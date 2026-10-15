@@ -1,0 +1,15 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop ... 
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop' (3576114) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs:95:13:
+assertion failed: new.1 < old.1 && new.2 < old.2 && new.5 <= old.5
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.08s
+

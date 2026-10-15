@@ -1,0 +1,152 @@
+Review this distinct source-only proposal for issue816, no execution/tools. Need concrete semantic/error-order/accounting blockers and minimal safe shape, under650words. Old functions stay compiled byte-exact. Parent requests caller-paid physical backing for remaining ordinary receiver helpers, no cap/unit discount/refund or source-ID assumptions. ReplayBudget.reserve_bytes(0) authenticates live/sticky; reserve_vec prepays full replacement array whileold remains, calls try_reserve_exact, verifies capacity; charge meters actualwork and is sticky. No global cache/newRc.
+PROPOSAL: add private paying helper selected only by existing paid ordinary receiving, preserving complete old fallbacks. Source and target region chains are fully traversed in old order with fallible paid Vec backing; eliminate target ancestor BTreeSet by membership in complete target chain, since only contains is used. Preserve errors by finishing target chain before membership. Truncate source Vec at first shared ancestor instead of allocating another collectedprefix; LoopLatch analogous truncate. Owningcontinue computes same checked prefix length with borrowed remainder key matching (no StorageId clone) then truncates existing source chain. Everyinitialized/return/receiving Vec/Result/newcontrol paid in full beforeconstruction, same existing payer. Physical old/new first boundaries naturallydiffer; full6semanticdiagnosticEq only atamplebudget. Old helper ignoredwork internally; new actualwalk/control work must be charged, no negative credits.
+Placeflags: add Leaves::under_with_budget using exact same immutable by_storage order/projection filtering, paid fallible Vec beforeeachpush; complete old under unchanged. Paying validate_place helper preserves unknown-storage beforeempty-leaf diagnostic; all ordinary receiving calls choose it, original old helpers/legacyTree untouched. Full initialized/receiving/result controls are explicit. Is lower-allocation alternative safelypossible without unmeteredfirstpass? Find minimal complete helper contracts. Do not invent runtimegains.
+ACTUAL OLD EXIT/CHAIN HELPERS:
+fn expected_exit_regions(
+    function: &ResolvedFunction,
+    exit: &ExitTarget,
+) -> Result<Vec<CleanupRegionId>, Diagnostic> {
+    let plan = &function.cleanup_plan;
+    let source_region = plan
+        .blocks
+        .get(exit.from.0 as usize)
+        .ok_or_else(|| replay_error(function, "cleanup exit has an unknown source block"))?
+        .region;
+    let source_chain = region_chain_to_root(function, source_region)?;
+    match &exit.continuation {
+        ExitContinuation::LoopLatch { target } => {
+            if let Some(leaves) =
+                lexical_cert::owned_continue_leaves(function, exit.id, &source_chain)?
+            {
+                return Ok(leaves);
+            }
+            let region = lexical_cert::loop_region(plan, target).ok_or_else(|| {
+                replay_error(function, "loop latch names an unknown lexical loop")
+            })?;
+            if !source_chain.contains(&region) {
+                return Err(replay_error(
+                    function,
+                    "loop latch exit does not originate inside its loop region",
+                ));
+            }
+            Ok(source_chain
+                .into_iter()
+                .take_while(|candidate| *candidate != region)
+                .collect())
+        }
+        ExitContinuation::Continue(edge)
+        | ExitContinuation::LoopBreak { edge, .. }
+        | ExitContinuation::FunctionReturn { edge, .. } => {
+            let target = plan
+                .edges
+                .get(edge.0 as usize)
+                .and_then(|edge| plan.blocks.get(edge.to.0 as usize))
+                .ok_or_else(|| {
+                    replay_error(function, "cleanup continuation has an unknown target")
+                })?;
+            let target_ancestors = region_chain_to_root(function, target.region)?
+                .into_iter()
+                .collect::<BTreeSet<_>>();
+            Ok(source_chain
+                .into_iter()
+                .take_while(|region| !target_ancestors.contains(region))
+                .collect())
+        }
+        ExitContinuation::CommitResult { .. }
+        | ExitContinuation::ReturnFailure { .. }
+        | ExitContinuation::ReturnUnit => Ok(source_chain),
+    }
+}
+
+fn region_chain_to_root(
+    function: &ResolvedFunction,
+    start: CleanupRegionId,
+) -> Result<Vec<CleanupRegionId>, Diagnostic> {
+    let mut chain = Vec::new();
+    let mut current = Some(start);
+    while let Some(region) = current {
+        let item = function
+            .cleanup_plan
+            .regions
+            .get(region.0 as usize)
+            .ok_or_else(|| {
+                replay_error(
+                    function,
+                    "cleanup region chain references an unknown region",
+                )
+            })?;
+        chain.push(region);
+        current = item.parent;
+    }
+    Ok(chain)
+}
+
+ACTUAL OLD OWNED CONTINUE:
+pub(super) fn owned_continue_leaves(
+    function: &ResolvedFunction,
+    exit: ExitTargetId,
+    chain: &[CleanupRegionId],
+) -> Result<Option<Vec<CleanupRegionId>>, Diagnostic> {
+    let plan = &function.cleanup_plan;
+    let Some(control) = plan.lexical_control.as_deref() else {
+        return Ok(None);
+    };
+    let Some(certificate) = control
+        .exits
+        .iter()
+        .find(|certificate| certificate.exit == exit)
+    else {
+        return Ok(None);
+    };
+    if certificate.kind != LexicalExitKind::Continue {
+        return Ok(None);
+    }
+    let Some(lp) = control
+        .loops
+        .iter()
+        .find(|lp| lp.target == certificate.target)
+    else {
+        return Ok(None);
+    };
+    let LoopLatchKind::OwnedIteratorStep { remainder, .. } = &lp.latch else {
+        return Ok(None);
+    };
+    let storage = StorageId::Value(remainder.clone());
+    let mut owners = chain.iter().enumerate().filter(|(_, region)| {
+        plan.regions
+            .get(region.0 as usize)
+            .is_some_and(|region| region.slots.contains(&storage))
+    });
+    let fail = |message: &str| replay_error(function, message);
+    let (index, arm) = owners
+        .next()
+        .map(|(index, region)| (index, *region))
+        .ok_or_else(|| fail("owning continue remainder has no active Yield scope"))?;
+    if owners.next().is_some() || index == 0 {
+        return Err(fail("owning continue remainder scope is ambiguous"));
+    }
+    let body = plan.regions[arm.0 as usize]
+        .parent
+        .ok_or_else(|| fail("owning continue Yield scope has no body parent"))?;
+    if plan.regions[body.0 as usize].parent != Some(lp.region) {
+        return Err(fail("owning continue retained scope chain differs"));
+    }
+    Ok(Some(chain[..index - 1].to_vec()))
+}
+
+ACTUAL OLD LEAVES UNDER:
+    /// The leaves at or below `place`, in liveness-flag order.
+    pub(super) fn under(&self, place: &CleanupPlace) -> Vec<LivenessFlagId> {
+        self.by_storage
+            .get(&place.storage)
+            .into_iter()
+            .flatten()
+            .filter(|flag| {
+                self.by_flag[*flag]
+                    .place
+                    .projections
+                    .starts_with(&place.projections)
+            })
+            .copied()
+            .collect()
+    }

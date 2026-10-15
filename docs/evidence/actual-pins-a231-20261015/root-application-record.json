@@ -1,0 +1,10 @@
+{
+  "actual_producer_source": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "application_head_before": "99c2b7dddf32136c38d63b72ede084476cc329b0",
+  "applied_exact_patch_sha256": "eabf6a718d00ba8e86462c6b2da397848234cfa470da9e8c6b7ba1342830cb68",
+  "all_three_before_and_after_sha256_verified": true,
+  "production_reexecution_claim": false,
+  "old_amount": 1416339,
+  "new_amount": 1416776,
+  "exclusive_causality_or_gain_claim": false
+}

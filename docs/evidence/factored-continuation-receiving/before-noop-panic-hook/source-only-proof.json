@@ -1,0 +1,87 @@
+{
+  "source_basis": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "old_full_test_sha256": "dce88b8e76e6ecb7eebe6f3d8ff7f15a137a4e01be2ebb010b789a6c93358949",
+  "whole_measured_compiler_body_preserved_verbatim_except_indent": true,
+  "old_and_current_panic_payload_and_drop_stay_measured": true,
+  "hook_setup_restore_outside_measure": true,
+  "restoration_precedes_any_resumed_assertion_panic": true,
+  "no_metric_or_registry_exclusions": true,
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "exact_inverse_counts": [
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/continuation_storage.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "exact_inverse_counts": [
+        1,
+        1
+      ]
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "exact_inverse_counts": [
+        1,
+        1,
+        1,
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "exact_inverse_counts": [
+        1,
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "exact_inverse_counts": [
+        1
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "exact_inverse_counts": [
+        1,
+        1,
+        1
+      ]
+    }
+  ]
+}

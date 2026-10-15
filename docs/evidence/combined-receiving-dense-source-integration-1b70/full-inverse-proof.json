@@ -1,0 +1,902 @@
+{
+  "base": "1b70a368999e328a65786e45506cc6a5df9e602b",
+  "source_head_before_metadata": "8abe7eeb4",
+  "no_rust_execution": true,
+  "rows": [
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "5be1edee738ee12b426939fbfbc09635229d4c7a3da4f45d3c1074254e0eb0e2",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "844628e0b1a3f3dafd563a7a9ef3396f513e664dc63e7d70237912736d6558ea",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "52fd9fb9d542ec3916b7427610885d934f7a9e0e9987e515feea226a0bbabfdb",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/referenced-edge-ownership-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "1e7c0243b7b229f4b820a19f67d768cb8c295f834b4237195d25011ce605ae80",
+      "protected_archive_sha256": "02901e6e9fb8922ee4be72dab3899cbafaba25b942a9f62daf0979ea1fb8556d",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "current_sha256": "be13817153b96635c9169b7ddd872ac2e32df3db263452574b11ced2c3091055",
+      "protected_archive_sha256": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
+      "current_sha256": "f27fb4d28d71bb522bafb208a3da4bd8098ec61b5cca904f33d5d9858738b0e4",
+      "protected_archive_sha256": "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
+      "current_sha256": "eff95ac901df52b4012ad9058f12e0189eb57997690e2f2e3bab47ae0cbd0b2a",
+      "protected_archive_sha256": "ea688655dac741ee5795e16582e64a69cae3928d491d008d36bca4549c73df05",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "1e7c0243b7b229f4b820a19f67d768cb8c295f834b4237195d25011ce605ae80",
+      "protected_archive_sha256": "350076d7fb340ac0c350a278b00f318762f1189418e12fc2abcc1c2e3c6adbe3",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
+      "current_sha256": "4d1363100d45c37409e5f2ec92376c6aa0b8ccafee0c150feac29a95e8ae5143",
+      "protected_archive_sha256": "a314eae7257c5ba20dc57d1a9ee1f166d2919bb34ebf9fb4f46e287c8b64b40c",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/leaf_index.rs",
+      "current_sha256": "17a6913340db634eb8fde149d23738ce68cf2ba1ec5ea10150084bc7defe2335",
+      "protected_archive_sha256": "6d7f32f3ed12640d920d58b6001f1088d4ed8b8e846303e715065f19ca4a1b9e",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "4c6763cc6a218441e08de18be3eeb8f54e0612e23879e7c7085462f79521d86e",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "ffca787b9ed74a134e02ed5af5dcfe62a137815b59360a130d4c2c3149d6f807",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/receiving-transitive-results-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "3aba68eb707236e99d2d93679c19c9e0a9b4849a8f7e94c5bf6ef60e7fc6548f",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "ef30bafb7e74ece87a8e4ccc2a056906a5775e3689139e538c74db8d8c4d4b0d",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "cf03c2e2c076eca2e8a4f5da0ab6db5efd8965f2888b3f081955c58ca0d26469",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "a349da31a1efabca38017cca4b1b7305a694ff7bd5f923e8eddad84d9e82053d",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "current_sha256": "32df1c42cc90ba3d0d9942585f647ecfa7c5a5f6549fdc3f2a77731108c9146e",
+      "protected_archive_sha256": "e3b0c44298fc1c149afbf4c8996fb92427ae41e4649b934ca495991b7852b855",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "current_sha256": "be13817153b96635c9169b7ddd872ac2e32df3db263452574b11ced2c3091055",
+      "protected_archive_sha256": "1efa201d404a09874514d70771d6015fa6269e7f82bd1dfee2f6b88038f5077a",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "current_sha256": "be13817153b96635c9169b7ddd872ac2e32df3db263452574b11ced2c3091055",
+      "protected_archive_sha256": "0f2576a1e32af73ddb3bae7c7db7bede6a28eab41f781b2ff06e98a369c6370c",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "03fde58554846398c379bbaa6f60cd1368d2573ff9fc715d340074f4c6ea56dc",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "bb72229bff1d33b7e6f03887a4022003465f077710cd643d75be9afcf4577961",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "7e0364a194df13c8fc374e4dd1ae2464609a8040ea2087429d06843a00f417c7",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-prefix-reference-proof/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "1e7c0243b7b229f4b820a19f67d768cb8c295f834b4237195d25011ce605ae80",
+      "protected_archive_sha256": "222853f211323dde7b91b7e5ba0dfebf0aeee26a4383174075718c662386bbe7",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "b3e5276b6bd016d1632ed6349ce34cd2e25fce762627b12c4416790ac02842be",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "ead6bb549f1bd85d904eecbf182f14103639489320ec8ad09f0d29232f2fe90b",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "1efc02b5a6d87c7bf56e17bcd40b3bd00adb70be3e8a3c50b0a844f5ba7dd903",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "83dc4425c79ca5720aa4d98d61561bdae8690701a0d7fb8daa0fbdfd0076f259",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "485f5b066ebe1e2edb3a42c9bcdfeb6d6f310d2691736eaf63777a02ac803676",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "44edd8afa0f32ce7d479b54e369ed7ae1220eb0bfdd057edb915808090b29c18",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "1e7c0243b7b229f4b820a19f67d768cb8c295f834b4237195d25011ce605ae80",
+      "protected_archive_sha256": "d1c619e451e181d4f1a9832f87f3055e4231f64b79099fcb4f15c4dbef592d5e",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "83dc4425c79ca5720aa4d98d61561bdae8690701a0d7fb8daa0fbdfd0076f259",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "b4344dd256df5f6ba747981d59590a8ae8a36c8784d68bf90571f107b65e9389",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "44edd8afa0f32ce7d479b54e369ed7ae1220eb0bfdd057edb915808090b29c18",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/constructor-inline-failure-825/exact-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "6ef5c9eb9182d70aa6906dc884da701c445739c64d1935bea1ecab86bc289fb7",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_sha256": "d4158fd988538e77c0f39a2f05cfc50aab15679744bba14ae1f005fc32c805fb",
+      "protected_archive_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "5be1edee738ee12b426939fbfbc09635229d4c7a3da4f45d3c1074254e0eb0e2",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "52fd9fb9d542ec3916b7427610885d934f7a9e0e9987e515feea226a0bbabfdb",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "844628e0b1a3f3dafd563a7a9ef3396f513e664dc63e7d70237912736d6558ea",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "current_sha256": "e285e44475cad6e0d430768d1bc13e630baeea6b2df1afead6337e3112c46830",
+      "protected_archive_sha256": "98db139e9b14abb2126a887f760e4db2bbbd095a9a2b89df924bef71e68732f3",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "4ba11a086ed1efbd2211d5b21e334316b0a3c91ccd66b2cf75677d4eb76c12bf",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "a36ff7c4241aaa4ecc8698b3ae64d5bef7c9ec0ecef208d5c612deb9e0e66718",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "b85fd51439e81d83b5a776244dc17f7f9ce83b8704040407fcfddefdb8f665c6",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "src/loan_plan/paid_live.rs",
+      "current_sha256": "5247ed741e5aee10ae7085d3b171bbca4533ea81f1527ef69db039f2e9903227",
+      "protected_archive_sha256": "5db3f83bc1305f20ce478f2746360fdaea138ff98f87305560f1db2c9b1d4688",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "src/loan_plan/paid_plan.rs",
+      "current_sha256": "e285e44475cad6e0d430768d1bc13e630baeea6b2df1afead6337e3112c46830",
+      "protected_archive_sha256": "f42d8f1a0d2b5d426e58e4240ee825d59b1623cb83092b353f39b45174b1b7cc",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "current_sha256": "be13817153b96635c9169b7ddd872ac2e32df3db263452574b11ced2c3091055",
+      "protected_archive_sha256": "4e35f87c1f78006a0f36583a8be6b75488a98856be32ecefdbd33e3526064e23",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "current_sha256": "be13817153b96635c9169b7ddd872ac2e32df3db263452574b11ced2c3091055",
+      "protected_archive_sha256": "2e8e01a0d509c00cc39953fa8358d7533c862ea1367c9eba6fe7fcb8c0179762",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "current_sha256": "1e7c0243b7b229f4b820a19f67d768cb8c295f834b4237195d25011ce605ae80",
+      "protected_archive_sha256": "5460420073056042a13515edc037e2c6737da39286c91105b3feae4f942aeab2",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
+      "current_sha256": "eff95ac901df52b4012ad9058f12e0189eb57997690e2f2e3bab47ae0cbd0b2a",
+      "protected_archive_sha256": "ba562e69301e6283bff9bec4517444ccea0fc2094f56959214cbbf78e3915b1b",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "tests/hir_module_boundaries.rs",
+      "current_sha256": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+      "protected_archive_sha256": "ef30bafb7e74ece87a8e4ccc2a056906a5775e3689139e538c74db8d8c4d4b0d",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "protected_archive_sha256": "4cc35f98927317e03348e7cb2508fec59d99b697def2b35f620fcac0060735a6",
+      "equal": true
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_sha256": "59aa90d35fd5fb6f19d1ce8399be670c1b5291d126488b7bedb9713cf61945f7",
+      "protected_archive_sha256": "a349da31a1efabca38017cca4b1b7305a694ff7bd5f923e8eddad84d9e82053d",
+      "equal": true
+    }
+  ],
+  "unaffected_not_reexecuted": [
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/continuation_storage.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/graph.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/schema/paid_summary/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/allocation/tests/accounting_scope.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/adjacency.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/cfg_directory.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_cfg.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/paid-cfg-child-scratch/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_plan_legacy.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/lexical_replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "source": "src/prelude.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/held_projection.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+      "source": "src/source_verify/constructor_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prefix-certified-expression-lookup/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/arena.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/lifecycle-inline-active-path/whole-source-inverses.json",
+      "source": "src/hir/validation/function_scope/lifecycle/completed.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "source": "src/workspace_graph/generic_type_import.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/cost.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/status-fact-borrow-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/loop_calls/byte_writer/source_index.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/loop_calls/byte_writer.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/import_stub/byte_helper.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/import_stub.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/held_projection.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/borrowed_imports.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/borrowed_leaf.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/uncached_peak.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/loop_calls/byte_writer/source_index_original.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/import_stub_original.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/held_projection_original.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/provider-proof-backing-714177/whole-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/bounded_output.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/bounded_output/loan_inner_stage_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/hir/canonical_loan_storage/caller.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/hir/canonical_loan_storage/caller/stage_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-inner-stages-829/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_cfg.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/hir.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/hir/validation.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/cleanup_plan/replay/paid_type_facts.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/source-projection-integration-797b/exact-receiving-inverses.json",
+      "source": "src/hir/ids.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "source": "src/workspace_graph/generic_type_import.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "source": "src/workspace_graph.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/borrowed-generic-membership-index-39c6/whole-source-inverses.json",
+      "source": "src/workspace_graph/generic_type_import/borrowed_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/constructor-inline-failure-825/exact-source-inverses.json",
+      "source": "src/workspace_graph.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/constructor-inline-failure-825/exact-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/defaults.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/constructor-inline-failure-825/exact-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/import_stub.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/constructor-inline-failure-825/exact-source-inverses.json",
+      "source": "src/workspace_graph/expected_projection/borrowed_imports.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "src/bounded_output.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "src/bounded_output/loan_inner_stage_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "src/loan_plan/cfg_directory.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_materialize.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-endpoint-ordered-union-827/exact-source-inverses.json",
+      "source": "src/loan_plan/storage.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/identity_resolution/nominal.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/invocation.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/bounded_output/identity_reservation/base_prelude.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/declaration_index/nominal_base.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/workspace_graph/identity_resolution/base.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/declaration_index/identity_payer.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/extension_work.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/vector_extension.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/extension_model.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/extension_producer.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/prelude-extension-reuse-828/exact-source-inverses.json",
+      "source": "src/hir/prelude_bundle/extension_staging.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/composed-source-inverses-ec94/exact-receiving-inverses.json",
+      "source": "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/composed-source-inverses-ec94/exact-receiving-inverses.json",
+      "source": "src/project/incremental/cold_source_tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_candidate.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/funded_flat/work_boundary.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/loan-candidate-inventory-reuse/exact-source-inverses.json",
+      "source": "src/loan_plan/paid_cursor/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/remaining-receiving-exits-816/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/lexical_replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining/selected.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "status": "unchanged source, not reexecuted here"
+    },
+    {
+      "packet": "docs/evidence/exit-status-directory-reuse/exact-source-inverses.json",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
+      "status": "unchanged source, not reexecuted here"
+    }
+  ],
+  "failures": []
+}

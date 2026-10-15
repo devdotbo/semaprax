@@ -1,0 +1,22 @@
+[
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "new": "            include_str!(\"../src/hir/validation/byte_traversal.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/before_nested.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/slot.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/check.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/index.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/intervals.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/shape.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/storage.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/tests.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/walk.rs\"),\n",
+    "before": "            include_str!(\"../src/hir/validation/byte_traversal.rs\"),\n"
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "new": "                include_str!(\"../../../../../src/hir/validation/byte_traversal.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/before_nested.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/slot.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/check.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/index.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/intervals.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/shape.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/storage.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/tests.rs\"),\n                include_str!(\"../../../../../src/hir/validation/byte_traversal/nested/walk.rs\"),\n",
+    "before": "                include_str!(\"../../../../../src/hir/validation/byte_traversal.rs\"),\n"
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "new": "                include_str!(\"../../../../../src/source_verify/byte_traversal.rs\"),\n                include_str!(\"../../../../../src/source_verify/byte_traversal/nested.rs\"),\n                include_str!(\"../../../../../src/source_verify/byte_traversal/nested/tests.rs\"),\n                include_str!(\"../../../../../src/source_verify/iterative/while_rules/before_nested.rs\"),\n",
+    "before": "                include_str!(\"../../../../../src/source_verify/byte_traversal.rs\"),\n"
+  },
+  {
+    "source": "tests/workspace/semantic_graph/source_inventory.rs",
+    "new": "    () => { concat!(\n        include_str!(\"../../src/hir/validation/byte_traversal/before_nested.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/slot.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/check.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/index.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/intervals.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/shape.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/storage.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/tests.rs\"),\n        include_str!(\"../../src/hir/validation/byte_traversal/nested/walk.rs\"),\n        include_str!(\"../../src/source_verify/byte_traversal/nested.rs\"),\n        include_str!(\"../../src/source_verify/byte_traversal/nested/tests.rs\"),\n        include_str!(\"../../src/source_verify/iterative/while_rules/before_nested.rs\"),\n",
+    "before": "    () => { concat!(\n"
+  }
+]

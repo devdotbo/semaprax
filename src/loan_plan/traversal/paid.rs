@@ -216,18 +216,16 @@ pub(in crate::loan_plan) fn draft_bytes(
 pub(in crate::loan_plan) fn draft_bytes_in<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
-    census: Option<&crate::hir::ByteTraversalCensus<'a>>,
+    census: &mut crate::hir::ByteTraversalSlot<'a>,
     expression: &'a ResolvedExpr,
     cfg: &Cfg<'_>,
     aliases: &impl crate::loan_plan::directory_access::Aliases,
     work: &mut WorkCounter,
 ) -> Result<Option<PaidDraft>, Diagnostic> {
-    let region = if let Some(census) = census {
-        census.region(program, function, expression)?
-    } else {
-        crate::hir::byte_traversal_region(expression)?
+    let region = census.region(program, function, expression)?;
+    let Some(region) = region else {
+        return Ok(None);
     };
-    let Some(region) = region else { return Ok(None); };
     charge(work)?;
     let place = storage::expression_place(region.view, work.allocation)?
         .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;

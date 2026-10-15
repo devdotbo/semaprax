@@ -1,0 +1,15 @@
+
+running 1 test
+test loan_plan::paid_materialize::tests::ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact ... 
+thread 'loan_plan::paid_materialize::tests::ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact' (3568817) panicked at src/loan_plan/paid_materialize/before.rs:74:33:
+index out of bounds: the len is 0 but the index is 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    loan_plan::paid_materialize::tests::ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.08s
+

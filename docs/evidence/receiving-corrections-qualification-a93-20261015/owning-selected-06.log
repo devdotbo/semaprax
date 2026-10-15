@@ -1,0 +1,21 @@
+
+running 1 test
+test cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic ... 
+thread 'cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic' (3678597) panicked at src/cleanup_plan/replay/factored.rs:616:45:
+index out of bounds: the len is 0 but the index is 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic' (3678597) panicked at src/cleanup_plan/replay/factored.rs:616:45:
+index out of bounds: the len is 0 but the index is 0
+
+thread 'cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic' (3678597) panicked at src/cleanup_plan/replay/factored/continuation_receiver/tests.rs:87:5:
+assertion failed: !allocation.invalid && allocation.live == 0
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.10s
+

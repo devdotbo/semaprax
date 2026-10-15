@@ -106,8 +106,12 @@ pub(crate) fn validate_function_with<'a>(
             "lexical completion has no public signature or storage type",
         ));
     }
+    crate::hir::validation::byte_traversal::nested::slot::controls(
+        std::mem::size_of::<Proofs<'_, '_>>()
+            + std::mem::size_of::<Result<Proofs<'_, '_>, Diagnostic>>(),
+    )?;
     let mut proofs = Proofs {
-        bytes: crate::hir::ByteTraversalCensus::optional(program, function)?,
+        bytes: crate::hir::ByteTraversalSlot::new(program, function)?,
         inspect,
     };
     for contract in function.requires.iter().chain(&function.ensures) {
@@ -136,7 +140,7 @@ pub(crate) fn validate_function_with<'a>(
     )
 }
 struct Proofs<'a, 'b> {
-    bytes: Option<crate::hir::ByteTraversalCensus<'a>>,
+    bytes: crate::hir::ByteTraversalSlot<'a>,
     inspect: &'b mut dyn FnMut(
         &dyn crate::cleanup::ReplayContext,
         &ResolvedExpr,
@@ -293,7 +297,7 @@ fn walk<'a>(
                         if let Some(wrapper) = super::wrapper::source_for_wrapper_with_bytes(
                             program,
                             value,
-                            inspect.bytes.as_ref().map(|census| (census, function)),
+                            Some(&mut inspect.bytes),
                             inspect.inspect,
                         )? {
                             if *mutable

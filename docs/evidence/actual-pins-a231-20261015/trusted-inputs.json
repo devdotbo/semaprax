@@ -1,0 +1,9 @@
+{
+  "capture_head": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "later_root_head_at_preparation": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "build_receipt_sha256": "2c0887bed598fe38ad681878758104831d5abede3fbc3c5d07d9568719c3c3b0",
+  "producer_receipt_sha256": "478f60578e461eb5c520e4c551b5fd1f851e1e779355a4165105dd44ca95d461",
+  "root": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "capture": "/Volumes/Semaprax/provenance/receiving-union-actual-pins-a231-20261015",
+  "round": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015"
+}

@@ -59,6 +59,11 @@ impl<'a> Index<'a> {
             }
             Ok(())
         })?;
+        if regions < 2 {
+            return Err(Failure::semantic(
+                "borrowed byte traversal is nested in another traversal",
+            ));
+        }
         let mut result = Self {
             nodes: storage.vector(nodes)?,
             definitions: storage.vector(definitions)?,

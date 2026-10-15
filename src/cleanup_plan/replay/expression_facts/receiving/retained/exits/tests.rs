@@ -80,6 +80,83 @@ fn original(program: &ResolvedProgram, function: &ResolvedFunction) -> Result<()
 }
 
 
+
+// The removed operation is executed independently after the same actual status
+// producer/bootstrap, while its retained token remains live through full Drop.
+fn removed_directory_cost(function: &ResolvedFunction) -> (usize, usize, usize) {
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(arena::build::<errors::Legacy>(function,
+        capacity::Payer::Selected(&mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation).unwrap());
+    let ((cost, allocation), refused, _, first) = with_limit_usage_refusal(1 << 26, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        let held = validate_status_sources_retained(function, &facts, &mut budget).unwrap();
+        let work = budget.remaining;
+        let bytes = crate::bounded_output::active_remaining().unwrap();
+        let before = crate::test_allocation_observer::current_metrics();
+        let mut directory = Directory::new(function, &mut budget, "cleanup exit status directory").unwrap();
+        for source in &function.cleanup_plan.status_sources {
+            directory.insert(function, &source.id, &mut budget).unwrap();
+        }
+        let after = crate::test_allocation_observer::current_metrics();
+        let cost = (work-budget.remaining,
+            bytes-crate::bounded_output::active_remaining().unwrap(), after.allocated-before.allocated);
+        drop(directory); drop(held); drop(budget); cost
+    }));
+    assert!(!refused && first.is_none() && !allocation.invalid);
+    assert_eq!(allocation.live,0); assert_eq!(allocation.allocated,allocation.freed);
+    cost
+}
+
+fn exact_accounting(function: &ResolvedFunction,
+    old: &(bool, usize, usize, bool, Option<ReservationRefusal>, usize),
+    new: &(bool, usize, usize, bool, Option<ReservationRefusal>, usize)) {
+    eprintln!("exit-status-cost function={} statuses={} old={old:?} current={new:?} borrow=({BORROW_UNITS},{BORROW_BYTES})",
+        function.id, function.cleanup_plan.status_sources.len());
+    assert!(old.0 && new.0 && !old.3 && !new.3);
+    assert!(old.4.is_none() && new.4.is_none());
+    let removed = removed_directory_cost(function);
+    eprintln!("exit-status-removed function={} cost={removed:?}",function.id);
+    assert_eq!(old.1.checked_add(BORROW_UNITS).unwrap(), new.1.checked_add(removed.0).unwrap());
+    assert_eq!(old.2.checked_add(BORROW_BYTES).unwrap(), new.2.checked_add(removed.1).unwrap());
+    assert_eq!(old.5, new.5.checked_add(removed.2).unwrap());
+    match function.cleanup_plan.status_sources.len() {
+        0 => {
+            assert_eq!(removed,(0,0,0));
+            assert_eq!(new.1,old.1+BORROW_UNITS);
+            assert_eq!(new.2,old.2+BORROW_BYTES); assert_eq!(new.5,old.5);
+        }
+        1 => {
+            // The actual old first insertion performs relocation1 + VISIT3;
+            // it has no key comparison, rotation or parent rebalance.
+            assert_eq!(removed.0,4); assert_eq!(BORROW_UNITS,7);
+            assert_eq!(new.1,old.1+3);
+            // Pin the actual a93 64-bit receipt, not a portable Node layout
+            // lemma. All hosts retain the independent additive equations above.
+            #[cfg(target_pointer_width = "64")]
+            {
+                assert_eq!(BORROW_BYTES,49);
+                assert_eq!(removed.1,48); assert_eq!(removed.2,48);
+                assert_eq!(new.2,old.2+1); assert_eq!(old.5,new.5+48);
+            }
+        }
+        _ => {}
+    }
+}
+
+// A separate real public caller with three ordinary borrowed reads. The old
+// receiver is unchanged and builds its original duplicate status directory.
+fn representative() -> ResolvedProgram {
+    crate::hir::resolve(&crate::check(r#"module replay.retained_exit_many;
+@id("many.read") fn read(input:borrow Bytes)->usize {
+ let view=bytes_as_slice(input); let range=byte_range(view,0usize,1usize); byte_len(range)
+}
+@id("many.main") fn main()->i64 {
+ let data=bytes_zeroed(1usize);
+ if read(data)==1usize {if read(data)==1usize {if read(data)==1usize {42}else{0}}else{0}}else{0}
+}"#, "retained-exit-many.spx").unwrap()).unwrap()
+}
+
 #[test]
 fn complete_exit_status_receivers_keep_six_fields_order_and_drop() {
     complete_source_archives();
@@ -91,9 +168,7 @@ fn complete_exit_status_receivers_keep_six_fields_order_and_drop() {
         let old = observe(&program, function, false, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
         let new = observe(&program, function, true, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
         assert!(old.0 && new.0 && !old.3 && !new.3);
-        if !function.cleanup_plan.status_sources.is_empty() {
-            assert!(new.1 < old.1 && new.2 < old.2 && new.5 <= old.5);
-        }
+        exact_accounting(function,&old,&new);
         if function.cleanup_plan.exits.is_empty() { continue; }
         let mut attacks = Vec::new();
         let mut bad = function.clone(); bad.cleanup_plan.exits[0].id = crate::cleanup_plan::ExitTargetId(u32::MAX); attacks.push(bad);
@@ -125,6 +200,15 @@ fn complete_exit_status_receivers_keep_six_fields_order_and_drop() {
         }
     }
     assert!(saw_status);
+    let program = representative();
+    let function = program.functions.iter().find(|f| f.id.as_str()=="many.main").unwrap();
+    assert!(function.cleanup_plan.status_sources.len()>=2);
+    let expected = original(&program,function); assert!(expected.is_ok());
+    let old = observe(&program,function,false,MAX_REPLAY_WORK_UNITS,1<<26,Some(&expected));
+    let new = observe(&program,function,true,MAX_REPLAY_WORK_UNITS,1<<26,Some(&expected));
+    exact_accounting(function,&old,&new);
+    assert!(old.0 && new.0 && !old.3 && !new.3);
+    assert!(new.1 < old.1 && new.2 < old.2 && new.5 < old.5);
 }
 
 #[test]

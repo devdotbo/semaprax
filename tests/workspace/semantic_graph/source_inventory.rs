@@ -1,6 +1,22 @@
 // Complete private-layout source inventory; original includes and literal bytes retained.
 macro_rules! semantic_graph_private_layout_source_inventory {
     () => { concat!(
+        include_str!("../../src/hir/validation/byte_traversal/before_nested.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/slot.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/check.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/index.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/intervals.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/shape.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/storage.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/tests.rs"),
+        include_str!("../../src/hir/validation/byte_traversal/nested/walk.rs"),
+        include_str!("../../src/source_verify/byte_traversal/nested.rs"),
+        include_str!("../../src/source_verify/byte_traversal/nested/tests.rs"),
+        include_str!("../../src/source_verify/iterative/while_rules/before_nested.rs"),
+        include_str!("../../src/loan_plan/paid_live.rs"),
+        include_str!("../../src/loan_plan/paid_live/dense.rs"),
+        include_str!("../../src/loan_plan/paid_live/dense/tests.rs"),
 concat!(
         include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),

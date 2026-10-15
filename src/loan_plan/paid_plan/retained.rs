@@ -11,14 +11,22 @@ pub(in crate::loan_plan) fn build(
     let (aliases, bound, ownership) = inventory.into_parts(program, function, payer)?;
     let cfg = build_cfg(function, work)?;
 
-    let byte_census = crate::hir::ByteTraversalCensus::optional(program, function)?;
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let mut drafts = Vec::<PaidDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::paid::draft(program, expression, &cfg, work)? {
             storage::push(&mut drafts, draft, payer)?;
         }
-        if let Some(draft) = traversal::paid::draft_bytes_in(program, function, byte_census.as_ref(), expression, &cfg, &aliases, work)? {
+        if let Some(draft) = traversal::paid::draft_bytes_in(
+            program,
+            function,
+            &mut byte_census,
+            expression,
+            &cfg,
+            &aliases,
+            work,
+        )? {
             storage::push(&mut drafts, draft, payer)?;
         }
         let view = match &expression.kind {
@@ -225,7 +233,7 @@ pub(in crate::loan_plan) fn build(
     let mut live = storage::vector(drafts.len(), payer)?;
     let mut live_pending = Vec::new();
     for (index, draft) in drafts.iter().enumerate() {
-        live.push(paid_live::live_nodes_with_pending(
+        live.push(paid_live::dense::live_nodes_with_pending(
             &cfg,
             LoanId(index as u16),
             draft.start,
@@ -244,10 +252,10 @@ pub(in crate::loan_plan) fn build(
             let parent = parent.0 as usize;
             let before = live[parent].len();
             let mut seeds = cfg_directory::clone_set(&drafts[parent].seeds, payer)?;
-            for node in live[child].iter(payer.expect("private funded entry"))? {
-                cfg_directory::set_insert(&mut seeds, *node, payer)?;
+            for node in live[child].values(payer.expect("private funded entry"))? {
+                cfg_directory::set_insert(&mut seeds, node, payer)?;
             }
-            live[parent] = paid_live::live_nodes_with_pending(
+            live[parent] = paid_live::dense::live_nodes_with_pending(
                 &cfg,
                 LoanId(parent as u16),
                 drafts[parent].start,
@@ -265,7 +273,8 @@ pub(in crate::loan_plan) fn build(
     drop(live_pending);
     reject_cfg_overlaps_paid(program, &cfg, &aliases, &drafts, &live, work)?;
 
-    let (mut edge_live, mut termination_edges) = paid_live::edge_liveness(&cfg, &live, work)?;
+    let (mut edge_live, mut termination_edges) =
+        paid_live::dense::edge_liveness(&cfg, &live, work)?;
     // A contract/body root has no outgoing CFG edge. A synchronous call
     // ending at that root completes on its incoming After edge, rather than
     // needing a nonexistent successor. Only admit this formerly rejected
@@ -298,16 +307,16 @@ pub(in crate::loan_plan) fn build(
         }
         for (child, parent) in parents.iter().enumerate() {
             if let Some(parent) = parent {
-                for node in live[child].iter(payer.expect("private funded entry"))? {
+                for node in live[child].values(payer.expect("private funded entry"))? {
                     charge(work)?;
-                    if !live[parent.0 as usize].contains(node) {
+                    if !live[parent.0 as usize].contains(&node) {
                         return Err(error("terminal loan child escapes its parent lifetime"));
                     }
                 }
             }
         }
         // Recompute edge proof only for a previously rejected terminal shape.
-        (edge_live, termination_edges) = paid_live::edge_liveness(&cfg, &live, work)?;
+        (edge_live, termination_edges) = paid_live::dense::edge_liveness(&cfg, &live, work)?;
     }
     paid_materialize::materialize(
         cfg,
@@ -318,4 +327,3 @@ pub(in crate::loan_plan) fn build(
         payer.expect("private funded entry"),
     )
 }
-

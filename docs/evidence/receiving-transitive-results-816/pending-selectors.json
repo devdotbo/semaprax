@@ -1,0 +1,17 @@
+[
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::helpers::tests::complete_transitive_receivers_preserve_old_order_payloads_and_drop",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs"
+  },
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::helpers::tests::paid_transitive_results_keep_exact_short_zero_work_and_bytes",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs"
+  },
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::helpers::tests::transitive_receiver_originals_and_sticky_auth_stay_complete",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs"
+  }
+]

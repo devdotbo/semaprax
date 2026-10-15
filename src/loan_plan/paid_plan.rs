@@ -62,14 +62,22 @@ pub(super) fn build(
         }
     }
 
-    let byte_census = crate::hir::ByteTraversalCensus::optional(program, function)?;
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let mut drafts = Vec::<PaidDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::paid::draft(program, expression, &cfg, work)? {
             storage::push(&mut drafts, draft, payer)?;
         }
-        if let Some(draft) = traversal::paid::draft_bytes_in(program, function, byte_census.as_ref(), expression, &cfg, &aliases, work)? {
+        if let Some(draft) = traversal::paid::draft_bytes_in(
+            program,
+            function,
+            &mut byte_census,
+            expression,
+            &cfg,
+            &aliases,
+            work,
+        )? {
             storage::push(&mut drafts, draft, payer)?;
         }
         let view = match &expression.kind {
@@ -370,12 +378,12 @@ pub(super) fn build(
     )
 }
 
-fn reject_cfg_overlaps_paid(
+fn reject_cfg_overlaps_paid<N: paid_live::Membership>(
     program: &ResolvedProgram,
     cfg: &Cfg<'_>,
     aliases: &cfg_directory::Map<ValueId, Place>,
     drafts: &[PaidDraft],
-    live: &[cfg_directory::Set<u16>],
+    live: &[N],
     work: &mut WorkCounter,
 ) -> Result<(), Diagnostic> {
     let payer = work.allocation;

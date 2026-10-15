@@ -26,8 +26,8 @@ use super::*;
 mod before_nested;
 pub(crate) mod nested;
 
-fn fail(message: &str) -> Diagnostic {
-    Diagnostic::io("SPX-H006", message)
+fn fail(message: &'static str) -> Diagnostic {
+    Diagnostic::io_static("SPX-H006", message)
 }
 
 /// The independently authenticated parts of one receiver.
@@ -399,10 +399,12 @@ pub(in crate::hir) fn validate_function(
     declarations: &DeclarationIndex,
     function: &ResolvedFunction,
 ) -> Result<(), Diagnostic> {
-    if nested::contains_nested(function)? {
-        nested::Census::validate(declarations, function)
-    } else {
-        validate_function_v1(declarations, function)
+    nested::slot::controls(0)?;
+    match validate_function_v1(declarations, function) {
+        Err(error) if nested::slot::nested_refusal(&error) => {
+            nested::Census::validate(declarations, function)
+        }
+        original => original,
     }
 }
 

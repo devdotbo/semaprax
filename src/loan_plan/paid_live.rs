@@ -16,6 +16,7 @@ impl Membership for cfg_directory::Set<u16> {
     }
 }
 
+#[cfg(test)]
 pub(super) fn live_nodes_with_pending(
     cfg: &Cfg<'_>,
     loan: LoanId,
@@ -51,6 +52,7 @@ pub(super) fn live_nodes_with_pending(
     Ok(live)
 }
 
+#[cfg(test)]
 pub(super) fn edge_liveness(
     cfg: &Cfg<'_>,
     live: &[cfg_directory::Set<u16>],
@@ -143,3 +145,6 @@ pub(super) mod before_plan_live {
         original::edge_liveness(cfg, live, work)
     }
 }
+
+// Ordinary funded receiver; complete AVL functions above remain independent.
+pub(super) mod dense;

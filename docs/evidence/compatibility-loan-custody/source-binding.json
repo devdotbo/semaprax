@@ -30,8 +30,8 @@
     "src/hir/canonical_loan_storage/caller/shared.rs": "ca16eccd943f2ae14971c372f66a2a27d907c2a6605348cd52d48252b1e762b3",
     "src/hir/canonical_loan_storage/caller/shared/tests.rs": "d2077ddc3cacca4232a8a08055e12095cada7f7fbca8b6521967ce55194519df",
     "src/hir/canonical_loan_storage/caller/owned_before.rs": "f119db223c35acd6e975e2825f5a6e4806508a49698989d94500ba8601fb456f",
-    "tests/hir_module_boundaries.rs": "3638d5d196c394a6b7e47e69403bb058164b8ad0870fdaf721b336ba8b0a2b22",
-    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "7270092608a52e5228f47a5b3a9b6655e110e1271a1a7cde13acb7d230596c8f"
+    "tests/hir_module_boundaries.rs": "f7dd85a6441d29786947e5fcf8961863b10c9296c8ba07a08a5bf842d7063b54",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb"
   },
   "unchanged_full_observer": {
     "selector": "hir::validation::function_scope::lifecycle::completed::tests::actual_repeated_call_receiver_is_paid_through_drop_with_exact_short_and_sticky_refusal",

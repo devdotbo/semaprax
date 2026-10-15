@@ -1,0 +1,1222 @@
+{
+  "state": "FROZEN_SOURCE_BOUND_UNEXECUTED_REGISTRATION",
+  "source_head": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+  "source_tree": "89a297ead8eeef19324214f4f5c17b7f998b5565",
+  "repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "freeze_required": false,
+  "prior_failed_bodies": 11,
+  "selected": 18,
+  "resolved": 18,
+  "issues": [],
+  "rows": [
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::type_proof_tests::projection_tests::rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/workspace_graph/type_proof_tests.rs",
+      "line": 829,
+      "name": "rendered_document_has_literal_sha_exact_wire_order_and_digest_binding",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 528,
+          "module": "workspace_graph",
+          "attributes": []
+        },
+        {
+          "source_path": "src/workspace_graph.rs",
+          "line": 5958,
+          "module": "type_proof_tests",
+          "attributes": [
+            "#[cfg(test)]",
+            "#[path = \"workspace_graph/type_proof_tests.rs\"]"
+          ]
+        },
+        {
+          "source_path": "src/workspace_graph/type_proof_tests.rs",
+          "line": 30,
+          "module": "projection_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "72f9a146d1224043655a767f28a20ae4ec90bf2c3cc3ae6210d112ea154fc41b",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/workspace_graph.rs": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b",
+        "src/workspace_graph/type_proof_tests.rs": "72f9a146d1224043655a767f28a20ae4ec90bf2c3cc3ae6210d112ea154fc41b"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-10.log",
+        "log_sha256": "7bc16c905b00e837c446e886f0165106982fbb803622b118f98179dd82604228",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "test:workspace",
+      "harness": "semaprax::workspace",
+      "selector": "semantic_graph::public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "tests/workspace/semantic_graph.rs",
+      "line": 589,
+      "name": "public_api_cli_bytes_getters_and_read_only_locking_are_exact",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "tests/workspace.rs",
+          "line": 68,
+          "module": "semantic_graph",
+          "attributes": [
+            "#[path = \"workspace/semantic_graph.rs\"]"
+          ]
+        }
+      ],
+      "sha256": "9b7e6e3738302e22799f0bb4a29acafcf32231ac3e3bac5c177f86cf2e55c63f",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "tests/workspace.rs": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-11.log",
+        "log_sha256": "2a342f3519c8d1155ebc860c7d8bd4ad1c416af0df280f687d8604778ac04a59",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "test:workspace",
+      "harness": "semaprax::workspace",
+      "selector": "semantic_graph::public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "tests/workspace/semantic_graph.rs",
+      "line": 833,
+      "name": "public_workspace_analysis_api_cli_kats_and_locking_are_exact",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "tests/workspace.rs",
+          "line": 68,
+          "module": "semantic_graph",
+          "attributes": [
+            "#[path = \"workspace/semantic_graph.rs\"]"
+          ]
+        }
+      ],
+      "sha256": "9b7e6e3738302e22799f0bb4a29acafcf32231ac3e3bac5c177f86cf2e55c63f",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "tests/workspace.rs": "2722662e4c54895e22dbffa8fb72f1ace5b93b99c4d58335f3948f6d73d5505f"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-12.log",
+        "log_sha256": "4803a2a0b221a4f0a52329cbc422e5ecc2d23bb10f247cd3d1646f44022c9cd0",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::tests::full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/tests.rs",
+      "line": 446,
+      "name": "full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 632,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "65a91f7add1b3b54b85cdd9c2275324629089cf66769544f9e2053ec23511288",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/expression_facts.rs": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+        "src/cleanup_plan/replay/expression_facts/receiving.rs": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-44.log",
+        "log_sha256": "ff8ca9cff6388379d39afac2afaf8aefc71fbd647a9ea89ed766230d88f780a7",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::expected_projection::prelude_forecast::tests::complete_receiving_sources_reconstruct_pinned_originals",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/workspace_graph/expected_projection/prelude_forecast_tests.rs",
+      "line": 163,
+      "name": "complete_receiving_sources_reconstruct_pinned_originals",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 528,
+          "module": "workspace_graph",
+          "attributes": []
+        },
+        {
+          "source_path": "src/workspace_graph.rs",
+          "line": 20,
+          "module": "expected_projection",
+          "attributes": []
+        },
+        {
+          "source_path": "src/workspace_graph/expected_projection.rs",
+          "line": 46,
+          "module": "prelude_forecast",
+          "attributes": [
+            "#[path = \"expected_projection/prelude_forecast.rs\"]"
+          ]
+        },
+        {
+          "source_path": "src/workspace_graph/expected_projection/prelude_forecast.rs",
+          "line": 80,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]",
+            "#[path = \"prelude_forecast_tests.rs\"]"
+          ]
+        }
+      ],
+      "sha256": "ffb60b4728460a4972be5820c709d687977287aeb82ea229a8a1736114b2813d",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/workspace_graph.rs": "c82d3bb6176c847fd9ff171f02d9c5aedd113e72b1eb9b1739ffee062319c11b",
+        "src/workspace_graph/expected_projection.rs": "974468e7035d1a7baa48b13078ce7ec7b0711c2c7610d64db7feea561b192f0c",
+        "src/workspace_graph/expected_projection/prelude_forecast.rs": "9c1b5e17bb19fe44d33a043c157b853168d2680e02eb4dac79c3e3ba2fdd09f2"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-65.log",
+        "log_sha256": "7c294f7fd556ef84299bb0d30929db9b9a8a0829e6f123a1f4d87bd9f9b2a0cb",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_materialize::tests::ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/loan_plan/paid_materialize/tests.rs",
+      "line": 120,
+      "name": "ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exact",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 75,
+          "module": "paid_materialize",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_materialize.rs",
+          "line": 123,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "a108b314c1e14dde6f3bfb393aaf4cc8681b8677bcfe455a40a5b2e5227b1d7f",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/loan_plan.rs": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8",
+        "src/loan_plan/paid_materialize.rs": "97b1eafdd7198997927eb01d6196ef16f094e90e621ebd7e6136befe9e491844"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-117.log",
+        "log_sha256": "3c85dba8b87ac708ceb70bcc16254a749a5e3cf948cc56d651bc46c64e82da36",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "line": 46,
+      "name": "current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 102,
+          "module": "factored",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored.rs",
+          "line": 972,
+          "module": "continuation_receiver",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+          "line": 30,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "dce88b8e76e6ecb7eebe6f3d8ff7f15a137a4e01be2ebb010b789a6c93358949",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/factored.rs": "95bfc24f97155a7072e377ef62ef031d46272f41459538706f5a68e53a27ce18",
+        "src/cleanup_plan/replay/factored/continuation_receiver.rs": "c946aa0786e0ec977aeb233ad8b12cf186076d2e3352dcad201377bb18f7a7ca"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-122.log",
+        "log_sha256": "99003fd73ebb2d91a7b6ef86d0d6b495706ed0fa47ac2e2a1a066f51827dbe57",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "hir::canonical_loan_storage::tests::reuse::complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are_bound",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/hir/canonical_loan_storage/tests/reuse.rs",
+      "line": 255,
+      "name": "complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are_bound",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 172,
+          "module": "hir",
+          "attributes": [
+            "#[allow(\n    unused_imports,\n    clippy::needless_borrows_for_generic_args,\n    clippy::too_many_arguments,\n    clippy::unnecessary_map_or,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/hir.rs",
+          "line": 123,
+          "module": "canonical_loan_storage",
+          "attributes": []
+        },
+        {
+          "source_path": "src/hir/canonical_loan_storage.rs",
+          "line": 12,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/hir/canonical_loan_storage/tests.rs",
+          "line": 10,
+          "module": "reuse",
+          "attributes": []
+        }
+      ],
+      "sha256": "75efc76f74a4a96638e2d8623bd5dd75514c9f41e94cda5414b6aa89552b65c5",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/hir.rs": "4c61c4805aedc57061406e3a46cb5a2c3a407d9efbe52fe8ed86b5335ce34ed7",
+        "src/hir/canonical_loan_storage.rs": "2e91ae3407014b5df2070aa18d0d770cdc5a6c8949c81a090dc1cc0c2917b929",
+        "src/hir/canonical_loan_storage/tests.rs": "d1a31bd500e69cb4aac4fbd957e7a20ed4a63832f983776d214f370cbb94a9a3"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-130.log",
+        "log_sha256": "d6482f2991a7cb5e7d6afda9a627b8f629d8d915b664b1249670c24fe98ae847",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop",
+      "reason": "actual a231 failed non-application body",
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+      "line": 157,
+      "name": "complete_exit_status_receivers_keep_six_fields_order_and_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 634,
+          "module": "exits",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
+          "line": 189,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "cde987e125de206e9e27f292cd970150ad27ffdcf367c279f7869ae18401c256",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/expression_facts.rs": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+        "src/cleanup_plan/replay/expression_facts/receiving.rs": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": "350076d7fb340ac0c350a278b00f318762f1189418e12fc2abcc1c2e3c6adbe3",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs": "a314eae7257c5ba20dc57d1a9ee1f166d2919bb34ebf9fb4f46e287c8b64b40c"
+      },
+      "prior_actual_failure": {
+        "source_subject": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+        "log": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-134.log",
+        "log_sha256": "73f6c9ff5429f7eff7c55287f284287740ede1d465b25fb98d7627e55b844464",
+        "receipt_path": "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json",
+        "receipt_sha256": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::exit_status_full_receivers_keep_exact_short_zero_work_bytes_and_tree_fallback",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+      "line": 211,
+      "name": "exit_status_full_receivers_keep_exact_short_zero_work_bytes_and_tree_fallback",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 634,
+          "module": "exits",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
+          "line": 189,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "cde987e125de206e9e27f292cd970150ad27ffdcf367c279f7869ae18401c256",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/expression_facts.rs": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+        "src/cleanup_plan/replay/expression_facts/receiving.rs": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": "350076d7fb340ac0c350a278b00f318762f1189418e12fc2abcc1c2e3c6adbe3",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs": "a314eae7257c5ba20dc57d1a9ee1f166d2919bb34ebf9fb4f46e287c8b64b40c"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::exit_status_authentication_precedes_debit_and_foreign_active_stays_sticky",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+      "line": 253,
+      "name": "exit_status_authentication_precedes_debit_and_foreign_active_stays_sticky",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 13,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 4,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 634,
+          "module": "exits",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
+          "line": 189,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "cde987e125de206e9e27f292cd970150ad27ffdcf367c279f7869ae18401c256",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/expression_facts.rs": "82c15975078a1e841c342440723a2e75ec2a0bfee01366ea8f43c49af0b6dec1",
+        "src/cleanup_plan/replay/expression_facts/receiving.rs": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": "350076d7fb340ac0c350a278b00f318762f1189418e12fc2abcc1c2e3c6adbe3",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs": "a314eae7257c5ba20dc57d1a9ee1f166d2919bb34ebf9fb4f46e287c8b64b40c"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::whole_original_and_current_comparison_pairs_execute_with_paid_last_drop",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "line": 9,
+      "name": "whole_original_and_current_comparison_pairs_execute_with_paid_last_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 102,
+          "module": "factored",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored.rs",
+          "line": 972,
+          "module": "continuation_receiver",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+          "line": 30,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "dce88b8e76e6ecb7eebe6f3d8ff7f15a137a4e01be2ebb010b789a6c93358949",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/factored.rs": "95bfc24f97155a7072e377ef62ef031d46272f41459538706f5a68e53a27ce18",
+        "src/cleanup_plan/replay/factored/continuation_receiver.rs": "c946aa0786e0ec977aeb233ad8b12cf186076d2e3352dcad201377bb18f7a7ca"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::paid_factored_receiving_exact_short_zero_keeps_first_failure_and_whole_drop",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "line": 165,
+      "name": "paid_factored_receiving_exact_short_zero_keeps_first_failure_and_whole_drop",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 102,
+          "module": "factored",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored.rs",
+          "line": 972,
+          "module": "continuation_receiver",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+          "line": 30,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "dce88b8e76e6ecb7eebe6f3d8ff7f15a137a4e01be2ebb010b789a6c93358949",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/factored.rs": "95bfc24f97155a7072e377ef62ef031d46272f41459538706f5a68e53a27ce18",
+        "src/cleanup_plan/replay/factored/continuation_receiver.rs": "c946aa0786e0ec977aeb233ad8b12cf186076d2e3352dcad201377bb18f7a7ca"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::continuation_receiver::tests::foreign_then_restored_invocation_cannot_acquire_or_reuse_held_frames",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "line": 223,
+      "name": "foreign_then_restored_invocation_cannot_acquire_or_reuse_held_frames",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 114,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 102,
+          "module": "factored",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored.rs",
+          "line": 972,
+          "module": "continuation_receiver",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+          "line": 30,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "dce88b8e76e6ecb7eebe6f3d8ff7f15a137a4e01be2ebb010b789a6c93358949",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/cleanup_plan.rs": "95abf77acc4556b3f5903342c6eba8f624474c91427a8263ab0f024c34d84ef8",
+        "src/cleanup_plan/replay.rs": "42449fd46e19cb668a435fbea806724c8c7a67e39557eddbb2b67be638aa91e4",
+        "src/cleanup_plan/replay/factored.rs": "95bfc24f97155a7072e377ef62ef031d46272f41459538706f5a68e53a27ce18",
+        "src/cleanup_plan/replay/factored/continuation_receiver.rs": "c946aa0786e0ec977aeb233ad8b12cf186076d2e3352dcad201377bb18f7a7ca"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_materialize::tests::ordered_endpoint_union_keeps_full_id_domain_duplicates_and_malformed_old_behavior",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/loan_plan/paid_materialize/tests.rs",
+      "line": 17,
+      "name": "ordered_endpoint_union_keeps_full_id_domain_duplicates_and_malformed_old_behavior",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 75,
+          "module": "paid_materialize",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_materialize.rs",
+          "line": 123,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "a108b314c1e14dde6f3bfb393aaf4cc8681b8677bcfe455a40a5b2e5227b1d7f",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/loan_plan.rs": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8",
+        "src/loan_plan/paid_materialize.rs": "97b1eafdd7198997927eb01d6196ef16f094e90e621ebd7e6136befe9e491844"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "harness": "semaprax::lib",
+      "selector": "loan_plan::paid_materialize::tests::ordered_endpoint_union_exact_short_zero_sticky_and_full_drop_are_physically_paid",
+      "reason": "all affected old/current comparison, hostile, physical, work, refusal and Drop bodies in changed test module",
+      "source_path": "src/loan_plan/paid_materialize/tests.rs",
+      "line": 227,
+      "name": "ordered_endpoint_union_exact_short_zero_sticky_and_full_drop_are_physically_paid",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 237,
+          "module": "loan_plan",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan.rs",
+          "line": 75,
+          "module": "paid_materialize",
+          "attributes": []
+        },
+        {
+          "source_path": "src/loan_plan/paid_materialize.rs",
+          "line": 123,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ],
+      "sha256": "a108b314c1e14dde6f3bfb393aaf4cc8681b8677bcfe455a40a5b2e5227b1d7f",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {
+        "src/lib.rs": "044494267f47eebdc1cfbd84d037706b72b61ae588e21eac621bc40fd660b9bc",
+        "src/loan_plan.rs": "369548317681a0e9856e2192a617dd27474fe91b5dae28b79081b440e2c3caf8",
+        "src/loan_plan/paid_materialize.rs": "97b1eafdd7198997927eb01d6196ef16f094e90e621ebd7e6136befe9e491844"
+      }
+    },
+    {
+      "package": "semaprax",
+      "kind": "test:module_size",
+      "harness": "semaprax::module_size",
+      "selector": "no_module_exceeds_its_recorded_size",
+      "reason": "changed joined test source boundary and module-size owning gate",
+      "source_path": "tests/module_size.rs",
+      "line": 114,
+      "name": "no_module_exceeds_its_recorded_size",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [],
+      "sha256": "f4db65da11156807050b9e929231c0c2df885256690a8416c6064d31e1b2e14b",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {}
+    },
+    {
+      "package": "semaprax",
+      "kind": "test:hir_module_boundaries",
+      "harness": "semaprax::hir_module_boundaries",
+      "selector": "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+      "reason": "changed joined test source boundary and module-size owning gate",
+      "source_path": "tests/hir_module_boundaries.rs",
+      "line": 2,
+      "name": "core_validation_has_no_resolution_cleanup_build_or_physical_authority",
+      "attributes": [
+        "#[test]"
+      ],
+      "registration_chain": [],
+      "sha256": "4c6763cc6a218441e08de18be3eeb8f54e0612e23879e7c7085462f79521d86e",
+      "ignored": false,
+      "binding_repository": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+      "registration_chain_sha256": {}
+    }
+  ],
+  "inputs_sha256": {
+    "/Volumes/Semaprax/provenance/qualification-registration-module-path-20261014.py": "8774afeeb957dabcde7eee44a29c1a91aec2572d7740413a0dbebf473ec7da6f",
+    "/Volumes/Semaprax/lane-prompts/receiving-union-a231-20261015/owning-selected-results.json": "d56504b7af53cea91017fdda8daccd981b7a8f26bbaf910a7ff6a4f815e4cea1"
+  },
+  "scope_note": "Only non-app actual failures and all changed comparison modules + source gates. Production implementation byte-unchanged from a231; prior scoped production Clippy reused, not rerun or relabeled current-head. App failures remain disclosed.",
+  "excluded_unchanged_actual_app_failures": [
+    {
+      "selector": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+      "exit_code": 101,
+      "log_sha256": "1b4bad3bca511f1a71b1371f63a1dc668f5d36de71ee7518a49a49174fb335cf",
+      "reason": "Unchanged production; both app failures retained/disclosed, not rerun for test-only corrections"
+    },
+    {
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "exit_code": 101,
+      "log_sha256": "c9e3f8b193927e69ac543b7eb32be1f84dc19ec79eb190d9c4bb6736c6babc04",
+      "reason": "Unchanged production; both app failures retained/disclosed, not rerun for test-only corrections"
+    }
+  ],
+  "changed_test_or_evidence_paths": [
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/analysis.log",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/binaries.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/candidates.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/projection-wire.log",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/public-graph.log",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/source-head.txt",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/source-local.patch",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/status.tsv",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/capability-context.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/capability-review.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/context.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/custom-impact.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/forward.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/impact.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/projection-wire.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/public-graph.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/review.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-a231-capture/wires/type-context.json",
+    "docs/evidence/actual-pins-a231-20261015/actual-literals-and-inverse-composition.patch",
+    "docs/evidence/actual-pins-a231-20261015/candidate-source-after/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+    "docs/evidence/actual-pins-a231-20261015/candidate-source-after/src/workspace_graph/type_proof_tests.rs",
+    "docs/evidence/actual-pins-a231-20261015/candidate-source-after/tests/workspace/semantic_graph.rs",
+    "docs/evidence/actual-pins-a231-20261015/complete-source.inverse.patch",
+    "docs/evidence/actual-pins-a231-20261015/expected-counts.json",
+    "docs/evidence/actual-pins-a231-20261015/owning-build-result.json",
+    "docs/evidence/actual-pins-a231-20261015/prelude-pin-producers-result.json",
+    "docs/evidence/actual-pins-a231-20261015/prepared-patch-record.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/analysis.log",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/binaries.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/candidates.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/projection-wire.log",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/public-graph.log",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/source-head.txt",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/source-local.patch",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/status.tsv",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/capability-context.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/capability-review.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/context.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/custom-impact.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/forward.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/impact.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/projection-wire.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/public-graph.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/review.json",
+    "docs/evidence/actual-pins-a231-20261015/previous-actual-be8f-capture/wires/type-context.json",
+    "docs/evidence/actual-pins-a231-20261015/readonly-command.json",
+    "docs/evidence/actual-pins-a231-20261015/readonly-plan.json",
+    "docs/evidence/actual-pins-a231-20261015/readonly.stderr",
+    "docs/evidence/actual-pins-a231-20261015/root-application-record.json",
+    "docs/evidence/actual-pins-a231-20261015/source-before/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+    "docs/evidence/actual-pins-a231-20261015/source-before/src/workspace_graph/type_proof_tests.rs",
+    "docs/evidence/actual-pins-a231-20261015/source-before/tests/workspace/semantic_graph.rs",
+    "docs/evidence/actual-pins-a231-20261015/trusted-inputs.json",
+    "docs/evidence/actual-pins-a231-20261015/whole-wire-exact-inverses.json",
+    "docs/evidence/endpoint-materializer-fixture-a231/HANDOFF.md",
+    "docs/evidence/endpoint-materializer-fixture-a231/actual-failure-inputs.json",
+    "docs/evidence/endpoint-materializer-fixture-a231/exact-source-inverses.json",
+    "docs/evidence/endpoint-materializer-fixture-a231/original/src__hir__canonical_loan_storage__tests__reuse.rs",
+    "docs/evidence/endpoint-materializer-fixture-a231/original/src__loan_plan__paid_materialize__tests.rs",
+    "docs/evidence/endpoint-materializer-fixture-a231/source-only-proof.json",
+    "docs/evidence/exit-status-directory-reuse/new-source-sha256.json",
+    "docs/evidence/exit-status-directory-reuse/small-case-accounting.md",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/DISPOSITION.md",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/payload.txt",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/process-receipt.json",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/result.json",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/review.md",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/run_review.py",
+    "docs/evidence/exit-status-directory-reuse/small-case-review/stderr.log",
+    "docs/evidence/factored-continuation-receiving/before-hostile-fixture/source-only-proof.json",
+    "docs/evidence/factored-continuation-receiving/before-hostile-fixture/tests.rs",
+    "docs/evidence/factored-continuation-receiving/exact-source-inverses.json",
+    "docs/evidence/loan-endpoint-ordered-union-827/new-children.json",
+    "docs/evidence/paid-receiving-directories/source-provenance.json",
+    "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+    "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/clippy-production-result.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/clippy-production.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/expected-counts.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-build-result.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-build.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-00.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-01.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-02.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-03.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-04.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-05.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-06.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-07.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-08.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-09.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-10.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-100.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-101.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-102.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-103.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-104.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-105.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-106.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-107.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-108.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-109.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-11.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-110.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-111.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-112.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-113.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-114.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-115.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-116.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-117.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-118.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-119.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-12.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-120.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-121.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-122.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-123.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-124.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-125.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-126.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-127.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-128.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-129.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-13.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-130.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-131.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-132.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-133.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-134.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-135.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-136.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-14.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-15.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-16.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-17.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-18.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-19.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-20.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-21.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-22.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-23.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-24.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-25.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-26.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-27.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-28.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-29.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-30.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-31.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-32.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-33.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-34.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-35.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-36.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-37.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-38.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-39.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-40.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-41.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-42.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-43.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-44.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-45.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-46.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-47.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-48.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-49.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-50.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-51.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-52.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-53.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-54.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-55.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-56.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-57.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-58.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-59.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-60.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-61.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-62.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-63.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-64.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-65.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-66.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-67.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-68.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-69.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-70.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-71.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-72.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-73.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-74.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-75.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-76.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-77.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-78.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-79.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-80.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-81.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-82.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-83.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-84.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-85.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-86.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-87.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-88.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-89.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-90.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-91.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-92.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-93.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-94.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-95.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-96.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-97.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-98.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-99.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/owning-selected-results.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/prelude-pin-producers-result.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/prelude-pin-producers.log",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/preparation-receipt.json",
+    "docs/evidence/receiving-union-first-qualification-a231-20261015/summary.json",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+    "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+    "src/hir/canonical_loan_storage/tests/reuse.rs",
+    "src/loan_plan/paid_materialize/tests.rs",
+    "src/workspace_graph/type_proof_tests.rs",
+    "tests/workspace/semantic_graph.rs"
+  ]
+}

@@ -1,0 +1,72 @@
+{
+  "status": "AUTHORED_NOT_EXECUTED",
+  "basis": "5b562965d",
+  "new_owners": [
+    {
+      "selector": "source_verify::byte_traversal::nested::tests::nested_byte_sources_available_at_outer_entry_are_admitted_and_v1_refusal_is_retained",
+      "source": "src/source_verify/byte_traversal/nested/tests.rs",
+      "source_sha256": "abd16d1991035dad36488cde978f7b9871e1dff4446a6863ab3be478dbcd6aef",
+      "harness": "lib"
+    },
+    {
+      "selector": "source_verify::byte_traversal::nested::tests::nested_byte_closed_routes_keep_complete_old_diagnostics_and_order",
+      "source": "src/source_verify/byte_traversal/nested/tests.rs",
+      "source_sha256": "abd16d1991035dad36488cde978f7b9871e1dff4446a6863ab3be478dbcd6aef",
+      "harness": "lib"
+    },
+    {
+      "selector": "source_verify::byte_traversal::nested::tests::nonnested_byte_source_profile_keeps_full_old_diagnostics_and_before_scope_unwinds",
+      "source": "src/source_verify/byte_traversal/nested/tests.rs",
+      "source_sha256": "abd16d1991035dad36488cde978f7b9871e1dff4446a6863ab3be478dbcd6aef",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_full_source_hir_graph_and_cache_replay_preserves_v1_receiver_independence",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_ancestor_freezes_cover_every_inner_subtree_and_same_root_after_inner_exit",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_census_uses_exact_owner_and_first_refusal_on_foreign_then_restored_scope",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_census_funds_exact_short_zero_every_frontier_sticky_and_complete_drop",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_while_bridge_and_inner_only_exits_replay_exact_nearest_targets",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "hir::validation::byte_traversal::nested::tests::nested_byte_same_root_release_does_not_allow_outer_move_or_renewal",
+      "source": "src/hir/validation/byte_traversal/nested/tests.rs",
+      "source_sha256": "4334b2caac57b791eb0f257b017441e118d99a01658219b88f6fdfc5cdb6eb6a",
+      "harness": "lib"
+    },
+    {
+      "selector": "byte_slice_for_runtime::nested::nested_byte_traversal_matches_manual_loop_on_interpreter_native_and_wasm",
+      "source": "tests/useful_data/byte_slice_for_runtime/nested.rs",
+      "source_sha256": "d485679bb622f7765e43cd7a7b82b8ed507c41b68ecdaf6e57da986a57d7996a",
+      "harness": "useful_data"
+    }
+  ],
+  "required_existing": [
+    "all existing byte_slice_for_traversal language/byte_data runtime owners",
+    "all existing HIR byte_traversal tests and cache roundtrip/drift owners",
+    "lexical exits, typed public replay and current actual normalizer/cumulative owners",
+    "author:byte-traversal checked help card and complete source inventory owners"
+  ]
+}

@@ -579,3 +579,24 @@ Declaration-index Drop skips queuing scalar roots and empty nominal argument lis
 and retains its iterative nested-type disposer. Independent original cloned-input
 and queue-through-Drop controls are authored; their current-head execution remains
 pending. These changes do not establish whole-pipeline funding.
+
+### Private point-domain live scratch
+
+The ordinary funded retained planner stores its temporary live CFG point sets
+as exact paid u64 bit words. The first insertion uses the already computed CFG
+point count; empty live sets allocate no backing. Membership and ascending
+extraction preserve the prior set semantics and all existing logical work
+increments. Larger forged u16 keys retain their old membership through paid
+replacement growth, rather than receiving a new admission bound. Seeds, parent
+union scratch and other directories retain their AVL policy; attached plan
+vectors and canonical order do not change.
+
+Full Nodes/Result receiving carriers, iterator carriers and simultaneous old/new
+word backing are paid to the same authenticated affine byte owner before actual
+construction. Drop grants no credit. Foreign/restored and selected refusal stay
+sticky, including duplicate/spare-capacity operations. The complete old AVL
+liveness producer and full old planner remain independent test receivers. Sparse
+sets can require more bytes; no application fit or exclusive failure attribution
+follows from source accounting. The source-only contract, exact whole-source
+inverses, four new owning selectors and bounded review are retained under
+`docs/evidence/dense-loan-live-scratch/`; actual qualification remains pending.

@@ -181,12 +181,12 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
             match transition {
                 CleanupTransition::Initialize { at, destination } => {
                     require_expression(function, expressions, at, budget)?;
-                    validate_place(function, destination, storage, leaves)?;
+                    helpers::validate_place(function, destination, storage, leaves, budget)?;
                 }
                 CleanupTransition::ReserveRenewal { at, binding } => {
                     renewal::validate_binding(program, function, at, binding, helpers, budget)?;
                     require_expression(function, expressions, at, budget)?;
-                    validate_place(function, binding, storage, leaves)?;
+                    helpers::validate_place(function, binding, storage, leaves, budget)?;
                 }
                 CleanupTransition::Renew {
                     at,
@@ -195,8 +195,8 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                 } => {
                     renewal::validate_binding(program, function, at, destination, helpers, budget)?;
                     require_expression(function, expressions, at, budget)?;
-                    validate_place(function, source, storage, leaves)?;
-                    validate_place(function, destination, storage, leaves)?;
+                    helpers::validate_place(function, source, storage, leaves, budget)?;
+                    helpers::validate_place(function, destination, storage, leaves, budget)?;
                 }
                 CleanupTransition::Transfer {
                     at,
@@ -204,8 +204,8 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                     destination,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    let source_flags = validate_place(function, source, storage, leaves)?;
-                    let destination_flags = validate_place(function, destination, storage, leaves)?;
+                    let source_flags = helpers::validate_place(function, source, storage, leaves, budget)?;
+                    let destination_flags = helpers::validate_place(function, destination, storage, leaves, budget)?;
                     let mut source_directory =
                         Directory::new(function, budget, "cleanup transfer source flag directory")?;
                     for flag in source_flags {
@@ -237,7 +237,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                     case,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    validate_place(function, source, storage, leaves)?;
+                    helpers::validate_place(function, source, storage, leaves, budget)?;
                     let Some(cases) = program.declarations().variant_cases(variant) else {
                         return Err(replay_error(
                             function,
@@ -275,8 +275,8 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                     variant,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    let source_flags = validate_place(function, source, storage, leaves)?;
-                    let destination_flags = validate_place(function, destination, storage, leaves)?;
+                    let source_flags = helpers::validate_place(function, source, storage, leaves, budget)?;
+                    let destination_flags = helpers::validate_place(function, destination, storage, leaves, budget)?;
                     if source_flags.len() != destination_flags.len()
                         || function
                             .cleanup_plan
@@ -306,7 +306,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                     variant,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    validate_place(function, destination, storage, leaves)?;
+                    helpers::validate_place(function, destination, storage, leaves, budget)?;
                     let slot = function
                         .cleanup_plan
                         .slots
@@ -420,7 +420,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                                 ));
                             }
                         }
-                        for flag in validate_place(function, &argument.source, storage, leaves)? {
+                        for flag in helpers::validate_place(function, &argument.source, storage, leaves, budget)? {
                             if !consumed.insert(function, flag, budget)? {
                                 return Err(replay_error(
                                     function,

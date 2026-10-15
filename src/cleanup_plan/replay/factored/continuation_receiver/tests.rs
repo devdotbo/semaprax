@@ -44,10 +44,91 @@ fn whole_original_and_current_comparison_pairs_execute_with_paid_last_drop() {
 }
 #[test]
 fn current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic() {
+    // Preserve the malformed inherited panic separately from the stable diagnostic.
+    // Both complete algorithms still run, including their unwind and last Drop.
+    let mut malformed = program();
+    malformed.functions[0].cleanup_plan.blocks.clear();
+    // The default harness hook may initialize retained output/backtrace caches.
+    // Replace only that test instrumentation outside the complete compiler
+    // observation. Both actual panic payloads, unwinds and final Drop stay in it.
+    struct RestoreHook<F: FnOnce()>(Option<F>);
+    impl<F: FnOnce()> Drop for RestoreHook<F> {
+        fn drop(&mut self) {
+            self.0.take().expect("one hook restoration")();
+        }
+    }
+    let previous_hook = std::panic::take_hook();
+    std::panic::set_hook(Box::new(|_| {}));
+    let restore_hook = RestoreHook(Some(|| std::panic::set_hook(previous_hook)));
+    // Catch the entire observation too: restoring a hook during active unwind
+    // would panic. Restore normally first, then resume any assertion failure.
+    let measured = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let function = &malformed.functions[0];
+                let mut old_budget = ReplayBudget::with_skeleton_limit(0);
+                let mut budget = ReplayBudget::with_skeleton_limit(0);
+                let mut storage =
+                    continuation_storage::Storage::for_program(&malformed, &mut budget).unwrap();
+                let old = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    build_comparison(&malformed, function, &mut old_budget, None, None)
+                }))
+                .err()
+                .expect("complete old receiver retains its malformed-block panic");
+                let current = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    build_comparison(&malformed, function, &mut budget, None, Some(&mut storage))
+                }))
+                .err()
+                .expect("current receiver retains the same malformed-block panic");
+                fn message(payload: &(dyn std::any::Any + Send)) -> Option<&str> {
+                    payload
+                        .downcast_ref::<String>()
+                        .map(String::as_str)
+                        .or_else(|| payload.downcast_ref::<&'static str>().copied())
+                }
+                assert_eq!(
+                    message(&*old),
+                    Some("index out of bounds: the len is 0 but the index is 0")
+                );
+                assert_eq!(message(&*current), message(&*old));
+                drop(old);
+                drop(current);
+                drop(storage);
+                drop(old_budget);
+                drop(budget);
+            })
+        })
+    }));
+    drop(restore_hook);
+    let (((), allocation), refused, _, first) = match measured {
+        Ok(result) => result,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
+    eprintln!(
+        "malformed old/current compiler panic observation: {allocation:?}; invalid_reason={:?}",
+        crate::test_allocation_observer::invalid_reason()
+    );
+    assert!(!refused && first.is_none());
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    // Rust panic payload/hook allocations are observed too, but have no compiler
+    // debit claim. The valid compiler cases below retain the full funding bound.
     for hostile in [false, true] {
         let mut program = program();
         if hostile {
-            program.functions[0].cleanup_plan.blocks.clear();
+            let plan = &mut program.functions[0].cleanup_plan;
+            let edge = plan
+                .blocks
+                .iter()
+                .find_map(|block| {
+                    if let CleanupTerminator::Branch(edges) = &block.terminator {
+                        edges.first().copied()
+                    } else {
+                        None
+                    }
+                })
+                .expect("fixture has a real branch edge");
+            plan.edges[edge.0 as usize].condition = EdgeCondition::Always;
         }
         let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
             measure(|| {
@@ -87,6 +168,10 @@ fn current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnos
                     (Err(old), Err(current)) => {
                         assert!(hostile);
                         assert_eq!(old, current);
+                        assert_eq!(old.code, "SPX-H006");
+                        assert!(old
+                            .message
+                            .ends_with("branch skeleton contains an unconditional edge"));
                     }
                     _ => panic!("complete old/current verdict mismatch"),
                 }

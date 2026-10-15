@@ -1,0 +1,17 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop ... exit-status-cost function=exit.read statuses=1 old=(true, 200, 1553, false, None, 697) current=(true, 203, 1554, false, None, 649) borrow=(7,49)
+exit-status-removed function=exit.read cost=(4, 48, 48)
+
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop' (3679754) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs:136:13:
+assertion failed: removed.1 > BORROW_BYTES && removed.2 > 0
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.09s
+

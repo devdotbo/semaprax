@@ -1,0 +1,10 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "basis": "5b562965d",
+  "complete_source_rows": 41,
+  "all_current_bindings_and_unchanged_originals": true,
+  "independently_compiled_old_receiver_exact": true,
+  "new_authored_selectors": 10,
+  "source_36": "PASS",
+  "later_packet_rows": 211
+}

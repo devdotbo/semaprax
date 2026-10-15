@@ -1,0 +1,17 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::tests::full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound ... 
+thread 'cleanup_plan::replay::expression_facts::receiving::tests::full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound' (3539006) panicked at src/cleanup_plan/replay/expression_facts/receiving/tests.rs:489:13:
+assertion `left == right` failed: "retained-status-directory-0"
+  left: 0
+ right: 1
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::expression_facts::receiving::tests::full_original_receiving_and_helpers_are_byte_exact_and_all_current_hooks_bound
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.04s
+

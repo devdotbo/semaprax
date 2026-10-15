@@ -1,7 +1,3 @@
-# Private wired checkpoint; qualification pending
+# Historical wired checkpoint superseded
 
-Source byte nesting, function/context-bound immutable HIR census, exact entry definitions, receiver association and every ancestor freeze interval are wired through actual ordinary/paid/retained loan plans and lexical contour replay. Late replay independently adds fresh authenticated provenance roots. Native/cleanup contextless wrapper callers are OwnedIteratorStep-only and retain complete strict v1 semantics. No Vec/While body ban, cached origin flag, cap/forecast discount or new allowance was added.
-
-Authored owning controls now include complete original receiver/manual differential, graph/cache, same-root outer lifetime after inner exit, all ancestor IDs, foreign/restored ledger and exact function/context bindings, every reservation frontier/exact/short/zero/sticky/complete Drop, nearest-target drift, safe Vec accumulation and interpreter/native O0/O2/Core-Wasm success/manual-loop/body-failure cases. The exact prior source negative remains compiled through its independent before selector; its currently admitted integration case has a paired computed-nesting refusal. V2 scope/help says what remains closed. Existing old originals/receivers are unchanged.
-
-Still required before integration handoff: compose current ROOT dense retained route, join every new source child into owning audits and complete inverse chains; register exact selectors. No Rust compilation or execution occurred. Authored assertions are not evidence of passing. Public no-owner replay remains explicitly unqualified and #780 remains open.
+The earlier f44/362 checkpoints are preserved as source-only history. The active source-ready packet is HANDOFF.md, final-source-inverses-v1.json, later-source-proof.json and pending-selectors.json. No compilation/execution claim is made.

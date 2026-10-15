@@ -1,0 +1,6 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::tests::complete_pre_retention_sources_and_all_inverse_hooks_remain_exact ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.06s
+

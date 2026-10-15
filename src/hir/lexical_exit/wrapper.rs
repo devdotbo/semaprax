@@ -48,7 +48,7 @@ pub(crate) fn source_for_wrapper_with<'a>(
 pub(crate) fn source_for_wrapper_with_bytes<'a>(
     program: &dyn crate::cleanup::ReplayContext,
     region: &'a ResolvedExpr,
-    byte_census: Option<(&crate::hir::ByteTraversalCensus<'a>, &'a ResolvedFunction)>,
+    byte_census: Option<&mut crate::hir::ByteTraversalSlot<'a>>,
     inspect: &mut dyn FnMut(
         &dyn crate::cleanup::ReplayContext,
         &ResolvedExpr,
@@ -122,8 +122,8 @@ pub(crate) fn source_for_wrapper_with_bytes<'a>(
         ..
     } = latch
     {
-        let proof = if let Some((census, function)) = byte_census {
-            census.region(program, function, region)?
+        let proof = if let Some(census) = byte_census {
+            census.region_for(program, region)?
         } else {
             crate::hir::validation::byte_traversal::region(region)?
         }

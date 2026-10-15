@@ -5,7 +5,9 @@ mod check;
 mod index;
 mod intervals;
 mod shape;
+pub(crate) mod slot;
 mod storage;
+pub(crate) use slot::Slot;
 mod walk;
 use shape::Shape;
 use storage::{Refused, Storage};
@@ -60,23 +62,11 @@ pub(crate) struct Census<'a> {
     storage: Storage,
 }
 impl<'a> Census<'a> {
-    pub(crate) fn optional(
+    pub(crate) fn acquire(
         context: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
-    ) -> Result<Option<Self>, Diagnostic> {
-        // Pure selection cannot proceed past an already selected caller error.
-        // This uses the current owner only; the retained proof subsequently
-        // captures and checks its exact ledger before acquisition and reuse.
-        if crate::bounded_output::active_remaining().is_some()
-            && !crate::bounded_output::reserve_active_required(0)
-        {
-            #[cfg(test)]
-            tests::record_failure();
-            return Err(Failure::Storage(Refused::Budget).diagnostic());
-        }
-        if !contains_nested(function)? {
-            return Ok(None);
-        }
+    ) -> Result<Self, Diagnostic> {
+        slot::controls(0)?;
         if !context
             .functions()
             .iter()
@@ -91,13 +81,10 @@ impl<'a> Census<'a> {
             )
             .diagnostic());
         }
-        Self::build(function, None)
-            .map(|mut census| {
-                census.context = Some(context);
-                census
-            })
-            .map(Some)
-            .map_err(Failure::diagnostic)
+        slot::controls(std::mem::size_of::<Result<Self, Diagnostic>>())?;
+        let mut census = Self::build(function, None).map_err(Failure::diagnostic)?;
+        census.context = Some(context);
+        Ok(census)
     }
     pub(super) fn validate(
         declarations: &DeclarationIndex,
@@ -186,28 +173,5 @@ impl<'a> Census<'a> {
         }))
     }
 }
-/// Pure selection, never authority. Existing v1 functions still execute the
-/// complete original receiver without acquiring a new carrier or allocation.
-pub(crate) fn contains_nested(function: &ResolvedFunction) -> Result<bool, Diagnostic> {
-    let mut nested = false;
-    for root in function
-        .ensures
-        .iter()
-        .rev()
-        .chain(std::iter::once(&function.body))
-        .chain(function.requires.iter().rev())
-    {
-        walk(root, |expression, enclosing| {
-            if let Some(shape) = shape::shape(expression)? {
-                nested |= enclosing.is_some();
-                Ok(Some(shape.receiver))
-            } else {
-                Ok(enclosing)
-            }
-        })?;
-    }
-    Ok(nested)
-}
-
 #[cfg(test)]
 mod tests;

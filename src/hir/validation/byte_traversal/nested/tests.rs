@@ -4,6 +4,14 @@ use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
 use crate::test_allocation_observer::{current_metrics, measure};
 use std::cell::{Cell, RefCell};
 const SOURCE: &str = include_str!("../../../../../tests/fixtures/nested-byte-slice-traversal.spx");
+const ROOTED: &str = r#"module nested.freeze;
+@id("nested.main") fn main()->i64 {
+ let data=[1u8,2u8]; let mut owned=bytes_copy(array_as_slice(data));
+ let whole=bytes_as_slice(owned); let view=byte_range(whole,0usize,1usize);
+ for outer in whole { for inner in view { let copied=inner; 0 } let first=outer; 0 }
+ 0
+}
+"#;
 thread_local! {
     static REQUESTS: RefCell<Option<Vec<usize>>> = const { RefCell::new(None) };
     static FAILED_AT: Cell<Option<usize>> = const { Cell::new(None) };
@@ -108,19 +116,19 @@ fn nested_byte_full_source_hir_graph_and_cache_replay_preserves_v1_receiver_inde
         super::super::validate_function(&program.declarations, manual)
     );
     // A cache or context clone is a different immutable invocation member.
-    let census = Census::optional(&program, sum).unwrap().unwrap();
+    let census = Census::acquire(&program, sum).unwrap();
     let row = census.rows[0].shape.root;
     let first = census.region(&decoded, sum, row).err().unwrap();
     assert!(first.message.contains("function differs"));
     let foreign_function = function(&decoded, "sum");
-    assert!(Census::optional(&program, foreign_function).is_err());
+    assert!(Census::acquire(&program, foreign_function).is_err());
 }
 #[test]
 fn nested_byte_ancestor_freezes_cover_every_inner_subtree_and_same_root_after_inner_exit() {
     let source = SOURCE.replace("for inner in right { total", "for inner in left { total");
     let program = resolved(&source);
     let sum = function(&program, "sum");
-    let census = Census::optional(&program, sum).unwrap().unwrap();
+    let census = Census::acquire(&program, sum).unwrap();
     let outer = census.rows.iter().min_by_key(|row| row.start).unwrap();
     let inner = census.rows.iter().max_by_key(|row| row.start).unwrap();
     let freezes = sum
@@ -202,126 +210,170 @@ fn nested_byte_ancestor_freezes_cover_every_inner_subtree_and_same_root_after_in
 fn nested_byte_census_uses_exact_owner_and_first_refusal_on_foreign_then_restored_scope() {
     let program = resolved(SOURCE);
     let sum = function(&program, "sum");
-    let (((), metrics), refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
-        let census = Census::optional(&program, sum).unwrap().unwrap();
-        let root = census.rows[0].shape.root;
-        measure(|| {
-            let (error, child_refused, child_used, child_first) =
-                with_limit_usage_refusal(0, || census.region(&program, sum, root).err().unwrap());
-            assert!(!child_refused);
-            assert_eq!(child_used, 0);
-            assert_eq!(child_first, None);
-            assert!(error.message.contains("detached"));
-            drop(error);
-            let restored = census.region(&program, sum, root).err().unwrap();
-            assert!(restored.message.contains("detached"));
-            drop(restored);
-            drop(census);
-        })
-    });
-    assert!(refused);
-    let first = first.unwrap();
-    assert_eq!((first.requested, first.floor, first.stage), (0, 0, None));
-    assert!(!metrics.invalid);
-    assert_eq!(metrics.allocated, 0);
+    let fixture = Census::acquire(&program, sum).unwrap();
+    let root = fixture
+        .rows
+        .iter()
+        .min_by_key(|row| row.start)
+        .unwrap()
+        .shape
+        .root;
+    drop(fixture);
+    for warm in [false, true] {
+        let ((((), metrics), remaining), refused, used, first) =
+            with_limit_usage_refusal(usize::MAX, || {
+                let mut slot = Slot::new(&program, sum).unwrap();
+                if warm {
+                    assert!(slot.region(&program, sum, root).unwrap().is_some());
+                }
+                let remaining = crate::bounded_output::active_remaining().unwrap();
+                (
+                    measure(|| {
+                        let (error, child_refused, child_used, child_first) =
+                            with_limit_usage_refusal(0, || {
+                                slot.region(&program, sum, root).err().unwrap()
+                            });
+                        assert!(!child_refused);
+                        assert_eq!(child_used, 0);
+                        assert_eq!(child_first, None);
+                        assert!(error.message.contains("detached"));
+                        drop(error);
+                        let restored = slot.region(&program, sum, root).err().unwrap();
+                        assert!(restored.message.contains("detached"));
+                        drop(restored);
+                        drop(slot);
+                    }),
+                    remaining,
+                )
+            });
+        assert!(refused);
+        assert_eq!(
+            first,
+            Some(crate::bounded_output::ReservationRefusal {
+                requested: 0,
+                remaining,
+                floor: 0,
+                stage: None
+            })
+        );
+        assert_eq!(used, usize::MAX - remaining);
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.allocated, 0);
+    }
 }
+
 #[test]
 fn nested_byte_census_funds_exact_short_zero_every_frontier_sticky_and_complete_drop() {
-    let program = resolved(SOURCE);
-    let sum = function(&program, "sum");
-    // The recorder is test instrumentation, preowned before the measured route.
-    // Its bound follows actual expression/statement shape, not a payment margin.
-    let mut expressions = 0usize;
-    let mut regions = 0usize;
-    let mut bindings = sum.params.len();
-    super::super::walk(&sum.body, |expression, authorized| {
-        expressions += 1;
-        regions += usize::from(shape::shape(expression)?.is_some());
-        if let ResolvedExprKind::Block { statements, .. }
-        | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
-        {
-            bindings += statements.len();
-        }
-        Ok(authorized)
-    })
-    .unwrap();
-    REQUESTS.with(|slot| {
-        *slot.borrow_mut() = Some(Vec::with_capacity(
-            64 + expressions * 2 + bindings * 2 + regions * 21,
-        ))
-    });
-    let (((), metrics), refused, exact, first) = with_limit_usage_refusal(usize::MAX, || {
-        measure(|| {
-            let census = Census::optional(&program, sum).unwrap().unwrap();
-            for row in &census.rows {
-                assert!(census
-                    .region(&program, sum, row.shape.root)
-                    .unwrap()
-                    .is_some());
+    for (source, name, late) in [(SOURCE, "sum", false), (ROOTED, "main", true)] {
+        let program = resolved(source);
+        let sum = function(&program, name);
+        let fixture = Census::acquire(&program, sum).unwrap();
+        let root = fixture
+            .rows
+            .iter()
+            .min_by_key(|row| row.start)
+            .unwrap()
+            .shape
+            .root;
+        drop(fixture);
+        let operation = || -> Result<(), Diagnostic> {
+            if late {
+                super::super::validate_function(&program.declarations, sum)
+            } else {
+                let mut slot = Slot::new(&program, sum)?;
+                slot.region(&program, sum, root)?;
+                drop(slot);
+                Ok(())
             }
-            drop(census);
+        };
+
+        // The recorder is test instrumentation, preowned before the measured route.
+        // Its bound follows actual expression/statement shape, not a payment margin.
+        let mut expressions = 0usize;
+        let mut regions = 0usize;
+        let mut bindings = sum.params.len();
+        super::super::walk(&sum.body, |expression, authorized| {
+            expressions += 1;
+            regions += usize::from(shape::shape(expression)?.is_some());
+            if let ResolvedExprKind::Block { statements, .. }
+            | ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+            {
+                bindings += statements.len();
+            }
+            Ok(authorized)
         })
-    });
-    let requests = REQUESTS.with(|slot| slot.borrow_mut().take().unwrap());
-    assert!(!refused);
-    assert_eq!(first, None);
-    assert!(!metrics.invalid);
-    assert_eq!(metrics.live, 0);
-    assert_eq!(metrics.allocated, metrics.freed);
-    assert!(metrics.allocated <= exact);
-    assert_eq!(requests.iter().sum::<usize>(), exact);
-    let mut cumulative = 0usize;
-    let mut caps = vec![0, exact - 1, exact];
-    for request in requests {
-        cumulative += request;
-        if request != 0 {
-            caps.push(cumulative - 1);
-        }
-    }
-    caps.sort_unstable();
-    caps.dedup();
-    for cap in caps {
-        FAILED_AT.with(|slot| slot.set(None));
-        let ((failed, metrics), refused, used, first) = with_limit_usage_refusal(cap, || {
+        .unwrap();
+        REQUESTS.with(|slot| {
+            *slot.borrow_mut() = Some(Vec::with_capacity(
+                64 + expressions * 2 + bindings * 2 + regions * 21,
+            ))
+        });
+        let (((), metrics), refused, exact, first) = with_limit_usage_refusal(usize::MAX, || {
             measure(|| {
-                let result = Census::optional(&program, sum);
+                operation().unwrap();
+            })
+        });
+        let requests = REQUESTS.with(|slot| slot.borrow_mut().take().unwrap());
+        assert!(!refused);
+        assert_eq!(first, None);
+        assert!(!metrics.invalid);
+        assert_eq!(metrics.live, 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+        assert!(metrics.allocated <= exact);
+        assert_eq!(requests.iter().sum::<usize>(), exact);
+        let mut cumulative = 0usize;
+        let mut caps = vec![0, exact - 1, exact];
+        for request in requests {
+            cumulative += request;
+            if request != 0 {
+                caps.push(cumulative - 1);
+            }
+        }
+        caps.sort_unstable();
+        caps.dedup();
+        for cap in caps {
+            FAILED_AT.with(|slot| slot.set(None));
+            let ((failed, metrics), refused, used, first) = with_limit_usage_refusal(cap, || {
+                measure(|| {
+                    let result = operation();
+                    let failed = result.is_err();
+                    drop(result);
+                    failed
+                })
+            });
+            assert!(!metrics.invalid);
+            assert_eq!(metrics.live, 0);
+            assert_eq!(metrics.allocated, metrics.freed);
+            if cap == exact {
+                assert!(!failed);
+                assert!(!refused);
+                assert_eq!(used, exact);
+                assert_eq!(first, None);
+            } else {
+                assert!(failed);
+                assert!(refused);
+                assert!(first.is_some());
+                assert_eq!(
+                    metrics.allocated,
+                    FAILED_AT.with(Cell::get).unwrap(),
+                    "no allocation after first refusal including error/partial owner Drop"
+                );
+            }
+        }
+        let ((failed, metrics), refused, used, first) = with_limit_usage_refusal(0, || {
+            assert!(!reserve_active_required(1));
+            measure(|| {
+                let result = operation();
                 let failed = result.is_err();
                 drop(result);
                 failed
             })
         });
-        assert!(!metrics.invalid);
-        assert_eq!(metrics.live, 0);
-        assert_eq!(metrics.allocated, metrics.freed);
-        if cap == exact {
-            assert!(!failed);
-            assert!(!refused);
-            assert_eq!(used, exact);
-            assert_eq!(first, None);
-        } else {
-            assert!(failed);
-            assert!(refused);
-            assert!(first.is_some());
-            assert_eq!(
-                metrics.allocated,
-                FAILED_AT.with(Cell::get).unwrap(),
-                "no allocation after first refusal including error/partial owner Drop"
-            );
-        }
+        assert!(failed && refused);
+        assert_eq!(used, 0);
+        assert_eq!(first.unwrap().requested, 1);
+        assert_eq!(metrics.allocated, 0);
     }
-    let ((failed, metrics), refused, used, first) = with_limit_usage_refusal(0, || {
-        assert!(!reserve_active_required(1));
-        measure(|| {
-            let result = Census::optional(&program, sum);
-            let failed = result.is_err();
-            drop(result);
-            failed
-        })
-    });
-    assert!(failed && refused);
-    assert_eq!(used, 0);
-    assert_eq!(first.unwrap().requested, 1);
-    assert_eq!(metrics.allocated, 0);
 }
 
 fn retarget(expression: &mut ResolvedExpr, site: &ExpressionId) -> usize {
@@ -367,7 +419,7 @@ fn nested_byte_while_bridge_and_inner_only_exits_replay_exact_nearest_targets() 
         let function = function(&program, name);
         let owner = FunctionExecutionId::Monomorphic(function.id.clone());
         crate::hir::lexical_exit::validate_function(&program, function, &owner).unwrap();
-        assert!(Census::optional(&program, function).unwrap().is_some());
+        assert!(Census::acquire(&program, function).is_ok());
     }
     let mut forged = program.clone();
     let exits = forged
@@ -411,14 +463,6 @@ fn nested_byte_while_bridge_and_inner_only_exits_replay_exact_nearest_targets() 
 }
 #[test]
 fn nested_byte_same_root_release_does_not_allow_outer_move_or_renewal() {
-    const ROOTED: &str = r#"module nested.freeze;
-@id("nested.main") fn main()->i64 {
- let data=[1u8,2u8]; let mut owned=bytes_copy(array_as_slice(data));
- let whole=bytes_as_slice(owned); let view=byte_range(whole,0usize,1usize);
- for outer in whole { for inner in view { let copied=inner; 0 } let first=outer; 0 }
- 0
-}
-"#;
     resolved(ROOTED);
     for source in [
         ROOTED.replace("let first=outer;", "let first=outer; let stolen=owned;"),

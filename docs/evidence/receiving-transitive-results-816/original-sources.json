@@ -1,0 +1,32 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+    "sha256": "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd"
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__regions_entry.rs.before.txt",
+    "sha256": "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b"
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__remaining.rs.before.txt",
+    "sha256": "ea688655dac741ee5795e16582e64a69cae3928d491d008d36bca4549c73df05"
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__retained.rs.before.txt",
+    "sha256": "350076d7fb340ac0c350a278b00f318762f1189418e12fc2abcc1c2e3c6adbe3"
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving__retained__exits.rs.before.txt",
+    "sha256": "a314eae7257c5ba20dc57d1a9ee1f166d2919bb34ebf9fb4f46e287c8b64b40c"
+  },
+  {
+    "source": "src/cleanup_plan/replay/leaf_index.rs",
+    "archive": "src__cleanup_plan__replay__leaf_index.rs.before.txt",
+    "sha256": "6d7f32f3ed12640d920d58b6001f1088d4ed8b8e846303e715065f19ca4a1b9e"
+  }
+]
