@@ -130,3 +130,82 @@ fn actual_core_extension_work_refusal_publishes_full_distinct_report_and_never_r
     );
     assert!(!disposal.invalid && disposal.allocated == 0);
 }
+
+#[test]
+fn all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop() {
+    let fixtures = [
+        (2, "module e; @id(\"app.main\") fn main()->i64 {0}"),
+        (3, "module e; @id(\"app.read\") fn read(x:borrow Vec<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (4, "module e; @id(\"app.read\") fn read(x:borrow Box<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (6, "module e; @id(\"app.read\") fn read(x:borrow Iter<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (8, "module e; @id(\"app.read\") fn read(x:borrow List<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (9, "module e; @id(\"app.read\") fn read(x:borrow StdinReader)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (11, "module e; @id(\"app.read\") fn read(x:borrow Map<i64,i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+    ];
+    for (count, source) in fixtures {
+        let program = crate::check(source, "extension-prefix.spx").unwrap();
+        assert_eq!(
+            crate::prelude::declarations_for_program(&program).len(),
+            count
+        );
+        let (((), disposal), refused, _, first) = with_limit_usage_refusal(CAP, || {
+            let authored = BTreeMap::new();
+            let mut core = crate::workspace_graph::expected_projection::CoreProviderProofs::new(
+                &authored,
+                std::slice::from_ref(&program),
+            )
+            .unwrap();
+            let old = crate::hir::identity_resolution::nominal_original::resolve(&program).unwrap();
+            let input = Input::Owned(program.clone());
+            let actual =
+                resolve_module_with_core(&mut core, None, &program.path, &input, None).unwrap();
+            let receipts = *core.base_prelude.extension_receipts();
+            let view =
+                crate::workspace_graph::expected_projection::borrowed_leaf::construct(&program)
+                    .unwrap();
+            let borrowed = Input::Borrowed(view);
+            let other =
+                resolve_module_with_core(&mut core, None, &program.path, &borrowed, None).unwrap();
+            let cache = FrontendPass::paid_receiver_candidate(
+                program.clone(),
+                old.0.clone(),
+                old.1.costs(),
+            );
+            let selective =
+                resolve_module_with_core(&mut core, Some(&cache), &program.path, &input, None)
+                    .unwrap();
+            for current in [&actual.0, &other.0, &selective.0] {
+                assert_eq!(current, &old.0);
+                assert_eq!(
+                    crate::cache_codec::encode(current).unwrap(),
+                    crate::cache_codec::encode(&old.0).unwrap()
+                );
+            }
+            assert_eq!(*core.base_prelude.extension_receipts(), receipts);
+            drop(core);
+            for left in &actual.0.types {
+                let Some(right) = other.0.types.iter().find(|right| right.id == left.id) else {
+                    panic!("full type view")
+                };
+                if !left.type_parameters.is_empty() {
+                    assert!(left.type_parameters.same_owner(&right.type_parameters));
+                }
+                if let (
+                    crate::hir::ResolvedTypeDeclarationKind::Variant { cases: a },
+                    crate::hir::ResolvedTypeDeclarationKind::Variant { cases: b },
+                ) = (&left.kind, &right.kind)
+                {
+                    assert!(a.same_owner(b));
+                }
+            }
+            let ((), disposal) = measure(|| {
+                drop(actual);
+                drop(other);
+                drop(selective);
+            });
+            ((), disposal)
+        });
+        assert!(!refused && first.is_none());
+        assert!(!disposal.invalid && disposal.allocated == 0);
+    }
+}

@@ -32,6 +32,18 @@
     {
       "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
       "name": "actual_core_extension_work_refusal_publishes_full_distinct_report_and_never_reacquires"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation"
+    },
+    {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "complete_selected_suffix_every_byte_acquisition_exact_short_zero_and_sticky_drop"
+    },
+    {
+      "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
+      "name": "all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_drop"
     }
   ]
 }

@@ -361,3 +361,157 @@ fn extension_failure_remains_whole_invocation_sticky_even_for_base_only_retry() 
     });
     assert!(!refused && first.is_none());
 }
+
+#[test]
+fn every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation() {
+    for target in 0..9 {
+        let bound = crate::hir::prelude_bundle::extension_model::WORK[target];
+        for limit in [0, bound - 1, bound] {
+            let ((success, allocation), refused, used, first) =
+                with_limit_usage_refusal(usize::MAX, || {
+                    measure(|| {
+                        let mut reserve = |n| {
+                            if reserve_active_required(n) {
+                                Ok(())
+                            } else {
+                                Err(Stop(1))
+                            }
+                        };
+                        reserve(2 * std::mem::size_of::<VectorExtension>()).unwrap();
+                        let mut catalog = VectorExtension::empty();
+                        for slot in 0..=target {
+                            let mut payer =
+                                ExtensionPayer::acquire_for(slot, &mut reserve).unwrap();
+                            if slot == target {
+                                payer.restrict_for_test(limit);
+                            }
+                            let result = crate::hir::prelude_bundle::extension_producer::acquire(
+                                slot,
+                                &catalog.values,
+                                &mut payer,
+                            );
+                            if slot == target && limit < bound {
+                                let Err(Failure::Payer(FixedFailure::Work(selected))) = result
+                                else {
+                                    panic!("exact slot work refusal")
+                                };
+                                let at = current_metrics().allocated;
+                                assert_eq!(payer.work(0), Err(FixedFailure::Work(selected)));
+                                assert_eq!(
+                                    payer.bytes(usize::MAX),
+                                    Err(FixedFailure::Work(selected))
+                                );
+                                drop(catalog);
+                                assert_eq!(current_metrics().allocated, at);
+                                return false;
+                            }
+                            let receipt = payer.receipt();
+                            let expected = crate::hir::prelude_bundle::extension_model::WORK[slot];
+                            assert_eq!(
+                                (
+                                    receipt.limit,
+                                    receipt.used,
+                                    receipt.remaining,
+                                    receipt.first
+                                ),
+                                (expected, expected, 0, None)
+                            );
+                            catalog.values[slot] = Some(result.unwrap());
+                        }
+                        drop(catalog);
+                        true
+                    })
+                });
+            assert_eq!(success, limit == bound);
+            assert!(!refused && first.is_none());
+            assert!(!allocation.invalid && allocation.live == 0);
+            assert_eq!(allocation.allocated, allocation.freed);
+            assert!(allocation.allocated <= used);
+        }
+    }
+}
+
+#[test]
+fn complete_selected_suffix_every_byte_acquisition_exact_short_zero_and_sticky_drop() {
+    let source = crate::prelude::declarations();
+    let mut requests = Vec::new();
+    let (_, refused, exact, _) = with_limit_usage_refusal(usize::MAX, || {
+        let mut invocation = Invocation::new();
+        let mut reserve = |n| {
+            requests.push(n);
+            if reserve_active_required(n) {
+                Ok(())
+            } else {
+                Err(Stop(1))
+            }
+        };
+        invocation.ensure_selected(source, &mut reserve).unwrap();
+        drop(invocation);
+    });
+    assert!(!refused && exact > 0);
+    for stop in 0..requests.len() {
+        let mut seen = 0;
+        let mut selected_at = 0;
+        let (((), allocation), refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let mut invocation = Invocation::new();
+                let mut reserve = |n| {
+                    assert_eq!(n, requests[seen]);
+                    let current = seen;
+                    seen += 1;
+                    if current == stop {
+                        selected_at = current_metrics().allocated;
+                        Err(Stop(current))
+                    } else if reserve_active_required(n) {
+                        Ok(())
+                    } else {
+                        panic!("ample byte owner")
+                    }
+                };
+                assert!(
+                    matches!(invocation.ensure_selected(source, &mut reserve), Err(InvocationFailure::Bytes(Stop(index))) if index == stop)
+                );
+                let mut forbidden =
+                    |_| -> Result<(), Stop> { panic!("sticky invocation cannot requery") };
+                assert!(
+                    matches!(invocation.ensure_selected(&source[..2], &mut forbidden), Err(InvocationFailure::Bytes(Stop(index))) if index == stop)
+                );
+                drop(invocation);
+            })
+        });
+        assert!(!refused && !allocation.invalid);
+        assert_eq!(seen, stop + 1);
+        assert_eq!(allocation.allocated, selected_at);
+        assert_eq!(allocation.live, 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+    }
+    for cap in [0, exact - 1, exact] {
+        let ((success, allocation), refused, used, first) = with_limit_usage_refusal(cap, || {
+            measure(|| {
+                let mut invocation = Invocation::new();
+                let mut reserve = |n| {
+                    if reserve_active_required(n) {
+                        Ok(())
+                    } else {
+                        Err(Stop(1))
+                    }
+                };
+                let success = invocation.ensure_selected(source, &mut reserve).is_ok();
+                drop(invocation);
+                success
+            })
+        });
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+        if cap == exact {
+            assert!(success && !refused && first.is_none());
+            assert_eq!(used, exact);
+            assert!(allocation.allocated <= used);
+        } else {
+            assert!(!success && refused && first.is_some());
+            if cap == 0 {
+                assert_eq!(allocation.allocated, 0);
+            }
+        }
+    }
+}
