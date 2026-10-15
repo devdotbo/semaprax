@@ -22,6 +22,7 @@ def part(s,a,b):return s[s.index(a):s.index(b,s.index(a))]
 start='    pub(in crate::cleanup_plan::replay::factored) fn acquire(';end='    pub(super) fn valid('
 assert part(slot,start,end)==part(before,start,end),'entire old acquire remains independently compiled'
 assert '#[cfg(test)]\n'+start in slot
+assert part(slot,'    pub(super) const CONTROLS: usize',';')==part(before,'    pub(super) const CONTROLS: usize',';'),'old controls are independently verbatim, not derived from direct controls'
 initializer=re.search(r'Ok\((Self \{.*?\n        \})\)',part(before,start,end),re.S).group(1)
 new_ctor=part(slot,'    pub(in crate::cleanup_plan::replay::factored) fn from_prepaid(','    // The unit producer')
 assert initializer in new_ctor and 'Result<' not in new_ctor

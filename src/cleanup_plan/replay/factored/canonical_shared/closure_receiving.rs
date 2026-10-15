@@ -24,8 +24,12 @@ impl ClosureReceiving {
     // The complete old Result-returning constructor stays independently usable
     // by its original controls. Production direct construction makes no such Result.
     #[cfg(test)]
-    pub(super) const CONTROLS: usize =
-        Self::DIRECT_CONTROLS + size_of::<Result<Self, Diagnostic>>();
+    pub(super) const CONTROLS: usize = 2 * size_of::<Self>()
+        + size_of::<Result<Self, Diagnostic>>()
+        + size_of::<Option<Diagnostic>>()
+        + size_of::<Diagnostic>()
+        + size_of::<Value>()
+        + size_of::<Result<(), Diagnostic>>();
     pub(in crate::cleanup_plan::replay::factored) fn from_prepaid(
         function: &ResolvedFunction,
         budget: &ReplayBudget,
