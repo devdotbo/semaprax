@@ -560,5 +560,5 @@
   ],
   "previous_packet": "source-inventory-activation-v13.json",
   "repair_basis": "actual a33c16996b4f095ffa2cf631bc39db4589e28302 composed with corrected nested-byte source; source-only no runtime claim",
-  "combined_final_source_basis": "87f267a62ceeec115f83ba180d9abfc495ca3c34"
+  "combined_final_source_basis": "d76696cf46a4f1beebffe313dd4cb0b978d785ff"
 }
