@@ -97,6 +97,15 @@ pub(crate) fn held(source: &str, current: &str) -> String {
 }
 
 pub(crate) fn weighted(path: &str, current: &str) -> String {
+    let compact = if path == "../epsilon_alias/tests.rs" {
+        before_compact844(
+            "src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias/tests.rs",
+            current,
+        )
+    } else {
+        current.to_owned()
+    };
+    let current = compact.as_str();
     if path == "../../../../../../docs/ARCHITECTURE.md" {
         return assembled_previous("docs/ARCHITECTURE.md", current);
     }
@@ -618,6 +627,8 @@ pub(crate) fn compressed_fixture_input(source: &str, current: &str) -> String {
 
 // The retained registry owner and inherited guards have distinct whole inputs.
 fn before_retained833(source: &str, current: &str) -> String {
+    let previous = before_compact844(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -628,6 +639,8 @@ fn before_retained833(source: &str, current: &str) -> String {
     )
 }
 pub(crate) fn retained833_input(source: &str, current: &str) -> String {
+    let previous = before_compact844(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -636,4 +649,19 @@ pub(crate) fn retained833_input(source: &str, current: &str) -> String {
         source,
         current,
     )
+}
+
+// A strict immediate successor; old tables and their assertion domains stay exact.
+fn before_compact844(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compact-automaton-844/source-inverses.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn compact844_input(_source: &str, current: &str) -> String {
+    current.to_owned()
 }

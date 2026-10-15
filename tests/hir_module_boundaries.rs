@@ -434,7 +434,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/test_allocation_observer.rs"),
             include_str!("../src/test_allocation_observer/free_order.rs"),
         ),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/borrowed.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/mod.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/storage.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/strategy.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/tests.rs"),

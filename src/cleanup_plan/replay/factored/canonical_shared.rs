@@ -3,8 +3,8 @@
 //! payloads. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::{
-    Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget, ResolvedFunction, Weighted,
-    physical_clone, replay_error,
+    physical_clone, replay_error, Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget,
+    ResolvedFunction, Weighted,
 };
 
 #[cfg(test)]
@@ -35,9 +35,9 @@ mod scratch_tests;
 mod singleton_target_tests;
 mod successor_targets;
 
-mod inline_weighted;
 #[cfg(test)]
 mod before_inline_weighted;
+mod inline_weighted;
 use inline_weighted::SmallWeighted;
 
 type SharedWeighted = Rc<SmallWeighted>;
@@ -272,7 +272,7 @@ impl<'a> Canonicalizer<'a> {
                     "factored closure cursors"
                 ));
                 self.cursor.push((node, true));
-                for target in &state.epsilon {
+                for target in state.epsilon() {
                     if !self.closures.contains_key(target) {
                         attempt!(budget.reserve_vec(
                             function,
@@ -288,10 +288,10 @@ impl<'a> Canonicalizer<'a> {
             // Exactly one immutable epsilon child contributes the complete map.
             // Sink/own-move/duplicate-edge and all other shapes keep the full
             // general producer below, including checked route accumulation.
-            if node != self.sink && state.moves.is_empty() && state.epsilon.len() == 1 {
+            if node != self.sink && state.moves().is_empty() && state.epsilon().len() == 1 {
                 #[cfg(test)]
                 app_census::eligible();
-                let Some(inner) = self.closures.get(&state.epsilon[0]) else {
+                let Some(inner) = self.closures.get(&state.epsilon()[0]) else {
                     receiving.refuse(replay_error(function, "cleanup CFG contains a cycle"));
                     return;
                 };
@@ -307,10 +307,9 @@ impl<'a> Canonicalizer<'a> {
                 };
                 #[cfg(test)]
                 app_census::acquired();
-                attempt!(
-                    self.closures
-                        .insert_retained(function, node, budget, || shared)
-                );
+                attempt!(self
+                    .closures
+                    .insert_retained(function, node, budget, || shared));
                 #[cfg(test)]
                 app_census::published();
                 continue;
@@ -323,13 +322,13 @@ impl<'a> Canonicalizer<'a> {
                 ));
             }
             let mut closure = ordered_weights::OrderedWeights::new();
-            if !state.moves.is_empty() || node == self.sink {
+            if !state.moves().is_empty() || node == self.sink {
                 if closure.needs_capacity() {
                     attempt!(closure.grow(function, budget));
                 }
                 closure.insert_prepaid(node, 1_u64);
             }
-            for target in &state.epsilon {
+            for target in state.epsilon() {
                 let Some(inner) = self.closures.get(target) else {
                     receiving.refuse(replay_error(function, "cleanup CFG contains a cycle"));
                     return;
@@ -362,10 +361,9 @@ impl<'a> Canonicalizer<'a> {
                 physical_clone::rc_backing_bytes::<ordered_weights::OrderedWeights>(),
                 "factored closure shared header",
             ));
-            attempt!(
-                self.closures
-                    .insert_retained(function, node, budget, || Rc::new(closure))
-            );
+            attempt!(self
+                .closures
+                .insert_retained(function, node, budget, || Rc::new(closure)));
         }
         receiving.complete(self.closures.get(&root).cloned());
     }
@@ -449,7 +447,7 @@ impl<'a> Canonicalizer<'a> {
         }
         let mut successors = BTreeMap::<Label, successor_targets::Targets>::new();
         for (node, weight) in closed.iter() {
-            let moves = &self.automaton.nodes[*node].moves;
+            let moves = self.automaton.nodes[*node].moves();
             budget.charge(
                 function,
                 moves.len().saturating_add(1),
@@ -805,3 +803,7 @@ pub(super) mod app_census;
 mod before_receiving_layers;
 #[cfg(test)]
 mod receiving_layer_tests;
+
+#[cfg(test)]
+#[path = "compact_nodes/before/canonical.rs"]
+pub(in crate::cleanup_plan::replay::factored) mod before_nodes;
