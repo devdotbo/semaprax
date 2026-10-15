@@ -22,6 +22,10 @@
       "name": "matching_foreign_ast_never_acquires_or_substitutes_extension_authority"
     },
     {
+      "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
+      "name": "extension_failure_remains_whole_invocation_sticky_even_for_base_only_retry"
+    },
+    {
       "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
       "name": "actual_core_vec_receiver_keeps_full_old_fresh_borrowed_selective_hir_wire_and_last_drop"
     },

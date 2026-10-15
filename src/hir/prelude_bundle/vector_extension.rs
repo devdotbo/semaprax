@@ -32,7 +32,13 @@ impl VectorExtension {
                     + size_of::<Vec<ResolvedTypeParameterDeclaration>>()
                     + size_of::<Result<Vec<ResolvedTypeParameterDeclaration>, Failure<P::Error>>>()
                     + 2 * size_of::<DeclarationId>()
-                    + size_of::<Result<DeclarationId, P::Error>>(),
+                    + size_of::<Result<DeclarationId, P::Error>>()
+                    + size_of::<Result<DeclarationId, Failure<P::Error>>>()
+                    + size_of::<
+                        Result<NominalPayload<ResolvedTypeParameterDeclaration>, Failure<P::Error>>,
+                    >()
+                    + size_of::<Vec<ResolvedFieldDeclaration>>()
+                    + size_of::<NominalPayload<ResolvedFieldDeclaration>>(),
             )
             .map_err(Failure::Payer)?;
         payer.work(1).map_err(Failure::Payer)?;

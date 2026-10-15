@@ -51,6 +51,10 @@ separately from base Work and Bytes and never reconstructs either failed owner.
 A successful cached module use still authenticates its actual receiving owner;
 new metadata/map/string and payload-view carriers are paid in that module.
 No heap is allocated merely to clone the already-funded parameter owner.
+Failure is sticky for the WHOLE Invocation: a later base-only request cannot
+recover after an extension error. "Base two unchanged" describes its schema,
+producer and exact work bound, not permission to ignore a selected invocation
+failure or reuse a successful base sub-result after another producer refused.
 
 The outer distinct ExtensionWork branch publishes the fixed H006 text
 `prelude extension producer work bound refused` by moving the existing paid

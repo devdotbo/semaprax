@@ -129,6 +129,10 @@ impl<E: Copy> Invocation<E> {
             )
             .map_err(InvocationFailure::Bytes)?;
             if prelude.len() > 2 && self.vector.is_none() {
+                reserve(std::mem::size_of::<
+                    Result<super::extension_work::ExtensionPayer<'_, E>, InvocationFailure<E>>,
+                >())
+                .map_err(InvocationFailure::Bytes)?;
                 let mut payer = super::extension_work::ExtensionPayer::acquire(reserve)
                     .map_err(InvocationFailure::Bytes)?;
                 #[cfg(test)]

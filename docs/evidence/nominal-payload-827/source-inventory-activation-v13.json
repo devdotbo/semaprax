@@ -243,7 +243,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/invocation.rs",
-      "sha256": "a8557c9fdeae300c947582c6475315bc3930bf94ecd9591428c4d4b0d417931b",
+      "sha256": "60ab06b07980da959637cbc7a238c219874f414c3c9e85d98769d0626a52b217",
       "original": null,
       "original_sha256": null,
       "new_file": true
@@ -517,14 +517,14 @@
     },
     {
       "source": "src/hir/prelude_bundle/vector_extension.rs",
-      "sha256": "af2160552b5211affe9c92eb55a9d3f3f299de0f891f5adcd9a0fff45d576696",
+      "sha256": "674670f1f6d8e565adb02d5110e0226838ffc9b54018dd5f4d96655213b8ed8b",
       "original": null,
       "original_sha256": null,
       "new_file": true
     },
     {
       "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
-      "sha256": "5e198c86de3823f9a51bf3bce7bc3f25a911ed79c2e3a396fd808da88a20d996",
+      "sha256": "ad7e5e596c7990c6839cf99a424699248c22614eae96597618001ca861bc1de4",
       "original": null,
       "original_sha256": null,
       "new_file": true

@@ -317,3 +317,43 @@ fn matching_foreign_ast_never_acquires_or_substitutes_extension_authority() {
     });
     assert!(!refused);
 }
+
+#[test]
+fn extension_failure_remains_whole_invocation_sticky_even_for_base_only_retry() {
+    let source = crate::prelude::declarations();
+    assert_eq!(source[2].stable_id, crate::prelude::VEC_ID);
+    assert_eq!(source[2].name, "Vec");
+    assert_eq!(source[2].type_parameters[0].name, "T");
+    let (_, refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
+        let mut invocation = Invocation::new();
+        invocation.restrict_extension_work(0);
+        let mut reserve = |n| {
+            if reserve_active_required(n) {
+                Ok(())
+            } else {
+                Err(Stop(1))
+            }
+        };
+        let error = invocation
+            .ensure_selected(&source[..3], &mut reserve)
+            .unwrap_err();
+        assert_eq!(
+            error,
+            InvocationFailure::ExtensionWork(WorkRefusal {
+                requested: 1,
+                remaining: 0
+            })
+        );
+        let mut called = false;
+        let retry = invocation
+            .ensure_selected(&source[..2], &mut |_| {
+                called = true;
+                Ok(())
+            })
+            .unwrap_err();
+        assert_eq!(retry, error);
+        assert!(!called);
+        assert_eq!(invocation.receipt().unwrap().remaining, 0);
+    });
+    assert!(!refused && first.is_none());
+}
