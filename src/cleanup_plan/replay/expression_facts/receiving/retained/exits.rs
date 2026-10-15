@@ -73,7 +73,7 @@ pub(in crate::cleanup_plan::replay) fn validate_exits_retained(
                 "cleanup exit has a non-contiguous ID or unknown source block",
             ));
         }
-        let expected_regions = expected_exit_regions(function, exit)?;
+        let expected_regions = helpers::expected_exit_regions(function, exit, budget)?;
         if exit.leaves_regions != expected_regions {
             return Err(replay_error(
                 function,

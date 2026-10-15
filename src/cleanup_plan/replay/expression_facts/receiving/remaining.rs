@@ -48,7 +48,7 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                 "cleanup exit has a non-contiguous ID or unknown source block",
             ));
         }
-        let expected_regions = expected_exit_regions(function, exit)?;
+        let expected_regions = helpers::expected_exit_regions(function, exit, budget)?;
         if exit.leaves_regions != expected_regions {
             return Err(replay_error(
                 function,
@@ -168,7 +168,7 @@ pub(super) fn validate_finalizer_actions(
 ) -> Result<(), Diagnostic> {
     let mut finalized = Directory::new(function, budget, "cleanup finalizer guard directory")?;
     for action in actions {
-        let under = validate_place(function, &action.source, storage, leaves)?;
+        let under = helpers::validate_place(function, &action.source, storage, leaves, budget)?;
         if under.len() != 1
             || under[0] != action.guard_flag
             || leaves[&action.guard_flag].place != action.source

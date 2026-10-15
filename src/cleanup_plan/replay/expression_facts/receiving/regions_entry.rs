@@ -96,7 +96,7 @@ pub(in crate::cleanup_plan::replay) fn validate_entry(
     }
     let mut flags = Directory::new(function, budget, "cleanup entry flag directory")?;
     for place in &plan.entry_state.live_owned_parameters {
-        let under = validate_place(function, place, storage, leaves)?;
+        let under = helpers::validate_place(function, place, storage, leaves, budget)?;
         for flag in &under {
             if !flags.insert(function, *flag, budget)? {
                 return Err(replay_error(
