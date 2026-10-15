@@ -212,7 +212,7 @@ macro_rules! loan_cfg_source_inventory {
         include_str!("../../../../../src/loan_plan/paid_live/dense/tests.rs"),
         include_str!("../../../../../src/loan_plan/paid_plan/retained_before_dense.rs"),
         include_str!("../../../../../src/loan_plan/funded_flat/before_dense.rs"),
-        include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/before/borrowed.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/before/mod.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/before/storage.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/before/strategy.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/compact_nodes/tests.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/tests.rs"),
