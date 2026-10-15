@@ -298,8 +298,13 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "cf03c2e2c076eca2e8a4f5da0ab6db5efd8965f2888b3f081955c58ca0d26469",
+      "current_sha256": "d9a8e2b86beb2ddbb1953e640051c02812f2391e04231cd9c1675fd66e187e7e",
       "inverse": [
+        {
+          "current": "        include_str!(\"../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/continuation_storage/paid_receiving.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/factored/continuation_receiver.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/factored/continuation_receiver/tests.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_model.rs\"),\n",
+          "before": "        include_str!(\"../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_model.rs\"),\n",
+          "hook": "union-continuation-exact-later-join-0"
+        },
         {
           "hook": "assembled-17c-exact-later-source-join-0",
           "current": "        include_str!(\"../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_model.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_producer.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/extension_staging.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/vector_extension.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/vector_extension/tests.rs\"),\n        include_str!(\"../../src/workspace_graph/identity_resolution/base/vector_tests.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../src/hir/prelude_bundle/merge.rs\"),\n",
@@ -382,8 +387,13 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "d4dd02235d06d587a050c6fef79b64b8844dc493c4271b6036463ae4c45f8aed",
+      "current_sha256": "b3adff1998e640216b4cc0caa8e5bba10e215e021f0016cc9d0c6b29419e8967",
       "inverse": [
+        {
+          "current": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/continuation_storage/paid_receiving.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/continuation_receiver.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/factored/continuation_receiver/tests.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_model.rs\"),\n",
+          "before": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_model.rs\"),\n",
+          "hook": "union-continuation-exact-later-join-0"
+        },
         {
           "current": "            include_str!(\"../../../../../src/loan_plan/paid_substitute/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_materialize.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_materialize/ordered_union.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_materialize/before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_materialize/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/traversal/paid.rs\"),\n            include_str!(\"../../../../../src/bounded_output/cfg_reservation.rs\"),\n",
           "before": "            include_str!(\"../../../../../src/loan_plan/paid_substitute/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_materialize.rs\"),\n            include_str!(\"../../../../../src/loan_plan/traversal/paid.rs\"),\n            include_str!(\"../../../../../src/bounded_output/cfg_reservation.rs\"),\n",
