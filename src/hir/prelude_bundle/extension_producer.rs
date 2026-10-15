@@ -127,12 +127,10 @@ fn fields<P: Payer>(
 }
 pub(super) fn acquire<P: Payer>(
     slot: usize,
+    source: &TypeDeclaration,
     prior: &Prior,
     payer: &mut P,
 ) -> Result<ResolvedTypeDeclaration, Failure<P::Error>> {
-    let source = crate::prelude::declarations()
-        .get(slot.checked_add(2).ok_or(Failure::Layout)?)
-        .ok_or(Failure::Schema)?;
     payer
         .bytes(
             2 * size_of::<ResolvedTypeDeclaration>()

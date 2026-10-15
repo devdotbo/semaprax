@@ -27,7 +27,10 @@ impl VectorExtension {
         paid::string(value, payer)
     }
     #[cfg(test)]
-    pub(super) fn acquire<P: Payer>(payer: &mut P) -> Result<Self, Failure<P::Error>> {
+    pub(super) fn acquire<P: Payer>(
+        source: &crate::ast::TypeDeclaration,
+        payer: &mut P,
+    ) -> Result<Self, Failure<P::Error>> {
         payer
             .bytes(
                 2 * size_of::<Self>()
@@ -36,7 +39,12 @@ impl VectorExtension {
             )
             .map_err(Failure::Payer)?;
         let mut value = Self::empty();
-        value.values[0] = Some(super::extension_producer::acquire(0, &value.values, payer)?);
+        value.values[0] = Some(super::extension_producer::acquire(
+            0,
+            source,
+            &value.values,
+            payer,
+        )?);
         Ok(value)
     }
     pub(crate) fn for_source<'a>(

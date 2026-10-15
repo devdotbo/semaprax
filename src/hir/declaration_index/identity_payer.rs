@@ -47,6 +47,7 @@ impl DeclarationIndex {
         Self::from_verified_with_nominal_base(program, prelude, None, reserve)
     }
 
+    #[cfg(test)]
     pub(in crate::hir) fn from_verified_with_nominal_base<E>(
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],

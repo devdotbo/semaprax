@@ -118,6 +118,9 @@ fn all_selected_prefixes_keep_full_old_index_wire_and_reuse_only_selected_vec_pa
 
 #[test]
 fn vector_work_exact_short_zero_and_sticky_failure_keep_whole_producer_drop_paid() {
+    // Existing immutable producer input belongs to the source owner, outside
+    // the complete paid constructor/refusal/Drop observation window.
+    let source = crate::prelude::declarations();
     for limit in [0, VECTOR_WORK - 1, VECTOR_WORK] {
         let ((success, allocation), refused, used, first) =
             with_limit_usage_refusal(usize::MAX, || {
@@ -131,7 +134,7 @@ fn vector_work_exact_short_zero_and_sticky_failure_keep_whole_producer_drop_paid
                     };
                     let mut payer = ExtensionPayer::acquire(&mut reserve).unwrap();
                     payer.restrict_for_test(limit);
-                    let result = VectorExtension::acquire(&mut payer);
+                    let result = VectorExtension::acquire(&source[2], &mut payer);
                     let receipt = payer.receipt();
                     if limit == VECTOR_WORK {
                         assert!(result.is_ok());
@@ -187,6 +190,9 @@ fn vector_work_exact_short_zero_and_sticky_failure_keep_whole_producer_drop_paid
 
 #[test]
 fn vector_every_byte_acquisition_and_whole_owner_exact_short_zero_are_sticky() {
+    // Existing immutable producer input belongs to the source owner, outside
+    // the complete paid constructor/refusal/Drop observation window.
+    let source = crate::prelude::declarations();
     let mut requests = Vec::new();
     let (_, refused, exact, _) = with_limit_usage_refusal(usize::MAX, || {
         let mut reserve = |n| {
@@ -198,7 +204,7 @@ fn vector_every_byte_acquisition_and_whole_owner_exact_short_zero_are_sticky() {
             }
         };
         let mut payer = ExtensionPayer::acquire(&mut reserve).unwrap();
-        drop(VectorExtension::acquire(&mut payer).unwrap());
+        drop(VectorExtension::acquire(&source[2], &mut payer).unwrap());
     });
     assert!(!refused && exact > 0);
     for stop in 0..requests.len() {
@@ -223,7 +229,7 @@ fn vector_every_byte_acquisition_and_whole_owner_exact_short_zero_are_sticky() {
                     Ok(p) => p,
                     Err(e) => return Err(e),
                 };
-                let result = VectorExtension::acquire(&mut payer);
+                let result = VectorExtension::acquire(&source[2], &mut payer);
                 let Err(Failure::Payer(FixedFailure::Bytes(error))) = result else {
                     panic!("expected exact byte error")
                 };
@@ -255,7 +261,7 @@ fn vector_every_byte_acquisition_and_whole_owner_exact_short_zero_are_sticky() {
                     Ok(p) => p,
                     Err(_) => return false,
                 };
-                let result = VectorExtension::acquire(&mut payer);
+                let result = VectorExtension::acquire(&source[2], &mut payer);
                 let success = result.is_ok();
                 drop(result);
                 success
@@ -395,6 +401,9 @@ fn extension_failure_remains_whole_invocation_sticky_even_for_base_only_retry() 
 
 #[test]
 fn every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_allocation() {
+    // Existing immutable producer input belongs to the source owner, outside
+    // the complete paid constructor/refusal/Drop observation window.
+    let source = crate::prelude::declarations();
     for target in 0..9 {
         let bound = crate::hir::prelude_bundle::extension_model::WORK[target];
         for limit in [0, bound - 1, bound] {
@@ -418,6 +427,7 @@ fn every_extension_slot_work_exact_short_zero_and_partial_roots_drop_without_all
                             }
                             let result = crate::hir::prelude_bundle::extension_producer::acquire(
                                 slot,
+                                &source[slot + 2],
                                 &catalog.values,
                                 &mut payer,
                             );

@@ -75,7 +75,7 @@
     },
     {
       "source": "src/hir/declaration_index/identity_payer.rs",
-      "sha256": "fe1277b43f51e0f21d77a232da1c8316cd42edf44d24705a9227a3eae83da962",
+      "sha256": "14c6cfc312bcf6e8e2da800a98c02cb3df384d1378584dc8b5b77864e6ccd9a0",
       "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index/identity_payer.rs",
       "original_sha256": "a385fe6aa95cf870d35f92b12bd9a07eeeff103a60a22903d8d61c952c52915d",
       "new_file": false
@@ -243,7 +243,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/invocation.rs",
-      "sha256": "b436349907c3eeb48c2a6dc0953f96097268f9f89c9b1255121a2ef8ec6da9ad",
+      "sha256": "39556325c416ded03d4ea8dc106fe22fa534866dd453f2f35cf867234e7bbdfd",
       "original": null,
       "original_sha256": null,
       "new_file": true
@@ -517,21 +517,21 @@
     },
     {
       "source": "src/hir/prelude_bundle/vector_extension.rs",
-      "sha256": "1aab11397750ebcb9134ea33a461b27666b942092a0ceb89c00929bf2cb46384",
+      "sha256": "ed7713aebaca5920c4bbe9ad2e56ab20f127f853a1cb3ddb9dfba680e40905bf",
       "original": null,
       "original_sha256": null,
       "new_file": true
     },
     {
       "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
-      "sha256": "49421cdb9778e9530665ecc6585ada126d5c72a8a2c58ff9eacd5ff17c17a566",
+      "sha256": "d2a070d284857446850f16fa4739fddc7f60db737b79e10b45df986f5378c478",
       "original": null,
       "original_sha256": null,
       "new_file": true
     },
     {
       "source": "src/workspace_graph/identity_resolution/base/vector_tests.rs",
-      "sha256": "d85c44fe42fc5f03d2a2cea2a6c567a0489124af22a77996edb4fdba677add27",
+      "sha256": "7da3a4e48cd73bf1d9239730782e36c635bc60ba2a100916d89fd37415019a20",
       "original": null,
       "original_sha256": null,
       "new_file": true
@@ -545,7 +545,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/extension_producer.rs",
-      "sha256": "b20dc8b2f9db848c24b52d434e05495600a82c188a0ab9593870a0a672298053",
+      "sha256": "fd2917d856b003e789b27600e838e4bd67ec301eee3cb8ee60bc567cebfb56db",
       "original": null,
       "original_sha256": null,
       "new_file": true

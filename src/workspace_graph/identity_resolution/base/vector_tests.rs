@@ -136,9 +136,9 @@ fn all_admitted_core_prefixes_keep_full_old_hir_wire_payload_owners_and_final_dr
     let fixtures = [
         (2, "module e; @id(\"app.main\") fn main()->i64 {0}"),
         (3, "module e; @id(\"app.read\") fn read(x:borrow Vec<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
-        (4, "module e; @id(\"app.read\") fn read(x:borrow Box<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (4, "module e; @id(\"app.main\") fn main()->i64 {box_into_inner<i64>(box_new<i64>(0))}"),
         (6, "module e; @id(\"app.read\") fn read(x:borrow Iter<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
-        (8, "module e; @id(\"app.read\") fn read(x:borrow List<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
+        (8, "module e; @id(\"app.read\") fn read(x:List<i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
         (9, "module e; @id(\"app.read\") fn read(x:borrow StdinReader)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
         (11, "module e; @id(\"app.read\") fn read(x:borrow Map<i64,i64>)->i64 {0} @id(\"app.main\") fn main()->i64 {0}"),
     ];

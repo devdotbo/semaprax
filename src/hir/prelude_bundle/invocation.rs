@@ -151,6 +151,7 @@ impl<E: Copy> Invocation<E> {
                 }
                 let produced = super::extension_producer::acquire(
                     slot,
+                    &prelude[slot + 2],
                     &self.vector.as_ref().expect("selected catalog").values,
                     &mut payer,
                 );
