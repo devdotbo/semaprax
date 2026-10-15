@@ -10,3 +10,7 @@ Source old insertion loop is preserved byte-exact in remaining.rs and uses every
 ### Subsequent actual a93 evidence
 
 The earlier B3 one-status byte-sign choice was wrong. The review explicitly warned that single-node backing could be below49bytes; actual old backing is48. The final test now requires exact+1debit and−48heap on this host using sizeof-derived controls, retaining+3work. No production fee/input/cap changes. Actual raw failed receipt and full log are saved separately. The original completed review is not represented as approval of this later correction or as a passed runtime. The multi-status strict assertion is unchanged and awaits actual execution.
+
+### Portability boundary
+
+The final test uses independent actual removed-operation additive work/byte/heap equations on every host. The exact49borrow/48removed/+1debit/−48heap pins are explicitly cfg(target_pointer_width="64") and record the actual a93 host receipt. No portable Rust Node layout equality or 32-bit size is asserted, and this test pin supplies no production funding authority. The+3logical regression follows the unchanged4old versus7new source work operations independent of pointer layout.
