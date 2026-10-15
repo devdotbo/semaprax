@@ -1,5 +1,7 @@
 # Changelog
 
+- Qualify the closed named String-transfer v1 scope with all15 exact a417 owning controls and the five27ae regenerated-pin/source controls; retain unrelated application-budget failures and frozen public profiles.
+
 - Add bounded authoring-card keyword/identity discovery from the existing route and card inventory, preserving library-only search. Executable qualification and live efficiency measurement remain pending.
 - Author authenticated numeric cleanup-closure memo chunks and reuse immutable
   single-epsilon child backing (#830), retaining every logical work charge and

@@ -1,0 +1,32 @@
+{
+  "source_subject": "27ae259515501fc23085d519ff56d0c8328cf6cd",
+  "build_exit_code": 0,
+  "selected": 5,
+  "passed": 5,
+  "failed": 0,
+  "full_suite": false,
+  "production_execution_source_changed_since_a417": false,
+  "scoped_production_clippy": {
+    "source_subject": "a41774c0b3522ea7e13798f1a337b0aa5f35714e",
+    "exit_code": 0,
+    "reason_no_repeat": "Only cfg(test)/integration pin literals and documentary evidence changed; validated production source equivalence recorded in manifest"
+  },
+  "not_a_repeat_of_148": true,
+  "original_a417_campaign": {
+    "selected": 148,
+    "passed": 123,
+    "failed": 25
+  },
+  "new_actual_consumer_results_repair_three_stale_pin_failures_only": true,
+  "remaining_failures_unchanged": true,
+  "phase_swap_growth_bytes": [
+    0,
+    0
+  ],
+  "receipts_sha256": {
+    "owning-build-result.json": "61fead7426f41b83c2e284e726e6e20daded39e716a4a4ee09578e7939e3e5ee",
+    "owning-selected-results.json": "2c68b78019ecd05235d343311b5bc1f41e3f28855a51484bcea04bef0e87ab9d",
+    "expected-counts.json": "2141241df0ff2223eb31528f7dd69be4973a104d120705818e59d114bfaa4ae2"
+  },
+  "no_application_recovery_or_live_token_claim": true
+}

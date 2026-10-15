@@ -2,8 +2,12 @@
 
 Audience: compiler contributors and reviewers.
 
-Status: source implementation and 15 owning controls authored for OPT790.
-Unexecuted; current-head qualification remains pending.
+Status: qualified for the closed v1 scope in the focused a417 campaign: all
+15 owning controls passed, with production library/CLI Clippy. The pin-only
+27ae correction passed all five pin/source owners without production-code changes.
+[Exact receipts](evidence/owned-string-transfer-qualified-a417-20261015/acceptance.json)
+retain runtime source identities and the unrelated campaign failures. No live
+agent-efficiency result is claimed.
 This contract does not expand public aggregate/UTF-8 ABIs or frozen profiles.
 
 `string_take(value) -> string`, reserved `core.string.take`, consumes exactly
