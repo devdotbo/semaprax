@@ -221,13 +221,21 @@ fn plan_parity(module: &WorkspaceResolvedModule, direct: &hir::ResolvedProgram) 
 fn admitted(build: &WorkspaceGraphBuild) {
     assert_eq!(
         schema(writer(build), &build.hir.declarations).unwrap(),
-        Some("semaprax.graph.v77"),
+        Some(crate::graph::STATIC_TEXT_GRAPH_SCHEMA),
         "exact literal-site authentication precedes composed lexical replay"
     );
-    assert_eq!(
-        build.source_graph_schemas().unwrap()["writer.spx"],
-        "semaprax.graph.v77"
-    );
+    let module = writer(build);
+    let expected = if module.functions.iter()
+        .chain(module.function_instances.iter().map(|instance| &instance.function))
+        .any(|function| std::iter::once(&function.body)
+            .chain(&function.requires).chain(&function.ensures)
+            .any(crate::vec_field::expression_uses))
+    {
+        crate::graph::VEC_FIELD_GRAPH_SCHEMA
+    } else {
+        crate::graph::STATIC_TEXT_GRAPH_SCHEMA
+    };
+    assert_eq!(build.source_graph_schemas().unwrap()["writer.spx"], expected);
 }
 
 fn evaluate(program: &hir::ResolvedProgram) -> ResolvedEvaluationOutcome {

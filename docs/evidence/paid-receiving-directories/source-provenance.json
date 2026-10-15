@@ -13,6 +13,11 @@
   "full_current_projection": {
     "src/cleanup_plan/replay/expression_facts/receiving.rs": [
       {
+        "name": "retained-status-directory-0",
+        "from": "use super::*;\nmod directory;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_status_sources_retained,\n};\nmod regions_entry;\nmod remaining;\n",
+        "to": "use super::*;\nmod directory;\nmod regions_entry;\nmod remaining;\n"
+      },
+      {
         "name": "region-entry-receiving-registration",
         "from": "mod regions_entry;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
         "to": "mod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
@@ -126,6 +131,11 @@
       }
     ],
     "src/cleanup_plan/replay/expression_facts.rs": [
+      {
+        "name": "complete-existing-ordinary-oracle-registration",
+        "from": "\n#[cfg(test)]\nuse crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20;\n#[cfg(test)]\npub(super) mod ordinary_before;\n",
+        "to": ""
+      },
       {
         "name": "expression_facts.rs: complete directory/hook projection 1",
         "from": "    }\n}\n\n#[cfg(test)]\nmod receiving_before;\n",

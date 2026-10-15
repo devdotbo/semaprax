@@ -13,6 +13,16 @@
         "name": "ordinary-1",
         "before": "    validate_entry(function, &storage, &leaves)?;",
         "after": "    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;"
+      },
+      {
+        "name": "retained-status-directory-0",
+        "before": "    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges(\n        program,\n        function,\n",
+        "after": "    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    let statuses = expression_facts::receiving::validate_status_sources_retained(\n        function, &expression_facts, budget,\n    )?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges_retained(\n        program,\n        function,\n"
+      },
+      {
+        "name": "retained-status-directory-1",
+        "before": "        helpers,\n        budget,\n    )?;\n    expression_facts::receiving::validate_exits(\n",
+        "after": "        helpers,\n        budget,\n        &statuses,\n    )?;\n    expression_facts::receiving::validate_exits(\n"
       }
     ]
   },
@@ -42,6 +52,11 @@
         "name": "region-entry-receiving-registration",
         "before": "mod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n",
         "after": "mod regions_entry;\nmod remaining;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\npub(in crate::cleanup_plan::replay) use remaining::validate_exits;\n"
+      },
+      {
+        "name": "retained-status-directory-0",
+        "before": "use super::*;\nmod directory;\nmod regions_entry;\nmod remaining;\n",
+        "after": "use super::*;\nmod directory;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_status_sources_retained,\n};\nmod regions_entry;\nmod remaining;\n"
       }
     ]
   },

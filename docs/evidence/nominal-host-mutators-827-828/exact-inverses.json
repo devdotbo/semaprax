@@ -54,12 +54,62 @@
       "path": "src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs",
       "archive": "docs/evidence/nominal-host-mutators-827-828/original/src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs",
       "original_sha256": "4a3b721df47651668991ca7a357462ffdedc3f792e6b582e8f75e85a3d5995e0",
-      "current_sha256": "1a485ed35c91faf674fb5239334115b92c2548145fbf96bcd29af0d81e842322",
+      "current_sha256": "ae528d01a07710e1ed20921bab781553b9a0a39ff9035e0705fbe2886e63089c",
       "splices": [
         {
-          "start": 13084,
-          "before": "    fields\n",
-          "after": "    crate::workspace_graph::source_schema::materialize_host_fields(fields)\n"
+          "start": 7787,
+          "before": "\"semap",
+          "after": "c"
+        },
+        {
+          "start": 7790,
+          "before": "x.",
+          "after": "te::"
+        },
+        {
+          "start": 7799,
+          "before": ".v77\"",
+          "after": "::STATIC_TEXT_GRAPH_SCHEMA"
+        },
+        {
+          "start": 7916,
+          "before": "",
+          "after": "let module = writer(build);\n    let expected = if module.functions.iter()\n        .chain(module.function_instances.iter().map(|instance| &instance.function))\n        .any(|function| std::iter::once(&function.body)\n            .chain(&function.requires).chain(&function.ensures)\n            .any(crate::vec_field::expression_uses))\n    {\n        crate::graph::VEC_FIELD_GRAPH_SCHEMA\n    } else {\n        crate::graph::STATIC_TEXT_GRAPH_SCHEMA\n    };\n    "
+        },
+        {
+          "start": 8380,
+          "before": "\n        ",
+          "after": ""
+        },
+        {
+          "start": 8432,
+          "before": "\n",
+          "after": ""
+        },
+        {
+          "start": 8433,
+          "before": "       \"s",
+          "after": ""
+        },
+        {
+          "start": 8434,
+          "before": "ma",
+          "after": "x"
+        },
+        {
+          "start": 8436,
+          "before": "rax.graph.v77\"\n    ",
+          "after": "ected"
+        },
+        {
+          "start": 13517,
+          "before": "",
+          "after": "crate::workspace_graph::source_schema::materialize_host_"
+        },
+        {
+          "start": 13579,
+          "before": "",
+          "after": "(fields)"
         }
       ]
     },

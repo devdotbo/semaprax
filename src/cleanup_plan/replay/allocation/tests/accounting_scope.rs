@@ -116,7 +116,7 @@ pub(in crate::cleanup_plan::replay) fn tree_facts_for_test<'hir>(
         format!("{preamble}{receiver}{suffix}")
     );
     // Invert exactly the paid-summary hook; compare the complete old receiver.
-    let current_replay = include_str!("../../../replay.rs");
+    let current_replay = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention("src/cleanup_plan/replay.rs", include_str!("../../../replay.rs"));
     let paid_schema_hook = "    let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;";
     let original_schema_hook =
         "    let ordinary_schema = schema::selected_schema_with_index(program, function, helpers)?;";

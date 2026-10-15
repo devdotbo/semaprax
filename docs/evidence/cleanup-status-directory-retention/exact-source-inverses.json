@@ -1,0 +1,91 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "archive": "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt",
+    "sha256": "1efa201d404a09874514d70771d6015fa6269e7f82bd1dfee2f6b88038f5077a",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "use super::*;\nmod directory;\nmod regions_entry;\nmod remaining;\n",
+        "after": "use super::*;\nmod directory;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_status_sources_retained,\n};\nmod regions_entry;\nmod remaining;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay.rs",
+    "archive": "src__cleanup_plan__replay.rs.before.txt",
+    "sha256": "078098941d77d4fab0f6c7b2bb4e5cba46b14dfdfa8476db3ac2602250afdaaa",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges(\n        program,\n        function,\n",
+        "after": "    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    let statuses = expression_facts::receiving::validate_status_sources_retained(\n        function, &expression_facts, budget,\n    )?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges_retained(\n        program,\n        function,\n"
+      },
+      {
+        "name": "retained-status-directory-1",
+        "before": "        helpers,\n        budget,\n    )?;\n    expression_facts::receiving::validate_exits(\n",
+        "after": "        helpers,\n        budget,\n        &statuses,\n    )?;\n    expression_facts::receiving::validate_exits(\n"
+      }
+    ]
+  },
+  {
+    "source": "src/graph.rs",
+    "archive": "src__graph.rs.before.txt",
+    "sha256": "4eaac289464bbf429bcaabe796fdb38bcab98355bdf2356f936567ce6a90fad0",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "use vec_field_origin::graph_json;\npub(crate) use vec_field_origin::{graph_schema, legacy_graph_schema};\nuse view_render::view_json;\n#[path = \"graph/native_import.rs\"]\n",
+        "after": "use vec_field_origin::graph_json;\npub(crate) use vec_field_origin::{graph_schema, legacy_graph_schema};\n#[cfg(test)]\npub(crate) use vec_field_origin::SCHEMA as VEC_FIELD_GRAPH_SCHEMA;\n#[cfg(test)]\npub(crate) use static_text::SCHEMA as STATIC_TEXT_GRAPH_SCHEMA;\nuse view_render::view_json;\n#[path = \"graph/native_import.rs\"]\n"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs",
+    "archive": "src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs.before.txt",
+    "sha256": "1a485ed35c91faf674fb5239334115b92c2548145fbf96bcd29af0d81e842322",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "    assert_eq!(\n        schema(writer(build), &build.hir.declarations).unwrap(),\n        Some(\"semaprax.graph.v77\"),\n        \"exact literal-site authentication precedes composed lexical replay\"\n    );\n    assert_eq!(\n        build.source_graph_schemas().unwrap()[\"writer.spx\"],\n        \"semaprax.graph.v77\"\n    );\n}\n\n",
+        "after": "    assert_eq!(\n        schema(writer(build), &build.hir.declarations).unwrap(),\n        Some(crate::graph::STATIC_TEXT_GRAPH_SCHEMA),\n        \"exact literal-site authentication precedes composed lexical replay\"\n    );\n    let module = writer(build);\n    let expected = if module.functions.iter()\n        .chain(module.function_instances.iter().map(|instance| &instance.function))\n        .any(|function| std::iter::once(&function.body)\n            .chain(&function.requires).chain(&function.ensures)\n            .any(crate::vec_field::expression_uses))\n    {\n        crate::graph::VEC_FIELD_GRAPH_SCHEMA\n    } else {\n        crate::graph::STATIC_TEXT_GRAPH_SCHEMA\n    };\n    assert_eq!(build.source_graph_schemas().unwrap()[\"writer.spx\"], expected);\n}\n\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/schema/paid_summary/tests.rs",
+    "archive": "src__cleanup_plan__replay__schema__paid_summary__tests.rs.before.txt",
+    "sha256": "fe014db66bf90d752e7db7a4145c2cf21ae25f322dc5ea06b03107701fd97c84",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "        include_str!(\"../../../../../docs/evidence/schema-summary/schema.rs.before\")\n    );\n    let current = include_str!(\"../../../replay.rs\");\n    let start = current\n        .find(\"fn validate_structure_with_budget_storage<'hir>(\")\n",
+        "after": "        include_str!(\"../../../../../docs/evidence/schema-summary/schema.rs.before\")\n    );\n    let restored = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention(\"src/cleanup_plan/replay.rs\", include_str!(\"../../../replay.rs\"));\n    let current = restored.as_str();\n    let start = current\n        .find(\"fn validate_structure_with_budget_storage<'hir>(\")\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/allocation/tests/accounting_scope.rs",
+    "archive": "src__cleanup_plan__replay__allocation__tests__accounting_scope.rs.before.txt",
+    "sha256": "d64f05b3f1e99ed0538198771cfd20a1fdaa3c4a6593bdd9daa712f14135736f",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "    );\n    // Invert exactly the paid-summary hook; compare the complete old receiver.\n    let current_replay = include_str!(\"../../../replay.rs\");\n    let paid_schema_hook = \"    let ordinary_schema =\\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;\";\n    let original_schema_hook =\n",
+        "after": "    );\n    // Invert exactly the paid-summary hook; compare the complete old receiver.\n    let current_replay = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention(\"src/cleanup_plan/replay.rs\", include_str!(\"../../../replay.rs\"));\n    let paid_schema_hook = \"    let ordinary_schema =\\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;\";\n    let original_schema_hook =\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "archive": "src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before.txt",
+    "sha256": "95817364bdfd1db1dfd73ee27994caf32a66c75d4f2f10464acf590e6a219a7c",
+    "edits": [
+      {
+        "name": "retained-status-directory-0",
+        "before": "    }\n    {\n        let mut current = include_str!(\"../../../replay.rs\").to_owned();\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n",
+        "after": "    }\n    {\n        let mut current = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention(\"src/cleanup_plan/replay.rs\", include_str!(\"../../../replay.rs\"));\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n"
+      }
+    ]
+  }
+]

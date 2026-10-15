@@ -77,6 +77,10 @@ mod static_text;
 mod view_render;
 use vec_field_origin::graph_json;
 pub(crate) use vec_field_origin::{graph_schema, legacy_graph_schema};
+#[cfg(test)]
+pub(crate) use vec_field_origin::SCHEMA as VEC_FIELD_GRAPH_SCHEMA;
+#[cfg(test)]
+pub(crate) use static_text::SCHEMA as STATIC_TEXT_GRAPH_SCHEMA;
 use view_render::view_json;
 #[path = "graph/native_import.rs"]
 mod native_import;

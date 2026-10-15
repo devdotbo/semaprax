@@ -7,7 +7,8 @@ fn complete_schema_original_and_receiving_body_remain_byte_exact() {
             .unwrap(),
         include_str!("../../../../../docs/evidence/schema-summary/schema.rs.before")
     );
-    let current = include_str!("../../../replay.rs");
+    let restored = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention("src/cleanup_plan/replay.rs", include_str!("../../../replay.rs"));
+    let current = restored.as_str();
     let start = current
         .find("fn validate_structure_with_budget_storage<'hir>(")
         .unwrap();
