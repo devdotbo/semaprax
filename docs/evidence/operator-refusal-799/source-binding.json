@@ -40,8 +40,9 @@
       "lines": 415
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
-      "sha256": "2268e27d102a048eadbec6b4478ddddf3c4cacfa46c3478676cd394995cc77d3",
-      "lines": 1234
+      "sha256": "97c5482aa06f974b5c1bc7d96933e3a11b77e2a143e6e1ad8b199b99e392e7eb",
+      "lines": 1234,
+      "bytes": 98424
     }
   },
   "execution": "none; root qualification pending"
