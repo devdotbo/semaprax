@@ -126,20 +126,37 @@ fn retained_statuses_reject_foreign_function_budget_and_sticky_work_refusal() {
 fn complete_pre_retention_sources_and_all_inverse_hooks_remain_exact() {
     use sha2::{Digest, Sha256};
     let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json"
-    ))).unwrap();
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/cleanup-status-directory-retention/exact-source-inverses.json"
+    )))
+    .unwrap();
+    let complete_sources = [
+        ("src/cleanup_plan/replay/expression_facts/receiving.rs", "src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt"))),
+        ("src/cleanup_plan/replay.rs", "src__cleanup_plan__replay.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__cleanup_plan__replay.rs.before.txt"))),
+        ("src/graph.rs", "src__graph.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/graph.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__graph.rs.before.txt"))),
+        ("src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs", "src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/source_schema/static_text/tests/retained_lexical_composition.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__workspace_graph__source_schema__static_text__tests__retained_lexical_composition.rs.before.txt"))),
+        ("src/cleanup_plan/replay/schema/paid_summary/tests.rs", "src__cleanup_plan__replay__schema__paid_summary__tests.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/schema/paid_summary/tests.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__cleanup_plan__replay__schema__paid_summary__tests.rs.before.txt"))),
+        ("src/cleanup_plan/replay/allocation/tests/accounting_scope.rs", "src__cleanup_plan__replay__allocation__tests__accounting_scope.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/allocation/tests/accounting_scope.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__cleanup_plan__replay__allocation__tests__accounting_scope.rs.before.txt"))),
+        ("src/cleanup_plan/replay/live_oracle/source_custody/a.rs", "src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before.txt", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/a.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/cleanup-status-directory-retention/src__cleanup_plan__replay__live_oracle__source_custody__a.rs.before.txt"))),
+    ];
+    assert_eq!(records.as_array().unwrap().len(), complete_sources.len());
     for record in records.as_array().unwrap() {
         let path = record["source"].as_str().unwrap();
-        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-        let current = std::fs::read_to_string(root.join(path)).unwrap();
-        let archive = std::fs::read_to_string(root.join("docs/evidence/cleanup-status-directory-retention")
-            .join(record["archive"].as_str().unwrap())).unwrap();
-        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(archive.as_bytes()))),
-            record["sha256"].as_str().unwrap());
-        assert_eq!(before_status_retention(path, &current), archive);
+        let (_, archive_name, current, archive) = complete_sources
+            .iter()
+            .find(|(source, _, _, _)| *source == path)
+            .unwrap();
+        assert_eq!(record["archive"].as_str().unwrap(), *archive_name);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(archive.as_bytes()))
+            ),
+            record["sha256"].as_str().unwrap()
+        );
+        assert_eq!(before_status_retention(path, current), *archive);
     }
 }
-
 
 #[test]
 fn retained_status_control_funding_exact_short_zero_and_foreign_active_are_sticky() {

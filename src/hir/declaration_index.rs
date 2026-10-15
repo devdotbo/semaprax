@@ -1018,6 +1018,7 @@ impl DeclarationIndex {
         );
     }
 
+    #[cfg(test)]
     fn insert_field(
         &mut self,
         owner: DeclarationId,
@@ -1059,6 +1060,7 @@ impl DeclarationIndex {
         );
     }
 
+    #[cfg(test)]
     fn insert_case_field(
         &mut self,
         owner: DeclarationId,
