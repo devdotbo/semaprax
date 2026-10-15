@@ -420,7 +420,8 @@ fn before_sourceguard_inputs(source: &str, current: &str) -> String {
     runtime_json::project(runtime_json::Fixture::F59, source, current)
 }
 pub(crate) fn source36_classifier_input(source: &str, current: &str) -> String {
-    runtime_json::project(runtime_json::Fixture::F60, source, current)
+    let staged = before_storage_oracle_join(source, current);
+    runtime_json::project(runtime_json::Fixture::F60, source, &staged)
 }
 
 // Actual producer literals are transported only for historical full-source guards.

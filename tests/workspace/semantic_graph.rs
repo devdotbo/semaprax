@@ -1339,6 +1339,22 @@ fn public_workspace_analysis_cli_hostiles_and_mode_separation_are_exact() {
 fn historical_projection_root_facade(current: &str) -> String {
     use sha2::{Digest, Sha256};
     let row: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/projection-facade-frontier-8bb-20261016/root-input.json"
+    )).unwrap();
+    assert_eq!(format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), row["current_sha256"]);
+    let mut previous = current.to_owned();
+    for edit in row["edits"].as_array().unwrap() {
+        let new = edit["new"].as_str().unwrap();
+        assert_eq!(previous.matches(new).count(), 1, "complete unique facade input inverse");
+        previous = previous.replacen(new, edit["old"].as_str().unwrap(), 1);
+    }
+    assert_eq!(format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(previous.as_bytes()))), row["original_sha256"]);
+    historical_projection_root_facade_before(&previous)
+}
+
+fn historical_projection_root_facade_before(current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let row: serde_json::Value = serde_json::from_str(include_str!(
         "../../docs/evidence/ae91-source-consumer-corrections-20261015/facade.json"
     ))
     .unwrap();
