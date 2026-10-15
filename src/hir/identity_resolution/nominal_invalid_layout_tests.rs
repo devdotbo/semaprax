@@ -120,6 +120,33 @@ fn nominal_invalid_recursive_layout_keeps_old_report_and_funds_every_refusal_and
             }
         }
     }
+    // Keep report allocation and its complete final Drop in one registry.
+    // A separate Drop-only observation cannot establish those original frees.
+    let (((), allocation), overflowed, used, first) = with_limit_usage_refusal(exact, || {
+        measure(|| {
+            let result =
+                DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+                    if reserve_active_required(n) {
+                        Ok(())
+                    } else {
+                        Err(Stop(7))
+                    }
+                });
+            let IdentityIndexError::Semantic(current) = result.unwrap_err() else {
+                panic!("exact complete owner unexpectedly refused")
+            };
+            assert_eq!(current, old);
+            drop(current);
+        })
+    });
+    assert!(!overflowed);
+    assert_eq!(first, None);
+    assert_eq!(used, exact);
+    assert!(!allocation.invalid);
+    assert!(allocation.allocated <= used);
+    assert_eq!(allocation.live, 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+
     let ((result, allocation), overflowed, used, first) = with_limit_usage_refusal(0, || {
         assert!(!reserve_active_required(1));
         measure(|| {
