@@ -1,5 +1,7 @@
 # Changelog
 
+- Preserve every historical CLI-help known answer while checking native-test timing and the four documented JSON-codec/fused-source usage additions; bind the complete new projection before restoring the frozen catalogue.
+
 - Grow structural call lookup scratch at actual depth under its unchanged 514-slot bound, paying complete replacement backing and work. Retain the complete original lookup and receiver controls, and propagate reservation caller coordinates through physical-budget wrappers.
 
 - Bind browser graph pins to the hosted paid-cursor result: both complete graphs retain every prior byte after only the declared 458,408-byte bill reduction and self-digest restoration. Preserve all historical cursor controls.
