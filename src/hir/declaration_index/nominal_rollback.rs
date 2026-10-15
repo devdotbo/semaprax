@@ -124,7 +124,12 @@ impl Drop for PendingType {
         }
     }
 }
+pub(super) struct PendingTypes { values:Vec<ResolvedType>, scratch:Option<Scratch> }
+impl Deref for PendingTypes { type Target=Vec<ResolvedType>; fn deref(&self)->&Self::Target { &self.values } }
+impl DerefMut for PendingTypes { fn deref_mut(&mut self)->&mut Self::Target { &mut self.values } }
+impl Drop for PendingTypes { fn drop(&mut self) { if let Some(s)=&self.scratch { let mut s=s.lock().expect("construction disposal lock"); for ty in self.values.drain(..) { nominal_payload::dispose(ty,&mut s); } } } }
 impl Workspace {
+    pub(super) fn types(&self)->PendingTypes { PendingTypes { values:Vec::new(), scratch:self.scratch.clone() } }
     pub(super) fn fields<T: nominal_payload::NominalElement>(
         &self,
         capacity: usize,

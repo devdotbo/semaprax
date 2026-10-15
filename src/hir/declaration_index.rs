@@ -5,6 +5,7 @@ use super::nominal_payload::map::{CaseFields, IndexMap};
 mod flags;
 mod nominal;
 mod nominal_base;
+mod nominal_construction;
 mod nominal_rollback;
 #[cfg(test)]
 pub(crate) mod nominal_original;

@@ -1,0 +1,3 @@
+# In-progress paid constructor site implementation
+
+Private source checkpoint only; not integration-ready and no executable evidence. The callback enum, exact String/Vec/node acquisition helpers, metadata-only borrowed field insertion and complete AST source-type receiver are authored. PendingTypes shares the already primed/funded rollback scratch and drains partial result roots iteratively. Existing old constructor/helpers remain independent. Wiring, explicit carrier fees, inheritance/type-fact peer children, all source-custody inverses and complete physical controls remain required. No quota, cap, test assertion or unexplained allocation margin is changed.
