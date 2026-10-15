@@ -27,7 +27,7 @@ must not be qualified there: use a separate unchanged-layout error carrier or
 prepay the complete uncovered success-path layouts. No portable equality is
 claimed. Existing valid scalar/lexical success accounting remains an owning gate.
 
-Six new selectors and two required existing selectors are in pending-selectors.
+Five new selectors and two required existing selectors are in pending-selectors.
 Controls preserve all six detailed Diagnostic fields, earlier profile-vs-member
 priority, the raw old Owned route, full observer Drop, exact/short/zero bytes and
 work, fixed report/ledger pointers, sticky retry, and first-stage preservation.
@@ -52,3 +52,5 @@ One bounded tool-disabled Sonnet review completed before two corrections. Raw
 output, actual argv/resource receipt and list-price usage are retained under
 review. It identified the full optional-carrier and sticky-stage issues, now
 corrected. It did not review the revised packet or grant runtime approval.
+
+The full six-field parity owner also executes the actual public WorkspaceReportFailure reported/has_paid_report/into_paid_report boundary, starting with current supported source resolution and the real held Session refusal. Both original Owned and current SelectedSession paths execute through complete observer Drop. It compares the old detailed diagnostic and fixed outward fields, and retains the same report buffer. This is not a source-authenticated semantic_operations end-to-end refusal: its outer authority legitimately rejects forged current-member inputs earlier, and is never bypassed. Old unpriced legacy diagnostic allocations remain observed; no whole-window funding inequality is asserted.

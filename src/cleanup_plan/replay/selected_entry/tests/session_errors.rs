@@ -57,33 +57,69 @@ fn selected_session_local_refusals_preserve_complete_original_and_raw_owned_orac
         if profile {
             foreign.effects.push("foreign.effect".to_owned());
         }
-        let mut original = acquire(&context, function, usize::MAX);
-        let expression_facts::errors::EngineError::Owned(old) = original
-            .validate_scalar_paid_original(&foreign)
-            .unwrap_err()
-        else {
-            panic!("complete original owned refusal remains independently executable")
-        };
-        let mut current = acquire(&context, function, usize::MAX);
-        let error = current.validate_scalar_paid(&foreign).unwrap_err();
-        let expression_facts::errors::EngineError::Structural(receipt) = error else {
-            panic!("local selected error must carry data without a String")
-        };
-        assert_eq!(receipt.stage(), "selected session");
-        assert_eq!(
-            receipt.source().as_str().as_ptr(),
-            foreign.body.id.as_str().as_ptr()
-        );
-        same(&old, &receipt.legacy(&foreign));
-        assert!(old.message.contains(if profile {
-            "module-local primitive context"
-        } else {
-            "not held by its current context"
-        }));
-        assert!(matches!(
-            current.validate_scalar_paid(&program.functions[0]),
-            Err(expression_facts::errors::EngineError::Failed)
-        ));
+        let (_, observed) = measure(|| {
+            let mut original = acquire(&context, function, usize::MAX);
+            let expression_facts::errors::EngineError::Owned(old) = original
+                .validate_scalar_paid_original(&foreign)
+                .unwrap_err()
+            else {
+                panic!("complete original owned refusal remains independently executable")
+            };
+            let mut current = acquire(&context, function, usize::MAX);
+            let error = current.validate_scalar_paid(&foreign).unwrap_err();
+            let expression_facts::errors::EngineError::Structural(receipt) = error else {
+                panic!("local selected error must carry data without a String")
+            };
+            assert_eq!(receipt.stage(), "selected session");
+            assert_eq!(
+                receipt.source().as_str().as_ptr(),
+                foreign.body.id.as_str().as_ptr()
+            );
+            same(&old, &receipt.legacy(&foreign));
+            assert!(old.message.contains(if profile {
+                "module-local primitive context"
+            } else {
+                "not held by its current context"
+            }));
+            assert!(matches!(
+                current.validate_scalar_paid(&program.functions[0]),
+                Err(expression_facts::errors::EngineError::Failed)
+            ));
+            // The current supported source constructor above reaches the real public
+            // report API. It does not forge source-graph receiving authority.
+            let old_refusal = original
+                .into_failed_preparation()
+                .refuse_engine(expression_facts::errors::EngineError::Owned(old));
+            let mut public = acquire(&context, function, usize::MAX);
+            let error = public.validate_scalar_paid(&foreign).unwrap_err();
+            let refusal = public.into_failed_preparation().refuse_engine(error);
+            assert_eq!(refusal.refused().unwrap().stage(), Some("selected session"));
+            assert_eq!(
+                refusal.structural_receipt().unwrap().stage(),
+                "selected session"
+            );
+            let backing = (
+                refusal.report().unwrap().as_ptr(),
+                refusal.report().unwrap()[0].message.as_ptr(),
+            );
+            let legacy =
+                crate::workspace_report::WorkspaceReportFailure::selected(old_refusal, Some(FORM));
+            let actual =
+                crate::workspace_report::WorkspaceReportFailure::selected(refusal, Some(FORM));
+            assert!(legacy.has_paid_report() && actual.has_paid_report());
+            let old_report = legacy.reported().unwrap();
+            let report = actual.reported().unwrap();
+            assert_eq!((old_report.len(), report.len()), (1, 1));
+            same(&old_report[0], &report[0]);
+            let output = actual.into_paid_report().ok().unwrap();
+            assert_eq!(output.as_ptr(), backing.0);
+            assert_eq!(output[0].message.as_ptr(), backing.1);
+            same(&legacy.into_paid_report().ok().unwrap()[0], &output[0]);
+            drop(output);
+        });
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
     }
 }
 #[test]

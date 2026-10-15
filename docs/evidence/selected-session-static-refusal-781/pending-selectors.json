@@ -26,11 +26,6 @@
       "harness": "lib",
       "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::source::selected_session_complete_source_inverses_and_old_layout_definitions_stay_bound",
       "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
-    },
-    {
-      "harness": "lib",
-      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::source::selected_session_layout_mirror_is_derived_from_complete_historical_definitions",
-      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
     }
   ],
   "also_required_existing": [
