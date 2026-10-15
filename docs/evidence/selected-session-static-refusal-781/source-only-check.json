@@ -1,0 +1,9 @@
+{
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "whole_inverse_rows": 19,
+  "archive_bytes_exact_to_basis": true,
+  "all_current_bindings_match": true,
+  "paid_owner_and_profile_complete_token_inverses": true,
+  "changed_rust_files_below_1500": true,
+  "rust_execution": false
+}

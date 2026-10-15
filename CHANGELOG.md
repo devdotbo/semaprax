@@ -7129,3 +7129,7 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
 - Add affine typed filesystem change/structural/operations reporting routes,
   retaining selected replay report ownership through preparation and unlock;
   preserve complete original Vec routes and unlock diagnostic precedence.
+
+- Source-only #781 successor: carry selected-local Session entry, membership and
+  profile refusals as prepaid static data while preserving complete legacy Owned
+  receivers, first receipt/stage and pending full-layout/physical/work controls.

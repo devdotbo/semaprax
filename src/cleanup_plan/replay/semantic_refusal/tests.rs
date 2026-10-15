@@ -67,6 +67,7 @@ fn sealed_atoms_keep_saved_detailed_text_and_allocate_no_identity_payload() {
 // Complete independent original adapter, including every owning message arm.
 fn complete_original_legacy(receipt: Receipt, function: &ResolvedFunction) -> Diagnostic {
     let message = match receipt.atom {
+        Atom::SelectedSession(detail) => detail.to_owned(),
         Atom::RepeatedStatus(id) => format!("status source for `{id}` is repeated"),
         Atom::UnknownStatus(id) => {
             format!("status source references unknown expression `{id}`")

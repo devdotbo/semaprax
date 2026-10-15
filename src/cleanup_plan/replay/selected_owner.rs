@@ -52,3 +52,5 @@ pub(super) fn owner(
     crate::hir::lexical_exit::validate_owner(function, &owner)?;
     Ok(owner)
 }
+
+pub(super) mod paid;

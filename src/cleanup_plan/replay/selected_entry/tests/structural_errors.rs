@@ -196,7 +196,7 @@ fn status_atoms_preserve_ordinary_selected_text_and_full_driver_earlier_priority
         let mut old = session(&program, usize::MAX);
         let mut paid = session(&program, usize::MAX);
         let legacy = old.validate(&forged).unwrap_err();
-        let error = paid.validate_paid(&forged).unwrap_err();
+        let error = paid.validate_paid_original(&forged).unwrap_err();
         let expression_facts::errors::EngineError::Owned(actual) = error else {
             panic!("earlier current-member error remains owned")
         };

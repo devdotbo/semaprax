@@ -165,3 +165,5 @@ mod fact_errors;
 mod structural_errors;
 
 mod transition_errors;
+
+mod session_errors;

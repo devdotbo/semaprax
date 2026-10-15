@@ -491,15 +491,32 @@ impl Preparation {
         mut self,
         error: expression_facts::errors::EngineError,
     ) -> PaidRefusal {
+        // An incoming later receipt cannot replace the first retained boundary.
+        // `failed` alone is not sufficient: Session recovery marks it before
+        // transferring its first error, so the retained slot is the authority.
+        if let Some(first) = self.receipt.as_ref() {
+            let refused = match first {
+                expression_facts::errors::EngineError::Failed => Refused::FAILED,
+                expression_facts::errors::EngineError::Owned(_) => Refused::SESSION,
+                expression_facts::errors::EngineError::Fact(_) => {
+                    Refused::SESSION.at("expression facts")
+                }
+                expression_facts::errors::EngineError::Structural(receipt) => {
+                    Refused::SESSION.at(receipt.stage())
+                }
+            };
+            return self.refuse(refused);
+        }
         match error {
             expression_facts::errors::EngineError::Owned(error) => self.refuse_session(error),
             expression_facts::errors::EngineError::Failed => self.refuse(Refused::FAILED),
             expression_facts::errors::EngineError::Structural(receipt) => {
+                let stage = receipt.stage();
                 self.failed = true;
                 if self.receipt.is_none() {
                     self.receipt = Some(expression_facts::errors::EngineError::Structural(receipt));
                 }
-                self.refuse(Refused::SESSION.at("structural replay"))
+                self.refuse(Refused::SESSION.at(stage))
             }
             expression_facts::errors::EngineError::Fact(receipt) => {
                 self.failed = true;

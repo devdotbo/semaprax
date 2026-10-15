@@ -4,6 +4,7 @@
 use super::*;
 #[derive(Debug)]
 pub(super) enum Atom {
+    SelectedSession(&'static str),
     RepeatedStatus(ExpressionId),
     UnknownStatus(ExpressionId),
     NoncontiguousSlot(usize),
@@ -26,9 +27,23 @@ pub(crate) struct Receipt {
     atom: Atom,
 }
 impl Receipt {
+    pub(super) fn selected(function: &ResolvedFunction, detail: &'static str) -> Self {
+        Self {
+            source: function.body.id.clone(),
+            atom: Atom::SelectedSession(detail),
+        }
+    }
+    pub(super) fn stage(&self) -> &'static str {
+        match &self.atom {
+            Atom::SelectedSession(_) => "selected session",
+            _ => "structural replay",
+        }
+    }
+
     pub(super) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
         // Branch-local calls: no `fmt::Arguments` escapes its own statement.
         match self.atom {
+            Atom::SelectedSession(detail) => replay_error(function, detail),
             Atom::RepeatedStatus(id) => replay_error(
                 function,
                 format_args!("status source for `{id}` is repeated"),

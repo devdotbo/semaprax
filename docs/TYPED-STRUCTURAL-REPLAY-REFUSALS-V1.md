@@ -56,3 +56,20 @@ specific mismatch subphase, same report/ledger pointers and sticky retry.
 Source/leaf fixture creation and fixed active-ledger context are outside its
 observer. This proves neither all transition allocations funded nor complete
 Session/engine funding. These source-authored controls remain unexecuted.
+
+## Selected-local Session successor (#781; source only)
+
+The paid Session has a separate Context/owner/profile error policy for closed
+static local refusals. Full old receivers and the raw earlier-current-member
+Owned oracle remain independently compiled. New local errors acquire their full
+receipt/sum/Result/optional control tuple before constructing shared-identity
+receipt data; failed payment uses the existing prepaid budget Diagnostic.
+The first retained receipt determines publication stage. Successful paths incur
+no new fee only if independently asserted complete old/current receiving layouts
+remain equal on the owning host. Those layout and physical/work controls are
+pending; no portable equality or whole-engine funding is claimed.
+
+Arbitrary child Diagnostics, including renewal census and work failures, retain
+the original owned route. Detailed legacy rendering remains explicitly allocating.
+The complete source packet, residuals and pending owners live in
+`docs/evidence/selected-session-static-refusal-781/`.

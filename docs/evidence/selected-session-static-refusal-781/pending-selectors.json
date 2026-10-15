@@ -1,0 +1,40 @@
+{
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "status": "source-only-unexecuted",
+  "new_owners": [
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::selected_session_local_refusals_preserve_complete_original_and_raw_owned_oracle",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::selected_session_receipt_full_carrier_exact_short_zero_sticky_report_and_drop",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::selected_session_publication_keeps_first_named_boundary_across_later_atom_kinds",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::selected_session_atom_keeps_every_success_receiving_layout_equal_to_complete_old_sum",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::source::selected_session_complete_source_inverses_and_old_layout_definitions_stay_bound",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
+    },
+    {
+      "harness": "lib",
+      "selector": "cleanup_plan::replay::selected_entry::tests::session_errors::source::selected_session_layout_mirror_is_derived_from_complete_historical_definitions",
+      "source": "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
+    }
+  ],
+  "also_required_existing": [
+    "cleanup_plan::replay::selected_entry::tests::structural_errors::status_atoms_preserve_ordinary_selected_text_and_full_driver_earlier_priority",
+    "cleanup_plan::replay::selected_entry::tests::fact_errors::paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts"
+  ]
+}

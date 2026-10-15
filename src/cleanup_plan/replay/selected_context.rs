@@ -8,6 +8,7 @@ pub(super) struct Context<'a> {
     renewals: crate::cleanup_plan::ReplayRenewalBindings<'a>,
 }
 impl<'a> Context<'a> {
+    #[cfg(test)]
     pub(super) fn new(
         source: &'a dyn ReplayContext,
         function: &'a ResolvedFunction,
@@ -104,3 +105,5 @@ impl ReplayContext for Context<'_> {
 
 #[cfg(test)]
 pub(super) mod borrowed;
+
+pub(super) mod paid;

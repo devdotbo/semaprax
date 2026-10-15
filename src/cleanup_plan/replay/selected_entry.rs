@@ -293,6 +293,37 @@ impl<'a> Session<'a> {
             return Err(expression_facts::errors::EngineError::Failed);
         }
         self.failed = true;
+        let context =
+            selected_context::Context::new_paid(&self.indexed, function, &mut self.budget, true)?;
+        lexical_replay::validate_paid(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
+
+    pub(crate) fn validate_scalar_paid(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), expression_facts::errors::EngineError> {
+        if self.failed {
+            return Err(expression_facts::errors::EngineError::Failed);
+        }
+        self.failed = true;
+        let context =
+            selected_context::Context::new_paid(&self.indexed, function, &mut self.budget, false)?;
+        scalar_replay::validate_paid(&context, function, &mut self.budget)?;
+        self.failed = false;
+        Ok(())
+    }
+
+    #[cfg(test)]
+    pub(crate) fn validate_paid_original(
+        &mut self,
+        function: &ResolvedFunction,
+    ) -> Result<(), expression_facts::errors::EngineError> {
+        if self.failed {
+            return Err(expression_facts::errors::EngineError::Failed);
+        }
+        self.failed = true;
         require_entry(function)?;
         let context = selected_context::Context::new(&self.indexed, function, &mut self.budget)?;
         lexical_replay::validate_paid(&context, function, &mut self.budget)?;
@@ -300,7 +331,8 @@ impl<'a> Session<'a> {
         Ok(())
     }
 
-    pub(crate) fn validate_scalar_paid(
+    #[cfg(test)]
+    pub(crate) fn validate_scalar_paid_original(
         &mut self,
         function: &ResolvedFunction,
     ) -> Result<(), expression_facts::errors::EngineError> {
