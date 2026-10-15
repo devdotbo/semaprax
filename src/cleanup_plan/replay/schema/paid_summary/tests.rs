@@ -8,6 +8,13 @@ fn complete_schema_original_and_receiving_body_remain_byte_exact() {
         include_str!("../../../../../docs/evidence/schema-summary/schema.rs.before")
     );
     let restored = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention("src/cleanup_plan/replay.rs", include_str!("../../../replay.rs"));
+    let mut restored = restored;
+    assert_eq!(restored.matches("    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;").count(), 1);
+    restored = restored.replacen("    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;", "    validate_entry(function, &storage, &leaves)?;", 1);
+    assert_eq!(restored.matches("    expression_facts::receiving::validate_regions(function, &storage, budget)?;").count(), 1);
+    restored = restored.replacen("    expression_facts::receiving::validate_regions(function, &storage, budget)?;", "    validate_regions(function, &storage)?;", 1);
+    assert_eq!(restored.matches("    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;").count(), 1);
+    restored = restored.replacen("    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;", "    validate_exits(program, function, &storage, &leaves, &BTreeSet::new())?;", 1);
     let current = restored.as_str();
     let start = current
         .find("fn validate_structure_with_budget_storage<'hir>(")

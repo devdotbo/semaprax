@@ -52,15 +52,13 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
                     return Err(replay_error(
                         function,
                         "propagated-call status source does not name a call expression",
-                    )
-                    .into());
+                    ));
                 };
                 if call.callee.as_ref() != callee {
                     return Err(replay_error(
                         function,
                         "propagated-call status source names the wrong callee",
-                    )
-                    .into());
+                    ));
                 }
             }
             (
@@ -81,8 +79,7 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
                     return Err(replay_error(
                         function,
                         "checked-arithmetic status cases are empty or repeated",
-                    )
-                    .into());
+                    ));
                 }
             }
             (
@@ -101,8 +98,7 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
                 return Err(replay_error(
                     function,
                     "status source lane does not match its producer",
-                )
-                .into());
+                ));
             }
         }
     }
@@ -110,6 +106,8 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
     Ok(StatusSources { function, budget, ledger: ClassifierLedger::capture(), ids: Some(ids) })
 }
 
+// The retained key proof is the sole additional borrowed argument to the complete receiver.
+#[allow(clippy::too_many_arguments)]
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

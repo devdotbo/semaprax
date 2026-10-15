@@ -13,9 +13,14 @@
           "after": "// Hostile controls mutate a detached copy through the same explicit paid API\n// required of any shared owner. Later forged writes remain ordinary host input.\n#[cfg(test)]\nfn materialize_host_fields(\n    payload: &mut hir::NominalPayload<hir::ResolvedFieldDeclaration>,\n) -> &mut Vec<hir::ResolvedFieldDeclaration> {\n    let shared = payload.is_shared();\n    let (result, refused, used, first) = crate::bounded_output::with_limit_usage_refusal(\n        MAX_BUILDER_BYTES,\n        || payload.try_make_mut(|bytes| {\n            crate::bounded_output::reserve_active_required(bytes).then_some(()).ok_or(())\n        }).map(|_| ()) ,\n    );\n    assert!(!refused && first.is_none(), \"host materialization must fit the unchanged builder cap\");\n    if shared {\n        assert!(used > 0, \"a shared host payload must explicitly pay for detachment\");\n    }\n    result.expect(\"explicit paid host materialization\");\n    // Successful explicit materialization left the legacy owned Vec carrier.\n    payload\n}\n\n"
         },
         {
-          "start": 22063,
-          "before": "                    fields[0].ty = hir::ResolvedType::Bool;\n",
-          "after": "                    materialize_host_fields(fields)[0].ty = hir::ResolvedType::Bool;\n"
+          "start": 22083,
+          "before": "",
+          "after": "materialize_host_"
+        },
+        {
+          "start": 22106,
+          "before": "",
+          "after": "(fields)"
         },
         {
           "start": 24298,
@@ -31,9 +36,14 @@
       "current_sha256": "7b0e26a9fe4afc91705edd5ac0117bd5ebb35fd72a0ac89bb4774a548ca2c87c",
       "splices": [
         {
-          "start": 1951,
-          "before": "                fields[1].ty = hir::ResolvedType::I64;\n",
-          "after": "                super::materialize_host_fields(fields)[1].ty = hir::ResolvedType::I64;\n"
+          "start": 1967,
+          "before": "",
+          "after": "super::materialize_host_"
+        },
+        {
+          "start": 1997,
+          "before": "",
+          "after": "(fields)"
         }
       ]
     },
@@ -44,9 +54,14 @@
       "current_sha256": "ca696de3f3e3605352f0c2fd8daa0744d9f2c99f4366bbf09dc545e830075dbc",
       "splices": [
         {
-          "start": 6752,
-          "before": "                fields[0].ty = ResolvedType::Bool;\n",
-          "after": "                super::super::materialize_host_fields(fields)[0].ty = ResolvedType::Bool;\n"
+          "start": 6768,
+          "before": "",
+          "after": "super::super::materialize_host_"
+        },
+        {
+          "start": 6805,
+          "before": "",
+          "after": "(fields)"
         }
       ]
     },
@@ -57,57 +72,57 @@
       "current_sha256": "ae528d01a07710e1ed20921bab781553b9a0a39ff9035e0705fbe2886e63089c",
       "splices": [
         {
-          "start": 7787,
+          "start": 7795,
           "before": "\"semap",
           "after": "c"
         },
         {
-          "start": 7790,
+          "start": 7798,
           "before": "x.",
           "after": "te::"
         },
         {
-          "start": 7799,
+          "start": 7807,
           "before": ".v77\"",
           "after": "::STATIC_TEXT_GRAPH_SCHEMA"
         },
         {
-          "start": 7916,
+          "start": 7924,
           "before": "",
           "after": "let module = writer(build);\n    let expected = if module.functions.iter()\n        .chain(module.function_instances.iter().map(|instance| &instance.function))\n        .any(|function| std::iter::once(&function.body)\n            .chain(&function.requires).chain(&function.ensures)\n            .any(crate::vec_field::expression_uses))\n    {\n        crate::graph::VEC_FIELD_GRAPH_SCHEMA\n    } else {\n        crate::graph::STATIC_TEXT_GRAPH_SCHEMA\n    };\n    "
         },
         {
-          "start": 8380,
+          "start": 8388,
           "before": "\n        ",
           "after": ""
         },
         {
-          "start": 8432,
+          "start": 8440,
           "before": "\n",
           "after": ""
         },
         {
-          "start": 8433,
+          "start": 8441,
           "before": "       \"s",
           "after": ""
         },
         {
-          "start": 8434,
+          "start": 8442,
           "before": "ma",
           "after": "x"
         },
         {
-          "start": 8436,
+          "start": 8444,
           "before": "rax.graph.v77\"\n    ",
           "after": "ected"
         },
         {
-          "start": 13517,
+          "start": 13525,
           "before": "",
           "after": "crate::workspace_graph::source_schema::materialize_host_"
         },
         {
-          "start": 13579,
+          "start": 13587,
           "before": "",
           "after": "(fields)"
         }
@@ -120,14 +135,54 @@
       "current_sha256": "1a4bc4921407de270671a097c6ca04570e415abe7e1162de0a594a66ee6cbc8a",
       "splices": [
         {
-          "start": 5760,
-          "before": "            0 => fields.swap(0, 1),\n            1 => fields[1].ty = hir::ResolvedType::Bytes,\n            2 => fields[1].index = 0,\n",
-          "after": "            0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),\n            1 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty = hir::ResolvedType::Bytes,\n            2 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0,\n"
+          "start": 3809,
+          "before": "",
+          "after": ".as_slice()"
         },
         {
-          "start": 0,
-          "after": "use super::*;\nuse crate::cleanup::ReplayContext;\nconst SOURCE: &str = r#\"module static.flat_records;\n@id(\"flat.Packet\") record Packet {\n @id(\"flat.Packet.n\") n:i64,@id(\"flat.Packet.text\") text:string,@id(\"flat.Packet.data\") data:Bytes,\n}\n@id(\"flat.identity\") fn identity(value:own Packet)->Packet {value}\n@id(\"flat.make\") fn make(input:borrow Slice<u8>)->Packet {\n Packet{n:7,text:\"label\",data:bytes_copy(input)}\n}\n@id(\"flat.read\") fn read(value:borrow Packet)->i64 {value.n}\n@id(\"flat.main\") fn main()->i64 {let key=str\"x\";return str_len_bytes(key);}\n\"#;\nfn build() -> WorkspaceGraphBuild {\n    build_source(SOURCE)\n}\nfn lexical_source() -> String {\n    SOURCE\n        .replace(\"fn identity(value:own Packet)->Packet {value}\",\n            \"fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value}\")\n        .replace(\"Packet{n:7,text:\\\"label\\\",data:bytes_copy(input)}\",\n            \"let packet=Packet{n:7,text:\\\"label\\\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0} 0} packet\")\n        .replace(\"{let key=str\\\"x\\\";return str_len_bytes(key);}\",\n            \"{let key=str\\\"x\\\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}\")\n}\nfn build_lexical() -> WorkspaceGraphBuild {\n    build_source(&lexical_source())\n}\nfn build_source(source: &str) -> WorkspaceGraphBuild {\n    let sources = [\n        (\"flat.spx\", source),\n        (\n            \"support.spx\",\n            \"module support.flat;@id(\\\"support.ready\\\") fn ready()->i64{0}\",\n        ),\n    ]\n    .into_iter()\n    .map(|(path, source)| WorkspaceSource {\n        path: path.to_owned(),\n        source: format::canonical(&crate::parse(source, path).unwrap()),\n    })\n    .collect();\n    build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)\n        .unwrap()\n        .0\n}\nfn module(build: &WorkspaceGraphBuild) -> &WorkspaceResolvedModule {\n    build\n        .hir\n        .modules\n        .iter()\n        .find(|module| module.module == \"static.flat_records\")\n        .unwrap()\n}\n#[test]\nfn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_without_admission() {\n    let nonlexical = build();\n    assert_eq!(\n        nonlexical.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n    let mut reservation = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);\n    let refused = super::super::authenticate(\n        module(&nonlexical),\n        &nonlexical.hir.declarations,\n        &mut reservation,\n    )\n    .err()\n    .expect(\"ordinary graph admission grants no retained lexical authority\");\n    assert!(refused.iter().any(|error| error.code == \"SPX-G410\"));\n    let build = build_lexical();\n    assert_eq!(\n        build.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n    let module = module(&build);\n    let inventory = module\n        .static_text\n        .as_ref()\n        .unwrap()\n        .lexical\n        .as_ref()\n        .unwrap();\n    assert_eq!(inventory.records.as_ref().unwrap().records.len(), 1);\n    let mut physical = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);\n    let context =\n        super::super::authenticate(module, &build.hir.declarations, &mut physical).unwrap();\n    let record = module\n        .types\n        .iter()\n        .find(|record| record.id.as_str() == \"flat.Packet\")\n        .unwrap();\n    let hir::ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {\n        panic!(\"record\")\n    };\n    assert_eq!(\n        context.declarations().record_fields(&record.id).unwrap(),\n        fields.as_slice()\n    );\n    for field in fields {\n        let declared = context.declarations().declaration(&field.id).unwrap();\n        assert_eq!(declared.kind, hir::DeclarationKind::Field);\n        assert_eq!(declared.owner.as_ref(), Some(&record.id));\n    }\n    let required = physical.charged();\n    assert!(required > 0);\n    let (exact, refused, used) = crate::bounded_output::with_limit_usage(required, || {\n        super::super::authenticate(\n            module,\n            &build.hir.declarations,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(required),\n        )\n    });\n    assert!(!refused);\n    assert_eq!(used, required);\n    assert!(exact.is_ok());\n    let mut short = crate::cleanup_plan::ReplayPhysicalReservation::new(required - 1);\n    assert!(super::super::authenticate(module, &build.hir.declarations, &mut short).is_err());\n    assert!(short.reserve(0).is_err());\n}\n#[test]\nfn captured_record_layout_namespace_and_constructor_body_drift_are_independently_rejected() {\n    for attack in 0..6 {\n        let mut build = build_lexical();\n        assert_eq!(\n            build.source_graph_schemas().unwrap()[\"flat.spx\"],\n            \"semaprax.graph.v77\"\n        );\n        super::super::authenticate(\n            module(&build),\n            &build.hir.declarations,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX),\n        )\n        .unwrap();\n        let mut facts = build.hir.declarations.clone();\n        let module = build\n            .hir\n            .modules\n            .iter_mut()\n            .find(|module| module.module == \"static.flat_records\")\n            .unwrap();\n        let record = module\n            .types\n            .iter_mut()\n            .find(|record| record.id.as_str() == \"flat.Packet\")\n            .unwrap();\n        let hir::ResolvedTypeDeclarationKind::Record { fields } = &mut record.kind else {\n            panic!(\"record\")\n        };\n        match attack {\n            0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),\n            1 => {\n                crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty =\n                    hir::ResolvedType::Bytes\n            }\n            2 => {\n                crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0\n            }\n            3 => facts.get_mut(\"flat.Packet.text\").unwrap().owner = None,\n            4 => record.span.end = record.span.end.checked_add(1).unwrap(),\n            _ => {\n                let make = module\n                    .functions\n                    .iter_mut()\n                    .find(|f| f.id.as_str() == \"flat.make\")\n                    .unwrap();\n                let hir::ResolvedExprKind::Block { statements, .. } = &mut make.body.kind else {\n                    panic!(\"make block\")\n                };\n                let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {\n                    panic!(\"source packet binding\")\n                };\n                let hir::ResolvedExprKind::ConstructRecord { fields, .. } = &mut value.kind else {\n                    panic!(\"source constructor\")\n                };\n                let field = fields\n                    .iter_mut()\n                    .find(|f| f.field.as_str() == \"flat.Packet.n\")\n                    .unwrap();\n                field.value.kind = hir::ResolvedExprKind::Int(8);\n            }\n        }\n        let result = super::super::authenticate(\n            module,\n            &facts,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX),\n        );\n        let errors = match result {\n            Ok(_) => panic!(\"stale record/source body authenticated\"),\n            Err(errors) => errors,\n        };\n        assert!(errors.iter().any(|error| error.code == \"SPX-G410\"));\n    }\n}\n\n#[test]\nfn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {\n    let build = build_lexical();\n    let module = module(&build);\n    for id in [\"flat.make\", \"flat.identity\"] {\n        let function = module\n            .functions\n            .iter()\n            .find(|function| function.id.as_str() == id)\n            .unwrap();\n        assert!(matches!(\n            function.return_type,\n            hir::ResolvedType::Nominal { .. }\n        ));\n        assert!(hir::lexical_exit::requires(function).unwrap());\n    }\n    assert_eq!(\n        build.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n}\n#[test]\nfn direct_record_replay_rejects_retained_field_epoch_and_finalizer_mutations() {\n    let source=SOURCE.replace(\"{let key=str\\\"x\\\";return str_len_bytes(key);}\",\n        \"{let key=str\\\"x\\\";let input=[65u8];let packet=identity(make(array_as_slice(input)));let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}\");\n    for attack in 0..3 {\n        let mut build = build_source(&source);\n        assert_eq!(\n            build.source_graph_schemas().unwrap()[\"flat.spx\"],\n            \"semaprax.graph.v77\"\n        );\n        let module = build\n            .hir\n            .modules\n            .iter_mut()\n            .find(|module| module.module == \"static.flat_records\")\n            .unwrap();\n        let function = module\n            .functions\n            .iter_mut()\n            .find(|function| function.id.as_str() == \"flat.main\")\n            .unwrap();\n        match attack {\n            0 => {\n                let slot = function\n                    .cleanup_plan\n                    .slots\n                    .iter_mut()\n                    .find(|slot| {\n                        matches!(\n                            slot.field_liveness_shape,\n                            crate::cleanup::FieldLivenessShape::Record { .. }\n                        )\n                    })\n                    .unwrap();\n                let crate::cleanup::FieldLivenessShape::Record { fields, .. } =\n                    &mut slot.field_liveness_shape\n                else {\n                    unreachable!()\n                };\n                fields[1].field_index = 0;\n            }\n            1 => {\n                let slot = function\n                    .cleanup_plan\n                    .slots\n                    .iter_mut()\n                    .find(|slot| {\n                        matches!(\n                            slot.storage,\n                            crate::cleanup_plan::StorageId::CallArgument { .. }\n                        ) && matches!(slot.ty, hir::ResolvedType::Nominal { .. })\n                    })\n                    .unwrap();\n                let crate::cleanup_plan::StorageId::CallArgument {\n                    parameter_index, ..\n                } = &mut slot.storage\n                else {\n                    unreachable!()\n                };\n                *parameter_index += 1;\n            }\n            _ => {\n                let exit = function\n                    .cleanup_plan\n                    .exits\n                    .iter_mut()\n                    .find(|exit| exit.finalize_in_order.len() >= 2)\n                    .unwrap();\n                exit.finalize_in_order.swap(0, 1);\n            }\n        }\n        assert!(\n            build\n                .source_graph_schemas()\n                .unwrap_err()\n                .iter()\n                .any(|error| error.code == \"SPX-G410\"),\n            \"attack {attack}\"\n        );\n    }\n}\n\nmod prepared;\n",
-          "before": "use super::*;\nuse crate::cleanup::ReplayContext;\nconst SOURCE: &str = r#\"module static.flat_records;\n@id(\"flat.Packet\") record Packet {\n @id(\"flat.Packet.n\") n:i64,@id(\"flat.Packet.text\") text:string,@id(\"flat.Packet.data\") data:Bytes,\n}\n@id(\"flat.identity\") fn identity(value:own Packet)->Packet {value}\n@id(\"flat.make\") fn make(input:borrow Slice<u8>)->Packet {\n Packet{n:7,text:\"label\",data:bytes_copy(input)}\n}\n@id(\"flat.read\") fn read(value:borrow Packet)->i64 {value.n}\n@id(\"flat.main\") fn main()->i64 {let key=str\"x\";return str_len_bytes(key);}\n\"#;\nfn build() -> WorkspaceGraphBuild {\n    build_source(SOURCE)\n}\nfn lexical_source() -> String {\n    SOURCE\n        .replace(\"fn identity(value:own Packet)->Packet {value}\",\n            \"fn identity(value:own Packet,flag:bool)->Packet {let mut next=0;while next<1 {next=next+1;if flag {return value;} else {0} 0} value}\")\n        .replace(\"Packet{n:7,text:\\\"label\\\",data:bytes_copy(input)}\",\n            \"let packet=Packet{n:7,text:\\\"label\\\",data:bytes_copy(input)};let mut next=0;while next<1 {next=next+1;if byte_len(input)>0usize {return packet;} else {0} 0} packet\")\n        .replace(\"{let key=str\\\"x\\\";return str_len_bytes(key);}\",\n            \"{let key=str\\\"x\\\";let input=[65u8];let packet=identity(make(array_as_slice(input)),false);let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}\")\n}\nfn build_lexical() -> WorkspaceGraphBuild {\n    build_source(&lexical_source())\n}\nfn build_source(source: &str) -> WorkspaceGraphBuild {\n    let sources = [\n        (\"flat.spx\", source),\n        (\n            \"support.spx\",\n            \"module support.flat;@id(\\\"support.ready\\\") fn ready()->i64{0}\",\n        ),\n    ]\n    .into_iter()\n    .map(|(path, source)| WorkspaceSource {\n        path: path.to_owned(),\n        source: format::canonical(&crate::parse(source, path).unwrap()),\n    })\n    .collect();\n    build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)\n        .unwrap()\n        .0\n}\nfn module(build: &WorkspaceGraphBuild) -> &WorkspaceResolvedModule {\n    build\n        .hir\n        .modules\n        .iter()\n        .find(|module| module.module == \"static.flat_records\")\n        .unwrap()\n}\n#[test]\nfn captured_flat_layout_reconstructs_minimal_index_at_exact_and_one_short_without_admission() {\n    let nonlexical = build();\n    assert_eq!(\n        nonlexical.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n    let mut reservation = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);\n    let refused = super::super::authenticate(\n        module(&nonlexical),\n        &nonlexical.hir.declarations,\n        &mut reservation,\n    )\n    .err()\n    .expect(\"ordinary graph admission grants no retained lexical authority\");\n    assert!(refused.iter().any(|error| error.code == \"SPX-G410\"));\n    let build = build_lexical();\n    assert_eq!(\n        build.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n    let module = module(&build);\n    let inventory = module\n        .static_text\n        .as_ref()\n        .unwrap()\n        .lexical\n        .as_ref()\n        .unwrap();\n    assert_eq!(inventory.records.as_ref().unwrap().records.len(), 1);\n    let mut physical = crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX);\n    let context =\n        super::super::authenticate(module, &build.hir.declarations, &mut physical).unwrap();\n    let record = module\n        .types\n        .iter()\n        .find(|record| record.id.as_str() == \"flat.Packet\")\n        .unwrap();\n    let hir::ResolvedTypeDeclarationKind::Record { fields } = &record.kind else {\n        panic!(\"record\")\n    };\n    assert_eq!(\n        context.declarations().record_fields(&record.id).unwrap(),\n        fields\n    );\n    for field in fields {\n        let declared = context.declarations().declaration(&field.id).unwrap();\n        assert_eq!(declared.kind, hir::DeclarationKind::Field);\n        assert_eq!(declared.owner.as_ref(), Some(&record.id));\n    }\n    let required = physical.charged();\n    assert!(required > 0);\n    let (exact, refused, used) = crate::bounded_output::with_limit_usage(required, || {\n        super::super::authenticate(\n            module,\n            &build.hir.declarations,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(required),\n        )\n    });\n    assert!(!refused);\n    assert_eq!(used, required);\n    assert!(exact.is_ok());\n    let mut short = crate::cleanup_plan::ReplayPhysicalReservation::new(required - 1);\n    assert!(super::super::authenticate(module, &build.hir.declarations, &mut short).is_err());\n    assert!(short.reserve(0).is_err());\n}\n#[test]\nfn captured_record_layout_namespace_and_constructor_body_drift_are_independently_rejected() {\n    for attack in 0..6 {\n        let mut build = build_lexical();\n        assert_eq!(\n            build.source_graph_schemas().unwrap()[\"flat.spx\"],\n            \"semaprax.graph.v77\"\n        );\n        super::super::authenticate(\n            module(&build),\n            &build.hir.declarations,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX),\n        )\n        .unwrap();\n        let mut facts = build.hir.declarations.clone();\n        let module = build\n            .hir\n            .modules\n            .iter_mut()\n            .find(|module| module.module == \"static.flat_records\")\n            .unwrap();\n        let record = module\n            .types\n            .iter_mut()\n            .find(|record| record.id.as_str() == \"flat.Packet\")\n            .unwrap();\n        let hir::ResolvedTypeDeclarationKind::Record { fields } = &mut record.kind else {\n            panic!(\"record\")\n        };\n        match attack {\n            0 => crate::workspace_graph::source_schema::materialize_host_fields(fields).swap(0, 1),\n            1 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].ty = hir::ResolvedType::Bytes,\n            2 => crate::workspace_graph::source_schema::materialize_host_fields(fields)[1].index = 0,\n            3 => facts.get_mut(\"flat.Packet.text\").unwrap().owner = None,\n            4 => record.span.end = record.span.end.checked_add(1).unwrap(),\n            _ => {\n                let make = module\n                    .functions\n                    .iter_mut()\n                    .find(|f| f.id.as_str() == \"flat.make\")\n                    .unwrap();\n                let hir::ResolvedExprKind::Block { statements, .. } = &mut make.body.kind else {\n                    panic!(\"make block\")\n                };\n                let hir::ResolvedStatement::Let { value, .. } = &mut statements[0] else {\n                    panic!(\"source packet binding\")\n                };\n                let hir::ResolvedExprKind::ConstructRecord { fields, .. } = &mut value.kind else {\n                    panic!(\"source constructor\")\n                };\n                let field = fields\n                    .iter_mut()\n                    .find(|f| f.field.as_str() == \"flat.Packet.n\")\n                    .unwrap();\n                field.value.kind = hir::ResolvedExprKind::Int(8);\n            }\n        }\n        let result = super::super::authenticate(\n            module,\n            &facts,\n            &mut crate::cleanup_plan::ReplayPhysicalReservation::new(usize::MAX),\n        );\n        let errors = match result {\n            Ok(_) => panic!(\"stale record/source body authenticated\"),\n            Err(errors) => errors,\n        };\n        assert!(errors.iter().any(|error| error.code == \"SPX-G410\"));\n    }\n}\n\n#[test]\nfn source_bound_nominal_make_identity_read_with_real_lexical_results_selects() {\n    let build = build_lexical();\n    let module = module(&build);\n    for id in [\"flat.make\", \"flat.identity\"] {\n        let function = module\n            .functions\n            .iter()\n            .find(|function| function.id.as_str() == id)\n            .unwrap();\n        assert!(matches!(\n            function.return_type,\n            hir::ResolvedType::Nominal { .. }\n        ));\n        assert!(hir::lexical_exit::requires(function).unwrap());\n    }\n    assert_eq!(\n        build.source_graph_schemas().unwrap()[\"flat.spx\"],\n        \"semaprax.graph.v77\"\n    );\n}\n#[test]\nfn direct_record_replay_rejects_retained_field_epoch_and_finalizer_mutations() {\n    let source=SOURCE.replace(\"{let key=str\\\"x\\\";return str_len_bytes(key);}\",\n        \"{let key=str\\\"x\\\";let input=[65u8];let packet=identity(make(array_as_slice(input)));let mut next=0;while next<1 {next=next+1;if str_len_bytes(key)==1 {return read(packet);} else {0} 0} read(packet)}\");\n    for attack in 0..3 {\n        let mut build = build_source(&source);\n        assert_eq!(\n            build.source_graph_schemas().unwrap()[\"flat.spx\"],\n            \"semaprax.graph.v77\"\n        );\n        let module = build\n            .hir\n            .modules\n            .iter_mut()\n            .find(|module| module.module == \"static.flat_records\")\n            .unwrap();\n        let function = module\n            .functions\n            .iter_mut()\n            .find(|function| function.id.as_str() == \"flat.main\")\n            .unwrap();\n        match attack {\n            0 => {\n                let slot = function\n                    .cleanup_plan\n                    .slots\n                    .iter_mut()\n                    .find(|slot| {\n                        matches!(\n                            slot.field_liveness_shape,\n                            crate::cleanup::FieldLivenessShape::Record { .. }\n                        )\n                    })\n                    .unwrap();\n                let crate::cleanup::FieldLivenessShape::Record { fields, .. } =\n                    &mut slot.field_liveness_shape\n                else {\n                    unreachable!()\n                };\n                fields[1].field_index = 0;\n            }\n            1 => {\n                let slot = function\n                    .cleanup_plan\n                    .slots\n                    .iter_mut()\n                    .find(|slot| {\n                        matches!(\n                            slot.storage,\n                            crate::cleanup_plan::StorageId::CallArgument { .. }\n                        ) && matches!(slot.ty, hir::ResolvedType::Nominal { .. })\n                    })\n                    .unwrap();\n                let crate::cleanup_plan::StorageId::CallArgument {\n                    parameter_index, ..\n                } = &mut slot.storage\n                else {\n                    unreachable!()\n                };\n                *parameter_index += 1;\n            }\n            _ => {\n                let exit = function\n                    .cleanup_plan\n                    .exits\n                    .iter_mut()\n                    .find(|exit| exit.finalize_in_order.len() >= 2)\n                    .unwrap();\n                exit.finalize_in_order.swap(0, 1);\n            }\n        }\n        assert!(\n            build\n                .source_graph_schemas()\n                .unwrap_err()\n                .iter()\n                .any(|error| error.code == \"SPX-G410\"),\n            \"attack {attack}\"\n        );\n    }\n}\n\nmod prepared;\n"
+          "start": 5788,
+          "before": "",
+          "after": "crate::workspace_graph::source_schema::materialize_host_"
+        },
+        {
+          "start": 5850,
+          "before": "",
+          "after": "(fields)"
+        },
+        {
+          "start": 5888,
+          "before": "",
+          "after": "{\n                crate::workspace_graph::source_schema::materialize_host_"
+        },
+        {
+          "start": 5968,
+          "before": "",
+          "after": "(fields)"
+        },
+        {
+          "start": 5984,
+          "before": "",
+          "after": "\n                   "
+        },
+        {
+          "start": 6029,
+          "before": ",",
+          "after": "\n            }"
+        },
+        {
+          "start": 6061,
+          "before": "",
+          "after": "{\n                crate::workspace_graph::source_schema::materialize_host_"
+        },
+        {
+          "start": 6141,
+          "before": "",
+          "after": "(fields)"
+        },
+        {
+          "start": 6162,
+          "before": ",",
+          "after": "\n            }"
         }
       ]
     }
