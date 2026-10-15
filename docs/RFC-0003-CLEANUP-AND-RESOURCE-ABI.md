@@ -724,3 +724,13 @@ ownership, owned payload, or public generic ABI.
 - Claiming platform interoperability from generated wrappers that have not executed conformance fixtures.
 
 These shortcuts weaken exactly the safety and cross-target equivalence that SEMAPRAX is intended to make verifiable.
+
+The source-only [OPT847 retained imported-function view draft](evidence/retained-function-alias-847/README.md)
+lends an exact provider Function only when the unchanged retained-wrapper classifier
+accepts it and the caller alias equals its source name. Uncached transient inputs
+keep an ordered paid directory; other aliases, cache retention and invariant
+transforms keep the complete owning fallback. This changes compiler construction,
+not language qualification, call permissions, source/graph/cache bytes or limits.
+The ordinary synthetic-AST peak census remains conservative and unchanged. Physical
+constructor/core comparisons and unchanged application gates remain pending; no
+19,422-byte reduction, application fit or issue closure follows from source review.

@@ -684,6 +684,8 @@ pub(crate) fn retry_fixture_input(source: &str, current: &str) -> String {
 
 // Every older runtime source guard retains the exact297 physical domain.
 fn before_direct_carriers831(source: &str, current: &str) -> String {
+    let previous = retained_function847_previous(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -692,4 +694,19 @@ fn before_direct_carriers831(source: &str, current: &str) -> String {
         source,
         current,
     )
+}
+
+// Independent exact7a87 predecessor of the retained imported-function view.
+fn retained_function847_previous(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-function-alias-847/current-to-7a87.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn retained_function847_input(_source: &str, current: &str) -> String {
+    current.to_owned()
 }

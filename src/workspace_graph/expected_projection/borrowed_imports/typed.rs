@@ -459,3 +459,10 @@ mod directory_tests {
         assert!(!live.contains("budgeted_format, directory"));
     }
 }
+
+mod alias;
+pub(in crate::workspace_graph) use alias::construct_transient;
+
+#[cfg(test)]
+#[path = "typed/before_alias.rs"]
+mod before_alias;
