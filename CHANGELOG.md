@@ -1,5 +1,7 @@
 # Changelog
 
+- Cover admitted internal owning-record imports together with exact public-v8 owning-parameter refusal, retaining the original type-import and unsupported-variant cases and no-write checks.
+
 - Refuse an authored owning row-helper parameter with T284 before retained-HIR projection, preserving cold/warm diagnostic parity and G173 for all existing descriptor forgeries.
 
 - Pin mutable command-argument source refusal to its earlier T264 diagnostic and retain the exact H006 immutability guard through an independently validated, tampered Project HIR control.
