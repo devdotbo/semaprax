@@ -7,7 +7,7 @@
   ],
   "existing_owners": [
     "hir::canonical_loan_storage::caller::stage_tests::actual_prepare_stage_keeps_full_old_storage_diagnostics_numeric_receipts_and_drop",
-    "hir::canonical_loan_storage::caller::stage_tests::actual_shared_sealing_stage_keeps_complete_old_receiver_payment_and_drop",
+    "hir::canonical_loan_storage::caller::stage_tests::actual_shared_seal_stage_preserves_exact_short_zero_numeric_receipts_and_complete_drop",
     "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
   ]
 }
