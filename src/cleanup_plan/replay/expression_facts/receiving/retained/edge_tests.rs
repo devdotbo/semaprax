@@ -19,15 +19,13 @@ fn receive(program: &ResolvedProgram, function: &ResolvedFunction, facts: &Facts
     current: Receiver) -> Result<(), Diagnostic>
 {
     let statuses = validate_status_sources_retained(function, facts, budget)?;
-    if matches!(current, Receiver::Current) {
-        validate_blocks_and_edges_retained(program, function, facts, storage, leaves,
-            None, budget, &statuses)
-    } else if matches!(current, Receiver::PaidBefore) {
-        paid_before_blocks_and_edges_retained(program, function, facts, storage, leaves,
-            None, budget, &statuses)
-    } else {
-        edge_before::validate_blocks_and_edges_retained(program, function, facts,
-            storage, leaves, None, budget, &statuses)
+    match current {
+        Receiver::Current => validate_blocks_and_edges_retained(program, function, facts,
+            storage, leaves, None, budget, &statuses),
+        Receiver::PaidBefore => paid_before_blocks_and_edges_retained(program, function, facts,
+            storage, leaves, None, budget, &statuses),
+        Receiver::Original => edge_before::validate_blocks_and_edges_retained(program, function,
+            facts, storage, leaves, None, budget, &statuses),
     }
 }
 
@@ -46,6 +44,7 @@ fn observe(program: &ResolvedProgram, function: &ResolvedFunction, current: Rece
     let ((value, allocation), refused, debit, first) = with_limit_usage_refusal(byte_limit, || measure(|| {
         let mut budget = ReplayBudget::new();
         budget.remaining = work_limit;
+        assert!(budget.pays_allocations(), "all3 observed routes require current paid mode");
         let result = receive(program, function, &facts, &storage, &leaves, &mut budget, current);
         if let Some(expected) = expected { assert_eq!(&result, expected); }
         let success = result.is_ok();
@@ -113,6 +112,7 @@ fn removed_directory_cost(program: &ResolvedProgram, function: &ResolvedFunction
 fn complete_edge_receivers_preserve_full_diagnostics_order_and_drop() {
     let program = program();
     let mut saved = false;
+    let mut paid_helper_work_seen = false;
     let mut branch_attacked = false;
     let mut foreign_reference_attacked = false;
     let mut foreign_block_attacked = false;
@@ -128,6 +128,7 @@ fn complete_edge_receivers_preserve_full_diagnostics_order_and_drop() {
             paid.1 as i128 - old.1 as i128, paid.2 as i128 - old.2 as i128);
         assert!(old.0 && paid.0 && new.0 && !old.3 && !paid.3 && !new.3);
         assert!(old.4.is_none() && paid.4.is_none() && new.4.is_none());
+        paid_helper_work_seen |= paid.1 != old.1;
         let removed = removed_directory_cost(&program, function);
         eprintln!("{} removed_edge_and_exit_directories={removed:?}", function.id.as_str());
         assert_eq!(paid.1, new.1.checked_add(removed.0).unwrap());
@@ -184,6 +185,7 @@ fn complete_edge_receivers_preserve_full_diagnostics_order_and_drop() {
         }
     }
     assert!(saved && branch_attacked && foreign_reference_attacked && foreign_block_attacked);
+    assert!(paid_helper_work_seen, "fixtures must execute newly paid place helper work");
 }
 
 #[test]

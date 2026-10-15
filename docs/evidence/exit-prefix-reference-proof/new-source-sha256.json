@@ -6,5 +6,5 @@
     "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs": "2abc2f14fce631b4c2cb24d107e1909d7b93ec7490fe24c6ba814b9997aac5c9",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs": "ea0e59d4bdac19df37b0814a9c81b48f5ea313884fded3be983d809164c0db1f"
   },
-  "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs": "8bf75f7129afe7942eb156c552a56d81b00682bbbefc82c5c9533b0cb837d967"
+  "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs": "090e2193d1fc028a6cc038c07ae85334fbe9084a9332cc64b44f1d0bc64100e9"
 }

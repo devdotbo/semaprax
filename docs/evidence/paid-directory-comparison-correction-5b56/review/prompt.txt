@@ -1,0 +1,153 @@
+Source-only correction review. Find concrete accounting/semantic/proof errors. Old complete receiver used unpriced validate_place; current uses newpaidhelper11sites. Bridge copies complete original450line algorithm changing ONLY11helpercalls+functionname; exactinverse restoresfulloldbody independentlycompiled. Full450linebodies omitted; scope to supplied seam. All3routes preserveinputs, observerthroughDrop, full6fielddiagnostics. No netold→currentwinclaim. Directorygain checkedbridge→current: samepaidhelper. Old→bridge costsprinted, neverassumedpositive. Validroute removes edge/exitAVLinsertions; extraexit20work/controlbytes onlymalformedowner. Original83strictnetgainfailed;103oldwork8271 vs new+removed8451. No runtime here. Is isolatedbaselinelegitimate and equationsvalid?
+
+RECEIVE/OBSERVER:
+#[allow(clippy::too_many_arguments)]
+fn receive(program: &ResolvedProgram, function: &ResolvedFunction, facts: &Facts<'_>,
+    storage: &BTreeSet<StorageId>, leaves: &Leaves, budget: &mut ReplayBudget,
+    current: Receiver) -> Result<(), Diagnostic>
+{
+    let statuses = validate_status_sources_retained(function, facts, budget)?;
+    if matches!(current, Receiver::Current) {
+        validate_blocks_and_edges_retained(program, function, facts, storage, leaves,
+            None, budget, &statuses)
+    } else if matches!(current, Receiver::PaidBefore) {
+        paid_before_blocks_and_edges_retained(program, function, facts, storage, leaves,
+            None, budget, &statuses)
+    } else {
+        edge_before::validate_blocks_and_edges_retained(program, function, facts,
+            storage, leaves, None, budget, &statuses)
+    }
+}
+
+// HIR/facts are existing immutable inputs. Every receiver allocation, result,
+// retained token and budget drops while the actual observer is still active.
+fn observe(program: &ResolvedProgram, function: &ResolvedFunction, current: Receiver,
+    work_limit: usize, byte_limit: usize, expected: Option<&Result<(), Diagnostic>>)
+    -> (bool, usize, usize, bool, Option<ReservationRefusal>, usize)
+{
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(super::super::super::arena::build::<errors::Legacy>(function,
+        capacity::Payer::Selected(&mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation).unwrap());
+    let storage = validate_slots(function).unwrap();
+    let leaves = collect_leaves(function).unwrap();
+    let ((value, allocation), refused, debit, first) = with_limit_usage_refusal(byte_limit, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        budget.remaining = work_limit;
+        let result = receive(program, function, &facts, &storage, &leaves, &mut budget, current);
+        if let Some(expected) = expected { assert_eq!(&result, expected); }
+        let success = result.is_ok();
+        if !success && work_limit < MAX_REPLAY_WORK_UNITS && byte_limit == 1 << 26 {
+            assert_eq!(result.as_ref().unwrap_err().code, "SPX-H006");
+            assert_eq!(budget.remaining, 0);
+        }
+        let used = work_limit - budget.remaining;
+        drop(result);
+        drop(budget);
+        (success, used)
+    }));
+    assert!(!allocation.invalid);
+    assert_eq!(allocation.live, 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    (value.0, value.1, debit, refused, first, allocation.allocated)
+}
+
+REMOVEDACTUALOPS:
+// Actual removed insertions in original terminator order, after the same receiver bootstrap.
+fn removed_directory_cost(program: &ResolvedProgram, function: &ResolvedFunction)
+    -> (usize, usize, usize)
+{
+    let mut preparation = ReplayBudget::unobserved();
+    let facts = Facts::Arena(super::super::super::arena::build::<errors::Legacy>(function,
+        capacity::Payer::Selected(&mut physical_storage::PhysicalReservation::new(usize::MAX)),
+        &mut preparation).unwrap());
+    let storage = validate_slots(function).unwrap(); let leaves = collect_leaves(function).unwrap();
+    let ((cost, allocation), refused, _, _) = with_limit_usage_refusal(1 << 26, || measure(|| {
+        let mut budget = ReplayBudget::new();
+        receive(program, function, &facts, &storage, &leaves, &mut budget, Receiver::Current).unwrap();
+        let work = budget.remaining; let bytes = crate::bounded_output::active_remaining().unwrap();
+        let heap = crate::test_allocation_observer::current_metrics().allocated;
+        let mut edges = Directory::<EdgeId>::new(function, &mut budget,
+            "cleanup referenced edge directory").unwrap();
+        let mut exits = Directory::<crate::cleanup_plan::ExitTargetId>::new(function, &mut budget,
+            "cleanup referenced exit directory").unwrap();
+        for block in &function.cleanup_plan.blocks {
+            match &block.terminator {
+                CleanupTerminator::Goto(edge) => { assert!(edges.insert(function, *edge, &mut budget).unwrap()); }
+                CleanupTerminator::Branch(branch) => for edge in branch {
+                    assert!(edges.insert(function, *edge, &mut budget).unwrap());
+                },
+                CleanupTerminator::Exit(exit) => { assert!(exits.insert(function, *exit, &mut budget).unwrap()); }
+            }
+        }
+        let cost = (work - budget.remaining, bytes - crate::bounded_output::active_remaining().unwrap(),
+            crate::test_allocation_observer::current_metrics().allocated - heap);
+        drop(edges); drop(exits); drop(budget); cost
+    }));
+    assert!(!refused && !allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed);
+    cost
+}
+
+EDGEASSERTIONS:
+        let old = observe(&program, function, Receiver::Original, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
+        let new = observe(&program, function, Receiver::Current, MAX_REPLAY_WORK_UNITS, 1 << 26, Some(&expected));
+        let paid = observe(&program, function, Receiver::PaidBefore, MAX_REPLAY_WORK_UNITS,
+            1 << 26, Some(&expected));
+        eprintln!("{} original={old:?} paid_before={paid:?} current={new:?}; physical delta={} work delta={} debit delta={}",
+            function.id.as_str(), paid.5 as i128 - old.5 as i128,
+            paid.1 as i128 - old.1 as i128, paid.2 as i128 - old.2 as i128);
+        assert!(old.0 && paid.0 && new.0 && !old.3 && !paid.3 && !new.3);
+        assert!(old.4.is_none() && paid.4.is_none() && new.4.is_none());
+        let removed = removed_directory_cost(&program, function);
+        eprintln!("{} removed_edge_and_exit_directories={removed:?}", function.id.as_str());
+        assert_eq!(paid.1, new.1.checked_add(removed.0).unwrap());
+        assert_eq!(paid.2, new.2.checked_add(removed.1).unwrap());
+        assert_eq!(paid.5, new.5.checked_add(removed.2).unwrap());
+        if !function.cleanup_plan.edges.is_empty() {
+            assert!(new.1 < paid.1 && new.2 < paid.2 && new.5 < paid.5);
+            saved = true;
+        }
+
+EXITASSERTIONS(same setup,removedop exitonly):
+        let removed = removed_directory_cost(&program, function);
+        assert_eq!(paid.1, new.1.checked_add(removed.0).unwrap());
+        assert_eq!(paid.2, new.2.checked_add(removed.1).unwrap());
+        assert_eq!(paid.5, new.5.checked_add(removed.2).unwrap());
+        eprintln!("{} removed_exit_directory={removed:?}", function.id.as_str());
+
+PAIDHELPER:
+//! Complete paid transitive receiving results; original root helpers stay compiled.
+use super::*;
+mod regions;
+pub(super) use regions::expected_exit_regions;
+
+pub(super) fn validate_place(
+    function: &ResolvedFunction,
+    place: &CleanupPlace,
+    storage: &BTreeSet<StorageId>,
+    leaves: &Leaves,
+    budget: &mut ReplayBudget,
+) -> Result<Vec<LivenessFlagId>, Diagnostic> {
+    if !budget.pays_allocations() {
+        return crate::cleanup_plan::replay::validate_place(function, place, storage, leaves);
+    }
+    budget.reserve_bytes(function, 0, "cleanup place receiving")?;
+    budget.charge(function, 0, "cleanup place receiving")?;
+    if !storage.contains(&place.storage) {
+        return Err(replay_error(function, "cleanup place references unknown storage"));
+    }
+    // Nested helper return and this helper's initialized/receiving result overlap.
+    budget.reserve_bytes(function,
+        2 * std::mem::size_of::<&mut ReplayBudget>()
+            + std::mem::size_of::<Result<Vec<LivenessFlagId>, Diagnostic>>()
+            + std::mem::size_of::<Vec<LivenessFlagId>>(), "cleanup place receiving")?;
+    budget.charge(function, 4, "cleanup place receiving")?;
+    let under = leaves.under_with_budget(function, place, budget)?;
+    if under.is_empty() {
+        return Err(replay_error(function, "cleanup place has no droppable leaf"));
+    }
+    Ok(under)
+}
+
+
+Directory.new zeroauthonly. Actualinsert paysoriginalnode/initializer/relocation/comparison/rebalance. Removedmicrophase sameowner afterfullcurrentbootstrap in EXACToldterminatorinsertionorder; heapdelta justcomponent but outerobserverincludesbootstrap+Drop. No exemption. EXITbridge/current differonlyexitdir; EDGEbothdirs. Allhostile/exactshortzero expandto3routes. Answer concretefindings, no runtimeapproval.

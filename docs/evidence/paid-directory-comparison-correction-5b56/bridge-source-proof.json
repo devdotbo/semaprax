@@ -5,8 +5,8 @@
     "old_original_sha256": "44125f7673c49b07323bb21c9450cee518b54d73a1015baeee350f85bd3822fc",
     "substitutions": 11,
     "extra_namespace_adapter": "function-name only; sibling test module has identical original relative scopes",
-    "new_test_sha256": "2ab19002d618858c85fab244f9adcff79156f19c7d71c5f1b13d5f74978a1fe0",
-    "lines": 733
+    "new_test_sha256": "edbe421055d030c81e8efb1dca442985619e6d5ec22f11d968b41b5fe7d20b33",
+    "lines": 735
   },
   {
     "kind": "exit",
@@ -14,7 +14,7 @@
     "old_original_sha256": "2abc2f14fce631b4c2cb24d107e1909d7b93ec7490fe24c6ba814b9997aac5c9",
     "substitutions": 11,
     "extra_namespace_adapter": "function-name only; sibling test module has identical original relative scopes",
-    "new_test_sha256": "8bf75f7129afe7942eb156c552a56d81b00682bbbefc82c5c9533b0cb837d967",
-    "lines": 728
+    "new_test_sha256": "090e2193d1fc028a6cc038c07ae85334fbe9084a9332cc64b44f1d0bc64100e9",
+    "lines": 730
   }
 ]
