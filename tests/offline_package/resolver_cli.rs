@@ -48,7 +48,8 @@ fn help_keeps_frozen_package_resolve_usage_and_current_cli_snapshot() {
     // /test; the scaffold gained a library template, a service template, and
     // a collection-record template; `new` became public; `fmt --manifest`, `doc`, `verify`,
     // `agent`, `query`, `change`, `package`, `add`, `fetch`, `service`, and
-    // `review` were added; and `doctor` became standalone.
+    // `review` were added; native tests gained opt-in diagnostic timings;
+    // and `doctor` became standalone.
     const RESTORED: [(&str, &str); 47] = [
         ("semaprax doctor [--profile <id>] [--target native|web|all] [--json]\n", ""),
         ("semaprax agent run <definition.json> <task.json> <transcript.json> [--evidence|--trace]\n", ""),
@@ -137,7 +138,7 @@ fn help_keeps_frozen_package_resolve_usage_and_current_cli_snapshot() {
             "semaprax test [semaprax.toml|--manifest-path path] [--json] [--max-steps N] [--max-bytes N]\n",
         ),
         (
-            "semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N]\n",
+            "semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N] [--native-timing]\n",
             "",
         ),
         (
@@ -391,6 +392,21 @@ fn help_keeps_frozen_package_resolve_usage_and_current_cli_snapshot() {
         &format!("{PROFILE_DOCTOR_LINE}{NEW_PROJECT_LINE}{BUILD_LINE}"),
         1,
     );
+    // These four documented usage additions follow the frozen catalogue.
+    // Pin the complete new projection, then restore every historical witness.
+    assert_eq!(current.len(), 7_103);
+    assert_eq!(fnv1a64(current.as_bytes()), 0x32cd_4c09_5de9_3da9);
+    const JSON_AND_FUSED_LINES: [&str; 4] = [
+        "semaprax json-codec <project> --source <module-path> --type <record-id> --output <new-file> [--profile <selector>] [--max-string-bytes <1..64>] [--max-array-items <1..256>]\n",
+        "semaprax json-codec <project> --plan <plan-json> --output <new-bundle>\n",
+        "semaprax build <file> --profile fused-construction-v1 --managed-bytes N --target native|wasm [-o|--output fresh-path] [--json]\n",
+        "semaprax run <file> --profile fused-construction-v1 --managed-bytes N [--json] [--max-steps N|--native]\n",
+    ];
+    assert_eq!(JSON_AND_FUSED_LINES.concat().len(), 475);
+    for line in JSON_AND_FUSED_LINES {
+        assert_eq!(current.matches(line).count(), 1);
+        current = current.replacen(line, "", 1);
+    }
     // Data-only literal decoding, calibrated against the retained old pin below.
     // Restore only this intentional usage change before all historical witnesses.
     assert_eq!(current.len(), 6_628);
