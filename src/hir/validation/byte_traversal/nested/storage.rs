@@ -23,7 +23,13 @@ impl Storage {
     pub(super) fn acquire() -> Result<Self, Refused> {
         let observed = active_remaining().is_some();
         let bytes = size_of::<Self>() + size_of::<Result<Self, Refused>>();
+        #[cfg(test)]
+        if observed {
+            super::tests::record_request(bytes);
+        }
         if observed && !reserve_active_required(bytes) {
+            #[cfg(test)]
+            super::tests::record_failure();
             return Err(Refused::Budget);
         }
         Ok(Self {
@@ -40,7 +46,13 @@ impl Storage {
             self.first.set(Some(Refused::Detached));
             return Err(Refused::Detached);
         }
+        #[cfg(test)]
+        if self.observed {
+            super::tests::record_request(bytes);
+        }
         if self.observed && !reserve_active_required(bytes) {
+            #[cfg(test)]
+            super::tests::record_failure();
             self.first.set(Some(Refused::Budget));
             return Err(Refused::Budget);
         }

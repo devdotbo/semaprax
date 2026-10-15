@@ -239,6 +239,38 @@ pub(super) fn draft_bytes(
     }))
 }
 
+pub(super) fn draft_bytes_in<'a>(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &'a ResolvedFunction,
+    census: Option<&crate::hir::ByteTraversalCensus<'a>>,
+    expression: &'a ResolvedExpr,
+    cfg: &Cfg<'_>,
+    aliases: &BTreeMap<ValueId, Place>,
+    work: &mut WorkCounter,
+) -> Result<Option<CfgDraft>, Diagnostic> {
+    let region = if let Some(census) = census {
+        census.region(program, function, expression)?
+    } else {
+        crate::hir::byte_traversal_region(expression)?
+    };
+    let Some(region) = region else { return Ok(None); };
+    charge(work)?;
+    let place = expression_place(region.view)
+        .ok_or_else(|| error("borrowed byte traversal view lacks its exact place"))?;
+    Ok(Some(CfgDraft {
+        site: expression.id.clone(),
+        origin: resolve_origin(aliases, place, work)?,
+        origin_span: region.view.span,
+        parent_root: None,
+        binding: None,
+        start: cfg.node(expression, LoanPointPhase::Before)?,
+        seeds: [cfg.node(expression, LoanPointPhase::After)?]
+            .into_iter()
+            .collect(),
+        cause: LoanCause::TraversalFreeze,
+    }))
+}
+
 #[cfg(test)]
 mod tests;
 #[cfg(test)] mod origin_tests;

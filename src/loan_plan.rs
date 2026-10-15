@@ -504,13 +504,14 @@ fn build_cfg_plan_counted(
         }
     }
 
+    let byte_census = crate::hir::ByteTraversalCensus::optional(program, function)?;
     let mut drafts = Vec::<CfgDraft>::new();
     for expression in &cfg.expressions {
         charge(work)?;
         if let Some(draft) = traversal::draft(program, expression, &cfg, work)? {
             drafts.push(draft);
         }
-        if let Some(draft) = traversal::draft_bytes(expression, &cfg, &aliases, work)? {
+        if let Some(draft) = traversal::draft_bytes_in(program, function, byte_census.as_ref(), expression, &cfg, &aliases, work)? {
             drafts.push(draft);
         }
         let view = match &expression.kind {
