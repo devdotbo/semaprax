@@ -592,7 +592,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/expression_facts/ordinary_before.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/tests/ordinary_before.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/tests/accounting_scope.rs"),
-        include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer.rs"),
+        concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer_before_cursor.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/capacity/cursor_tests.rs")),
         concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),

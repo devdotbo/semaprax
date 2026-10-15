@@ -2,6 +2,10 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Bind browser graph pins to the hosted paid-cursor result: both complete graphs retain every prior byte after only the declared 458,408-byte bill reduction and self-digest restoration. Preserve all historical cursor controls.
+
+- Grow the paid expression-fact Arena cursor at actual traversal depth, reserving complete replacement backing and copy work while retaining the original factory, type cursor, depth ceiling, producer controls and preclone payload charges.
+
 - Remove real held-slot and initial weighted-root Result carriers from the direct factored replay path (#831), retaining the complete original constructor fees and strict old receiver independently. Source review and inverse proofs passed; executable qualification and measured gains remain pending.
 
 - Resolve explicitly selected starter plan and command-source paths once from

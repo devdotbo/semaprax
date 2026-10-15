@@ -684,12 +684,20 @@ pub(crate) fn retry_fixture_input(source: &str, current: &str) -> String {
 
 // Every older runtime source guard retains the exact297 physical domain.
 fn before_direct_carriers831(source: &str, current: &str) -> String {
+    let current = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main1e3-source-integration-20261015/current-to-7a87.json"
+        )),
+        source,
+        current,
+    );
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/direct-canonical-carriers-831-20261015/current-to-297.json"
         )),
         source,
-        current,
+        &current,
     )
 }

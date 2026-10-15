@@ -1314,7 +1314,7 @@ macro_rules! lower_source_inventory {
             include_str!("../../../../../src/test_allocation_observer/free_order.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/saved.rs"),
-            include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/producer.rs"),
+            concat!(include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/producer.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/producer_before_cursor.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/capacity/cursor_tests.rs")),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/borrowed/tests.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/expression_facts/borrowed.rs"),
