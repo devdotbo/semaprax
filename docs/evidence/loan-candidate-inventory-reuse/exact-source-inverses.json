@@ -68,12 +68,12 @@
       {
         "name": "actual-loan-inventory-reuse-1",
         "before": "                    crate::test_allocation_observer::measure(|| {\n                        let owner = CfgReservation::acquire().unwrap();\n                        let result = with_limit(limit, || build(program, function, &owner));\n                        assert!(owner.first().is_none());\n                        match result {\n",
-        "after": "                    crate::test_allocation_observer::measure(|| {\n                        let owner = CfgReservation::acquire().unwrap();\n                        let result = with_limit(limit, || super::inventory_before::build(program, function, &owner));\n                        assert!(owner.first().is_none());\n                        match result {\n"
+        "after": "                    crate::test_allocation_observer::measure(|| {\n                        let owner = CfgReservation::acquire().unwrap();\n                        let result = crate::loan_plan::funded_flat::with_inventory_work_limit(limit, || crate::loan_plan::funded_flat::before_inventory_for_test(program, function, &owner));\n                        assert!(owner.first().is_none());\n                        match result {\n"
       },
       {
         "name": "actual-loan-inventory-reuse-2",
         "before": "        let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n            let owner = CfgReservation::acquire().unwrap();\n            let plan = build(program, function, &owner)\n                .unwrap_or_else(|_| panic!(\"restored production cap\"));\n            assert_eq!(plan, function.loan_plan);\n",
-        "after": "        let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n            let owner = CfgReservation::acquire().unwrap();\n            let plan = super::inventory_before::build(program, function, &owner)\n                .unwrap_or_else(|_| panic!(\"restored production cap\"));\n            assert_eq!(plan, function.loan_plan);\n"
+        "after": "        let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n            let owner = CfgReservation::acquire().unwrap();\n            let plan = crate::loan_plan::funded_flat::before_inventory_for_test(program, function, &owner)\n                .unwrap_or_else(|_| panic!(\"restored production cap\"));\n            assert_eq!(plan, function.loan_plan);\n"
       }
     ]
   },
