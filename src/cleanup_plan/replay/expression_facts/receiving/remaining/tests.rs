@@ -315,10 +315,14 @@ fn complete_exit_work_exact_short_and_sticky_use_the_same_original_budget() {
 #[test]
 fn complete_root_receivers_and_only_named_paid_caller_projections_keep_original_bytes() {
     use sha2::{Digest, Sha256};
+    let selected = include_str!("selected.rs");
+    let adapter = "pub(in crate::cleanup_plan::replay::expression_facts::receiving) fn unique_status";
+    assert_eq!(selected.matches(adapter).count(), 1);
+    let selected = selected.replacen(adapter, "pub(super) fn unique_status", 1);
     assert_eq!(
         format!(
             "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!("selected.rs")))
+            crate::digest_hex::LowerHex(Sha256::digest(selected.as_bytes()))
         ),
         "446459444ef20047d571618c4c85c4cb1d8151f52bb1b587221c795bff0b52b9"
     );

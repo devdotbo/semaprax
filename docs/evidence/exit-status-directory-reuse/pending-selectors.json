@@ -1,0 +1,17 @@
+[
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs"
+  },
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::exit_status_full_receivers_keep_exact_short_zero_work_bytes_and_tree_fallback",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs"
+  },
+  {
+    "harness": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::exit_status_authentication_precedes_debit_and_foreign_active_stays_sticky",
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs"
+  }
+]

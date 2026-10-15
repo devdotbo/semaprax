@@ -1087,6 +1087,7 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, "            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining/selected.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/continuation_storage/paid_receiving.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/continuation_receiver.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/continuation_receiver/tests.rs\"),", "        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),");
         undo(&mut current, r####"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
                     include_str!("../src/bounded_output/loan_inner_stage_tests.rs"),

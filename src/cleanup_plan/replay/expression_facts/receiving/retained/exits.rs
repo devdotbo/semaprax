@@ -3,11 +3,12 @@ use super::*;
 use super::super::remaining::{selected, validate_finalizer_actions};
 
 const BORROW_BYTES: usize = 2 * std::mem::size_of::<&StatusSources<'static>>()
+    + 2 * std::mem::size_of::<&Option<Directory<&'static StatusSourceId>>>()
     + std::mem::size_of::<Option<&Directory<&'static StatusSourceId>>>()
     + std::mem::size_of::<&Directory<&'static StatusSourceId>>()
     + std::mem::size_of::<bool>();
-// Two argument copies, optional-return assignment, pattern receiver and branch.
-const BORROW_UNITS: usize = 5;
+// Two token and two as_ref argument copies, return/pattern assignment, branch.
+const BORROW_UNITS: usize = 7;
 
 pub(in crate::cleanup_plan::replay) fn validate_exits_retained(
     program: &dyn crate::cleanup::ReplayContext,
@@ -183,3 +184,6 @@ pub(in crate::cleanup_plan::replay) fn validate_exits_retained(
     Ok(())
 }
 
+
+#[cfg(test)]
+mod tests;
