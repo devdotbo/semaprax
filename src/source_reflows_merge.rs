@@ -684,10 +684,24 @@ pub(crate) fn retry_fixture_input(source: &str, current: &str) -> String {
 
 // Every older runtime source guard retains the exact297 physical domain.
 fn before_direct_carriers831(source: &str, current: &str) -> String {
+    let observed = before_cached_acquisition_observer(source, current);
+    let current = observed.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/direct-canonical-carriers-831-20261015/current-to-297.json"
+        )),
+        source,
+        current,
+    )
+}
+
+// Test-only observation successor; exact prior runtime tables remain immutable.
+fn before_cached_acquisition_observer(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/cached-prelude-acquisition-observer-7a87/current-to-7a87.json"
         )),
         source,
         current,
