@@ -82,9 +82,9 @@
     "sha256": "95817364bdfd1db1dfd73ee27994caf32a66c75d4f2f10464acf590e6a219a7c",
     "edits": [
       {
-        "name": "retained-status-directory-0",
-        "before": "    }\n    {\n        let mut current = include_str!(\"../../../replay.rs\").to_owned();\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n",
-        "after": "    }\n    {\n        let mut current = crate::cleanup_plan::replay::expression_facts::receiving::before_status_retention(\"src/cleanup_plan/replay.rs\", include_str!(\"../../../replay.rs\"));\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n"
+        "name": "explicit-retained-status-hook-0",
+        "before": "    {\n        let mut current = include_str!(\"../../../replay.rs\").to_owned();\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n",
+        "after": "    {\n        let mut current = include_str!(\"../../../replay.rs\").to_owned();\n        undo(&mut current,\n            r#\"    let statuses = expression_facts::receiving::validate_status_sources_retained(\n        function, &expression_facts, budget,\n    )?;\"#,\n            r#\"    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;\"#);\n        undo(&mut current, \"    expression_facts::receiving::validate_blocks_and_edges_retained(\\n\",\n            \"    expression_facts::receiving::validate_blocks_and_edges(\\n\");\n        undo(&mut current, \"        budget,\\n        &statuses,\\n    )?;\",\n            \"        budget,\\n    )?;\");\n        undo(&mut current, \"pub(crate) use live_oracle::with_financed_test_oracles;\", \"pub(super) use live_oracle::with_financed_test_oracles;\");\n        undo(\n"
       }
     ]
   }
