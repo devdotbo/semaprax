@@ -1,5 +1,10 @@
 # Changelog
 
+- Reuse the already paid status-source directory between ordinary cleanup
+  validation passes, retaining membership work and complete original receivers.
+  Bind the retained token to its function, replay payer and active ledger;
+  focused work/refusal/Drop qualification and full retry recovery remain pending.
+
 - Author immutable paid nominal payloads and one invocation-owned base-prelude
   bundle through workspace fresh, borrowed and selective resolution (#827,
   #828). Preserve complete declaration maps, wire projections and old receivers;
