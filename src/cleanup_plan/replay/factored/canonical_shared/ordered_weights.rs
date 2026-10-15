@@ -292,15 +292,27 @@ impl OrderedWeights {
                 next = self.nodes[next as usize].left;
             }
         }
-        Iter { owner: self, next }
+        Iter {
+            owner: Some(self),
+            next,
+        }
     }
 }
 
 // Replaces the old BTreeMap borrowed iterator at its existing loop sites.
 // Its two-word control has no backing; the numeric arena owns every node.
 pub(super) struct Iter<'a> {
-    owner: &'a OrderedWeights,
+    owner: Option<&'a OrderedWeights>,
     next: Link,
+}
+impl Iter<'_> {
+    // Same iterator carrier as a borrowed ordered traversal; no empty map owner.
+    pub(super) fn empty() -> Self {
+        Self {
+            owner: None,
+            next: NONE,
+        }
+    }
 }
 impl<'a> Iterator for Iter<'a> {
     type Item = (&'a usize, &'a u64);
@@ -308,12 +320,13 @@ impl<'a> Iterator for Iter<'a> {
         if self.next == NONE {
             return None;
         }
-        if self.owner.used == 1 && self.owner.nodes.is_empty() {
+        let owner = self.owner.expect("nonempty iterator has an owner");
+        if owner.used == 1 && owner.nodes.is_empty() {
             self.next = NONE;
-            return Some((&self.owner.first_key, &self.owner.first_weight));
+            return Some((&owner.first_key, &owner.first_weight));
         }
         let at = self.next;
-        let nodes = &self.owner.nodes;
+        let nodes = &owner.nodes;
         self.next = nodes[at as usize].right;
         if self.next != NONE {
             while nodes[self.next as usize].left != NONE {
@@ -369,7 +382,7 @@ mod tests;
 // the measured region. The complete original assertions are archived/inverted.
 #[cfg(test)]
 pub(super) fn assert_closure_result(
-    actual: &Result<Option<std::rc::Rc<OrderedWeights>>, Diagnostic>,
+    actual: &Result<Option<impl ClosureEntries + std::fmt::Debug>, Diagnostic>,
     expected: &Result<Option<std::rc::Rc<std::collections::BTreeMap<usize, u64>>>, Diagnostic>,
 ) {
     match (actual, expected) {
@@ -377,7 +390,7 @@ pub(super) fn assert_closure_result(
         (Ok(None), Ok(None)) => {}
         (Ok(Some(actual)), Ok(Some(expected))) => {
             assert!(
-                actual.iter().eq(expected.iter()),
+                actual.entries().eq(expected.iter()),
                 "complete numeric closure entries"
             );
         }
@@ -386,12 +399,29 @@ pub(super) fn assert_closure_result(
 }
 #[cfg(test)]
 pub(super) fn assert_closure_view(
-    actual: Option<&std::rc::Rc<OrderedWeights>>,
+    actual: Option<&impl ClosureEntries>,
     expected: Option<&std::rc::Rc<std::collections::BTreeMap<usize, u64>>>,
 ) {
     match (actual, expected) {
         (None, None) => {}
-        (Some(actual), Some(expected)) => assert!(actual.iter().eq(expected.iter())),
+        (Some(actual), Some(expected)) => assert!(actual.entries().eq(expected.iter())),
         _ => panic!("closure view mismatch: actual={actual:?}, expected={expected:?}"),
+    }
+}
+
+#[cfg(test)]
+pub(super) trait ClosureEntries {
+    fn entries(&self) -> Iter<'_>;
+}
+#[cfg(test)]
+impl ClosureEntries for std::rc::Rc<OrderedWeights> {
+    fn entries(&self) -> Iter<'_> {
+        self.iter()
+    }
+}
+#[cfg(test)]
+impl ClosureEntries for super::empty_closure::Closure {
+    fn entries(&self) -> Iter<'_> {
+        self.iter()
     }
 }

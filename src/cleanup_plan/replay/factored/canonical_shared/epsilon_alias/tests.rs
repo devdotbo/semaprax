@@ -91,7 +91,7 @@ fn epsilon_chain_diamond_duplicate_and_mixed_maps_keep_every_old_entry_and_actua
                     if node != sink && state.moves().is_empty() && state.epsilon().len() == 1 {
                         let child = state.epsilon()[0];
                         if let (Some(value), Some(inner)) = (value, current.closures.get(&child)) {
-                            assert!(Rc::ptr_eq(value, inner));
+                            assert!(super::super::empty_closure::Closure::same_storage(value, inner));
                             assert!(!Rc::ptr_eq(
                                 old_value.unwrap(),
                                 old.alias_view(&child).unwrap()
@@ -477,7 +477,7 @@ fn epsilon_sink_with_one_child_keeps_own_entry_and_general_backing() {
                 actual.as_ref().unwrap().as_ref().unwrap().get(&child),
                 Some(&1)
             );
-            assert!(!Rc::ptr_eq(
+            assert!(!super::super::empty_closure::Closure::same_storage(
                 current.closures.get(&sink).unwrap(),
                 current.closures.get(&child).unwrap()
             ));

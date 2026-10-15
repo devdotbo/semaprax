@@ -22,13 +22,21 @@ mod before_scratch;
 #[cfg(test)]
 mod before_targets;
 pub(in crate::cleanup_plan::replay) mod closure_receiving;
+mod empty_closure;
+mod empty_memo;
 #[cfg(test)]
 mod epsilon_alias;
 #[cfg(test)]
 mod held_auth_tests;
+#[cfg(test)]
 mod memo;
 mod ordered_alias;
 mod ordered_weights;
+use empty_closure::View;
+#[cfg(test)]
+mod before_empty;
+#[cfg(test)]
+mod empty_closure_tests;
 #[cfg(test)]
 mod scratch_tests;
 #[cfg(test)]
@@ -113,7 +121,7 @@ fn share_weighted(
 pub(super) struct Canonicalizer<'a> {
     automaton: &'a Automaton,
     sink: usize,
-    closures: memo::RetainedMemo<Rc<ordered_weights::OrderedWeights>>,
+    closures: empty_memo::RetainedMemo<Rc<ordered_weights::OrderedWeights>>,
     states: BTreeMap<SharedWeighted, usize>,
     ids: BTreeMap<(u64, Vec<(Label, usize)>), usize>,
     cursor: Vec<(usize, bool)>,
@@ -127,7 +135,7 @@ impl<'a> Canonicalizer<'a> {
         Self {
             automaton,
             sink,
-            closures: memo::RetainedMemo::new(),
+            closures: empty_memo::RetainedMemo::new(),
             states: BTreeMap::new(),
             ids: BTreeMap::new(),
             cursor: Vec::new(),
@@ -187,14 +195,25 @@ impl<'a> Canonicalizer<'a> {
         function: &ResolvedFunction,
         root: usize,
         budget: &mut ReplayBudget,
-    ) -> Result<Option<Rc<ordered_weights::OrderedWeights>>, Diagnostic> {
+    ) -> Result<Option<empty_closure::Closure>, Diagnostic> {
+        // Reject foreign/sticky owners before any adapter payment.
         self.closures.authenticate_retained(function, budget);
         if self.closures.failed() {
             return Err(self.closures.failure());
         }
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                empty_closure::Closure::ADAPTER_CONTROLS,
+                "test closure compatibility receiving",
+            )?;
+        }
         if self.closures.contains_key(&root) {
             budget.charge(function, 1, "factored closure cursor")?;
-            return Ok(self.closures.get(&root).cloned());
+            return Ok(Some(match self.closures.get(&root) {
+                Some(value) => empty_closure::Closure::Shared(Rc::clone(value)),
+                None => empty_closure::Closure::Empty,
+            }));
         }
         if budget.pays_allocations() {
             budget.reserve_bytes(
@@ -204,16 +223,29 @@ impl<'a> Canonicalizer<'a> {
             )?;
         }
         let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
-        self.closure_with_receiving(function, root, budget, &mut receiving)
+        self.closure_query(function, root, budget, &mut receiving);
+        receiving.ready = false;
+        if receiving.refusal.is_some() {
+            return Err(receiving.refusal.take().expect("published refusal"));
+        }
+        if receiving.overflow {
+            return Ok(None);
+        }
+        Ok(Some(match self.closures.get(&root) {
+            Some(value) => empty_closure::Closure::Shared(Rc::clone(value)),
+            None => empty_closure::Closure::Empty,
+        }))
     }
+
+    #[cfg(test)]
     fn closure_with_receiving(
         &mut self,
         function: &ResolvedFunction,
         root: usize,
         budget: &mut ReplayBudget,
         receiving: &mut closure_receiving::ClosureReceiving,
-    ) -> Result<Option<Rc<ordered_weights::OrderedWeights>>, Diagnostic> {
-        // Validate the held destination before any ordinary payer query.
+    ) -> Result<Option<empty_closure::Closure>, Diagnostic> {
+        // Compatibility adapter is priced separately from actual unit production.
         if !receiving.valid(function, budget) {
             self.closures.reject_after_error();
             return Err(Diagnostic::io("SPX-H006", String::new()));
@@ -222,36 +254,99 @@ impl<'a> Canonicalizer<'a> {
         if self.closures.failed() {
             return Err(self.closures.failure());
         }
-        // The cached route still executes its original one cursor work debit.
-        // It constructs neither a cursor Vec nor a closure_inner Result
-        // receiver. Cold memo authentication still pays its real Result; warm
-        // authentication writes directly into its already paid refusal slot.
-        if self.closures.contains_key(&root) {
-            budget.charge(function, 1, "factored closure cursor")?;
-            return Ok(self.closures.get(&root).cloned());
-        }
         if budget.pays_allocations() {
             budget.reserve_bytes(
                 function,
-                closure_receiving::ClosureReceiving::PER_MISS_CONTROLS
-                    + std::mem::size_of::<Result<(), Diagnostic>>()
-                    + std::mem::size_of::<usize>(),
-                "factored closure scratch receiving",
+                empty_closure::Closure::ADAPTER_CONTROLS,
+                "test closure compatibility receiving",
             )?;
         }
-        self.prepare_scratch(function, budget)?;
+        self.closure_query(function, root, budget, receiving);
+        receiving.ready = false;
+        if receiving.refusal.is_some() {
+            return Err(receiving.refusal.take().expect("published refusal"));
+        }
+        if receiving.overflow {
+            return Ok(None);
+        }
+        Ok(Some(match self.closures.get(&root) {
+            Some(value) => empty_closure::Closure::Shared(Rc::clone(value)),
+            None => empty_closure::Closure::Empty,
+        }))
+    }
+
+    // Actual production gateway returns unit into the already-paid status/refusal
+    // owner. No Rc clone, Option<closure>, Result or new owned view is returned.
+    fn closure_query(
+        &mut self,
+        function: &ResolvedFunction,
+        root: usize,
+        budget: &mut ReplayBudget,
+        receiving: &mut closure_receiving::ClosureReceiving,
+    ) {
+        if !receiving.valid(function, budget) {
+            self.closures.reject_after_error();
+            receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
+            receiving.ready = true;
+            return;
+        }
+        self.closures.authenticate_retained(function, budget);
+        if self.closures.failed() {
+            receiving.refusal = Some(self.closures.failure());
+            receiving.ready = true;
+            return;
+        }
+        match self.closures.state(&root) {
+            1 => {
+                receiving.empty = true;
+                receiving.overflow = false;
+                match budget.charge(function, 1, "factored closure cursor") {
+                    Ok(()) => receiving.ready = true,
+                    Err(error) => {
+                        receiving.refusal = Some(error);
+                        receiving.ready = true;
+                    }
+                }
+                return;
+            }
+            2 => {
+                receiving.empty = false;
+                receiving.overflow = false;
+                match budget.charge(function, 1, "factored closure cursor") {
+                    Ok(()) => receiving.ready = true,
+                    Err(error) => {
+                        receiving.refusal = Some(error);
+                        receiving.ready = true;
+                    }
+                }
+                return;
+            }
+            _ => {}
+        }
+        if budget.pays_allocations() {
+            if let Err(error) = budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::QUERY_CONTROLS
+                    + std::mem::size_of::<Result<(), Diagnostic>>()
+                    + std::mem::size_of::<usize>(),
+                "factored held closure producer and take controls",
+            ) {
+                receiving.refusal = Some(error);
+                receiving.ready = true;
+                return;
+            }
+        }
+        if let Err(error) = self.prepare_scratch(function, budget) {
+            receiving.refusal = Some(error);
+            receiving.ready = true;
+            return;
+        }
         receiving.begin();
         #[cfg(test)]
         closure_receiving::note_producer();
         self.closure_inner_into(function, root, budget, receiving);
         self.cursor.clear();
         assert!(receiving.ready, "unit producer settled exactly once");
-        receiving.ready = false;
-        // Do not construct an Option<Diagnostic> receiver on success.
-        if receiving.refusal.is_some() {
-            return Err(receiving.refusal.take().expect("published refusal"));
-        }
-        Ok(receiving.value.take())
     }
 
     fn closure_inner_into(
@@ -313,6 +408,14 @@ impl<'a> Canonicalizer<'a> {
                 #[cfg(test)]
                 app_census::eligible();
                 let Some(inner) = self.closures.get(&state.epsilon()[0]) else {
+                    if self.closures.contains_key(&state.epsilon()[0]) {
+                        attempt!(budget.charge(function, 1, "factored skeleton closure"));
+                        attempt!(self.closures.insert_empty_retained(function, node, budget));
+                        if node == root {
+                            receiving.empty = true;
+                        }
+                        continue;
+                    }
                     receiving.refuse(replay_error(function, "cleanup CFG contains a cycle"));
                     return;
                 };
@@ -335,6 +438,14 @@ impl<'a> Canonicalizer<'a> {
                 app_census::published();
                 continue;
             }
+            if node != self.sink && state.moves().is_empty() && state.epsilon().is_empty() {
+                attempt!(budget.charge(function, 1, "factored skeleton closure"));
+                attempt!(self.closures.insert_empty_retained(function, node, budget));
+                if node == root {
+                    receiving.empty = true;
+                }
+                continue;
+            }
             if budget.pays_allocations() {
                 attempt!(budget.reserve_bytes(
                     function,
@@ -351,6 +462,9 @@ impl<'a> Canonicalizer<'a> {
             }
             for target in state.epsilon() {
                 let Some(inner) = self.closures.get(target) else {
+                    if self.closures.contains_key(target) {
+                        continue;
+                    }
                     receiving.refuse(replay_error(function, "cleanup CFG contains a cycle"));
                     return;
                 };
@@ -366,7 +480,7 @@ impl<'a> Canonicalizer<'a> {
                         .get_mut(inner_node)
                         .expect("inserted ordered weight");
                     let Some(sum) = slot.checked_add(*routes) else {
-                        receiving.complete(None);
+                        receiving.finish_overflow();
                         return;
                     };
                     *slot = sum;
@@ -386,7 +500,7 @@ impl<'a> Canonicalizer<'a> {
                 .closures
                 .insert_retained(function, node, budget, || Rc::new(closure)));
         }
-        receiving.complete(self.closures.get(&root).cloned());
+        receiving.ready = true;
     }
 
     /// The accepted weight of `state` and its weighted successor per label.
@@ -403,47 +517,64 @@ impl<'a> Canonicalizer<'a> {
         let borrowed;
         let mut owned;
         let closed = if let [(node, 1)] = state.as_slice() {
+            self.closure_query(function, *node, budget, receiving);
+            receiving.ready = false;
+            if receiving.refusal.is_some() {
+                return Err(receiving.refusal.take().expect("published refusal"));
+            }
+            if receiving.overflow {
+                return Ok(None);
+            }
             if budget.pays_allocations() {
                 budget.reserve_bytes(
                     function,
-                    2 * std::mem::size_of::<Rc<ordered_weights::OrderedWeights>>()
-                        + 2 * std::mem::size_of::<&ordered_weights::OrderedWeights>(),
+                    2 * std::mem::size_of::<View<'_>>()
+                        + if receiving.empty {
+                            0
+                        } else {
+                            2 * std::mem::size_of::<Rc<ordered_weights::OrderedWeights>>()
+                        },
                     "factored borrowed closed receiving controls",
                 )?;
             }
-            let Some(closure) = self.closure_with_receiving(function, *node, budget, receiving)?
-            else {
-                return Ok(None);
-            };
-            // The old empty accumulator saw every unique closure entry once.
-            // Execute its checked arithmetic and EACH original work debit,
-            // before moving the authenticated immutable owner into the view.
-            for (_, routes) in closure.iter() {
-                let Some(_sum) = routes
-                    .checked_mul(1)
-                    .and_then(|product| 0_u64.checked_add(product))
-                else {
-                    return Ok(None);
-                };
-                budget.charge(function, 1, "factored weighted route addition")?;
+            if let Some(inner) = self.closures.get(node) {
+                // Same original Rc initializer/receiver, now after its branch
+                // is known and before either value is constructed.
+                let closure = Rc::clone(inner);
+                for (_, routes) in closure.iter() {
+                    let Some(_sum) = routes
+                        .checked_mul(1)
+                        .and_then(|product| 0_u64.checked_add(product))
+                    else {
+                        return Ok(None);
+                    };
+                    budget.charge(function, 1, "factored weighted route addition")?;
+                }
+                borrowed = closure;
+                View::Shared(&borrowed)
+            } else {
+                View::Empty
             }
-            borrowed = closure;
-            &*borrowed
         } else {
             if budget.pays_allocations() {
                 budget.reserve_bytes(
                     function,
-                    ordered_weights::OrderedWeights::CONTROLS
-                        + 2 * std::mem::size_of::<&ordered_weights::OrderedWeights>(),
+                    ordered_weights::OrderedWeights::CONTROLS + 2 * std::mem::size_of::<View<'_>>(),
                     "factored ordered accumulator controls",
                 )?;
             }
             owned = ordered_weights::OrderedWeights::new();
             for (node, weight) in state.iter() {
-                let Some(closure) =
-                    self.closure_with_receiving(function, *node, budget, receiving)?
-                else {
+                self.closure_query(function, *node, budget, receiving);
+                receiving.ready = false;
+                if receiving.refusal.is_some() {
+                    return Err(receiving.refusal.take().expect("published refusal"));
+                }
+                if receiving.overflow {
                     return Ok(None);
+                }
+                let Some(closure) = self.closures.get(node) else {
+                    continue;
                 };
                 for (inner, routes) in closure.iter() {
                     let Some(sum) = routes.checked_mul(*weight).and_then(|product| {
@@ -461,7 +592,7 @@ impl<'a> Canonicalizer<'a> {
                     *owned.get_mut(inner).expect("inserted ordered weight") = sum;
                 }
             }
-            &owned
+            View::Shared(&owned)
         };
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         if budget.pays_allocations() {
