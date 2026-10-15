@@ -6,6 +6,8 @@ mod flags;
 mod nominal;
 mod nominal_base;
 mod nominal_construction;
+mod nominal_paid_values;
+mod nominal_paid_inheritance;
 mod nominal_rollback;
 #[cfg(test)]
 pub(crate) mod nominal_original;

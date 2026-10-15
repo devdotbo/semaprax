@@ -10,6 +10,7 @@ pub(super) fn resolve<E>(
         Enter(&'a Type),
         Finish(DeclarationId, usize),
     }
+    payer.bytes(2 * size_of::<Frame<'_>>() + size_of::<Result<Option<ResolvedType>, E>>())?;
     let mut frames = payer.vec(1)?;
     frames.push(Frame::Enter(ty));
     let mut resolved = index.nominal_drop_workspace.types();

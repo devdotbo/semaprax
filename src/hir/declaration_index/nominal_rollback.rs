@@ -250,7 +250,10 @@ impl Workspace {
         let guards = 2 * size_of::<PendingVec<ResolvedVariantCaseDeclaration>>()
             + 2 * size_of::<PendingVec<ResolvedFieldDeclaration>>()
             + 2 * size_of::<PendingType>()
-            + 2 * size_of::<PendingTypes>();
+            + 2 * size_of::<PendingTypes>()
+            + 2 * size_of::<ResolvedFieldDeclaration>()
+            + 2 * size_of::<ResolvedVariantCaseDeclaration>()
+            + 2 * size_of::<ResolvedType>();
         // The pthread std Mutex stores its native object in a lazy Box.
         // Fund that exact native Layout before its first lock, then initialize
         // it here so rollback never performs that allocation after refusal.

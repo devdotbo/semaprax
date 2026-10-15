@@ -79,6 +79,16 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "after": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
+        "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),",
+        "count": 1
+      },
+      {
+        "after": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_rollback.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),",
+        "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_rollback.rs\"),",
+        "count": 1
+      },
+      {
         "before": "",
         "after": "            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n",
         "count": 1

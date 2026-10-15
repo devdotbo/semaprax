@@ -1087,6 +1087,13 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),
+        include_str!("../src/hir/declaration_index/nominal_paid_values.rs"),
+        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####);
+        // Additive current child join, before every unchanged original inventory hook.
+        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),
+        include_str!("../src/hir/declaration_index/nominal_construction.rs"),
+        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),"####);
         undo(&mut current, r#####"        concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),"#####, r#####"        include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),"#####);

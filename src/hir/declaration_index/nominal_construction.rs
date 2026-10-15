@@ -17,11 +17,18 @@ impl<E> Payer<'_, E> {
     pub(super) fn identity(&mut self, text: &str) -> Result<DeclarationId, E> {
         match self {
             Self::Legacy(identity) => identity(text),
-            Self::Funded(reserve) => DeclarationId::paid_borrowed(text, reserve),
+            Self::Funded(reserve) => {
+                reserve(2 * size_of::<DeclarationId>() + size_of::<Result<DeclarationId, E>>())?;
+                DeclarationId::paid_borrowed(text, reserve)
+            }
         }
     }
     pub(super) fn text(&mut self, text: &str) -> Result<String, E> {
-        self.bytes(size_of::<String>().saturating_add(text.len()))?;
+        self.bytes(
+            (2 * size_of::<String>())
+                .saturating_add(size_of::<Result<String, E>>())
+                .saturating_add(text.len()),
+        )?;
         Ok(text.to_owned())
     }
     pub(super) fn node<K, V>(&mut self) -> Result<(), E> {

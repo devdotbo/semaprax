@@ -1,0 +1,1374 @@
+Review ONLY this bounded new constructor/payer/source-type/rollback packet. Tool-disabled, no execution or delegation. Focus actual allocations-before-reserve, any allocation after selected callback Err, Rust type/borrow errors, left-to-right first semantic error order, recursive Drop guards. All inherited class/typefacts paid children are authored independently and pending: do not assume they are funded or report their missing definitions as unexpected. Old full constructor remains in independent nominal_original; current legacy identity-only route remains explicitly unfunded. No cap/quotas/margin or test weakening is permitted. Installed pthread Mutex lazy backing was separately funded and primed in predecessor. This is WIP source, not build evidence. Give concrete source-line findings within600words; separate definite blockers from uncertainty.
+
+===== src/hir/declaration_index/identity_payer.rs:1-616 sha256 a5a0185a1bf8ba55d57c10fce5412a55424583386dcb2abb62bf16ab1b5552bc =====
+1: //! Explicit identity payer for initial declaration-index construction.
+2: //! Semantic diagnostics retain their original owned compatibility contract.
+3: //! Identity refusal returns the exact caller error, without rendering a new
+4: //! Diagnostic, allocating a report, or consulting an ambient ledger.
+5: use super::nominal_construction::Payer;
+6: use super::*;
+7: 
+8: #[derive(Debug)]
+9: pub(in crate::hir) enum IdentityIndexError<E> {
+10:     Semantic(Diagnostic),
+11:     Identity(E),
+12: }
+13: impl<E> From<Diagnostic> for IdentityIndexError<E> {
+14:     fn from(error: Diagnostic) -> Self {
+15:         Self::Semantic(error)
+16:     }
+17: }
+18: 
+19: impl DeclarationIndex {
+20:     /// The caller owns this reservation callback and its refusal carrier.
+21:     /// Only bytes are requested from it; exact source text is constructed
+22:     /// internally, so callback presence cannot substitute declaration IDs.
+23:     #[cfg_attr(
+24:         not(test),
+25:         allow(
+26:             dead_code,
+27:             reason = "explicit index payer seam awaits caller-owned outward report migration"
+28:         )
+29:     )]
+30:     pub(in crate::hir) fn from_verified_with_identity_reservation<E>(
+31:         program: &dyn ProgramSource,
+32:         prelude: &[crate::ast::TypeDeclaration],
+33:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+34:     ) -> Result<Self, IdentityIndexError<E>> {
+35:         Self::from_verified_with_identity_payer(program, prelude, &mut |text| {
+36:             DeclarationId::paid_borrowed(text, &mut reserve)
+37:         })
+38:     }
+39: 
+40:     /// Same explicit owner, now also acquiring the canonical nominal owners.
+41:     #[cfg(test)]
+42:     pub(in crate::hir) fn from_verified_with_nominal_reservation<E>(
+43:         program: &dyn ProgramSource,
+44:         prelude: &[crate::ast::TypeDeclaration],
+45:         reserve: impl FnMut(usize) -> Result<(), E>,
+46:     ) -> Result<Self, IdentityIndexError<E>> {
+47:         Self::from_verified_with_nominal_base(program, prelude, None, reserve)
+48:     }
+49: 
+50:     pub(in crate::hir) fn from_verified_with_nominal_base<E>(
+51:         program: &dyn ProgramSource,
+52:         prelude: &[crate::ast::TypeDeclaration],
+53:         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+54:         mut reserve: impl FnMut(usize) -> Result<(), E>,
+55:     ) -> Result<Self, IdentityIndexError<E>> {
+56:         if let Some(base) = base {
+57:             Self::reserve_base_receivers(base, &mut reserve)
+58:                 .map_err(IdentityIndexError::Identity)?;
+59:         }
+60:         let workspace = super::nominal_rollback::Workspace::acquire(program, prelude, &mut reserve)
+61:             .map_err(IdentityIndexError::Identity)?;
+62:         reserve(
+63:             2 * std::mem::size_of::<Payer<'_, E>>()
+64:                 + 2 * std::mem::size_of::<Self>()
+65:                 + std::mem::size_of::<Result<Self, IdentityIndexError<E>>>(),
+66:         )
+67:         .map_err(IdentityIndexError::Identity)?;
+68:         let mut index = Self::build_nominal_index(
+69:             program,
+70:             prelude,
+71:             &mut Payer::Funded(&mut reserve),
+72:             true,
+73:             workspace,
+74:             base,
+75:         )?;
+76:         index
+77:             .share_nominal_payloads(&mut reserve)
+78:             .map_err(IdentityIndexError::Identity)?;
+79:         index.nominal_drop_workspace.finish();
+80:         Ok(index)
+81:     }
+82: 
+83:     // Borrow the callback on the stack so this complete constructor specializes
+84:     // by its refusal carrier, rather than every caller closure type. No callback
+85:     // escapes and reservation order and owned identity construction stay exact.
+86:     pub(super) fn from_verified_with_identity_payer<E>(
+87:         program: &dyn ProgramSource,
+88:         prelude: &[crate::ast::TypeDeclaration],
+89:         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+90:     ) -> Result<Self, IdentityIndexError<E>> {
+91:         Self::build_nominal_index(
+92:             program,
+93:             prelude,
+94:             &mut Payer::Legacy(identity),
+95:             false,
+96:             super::nominal_rollback::Workspace::default(),
+97:             None,
+98:         )
+99:     }
+100: 
+101:     fn build_nominal_index<E>(
+102:         program: &dyn ProgramSource,
+103:         prelude: &[crate::ast::TypeDeclaration],
+104:         payer: &mut Payer<'_, E>,
+105:         canonical_nominals: bool,
+106:         workspace: super::nominal_rollback::Workspace,
+107:         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+108:     ) -> Result<Self, IdentityIndexError<E>> {
+109:         let mut index = Self::default();
+110:         index.nominal_drop_workspace = workspace;
+111:         for declaration in program.types().iter().chain(prelude) {
+112:             if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+113:                 payer
+114:                     .top(&ty.name, DeclarationKind::Variant)
+115:                     .map_err(IdentityIndexError::Identity)?;
+116:                 index.insert_top_level(
+117:                     payer.text(&ty.name).map_err(IdentityIndexError::Identity)?,
+118:                     ty.id.clone(),
+119:                     DeclarationKind::Variant,
+120:                     IdentityOrigin::CompilerOwned,
+121:                 );
+122:                 index
+123:                     .type_parameters
+124:                     .insert(ty.id.clone(), ty.type_parameters.clone());
+125:                 continue;
+126:             }
+127:             let kind = match declaration.kind {
+128:                 TypeDeclarationKind::Resource { .. } => DeclarationKind::Resource,
+129:                 TypeDeclarationKind::Record { .. } => DeclarationKind::Record,
+130:                 TypeDeclarationKind::Class { .. } => DeclarationKind::Class,
+131:                 TypeDeclarationKind::Variant { .. } => DeclarationKind::Variant,
+132:             };
+133:             payer
+134:                 .top(&declaration.name, kind)
+135:                 .map_err(IdentityIndexError::Identity)?;
+136:             index.insert_top_level(
+137:                 payer
+138:                     .text(&declaration.name)
+139:                     .map_err(IdentityIndexError::Identity)?,
+140:                 payer
+141:                     .identity(&declaration.stable_id)
+142:                     .map_err(IdentityIndexError::Identity)?,
+143:                 kind,
+144:                 if crate::prelude::is_compiler_owned_id(&declaration.stable_id) {
+145:                     IdentityOrigin::CompilerOwned
+146:                 } else if declaration.explicit_id {
+147:                     IdentityOrigin::Explicit
+148:                 } else {
+149:                     IdentityOrigin::Automatic
+150:                 },
+151:             );
+152:             let owner = index.inserted_identity(&declaration.stable_id);
+153:             let mut parameters = payer
+154:                 .vec::<ResolvedTypeParameterDeclaration>(declaration.type_parameters.len())
+155:                 .map_err(IdentityIndexError::Identity)?;
+156:             for (ordinal, parameter) in declaration.type_parameters.iter().enumerate() {
+157:                 parameters.push(ResolvedTypeParameterDeclaration {
+158:                     name: payer
+159:                         .text(&parameter.name)
+160:                         .map_err(IdentityIndexError::Identity)?,
+161:                     index: u32::try_from(ordinal).map_err(|_| {
+162:                         Diagnostic::error(
+163:                             "SPX-H006",
+164:                             format!("type `{}` has too many parameters", declaration.name),
+165:                             declaration.span,
+166:                         )
+167:                         .at_path(program.path())
+168:                     })?,
+169:                     span: parameter.span,
+170:                 });
+171:             }
+172:             index.type_parameters.insert(owner, parameters);
+173:         }
+174:         for interface in program.interfaces() {
+175:             let interface_id = payer
+176:                 .identity(&interface.stable_id)
+177:                 .map_err(IdentityIndexError::Identity)?;
+178:             payer
+179:                 .top(&interface.name, DeclarationKind::Interface)
+180:                 .map_err(IdentityIndexError::Identity)?;
+181:             index.insert_top_level(
+182:                 payer
+183:                     .text(&interface.name)
+184:                     .map_err(IdentityIndexError::Identity)?,
+185:                 interface_id.clone(),
+186:                 DeclarationKind::Interface,
+187:                 IdentityOrigin::Explicit,
+188:             );
+189:             for import in &interface.imports {
+190:                 let import_id = payer
+191:                     .identity(&import.stable_id)
+192:                     .map_err(IdentityIndexError::Identity)?;
+193:                 payer
+194:                     .node::<String, DeclarationId>()
+195:                     .map_err(IdentityIndexError::Identity)?;
+196:                 index.imports_by_key.insert(
+197:                     payer
+198:                         .text(&import.stable_id)
+199:                         .map_err(IdentityIndexError::Identity)?,
+200:                     import_id.clone(),
+201:                 );
+202:                 if import.native_rust {
+203:                     payer
+204:                         .node::<String, DeclarationId>()
+205:                         .map_err(IdentityIndexError::Identity)?;
+206:                     index.native_rust_imports_by_name.insert(
+207:                         payer
+208:                             .text(&import.name)
+209:                             .map_err(IdentityIndexError::Identity)?,
+210:                         import_id.clone(),
+211:                     );
+212:                 }
+213:                 payer.owned().map_err(IdentityIndexError::Identity)?;
+214:                 index.insert_owned_declaration(
+215:                     interface_id.clone(),
+216:                     payer
+217:                         .text(&import.name)
+218:                         .map_err(IdentityIndexError::Identity)?,
+219:                     import_id,
+220:                     DeclarationKind::Import,
+221:                     IdentityOrigin::Explicit,
+222:                 );
+223:             }
+224:         }
+225:         for declaration in program.types().iter().chain(prelude) {
+226:             let TypeDeclarationKind::Resource { lifecycles } = &declaration.kind else {
+227:                 continue;
+228:             };
+229:             if let [lifecycle] = lifecycles.as_slice() {
+230:                 let lifecycle_id = lifecycle
+231:                     .stable_id
+232:                     .as_ref()
+233:                     .expect("verified lifecycle has an explicit identity");
+234:                 payer.owned().map_err(IdentityIndexError::Identity)?;
+235:                 index.insert_owned_declaration(
+236:                     index.inserted_identity(&declaration.stable_id),
+237:                     payer.text("drop").map_err(IdentityIndexError::Identity)?,
+238:                     payer
+239:                         .identity(lifecycle_id)
+240:                         .map_err(IdentityIndexError::Identity)?,
+241:                     DeclarationKind::ResourceDrop,
+242:                     IdentityOrigin::Explicit,
+243:                 );
+244:             }
+245:         }
+246:         for function in program.functions() {
+247:             let owner = payer
+248:                 .identity(&function.stable_id)
+249:                 .map_err(IdentityIndexError::Identity)?;
+250:             payer
+251:                 .top(&function.name, DeclarationKind::Function)
+252:                 .map_err(IdentityIndexError::Identity)?;
+253:             index.insert_top_level(
+254:                 payer
+255:                     .text(&function.name)
+256:                     .map_err(IdentityIndexError::Identity)?,
+257:                 owner.clone(),
+258:                 DeclarationKind::Function,
+259:                 if super::record_invariants::is_synthesized(&function.name) {
+260:                     IdentityOrigin::CompilerOwned
+261:                 } else if function.explicit_id {
+262:                     IdentityOrigin::Explicit
+263:                 } else {
+264:                     IdentityOrigin::Automatic
+265:                 },
+266:             );
+267:             let mut parameters = payer
+268:                 .vec::<ResolvedTypeParameterDeclaration>(function.type_parameters.len())
+269:                 .map_err(IdentityIndexError::Identity)?;
+270:             for (ordinal, parameter) in function.type_parameters.iter().enumerate() {
+271:                 parameters.push(ResolvedTypeParameterDeclaration {
+272:                     name: payer
+273:                         .text(&parameter.name)
+274:                         .map_err(IdentityIndexError::Identity)?,
+275:                     index: u32::try_from(ordinal).map_err(|_| {
+276:                         Diagnostic::error(
+277:                             "SPX-H006",
+278:                             format!("function `{}` has too many parameters", function.name),
+279:                             function.span,
+280:                         )
+281:                         .at_path(program.path())
+282:                     })?,
+283:                     span: parameter.span,
+284:                 });
+285:             }
+286:             index.type_parameters.insert(owner, parameters);
+287:         }
+288:         if program
+289:             .interfaces()
+290:             .iter()
+291:             .flat_map(|interface| &interface.imports)
+292:             .filter(|import| import.native_rust)
+293:             .any(|import| index.functions_by_name.contains_key(&import.name))
+294:         {
+295:             return Err(IdentityIndexError::Semantic(
+296:                 Diagnostic::error(
+297:                     "SPX-B107",
+298:                     "Native Rust Interop declaration set is unsupported: symbol collision",
+299:                     Span::default(),
+300:                 )
+301:                 .at_path(program.path()),
+302:             ));
+303:         }
+304:         for declaration in program.types().iter().chain(prelude) {
+305:             let (TypeDeclarationKind::Record { fields }
+306:             | TypeDeclarationKind::Class { fields, .. }) = &declaration.kind
+307:             else {
+308:                 continue;
+309:             };
+310:             let owner = index.inserted_identity(&declaration.stable_id);
+311:             payer
+312:                 .vector::<ResolvedFieldDeclaration>(fields.len())
+313:                 .map_err(IdentityIndexError::Identity)?;
+314:             let mut resolved_fields = index
+315:                 .nominal_drop_workspace
+316:                 .fields::<ResolvedFieldDeclaration>(fields.len());
+317:             for (ordinal, field) in fields.iter().enumerate() {
+318:                 let ty = payer
+319:                     .resolve_type(&index, &field.ty, Some(&owner))
+320:                     .map_err(IdentityIndexError::Identity)?
+321:                     .ok_or_else(|| {
+322:                         Diagnostic::error(
+323:                             "SPX-H001",
+324:                             format!("unresolved field type `{}`", field.ty),
+325:                             field.span,
+326:                         )
+327:                         .at_path(program.path())
+328:                     })?;
+329:                 let field_index = u32::try_from(ordinal).map_err(|_| {
+330:                     Diagnostic::error(
+331:                         "SPX-H006",
+332:                         format!("record `{}` has too many fields", declaration.name),
+333:                         declaration.span,
+334:                     )
+335:                     .at_path(program.path())
+336:                 })?;
+337:                 let ty = index.nominal_drop_workspace.resolved_type(ty);
+338:                 let resolved = ResolvedFieldDeclaration {
+339:                     id: payer
+340:                         .identity(&field.stable_id)
+341:                         .map_err(IdentityIndexError::Identity)?,
+342:                     name: payer
+343:                         .text(&field.name)
+344:                         .map_err(IdentityIndexError::Identity)?,
+345:                     index: field_index,
+346:                     ty: ty.into_type(),
+347:                     span: field.span,
+348:                 };
+349:                 resolved_fields.push(resolved);
+350:                 let resolved = resolved_fields.last().expect("guarded constructed field");
+351:                 payer
+352:                     .field(&resolved.name)
+353:                     .map_err(IdentityIndexError::Identity)?;
+354:                 index.insert_field_view(
+355:                     owner.clone(),
+356:                     resolved,
+357:                     if field.explicit_id {
+358:                         IdentityOrigin::Explicit
+359:                     } else {
+360:                         IdentityOrigin::Automatic
+361:                     },
+362:                 );
+363:             }
+364:             index
+365:                 .record_fields
+366:                 .insert(owner, resolved_fields.into_vec());
+367:         }
+368:         for declaration in program.types().iter() {
+369:             let TypeDeclarationKind::Class { fields, methods } = &declaration.kind else {
+370:                 continue;
+371:             };
+372:             let owner = index.inserted_identity(&declaration.stable_id);
+373:             payer
+374:                 .vector::<ResolvedFieldDeclaration>(fields.len())
+375:                 .map_err(IdentityIndexError::Identity)?;
+376:             let mut resolved_fields = index
+377:                 .nominal_drop_workspace
+378:                 .fields::<ResolvedFieldDeclaration>(fields.len());
+379:             for (ordinal, field) in fields.iter().enumerate() {
+380:                 let ty = payer
+381:                     .resolve_type(&index, &field.ty, Some(&owner))
+382:                     .map_err(IdentityIndexError::Identity)?
+383:                     .ok_or_else(|| {
+384:                         Diagnostic::error(
+385:                             "SPX-H001",
+386:                             format!("unresolved class field type `{}`", field.ty),
+387:                             field.span,
+388:                         )
+389:                         .at_path(program.path())
+390:                     })?;
+391:                 let field_index = u32::try_from(ordinal).map_err(|_| {
+392:                     Diagnostic::error(
+393:                         "SPX-H006",
+394:                         format!("class `{}` has too many fields", declaration.name),
+395:                         declaration.span,
+396:                     )
+397:                     .at_path(program.path())
+398:                 })?;
+399:                 let ty = index.nominal_drop_workspace.resolved_type(ty);
+400:                 let resolved = ResolvedFieldDeclaration {
+401:                     id: payer
+402:                         .identity(&field.stable_id)
+403:                         .map_err(IdentityIndexError::Identity)?,
+404:                     name: payer
+405:                         .text(&field.name)
+406:                         .map_err(IdentityIndexError::Identity)?,
+407:                     index: field_index,
+408:                     ty: ty.into_type(),
+409:                     span: field.span,
+410:                 };
+411:                 resolved_fields.push(resolved);
+412:                 let resolved = resolved_fields.last().expect("guarded constructed field");
+413:                 payer
+414:                     .field(&resolved.name)
+415:                     .map_err(IdentityIndexError::Identity)?;
+416:                 index.insert_field_view(
+417:                     owner.clone(),
+418:                     resolved,
+419:                     if field.explicit_id {
+420:                         IdentityOrigin::Explicit
+421:                     } else {
+422:                         IdentityOrigin::Automatic
+423:                     },
+424:                 );
+425:             }
+426:             index
+427:                 .record_fields
+428:                 .insert(owner.clone(), resolved_fields.into_vec());
+429:             for method in methods {
+430:                 let method_id = payer
+431:                     .identity(&method.stable_id)
+432:                     .map_err(IdentityIndexError::Identity)?;
+433:                 if index.declarations.contains_key(&method_id) {
+434:                     return Err(IdentityIndexError::Semantic(
+435:                         Diagnostic::error(
+436:                             "SPX-S102",
+437:                             format!("duplicate stable id `{}`", method.stable_id),
+438:                             method.span,
+439:                         )
+440:                         .at_path(program.path()),
+441:                     ));
+442:                 }
+443:                 payer.owned().map_err(IdentityIndexError::Identity)?;
+444:                 index.insert_owned_declaration(
+445:                     owner.clone(),
+446:                     payer
+447:                         .text(&method.name)
+448:                         .map_err(IdentityIndexError::Identity)?,
+449:                     method_id,
+450:                     DeclarationKind::Function,
+451:                     if method.explicit_id {
+452:                         IdentityOrigin::Explicit
+453:                     } else {
+454:                         IdentityOrigin::Automatic
+455:                     },
+456:                 );
+457:                 if !method.type_parameters.is_empty() {
+458:                     return Err(IdentityIndexError::Semantic(
+459:                         Diagnostic::error(
+460:                             "SPX-T224",
+461:                             format!(
+462:                                 "class method `{}` cannot declare generic parameters in this slice",
+463:                                 method.name
+464:                             ),
+465:                             method.span,
+466:                         )
+467:                         .at_path(program.path()),
+468:                     ));
+469:                 }
+470:                 index
+471:                     .type_parameters
+472:                     .insert(index.inserted_identity(&method.stable_id), Vec::new());
+473:             }
+474:         }
+475:         for declaration in program.types().iter().chain(prelude) {
+476:             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
+477:                 continue;
+478:             };
+479:             if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+480:                 index.insert_base_variant(ty);
+481:                 continue;
+482:             }
+483:             let owner = index.inserted_identity(&declaration.stable_id);
+484:             payer
+485:                 .vector::<ResolvedVariantCaseDeclaration>(cases.len())
+486:                 .map_err(IdentityIndexError::Identity)?;
+487:             let mut resolved_cases = index
+488:                 .nominal_drop_workspace
+489:                 .fields::<ResolvedVariantCaseDeclaration>(cases.len());
+490:             for (case_ordinal, case) in cases.iter().enumerate() {
+491:                 let case_id = payer
+492:                     .identity(&case.stable_id)
+493:                     .map_err(IdentityIndexError::Identity)?;
+494:                 let case_index = u32::try_from(case_ordinal).map_err(|_| {
+495:                     Diagnostic::error(
+496:                         "SPX-H006",
+497:                         format!("variant `{}` has too many cases", declaration.name),
+498:                         declaration.span,
+499:                     )
+500:                     .at_path(program.path())
+501:                 })?;
+502:                 payer
+503:                     .case(&case.name)
+504:                     .map_err(IdentityIndexError::Identity)?;
+505:                 index.insert_case(
+506:                     owner.clone(),
+507:                     payer
+508:                         .text(&case.name)
+509:                         .map_err(IdentityIndexError::Identity)?,
+510:                     case_id.clone(),
+511:                     if crate::prelude::is_compiler_owned_id(&case.stable_id) {
+512:                         IdentityOrigin::CompilerOwned
+513:                     } else if case.explicit_id {
+514:                         IdentityOrigin::Explicit
+515:                     } else {
+516:                         IdentityOrigin::Automatic
+517:                     },
+518:                 );
+519:                 payer
+520:                     .vector::<ResolvedFieldDeclaration>(case.fields.len())
+521:                     .map_err(IdentityIndexError::Identity)?;
+522:                 let mut resolved_fields = index
+523:                     .nominal_drop_workspace
+524:                     .fields::<ResolvedFieldDeclaration>(case.fields.len());
+525:                 for (field_ordinal, field) in case.fields.iter().enumerate() {
+526:                     let ty = payer
+527:                         .resolve_type(&index, &field.ty, Some(&owner))
+528:                         .map_err(IdentityIndexError::Identity)?
+529:                         .ok_or_else(|| {
+530:                             Diagnostic::error(
+531:                                 "SPX-H001",
+532:                                 format!("unresolved case field type `{}`", field.ty),
+533:                                 field.span,
+534:                             )
+535:                             .at_path(program.path())
+536:                         })?;
+537:                     let field_index = u32::try_from(field_ordinal).map_err(|_| {
+538:                         Diagnostic::error(
+539:                             "SPX-H006",
+540:                             format!(
+541:                                 "variant case `{}::{}` has too many fields",
+542:                                 declaration.name, case.name
+543:                             ),
+544:                             case.span,
+545:                         )
+546:                         .at_path(program.path())
+547:                     })?;
+548:                     let ty = index.nominal_drop_workspace.resolved_type(ty);
+549:                     let resolved = ResolvedFieldDeclaration {
+550:                         id: payer
+551:                             .identity(&field.stable_id)
+552:                             .map_err(IdentityIndexError::Identity)?,
+553:                         name: payer
+554:                             .text(&field.name)
+555:                             .map_err(IdentityIndexError::Identity)?,
+556:                         index: field_index,
+557:                         ty: ty.into_type(),
+558:                         span: field.span,
+559:                     };
+560:                     resolved_fields.push(resolved);
+561:                     let resolved = resolved_fields.last().expect("guarded constructed field");
+562:                     payer
+563:                         .field(&resolved.name)
+564:                         .map_err(IdentityIndexError::Identity)?;
+565:                     index.insert_case_field_view(
+566:                         case_id.clone(),
+567:                         resolved,
+568:                         if crate::prelude::is_compiler_owned_id(&field.stable_id) {
+569:                             IdentityOrigin::CompilerOwned
+570:                         } else if field.explicit_id {
+571:                             IdentityOrigin::Explicit
+572:                         } else {
+573:                             IdentityOrigin::Automatic
+574:                         },
+575:                     );
+576:                 }
+577:                 if !canonical_nominals {
+578:                     index
+579:                         .case_fields
+580:                         .insert(case_id.clone(), resolved_fields.clone());
+581:                 }
+582:                 resolved_cases.push(ResolvedVariantCaseDeclaration {
+583:                     id: case_id,
+584:                     name: payer
+585:                         .text(&case.name)
+586:                         .map_err(IdentityIndexError::Identity)?,
+587:                     index: case_index,
+588:                     fields: resolved_fields.into_vec(),
+589:                     span: case.span,
+590:                 });
+591:             }
+592:             index.variant_cases.insert(owner, resolved_cases.into_vec());
+593:         }
+594:         if canonical_nominals {
+595:             index.materialize_class_inheritance_paid(program, &mut |n| payer.bytes(n))?;
+596:         } else {
+597:             index.materialize_class_inheritance(program)?;
+598:         }
+599:         let facts = if canonical_nominals {
+600:             index.populate_type_facts_paid(&mut |n| payer.bytes(n))?
+601:         } else {
+602:             index.populate_type_facts()
+603:         };
+604:         if !facts {
+605:             return Err(IdentityIndexError::Semantic(
+606:                 Diagnostic::error(
+607:                     "SPX-T217",
+608:                     "record declarations contain an illegal by-value recursive layout",
+609:                     Span::default(),
+610:                 )
+611:                 .at_path(program.path()),
+612:             ));
+613:         }
+614:         Ok(index)
+615:     }
+616: }
+
+===== src/hir/declaration_index/nominal_construction.rs:1-143 sha256 989e1f397fca097c2e8706a8732edcb98337dab9a4b702484986be815837ff41 =====
+1: //! Exact acquisition operations for the actual canonical nominal constructor.
+2: //! Legacy identity-only construction retains its independent unpriced helpers.
+3: use super::*;
+4: use std::mem::size_of;
+5: mod types;
+6: pub(super) enum Payer<'a, E> {
+7:     Legacy(&'a mut dyn FnMut(&str) -> Result<DeclarationId, E>),
+8:     Funded(&'a mut dyn FnMut(usize) -> Result<(), E>),
+9: }
+10: impl<E> Payer<'_, E> {
+11:     pub(super) fn bytes(&mut self, bytes: usize) -> Result<(), E> {
+12:         match self {
+13:             Self::Legacy(_) => Ok(()),
+14:             Self::Funded(reserve) => reserve(bytes),
+15:         }
+16:     }
+17:     pub(super) fn identity(&mut self, text: &str) -> Result<DeclarationId, E> {
+18:         match self {
+19:             Self::Legacy(identity) => identity(text),
+20:             Self::Funded(reserve) => DeclarationId::paid_borrowed(text, reserve),
+21:         }
+22:     }
+23:     pub(super) fn text(&mut self, text: &str) -> Result<String, E> {
+24:         self.bytes(size_of::<String>().saturating_add(text.len()))?;
+25:         Ok(text.to_owned())
+26:     }
+27:     pub(super) fn node<K, V>(&mut self) -> Result<(), E> {
+28:         self.bytes(
+29:             crate::cleanup_plan::replay_btree_node_upper::<K, V>()
+30:                 .expect("fixed constructor map layout"),
+31:         )
+32:     }
+33:     pub(super) fn vector<T>(&mut self, len: usize) -> Result<(), E> {
+34:         self.bytes(
+35:             (2 * size_of::<Vec<T>>())
+36:                 .saturating_add(size_of::<Result<Vec<T>, E>>())
+37:                 .saturating_add(len.saturating_mul(size_of::<T>())),
+38:         )
+39:     }
+40:     pub(super) fn vec<T>(&mut self, len: usize) -> Result<Vec<T>, E> {
+41:         self.vector::<T>(len)?;
+42:         let values = Vec::with_capacity(len);
+43:         assert_eq!(values.capacity(), len);
+44:         Ok(values)
+45:     }
+46:     pub(super) fn grow<T>(&mut self, values: &mut Vec<T>, additional: usize) -> Result<(), E> {
+47:         if values.capacity() - values.len() >= additional {
+48:             return Ok(());
+49:         }
+50:         let capacity = values
+51:             .capacity()
+52:             .saturating_mul(2)
+53:             .max(values.len().saturating_add(additional))
+54:             .max(4);
+55:         let mut next = self.vec(capacity)?;
+56:         next.append(values);
+57:         *values = next;
+58:         Ok(())
+59:     }
+60:     pub(super) fn top(&mut self, name: &str, kind: DeclarationKind) -> Result<(), E> {
+61:         // Caller creates one name; insert_top_level clones the map key once.
+62:         if matches!(
+63:             kind,
+64:             DeclarationKind::Resource
+65:                 | DeclarationKind::Record
+66:                 | DeclarationKind::Class
+67:                 | DeclarationKind::Variant
+68:                 | DeclarationKind::Function
+69:         ) {
+70:             self.bytes(size_of::<String>().saturating_add(name.len()))?;
+71:             self.node::<String, DeclarationId>()?;
+72:         }
+73:         self.node::<DeclarationId, Declaration>()?;
+74:         self.bytes(2 * size_of::<Declaration>())
+75:     }
+76:     pub(super) fn owned(&mut self) -> Result<(), E> {
+77:         self.node::<DeclarationId, Declaration>()?;
+78:         self.bytes(2 * size_of::<Declaration>())
+79:     }
+80:     pub(super) fn field(&mut self, name: &str) -> Result<(), E> {
+81:         // One metadata name and its owner/name key; the original field/type
+82:         // remains in the guarded canonical sequence and is never deep-cloned.
+83:         self.bytes(2 * size_of::<String>() + 2 * name.len())?;
+84:         self.node::<(DeclarationId, String), DeclarationId>()?;
+85:         self.owned()
+86:     }
+87:     pub(super) fn case(&mut self, name: &str) -> Result<(), E> {
+88:         self.bytes(size_of::<String>() + name.len())?;
+89:         self.node::<(DeclarationId, String), DeclarationId>()?;
+90:         self.owned()
+91:     }
+92:     pub(super) fn resolve_type(
+93:         &mut self,
+94:         index: &DeclarationIndex,
+95:         ty: &Type,
+96:         owner: Option<&DeclarationId>,
+97:     ) -> Result<Option<ResolvedType>, E> {
+98:         if matches!(self, Self::Legacy(_)) {
+99:             return Ok(index.resolve_source_type(ty, owner));
+100:         }
+101:         types::resolve(index, ty, owner, self)
+102:     }
+103: }
+104: impl DeclarationIndex {
+105:     pub(super) fn insert_field_view(
+106:         &mut self,
+107:         owner: DeclarationId,
+108:         field: &ResolvedFieldDeclaration,
+109:         origin: IdentityOrigin,
+110:     ) {
+111:         self.fields_by_owner_name
+112:             .insert((owner.clone(), field.name.clone()), field.id.clone());
+113:         self.declarations.insert(
+114:             field.id.clone(),
+115:             Declaration {
+116:                 id: field.id.clone(),
+117:                 name: field.name.clone(),
+118:                 kind: DeclarationKind::Field,
+119:                 identity_origin: origin,
+120:                 owner: Some(owner),
+121:             },
+122:         );
+123:     }
+124:     pub(super) fn insert_case_field_view(
+125:         &mut self,
+126:         owner: DeclarationId,
+127:         field: &ResolvedFieldDeclaration,
+128:         origin: IdentityOrigin,
+129:     ) {
+130:         self.fields_by_owner_name
+131:             .insert((owner.clone(), field.name.clone()), field.id.clone());
+132:         self.declarations.insert(
+133:             field.id.clone(),
+134:             Declaration {
+135:                 id: field.id.clone(),
+136:                 name: field.name.clone(),
+137:                 kind: DeclarationKind::CaseField,
+138:                 identity_origin: origin,
+139:                 owner: Some(owner),
+140:             },
+141:         );
+142:     }
+143: }
+
+===== src/hir/declaration_index/nominal_construction/types.rs:1-121 sha256 933e1781239f31d57318ad9268dfb2265ad4c8571449a7982b33c8815291ebfb =====
+1: //! Complete source type receiver with prepaid frames/results/arguments.
+2: use super::*;
+3: pub(super) fn resolve<E>(
+4:     index: &DeclarationIndex,
+5:     ty: &Type,
+6:     owner: Option<&DeclarationId>,
+7:     payer: &mut Payer<'_, E>,
+8: ) -> Result<Option<ResolvedType>, E> {
+9:     enum Frame<'a> {
+10:         Enter(&'a Type),
+11:         Finish(DeclarationId, usize),
+12:     }
+13:     let mut frames = payer.vec(1)?;
+14:     frames.push(Frame::Enter(ty));
+15:     let mut resolved = index.nominal_drop_workspace.types();
+16:     while let Some(frame) = frames.pop() {
+17:         match frame {
+18:             Frame::Enter(ty) => {
+19:                 let value = match ty {
+20:                     Type::Function { parameters, result } => {
+21:                         if parameters.len() > 8 {
+22:                             return Ok(None);
+23:                         }
+24:                         // The independent receiver admits only direct scalar
+25:                         // function parameters/result, checked before allocation.
+26:                         if parameters.iter().any(|p| {
+27:                             super::super::super::function_value::resolve::source_scalar(p).is_none()
+28:                         }) {
+29:                             return Ok(None);
+30:                         }
+31:                         let Some(result) =
+32:                             super::super::super::function_value::resolve::source_scalar(result)
+33:                         else {
+34:                             return Ok(None);
+35:                         };
+36:                         let mut values = payer.vec(parameters.len())?;
+37:                         for p in parameters {
+38:                             values.push(
+39:                                 super::super::super::function_value::resolve::source_scalar(p)
+40:                                     .unwrap(),
+41:                             );
+42:                         }
+43:                         payer.bytes(size_of::<ResolvedType>() + size_of::<Box<ResolvedType>>())?;
+44:                         ResolvedType::Function {
+45:                             parameters: values,
+46:                             result: Box::new(result),
+47:                         }
+48:                     }
+49:                     Type::Named { name, arguments } => {
+50:                         if arguments.is_empty() {
+51:                             if let Some(owner) = owner {
+52:                                 if let Some(parameter) = index
+53:                                     .type_parameters(owner)
+54:                                     .and_then(|p| p.iter().find(|p| p.name == *name))
+55:                                 {
+56:                                     payer.grow(&mut resolved, 1)?;
+57:                                     resolved.push(ResolvedType::TypeParameter {
+58:                                         owner: owner.clone(),
+59:                                         index: parameter.index,
+60:                                     });
+61:                                     continue;
+62:                                 }
+63:                             }
+64:                         }
+65:                         let Some(declaration) = index.type_id(name) else {
+66:                             return Ok(None);
+67:                         };
+68:                         payer.grow(&mut frames, arguments.len().saturating_add(1))?;
+69:                         frames.push(Frame::Finish(declaration.clone(), arguments.len()));
+70:                         for argument in arguments.iter().rev() {
+71:                             frames.push(Frame::Enter(argument));
+72:                         }
+73:                         continue;
+74:                     }
+75:                     Type::Never => return Ok(None),
+76:                     Type::I64 => ResolvedType::I64,
+77:                     Type::I32 => ResolvedType::I32,
+78:                     Type::Char => ResolvedType::Char,
+79:                     Type::U8 => ResolvedType::U8,
+80:                     Type::Usize => ResolvedType::Usize,
+81:                     Type::ArrayU8(n) => ResolvedType::ArrayU8(*n),
+82:                     Type::F32 => ResolvedType::F32,
+83:                     Type::F64 => ResolvedType::F64,
+84:                     Type::Bool => ResolvedType::Bool,
+85:                     Type::String => ResolvedType::String,
+86:                     Type::Bytes => ResolvedType::Bytes,
+87:                     Type::OnceFunction => ResolvedType::OnceFunction,
+88:                     Type::OnceFunctionI64 => ResolvedType::OnceFunctionI64,
+89:                     Type::OnceFunctionI64Pair => ResolvedType::OnceFunctionI64Pair,
+90:                     Type::MutFunctionI64 => ResolvedType::MutFunctionI64,
+91:                     Type::Str => ResolvedType::Str,
+92:                     Type::SliceU8 => ResolvedType::SliceU8,
+93:                     Type::StringMap => ResolvedType::StringMap,
+94:                 };
+95:                 // Acquire result storage while the root is protected by the
+96:                 // already funded construction-only recursive Drop guard.
+97:                 let value = index.nominal_drop_workspace.resolved_type(value);
+98:                 payer.grow(&mut resolved, 1)?;
+99:                 resolved.push(value.into_type());
+100:             }
+101:             Frame::Finish(declaration, count) => {
+102:                 let Some(split) = resolved.len().checked_sub(count) else {
+103:                     return Ok(None);
+104:                 };
+105:                 let mut arguments = payer.vec(count)?;
+106:                 arguments.extend(resolved.drain(split..));
+107:                 // No growth is needed: draining count children frees a slot
+108:                 // except for a nullary nominal, whose growth is paid first.
+109:                 let value = index
+110:                     .nominal_drop_workspace
+111:                     .resolved_type(ResolvedType::Nominal {
+112:                         declaration,
+113:                         arguments,
+114:                     });
+115:                 payer.grow(&mut resolved, 1)?;
+116:                 resolved.push(value.into_type());
+117:             }
+118:         }
+119:     }
+120:     Ok((resolved.len() == 1).then(|| resolved.pop().unwrap()))
+121: }
+
+===== src/hir/declaration_index/nominal_rollback.rs:75-200 sha256 2e6542dd33e5bc9edb95149fdae6fc96fd111b6002e05b6f8bcaea800cc23c06 =====
+75:         maximum = maximum.max(stack.len());
+76:     }
+77:     Ok(maximum)
+78: }
+79: /// Construction-only Vec guard. The original Vec allocation and order are
+80: /// unchanged; all local recursive values share the one prepaid rollback frontier.
+81: pub(super) struct PendingVec<T: nominal_payload::NominalElement> {
+82:     values: Vec<T>,
+83:     scratch: Option<Scratch>,
+84: }
+85: impl<T: nominal_payload::NominalElement> PendingVec<T> {
+86:     pub(super) fn into_vec(mut self) -> Vec<T> {
+87:         std::mem::take(&mut self.values)
+88:     }
+89: }
+90: impl<T: nominal_payload::NominalElement> Deref for PendingVec<T> {
+91:     type Target = Vec<T>;
+92:     fn deref(&self) -> &Vec<T> {
+93:         &self.values
+94:     }
+95: }
+96: impl<T: nominal_payload::NominalElement> DerefMut for PendingVec<T> {
+97:     fn deref_mut(&mut self) -> &mut Vec<T> {
+98:         &mut self.values
+99:     }
+100: }
+101: impl<T: nominal_payload::NominalElement> Drop for PendingVec<T> {
+102:     fn drop(&mut self) {
+103:         if let Some(scratch) = &self.scratch {
+104:             let mut scratch = scratch.lock().expect("construction disposal lock");
+105:             for value in &mut self.values {
+106:                 value.drain_types(&mut |ty| nominal_payload::dispose(ty, &mut scratch));
+107:             }
+108:         }
+109:     }
+110: }
+111: pub(super) struct PendingType {
+112:     value: Option<ResolvedType>,
+113:     scratch: Option<Scratch>,
+114: }
+115: impl PendingType {
+116:     pub(super) fn into_type(mut self) -> ResolvedType {
+117:         self.value.take().expect("present construction type")
+118:     }
+119: }
+120: impl Drop for PendingType {
+121:     fn drop(&mut self) {
+122:         if let (Some(ty), Some(scratch)) = (self.value.take(), &self.scratch) {
+123:             nominal_payload::dispose(ty, &mut scratch.lock().expect("construction disposal lock"));
+124:         }
+125:     }
+126: }
+127: pub(super) struct PendingTypes {
+128:     values: Vec<ResolvedType>,
+129:     scratch: Option<Scratch>,
+130: }
+131: impl Deref for PendingTypes {
+132:     type Target = Vec<ResolvedType>;
+133:     fn deref(&self) -> &Self::Target {
+134:         &self.values
+135:     }
+136: }
+137: impl DerefMut for PendingTypes {
+138:     fn deref_mut(&mut self) -> &mut Self::Target {
+139:         &mut self.values
+140:     }
+141: }
+142: impl Drop for PendingTypes {
+143:     fn drop(&mut self) {
+144:         if let Some(s) = &self.scratch {
+145:             let mut s = s.lock().expect("construction disposal lock");
+146:             for ty in self.values.drain(..) {
+147:                 nominal_payload::dispose(ty, &mut s);
+148:             }
+149:         }
+150:     }
+151: }
+152: impl Workspace {
+153:     pub(super) fn types(&self) -> PendingTypes {
+154:         PendingTypes {
+155:             values: Vec::new(),
+156:             scratch: self.scratch.clone(),
+157:         }
+158:     }
+159:     pub(super) fn fields<T: nominal_payload::NominalElement>(
+160:         &self,
+161:         capacity: usize,
+162:     ) -> PendingVec<T> {
+163:         PendingVec {
+164:             values: Vec::with_capacity(capacity),
+165:             scratch: self.scratch.clone(),
+166:         }
+167:     }
+168:     pub(super) fn resolved_type(&self, value: ResolvedType) -> PendingType {
+169:         PendingType {
+170:             value: Some(value),
+171:             scratch: self.scratch.clone(),
+172:         }
+173:     }
+174:     pub(super) fn finish(&mut self) {
+175:         self.building = false;
+176:         // Every published nonempty sequence now has its own immutable paid
+177:         // owner. Never apply a source frontier to later host-mutated values.
+178:         self.scratch = None;
+179:     }
+180:     pub(super) fn acquire<E>(
+181:         program: &dyn ProgramSource,
+182:         prelude: &[crate::ast::TypeDeclaration],
+183:         reserve: &mut impl FnMut(usize) -> Result<(), E>,
+184:     ) -> Result<Self, E> {
+185:         // Replacing Vec map values enlarges actual BTree nodes. Acquire a
+186:         // complete current node upper bound per possible insertion in each
+187:         // changed map, in addition to the unchanged caller prebound. There is
+188:         // no credit for the old map or for omitted payload clones.
+189:         fn node<V>() -> usize {
+190:             crate::cleanup_plan::replay_btree_node_upper::<DeclarationId, V>()
+191:                 .expect("fixed nominal map layout")
+192:         }
+193:         for declaration in program.types().iter().chain(prelude) {
+194:             reserve(node::<NominalPayload<ResolvedTypeParameterDeclaration>>())?;
+195:             match &declaration.kind {
+196:                 TypeDeclarationKind::Record { .. } | TypeDeclarationKind::Class { .. } => {
+197:                     reserve(node::<NominalPayload<ResolvedFieldDeclaration>>())?;
+198:                 }
+199:                 TypeDeclarationKind::Variant { cases } => {
+200:                     reserve(node::<NominalPayload<ResolvedVariantCaseDeclaration>>())?;
+
+===== src/hir/declaration_index/nominal_rollback.rs:235-302 sha256 2e6542dd33e5bc9edb95149fdae6fc96fd111b6002e05b6f8bcaea800cc23c06 =====
+235:                             capacity = capacity.max(frontier(&field.ty, reserve)?);
+236:                         }
+237:                     }
+238:                 }
+239:                 TypeDeclarationKind::Resource { .. } => {}
+240:             }
+241:         }
+242:         #[repr(C)]
+243:         struct ArcCarrier<T> {
+244:             strong: usize,
+245:             weak: usize,
+246:             value: T,
+247:         }
+248:         // At most one outer cases guard, one fields guard and one resolved
+249:         // field type coexist. Price both initialization and receiving slots.
+250:         let guards = 2 * size_of::<PendingVec<ResolvedVariantCaseDeclaration>>()
+251:             + 2 * size_of::<PendingVec<ResolvedFieldDeclaration>>()
+252:             + 2 * size_of::<PendingType>()
+253:             + 2 * size_of::<PendingTypes>();
+254:         // The pthread std Mutex stores its native object in a lazy Box.
+255:         // Fund that exact native Layout before its first lock, then initialize
+256:         // it here so rollback never performs that allocation after refusal.
+257:         #[cfg(all(
+258:             unix,
+259:             not(any(
+260:                 target_os = "linux",
+261:                 target_os = "android",
+262:                 target_os = "freebsd",
+263:                 target_os = "openbsd",
+264:                 target_os = "dragonfly",
+265:                 target_os = "fuchsia"
+266:             ))
+267:         ))]
+268:         let mutex_backing = size_of::<libc::pthread_mutex_t>();
+269:         #[cfg(not(all(
+270:             unix,
+271:             not(any(
+272:                 target_os = "linux",
+273:                 target_os = "android",
+274:                 target_os = "freebsd",
+275:                 target_os = "openbsd",
+276:                 target_os = "dragonfly",
+277:                 target_os = "fuchsia"
+278:             ))
+279:         )))]
+280:         let mutex_backing = 0;
+281:         reserve(
+282:             size_of::<ArcCarrier<Mutex<Vec<ResolvedType>>>>()
+283:                 .saturating_add(mutex_backing)
+284:                 .saturating_add(guards)
+285:                 .saturating_add(size_of::<Self>())
+286:                 .saturating_add(size_of::<Result<Self, E>>())
+287:                 .saturating_add(capacity.saturating_mul(size_of::<ResolvedType>())),
+288:         )?;
+289:         let scratch = Vec::with_capacity(capacity);
+290:         assert_eq!(scratch.capacity(), capacity);
+291:         let scratch = Arc::new(Mutex::new(scratch));
+292:         drop(
+293:             scratch
+294:                 .lock()
+295:                 .expect("initialize prepaid construction disposal lock"),
+296:         );
+297:         Ok(Self {
+298:             scratch: Some(scratch),
+299:             building: true,
+300:         })
+301:     }
+302: }
+
+===== src/hir/declaration_index.rs:50-73 sha256 45d36dcbc7ef769a508a195f525604c29239fb7219a3e1b67a410112ebd36688 =====
+50:     }
+51: 
+52:     /// Moves every recursively nested resolved type out of the declaration
+53:     /// index before ordinary field drop glue runs. Private bounded owners use
+54:     /// this hook to feed their existing preallocated iterative disposer.
+55:     fn drain_recursive_types_for_private_contract(
+56:         &mut self,
+57:         mut dispose: impl FnMut(ResolvedType),
+58:     ) {
+59:         // Release case views before asking whether the outer case owner is
+60:         // unique. Legacy full field inventories retain their original roots.
+61:         for (_, fields) in std::mem::take(&mut self.case_fields) {
+62:             fields.drain(&mut dispose);
+63:         }
+64:         for (_, fields) in std::mem::take(&mut self.record_fields) {
+65:             fields.drain_recursive_types(&mut dispose);
+66:         }
+67:         for (_, cases) in std::mem::take(&mut self.variant_cases) {
+68:             cases.drain_recursive_types(&mut dispose);
+69:         }
+70:     }
+71:     pub fn byte_slice_provenance(&self, value: &ValueId) -> Option<&ByteSliceProvenance> {
+72:         self.byte_slice_roots.get(value)
+73:     }
+
+===== src/hir/declaration_index.rs:1158-1182 sha256 45d36dcbc7ef769a508a195f525604c29239fb7219a3e1b67a410112ebd36688 =====
+1158: }
+1159: 
+1160: impl Drop for DeclarationIndex {
+1161:     fn drop(&mut self) {
+1162:         if let Some(scratch) = self.nominal_drop_workspace.scratch.take() {
+1163:             let mut scratch=scratch.lock().expect("construction disposal lock");
+1164:             self.drain_recursive_types_for_private_contract(|ty| nominal_payload::dispose(ty, &mut scratch));
+1165:             return;
+1166:         }
+1167:         let mut pending = Vec::new();
+1168:         // Leaf fields have no recursive payload to queue. Move only nominal
+1169:         // children into the iterative fallback, preserving bounded stack use.
+1170:         self.drain_legacy_type_roots(|ty| {
+1171:             if let ResolvedType::Nominal { arguments, .. } = ty {
+1172:                 pending.extend(arguments);
+1173:             }
+1174:         });
+1175:         while let Some(ty) = pending.pop() {
+1176:             if let ResolvedType::Nominal { arguments, .. } = ty {
+1177:                 pending.extend(arguments);
+1178:             }
+1179:         }
+1180:     }
+1181: }
+1182: 
+
+===== src/hir/function_value/resolve.rs:8-52 sha256 22370180296207253ab2a43210b86a499d890d325bf9942bd37f3a5823d49256 =====
+8:     Some(match ty {
+9:         Type::I64 => ResolvedType::I64,
+10:         Type::I32 => ResolvedType::I32,
+11:         Type::U8 => ResolvedType::U8,
+12:         Type::Usize => ResolvedType::Usize,
+13:         Type::Char => ResolvedType::Char,
+14:         Type::F32 => ResolvedType::F32,
+15:         Type::F64 => ResolvedType::F64,
+16:         Type::Bool => ResolvedType::Bool,
+17:         _ => return None,
+18:     })
+19: }
+20: pub(crate) fn source_type(ty: &Type) -> Option<ResolvedType> {
+21:     if *ty == Type::MutFunctionI64 {
+22:         return Some(ResolvedType::MutFunctionI64);
+23:     }
+24:     if ty.is_once_function() {
+25:         return Some(if *ty == Type::OnceFunctionI64Pair {
+26:             ResolvedType::OnceFunctionI64Pair
+27:         } else if *ty == Type::OnceFunctionI64 {
+28:             ResolvedType::OnceFunctionI64
+29:         } else {
+30:             ResolvedType::OnceFunction
+31:         });
+32:     }
+33:     let Type::Function { parameters, result } = ty else {
+34:         return source_scalar(ty);
+35:     };
+36:     if parameters.len() > 8 {
+37:         return None;
+38:     }
+39:     Some(ResolvedType::Function {
+40:         parameters: parameters
+41:             .iter()
+42:             .map(source_scalar)
+43:             .collect::<Option<_>>()?,
+44:         result: Box::new(source_scalar(result)?),
+45:     })
+46: }
+47: impl Resolver<'_> {
+48:     pub(in crate::hir) fn finish_invocation<'p>(
+49:         &self,
+50:         function: &FunctionExecutionId,
+51:         path: impl Into<ExprPath<'p>>,
+52:         span: crate::ast::Span,
+
+===== docs/evidence/nominal-funding-repair-086c/actual-failure-03.log:1-17 sha256 3c9f7dcd22d01973b8f71ea4f6cce21cfaaf902fb34366d2c62c6aa566f5cf48 =====
+1: 
+2: running 1 test
+3: test hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners ... 
+4: thread 'hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners' (2533293) panicked at src/hir/identity_resolution/nominal_tests.rs:160:9:
+5: assertion `left == right` failed: no allocation after selected refusal, including local/index Drop
+6:   left: 203
+7:  right: 139
+8: note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+9: FAILED
+10: 
+11: failures:
+12: 
+13: failures:
+14:     hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners
+15: 
+16: test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8748 filtered out; finished in 0.06s
+17: 
+
+===== docs/evidence/nominal-funding-repair-086c/actual-failure-04.log:1-15 sha256 ce3a536d80305e0fb1e42e60a898334f8fbb711f3745da66b952293fcdef0a2e =====
+1: 
+2: running 1 test
+3: test hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal ... 
+4: thread 'hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal' (2533542) panicked at src/hir/identity_resolution/nominal_tests.rs:230:13:
+5: actual backing=Metrics { allocations: 280, reallocations: 35, allocated: 27765, freed: 12085, live: 15680, highwater: 15800, invalid: false }; paid=18621
+6: note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+7: FAILED
+8: 
+9: failures:
+10: 
+11: failures:
+12:     hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal
+13: 
+14: test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8748 filtered out; finished in 0.05s
+15: 
+
+===== src/hir/identity_resolution/nominal_tests.rs:95-245 sha256 041ba82c66c03d3e0e651f2d7474f32fb4559a3b99742f847385601a4129066c =====
+95: }
+96: #[test]
+97: fn nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners() {
+98:     let nested = SOURCE
+99:         .replace(
+100:             "@id(\"row.x\") x:i64",
+101:             "@id(\"row.x\") x:Option<Option<i64>>",
+102:         )
+103:         .replace(
+104:             "@id(\"choice.left.x\") x:i64",
+105:             "@id(\"choice.left.x\") x:Option<Option<i64>>",
+106:         );
+107:     // Preserve the original inadmitted fixture as its complete negative control.
+108:     let rejected = crate::check(&nested, "nominal-shared.spx").unwrap_err();
+109:     let expected = [
+110:         ("SPX-T223", "generic copy type `Option` accepts only direct `i64` or `bool` arguments", 65, 87, 2, 43),
+111:         ("SPX-T223", "generic copy type `Option` accepts only direct `i64` or `bool` arguments", 411, 433, 12, 52),
+112:         ("SPX-T215", "case field `Choice::Left.x` must have a direct admitted Copy scalar or an in-scope variant type parameter in Copy Variants v1", 411, 433, 12, 52),
+113:     ].map(|(code, message, start, end, line, column)| {
+114:         Diagnostic::error(code, message, crate::ast::Span { start, end, line, column })
+115:             .at_path("nominal-shared.spx")
+116:     });
+117:     assert_eq!(rejected, expected);
+118:     // Direct scalar instantiation is admitted for a record field, and the
+119:     // generic variant's field uses its in-scope parameter. Both retain a real
+120:     // recursive nominal payload without bypassing source verification.
+121:     let admitted = SOURCE
+122:         .replace("@id(\"row.x\") x:i64", "@id(\"row.x\") x:Option<i64>")
+123:         .replace("variant Choice {", "variant Choice<T> {")
+124:         .replace("@id(\"choice.left.x\") x:i64", "@id(\"choice.left.x\") x:T");
+125:     let program = crate::check(&admitted, "nominal-shared.spx").unwrap();
+126:     let prelude = crate::prelude::declarations_for_program(&program);
+127:     let mut requests = Vec::new();
+128:     let full = DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+129:         requests.push(n);
+130:         Ok::<_, Stop>(())
+131:     })
+132:     .unwrap();
+133:     let original = DeclarationIndex::nominal_original_with_prelude(&program, prelude).unwrap();
+134:     assert_eq!(full, original);
+135:     assert_eq!(
+136:         crate::cache_codec::encode(&full).unwrap(),
+137:         crate::cache_codec::encode(&original).unwrap()
+138:     );
+139:     for stop in 0..requests.len() {
+140:         let mut seen = 0;
+141:         let mut at_refusal = 0;
+142:         let (result, allocation) = measure(|| {
+143:             DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+144:                 assert_eq!(n, requests[seen]);
+145:                 let at = seen;
+146:                 seen += 1;
+147:                 if at == stop {
+148:                     at_refusal = current_metrics().allocated;
+149:                     Err(Stop(at))
+150:                 } else {
+151:                     Ok(())
+152:                 }
+153:             })
+154:         });
+155:         assert!(matches!(result,Err(IdentityIndexError::Identity(Stop(at))) if at==stop));
+156:         assert_eq!(seen, stop + 1, "no callback retry after the selected error");
+157:         assert!(!allocation.invalid);
+158:         assert_eq!(allocation.live, 0);
+159:         assert_eq!(allocation.allocated, allocation.freed);
+160:         assert_eq!(
+161:             allocation.allocated, at_refusal,
+162:             "no allocation after selected refusal, including local/index Drop"
+163:         );
+164:     }
+165: }
+166: #[test]
+167: fn nominal_full_constructor_keeps_complete_old_semantic_diagnostic_order() {
+168:     for source in [
+169:         SOURCE.replace("Child : Base", "Child : Missing"),
+170:         SOURCE.replace("class Base {", "class Base : Child {"),
+171:         SOURCE.replace("@id(\"child.read\")", "@id(\"base.read\")"),
+172:     ] {
+173:         let program = crate::parse(&source, "nominal-invalid.spx").unwrap();
+174:         let prelude = crate::prelude::declarations_for_program(&program);
+175:         let old = DeclarationIndex::nominal_original_with_prelude(&program, prelude).unwrap_err();
+176:         let IdentityIndexError::Semantic(current) =
+177:             DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |_| {
+178:                 Ok::<_, Stop>(())
+179:             })
+180:             .unwrap_err()
+181:         else {
+182:             panic!("unexpected payer refusal")
+183:         };
+184:         assert_eq!(current, old);
+185:     }
+186: }
+187: 
+188: #[test]
+189: fn nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal() {
+190:     use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
+191:     let program = crate::check(SOURCE, "nominal-owner.spx").unwrap();
+192:     let prelude = crate::prelude::declarations_for_program(&program);
+193:     // This constructor retains ordinary ambient type-fact/layout formatting
+194:     // debits in addition to the explicit nominal/identity callback requests.
+195:     // Observe the complete same-owner route rather than treating that callback
+196:     // subtotal as its whole ledger. No charge or quota is changed.
+197:     let mut explicit = 0usize;
+198:     let (full, refused, exact, first) = with_limit_usage_refusal(usize::MAX, || {
+199:         DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+200:             explicit = explicit.checked_add(n).unwrap();
+201:             if reserve_active_required(n) {
+202:                 Ok(())
+203:             } else {
+204:                 Err(Stop(7))
+205:             }
+206:         })
+207:     });
+208:     assert!(full.is_ok(), "full owner route: {full:?}; first={first:?}");
+209:     assert!(!refused);
+210:     assert_eq!(first, None);
+211:     assert!(exact >= explicit);
+212:     drop(full);
+213:     for cap in [0, exact - 1, exact] {
+214:         let ((result, metrics), overflowed, used, first) = with_limit_usage_refusal(cap, || {
+215:             measure(|| {
+216:                 DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
+217:                     if reserve_active_required(n) {
+218:                         Ok(())
+219:                     } else {
+220:                         Err(Stop(7))
+221:                     }
+222:                 })
+223:             })
+224:         });
+225:         assert!(!metrics.invalid);
+226:         if cap == exact {
+227:             assert!(result.is_ok(), "cap={cap} exact={exact} explicit={explicit} used={used} first={first:?} result={result:?}");
+228:             assert!(!overflowed);
+229:             assert_eq!(used, exact);
+230:             assert!(
+231:                 metrics.allocated <= used,
+232:                 "actual backing={metrics:?}; paid={used}"
+233:             );
+234:             assert!(first.is_none());
+235:         } else {
+236:             assert!(matches!(result, Err(IdentityIndexError::Identity(Stop(7)))));
+237:             assert!(overflowed);
+238:             assert!(first.is_some());
+239:             assert_eq!(metrics.live, 0);
+240:             if cap == 0 {
+241:                 assert_eq!(metrics.allocated, 0);
+242:             }
+243:         }
+244:         drop(result);
+245:     }
