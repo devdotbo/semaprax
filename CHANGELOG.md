@@ -1,5 +1,6 @@
 # Changelog
 
+- Update candidate inventory regressions for the admitted bounded-zeroing builtin, recognize binary-hash receipt readers in harness isolation, and fix two remaining test lint findings.
 - Give ordinary empty-renewal branch clones a separately prepaid borrowed
   payload without a renewal-map reference, preserving full state and work while
   avoiding an atomic type cursor and tightening the conservative backing bound. Retain exact browser Project graph
