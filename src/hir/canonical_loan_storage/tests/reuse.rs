@@ -272,6 +272,15 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     );
     let hooks: serde_json::Value = serde_json::from_str(hooks).unwrap();
     let mut projected = include_str!("../caller.rs").to_owned();
+    // Exact later append-stage wrapper; preserve the complete old call and
+    // every original hook/archive byte below rather than normalizing source.
+    let append_stage = "            {\n                let _stage = crate::bounded_output::reservation_stage_guard(\n                    crate::bounded_output::ReservationStage::LoanCanonicalAppend,\n                );\n                append(&mut storage, plan, payer)?;\n            }";
+    assert_eq!(projected.matches(append_stage).count(), 1);
+    projected = projected.replacen(
+        append_stage,
+        "            append(&mut storage, plan, payer)?;",
+        1,
+    );
     // Exact additive production stage and test registration only; preserve
     // every byte of the complete original preparation receiver below.
     for addition in [

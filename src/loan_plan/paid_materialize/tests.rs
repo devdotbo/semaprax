@@ -56,6 +56,7 @@ fn run_materializer(
     owner: &CfgReservation,
     old: bool,
     missing_end: bool,
+    missing_edge_rows: bool,
 ) -> (Result<LoanPlan, Diagnostic>, usize) {
     let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
     work.allocation = Some(owner);
@@ -75,7 +76,23 @@ fn run_materializer(
         })
         .collect();
     let parents = plan.loans.iter().map(|loan| loan.parent).collect();
-    let live = plan.edges.iter().map(|edge| edge.live.to_vec()).collect();
+    // The public planner may return empty_v1 before building any CFG. A
+    // materializer input still needs one liveness row per actual CFG edge.
+    // Keep its original malformed zero-row input as an explicit panic control.
+    let live = if missing_edge_rows {
+        Vec::new()
+    } else if plan.edges.is_empty() {
+        assert!(plan.loans.is_empty());
+        (0..cfg.edges.len()).map(|_| Vec::new()).collect()
+    } else {
+        assert_eq!(plan.edges.len(), cfg.edges.len());
+        assert!(plan
+            .edges
+            .iter()
+            .zip(&cfg.edges)
+            .all(|(edge, pair)| (edge.from, edge.to) == *pair));
+        plan.edges.iter().map(|edge| edge.live.to_vec()).collect()
+    };
     let ends = plan
         .loans
         .iter()
@@ -107,20 +124,54 @@ fn ordered_endpoint_union_complete_old_materializer_plan_and_first_error_are_exa
         let plan = saved_planner::build_plan(&program, function).unwrap();
         let ((), refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
             let owner = CfgReservation::acquire().unwrap();
-            let (old, old_work) = run_materializer(function, &plan, &owner, true, false);
-            let (current, current_work) = run_materializer(function, &plan, &owner, false, false);
+            let (old, old_work) = run_materializer(function, &plan, &owner, true, false, false);
+            let (current, current_work) =
+                run_materializer(function, &plan, &owner, false, false, false);
             assert_eq!(current_work, old_work);
             assert_eq!(current, old);
             // Empty plans can have no CFG rows in the public early return;
             // both complete materializers still produce identical full rows.
             if !plan.loans.is_empty() {
                 assert_eq!(current.unwrap(), plan);
-                let (old, _) = run_materializer(function, &plan, &owner, true, true);
-                let (current, _) = run_materializer(function, &plan, &owner, false, true);
+                let (old, _) = run_materializer(function, &plan, &owner, true, true, false);
+                let (current, _) = run_materializer(function, &plan, &owner, false, true, false);
                 assert_eq!(current, old);
                 assert_eq!(
                     current.unwrap_err().message,
                     "loan has no bounded CFG termination edge"
+                );
+            }
+            if count == 0 {
+                let inherited = |saved| {
+                    std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        run_materializer(function, &plan, &owner, saved, false, true)
+                    }))
+                    .expect_err(
+                        "the full old/new internal receiver both reject missing CFG rows by panic",
+                    )
+                };
+                let old = inherited(true);
+                let current = inherited(false);
+                let message = |value: &(dyn std::any::Any + Send)| -> String {
+                    if let Some(value) = value.downcast_ref::<String>() {
+                        value.clone()
+                    } else if let Some(value) = value.downcast_ref::<&'static str>() {
+                        (*value).to_owned()
+                    } else {
+                        panic!("expected inherited index panic payload")
+                    }
+                };
+                assert_eq!(message(&*current), message(&*old));
+                assert!(message(&*current).contains("index out of bounds"));
+            } else {
+                // A missing termination must select the original stable full
+                // diagnostic before even the malformed edge rows are read.
+                let (old, _) = run_materializer(function, &plan, &owner, true, true, true);
+                let (current, _) = run_materializer(function, &plan, &owner, false, true, true);
+                assert_eq!(current, old);
+                assert_eq!(
+                    current.unwrap_err(),
+                    error("loan has no bounded CFG termination edge")
                 );
             }
             assert_eq!(owner.first(), None);
