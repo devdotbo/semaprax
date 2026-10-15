@@ -1,5 +1,7 @@
 # Changelog
 
+- Refuse an authored owning row-helper parameter with T284 before retained-HIR projection, preserving cold/warm diagnostic parity and G173 for all existing descriptor forgeries.
+
 - Pin mutable command-argument source refusal to its earlier T264 diagnostic and retain the exact H006 immutability guard through an independently validated, tampered Project HIR control.
 
 - Check frozen v11 nested-record String refusal at descriptor derivation and replay, retaining array source refusal and adding an identical Bool-field positive control. Preserve the language's admitted String records.
