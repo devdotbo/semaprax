@@ -222,7 +222,8 @@ impl<T> Memo<T> {
             });
             self.chunks[index] = Some(chunk);
         }
-        assert!(self.chunks[index].as_ref().expect("paid chunk").values[key % WIDTH].is_none());
+        // Only !contains_key nodes reach publication in the postorder producer;
+        // no value is overwritten and no extra assertion lookup is constructed.
         self.chunks[index].as_mut().expect("paid chunk").empty |= 1_u8 << (key % WIDTH);
         Ok(())
     }

@@ -1,6 +1,7 @@
 //! Explicit empty closures carry semantic success without a map/Rc allocation.
 //! Overflow remains the enclosing None; cached Empty remains a present memo key.
-use super::ordered_weights::{Iter, OrderedWeights};
+#[cfg(test)]
+use super::ordered_weights::OrderedWeights;
 #[cfg(test)]
 use super::{Diagnostic, Rc, ReplayBudget, ResolvedFunction};
 #[cfg(test)]
@@ -15,7 +16,13 @@ pub(super) enum Closure {
 #[cfg(test)]
 impl PartialEq for Closure {
     fn eq(&self, other: &Self) -> bool {
-        self.iter().eq(other.iter())
+        match (self, other) {
+            (Self::Empty, Self::Empty) => true,
+            (Self::Shared(left), Self::Shared(right)) => left == right,
+            (Self::Empty, Self::Shared(value)) | (Self::Shared(value), Self::Empty) => {
+                value.len() == 0
+            }
+        }
     }
 }
 #[cfg(test)]
@@ -37,13 +44,6 @@ impl Closure {
             Self::Shared(weights) => weights.len(),
         }
     }
-    pub(super) fn iter(&self) -> Iter<'_> {
-        // One original iterator result; no wrapper iterator or collected copy.
-        match self {
-            Self::Empty => Iter::empty(),
-            Self::Shared(weights) => weights.iter(),
-        }
-    }
     pub(super) fn get(&self, key: &usize) -> Option<&u64> {
         match self {
             Self::Empty => None,
@@ -56,27 +56,6 @@ impl Closure {
             (Self::Empty, Self::Empty) => true,
             (Self::Shared(left), Self::Shared(right)) => Rc::ptr_eq(left, right),
             _ => false,
-        }
-    }
-}
-
-// A directly paid borrowed common view replaces the old borrowed map reference.
-// It has no owning map, allocation, iterator adapter, or persistent lifetime.
-pub(super) enum View<'a> {
-    Empty,
-    Shared(&'a OrderedWeights),
-}
-impl<'a> View<'a> {
-    pub(super) fn get(&self, key: &usize) -> Option<&'a u64> {
-        match self {
-            Self::Empty => None,
-            Self::Shared(weights) => weights.get(key),
-        }
-    }
-    pub(super) fn iter(&self) -> Iter<'a> {
-        match self {
-            Self::Empty => Iter::empty(),
-            Self::Shared(weights) => weights.iter(),
         }
     }
 }

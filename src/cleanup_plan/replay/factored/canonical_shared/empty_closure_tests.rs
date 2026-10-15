@@ -290,3 +290,79 @@ fn direct_overflow_is_not_empty_and_the_same_paid_status_owner_can_receive_empty
     assert_eq!(a.remaining, b.remaining);
     assert_eq!(a.skeleton_remaining, b.skeleton_remaining);
 }
+
+#[test]
+fn direct_primed_foreign_inputs_and_nested_scope_never_query_foreign_payer_or_restore_memo() {
+    use crate::bounded_output::{active_remaining, with_limit_usage_refusal};
+    let function = fixture();
+    let foreign_function = fixture();
+    let (graph, sink, empty, _) = graph(&function);
+    for mode in 0..3 {
+        let (((), allocation), refused, _, first) = with_limit_usage_refusal(1 << 24, || {
+            measure(|| {
+                let mut current = Canonicalizer::new(&graph, sink);
+                let mut budget = ReplayBudget::new();
+                let mut other = ReplayBudget::new();
+                budget
+                    .reserve_bytes(
+                        &function,
+                        ClosureReceiving::DIRECT_CONTROLS,
+                        "direct identity test owner",
+                    )
+                    .unwrap();
+                let mut receiving = ClosureReceiving::from_prepaid(&function, &budget);
+                current.closure_query(&function, empty, &mut budget, &mut receiving);
+                assert!(receiving.ready && receiving.empty && receiving.refusal.is_none());
+                receiving.ready = false;
+                if mode == 2 {
+                    let ((), child_refused, child_paid, child_first) =
+                        with_limit_usage_refusal(0, || {
+                            let at = current_metrics().allocated;
+                            current.closure_query(&function, empty, &mut budget, &mut receiving);
+                            assert_eq!(active_remaining(), Some(0));
+                            assert_eq!(current_metrics().allocated, at);
+                        });
+                    assert!(!child_refused && child_paid == 0 && child_first.is_none());
+                } else {
+                    let paid = active_remaining();
+                    let at = current_metrics().allocated;
+                    if mode == 0 {
+                        current.closure_query(
+                            &foreign_function,
+                            empty,
+                            &mut budget,
+                            &mut receiving,
+                        );
+                    } else {
+                        current.closure_query(&function, empty, &mut other, &mut receiving);
+                    }
+                    assert_eq!(active_remaining(), paid);
+                    assert_eq!(current_metrics().allocated, at);
+                }
+                assert!(current.closures.failed());
+                assert_eq!(
+                    receiving.refusal.take(),
+                    Some(super::Diagnostic::io("SPX-H006", String::new()))
+                );
+                receiving.ready = false;
+                let at = current_metrics().allocated;
+                let paid = active_remaining();
+                current.closure_query(&function, empty, &mut budget, &mut receiving);
+                assert_eq!(
+                    receiving.refusal.take(),
+                    Some(super::Diagnostic::io("SPX-H006", String::new()))
+                );
+                assert_eq!(active_remaining(), paid);
+                assert_eq!(current_metrics().allocated, at);
+                drop(receiving);
+                drop(current);
+                drop(other);
+                drop(budget);
+            })
+        });
+        assert_eq!(refused, mode == 2);
+        assert_eq!(first.is_some(), mode == 2);
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+    }
+}
