@@ -232,3 +232,202 @@ pub(super) fn field<E>(
         span: field.span,
     })
 }
+
+fn template_error<E>(
+    args: fmt::Arguments<'_>,
+    reserve: &mut Reserve<'_, E>,
+) -> Result<Diagnostic, E> {
+    bytes(
+        reserve,
+        size_of::<Diagnostic>()
+            + size_of::<std::result::Result<Diagnostic, IdentityIndexError<E>>>(),
+    )?;
+    Ok(Diagnostic::io("SPX-H006", formatted(args, reserve)?))
+}
+fn substituted<'a, E>(
+    ty: &'a ResolvedType,
+    active: bool,
+    owner: &DeclarationId,
+    arguments: &'a [ResolvedType],
+    reserve: &mut Reserve<'_, E>,
+) -> Result<(&'a ResolvedType, bool), E> {
+    if active {
+        if let ResolvedType::TypeParameter {
+            owner: actual,
+            index,
+        } = ty
+        {
+            if actual != owner {
+                return Err(template_error(
+                    format_args!(
+                        "type template for `{owner}` contains foreign parameter owner `{actual}`"
+                    ),
+                    reserve,
+                )?
+                .into());
+            }
+            let Ok(at) = usize::try_from(*index) else {
+                return Err(template_error(
+                    format_args!("type parameter index {index} does not fit usize"),
+                    reserve,
+                )?
+                .into());
+            };
+            let Some(argument) = arguments.get(at) else {
+                return Err(template_error(
+                    format_args!(
+                        "type template for `{owner}` references missing parameter {index}"
+                    ),
+                    reserve,
+                )?
+                .into());
+            };
+            return Ok((argument, false));
+        }
+    }
+    Ok((ty, active))
+}
+/// The old substitution's complete value/error semantics with explicit storage.
+/// The borrowed expanded-tree census pays its own cursor and prepares exactly
+/// the disposal frontier needed by the resulting tree, with no depth quota.
+pub(super) fn substitute_type<E>(
+    template: &ResolvedType,
+    owner: &DeclarationId,
+    arguments: &[ResolvedType],
+    workspace: &Workspace,
+    reserve: &mut Reserve<'_, E>,
+) -> Result<ResolvedType, E> {
+    let root = substituted(template, true, owner, arguments, reserve)?;
+    let mut census = vector(1, reserve)?;
+    census.push(root);
+    // Diagnose templates in the old source order before walking the expanded
+    // disposal order (which deliberately visits siblings in reverse).
+    while let Some((ty, active)) = census.pop() {
+        let (ty, active) = substituted(ty, active, owner, arguments, reserve)?;
+        match ty {
+            ResolvedType::Nominal {
+                arguments: nested, ..
+            } => {
+                grow(&mut census, nested.len(), reserve)?;
+                census.extend(nested.iter().rev().map(|ty| (ty, active)));
+            }
+            ResolvedType::Function { parameters, result } => {
+                grow(
+                    &mut census,
+                    parameters.len().checked_add(1).ok_or_else(overflow)?,
+                    reserve,
+                )?;
+                census.push((result.as_ref(), active));
+                census.extend(parameters.iter().rev().map(|ty| (ty, active)));
+            }
+            _ => {}
+        }
+    }
+    census.push(root);
+    let mut frontier = 0;
+    while let Some((ty, active)) = census.pop() {
+        let (children, result) = match ty {
+            ResolvedType::Nominal { arguments, .. } => (arguments.as_slice(), None),
+            ResolvedType::Function { parameters, result } => {
+                (parameters.as_slice(), Some(result.as_ref()))
+            }
+            _ => (&[][..], None),
+        };
+        grow(
+            &mut census,
+            children
+                .len()
+                .checked_add(usize::from(result.is_some()))
+                .ok_or_else(overflow)?,
+            reserve,
+        )?;
+        for child in children {
+            census.push(substituted(child, active, owner, arguments, reserve)?);
+        }
+        if let Some(result) = result {
+            census.push(substituted(result, active, owner, arguments, reserve)?);
+        }
+        frontier = frontier.max(census.len());
+    }
+    workspace.ensure_paid_frontier(frontier, reserve)?;
+    enum Frame<'a> {
+        Enter(&'a ResolvedType, bool),
+        Nominal(&'a DeclarationId, usize),
+        Callable(usize),
+    }
+    let mut frames = vector(1, reserve)?;
+    frames.push(Frame::Enter(root.0, root.1));
+    bytes(
+        reserve,
+        size_of::<super::nominal_rollback::PendingTypes>()
+            + size_of::<Vec<ResolvedType>>()
+            + size_of::<std::result::Result<ResolvedType, IdentityIndexError<E>>>(),
+    )?;
+    let mut values = workspace.types(Vec::new());
+    while let Some(frame) = frames.pop() {
+        match frame {
+            Frame::Enter(ty, active) => {
+                let (ty, active) = substituted(ty, active, owner, arguments, reserve)?;
+                match ty {
+                    ResolvedType::Nominal {
+                        declaration,
+                        arguments,
+                    } => {
+                        grow(
+                            &mut frames,
+                            arguments.len().checked_add(1).ok_or_else(overflow)?,
+                            reserve,
+                        )?;
+                        frames.push(Frame::Nominal(declaration, arguments.len()));
+                        frames.extend(arguments.iter().rev().map(|ty| Frame::Enter(ty, active)));
+                    }
+                    ResolvedType::Function { parameters, result } => {
+                        grow(
+                            &mut frames,
+                            parameters.len().checked_add(2).ok_or_else(overflow)?,
+                            reserve,
+                        )?;
+                        frames.push(Frame::Callable(parameters.len()));
+                        frames.push(Frame::Enter(result, active));
+                        frames.extend(parameters.iter().rev().map(|ty| Frame::Enter(ty, active)));
+                    }
+                    leaf => {
+                        grow(&mut values, 1, reserve)?;
+                        bytes(reserve, size_of::<ResolvedType>())?;
+                        values.push(leaf.clone());
+                    }
+                }
+            }
+            Frame::Nominal(declaration, count) => {
+                let split = values.len().checked_sub(count).ok_or_else(overflow)?;
+                if count == 0 {
+                    grow(&mut values, 1, reserve)?;
+                }
+                let mut nested = vector(count, reserve)?;
+                // No callback follows removal of recursive children from the
+                // shared guarded pool until their new root is guarded again.
+                nested.extend(values.drain(split..));
+                values.push(ResolvedType::Nominal {
+                    declaration: declaration.clone(),
+                    arguments: nested,
+                });
+            }
+            Frame::Callable(count) => {
+                let split = values
+                    .len()
+                    .checked_sub(count.checked_add(1).ok_or_else(overflow)?)
+                    .ok_or_else(overflow)?;
+                let mut parameters = vector(count, reserve)?;
+                bytes(
+                    reserve,
+                    size_of::<ResolvedType>() + size_of::<Box<ResolvedType>>(),
+                )?;
+                let result = Box::new(values.pop().expect("complete callable result"));
+                parameters.extend(values.drain(split..));
+                values.push(ResolvedType::Function { parameters, result });
+            }
+        }
+    }
+    assert_eq!(values.len(), 1);
+    Ok(values.pop().expect("one complete substituted type"))
+}
