@@ -592,6 +592,8 @@ pub(crate) fn main_current_input(source: &str, current: &str) -> String {
 
 // Independent branches: inherited guards see13d; the pilot sees its exact5f input.
 fn before_fixture841(source: &str, current: &str) -> String {
+    let previous = before_retained833(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -602,10 +604,34 @@ fn before_fixture841(source: &str, current: &str) -> String {
     )
 }
 pub(crate) fn compressed_fixture_input(source: &str, current: &str) -> String {
+    let previous = before_retained833(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/compressed-fixture-841-assembly-20261015/pilot-runtime-views.json"
+        )),
+        source,
+        current,
+    )
+}
+
+// The retained registry owner and inherited guards have distinct whole inputs.
+fn before_retained833(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-registry-833-assembly-20261015/current-to-381.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn retained833_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retained-registry-833-assembly-20261015/current-to-c3.json"
         )),
         source,
         current,

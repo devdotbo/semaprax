@@ -9,7 +9,7 @@ macro_rules! semantic_graph_private_layout_owned_source_inventory {
         include_str!("../../src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs"),
     ) };
     (core) => { concat!(
-        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"), include_str!("../../src/workspace_graph/expected_projection/private_layout/registry/storage.rs"), include_str!("../../src/workspace_graph/expected_projection/private_layout/registry/before_retained.rs"), include_str!("../../src/workspace_graph/expected_projection/private_layout/registry/retained_tests.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/before_registry.rs"),
         include_str!("../../src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs"),

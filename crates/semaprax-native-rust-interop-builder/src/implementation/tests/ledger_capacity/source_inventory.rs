@@ -176,7 +176,7 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/semantic_refusal.rs"),
             include_str!("../../../../../src/cleanup_plan/replay/semantic_refusal/tests.rs"),
-        include_str!("../../../../../src/workspace_graph/expected_projection/private_layout.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection/private_layout.rs"), include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/registry/storage.rs"), include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/registry/before_retained.rs"), include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/registry/retained_tests.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/capacity_before.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/capacity_tests.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection/private_layout/capacity_tests/owner_controls.rs"),
