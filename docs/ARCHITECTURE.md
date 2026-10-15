@@ -4945,3 +4945,10 @@ Vec APIs remain independent compatibility receivers.
 The ordinary replay status receiver owns the affine [complete status-source
 case proof](STATUS-CASE-SOURCE-PROOF-V1.md). Independent complete HIR discovery
 precedes its exact held-row reuse; it grants no payer or semantic admission.
+
+The test-only `canonical_shared::main_unit_weight` namespace retains the complete
+Main unit-weight closure receiver and its five original controls independently
+of the modern retained canonicalizer. Its eleven source owners participate in
+all three raw source inventories; their measurements describe that historical
+receiver rather than the production route. The function-alias graph/Image
+control compares real Project outputs against the complete immediate-old core.

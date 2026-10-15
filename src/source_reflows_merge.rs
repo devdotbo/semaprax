@@ -5,6 +5,8 @@ use sha2::{Digest, Sha256};
 mod runtime_json;
 // The final compositor authenticates its raw view at this independent owner front.
 pub(crate) fn boxed849_input(source: &str, current: &str) -> String {
+    let next = project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/next-main-beb0-847-joined-20261016/current-to-8bb.json")), source, current);
+    let current = next.as_str();
     let joined = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -580,6 +582,8 @@ fn main83_physical_input(source: &str, current: &str) -> String {
 
 // Full post-compiler-fix inputs precede the immutable MAIN83 and older domains.
 fn before_storage_oracle_join(source: &str, current: &str) -> String {
+    let next = project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/next-main-beb0-847-joined-20261016/current-to-8bb.json")), source, current);
+    let current = next.as_str();
     let integrated = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
