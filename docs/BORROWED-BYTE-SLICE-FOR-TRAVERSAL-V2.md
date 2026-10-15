@@ -12,6 +12,12 @@ Every enclosing source-for must itself be an admitted immutable byte traversal. 
 
 These source admission limits do not impose a blanket Vec/Iter-operation or manual-While ban on a byte body. Existing independent collection, ownership, row, owned-iterator and lexical-exit validators keep their full restrictions. HIR proves actual lowered semantics and does not infer surface syntax from a marker or cached Boolean.
 
+The resolver independently locates the exact authored while body under its
+enclosing byte-only traversal ancestry before allowing a while bridge. An
+ordinary while outside that ancestry cannot create it, including when the
+caller passes parsed AST directly without running source verification first.
+Closure bodies start a separate ancestry, and mixed traversals stay closed.
+
 ## Independent contextual replay
 
 A private non-Clone, non-serialized census borrows one immutable function and its exact current replay context. It indexes exact expression references and complete IDs; a same-ID clone, foreign function/context or stale decoded graph is not a current member. Current HIR must be freshly replayed after decode.

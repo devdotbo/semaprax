@@ -1,5 +1,8 @@
 # Changelog
 
+- Keep nested immutable byte traversal tied to an actual enclosing authored
+  byte traversal, including through while bridges, when resolving unchecked AST.
+
 - Explicitly release harness journal writer locks before closing their file
   descriptors, so concurrent process launches cannot delay same-lineage reopen.
   Cover retained duplicate descriptors for plain and indexed journals. Restore
