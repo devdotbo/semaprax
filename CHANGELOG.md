@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted 17104e20c records after paid-scratch bill reductions, retaining every historical graph byte and adding an exact previous-capture reconstruction gate.
+
 - Reject reached Useful Data v1 dependency signatures at import admission with G172, preserving H006 for body-only authored-type refusals and admission of unreached newer bundled declarations.
 
 - Grow the actual supplemental receiving cursor from two frames under its unchanged 1,028-frame bound, paying complete overlapping replacements and live-frame moves. Retain the full original receiver and shallow reuse gate; expose callers through remaining array and path-join reservation wrappers.
