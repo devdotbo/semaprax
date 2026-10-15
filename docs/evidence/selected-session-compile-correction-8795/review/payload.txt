@@ -1,0 +1,130 @@
+Review bounded test-only compile correction. No production change/visibility widening or execution. Known errors: three destructures expect () in with_limit_usage third field (actuallyusize), plus sibling test calls private paid::acquire. Unit closures now bind ((),overflow,_active_used). Baseline also had wrong-field bug: closure returns SELECTED physical owner usage but (_,overflow,base) used unrelated ACTIVE consumed bytes; corrected first-field base drives exact base+bytes controls. bytes() independently mirrors actual full Controls<Context> tuple; no fitted numeric allowance. Constructor owner advised same selected reserve_bytes(bytes()) then exact6work units before raw structural atom. Raw structural-first/selected-first report assertions unchanged. Full byte exact/one-short/zero, report backing/ledger identity, first sticky/noallocation/Drop assertions retained. One direct unused super import removed in child; unrelated6warnings untouched. Full old tests archived/inverses preserved. Assess concrete baseline/payment/error-priority mistakes, not broader redesign.
+
+DIFF:
+--- actual879-test
++++ corrected-test
+@@ -126,15 +126,15 @@
+ fn selected_session_receipt_full_carrier_exact_short_zero_sticky_report_and_drop() {
+     let program = fixture();
+     let context = primitive_fixture::Context::new(&program);
+     let function = &program.functions[0];
+-    let (_, overflow, base) = crate::bounded_output::with_limit_usage(usize::MAX, || {
++    let (base, overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+         let owner = acquire(&context, function, usize::MAX);
+         owner.usage().1
+     });
+     assert!(!overflow);
+     for (extra, semantic) in [(0, false), (bytes() - 1, false), (bytes(), true)] {
+-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
++        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+             let (_, observed) = measure(|| {
+                 let mut owner = acquire(&context, function, base + extra);
+                 let backing = owner.report.as_ref().unwrap().backing();
+                 let ledger = owner.budget.physical.as_deref().unwrap() as *const _;
+@@ -174,9 +174,9 @@
+         });
+         assert!(!overflow);
+     }
+     for work in [0, 5, 6] {
+-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
++        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+             let mut owner = acquire(&context, function, usize::MAX);
+             owner.budget.remaining = work;
+             let error = selected_context::paid::refusal(
+                 function,
+@@ -198,21 +198,24 @@
+     let program = fixture();
+     let context = primitive_fixture::Context::new(&program);
+     let function = &program.functions[0];
+     for selected_first in [false, true] {
+-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
++        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+             let mut owner = acquire(&context, function, usize::MAX);
+             // Both complete receiving controls are prepaid before their atoms.
+             let selected = selected_context::paid::refusal(
+                 function,
+                 &mut owner.budget,
+                 "selected lexical function is not held by its current context",
+             );
+-            selected_context::paid::acquire::<selected_context::Context<'_>>(
++            // Independent full Controls<Context> census on this same owner.
++            // Keep the production acquire helper private to selected_context.
++            owner.budget.reserve_bytes(
+                 function,
+-                &mut owner.budget,
+-            )
+-            .unwrap();
++                bytes(),
++                "selected session refusal controls",
++            ).unwrap();
++            owner.budget.charge(function, 6, "selected session refusal controls").unwrap();
+             let structural =
+                 <expression_facts::errors::EngineError as semantic_refusal::Error>::structural(
+                     function,
+                     semantic_refusal::Atom::UnknownStatus(function.body.id.clone()),
+
+REAL PRIVATE PRODUCER:
+//! Selected-session error data, paid before the first local refusal can exist.
+//! This adds no source/replay authority. Unmigrated child Diagnostics stay owned.
+use super::*;
+type Error = expression_facts::errors::EngineError;
+/// Every added full carrier is charged independently; no old-header credit.
+/// Six initialized/receiving controls, including the retained optional receipt.
+pub(super) fn acquire<T>(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<(), Error> {
+    type Controls<T> = (
+        semantic_refusal::Receipt,
+        Error,
+        Result<T, Error>,
+        Result<crate::hir::FunctionExecutionId, Error>,
+        Result<(), Error>,
+        Option<Error>,
+    );
+    budget.reserve_array::<Controls<T>>(function, 1, "selected session refusal controls")?;
+    budget.charge(function, 6, "selected session refusal controls")?;
+    Ok(())
+}
+// Identity handles are immutable shared operands; acquiring the full controls
+// precedes even the source-handle clone. No successful-session surcharge.
+pub(in super::super) fn refusal(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    detail: &'static str,
+) -> Error {
+    if let Err(error) = acquire::<Context<'_>>(function, budget) {
+        return error;
+    }
+    Error::Structural(semantic_refusal::Receipt::selected(function, detail))
+}
+
+WRAPPER:
+pub(crate) fn with_limit_usage<T>(limit: usize, operation: impl FnOnce() -> T) -> (T, bool, usize) {
+    let (value, overflowed, consumed, _) = with_limit_usage_refusal(limit, operation);
+    (value, overflowed, consumed)
+}
+SELECTED USAGE:
+    pub(crate) fn usage(&self) -> (usize, usize) {
+        (
+            self.budget.remaining,
+            self.budget
+                .physical
+                .as_ref()
+                .expect("held selected reservation")
+                .charged(),
+        )
+    }
+
+INDEPENDENT TEST CENSUS:
+fn bytes() -> usize {
+    // Independent full carrier census: no former-header credit or padding fit.
+    std::mem::size_of::<(
+        semantic_refusal::Receipt,
+        expression_facts::errors::EngineError,
+        Result<selected_context::Context<'static>, expression_facts::errors::EngineError>,
+        Result<crate::hir::FunctionExecutionId, expression_facts::errors::EngineError>,
+        Result<(), expression_facts::errors::EngineError>,
+        Option<expression_facts::errors::EngineError>,
+    )>()
+}

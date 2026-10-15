@@ -1,0 +1,20 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_OR_CARGO_EXECUTION",
+  "basis": "8795285cc9f2de1113f9f34b66af6ee11ad75ff7",
+  "actual_compile_log": "/Volumes/Semaprax/lane-prompts/final-large-8795-20261015/owning-build.jsonl",
+  "test_files_corrected": [
+    "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+    "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
+  ],
+  "correction_originals": 2,
+  "existing_full_inverse_rows": 19,
+  "all_originals_and_old_hooks_preserved": true,
+  "production_source_modified": false,
+  "baseline": "callback-returned selected owner.usage().1, kept separate from third-field ACTIVE consumption",
+  "preflight": "same owner reserves complete independent Controls<Context> bytes(), then original6units before structural atom",
+  "original_assertions_preserved": true,
+  "additional_assertion": "each limited owner initial selected usage equals measured baseline",
+  "unrelated_six_warnings_untouched": true,
+  "claude_dispatches": 1,
+  "raw_conditional_verdict_retained": true
+}

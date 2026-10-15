@@ -127,15 +127,16 @@ fn selected_session_receipt_full_carrier_exact_short_zero_sticky_report_and_drop
     let program = fixture();
     let context = primitive_fixture::Context::new(&program);
     let function = &program.functions[0];
-    let (_, overflow, base) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+    let (base, overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
         let owner = acquire(&context, function, usize::MAX);
         owner.usage().1
     });
     assert!(!overflow);
     for (extra, semantic) in [(0, false), (bytes() - 1, false), (bytes(), true)] {
-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
             let (_, observed) = measure(|| {
                 let mut owner = acquire(&context, function, base + extra);
+                assert_eq!(owner.usage().1, base);
                 let backing = owner.report.as_ref().unwrap().backing();
                 let ledger = owner.budget.physical.as_deref().unwrap() as *const _;
                 let before = current_metrics();
@@ -175,7 +176,7 @@ fn selected_session_receipt_full_carrier_exact_short_zero_sticky_report_and_drop
         assert!(!overflow);
     }
     for work in [0, 5, 6] {
-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
             let mut owner = acquire(&context, function, usize::MAX);
             owner.budget.remaining = work;
             let error = selected_context::paid::refusal(
@@ -199,7 +200,7 @@ fn selected_session_publication_keeps_first_named_boundary_across_later_atom_kin
     let context = primitive_fixture::Context::new(&program);
     let function = &program.functions[0];
     for selected_first in [false, true] {
-        let (_, overflow, ()) = crate::bounded_output::with_limit_usage(usize::MAX, || {
+        let ((), overflow, _active_used) = crate::bounded_output::with_limit_usage(usize::MAX, || {
             let mut owner = acquire(&context, function, usize::MAX);
             // Both complete receiving controls are prepaid before their atoms.
             let selected = selected_context::paid::refusal(
@@ -207,11 +208,14 @@ fn selected_session_publication_keeps_first_named_boundary_across_later_atom_kin
                 &mut owner.budget,
                 "selected lexical function is not held by its current context",
             );
-            selected_context::paid::acquire::<selected_context::Context<'_>>(
+            // Independent full Controls<Context> census on this same owner.
+            // Keep the production acquire helper private to selected_context.
+            owner.budget.reserve_bytes(
                 function,
-                &mut owner.budget,
-            )
-            .unwrap();
+                bytes(),
+                "selected session refusal controls",
+            ).unwrap();
+            owner.budget.charge(function, 6, "selected session refusal controls").unwrap();
             let structural =
                 <expression_facts::errors::EngineError as semantic_refusal::Error>::structural(
                     function,

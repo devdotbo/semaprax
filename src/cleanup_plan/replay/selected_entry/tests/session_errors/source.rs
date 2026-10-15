@@ -1,5 +1,4 @@
 //! Complete source custody; all historical originals retain exact bytes.
-use super::*;
 #[test]
 fn selected_session_complete_source_inverses_and_old_layout_definitions_stay_bound() {
     selected_session_layout_mirror_is_derived_from_complete_historical_definitions();

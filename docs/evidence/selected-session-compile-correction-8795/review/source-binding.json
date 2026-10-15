@@ -1,0 +1,8 @@
+{
+  "basis": "8795285cc9f2de1113f9f34b66af6ee11ad75ff7",
+  "uncommitted_test_only": true,
+  "payload_bytes": 6747,
+  "test_sha256": "0416834344a8788b4493762c4013e1a849c2f066f2505cda2352b4de5c045b38",
+  "production_paid_sha256": "11ed9b6ea8ab09cb729185c4e1a74dae8ad788e7b6bdb0315aa7e6002603026a",
+  "preparation_note": "Earlier oversized packet rejected locally before prompt creation; no Claude process dispatched."
+}
