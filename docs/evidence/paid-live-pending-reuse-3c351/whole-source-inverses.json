@@ -89,6 +89,11 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "before": "            include_str!(\"../../../../../src/hir/canonical_loan_storage.rs\"),\n            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n",
+        "after": "            include_str!(\"../../../../../src/hir/canonical_loan_storage.rs\"),\n            include_str!(\"../../../../../src/bounded_output/canonical_stage_tests.rs\"),\n            include_str!(\"../../../../../src/bounded_output/loan_inner_stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/stage_tests.rs\"),\n            include_str!(\"../../../../../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs\"),\n",
+        "count": 1
+      },
+      {
         "before": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/merge.rs\"),\n",
         "after": "        include_str!(\"../../../../../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_work.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_model.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_producer.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/extension_staging.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/vector_extension.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/vector_extension/tests.rs\"),\n        include_str!(\"../../../../../src/workspace_graph/identity_resolution/base/vector_tests.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../../../../../src/hir/prelude_bundle/merge.rs\"),\n",
         "count": 1
