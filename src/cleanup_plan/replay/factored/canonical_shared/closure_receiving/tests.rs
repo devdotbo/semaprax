@@ -300,42 +300,52 @@ fn held_closure_foreign_function_budget_nested_and_expired_slot_are_sticky_witho
     let function = fixture();
     let foreign = fixture();
     for kind in 0..3 {
-        let ((), refused, _, first) = with_limit_usage_refusal(1 << 20, || {
-            let mut budget = ReplayBudget::new();
-            let mut other = ReplayBudget::new();
-            let mut receiving = ClosureReceiving::acquire(&function, &mut budget).unwrap();
-            if kind == 2 {
-                let ((), refused, used, first) = with_limit_usage_refusal(0, || {
-                    let at = current_metrics().allocated;
-                    assert!(!receiving.valid(&function, &budget));
-                    assert_eq!(current_metrics().allocated, at);
-                });
-                assert!(!refused && used == 0 && first.is_none());
-            } else {
-                let left = active_remaining();
-                if kind == 0 {
-                    assert!(!receiving.valid(&foreign, &budget));
+        let (((), allocation), refused, _, first) = with_limit_usage_refusal(1 << 20, || {
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                let mut other = ReplayBudget::new();
+                let mut receiving = ClosureReceiving::acquire(&function, &mut budget).unwrap();
+                if kind == 2 {
+                    let ((), refused, used, first) = with_limit_usage_refusal(0, || {
+                        let at = current_metrics().allocated;
+                        assert!(!receiving.valid(&function, &budget));
+                        assert_eq!(current_metrics().allocated, at);
+                    });
+                    assert!(!refused && used == 0 && first.is_none());
                 } else {
-                    assert!(!receiving.valid(&function, &other));
+                    let left = active_remaining();
+                    if kind == 0 {
+                        assert!(!receiving.valid(&foreign, &budget));
+                    } else {
+                        assert!(!receiving.valid(&function, &other));
+                    }
+                    assert_eq!(active_remaining(), left);
                 }
+                let left = active_remaining();
+                assert!(!receiving.valid(&function, &budget));
                 assert_eq!(active_remaining(), left);
-            }
-            let left = active_remaining();
-            assert!(!receiving.valid(&function, &budget));
-            assert_eq!(active_remaining(), left);
-            // Keep the second budget at a stable distinct address throughout.
-            assert_eq!(other.remaining, budget.remaining);
-            let _ = &mut other;
+                // Keep the second budget at a stable distinct address throughout.
+                assert_eq!(other.remaining, budget.remaining);
+                let _ = &mut other;
+            })
         });
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
         assert_eq!(refused, kind == 2);
         assert!(first.is_none() || kind == 2);
     }
-    let mut budget = ReplayBudget::new();
-    let (mut expired, _, _, _) = with_limit_usage_refusal(1 << 20, || {
-        ClosureReceiving::acquire(&function, &mut budget).unwrap()
+    let ((), allocation) = measure(|| {
+        let mut budget = ReplayBudget::new();
+        let (mut expired, _, _, _) = with_limit_usage_refusal(1 << 20, || {
+            ClosureReceiving::acquire(&function, &mut budget).unwrap()
+        });
+        assert!(!expired.valid(&function, &budget));
+        assert!(!expired.valid(&function, &budget));
+        drop(expired);
+        drop(budget);
     });
-    assert!(!expired.valid(&function, &budget));
-    assert!(!expired.valid(&function, &budget));
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
 }
 
 #[test]
