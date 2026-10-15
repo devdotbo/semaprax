@@ -95,6 +95,9 @@ pub(in crate::workspace_graph) fn resolve_module_with_base<'s>(
             ModuleFailure::Report(owner.publish_base_prelude_work())
         }
         BaseSelectiveFailure::Resolve(NominalReceiverFailure::Base(
+            InvocationFailure::ExtensionWork(_),
+        )) => ModuleFailure::Report(owner.publish_prelude_extension_work()),
+        BaseSelectiveFailure::Resolve(NominalReceiverFailure::Base(
             InvocationFailure::Producer(_),
         )) => ModuleFailure::Report(owner.publish_base_prelude_producer()),
     })

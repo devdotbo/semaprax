@@ -20,3 +20,13 @@ impl IdentityReservation {
 
 #[cfg(test)]
 mod tests;
+
+const EXTENSION_WORK_MESSAGE: &str = "prelude extension producer work bound refused";
+const _: () = assert!(EXTENSION_WORK_MESSAGE.len() <= MESSAGE.len());
+impl IdentityReservation {
+    pub(crate) fn publish_prelude_extension_work(mut self) -> Vec<Diagnostic> {
+        self.text.push_str(EXTENSION_WORK_MESSAGE);
+        self.report.push(Diagnostic::io("SPX-H006", self.text));
+        self.report
+    }
+}

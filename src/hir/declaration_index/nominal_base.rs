@@ -20,6 +20,16 @@ impl DeclarationIndex {
             .position(|item| std::ptr::eq(item, declaration))?;
         base.types_slice().get(ordinal)
     }
+    pub(super) fn compiler_type_for_source<'a>(
+        base: Option<&'a BasePreludeBundle>,
+        vector: Option<&'a crate::hir::prelude_bundle::VectorExtension>,
+        prelude: &[crate::ast::TypeDeclaration],
+        declaration: &crate::ast::TypeDeclaration,
+    ) -> Option<&'a ResolvedTypeDeclaration> {
+        Self::base_type_for_source(base, prelude, declaration).or_else(|| {
+            crate::hir::prelude_bundle::VectorExtension::for_source(vector, prelude, declaration)
+        })
+    }
     pub(super) fn reserve_base_receivers<E>(
         base: &BasePreludeBundle,
         reserve: &mut impl FnMut(usize) -> Result<(), E>,

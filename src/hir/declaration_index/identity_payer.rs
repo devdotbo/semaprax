@@ -51,6 +51,16 @@ impl DeclarationIndex {
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+        reserve: impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, IdentityIndexError<E>> {
+        Self::from_verified_with_nominal_extensions(program, prelude, base, None, reserve)
+    }
+
+    pub(in crate::hir) fn from_verified_with_nominal_extensions<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+        vector: Option<&super::super::prelude_bundle::VectorExtension>,
         mut reserve: impl FnMut(usize) -> Result<(), E>,
     ) -> Result<Self, IdentityIndexError<E>> {
         if let Some(base) = base {
@@ -72,6 +82,7 @@ impl DeclarationIndex {
             true,
             workspace,
             base,
+            vector,
         )?;
         index
             .share_nominal_payloads(&mut reserve)
@@ -95,6 +106,7 @@ impl DeclarationIndex {
             false,
             super::nominal_rollback::Workspace::default(),
             None,
+            None,
         )
     }
 
@@ -105,18 +117,32 @@ impl DeclarationIndex {
         canonical_nominals: bool,
         workspace: super::nominal_rollback::Workspace,
         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+        vector: Option<&super::super::prelude_bundle::VectorExtension>,
     ) -> Result<Self, IdentityIndexError<E>> {
         let mut index = Self::default();
         index.nominal_drop_workspace = workspace;
         for declaration in program.types().iter().chain(prelude) {
-            if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+            if let Some(ty) = Self::compiler_type_for_source(base, vector, prelude, declaration) {
+                let kind = match &ty.kind {
+                    ResolvedTypeDeclarationKind::Variant { .. } => DeclarationKind::Variant,
+                    ResolvedTypeDeclarationKind::Record { .. } => DeclarationKind::Record,
+                    _ => unreachable!("closed compiler payload kind"),
+                };
+                if kind == DeclarationKind::Record {
+                    payer
+                        .node::<DeclarationId, NominalPayload<ResolvedTypeParameterDeclaration>>()
+                        .map_err(IdentityIndexError::Identity)?;
+                    payer.bytes(2 * std::mem::size_of::<NominalPayload<ResolvedTypeParameterDeclaration>>()
+                        + std::mem::size_of::<Option<NominalPayload<ResolvedTypeParameterDeclaration>>>())
+                        .map_err(IdentityIndexError::Identity)?;
+                }
                 payer
-                    .top(&ty.name, DeclarationKind::Variant)
+                    .top(&ty.name, kind)
                     .map_err(IdentityIndexError::Identity)?;
                 index.insert_top_level(
                     payer.text(&ty.name).map_err(IdentityIndexError::Identity)?,
                     ty.id.clone(),
-                    DeclarationKind::Variant,
+                    kind,
                     IdentityOrigin::CompilerOwned,
                 );
                 index
@@ -312,6 +338,23 @@ impl DeclarationIndex {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
+            if let Some(ty) = Self::compiler_type_for_source(base, vector, prelude, declaration) {
+                if let ResolvedTypeDeclarationKind::Record { fields } = &ty.kind {
+                    payer
+                        .node::<DeclarationId, NominalPayload<ResolvedFieldDeclaration>>()
+                        .map_err(IdentityIndexError::Identity)?;
+                    payer
+                        .bytes(
+                            2 * std::mem::size_of::<NominalPayload<ResolvedFieldDeclaration>>()
+                                + std::mem::size_of::<
+                                    Option<NominalPayload<ResolvedFieldDeclaration>>,
+                                >(),
+                        )
+                        .map_err(IdentityIndexError::Identity)?;
+                    index.record_fields.insert(owner, fields.clone());
+                    continue;
+                }
+            }
             payer
                 .vector::<ResolvedFieldDeclaration>(fields.len())
                 .map_err(IdentityIndexError::Identity)?;
@@ -482,7 +525,7 @@ impl DeclarationIndex {
             let TypeDeclarationKind::Variant { cases } = &declaration.kind else {
                 continue;
             };
-            if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+            if let Some(ty) = Self::compiler_type_for_source(base, vector, prelude, declaration) {
                 index.insert_base_variant(ty);
                 continue;
             }

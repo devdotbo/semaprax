@@ -45,25 +45,27 @@ fn resolve_verified_paid_nominal<E>(
     } else {
         reuse
     };
-    let resolved = pass_nominal(inventory_program, reuse, None, reserve)?;
+    let resolved = pass_nominal(inventory_program, reuse, None, None, reserve)?;
     let Some(desugared) = record_invariants::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass_nominal(&desugared, None, None, reserve)
+    pass_nominal(&desugared, None, None, None, reserve)
 }
 
 fn source_pass_nominal<E>(
     program: &dyn ProgramSource,
     reuse: Option<FunctionReuse<'_>>,
     base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+    vector: Option<&super::super::prelude_bundle::VectorExtension>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // SourceIndex precedes the DeclarationIndex, as in the legacy route.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
-    let declarations = DeclarationIndex::from_verified_with_nominal_base(
+    let declarations = DeclarationIndex::from_verified_with_nominal_extensions(
         program,
         crate::prelude::declarations_for_program(program),
         base,
+        vector,
         &mut *reserve,
     )?;
     (Resolver {
@@ -83,14 +85,16 @@ fn pass_nominal<E>(
     program: &Program,
     reuse: Option<FunctionReuse<'_>>,
     base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+    vector: Option<&super::super::prelude_bundle::VectorExtension>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(ResolvedProgram, FunctionResolutionWork), Failure<E>> {
     // Preserve the old Resolver field-evaluation order before index creation.
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
-    let declarations = DeclarationIndex::from_verified_with_nominal_base(
+    let declarations = DeclarationIndex::from_verified_with_nominal_extensions(
         program,
         crate::prelude::declarations_for_program(program),
         base,
+        vector,
         &mut *reserve,
     )?;
     (Resolver {
@@ -143,12 +147,13 @@ pub(crate) fn resolve_source_checked_previous_nominal<'p, E>(
             reuse
         },
         None,
+        None,
         &mut reserve,
     )?;
     let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass_nominal(&desugared, None, None, &mut reserve)
+    pass_nominal(&desugared, None, None, None, &mut reserve)
 }
 
 pub(crate) fn resolve_source_nominal<'p, E>(
@@ -190,8 +195,11 @@ pub(crate) fn resolve_source_checked_previous_with_base<'p>(
             diagnostics,
         )));
     }
-    let base = invocation
-        .ensure(&mut reserve)
+    let (base, vector) = invocation
+        .ensure_selected(
+            crate::prelude::declarations_for_program(program),
+            &mut reserve,
+        )
         .map_err(NominalReceiverFailure::Base)?;
     let reuse = previous_program
         .zip(previous_resolved)
@@ -213,12 +221,13 @@ pub(crate) fn resolve_source_checked_previous_with_base<'p>(
             reuse
         },
         Some(base),
+        vector,
         &mut reserve,
     )
     .map_err(NominalReceiverFailure::Resolve)?;
     let Some(desugared) = record_invariants::source::desugar(program, &resolved.0) else {
         return Ok(resolved);
     };
-    pass_nominal(&desugared, None, Some(base), &mut reserve)
+    pass_nominal(&desugared, None, Some(base), vector, &mut reserve)
         .map_err(NominalReceiverFailure::Resolve)
 }

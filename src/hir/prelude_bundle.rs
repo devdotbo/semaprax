@@ -12,8 +12,13 @@ use std::sync::Arc;
 
 #[path = "prelude_bundle/borrowed.rs"]
 mod borrowed;
+#[path = "prelude_bundle/extension_work.rs"]
+mod extension_work;
 #[path = "prelude_bundle/fixed_work.rs"]
 mod fixed_work;
+#[path = "prelude_bundle/vector_extension.rs"]
+mod vector_extension;
+pub(crate) use vector_extension::VectorExtension;
 #[path = "prelude_bundle/invocation.rs"]
 mod invocation;
 #[cfg(test)]
