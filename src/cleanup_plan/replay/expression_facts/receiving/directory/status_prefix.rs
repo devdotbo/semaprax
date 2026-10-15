@@ -92,6 +92,14 @@ impl<'hir> Owner<'hir> {
         }
         budget.reserve_bytes(function, 0, directory.phase)?;
         budget.charge(function, 0, directory.phase)?;
+        // The authorization receipt and the inner/outer insertion Results are
+        // new receiving carriers. Fund them through this authenticated owner
+        // before producing the successful receipt or entering the probe.
+        budget.reserve_bytes(
+            function,
+            size_of::<Result<(), Diagnostic>>() + 2 * size_of::<Result<bool, Diagnostic>>(),
+            directory.phase,
+        )?;
         // One exact indexed current-row identity test; no textual ID parsing or
         // extra full-function scan precedes the original duplicate frontier.
         budget.charge(function, 1, directory.phase)?;

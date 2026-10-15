@@ -44,7 +44,9 @@ or short-key probes can cost more. Semantic duplicate-before-unknown-before-
 producer priority is unchanged wherever that algorithm's actual work suffices.
 
 After a missing-key probe, the existing grow, append, links and rebalance sequence
-is unchanged. Full new owner/search/comparison/Result carriers are paid through
+is unchanged. The successful authorization receipt and inner/outer insertion Results receive
+their exact three Layout fees per authenticated insertion before the probe.
+Full new owner/search/comparison/Result carriers are paid through
 the same byte owner before construction; exact old/new node backing remains the
 existing reserve_vec protocol. Failure never grants post-refusal allocation,
 new work allowance, fresh receiver or Drop credit. Ordinary detailed diagnostics
