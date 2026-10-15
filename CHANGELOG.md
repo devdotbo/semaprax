@@ -1,5 +1,7 @@
 # Changelog
 
+- Grow canonical expression-statement hygiene scratch with actual traversal depth, prepaying each complete replacement and retaining the original depth limit and full fixed-array receiver controls.
+
 - Initialize reservation caller metadata on the source-acquisition payer. Keep the exact truncated release version in the bounded notice while retaining its changelog link, and extend the frozen CLI-help projection for the admitted current scaffold layout.
 
 - Capture the first refused reservation’s compiler caller without allocating, and append it to outward builder-budget help while preserving numeric receipts, stages, limits and paid-report omission.
