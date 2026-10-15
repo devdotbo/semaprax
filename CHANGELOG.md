@@ -1,5 +1,7 @@
 # Changelog
 
+- Prepay a separate atomic-body control-key constructor without a type-walk cursor, preserving the full original control tuple, replay work and every other receiver. Mark generic type spellings as code in five rustdoc comments.
+
 - Update candidate inventory regressions for the admitted bounded-zeroing builtin, recognize binary-hash receipt readers in harness isolation, and fix two remaining test lint findings.
 - Give ordinary empty-renewal branch clones a separately prepaid borrowed
   payload without a renewal-map reference, preserving full state and work while
