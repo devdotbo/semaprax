@@ -266,3 +266,5 @@ fn nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal() {
     assert!(!metrics.invalid);
     assert_eq!(metrics.allocated, 0);
 }
+
+mod legacy;

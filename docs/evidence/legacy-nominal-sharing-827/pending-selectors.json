@@ -1,0 +1,70 @@
+{
+  "basis": "07b76aa3c0d2099f804fb8c09be3664b63c0fbf3",
+  "status": "authored-unexecuted",
+  "owners": [
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::nominal_payload::legacy::tests::legacy_owner_inside_zero_active_scope_is_unfunded_and_mutations_isolate_both_drop_orders",
+      "source": "src/hir/nominal_payload/legacy/tests.rs",
+      "source_sha256": "5e8338a37baf6d8da078cb28416061951b919d9a0266a4e407c5398d9c39df1f",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::nominal_payload::legacy::tests::legacy_and_funded_explicit_mutation_refusal_never_falls_through_to_implicit_cow",
+      "source": "src/hir/nominal_payload/legacy/tests.rs",
+      "source_sha256": "5e8338a37baf6d8da078cb28416061951b919d9a0266a4e407c5398d9c39df1f",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::nominal_payload::legacy::tests::legacy_512_owner_and_host_detached_payloads_keep_iterative_last_drop",
+      "source": "src/hir/nominal_payload/legacy/tests.rs",
+      "source_sha256": "5e8338a37baf6d8da078cb28416061951b919d9a0266a4e407c5398d9c39df1f",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::identity_resolution::nominal_tests::legacy::public_legacy_nominal_postpass_keeps_full_hir_graph_cache_and_isolated_mutation",
+      "source": "src/hir/identity_resolution/nominal_tests/legacy.rs",
+      "source_sha256": "966dc1d356f853ed765c32e8140cbcb4cc6db3d0cc5c270cb4d65463fef558c3",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::identity_resolution::nominal_tests::legacy::legacy_postpass_keeps_full_original_diagnostics_before_any_canonicalization",
+      "source": "src/hir/identity_resolution/nominal_tests/legacy.rs",
+      "source_sha256": "966dc1d356f853ed765c32e8140cbcb4cc6db3d0cc5c270cb4d65463fef558c3",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::identity_resolution::nominal_tests::legacy::complete_owned_baseline_and_public_legacy_sharing_report_real_allocation_and_drop",
+      "source": "src/hir/identity_resolution/nominal_tests/legacy.rs",
+      "source_sha256": "966dc1d356f853ed765c32e8140cbcb4cc6db3d0cc5c270cb4d65463fef558c3",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::nominal_payload::legacy::source_tests::legacy_nominal_complete_original_sources_and_semantic_constructor_stay_exact",
+      "source": "src/hir/nominal_payload/legacy/source_tests.rs",
+      "source_sha256": "e340cd3fb18b510e0b366ff8c2389843bc84374339a26f1e5ff4e26a80b7048a",
+      "reason": "Legacy COW compatibility, full old/current parity and explicit unfunded/paid isolation"
+    }
+  ],
+  "also_required_existing": [
+    "hir::identity_resolution::nominal_tests::nominal_actual_paid_receiver_preserves_complete_old_hir_wire_and_shares_all_nominal_views",
+    "hir::identity_resolution::nominal_tests::nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all_partial_owners",
+    "hir::identity_resolution::nominal_tests::nominal_full_constructor_keeps_complete_old_semantic_diagnostic_order",
+    "hir::identity_resolution::nominal_tests::nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal",
+    "hir::nominal_payload::tests::shared_mutation_refuses_without_touching_either_full_owner",
+    "hir::nominal_payload::tests::nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing"
+  ]
+}

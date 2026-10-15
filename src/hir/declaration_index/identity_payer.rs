@@ -100,7 +100,7 @@ impl DeclarationIndex {
         prelude: &[crate::ast::TypeDeclaration],
         identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
     ) -> Result<Self, IdentityIndexError<E>> {
-        Self::build_nominal_index(
+        let mut index = Self::build_nominal_index(
             program,
             prelude,
             &mut Payer::Legacy(identity),
@@ -108,7 +108,9 @@ impl DeclarationIndex {
             super::nominal_rollback::Workspace::default(),
             None,
             None,
-        )
+        )?;
+        index.share_legacy_nominal_payloads_unfunded();
+        Ok(index)
     }
 
     fn build_nominal_index<E>(

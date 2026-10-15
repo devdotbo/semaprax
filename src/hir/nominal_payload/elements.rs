@@ -53,6 +53,9 @@ fn capacity<E>(
     Ok(highwater)
 }
 impl NominalElement for ResolvedFieldDeclaration {
+    fn clone_legacy_unfunded(&self) -> Self {
+        super::legacy::clone::field(self)
+    }
     fn drop_capacity<E>(
         &self,
         reserve: &mut impl FnMut(usize) -> Result<(), E>,
@@ -67,6 +70,9 @@ impl NominalElement for ResolvedFieldDeclaration {
     }
 }
 impl NominalElement for ResolvedVariantCaseDeclaration {
+    fn clone_legacy_unfunded(&self) -> Self {
+        super::legacy::clone::case(self)
+    }
     fn drop_capacity<E>(
         &self,
         reserve: &mut impl FnMut(usize) -> Result<(), E>,

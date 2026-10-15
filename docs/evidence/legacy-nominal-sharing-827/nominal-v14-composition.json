@@ -1,0 +1,15 @@
+{
+  "basis": "07b76aa3c0d2099f804fb8c09be3664b63c0fbf3",
+  "whole_v14_rows": 79,
+  "all_original_archives_equal": true,
+  "all_prior_hooks_retained": true,
+  "leading_composed_sources": [
+    "src/hir/declaration_index/identity_payer.rs",
+    "src/hir/declaration_index/nominal.rs",
+    "src/hir/identity_resolution/nominal_tests.rs",
+    "src/hir/nominal_payload.rs",
+    "src/hir/nominal_payload/elements.rs",
+    "src/hir/nominal_payload/map.rs"
+  ],
+  "rust_execution": false
+}

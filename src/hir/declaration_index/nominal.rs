@@ -4,6 +4,13 @@ fn shared<T: nominal_payload::NominalElement, E>(
     values: &mut NominalPayload<T>,
     reserve: &mut impl FnMut(usize) -> Result<(), E>,
 ) -> Result<(), E> {
+    // This private funded producer only receives its freshly constructed
+    // Owned payloads or its explicitly funded compiler bundle. Never invoke
+    // Legacy COW before a reservation by treating it as a paid source.
+    assert!(
+        !values.is_legacy_shared(),
+        "legacy nominal promotion requires explicit paid materialization"
+    );
     if values.is_shared() {
         return reserve(0);
     }
@@ -22,12 +29,12 @@ impl DeclarationIndex {
             fields.drain(&mut dispose);
         }
         for (_, fields) in std::mem::take(&mut self.record_fields) {
-            if !fields.is_shared() {
+            if !fields.has_shared_owner() {
                 fields.drain_recursive_types(&mut dispose);
             }
         }
         for (_, cases) in std::mem::take(&mut self.variant_cases) {
-            if !cases.is_shared() {
+            if !cases.has_shared_owner() {
                 cases.drain_recursive_types(&mut dispose);
             }
         }
@@ -77,3 +84,5 @@ impl DeclarationIndex {
         Ok(())
     }
 }
+
+mod legacy;

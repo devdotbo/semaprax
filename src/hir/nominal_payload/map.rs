@@ -67,6 +67,17 @@ impl CaseFields {
             storage: CaseStorage::Case { owner, ordinal },
         }
     }
+    /// Actual immutable storage only; this grants no paid provenance.
+    pub(crate) fn legacy_unfunded(
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    ) -> Self {
+        assert!(owner.is_legacy_shared());
+        assert!(ordinal < owner.len());
+        Self {
+            storage: CaseStorage::Case { owner, ordinal },
+        }
+    }
     pub(crate) fn drain(self, dispose: &mut impl FnMut(ResolvedType)) {
         if let CaseStorage::Owned(fields) = self.storage {
             fields.drain_recursive_types(dispose);
@@ -91,6 +102,16 @@ impl Deref for CaseFields {
 }
 impl DerefMut for CaseFields {
     fn deref_mut(&mut self) -> &mut Self::Target {
+        if let CaseStorage::Case { owner, ordinal } = &self.storage {
+            if owner.is_legacy_shared() {
+                let fields = owner[*ordinal]
+                    .fields
+                    .iter()
+                    .map(NominalElement::clone_legacy_unfunded)
+                    .collect::<Vec<_>>();
+                self.storage = CaseStorage::Owned(fields.into());
+            }
+        }
         match &mut self.storage {
             CaseStorage::Owned(values) => values,
             CaseStorage::Case { .. } => {

@@ -11,3 +11,17 @@ A fully funded index constructor must acquire the legacy success producer's allo
 The actual workspace core owns one invocation base bundle across non-hit module resolutions. The original core ledger must still be current; foreign/restored scopes permanently select a typed detached producer failure without acquiring or reusing base storage. Full source verification precedes producer acquisition. The bundle has the separately specified finite fixed-schema producer counter; no authored/replay work allowance is created or reset. Bytes, work and structural producer failures stay distinct until publication through the existing prepaid report text/slot. The index retains complete logical maps; only the exact current compiler-owned AST source pair may select schema payloads. Authored or decoded ID matches substitute nothing.
 
 Standalone public/no-owner resolution, final linker activation, decoded caches and selected extension-prelude ownership remain explicit residuals. No cap increase, forecast/P discount, total-deficit inference, runtime-fit claim or full827/828 completion is authorized by this source change. Qualification must include complete old/current full maps/HIR/wire/diagnostics, actual same-owner receiving paths, exact/short/zero and sticky refusal, actual allocation/backing and iterative Drop, current source custody, generated artifact pins, and the existing unchanged runtime fixtures.
+
+## Explicit unfunded Legacy sharing successor (source only)
+
+Successful ordinary Legacy construction now performs a separate post-validation
+storage pass while retaining its complete old checking/error order. Immutable
+payloads may share a private LegacyUnfunded owner; is_shared still denotes only
+explicitly acquired Funded owners. Legacy direct/mutable-iteration writes detach
+complete Owned values (unique move or iterative copy), preserving index/sibling
+isolation and the old iterative disposal fallback. Funded implicit mutation stays
+forbidden. Cache decode and public Vec conversion remain Owned. No new public enum
+variant, payer discovery, controlled Legacy budget refusal, forecast discount or
+application recovery is claimed. Complete old/current owners and allocation/Drop
+observations are pending execution; source custody and scope are recorded under
+`docs/evidence/legacy-nominal-sharing-827/`.

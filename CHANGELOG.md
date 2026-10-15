@@ -7140,3 +7140,7 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
 - Source-only #781 successor: carry selected-local Session entry, membership and
   profile refusals as prepaid static data while preserving complete legacy Owned
   receivers, first receipt/stage and pending full-layout/physical/work controls.
+
+- Source-only #827 Legacy successor: preserve complete old nominal validation,
+  then share explicitly unfunded immutable payloads with isolated iterative COW;
+  keep paid provenance and funded mutation guards separate. Qualification pending.

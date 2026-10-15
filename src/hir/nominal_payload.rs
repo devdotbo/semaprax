@@ -29,8 +29,19 @@ pub trait NominalElement: sealed::Sealed + Clone + fmt::Debug + Eq {
     ) -> Result<usize, E>;
     fn drain_types(&mut self, dispose: &mut impl FnMut(ResolvedType));
     fn clone_bytes(&self) -> Option<usize>;
+    /// Stack-safe compatibility cloning for implicit legacy COW only.
+    #[doc(hidden)]
+    fn clone_legacy_unfunded(&self) -> Self {
+        self.clone()
+    }
+}
+#[derive(Clone, Copy, Eq, PartialEq)]
+enum OwnerMode {
+    Funded,
+    LegacyUnfunded,
 }
 struct Owner<T: NominalElement> {
+    mode: OwnerMode,
     values: Vec<T>,
     scratch: Vec<ResolvedType>,
 }
@@ -102,6 +113,7 @@ impl<T: NominalElement> NominalPayload<T> {
         );
         Ok(Self {
             storage: Storage::Shared(Arc::new(Owner {
+                mode: OwnerMode::Funded,
                 values: std::mem::take(values),
                 scratch,
             })),
@@ -156,8 +168,15 @@ impl<T: NominalElement> NominalPayload<T> {
             }
         }
     }
+    /// Paid provenance only. Physical legacy sharing never satisfies this.
     pub(crate) fn is_shared(&self) -> bool {
-        matches!(self.storage, Storage::Shared(_))
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::Funded)
+    }
+    pub(crate) fn is_legacy_shared(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::LegacyUnfunded)
+    }
+    pub(crate) fn has_shared_owner(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(_))
     }
     #[cfg(test)]
     pub(crate) fn same_owner(&self, other: &Self) -> bool {
@@ -202,6 +221,11 @@ impl<T: NominalElement> Deref for NominalPayload<T> {
 }
 impl<T: NominalElement> DerefMut for NominalPayload<T> {
     fn deref_mut(&mut self) -> &mut Vec<T> {
+        // A legacy mutation always leaves shared precomputed disposal scratch.
+        // The detached Owned Vec uses its original iterative fallback instead.
+        if self.is_legacy_shared() {
+            self.detach_legacy_unfunded();
+        }
         match &mut self.storage {
             Storage::Owned(v) => v,
             Storage::Shared(_) => panic!("shared nominal mutation requires try_make_mut"),
@@ -295,3 +319,12 @@ pub(crate) fn dispose(ty: ResolvedType, scratch: &mut Vec<ResolvedType>) {
 }
 #[cfg(test)]
 mod tests;
+
+mod legacy;
+
+pub(super) fn legacy_fields_equal(
+    left: &[ResolvedFieldDeclaration],
+    right: &[ResolvedFieldDeclaration],
+) -> bool {
+    legacy::clone::fields_equal(left, right)
+}

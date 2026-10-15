@@ -1,0 +1,212 @@
+Review corrected concrete #827 Legacy COW proof, source-only/tools-disabled; no execution. Check new iterative clone order/Drop, unique move-out, exact case-field preservation, paid/Legacy provenance and explicit paid refusal isolation. Public NominalPayload remains a struct with private Storage. Owner mode adds only Funded vs LegacyUnfunded, is_shared means Funded only. Public From<Vec> and decoded values remain Owned, original Clone on Owned remains deep. Shared Legacy implicit mutation invokes detach below; funded implicit mutation still panics. Legacy acquisition invokes NO ambient payer and never claims funding. Postpass occurs AFTER whole old semantic construction (canonical_nominals=false), not for cache decoding. Existing paid Arc/owner/Result fees use actual size_of including mode. No cap/forecast/allowance changes. Report concrete blockers, not inferred runtime approval.
+
+FILE src/hir/nominal_payload/legacy.rs
+//! Explicit unfunded compatibility acquisition. No ambient payer is queried.
+use super::*;
+impl<T: NominalElement> NominalPayload<T> {
+    pub(super) fn detach_legacy_unfunded(&mut self) {
+        let Storage::Shared(owner) = &mut self.storage else {
+            unreachable!("legacy shared owner")
+        };
+        assert!(owner.mode == OwnerMode::LegacyUnfunded);
+        let values = if let Some(owner) = Arc::get_mut(owner) {
+            std::mem::take(&mut owner.values)
+        } else {
+            owner
+                .values
+                .iter()
+                .map(NominalElement::clone_legacy_unfunded)
+                .collect()
+        };
+        self.storage = Storage::Owned(values);
+    }
+    pub(crate) fn from_legacy_vec_unfunded(values: &mut Vec<T>) -> Self {
+        let mut capacity = 0;
+        for value in values.iter() {
+            let required = value.drop_capacity(&mut |_| Ok::<_, std::convert::Infallible>(()));
+            let required = match required {
+                Ok(n) => n,
+                Err(impossible) => match impossible {},
+            };
+            capacity = capacity.max(required);
+        }
+        // These are ordinary infallible legacy allocations, not a controlled
+        // budget acquisition. In particular an existing active account pays 0.
+        let scratch = Vec::with_capacity(capacity);
+        Self {
+            storage: Storage::Shared(Arc::new(Owner {
+                mode: OwnerMode::LegacyUnfunded,
+                values: std::mem::take(values),
+                scratch,
+            })),
+        }
+    }
+}
+#[cfg(test)]
+mod tests;
+
+pub(super) mod clone;
+
+FILE src/hir/nominal_payload/legacy/clone.rs
+//! Infallible legacy COW cloning, without recursive type-stack growth or payer.
+use super::*;
+fn ty(root: &ResolvedType) -> ResolvedType {
+    enum Frame<'a> {
+        Enter(&'a ResolvedType),
+        Nominal(crate::hir::DeclarationId, usize),
+        Function(usize),
+    }
+    let mut frames = vec![Frame::Enter(root)];
+    let mut values = Vec::new();
+    while let Some(frame) = frames.pop() {
+        match frame {
+            Frame::Enter(value) => match value {
+                ResolvedType::Nominal {
+                    declaration,
+                    arguments,
+                } => {
+                    frames.push(Frame::Nominal(declaration.clone(), arguments.len()));
+                    for child in arguments.iter().rev() {
+                        frames.push(Frame::Enter(child));
+                    }
+                }
+                ResolvedType::Function { parameters, result } => {
+                    frames.push(Frame::Function(parameters.len()));
+                    frames.push(Frame::Enter(result));
+                    for child in parameters.iter().rev() {
+                        frames.push(Frame::Enter(child));
+                    }
+                }
+                leaf => values.push(leaf.clone()),
+            },
+            Frame::Nominal(declaration, count) => {
+                let split = values
+                    .len()
+                    .checked_sub(count)
+                    .expect("legacy nominal child count");
+                let arguments = values.drain(split..).collect();
+                values.push(ResolvedType::Nominal {
+                    declaration,
+                    arguments,
+                });
+            }
+            Frame::Function(count) => {
+                let result = Box::new(values.pop().expect("legacy function result"));
+                let split = values
+                    .len()
+                    .checked_sub(count)
+                    .expect("legacy function parameter count");
+                let parameters = values.drain(split..).collect();
+                values.push(ResolvedType::Function { parameters, result });
+            }
+        }
+    }
+    assert_eq!(values.len(), 1, "legacy complete cloned type");
+    values.pop().unwrap()
+}
+pub(in super::super) fn field(value: &ResolvedFieldDeclaration) -> ResolvedFieldDeclaration {
+    ResolvedFieldDeclaration {
+        id: value.id.clone(),
+        name: value.name.clone(),
+        index: value.index,
+        ty: ty(&value.ty),
+        span: value.span,
+    }
+}
+pub(in super::super) fn case(
+    value: &ResolvedVariantCaseDeclaration,
+) -> ResolvedVariantCaseDeclaration {
+    ResolvedVariantCaseDeclaration {
+        id: value.id.clone(),
+        name: value.name.clone(),
+        index: value.index,
+        fields: value.fields.iter().map(field).collect(),
+        span: value.span,
+    }
+}
+
+FILE src/hir/declaration_index/nominal/legacy.rs
+//! Post-validation legacy storage reuse. Original checking/error order precedes this.
+use super::*;
+fn share<T: nominal_payload::NominalElement>(values: &mut NominalPayload<T>) {
+    if !values.is_empty() && !values.has_shared_owner() {
+        *values = NominalPayload::from_legacy_vec_unfunded(&mut **values);
+    }
+}
+impl DeclarationIndex {
+    pub(in super::super) fn share_legacy_nominal_payloads_unfunded(&mut self) {
+        for values in self.type_parameters.values_mut() {
+            share(values);
+        }
+        for values in self.record_fields.values_mut() {
+            share(values);
+        }
+        for values in self.variant_cases.values_mut() {
+            share(values);
+        }
+        for cases in self.variant_cases.values() {
+            if !cases.is_legacy_shared() {
+                continue;
+            }
+            for (ordinal, case) in cases.iter().enumerate() {
+                // Never synthesize or overwrite a missing/different fact from
+                // an ID match. Preserve the exact earlier constructor winner.
+                if self
+                    .case_fields
+                    .get(&case.id)
+                    .is_none_or(|fields| fields.as_slice() != case.fields.as_slice())
+                {
+                    continue;
+                }
+                self.case_fields.insert(
+                    case.id.clone(),
+                    CaseFields::legacy_unfunded(cases.clone(), ordinal),
+                );
+            }
+        }
+    }
+}
+
+FILE existing explicit paid materializer guard
+    pub fn try_make_mut<E>(
+        &mut self,
+        mut reserve: impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<&mut Vec<T>, NominalMutationError<E>> {
+        if matches!(&self.storage, Storage::Shared(_)) {
+Unchanged paid materializer then reserves clone cursor and full payload before cloning, sets self.storage=Owned(values), and returns self.deref_mut(); both Shared modes follow that path. Owned only probes reserve(0).
+
+FILE provenance
+    /// Paid provenance only. Physical legacy sharing never satisfies this.
+    pub(crate) fn is_shared(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::Funded)
+    }
+    pub(crate) fn is_legacy_shared(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(owner) if owner.mode == OwnerMode::LegacyUnfunded)
+    }
+    pub(crate) fn has_shared_owner(&self) -> bool {
+        matches!(&self.storage, Storage::Shared(_))
+    }
+
+FILE CaseFields COW
+impl DerefMut for CaseFields {
+    fn deref_mut(&mut self) -> &mut Self::Target {
+        if let CaseStorage::Case { owner, ordinal } = &self.storage {
+            if owner.is_legacy_shared() {
+                let fields = owner[*ordinal]
+                    .fields
+                    .iter()
+                    .map(NominalElement::clone_legacy_unfunded)
+                    .collect::<Vec<_>>();
+                self.storage = CaseStorage::Owned(fields.into());
+            }
+        }
+        match &mut self.storage {
+            CaseStorage::Owned(values) => values,
+            CaseStorage::Case { .. } => {
+                panic!("shared case-field mutation requires explicit paid materialization")
+            }
+        }
+    }
+}
+Unchanged paid CaseFields::canonical asserts owner.is_shared() (Funded only), validates ordinal<len. New legacy_unfunded asserts owner.is_legacy_shared(), validates ordinal<len. No method changes either OwnerMode. CaseStorage::Case holds owner+ordinal; Owned wraps NominalPayload fields. Drain handles Owned roots only; coordinate owner drop releases Arc.
+NominalElement is sealed to Field/Case/TypeParameter. New default clone_legacy_unfunded uses self.clone (parameter scalar metadata); Field override invokes legacy::clone::field, Case override invokes legacy::clone::case. Existing drain_types replaces each field ty with Unit then passes old ty to disposer; cases drain each field. Owner Drop loops drain_types and unchanged iterative dispose using preacquired scratch. Legacy wrapper computes maximum drop_capacity with same traversal order before allocation. Detached Owned fallback handles both Nominal and Function iteratively. No mutable Owner values escape except get_mut in destructive drain, which only shrinks, or unique move-out below.
