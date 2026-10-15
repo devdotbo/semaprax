@@ -104,7 +104,25 @@ fn nominal_full_constructor_refuses_at_every_actual_acquisition_and_releases_all
             "@id(\"choice.left.x\") x:i64",
             "@id(\"choice.left.x\") x:Option<Option<i64>>",
         );
-    let program = crate::check(&nested, "nominal-shared.spx").unwrap();
+    // Preserve the original inadmitted fixture as its complete negative control.
+    let rejected = crate::check(&nested, "nominal-shared.spx").unwrap_err();
+    let expected = [
+        ("SPX-T223", "generic copy type `Option` accepts only direct `i64` or `bool` arguments", 65, 87, 2, 43),
+        ("SPX-T223", "generic copy type `Option` accepts only direct `i64` or `bool` arguments", 411, 433, 12, 52),
+        ("SPX-T215", "case field `Choice::Left.x` must have a direct admitted Copy scalar or an in-scope variant type parameter in Copy Variants v1", 411, 433, 12, 52),
+    ].map(|(code, message, start, end, line, column)| {
+        Diagnostic::error(code, message, crate::ast::Span { start, end, line, column })
+            .at_path("nominal-shared.spx")
+    });
+    assert_eq!(rejected, expected);
+    // Direct scalar instantiation is admitted for a record field, and the
+    // generic variant's field uses its in-scope parameter. Both retain a real
+    // recursive nominal payload without bypassing source verification.
+    let admitted = SOURCE
+        .replace("@id(\"row.x\") x:i64", "@id(\"row.x\") x:Option<i64>")
+        .replace("variant Choice {", "variant Choice<T> {")
+        .replace("@id(\"choice.left.x\") x:i64", "@id(\"choice.left.x\") x:T");
+    let program = crate::check(&admitted, "nominal-shared.spx").unwrap();
     let prelude = crate::prelude::declarations_for_program(&program);
     let mut requests = Vec::new();
     let full = DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
@@ -172,14 +190,26 @@ fn nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal() {
     use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
     let program = crate::check(SOURCE, "nominal-owner.spx").unwrap();
     let prelude = crate::prelude::declarations_for_program(&program);
-    let mut exact = 0usize;
-    drop(
+    // This constructor retains ordinary ambient type-fact/layout formatting
+    // debits in addition to the explicit nominal/identity callback requests.
+    // Observe the complete same-owner route rather than treating that callback
+    // subtotal as its whole ledger. No charge or quota is changed.
+    let mut explicit = 0usize;
+    let (full, refused, exact, first) = with_limit_usage_refusal(usize::MAX, || {
         DeclarationIndex::from_verified_with_nominal_reservation(&program, prelude, |n| {
-            exact = exact.checked_add(n).unwrap();
-            Ok::<_, Stop>(())
+            explicit = explicit.checked_add(n).unwrap();
+            if reserve_active_required(n) {
+                Ok(())
+            } else {
+                Err(Stop(7))
+            }
         })
-        .unwrap(),
-    );
+    });
+    assert!(full.is_ok(), "full owner route: {full:?}; first={first:?}");
+    assert!(!refused);
+    assert_eq!(first, None);
+    assert!(exact >= explicit);
+    drop(full);
     for cap in [0, exact - 1, exact] {
         let ((result, metrics), overflowed, used, first) = with_limit_usage_refusal(cap, || {
             measure(|| {
@@ -194,9 +224,13 @@ fn nominal_full_constructor_exact_short_zero_and_preselected_owner_refusal() {
         });
         assert!(!metrics.invalid);
         if cap == exact {
-            assert!(result.is_ok());
+            assert!(result.is_ok(), "cap={cap} exact={exact} explicit={explicit} used={used} first={first:?} result={result:?}");
             assert!(!overflowed);
             assert_eq!(used, exact);
+            assert!(
+                metrics.allocated <= used,
+                "actual backing={metrics:?}; paid={used}"
+            );
             assert!(first.is_none());
         } else {
             assert!(matches!(result, Err(IdentityIndexError::Identity(Stop(7)))));

@@ -30,7 +30,7 @@ fn assert_detached_report(failure: ModuleFailure) {
 
 fn owner_affinity(cached: bool) {
     let program = crate::check(SOURCE, "nominal-affinity.spx").unwrap();
-    let ((), refused, _, first) = with_limit_usage_refusal(CAP, || {
+    let (restored_refusal, refused, _, first) = with_limit_usage_refusal(CAP, || {
         let authored = BTreeMap::new();
         let mut core = crate::workspace_graph::expected_projection::CoreProviderProofs::new(
             &authored,
@@ -52,6 +52,12 @@ fn owner_affinity(cached: bool) {
         }
         // A different active Rc<Budget> cannot acquire or reuse this core's
         // payload, even though its own outward report allocation succeeds.
+        let expected_parent = crate::bounded_output::ReservationRefusal {
+            requested: 0,
+            remaining: crate::bounded_output::active_remaining().unwrap(),
+            floor: 0,
+            stage: None,
+        };
         let ((), child_refused, _, child_first) = with_limit_usage_refusal(CAP, || {
             assert_detached_report(
                 resolve_module_with_core(&mut core, None, &program.path, &input, None).unwrap_err(),
@@ -62,9 +68,20 @@ fn owner_affinity(cached: bool) {
         assert_eq!(child_first, None);
         // Restoring the original ledger cannot reset the selected detachment
         // or complete an unbuilt bundle, nor reuse a previously built bundle.
-        assert_detached_report(
-            resolve_module_with_core(&mut core, None, &program.path, &input, None).unwrap_err(),
-        );
+        // ClassifierLedger::current selects a zero-byte custody refusal on
+        // the HELD parent when it detects the foreign owner. Restoring that
+        // parent cannot fund a second report after its sticky refusal.
+        let acquired = acquisitions();
+        let (restored, setup) = measure(|| {
+            resolve_module_with_core(&mut core, None, &program.path, &input, None).unwrap_err()
+        });
+        let ModuleFailure::Setup(Refused::Budget(restored_refusal)) = restored else {
+            panic!("restored sticky parent must refuse report setup: {restored:?}")
+        };
+        assert_eq!(restored_refusal, expected_parent);
+        assert_eq!(acquisitions(), acquired);
+        assert_eq!(setup.allocated, 0);
+        assert!(!setup.invalid);
         assert_eq!(core.base_prelude.receipt(), receipt);
         let (selected, retry) = measure(|| {
             core.base_prelude
@@ -86,12 +103,14 @@ fn owner_affinity(cached: bool) {
         });
         assert_eq!(disposal.allocated, 0);
         assert!(!disposal.invalid);
+        restored_refusal
     });
     assert!(
-        !refused,
-        "owner detachment does not fabricate a byte refusal"
+        refused,
+        "the original held ledger's custody failure stays sticky"
     );
-    assert_eq!(first, None);
+    assert_eq!(first, Some(restored_refusal));
+    assert_eq!(restored_refusal.requested, 0);
 }
 
 #[test]

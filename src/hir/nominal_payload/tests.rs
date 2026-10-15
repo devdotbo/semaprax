@@ -124,23 +124,35 @@ fn nested_512_last_owner_drop_uses_only_its_preacquired_disposal_backing() {
             arguments: vec![ty],
         };
     }
-    let mut fields = vec![field(ty)];
-    let mut charged = 0;
-    let (payload, construction) = measure(|| {
-        NominalPayload::from_funded_vec(&mut fields, |n| {
+    // Keep construction and both drops in one real observer registry. A new
+    // measure() resets its registry and cannot account frees of prior phases.
+    let ((), total) = measure(|| {
+        let mut fields = vec![field(ty)];
+        let mut charged = 0;
+        let before = crate::test_allocation_observer::current_metrics();
+        let payload = NominalPayload::from_funded_vec(&mut fields, |n| {
             charged += n;
             Ok::<_, ()>(())
         })
-        .unwrap()
+        .unwrap();
+        let construction = crate::test_allocation_observer::current_metrics();
+        assert!(!construction.invalid);
+        assert!(charged >= construction.allocated - before.allocated);
+        let copy = payload.clone();
+        let before_drop = crate::test_allocation_observer::current_metrics();
+        drop(payload);
+        let not_last = crate::test_allocation_observer::current_metrics();
+        assert_eq!(not_last.allocated, before_drop.allocated);
+        assert_eq!(not_last.freed, before_drop.freed);
+        drop(copy);
+        let last = crate::test_allocation_observer::current_metrics();
+        assert_eq!(last.allocated, not_last.allocated);
+        assert!(!last.invalid);
+        assert!(last.freed > not_last.freed);
+        assert_eq!(last.live, 0);
+        assert_eq!(last.freed, last.allocated);
     });
-    assert!(!construction.invalid);
-    assert!(charged >= construction.allocated);
-    let copy = payload.clone();
-    let ((), not_last) = measure(|| drop(payload));
-    assert_eq!(not_last.allocated, 0);
-    assert_eq!(not_last.freed, 0);
-    let ((), last) = measure(|| drop(copy));
-    assert_eq!(last.allocated, 0);
-    assert!(!last.invalid);
-    assert!(last.freed > 0);
+    assert!(!total.invalid);
+    assert_eq!(total.live, 0);
+    assert_eq!(total.allocated, total.freed);
 }
