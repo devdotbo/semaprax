@@ -1,5 +1,6 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
+mod branch_clone;
 mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
@@ -6648,7 +6649,7 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    let mut branch = skeleton_clone(
+                    let mut branch = branch_clone::for_push(
                         budget,
                         function,
                         &observations,

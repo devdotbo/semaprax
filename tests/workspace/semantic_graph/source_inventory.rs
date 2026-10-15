@@ -14,6 +14,8 @@ macro_rules! semantic_graph_private_layout_source_inventory {
         include_str!("../../src/source_verify/byte_traversal/nested.rs"),
         include_str!("../../src/source_verify/byte_traversal/nested/tests.rs"),
         include_str!("../../src/source_verify/iterative/while_rules/before_nested.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/tests.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/memo.rs"),

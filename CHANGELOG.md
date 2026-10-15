@@ -1,5 +1,7 @@
 # Changelog
 
+- Acquire branch-history clone backing at the capacity of its immediately following push, preserving complete path enumeration, work debits and later growth while retaining the original clone and push controls.
+
 - Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
 
 - Share the exact explicit-record presence census within one immutable renewal-directory phase, authenticating its declaration index on reuse and preserving full consuming checks under the unchanged work limit.

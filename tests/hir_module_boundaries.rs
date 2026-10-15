@@ -434,6 +434,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/test_allocation_observer.rs"),
             include_str!("../src/test_allocation_observer/free_order.rs"),
         ),
+        include_str!("../src/cleanup_plan/replay/branch_clone.rs"),
+        include_str!("../src/cleanup_plan/replay/branch_clone/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/memo.rs"),
