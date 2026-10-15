@@ -763,6 +763,15 @@ fn final_ready_input(stage: &str, source: &str, current: &str) -> String {
     let current = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/initial-report-policy-845-20261015/current-to-2bfd.json"
+        )),
+        source,
+        current,
+    );
+    let current = current.as_str();
+    let current = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/field-update-hir-visitor-836-20261015/current-to-677.json"
         )),
         source,
@@ -802,4 +811,9 @@ pub(crate) fn compact844_input(source: &str, current: &str) -> String {
 }
 pub(crate) fn diagnostic846_input(source: &str, current: &str) -> String {
     final_ready_input("846", source, current)
+}
+
+// Independent raw845 domain. A later compositor supplies a separate full view here.
+pub(crate) fn initial845_input(_source: &str, current: &str) -> String {
+    current.to_owned()
 }
