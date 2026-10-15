@@ -1,0 +1,12 @@
+{
+  "source_only": true,
+  "basis": "5e856b83a",
+  "provider_current_bindings": 17,
+  "provider_complete_unchanged_originals": 17,
+  "composition": "Two exact contextual inverses undo retained-edge concat joins before all original hooks.",
+  "other_actual_root_checks": {
+    "linked_whole_inverses": 3,
+    "nominal_v12_whole_inverses_and_bindings": 72
+  },
+  "execution": "Python source projection only; no Cargo/Rust tests."
+}

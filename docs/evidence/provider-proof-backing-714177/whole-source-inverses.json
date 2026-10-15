@@ -377,8 +377,18 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "3db281494bd6c3fe300b334f6e4c35534df6fa44c9e79dbdd5a5f4dae0119c80",
+      "current_sha256": "485f5b066ebe1e2edb3a42c9bcdfeb6d6f310d2691736eaf63777a02ac803676",
       "inverse": [
+        {
+          "hook": "retained-edge-complete-source-context-1",
+          "current": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/errors.rs\"),\n            concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n",
+          "before": "            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/errors.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs\"),\n"
+        },
+        {
+          "hook": "retained-edge-complete-source-context-2",
+          "current": "            include_str!(\"../../../../../src/hir/validation/call_parameters/copy_flags_tests.rs\"),\n            concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs\")),\n",
+          "before": "            include_str!(\"../../../../../src/hir/validation/call_parameters/copy_flags_tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving.rs\"),\n"
+        },
         {
           "hook": "existing-retained-loan-children-complete-source",
           "current": "            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/inventory_before.rs\"),\n",
