@@ -455,7 +455,11 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         exact_facade,
     );
     let mut current_facade = exact_facade.to_vec();
-    let child = current_facade.iter().position(|line| *line == "pub(super) fn materialize_receiving(").unwrap() + 1;
+    let child = current_facade
+        .iter()
+        .position(|line| *line == "pub(super) fn materialize_receiving(")
+        .unwrap()
+        + 1;
     current_facade.splice(child..child, [
         "pub(super) fn pay_type(declaration: &TypeDeclaration, owner: &mut Receiver) -> Result<(), Setup> {",
         "pub(super) fn pay_signature(function: &Function, owner: &mut Receiver) -> Result<(), Setup> {",
@@ -465,10 +469,16 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn pay_teardown_minimum(owner: &mut Receiver) -> Result<(), Setup> {",
     ]);
     current_facade.push("pub(super) fn verify(");
-    assert_eq!(current_projection_root.lines().filter_map(|line| {
-        let trimmed = line.trim();
-        trimmed.contains("pub(super)").then_some(trimmed)
-    }).collect::<Vec<_>>(), current_facade);
+    assert_eq!(
+        current_projection_root
+            .lines()
+            .filter_map(|line| {
+                let trimmed = line.trim();
+                trimmed.contains("pub(super)").then_some(trimmed)
+            })
+            .collect::<Vec<_>>(),
+        current_facade
+    );
 
     assert_eq!(
         projection_call_sites
@@ -526,9 +536,8 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "#[cfg(test)]\n#[path = \"uncached_absence_tests.rs\"]\nmod uncached_absence_tests;"
     ));
     assert_eq!(cost_root.matches("mod uncached_absence_tests;").count(), 1);
-    let constructor_cost = include_str!(
-        "../../src/workspace_graph/expected_projection/cost/constructor.rs"
-    );
+    let constructor_cost =
+        include_str!("../../src/workspace_graph/expected_projection/cost/constructor.rs");
     assert_eq!(projection.matches(constructor_cost).count(), 1);
     let absence_fixture =
         include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs");
@@ -1323,10 +1332,19 @@ fn public_workspace_analysis_cli_hostiles_and_mode_separation_are_exact() {
 // The historical equality remains complete and rejects any raw join drift.
 fn historical_projection_root_facade(current: &str) -> String {
     use sha2::{Digest, Sha256};
-    let row: serde_json::Value = serde_json::from_str(include_str!("../../docs/evidence/ae91-source-consumer-corrections-20261015/facade.json")).unwrap();
-    assert_eq!(format!("{:x}", Sha256::digest(current.as_bytes())), row["current_sha256"]);
+    let row: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/ae91-source-consumer-corrections-20261015/facade.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!("{:x}", Sha256::digest(current.as_bytes())),
+        row["current_sha256"]
+    );
     assert_eq!(current, row["edits"][0]["new"].as_str().unwrap());
     let original = row["edits"][0]["old"].as_str().unwrap();
-    assert_eq!(format!("{:x}", Sha256::digest(original.as_bytes())), row["original_sha256"]);
+    assert_eq!(
+        format!("{:x}", Sha256::digest(original.as_bytes())),
+        row["original_sha256"]
+    );
     original.to_owned()
 }
