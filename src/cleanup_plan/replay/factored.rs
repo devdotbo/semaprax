@@ -121,7 +121,12 @@ pub(super) fn validate_with_index_storage<'hir>(
         &mut ReplayBudget::new(),
     )? {
         #[cfg(test)]
-        oracle_hook::cross_check(program, function);
+        oracle_hook::cross_check_with_storage(
+            program,
+            function,
+            budget,
+            continuations,
+        )?;
         return Ok(false);
     }
     match compare_with_index_storage(program, function, budget, helpers, continuations) {
@@ -962,3 +967,6 @@ mod continuation_tests {
 
 #[cfg(test)]
 mod oracle_order;
+
+#[cfg(test)]
+mod continuation_receiver;

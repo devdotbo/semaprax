@@ -1,5 +1,6 @@
 //! Invocation-held empty continuation backing; never HIR proof or a quota.
 use super::*;
+mod paid_receiving;
 pub(super) const FRAME_CAPACITY: usize = 516;
 // Some(empty) is an idle, never-acquired top-level slot; None is its lease.
 // This replaces the old bool without enlarging the inline Storage carrier.
@@ -7,6 +8,8 @@ pub(super) struct Storage<'hir> {
     program: &'hir ResolvedProgram,
     pub(super) frames: Option<Vec<Frame<'hir>>>,
     nested: Option<Box<Nested<'hir>>>,
+    receiving_owner: Option<crate::bounded_output::classifier_string::ClassifierLedger>,
+    receiving_first: Option<paid_receiving::Failure>,
 }
 struct Nested<'hir> {
     depth: usize,
@@ -23,6 +26,8 @@ impl<'hir> Storage<'hir> {
             program,
             frames: Some(Vec::new()),
             nested: None,
+            receiving_owner: None,
+            receiving_first: None,
         }
     }
     pub(super) fn matches(&self, program: &dyn crate::cleanup::ReplayContext) -> bool {
@@ -35,6 +40,9 @@ impl<'hir> Storage<'hir> {
         function: &ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<(Lease, Vec<Frame<'hir>>), Diagnostic> {
+        if self.receiving_owner.is_some() {
+            self.authenticate(self.program, function, budget)?;
+        }
         if self.frames.is_some() {
             let frames = self.frames.as_mut().unwrap();
             if frames.capacity() == 0 {

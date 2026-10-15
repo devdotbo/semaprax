@@ -482,7 +482,6 @@ pub(in crate::cleanup_plan) fn validate_program_context(
         )
     })?;
     let mut budget = ReplayBudget::new();
-    let mut continuations = continuation_storage::Storage::new(full);
     let helpers = ordinary_renewals::index(full, &mut budget)?;
     reserve_program_skeleton_work(
         program,
@@ -494,6 +493,7 @@ pub(in crate::cleanup_plan) fn validate_program_context(
         ),
         &mut budget,
     )?;
+    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;
     for function in program.functions() {
         validate_structure_with_budget_storage(
             program,

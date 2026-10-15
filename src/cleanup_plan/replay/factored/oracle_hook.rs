@@ -16,6 +16,28 @@ pub(super) fn cross_check(
     }
 }
 
+/// Ordinary storage sharing changes backing only; explicitly opted oracle
+/// routes keep their complete independent account and never borrow this lease.
+pub(super) fn cross_check_with_storage<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    storage: Option<&mut continuation_storage::Storage<'hir>>,
+) -> Result<(), Diagnostic> {
+    match super::super::allocation::opted() {
+        Ok(None) => match storage {
+            Some(storage) if storage.has_receiving_owner() => {
+                storage.authenticate(program, function, budget)?;
+                super::continuation_receiver::cross_check(program, function, storage);
+            }
+            _ => super::cross_check(program, function),
+        },
+        Ok(Some(lease)) => cross_check_oracle(program, function, lease),
+        Err(refusal) => panic!("opted oracle lease is not live: {refusal:?}"),
+    }
+    Ok(())
+}
+
 /// Restores the materialization instrumentation on every exit, including
 /// unwind. It only restores the saved counter; nothing is normalized.
 struct Restore(usize);
