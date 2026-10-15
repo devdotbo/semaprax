@@ -5,6 +5,10 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "after": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
+        "before": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n"
+      },
+      {
         "after": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/inventory_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n",
         "before": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n"
       },

@@ -280,3 +280,6 @@ pub(crate) use nominal::{resolve_source_checked_previous_with_base, NominalRecei
 
 #[cfg(test)]
 pub(crate) mod nominal_original;
+
+#[cfg(test)]
+mod nominal_invalid_layout_tests;

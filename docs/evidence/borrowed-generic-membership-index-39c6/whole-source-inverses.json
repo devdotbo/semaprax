@@ -159,8 +159,14 @@
     "source": "tests/workspace/semantic_graph/source_inventory.rs",
     "archive": "docs/evidence/borrowed-generic-membership-index-39c6/source_inventory.rs.before.txt",
     "original_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
-    "current_sha256": "549fbe4fbad5eba571927db49a83236dcf769da184f4e55e8cfd2be390ad992e",
+    "current_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
     "hooks": [
+      {
+        "after": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
+        "before": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n",
+        "name": "nominal-invalid-layout-complete-source",
+        "count": 1
+      },
       {
         "after": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
         "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",

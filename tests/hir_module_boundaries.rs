@@ -615,6 +615,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/identity_resolution/nominal.rs"),
         include_str!("../src/hir/identity_resolution/nominal_original.rs"),
         include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
+        include_str!("../src/hir/identity_resolution/nominal_invalid_layout_tests.rs"),
         include_str!("../src/hir/nominal_payload.rs"),
         include_str!("../src/hir/nominal_payload/codec.rs"),
         include_str!("../src/hir/nominal_payload/elements.rs"),

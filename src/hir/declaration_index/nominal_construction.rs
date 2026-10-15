@@ -96,6 +96,32 @@ impl<E> Payer<'_, E> {
         self.node::<(DeclarationId, String), DeclarationId>()?;
         self.owned()
     }
+    pub(super) fn semantic(
+        &mut self,
+        code: &'static str,
+        args: std::fmt::Arguments<'_>,
+        span: Span,
+        path: &str,
+        legacy_logical_format: bool,
+    ) -> super::identity_payer::IdentityIndexError<E> {
+        use super::identity_payer::IdentityIndexError;
+        match self {
+            Self::Legacy(_) => {
+                let message = if legacy_logical_format {
+                    crate::bounded_output::budgeted_format(args)
+                } else {
+                    std::fmt::format(args)
+                };
+                IdentityIndexError::Semantic(Diagnostic::error(code, message, span).at_path(path))
+            }
+            Self::Funded(reserve) => {
+                match super::nominal_paid_values::diagnostic(code, args, span, path, *reserve) {
+                    Ok(diagnostic) => IdentityIndexError::Semantic(diagnostic),
+                    Err(error) => error,
+                }
+            }
+        }
+    }
     pub(super) fn resolve_type(
         &mut self,
         index: &DeclarationIndex,

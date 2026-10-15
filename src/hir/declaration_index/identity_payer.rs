@@ -159,12 +159,13 @@ impl DeclarationIndex {
                         .text(&parameter.name)
                         .map_err(IdentityIndexError::Identity)?,
                     index: u32::try_from(ordinal).map_err(|_| {
-                        Diagnostic::error(
+                        payer.semantic(
                             "SPX-H006",
-                            format!("type `{}` has too many parameters", declaration.name),
+                            format_args!("type `{}` has too many parameters", declaration.name),
                             declaration.span,
+                            program.path(),
+                            true,
                         )
-                        .at_path(program.path())
                     })?,
                     span: parameter.span,
                 });
@@ -273,12 +274,13 @@ impl DeclarationIndex {
                         .text(&parameter.name)
                         .map_err(IdentityIndexError::Identity)?,
                     index: u32::try_from(ordinal).map_err(|_| {
-                        Diagnostic::error(
+                        payer.semantic(
                             "SPX-H006",
-                            format!("function `{}` has too many parameters", function.name),
+                            format_args!("function `{}` has too many parameters", function.name),
                             function.span,
+                            program.path(),
+                            true,
                         )
-                        .at_path(program.path())
                     })?,
                     span: parameter.span,
                 });
@@ -292,13 +294,15 @@ impl DeclarationIndex {
             .filter(|import| import.native_rust)
             .any(|import| index.functions_by_name.contains_key(&import.name))
         {
-            return Err(IdentityIndexError::Semantic(
-                Diagnostic::error(
-                    "SPX-B107",
-                    "Native Rust Interop declaration set is unsupported: symbol collision",
-                    Span::default(),
-                )
-                .at_path(program.path()),
+            return Err(payer.semantic(
+                "SPX-B107",
+                format_args!(
+                    "{}",
+                    "Native Rust Interop declaration set is unsupported: symbol collision"
+                ),
+                Span::default(),
+                program.path(),
+                false,
             ));
         }
         for declaration in program.types().iter().chain(prelude) {
@@ -319,20 +323,22 @@ impl DeclarationIndex {
                     .resolve_type(&index, &field.ty, Some(&owner))
                     .map_err(IdentityIndexError::Identity)?
                     .ok_or_else(|| {
-                        Diagnostic::error(
+                        payer.semantic(
                             "SPX-H001",
-                            format!("unresolved field type `{}`", field.ty),
+                            format_args!("unresolved field type `{}`", field.ty),
                             field.span,
+                            program.path(),
+                            true,
                         )
-                        .at_path(program.path())
                     })?;
                 let field_index = u32::try_from(ordinal).map_err(|_| {
-                    Diagnostic::error(
+                    payer.semantic(
                         "SPX-H006",
-                        format!("record `{}` has too many fields", declaration.name),
+                        format_args!("record `{}` has too many fields", declaration.name),
                         declaration.span,
+                        program.path(),
+                        true,
                     )
-                    .at_path(program.path())
                 })?;
                 let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
@@ -381,20 +387,22 @@ impl DeclarationIndex {
                     .resolve_type(&index, &field.ty, Some(&owner))
                     .map_err(IdentityIndexError::Identity)?
                     .ok_or_else(|| {
-                        Diagnostic::error(
+                        payer.semantic(
                             "SPX-H001",
-                            format!("unresolved class field type `{}`", field.ty),
+                            format_args!("unresolved class field type `{}`", field.ty),
                             field.span,
+                            program.path(),
+                            true,
                         )
-                        .at_path(program.path())
                     })?;
                 let field_index = u32::try_from(ordinal).map_err(|_| {
-                    Diagnostic::error(
+                    payer.semantic(
                         "SPX-H006",
-                        format!("class `{}` has too many fields", declaration.name),
+                        format_args!("class `{}` has too many fields", declaration.name),
                         declaration.span,
+                        program.path(),
+                        true,
                     )
-                    .at_path(program.path())
                 })?;
                 let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
@@ -431,13 +439,12 @@ impl DeclarationIndex {
                     .identity(&method.stable_id)
                     .map_err(IdentityIndexError::Identity)?;
                 if index.declarations.contains_key(&method_id) {
-                    return Err(IdentityIndexError::Semantic(
-                        Diagnostic::error(
-                            "SPX-S102",
-                            format!("duplicate stable id `{}`", method.stable_id),
-                            method.span,
-                        )
-                        .at_path(program.path()),
+                    return Err(payer.semantic(
+                        "SPX-S102",
+                        format_args!("duplicate stable id `{}`", method.stable_id),
+                        method.span,
+                        program.path(),
+                        true,
                     ));
                 }
                 payer.owned().map_err(IdentityIndexError::Identity)?;
@@ -455,16 +462,15 @@ impl DeclarationIndex {
                     },
                 );
                 if !method.type_parameters.is_empty() {
-                    return Err(IdentityIndexError::Semantic(
-                        Diagnostic::error(
-                            "SPX-T224",
-                            format!(
-                                "class method `{}` cannot declare generic parameters in this slice",
-                                method.name
-                            ),
-                            method.span,
-                        )
-                        .at_path(program.path()),
+                    return Err(payer.semantic(
+                        "SPX-T224",
+                        format_args!(
+                            "class method `{}` cannot declare generic parameters in this slice",
+                            method.name
+                        ),
+                        method.span,
+                        program.path(),
+                        true,
                     ));
                 }
                 index
@@ -492,12 +498,13 @@ impl DeclarationIndex {
                     .identity(&case.stable_id)
                     .map_err(IdentityIndexError::Identity)?;
                 let case_index = u32::try_from(case_ordinal).map_err(|_| {
-                    Diagnostic::error(
+                    payer.semantic(
                         "SPX-H006",
-                        format!("variant `{}` has too many cases", declaration.name),
+                        format_args!("variant `{}` has too many cases", declaration.name),
                         declaration.span,
+                        program.path(),
+                        true,
                     )
-                    .at_path(program.path())
                 })?;
                 payer
                     .case(&case.name)
@@ -527,23 +534,25 @@ impl DeclarationIndex {
                         .resolve_type(&index, &field.ty, Some(&owner))
                         .map_err(IdentityIndexError::Identity)?
                         .ok_or_else(|| {
-                            Diagnostic::error(
+                            payer.semantic(
                                 "SPX-H001",
-                                format!("unresolved case field type `{}`", field.ty),
+                                format_args!("unresolved case field type `{}`", field.ty),
                                 field.span,
+                                program.path(),
+                                true,
                             )
-                            .at_path(program.path())
                         })?;
                     let field_index = u32::try_from(field_ordinal).map_err(|_| {
-                        Diagnostic::error(
+                        payer.semantic(
                             "SPX-H006",
-                            format!(
+                            format_args!(
                                 "variant case `{}::{}` has too many fields",
                                 declaration.name, case.name
                             ),
                             case.span,
+                            program.path(),
+                            true,
                         )
-                        .at_path(program.path())
                     })?;
                     let ty = index.nominal_drop_workspace.resolved_type(ty);
                     let resolved = ResolvedFieldDeclaration {

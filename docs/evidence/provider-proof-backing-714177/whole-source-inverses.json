@@ -298,8 +298,13 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "549fbe4fbad5eba571927db49a83236dcf769da184f4e55e8cfd2be390ad992e",
+      "current_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
       "inverse": [
+        {
+          "hook": "nominal-invalid-layout-complete-source",
+          "current": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
+          "before": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n"
+        },
         {
           "hook": "complete-paid-facts-current-source-join",
           "current": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
@@ -367,8 +372,13 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "e3a2aa8df810c083f626f75a8f579d7e0a9d524bd0dca38d31cbc283358ca6bf",
+      "current_sha256": "352293712245623f1c371e81b57e885105064a5170cc624471747743b6cc5c26",
       "inverse": [
+        {
+          "hook": "nominal-invalid-layout-complete-source",
+          "current": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
+          "before": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n"
+        },
         {
           "hook": "complete-paid-facts-current-source-join",
           "current": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_facts.rs\"),",

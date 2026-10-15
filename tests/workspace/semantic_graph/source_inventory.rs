@@ -68,6 +68,7 @@ macro_rules! semantic_graph_root_source_inventory {
         include_str!("../../src/hir/identity_resolution/nominal.rs"),
         include_str!("../../src/hir/identity_resolution/nominal_original.rs"),
         include_str!("../../src/hir/identity_resolution/nominal_tests.rs"),
+        include_str!("../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs"),
         include_str!("../../src/hir/nominal_payload.rs"),
         include_str!("../../src/hir/nominal_payload/codec.rs"),
         include_str!("../../src/hir/nominal_payload/elements.rs"),
