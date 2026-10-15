@@ -1,5 +1,7 @@
 # Changelog
 
+- Keep the reserved string-builtin source refusal and an independent G235 lookalike-producer rebase control; use a portable auxiliary fixture path, and transport the complete frozen builder fixture through pinned formatting without changing its runtime assertions.
+
 - Decline optional scalar-helper capture when the complete source hash cannot fit its unchanged work bound, preserving ordinary scalar imports and the full G410 receiving refusal for a missing proof. Retain the large Explorer snapshot regression and independent capture controls.
 
 - Refresh browser graph pins from complete hosted 17104e20c records after paid-scratch bill reductions, retaining every historical graph byte and adding an exact previous-capture reconstruction gate.
