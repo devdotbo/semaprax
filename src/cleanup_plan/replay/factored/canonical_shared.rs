@@ -4,6 +4,10 @@
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::*;
 
+mod memo;
+#[cfg(test)]
+mod before_index;
+
 type SharedWeighted = Rc<Weighted>;
 
 enum CanonicalFrame {
@@ -67,7 +71,7 @@ fn share_weighted(
 pub(super) struct Canonicalizer<'a> {
     automaton: &'a Automaton,
     sink: usize,
-    closures: BTreeMap<usize, Rc<BTreeMap<usize, u64>>>,
+    closures: memo::Memo<Rc<BTreeMap<usize, u64>>>,
     states: BTreeMap<SharedWeighted, usize>,
     ids: BTreeMap<(u64, Vec<(Label, usize)>), usize>,
 }
@@ -77,7 +81,7 @@ impl<'a> Canonicalizer<'a> {
         Self {
             automaton,
             sink,
-            closures: BTreeMap::new(),
+            closures: memo::Memo::new(),
             states: BTreeMap::new(),
             ids: BTreeMap::new(),
         }
@@ -91,6 +95,7 @@ impl<'a> Canonicalizer<'a> {
         root: usize,
         budget: &mut ReplayBudget,
     ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        self.closures.authenticate(function, budget)?;
         budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
         let mut stack = vec![(root, false)];
         while let Some((node, expanded)) = stack.pop() {
@@ -142,11 +147,7 @@ impl<'a> Canonicalizer<'a> {
                 physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
                 "factored closure shared header",
             )?;
-            budget.reserve_btree_node::<usize, Rc<BTreeMap<usize, u64>>>(
-                function,
-                "factored closure memo node",
-            )?;
-            self.closures.insert(node, Rc::new(closure));
+            self.closures.insert(function, node, budget, || Rc::new(closure))?;
         }
         Ok(self.closures.get(&root).cloned())
     }
@@ -230,6 +231,10 @@ impl<'a> Canonicalizer<'a> {
     ) -> Result<Option<usize>, Diagnostic> {
         #[cfg(test)]
         tests::note_actual_entry(budget);
+        // Authenticate even when states already contains the requested root.
+        // One equivalent() call holds this function and budget borrowed across
+        // both roots; no closure/cache view leaves that invocation.
+        self.closures.authenticate(function, budget)?;
         budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
         let root = own_weighted(function, budget, root)?;
         let root_copy = share_weighted(function, budget, &root)?;

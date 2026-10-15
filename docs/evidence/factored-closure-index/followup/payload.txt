@@ -1,0 +1,176 @@
+One source-only followup on prior guessed-fee + authentication blockers. No execution. Review ONLY concrete remaining defects, no expansion to old cycle behavior. Accounting policy covers full new receiving/initializer carriers as well as heap backing; no outer Canonicalizer carrier charge exists at caller (factored.rs221: let mut canonical=Canonicalizer::new(&automaton,sink); then two id(function,vec![(root,1)],budget) calls on the SAME borrowed function/budget before canonical Drop). All raw pointers compare only, never dereference. No Memo escapes that local scope. Existing full old receiver compiled independently. Same logical work/caps, no gain claim; sparse directory has O(maxkey/8) slots. reserve_vec precharges FULL replacement target backing while old backing remains paid; LegacyUnobserved skips growth charging/allocation control and Vec::resize grows ordinarily. pays_allocations=false must skip ALL new positive fees (explicit below). ClassifierLedger is Option<Rc<Budget>>, capture/current just Rc clone/pointer check; foreign current poisons held ledger. reserve_bytes(0) authenticates without bootstrap; positive may bootstrap prepaid error text; budget_refusal may consume prepaid text and later returns empty H006 without allocation. Test wrapper setup stays in whole observer. Original review called Result<Box> nonexistent, duplicated Self guessed, cached id/read authorization possibly missing. Those are corrected below: named initializer, one uncovered Memo receiver, actual authenticate Result; chunk initializer + heap + named Box. get serves nothing after sticky fail. New sparse-first, all prefix endpoints exact/short/zero, wrong function/budget, detached/restored, stale ledger and explicit legacy tests authored, not executed. Check whether exact carrier formulas still have unbacked terms, and whether id/closure authority/lifetime is sound for this actual caller. Retain conditional uncertainties.
+
+MEMO:
+//! Lazy numeric closure memo. Sparse high keys still require gap directory slots.
+use super::{Diagnostic, ReplayBudget, ResolvedFunction};
+use crate::bounded_output::classifier_string::ClassifierLedger;
+use std::mem::size_of;
+const WIDTH: usize = 8;
+
+pub(super) struct Memo<T> {
+    chunks: Vec<Option<Box<[Option<T>; WIDTH]>>>,
+    binding: Option<Binding>,
+    failed: bool,
+}
+struct Binding {
+    function: *const ResolvedFunction,
+    budget: *const ReplayBudget,
+    ledger: ClassifierLedger,
+}
+impl<T> Memo<T> {
+    pub(super) fn new() -> Self {
+        Self {
+            chunks: Vec::new(),
+            binding: None,
+            failed: false,
+        }
+    }
+    pub(super) fn authenticate(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        if self.failed {
+            return Err(Diagnostic::io("SPX-H006", String::new()));
+        }
+        if let Some(binding) = &self.binding {
+            // Read no foreign payer, even to construct a refusal report. The
+            // exact caller keeps both borrowed receivers at stable addresses.
+            let ledger_matches = binding.ledger.current();
+            if binding.function != std::ptr::from_ref(function)
+                || binding.budget != std::ptr::from_ref(budget)
+                || !ledger_matches
+            {
+                self.failed = true;
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+        }
+        if let Err(error) =
+            budget.reserve_bytes(function, 0, "factored closure memo authentication")
+        {
+            self.failed = true;
+            return Err(error);
+        }
+        if self.binding.is_none() {
+            // One live Memo receiver (including its binding slot), the named
+            // Binding initializer below, and this actual authorization Result.
+            // The old Canonicalizer constructor created only allocation-free
+            // inert fields; activation pays its new inline receiver once.
+            if budget.pays_allocations() {
+                if let Err(error) = budget.reserve_bytes(
+                    function,
+                    size_of::<Self>() + size_of::<Binding>() + size_of::<Result<(), Diagnostic>>(),
+                    "factored closure memo controls",
+                ) {
+                    self.failed = true;
+                    return Err(error);
+                }
+            }
+            let binding = Binding {
+                function: std::ptr::from_ref(function),
+                budget: std::ptr::from_ref(budget),
+                ledger: ClassifierLedger::capture(),
+            };
+            self.binding = Some(binding);
+        }
+        Ok(())
+    }
+    pub(super) fn contains_key(&self, key: &usize) -> bool {
+        self.get(key).is_some()
+    }
+    pub(super) fn get(&self, key: &usize) -> Option<&T> {
+        if self.failed {
+            return None;
+        }
+        self.chunks
+            .get(*key / WIDTH)?
+            .as_ref()?
+            .get(*key % WIDTH)?
+            .as_ref()
+    }
+    pub(super) fn insert(
+        &mut self,
+        function: &ResolvedFunction,
+        key: usize,
+        budget: &mut ReplayBudget,
+        make: impl FnOnce() -> T,
+    ) -> Result<(), Diagnostic> {
+        self.authenticate(function, budget)?;
+        let result = self.insert_bound(function, key, budget, make);
+        if result.is_err() {
+            self.failed = true;
+        }
+        result
+    }
+    fn insert_bound(
+        &mut self,
+        function: &ResolvedFunction,
+        key: usize,
+        budget: &mut ReplayBudget,
+        make: impl FnOnce() -> T,
+    ) -> Result<(), Diagnostic> {
+        let index = key / WIDTH;
+        // WIDTH > 1, so quotient + 1 cannot overflow usize.
+        let required = index + 1;
+        if self.chunks.len() < required {
+            let additional = required - self.chunks.len();
+            budget.reserve_vec(
+                function,
+                &mut self.chunks,
+                additional,
+                "factored closure memo directory",
+            )?;
+            self.chunks.resize_with(required, || None);
+        }
+        if self.chunks[index].is_none() {
+            if budget.pays_allocations() {
+                // Named array initializer + its simultaneously allocated boxed
+                // array backing + named Box pointer. The directory's receiving
+                // Option<Box> slot was already paid by reserve_vec, not again.
+                budget.reserve_bytes(
+                    function,
+                    2 * size_of::<[Option<T>; WIDTH]>() + size_of::<Box<[Option<T>; WIDTH]>>(),
+                    "factored closure memo chunk",
+                )?;
+            }
+            let values: [Option<T>; WIDTH] = std::array::from_fn(|_| None);
+            let chunk = Box::new(values);
+            self.chunks[index] = Some(chunk);
+        }
+        self.chunks[index].as_mut().expect("paid chunk")[key % WIDTH] = Some(make());
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod tests;
+
+CANONICAL ID ENTRY:
+    pub(super) fn id(
+        &mut self,
+        function: &ResolvedFunction,
+        root: Weighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<usize>, Diagnostic> {
+        #[cfg(test)]
+        tests::note_actual_entry(budget);
+        // Authenticate even when states already contains the requested root.
+        // One equivalent() call holds this function and budget borrowed across
+        // both roots; no closure/cache view leaves that invocation.
+        self.closures.authenticate(function, budget)?;
+        budget.reserve_array::<CanonicalFrame>(function, 1, "factored canonical initial frame")?;
+        let root = own_weighted(function, budget, root)?;
+        let root_copy = share_weighted(function, budget, &root)?;
+        let mut frames = vec![CanonicalFrame::Enter(root_copy)];
+
+CLOSURE ENTRY:
+    fn closure(
+        &mut self,
+        function: &ResolvedFunction,
+        root: usize,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        self.closures.authenticate(function, budget)?;
+        budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
+
+ALL MEMO READS are only closure loop contains/get and final root.get, between its upfront authenticate and return, no mutable function/budget/source escape. insert authenticates separately.

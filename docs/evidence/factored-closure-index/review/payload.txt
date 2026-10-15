@@ -1,0 +1,501 @@
+Review a private compiler optimization draft. No execution has happened. Goal: remove per-key closure memo BTree nodes without changing full epsilon closure/weighted algebra, work debits, sticky cumulative physical payer, old receiver or caps. Memo is local to one canonicalizer/automaton, authenticates exact function and ReplayBudget addresses plus actual ClassifierLedger, then zero reserve. Old closure map type BTreeMap<usize,Rc<BTreeMap<usize,u64>>>; new lazy numeric chunks8. Chunk gaps retain None. `reserve_vec` prepays whole geometric replacement; `reserve_bytes` is sticky and bootstrap/refusal-text-aware. Legacy unobserved must remain explicit. Complete pre-index shared receiver will remain independently compiled, plus canonical_before. New tuple/control/chunk sizes must cover actual simultaneous values before acquisition; do not accept refunds or guessed padding. Evaluate compile typing, real semantic differences, underpayment, foreign/restored behavior, and small/sparse tradeoffs. Point out concrete blockers versus absent context. No source/tool access permitted.
+
+FILE src/cleanup_plan/replay/factored/canonical_shared/memo.rs
+//! Lazy numeric closure memo; no automaton-wide or per-key tree allocation.
+use super::{Diagnostic, ReplayBudget, ResolvedFunction};
+use crate::bounded_output::classifier_string::ClassifierLedger;
+use std::mem::size_of;
+const WIDTH: usize = 8;
+
+pub(super) struct Memo<T> {
+    chunks: Vec<Option<Box<[Option<T>; WIDTH]>>>,
+    binding: Option<Binding>,
+    failed: bool,
+}
+struct Binding {
+    function: *const ResolvedFunction,
+    budget: *const ReplayBudget,
+    ledger: ClassifierLedger,
+}
+impl<T> Memo<T> {
+    pub(super) fn new() -> Self {
+        Self {
+            chunks: Vec::new(),
+            binding: None,
+            failed: false,
+        }
+    }
+    pub(super) fn authenticate(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        if let Some(binding) = &self.binding {
+            if binding.function != std::ptr::from_ref(function)
+                || binding.budget != std::ptr::from_ref(budget)
+                || !binding.ledger.current()
+            {
+                self.failed = true;
+            }
+        }
+        if self.failed {
+            return Err(budget.budget_refusal(
+                function,
+                "factored closure memo belongs to another receiver",
+                "",
+            ));
+        }
+        budget.reserve_bytes(function, 0, "factored closure memo authentication")?;
+        if self.binding.is_none() {
+            budget.reserve_bytes(
+                function,
+                2 * size_of::<Self>() + size_of::<Result<(), Diagnostic>>() + size_of::<Binding>(),
+                "factored closure memo controls",
+            )?;
+            self.binding = Some(Binding {
+                function: std::ptr::from_ref(function),
+                budget: std::ptr::from_ref(budget),
+                ledger: ClassifierLedger::capture(),
+            });
+        }
+        Ok(())
+    }
+    pub(super) fn contains_key(&self, key: &usize) -> bool {
+        self.get(key).is_some()
+    }
+    pub(super) fn get(&self, key: &usize) -> Option<&T> {
+        self.chunks
+            .get(*key / WIDTH)?
+            .as_ref()?
+            .get(*key % WIDTH)?
+            .as_ref()
+    }
+    pub(super) fn insert(
+        &mut self,
+        function: &ResolvedFunction,
+        key: usize,
+        budget: &mut ReplayBudget,
+        make: impl FnOnce() -> T,
+    ) -> Result<(), Diagnostic> {
+        self.authenticate(function, budget)?;
+        let index = key / WIDTH;
+        let required = index.checked_add(1).ok_or_else(|| {
+            budget.budget_refusal(function, "factored closure memo index overflowed", "")
+        })?;
+        if self.chunks.len() < required {
+            let additional = required - self.chunks.len();
+            budget.reserve_vec(
+                function,
+                &mut self.chunks,
+                additional,
+                "factored closure memo directory",
+            )?;
+            self.chunks.resize_with(required, || None);
+        }
+        if self.chunks[index].is_none() {
+            budget.reserve_bytes(
+                function,
+                2 * size_of::<[Option<T>; WIDTH]>()
+                    + size_of::<Box<[Option<T>; WIDTH]>>()
+                    + size_of::<Result<Box<[Option<T>; WIDTH]>, Diagnostic>>(),
+                "factored closure memo chunk",
+            )?;
+            self.chunks[index] = Some(Box::new(std::array::from_fn(|_| None)));
+        }
+        self.chunks[index].as_mut().expect("paid chunk")[key % WIDTH] = Some(make());
+        Ok(())
+    }
+}
+
+FILE src/cleanup_plan/replay/factored/canonical_shared.rs
+//! Paid immutable weighted backing for the ordinary canonical receiver.
+//! Frames, open states and completed memo keys share only owned immutable
+//! vectors. Label order, route weights, signature algebra and work debits keep
+//! the complete original receiver in canonical_before.rs as an independent control.
+use super::*;
+
+mod memo;
+
+type SharedWeighted = Rc<Weighted>;
+
+enum CanonicalFrame {
+    Enter(SharedWeighted),
+    Exit(SharedWeighted, u64, Vec<(Label, SharedWeighted)>),
+}
+
+// The caller has already paid the moved vector's complete allocated backing.
+// Rc owns that vector without copying it; its two counters and Vec header are
+// separately acquired while all preceding owners remain fully charged.
+fn own_weighted(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    state: Weighted,
+) -> Result<SharedWeighted, Diagnostic> {
+    budget.reserve_bytes(
+        function,
+        physical_clone::rc_backing_bytes::<Weighted>(),
+        "factored weighted shared header",
+    )?;
+    Ok(Rc::new(state))
+}
+
+// Vec's FromIterator growth policy may round 1..3 items up to four slots.
+// Build this producer through its exact precharged capacity instead.
+fn weighted_successor(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    targets: BTreeMap<usize, u64>,
+) -> Result<SharedWeighted, Diagnostic> {
+    budget.reserve_array::<(usize, u64)>(
+        function,
+        targets.len(),
+        "factored weighted successor vector",
+    )?;
+    let mut state = Vec::with_capacity(targets.len());
+    state.extend(targets);
+    own_weighted(function, budget, state)
+}
+
+fn share_weighted(
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    state: &SharedWeighted,
+) -> Result<SharedWeighted, Diagnostic> {
+    let work = state
+        .len()
+        .checked_add(1)
+        .ok_or_else(|| replay_error(function, "factored weighted state work overflowed"))?;
+    budget.charge(function, work, "factored weighted state copy")?;
+    // Authentication remains sticky even though this clone creates no backing.
+    // The receiving frame/map slot has its own full carrier reservation.
+    budget.reserve_bytes(function, 0, "factored weighted state backing")?;
+    Ok(Rc::clone(state))
+}
+
+/// Bottom-up hash-consing of the weighted subset construction. A determinized
+/// state's id is its accepted weight together with each label and the id of
+/// the state that label leads to, so two states share an id exactly when
+/// they accept every observation sequence the same number of times.
+pub(super) struct Canonicalizer<'a> {
+    automaton: &'a Automaton,
+    sink: usize,
+    closures: memo::Memo<Rc<BTreeMap<usize, u64>>>,
+    states: BTreeMap<SharedWeighted, usize>,
+    ids: BTreeMap<(u64, Vec<(Label, usize)>), usize>,
+}
+
+impl<'a> Canonicalizer<'a> {
+    pub(super) fn new(automaton: &'a Automaton, sink: usize) -> Self {
+        Self {
+            automaton,
+            sink,
+            closures: memo::Memo::new(),
+            states: BTreeMap::new(),
+            ids: BTreeMap::new(),
+        }
+    }
+
+    /// Nodes with moves (or the sink) reachable through epsilon edges, each
+    /// with its number of epsilon routes.
+    fn closure(
+        &mut self,
+        function: &ResolvedFunction,
+        root: usize,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<Rc<BTreeMap<usize, u64>>>, Diagnostic> {
+        self.closures.authenticate(function, budget)?;
+        budget.reserve_array::<(usize, bool)>(function, 1, "factored closure initial cursor")?;
+        let mut stack = vec![(root, false)];
+        while let Some((node, expanded)) = stack.pop() {
+            budget.charge(function, 1, "factored closure cursor")?;
+            if self.closures.contains_key(&node) {
+                continue;
+            }
+            let state = &self.automaton.nodes[node];
+            if !expanded {
+                budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                stack.push((node, true));
+                for target in &state.epsilon {
+                    if !self.closures.contains_key(target) {
+                        budget.reserve_vec(function, &mut stack, 1, "factored closure cursors")?;
+                        stack.push((*target, false));
+                    }
+                }
+                continue;
+            }
+            let mut closure = BTreeMap::new();
+            if !state.moves.is_empty() || node == self.sink {
+                budget.reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                closure.insert(node, 1_u64);
+            }
+            for target in &state.epsilon {
+                let Some(inner) = self.closures.get(target) else {
+                    return Err(replay_error(function, "cleanup CFG contains a cycle"));
+                };
+                for (inner_node, routes) in inner.iter() {
+                    budget.charge(function, 1, "factored closure route addition")?;
+                    if !closure.contains_key(inner_node) {
+                        budget
+                            .reserve_btree_node::<usize, u64>(function, "factored closure node")?;
+                    }
+                    let slot = closure.entry(*inner_node).or_insert(0_u64);
+                    let Some(sum) = slot.checked_add(*routes) else {
+                        return Ok(None);
+                    };
+                    *slot = sum;
+                }
+            }
+            budget.charge(
+                function,
+                closure.len().saturating_add(1),
+                "factored skeleton closure",
+            )?;
+            budget.reserve_bytes(
+                function,
+                physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
+                "factored closure shared header",
+            )?;
+            self.closures.insert(function, node, budget, || Rc::new(closure))?;
+        }
+        Ok(self.closures.get(&root).cloned())
+    }
+
+
+FILE src/cleanup_plan/replay/physical_budget.rs
+//! Selected physical allocation requests; ordinary replay keeps its exact route.
+use super::*;
+mod setup;
+pub(crate) use setup::{SetupFailure, SetupReason};
+
+impl ReplayBudget {
+    pub(super) fn with_physical(
+        function: &ResolvedFunction,
+        bytes: usize,
+    ) -> Result<Self, Diagnostic> {
+        Self::from_reservation(function, physical_storage::PhysicalReservation::new(bytes))
+    }
+
+    pub(super) fn from_reservation(
+        function: &ResolvedFunction,
+        physical: physical_storage::PhysicalReservation,
+    ) -> Result<Self, Diagnostic> {
+        Self::try_from_reservation(function, physical).map_err(|failure| {
+            let (_, reason) = failure.into_parts();
+            // Compatibility boundary: this legacy wrapper constructs an owned
+            // Diagnostic without an outer paid carrier. try_from_reservation
+            // itself publishes only an inline reason and the failed ledger.
+            replay_error(function, reason.message())
+        })
+    }
+
+    pub(super) fn reserve_bytes(
+        &mut self,
+        function: &ResolvedFunction,
+        bytes: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if bytes == 0 {
+            // A zero request constructs nothing, so it must not bootstrap the
+            // refusal String. It consults the same payer, sticky refusal,
+            // reserved floor and refusal_spent state that a positive request
+            // would, then authenticates only. Positive requests below keep
+            // their original bootstrap and charges byte-for-byte.
+            let admitted = match self.payer {
+                AllocationPayer::LegacyUnobserved => true,
+                AllocationPayer::ActiveBuilder => {
+                    if self.refusal_spent || crate::bounded_output::active_refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    crate::bounded_output::reserve_active_required(0)
+                }
+                #[cfg(test)]
+                AllocationPayer::Oracle(lease) => {
+                    if self.refusal_spent || lease.refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    lease.charge(0).is_ok()
+                }
+                AllocationPayer::SelectedReservation => self
+                    .physical
+                    .as_deref_mut()
+                    .expect("selected reservation payer")
+                    .reserve(0)
+                    .is_ok(),
+            };
+            return if admitted {
+                Ok(())
+            } else {
+                Err(self.budget_refusal(
+                    function,
+                    "cleanup replay physical reservation exhausted during ",
+                    phase,
+                ))
+            };
+        }
+        self.prepare_builder(function)?;
+        let accepted = match self.payer {
+            AllocationPayer::LegacyUnobserved => true,
+            AllocationPayer::ActiveBuilder => {
+                !self.refusal_spent
+                    && !crate::bounded_output::active_refused()
+                    && crate::bounded_output::reserve_active_required(bytes)
+            }
+            #[cfg(test)]
+            AllocationPayer::Oracle(lease) => {
+                !self.refusal_spent && !lease.refused() && lease.charge(bytes).is_ok()
+            }
+            AllocationPayer::SelectedReservation => self
+                .physical
+                .as_deref_mut()
+                .expect("selected reservation payer")
+                .reserve(bytes)
+                .is_ok(),
+        };
+        if accepted {
+            Ok(())
+        } else {
+            Err(self.budget_refusal(
+                function,
+                "cleanup replay physical reservation exhausted during ",
+                phase,
+            ))
+        }
+    }
+
+    pub(super) fn reserve_clone<T: ClonePayload>(
+        &mut self,
+        function: &ResolvedFunction,
+        value: &T,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        self.prepare_clone_cursor(function)?;
+        #[cfg(test)]
+        let payload = match self.oracle_lease() {
+            Some(lease) => {
+                value.clone_payload_bytes_with_work(&mut |units| lease.charge_work(units).is_ok())
+            }
+            None => value.clone_payload_bytes(),
+        };
+        #[cfg(not(test))]
+        let payload = value.clone_payload_bytes();
+        let bytes = payload.ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay clone payload exceeds the physical bound",
+                "",
+            )
+        })?;
+        self.reserve_bytes(function, bytes, phase)
+    }
+
+    pub(super) fn reserve_array<T>(
+        &mut self,
+        function: &ResolvedFunction,
+        count: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        let bytes = count.checked_mul(std::mem::size_of::<T>()).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay physical array layout overflowed",
+                "",
+            )
+        })?;
+        self.reserve_bytes(function, bytes, phase)
+    }
+
+    pub(super) fn reserve_btree_node<K, V>(
+        &mut self,
+        function: &ResolvedFunction,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        let bytes = physical_storage::btree_node_upper::<K, V>().ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay physical tree layout overflowed",
+                "",
+            )
+        })?;
+        self.reserve_bytes(function, bytes, phase)
+    }
+
+    pub(super) fn reserve_vec<T>(
+        &mut self,
+        function: &ResolvedFunction,
+        values: &mut Vec<T>,
+        additional: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        self.reserve_bytes(function, 0, phase)?;
+        let required = values.len().checked_add(additional).ok_or_else(|| {
+            self.budget_refusal(
+                function,
+                "cleanup replay physical vector length overflowed",
+                "",
+            )
+        })?;
+        if required <= values.capacity() {
+            return Ok(());
+        }
+        let target = physical_storage::replay_growth_capacity(values.capacity(), required)
+            .ok_or_else(|| {
+                self.budget_refusal(
+                    function,
+                    "cleanup replay physical vector capacity overflowed",
+                    "",
+                )
+            })?;
+        self.reserve_array::<T>(function, target, phase)?;
+        values
+            .try_reserve_exact(target - values.len())
+            .map_err(|_| {
+                self.budget_refusal(
+                    function,
+                    "cleanup replay physical vector allocation failed",
+                    "",
+                )
+            })?;
+        if values.capacity() != target {
+            return Err(self.budget_refusal(
+                function,
+                "cleanup replay physical vector capacity disagrees with its reservation",
+                "",
+            ));
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+mod queue_tests;
+
+// Covers the fixed replay prefix, the longest budget failure description and
+// every internal operation label. No authored bytes other than the exact held
+// function ID are copied here. Oversized internal labels select a fixed
+// invariant description rather than allocating beyond this paid backing.
+const REFUSAL_PHASE_BYTES: usize = 256;
+const REFUSAL_FIXED_BYTES: usize = 512;
+impl ReplayBudget {
+    pub(super) fn budget_refusal(
+        &mut self,
+        funct

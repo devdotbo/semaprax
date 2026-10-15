@@ -5,7 +5,7 @@ fn fixture() -> ResolvedFunction {
     super::super::lexical_plan_tests::fixture(super::super::lexical_plan_tests::WHILE).1
 }
 
-fn automaton(function: &ResolvedFunction) -> (Automaton, usize, Vec<usize>) {
+pub(super) fn automaton(function: &ResolvedFunction) -> (Automaton, usize, Vec<usize>) {
     let mut budget = ReplayBudget::new();
     let mut automaton = Automaton::default();
     let sink = automaton.node(function, &mut budget).unwrap();

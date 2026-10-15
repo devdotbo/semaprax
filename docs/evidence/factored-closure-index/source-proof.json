@@ -1,0 +1,13 @@
+{
+  "status": "SOURCE_ONLY_PASS_NO_CARGO",
+  "whole_source_inverses": 9,
+  "new_exact_registered_test_bodies": 7,
+  "existing_exact_registered_test_bodies": 7,
+  "old_module_body_byte_equal": true,
+  "old_module_adapters": [
+    "lexical parent import",
+    "explicit original test hook import",
+    "old tests registration remains on current module, omitted only in archive receiver"
+  ],
+  "runtime_or_gain_claim": false
+}
