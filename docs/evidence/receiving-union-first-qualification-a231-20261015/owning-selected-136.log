@@ -1,0 +1,6 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::exit_status_authentication_precedes_debit_and_foreign_active_stays_sticky ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.01s
+

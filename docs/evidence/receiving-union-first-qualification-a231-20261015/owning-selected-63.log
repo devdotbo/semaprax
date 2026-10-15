@@ -1,0 +1,6 @@
+
+running 1 test
+test workspace_graph::source_schema::static_text::primitive::records::tests::captured_record_layout_namespace_and_constructor_body_drift_are_independently_rejected ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 1.10s
+

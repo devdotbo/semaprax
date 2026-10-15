@@ -1,0 +1,6 @@
+
+running 1 test
+test hir::canonical_loan_storage::tests::reuse::full_current_and_complete_saved_prepare_pay_every_actual_acquisition_through_drop ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.03s
+

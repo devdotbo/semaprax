@@ -1,0 +1,6 @@
+
+running 1 test
+test loan_plan::paid_cfg::rootmap_tests::rootmap_identity_membership_keeps_duplicate_identity_first_error_and_work_order ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8800 filtered out; finished in 0.00s
+
