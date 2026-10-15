@@ -1,5 +1,7 @@
 # Changelog
 
+- Grow the paid expression-fact Arena cursor at actual traversal depth, reserving complete replacement backing and copy work while retaining the original factory, type cursor, depth ceiling, producer controls and preclone payload charges.
+
 - Refresh both browser graph pins from authenticated hosted compiler records, retaining full current/prior graph wires, exact historical bill reconstruction, and the unchanged original cursor-control helper and hashes. Use the direct error assertion for the unit-valued hidden-law check result to satisfy the pinned Clippy gate.
 
 - Refuse a native-law carrier in ordinary Project file facts unless the manifest selected its law path before workspace preflight; preserve raw Graph retention and add owned, cold, and cached Project regressions.
