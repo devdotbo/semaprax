@@ -1,7 +1,7 @@
 //! Argument ownership checking at call boundaries, including the
 //! invocation-local loans that borrowed byte-data arguments activate.
 
-use super::binding::{Binding, CheckedValue, SourceLoan, SourceLoanId};
+use super::binding::{Availability, Binding, CheckedValue, SourceLoan, SourceLoanId};
 use super::diagnostics::error;
 use super::loans::{has_active_overlapping_loan, mark_value_sources_moved};
 use super::place::source_place;
