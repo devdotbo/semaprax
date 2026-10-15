@@ -5,6 +5,7 @@
 - Bind browser graph pins to the hosted paid-cursor result: both complete graphs retain every prior byte after only the declared 458,408-byte bill reduction and self-digest restoration. Preserve all historical cursor controls.
 
 - Grow the paid expression-fact Arena cursor at actual traversal depth, reserving complete replacement backing and copy work while retaining the original factory, type cursor, depth ceiling, producer controls and preclone payload charges.
+- Author shared borrowed diagnostic rendering for the actual CLI and existing typed human report consumer (#846), preserving the full bounded compatibility route, selected status and independent old renderer. Focused executable qualification remains pending.
 
 - Remove real held-slot and initial weighted-root Result carriers from the direct factored replay path (#831), retaining the complete original constructor fees and strict old receiver independently. Source review and inverse proofs passed; executable qualification and measured gains remain pending.
 
