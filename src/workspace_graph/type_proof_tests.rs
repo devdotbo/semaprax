@@ -895,7 +895,7 @@ module graph.v14;
         // digest over it move.
         assert_eq!(
             document_sha,
-            "sha256:55a0accbdfa1d8770dc6be6ee3f1d1e4d5b733923fab6f83937c39e2530dc10a"
+            "sha256:dfd72facdc354e3b6494a1d76713b04c6d4c5869931e7be1ec39cee7177008d1"
         );
         assert!(json.starts_with(
                 "{\"schema\":\"semaprax.workspace-semantic-graph.v1\",\"workspace_manifest_schema\":\"semaprax.workspace-semantic-manifest.v1\",\"workspace_revision\":\"sha256:workspace\",\"graph_digest\":\"sha256:"
