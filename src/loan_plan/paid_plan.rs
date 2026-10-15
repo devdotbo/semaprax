@@ -1,6 +1,7 @@
 //! Complete unchanged loan ordering with private caller-paid inventories.
 use super::*;
 
+#[cfg(test)]
 pub(super) fn build(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
@@ -486,3 +487,6 @@ pub(super) fn build_before_live_reuse(
 ) -> Result<LoanPlan, Diagnostic> {
     pre_live_reuse::build(program, function, work)
 }
+
+mod retained;
+pub(super) use retained::build as build_retained;

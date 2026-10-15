@@ -1,0 +1,133 @@
+[
+  {
+    "source": "src/loan_plan/paid_candidate.rs",
+    "archive": "paid_candidate.rs.before.txt",
+    "original_sha256": "1e0b84ebde6ce7c110238cfb35f68f5daf1befbc2a2648e1f49203a302aa1f22",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "use super::*;\n\npub(super) fn inspect(\n    program: &ResolvedProgram,\n",
+        "after": "use super::*;\n\n#[cfg(test)]\npub(super) fn inspect(\n    program: &ResolvedProgram,\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-1",
+        "before": "    Ok(result)\n}\n",
+        "after": "    Ok(result)\n}\n\nmod retained;\npub(super) use retained::{inspect as inspect_retained, Inventory};\n\n#[cfg(test)]\npub(super) use retained::before_inventory_source;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/paid_plan.rs",
+    "archive": "paid_plan.rs.before.txt",
+    "original_sha256": "98db139e9b14abb2126a887f760e4db2bbbd095a9a2b89df924bef71e68732f3",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "use super::*;\n\npub(super) fn build(\n    program: &ResolvedProgram,\n",
+        "after": "use super::*;\n\n#[cfg(test)]\npub(super) fn build(\n    program: &ResolvedProgram,\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-1",
+        "before": "    pre_live_reuse::build(program, function, work)\n}\n",
+        "after": "    pre_live_reuse::build(program, function, work)\n}\n\nmod retained;\npub(super) use retained::build as build_retained;\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/funded_flat.rs",
+    "archive": "funded_flat.rs.before.txt",
+    "original_sha256": "3c4084c88c10993169b65b9bf3a16de490f14b98754cba4966b5f7af56df7d99",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "        )));\n    }\n    // Lexical preflight precedes the legacy guidance boundary. Its semantic\n    // refusal must retain its original span/path/help, even for a work limit.\n",
+        "after": "        )));\n    }\n    payer.reserve(SUBJECT_BYTES).map_err(PlannerError::Physical)?;\n    let subject = CurrentSubject { program, function };\n    // Lexical preflight precedes the legacy guidance boundary. Its semantic\n    // refusal must retain its original span/path/help, even for a work limit.\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-1",
+        "before": "        #[cfg(test)]\n        work_boundary::apply(&mut work);\n        if paid_candidate::inspect(program, function, payer, &mut work)? {\n            paid_plan::build(program, function, &mut work)\n        } else {\n            let mut plan = LoanPlan::empty_v1();\n",
+        "after": "        #[cfg(test)]\n        work_boundary::apply(&mut work);\n        if let Some(inventory) = paid_candidate::inspect_retained(subject, payer, &mut work)? {\n            paid_plan::build_retained(program, function, &mut work, inventory)\n        } else {\n            let mut plan = LoanPlan::empty_v1();\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-2",
+        "before": "#[cfg(test)]\nmod work_boundary;\n",
+        "after": "#[cfg(test)]\nmod work_boundary;\n\n// Constructible only after this producer's exact current-function check.\npub(super) struct CurrentSubject<'a> { program: &'a ResolvedProgram, function: &'a ResolvedFunction }\nconst SUBJECT_BYTES: usize = 3 * std::mem::size_of::<CurrentSubject<'static>>();\nimpl<'a> CurrentSubject<'a> {\n    pub(super) fn into_refs(self) -> (&'a ResolvedProgram, &'a ResolvedFunction) {\n        (self.program, self.function)\n    }\n}\n\n#[cfg(test)]\nmod inventory_before;\n#[cfg(test)]\npub(super) fn with_inventory_work_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {\n    work_boundary::with_limit(limit, operation)\n}\n#[cfg(test)]\npub(super) fn subject_for_test<'a>(program: &'a ResolvedProgram, function: &'a ResolvedFunction,\n    payer: &CfgReservation) -> Result<CurrentSubject<'a>, Diagnostic>\n{\n    payer.reserve(SUBJECT_BYTES + std::mem::size_of::<Result<CurrentSubject<'a>, Diagnostic>>())\n        .map_err(|_| storage::marker())?;\n    if !program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function))\n        .any(|current| std::ptr::eq(current, function))\n    { return Err(Diagnostic::io_static(\"SPX-H006\", \"funded loan planner requires the exact current function\")); }\n    Ok(CurrentSubject { program, function })\n}\n\n#[cfg(test)]\npub(super) fn before_inventory_for_test(program: &ResolvedProgram, function: &ResolvedFunction,\n    payer: &CfgReservation) -> Result<LoanPlan, PlannerError>\n{\n    inventory_before::build(program, function, payer)\n}\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/funded_flat/work_boundary.rs",
+    "archive": "work_boundary.rs.before.txt",
+    "original_sha256": "706a4b53dbe3e980470a6156d06a6ef4f31fedcb357a61b7491b6a24c08b7733",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "    }\n}\nfn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {\n    assert!(limit <= MAX_LOAN_PLAN_WORK_V1);\n    struct Restore(Option<usize>);\n",
+        "after": "    }\n}\npub(super) fn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {\n    assert!(limit <= MAX_LOAN_PLAN_WORK_V1);\n    struct Restore(Option<usize>);\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-1",
+        "before": "                    crate::test_allocation_observer::measure(|| {\n                        let owner = CfgReservation::acquire().unwrap();\n                        let result = with_limit(limit, || build(program, function, &owner));\n                        assert!(owner.first().is_none());\n                        match result {\n",
+        "after": "                    crate::test_allocation_observer::measure(|| {\n                        let owner = CfgReservation::acquire().unwrap();\n                        let result = with_limit(limit, || super::inventory_before::build(program, function, &owner));\n                        assert!(owner.first().is_none());\n                        match result {\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-2",
+        "before": "        let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n            let owner = CfgReservation::acquire().unwrap();\n            let plan = build(program, function, &owner)\n                .unwrap_or_else(|_| panic!(\"restored production cap\"));\n            assert_eq!(plan, function.loan_plan);\n",
+        "after": "        let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {\n            let owner = CfgReservation::acquire().unwrap();\n            let plan = super::inventory_before::build(program, function, &owner)\n                .unwrap_or_else(|_| panic!(\"restored production cap\"));\n            assert_eq!(plan, function.loan_plan);\n"
+      }
+    ]
+  },
+  {
+    "source": "src/loan_plan/paid_cursor/tests.rs",
+    "archive": "paid_cursor_tests.rs.before.txt",
+    "original_sha256": "36d74075307777d67fcbcc5694c32d7d553fdb8ef0c208cb42e93bba3fb87202",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "    );\n    assert_eq!(include_str!(\"../paid_candidate_before.rs\"), old);\n    let mut projected = include_str!(\"../paid_candidate.rs\").to_owned();\n    for (current, original) in [\n        (\"    work: &mut WorkCounter<'_>,\\n\", \"\"),\n",
+        "after": "    );\n    assert_eq!(include_str!(\"../paid_candidate_before.rs\"), old);\n    let mut projected = paid_candidate::before_inventory_source(\"src/loan_plan/paid_candidate.rs\", include_str!(\"../paid_candidate.rs\"));\n    for (current, original) in [\n        (\"    work: &mut WorkCounter<'_>,\\n\", \"\"),\n"
+      },
+      {
+        "name": "actual-loan-inventory-reuse-1",
+        "before": "    let current_hook = \"        let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\\n        work.allocation = Some(payer);\\n        if paid_candidate::inspect(program, function, payer, &mut work)? {\\n\";\n    let original_hook = \"        if paid_candidate::inspect(program, function, payer)? {\\n            let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\\n            work.allocation = Some(payer);\\n\";\n    let mut current = include_str!(\"../funded_flat.rs\").to_owned();\n    for test_hook in [\n        \"        #[cfg(test)]\\n        work_boundary::apply(&mut work);\\n\",\n",
+        "after": "    let current_hook = \"        let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\\n        work.allocation = Some(payer);\\n        if paid_candidate::inspect(program, function, payer, &mut work)? {\\n\";\n    let original_hook = \"        if paid_candidate::inspect(program, function, payer)? {\\n            let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);\\n            work.allocation = Some(payer);\\n\";\n    let mut current = paid_candidate::before_inventory_source(\"src/loan_plan/funded_flat.rs\", include_str!(\"../funded_flat.rs\"));\n    for test_hook in [\n        \"        #[cfg(test)]\\n        work_boundary::apply(&mut work);\\n\",\n"
+      }
+    ]
+  },
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "archive": "tests__hir_module_boundaries.rs.before.txt",
+    "original_sha256": "4ba11a086ed1efbd2211d5b21e334316b0a3c91ccd66b2cf75677d4eb76c12bf",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "        include_str!(\"../src/cleanup_plan/replay/shape_cursor.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate_before.rs\"),\n        include_str!(\"../src/loan_plan/paid_cursor.rs\"),\n        include_str!(\"../src/loan_plan/paid_cursor/tests.rs\"),\n",
+        "after": "        include_str!(\"../src/cleanup_plan/replay/shape_cursor.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate_before.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../src/loan_plan/funded_flat/inventory_before.rs\"),\n        include_str!(\"../src/loan_plan/paid_cursor.rs\"),\n        include_str!(\"../src/loan_plan/paid_cursor/tests.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "archive": "crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
+    "original_sha256": "a36ff7c4241aaa4ecc8698b3ae64d5bef7c9ec0ecef208d5c612deb9e0e66718",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n",
+        "after": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/inventory_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "archive": "source_custody_b.rs.before.txt",
+    "original_sha256": "b85fd51439e81d83b5a776244dc17f7f9ce83b8704040407fcfddefdb8f665c6",
+    "edits": [
+      {
+        "name": "actual-loan-inventory-reuse-0",
+        "before": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r#####\"        concat!(include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\"),\n",
+        "after": "    {\n        let mut current = include_str!(\"../../../../../tests/hir_module_boundaries.rs\").to_owned();\n        undo(&mut current, r#####\"        include_str!(\"../src/loan_plan/paid_candidate_before.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../src/loan_plan/funded_flat/inventory_before.rs\"),\"#####, r#####\"        include_str!(\"../src/loan_plan/paid_candidate_before.rs\"),\"#####);\n        undo(&mut current, r#####\"        concat!(include_str!(\"../src/cleanup_plan/replay/expression_facts/arena.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\"),\n"
+      }
+    ]
+  }
+]

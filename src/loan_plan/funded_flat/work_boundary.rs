@@ -9,7 +9,7 @@ pub(super) fn apply(work: &mut WorkCounter<'_>) {
         work.limit = work.limit.min(limit);
     }
 }
-fn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {
+pub(super) fn with_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {
     assert!(limit <= MAX_LOAN_PLAN_WORK_V1);
     struct Restore(Option<usize>);
     impl Drop for Restore {
@@ -57,7 +57,7 @@ fn actual_funded_candidate_false_and_plan_routes_keep_exact_short_guided_full_di
                 crate::bounded_output::with_limit_usage(usize::MAX, || {
                     crate::test_allocation_observer::measure(|| {
                         let owner = CfgReservation::acquire().unwrap();
-                        let result = with_limit(limit, || build(program, function, &owner));
+                        let result = with_limit(limit, || super::inventory_before::build(program, function, &owner));
                         assert!(owner.first().is_none());
                         match result {
                             Ok(plan) => {
@@ -88,7 +88,7 @@ fn actual_funded_candidate_false_and_plan_routes_keep_exact_short_guided_full_di
         // Guard restored: the ordinary current production call uses MAX again.
         let (_, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
             let owner = CfgReservation::acquire().unwrap();
-            let plan = build(program, function, &owner)
+            let plan = super::inventory_before::build(program, function, &owner)
                 .unwrap_or_else(|_| panic!("restored production cap"));
             assert_eq!(plan, function.loan_plan);
         });

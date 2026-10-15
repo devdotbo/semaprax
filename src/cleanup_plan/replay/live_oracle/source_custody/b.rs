@@ -1087,6 +1087,15 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),
+        include_str!("../src/loan_plan/paid_candidate.rs"),
+        include_str!("../src/loan_plan/paid_candidate/retained.rs"),
+        include_str!("../src/loan_plan/paid_candidate/retained/inventory.rs"),
+        include_str!("../src/loan_plan/paid_candidate/retained/tests.rs"),
+        include_str!("../src/loan_plan/paid_plan.rs"),
+        include_str!("../src/loan_plan/paid_plan/retained.rs"),
+        include_str!("../src/loan_plan/funded_flat.rs"),
+        include_str!("../src/loan_plan/funded_flat/inventory_before.rs"),"#####, r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),"#####);
         undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),
         include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####);
         undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),

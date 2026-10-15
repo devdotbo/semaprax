@@ -1,6 +1,7 @@
 //! Current candidate order with explicit caller-paid discovery containers.
 use super::*;
 
+#[cfg(test)]
 pub(super) fn inspect(
     program: &ResolvedProgram,
     function: &ResolvedFunction,
@@ -212,3 +213,9 @@ fn ultimate_root_is_own(
     }
     Ok(result)
 }
+
+mod retained;
+pub(super) use retained::{inspect as inspect_retained, Inventory};
+
+#[cfg(test)]
+pub(super) use retained::before_inventory_source;

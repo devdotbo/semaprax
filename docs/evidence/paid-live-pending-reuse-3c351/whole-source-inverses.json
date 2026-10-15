@@ -42,6 +42,16 @@
     "before_sha256": "f42d8f1a0d2b5d426e58e4240ee825d59b1623cb83092b353f39b45174b1b7cc",
     "hooks": [
       {
+        "after": "    pre_live_reuse::build(program, function, work)\n}\n\nmod retained;\npub(super) use retained::build as build_retained;\n",
+        "before": "    pre_live_reuse::build(program, function, work)\n}\n",
+        "count": 1
+      },
+      {
+        "after": "use super::*;\n\n#[cfg(test)]\npub(super) fn build(\n    program: &ResolvedProgram,\n",
+        "before": "use super::*;\n\npub(super) fn build(\n    program: &ResolvedProgram,\n",
+        "count": 1
+      },
+      {
         "after": "\n#[cfg(test)]\n#[path = \"paid_plan/pre_live_reuse.rs\"]\nmod pre_live_reuse;\n\n#[cfg(test)]\npub(super) fn build_before_live_reuse(\n    program: &ResolvedProgram,\n    function: &ResolvedFunction,\n    work: &mut WorkCounter,\n) -> Result<LoanPlan, Diagnostic> {\n    pre_live_reuse::build(program, function, work)\n}\n",
         "before": "",
         "count": 1
@@ -78,6 +88,11 @@
     "archive": "docs/evidence/paid-live-pending-reuse-3c351/interop_source_inventory.rs.before.txt",
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
+      {
+        "after": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/inventory_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n",
+        "before": "            include_str!(\"../../../../../src/loan_plan/funded_flat/tests.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_candidate_before.rs\"),\n            include_str!(\"../../../../../src/loan_plan/paid_cursor.rs\"),\n",
+        "count": 1
+      },
       {
         "after": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
         "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",

@@ -1,0 +1,14 @@
+{
+  "status": "source authored; no Rust execution",
+  "harness": "semaprax --lib",
+  "selectors": [
+    "loan_plan::paid_candidate::retained::tests::complete_old_and_retained_plans_diagnostics_allocation_and_drop_match",
+    "loan_plan::paid_candidate::retained::tests::actual_retained_work_and_byte_routes_have_exact_short_zero_and_sticky_boundaries",
+    "loan_plan::paid_candidate::retained::tests::retained_inventory_foreign_subject_reservation_detached_and_sticky_owners_fail_closed",
+    "loan_plan::paid_candidate::retained::tests::complete_original_receivers_and_all_source_joins_are_byte_exact",
+    "loan_plan::funded_flat::work_boundary::actual_funded_candidate_false_and_plan_routes_keep_exact_short_guided_full_diagnostics",
+    "loan_plan::paid_cursor::tests::complete_old_candidate_and_funded_receivers_are_exact_and_current_hooks_are_scoped",
+    "loan_plan::paid_live::reuse_tests::complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remain_exact",
+    "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap"
+  ]
+}

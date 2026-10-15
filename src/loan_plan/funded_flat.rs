@@ -21,6 +21,8 @@ pub(super) fn build(
             "funded loan planner requires the exact current function",
         )));
     }
+    payer.reserve(SUBJECT_BYTES).map_err(PlannerError::Physical)?;
+    let subject = CurrentSubject { program, function };
     // Lexical preflight precedes the legacy guidance boundary. Its semantic
     // refusal must retain its original span/path/help, even for a work limit.
     let lexical = lexical_preflight(program, function, payer, &mut |program, region| {
@@ -31,8 +33,8 @@ pub(super) fn build(
         work.allocation = Some(payer);
         #[cfg(test)]
         work_boundary::apply(&mut work);
-        if paid_candidate::inspect(program, function, payer, &mut work)? {
-            paid_plan::build(program, function, &mut work)
+        if let Some(inventory) = paid_candidate::inspect_retained(subject, payer, &mut work)? {
+            paid_plan::build_retained(program, function, &mut work, inventory)
         } else {
             let mut plan = LoanPlan::empty_v1();
             if lexical {
@@ -87,3 +89,37 @@ mod directories_tests;
 
 #[cfg(test)]
 mod work_boundary;
+
+// Constructible only after this producer's exact current-function check.
+pub(super) struct CurrentSubject<'a> { program: &'a ResolvedProgram, function: &'a ResolvedFunction }
+const SUBJECT_BYTES: usize = 3 * std::mem::size_of::<CurrentSubject<'static>>();
+impl<'a> CurrentSubject<'a> {
+    pub(super) fn into_refs(self) -> (&'a ResolvedProgram, &'a ResolvedFunction) {
+        (self.program, self.function)
+    }
+}
+
+#[cfg(test)]
+mod inventory_before;
+#[cfg(test)]
+pub(super) fn with_inventory_work_limit<T>(limit: usize, operation: impl FnOnce() -> T) -> T {
+    work_boundary::with_limit(limit, operation)
+}
+#[cfg(test)]
+pub(super) fn subject_for_test<'a>(program: &'a ResolvedProgram, function: &'a ResolvedFunction,
+    payer: &CfgReservation) -> Result<CurrentSubject<'a>, Diagnostic>
+{
+    payer.reserve(SUBJECT_BYTES + std::mem::size_of::<Result<CurrentSubject<'a>, Diagnostic>>())
+        .map_err(|_| storage::marker())?;
+    if !program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function))
+        .any(|current| std::ptr::eq(current, function))
+    { return Err(Diagnostic::io_static("SPX-H006", "funded loan planner requires the exact current function")); }
+    Ok(CurrentSubject { program, function })
+}
+
+#[cfg(test)]
+pub(super) fn before_inventory_for_test(program: &ResolvedProgram, function: &ResolvedFunction,
+    payer: &CfgReservation) -> Result<LoanPlan, PlannerError>
+{
+    inventory_before::build(program, function, payer)
+}

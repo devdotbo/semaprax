@@ -1,0 +1,220 @@
+Review DISTINCT concrete loan-allocation reuse source only, no tools/execution. Normalizer G171 currently64requested/60remaining in enclosing canonical stage; exact inner operation UNKNOWN. Old funded candidate fully builds three maps before candidate detection, returnsbool/dropsmaps; positive paid_plan buildsCFG then repeats same maps. New producer returns opaque actual maps bound to immutable program/function/CfgReservation; new plan validates owner, builds unchangedCFG, consumes maps then executes unchanged remainder. No cap/unitdiscount/refund/headercredit. Old full inspect/build remain cfg(test), old work receipt retained and new exact/short boundary independently derived. Need identify ordering/last-wins, foreign/stale current ACTIVE, and full carrier/backing/overlap payment mistakes. Both traversals are requires→body→ensures evaluation-child preorder; CFG rejects duplicateexpressionIDs before consumingmaps. All five true returns occur only after complete first inventoryloop. Do not infer recovery or execution. Under700words.
+
+COMPLETE FIRST INVENTORY LOOP:
+let mut aliases = cfg_directory::Map::<ValueId, Place>::new(payer)?;
+let mut bound = cfg_directory::Map::<ExpressionId, ValueId>::new(payer)?;
+let mut ownership = cfg_directory::Map::new(payer)?;
+for parameter in &function.params {
+cfg_directory::map_insert(
+&mut ownership,
+parameter.id.clone(),
+parameter.ownership,
+Some(payer),
+)?;
+}
+while let Some(expression) = discovery.next(work)? {
+native_view::inventory_aliases_paid(program, expression, &mut aliases, Some(payer))?;
+if let ResolvedExprKind::Match { arms, .. } = &expression.kind {
+for arm in arms {
+paid_patterns::inventory(&arm.pattern, &mut ownership, Some(payer))?;
+}
+}
+if let ResolvedExprKind::Block { statements, .. }
+| ResolvedExprKind::VecConstructor { statements, .. } = &expression.kind
+{
+for statement in statements {
+if let ResolvedStatement::Let { binding, value, .. } = statement {
+cfg_directory::map_insert(
+&mut ownership,
+binding.id.clone(),
+binding.ownership,
+Some(payer),
+)?;
+if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
+if let Some(place) = storage::expression_place(value, Some(payer))? {
+cfg_directory::map_insert(
+&mut aliases,
+binding.id.clone(),
+place,
+Some(payer),
+)?;
+cfg_directory::map_insert(
+&mut bound,
+value.id.clone(),
+binding.id.clone(),
+Some(payer),
+)?;
+}
+}
+}
+}
+}
+}
+
+
+COMPLETE DIFF OF FIRST LOOP TO OLD SECOND LOOP:
+--- 
++++ 
+@@ -1,4 +1,6 @@
+-    let mut aliases = cfg_directory::Map::<ValueId, Place>::new(payer)?;
+-    let mut bound = cfg_directory::Map::<ExpressionId, ValueId>::new(payer)?;
+-    let mut ownership = cfg_directory::Map::new(payer)?;
++    let mut aliases =
++        cfg_directory::Map::<ValueId, Place>::new(payer.expect("private funded entry"))?;
++    let mut bound =
++        cfg_directory::Map::<ExpressionId, ValueId>::new(payer.expect("private funded entry"))?;
++    let mut ownership = cfg_directory::Map::new(payer.expect("private funded entry"))?;
+for parameter in &function.params {
+@@ -8,10 +10,11 @@
+parameter.ownership,
+-            Some(payer),
++            payer,
+)?;
+}
+-    while let Some(expression) = discovery.next(work)? {
+-        native_view::inventory_aliases_paid(program, expression, &mut aliases, Some(payer))?;
++    for expression in &cfg.expressions {
++        charge(work)?;
++        native_view::inventory_aliases_paid(program, expression, &mut aliases, payer)?;
+if let ResolvedExprKind::Match { arms, .. } = &expression.kind {
+for arm in arms {
+-                paid_patterns::inventory(&arm.pattern, &mut ownership, Some(payer))?;
++                paid_patterns::inventory(&arm.pattern, &mut ownership, payer)?;
+}
+@@ -27,6 +30,6 @@
+binding.ownership,
+-                        Some(payer),
++                        payer,
+)?;
+if matches!(binding.ty, ResolvedType::SliceU8 | ResolvedType::Str) {
+-                        if let Some(place) = storage::expression_place(value, Some(payer))? {
++                        if let Some(place) = storage::expression_place(value, payer)? {
+cfg_directory::map_insert(
+@@ -35,3 +38,3 @@
+place,
+-                                Some(payer),
++                                payer,
+)?;
+@@ -41,3 +44,3 @@
+binding.id.clone(),
+-                                Some(payer),
++                                payer,
+)?;
+
+COMPLETE NEW INVENTORY TOKEN:
+//! Opaque actual maps, with exact subject and actual affine reservation ownership.
+use super::*;
+use crate::bounded_output::cfg_reservation::CfgReservation;
+type Parts = (
+cfg_directory::Map<ValueId, Place>,
+cfg_directory::Map<ExpressionId, ValueId>,
+cfg_directory::Map<ValueId, OwnershipMode>,
+);
+pub(in crate::loan_plan) struct Inventory<'a, 'p> {
+pub(super) program: &'a ResolvedProgram,
+pub(super) function: &'a ResolvedFunction,
+pub(super) payer: &'p CfgReservation,
+pub(super) aliases: cfg_directory::Map<ValueId, Place>,
+pub(super) bound: cfg_directory::Map<ExpressionId, ValueId>,
+pub(super) ownership: cfg_directory::Map<ValueId, OwnershipMode>,
+}
+impl Inventory<'_, '_> {
+pub(in crate::loan_plan) fn validate(
+&self, program: &ResolvedProgram, function: &ResolvedFunction,
+payer: Option<&CfgReservation>,
+) -> Result<(), Diagnostic> {
+// Positive payment authenticates the same live account before any
+// identity/map read; the complete new guard Result is prepaid too.
+self.payer.reserve(std::mem::size_of::<Result<(), Diagnostic>>())
+.map_err(|_| storage::marker())?;
+if !std::ptr::eq(self.program, program) || !std::ptr::eq(self.function, function)
+|| !payer.is_some_and(|payer| std::ptr::eq(self.payer, payer))
+{
+return Err(Diagnostic::io_static("SPX-H006", "candidate inventories belong to another subject or reservation"));
+}
+Ok(())
+}
+pub(in crate::loan_plan) fn into_parts(
+self,
+program: &ResolvedProgram,
+function: &ResolvedFunction,
+payer: &CfgReservation,
+) -> Result<Parts, Diagnostic> {
+self.validate(program, function, Some(payer))?;
+self.payer.reserve(std::mem::size_of::<Result<Parts, Diagnostic>>()
++ std::mem::size_of::<Parts>()).map_err(|_| storage::marker())?;
+Ok((self.aliases, self.bound, self.ownership))
+}
+}
+
+NEW PRODUCER ENTRY, RESULT PAYMENT, COMPLETE DISCOVERY:
+//! Retain actual complete candidate inventories for the same immutable function.
+use super::*;
+mod inventory;
+pub(in crate::loan_plan) use inventory::Inventory;
+const RESULT_BYTES: usize = std::mem::size_of::<Result<Option<Inventory<'static, 'static>>, Diagnostic>>()
++ std::mem::size_of::<Option<Inventory<'static, 'static>>>();
+
+pub(in crate::loan_plan) fn inspect<'a, 'p>(
+program: &'a ResolvedProgram,
+function: &'a ResolvedFunction,
+payer: &'p crate::bounded_output::cfg_reservation::CfgReservation,
+work: &mut WorkCounter<'_>,
+) -> Result<Option<Inventory<'a, 'p>>, Diagnostic> {
+payer.reserve(RESULT_BYTES).map_err(|_| storage::marker())?;
+let mut current_member = false;
+for current in program.functions.iter().chain(program.function_instances.iter().map(|i| &i.function)) {
+charge(work)?;
+if std::ptr::eq(current, function) { current_member = true; break; }
+}
+if !current_member {
+return Err(Diagnostic::io_static("SPX-H006", "retained candidate requires the exact current function"));
+}
+// Complete discovery still precedes every alias/ownership diagnostic.
+// Retain its actual paid spill and replay the immutable borrowed traversal.
+let mut discovery = paid_cursor::Cursor::new(function, payer);
+while discovery.next(work)?.is_some() {}
+discovery.reset()?;
+
+
+ONE OF FIVE IDENTICAL TRUE-RETURN BOUNDARIES:
+if let Some(proof) = traversal::paid::inspect(program, expression, payer)? {
+if storage::expression_place(proof.source, Some(payer))?
+.is_some_and(|place| ownership.get(&place.root) == Some(&OwnershipMode::Own))
+{
+payer.reserve(std::mem::size_of::<Inventory<'_, '_>>()).map_err(|_| storage::marker())?;
+return Ok(Some(Inventory { program, function, payer, aliases, bound, ownership }));
+}
+}
+
+COMPLETE NEW PLAN ENTRY BEFORE UNCHANGED DRAFTS:
+//! Complete prior plan builder after moving its actual first paid inventories.
+use super::*;
+
+pub(in crate::loan_plan) fn build(
+program: &ResolvedProgram,
+function: &ResolvedFunction,
+work: &mut WorkCounter,
+inventory: paid_candidate::Inventory<'_, '_>,
+) -> Result<LoanPlan, Diagnostic> {
+let payer = work.allocation;
+inventory.validate(program, function, payer)?;
+let cfg = build_cfg(function, work)?;
+let (aliases, bound, ownership) = inventory.into_parts(program, function,
+payer.expect("private funded entry"))?;
+
+
+ACTUAL CURRENT/REFUSAL OWNER AUTHENTICATION:
+pub(crate) fn reserve(&self, bytes: usize) -> Result<(), Refused> {
+// Identity is checked even for zero bytes and spare-capacity requests.
+if !active().is_some_and(|current| Rc::ptr_eq(&current, &self.budget)) {
+return self.fail(Refused::Detached, bytes);
+}
+if let Some(first) = self.first.get() {
+return Err(first);
+}
+required(&self.budget, bytes).inspect_err(|&reason| {
+self.first.set(Some(reason));
+})
+}
+
