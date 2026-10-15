@@ -157,6 +157,14 @@ impl Resolver<'_> {
         expression: &Expr,
         execution: Option<&FunctionExecutionId>,
     ) -> Result<(), Diagnostic> {
+        self.reject_while_disallowed_in_scope(expression, execution, None)
+    }
+    pub(super) fn reject_while_disallowed_in_scope(
+        &self,
+        expression: &Expr,
+        execution: Option<&FunctionExecutionId>,
+        byte_entry: Option<&BTreeMap<String, Binding>>,
+    ) -> Result<(), Diagnostic> {
         if execution
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {
@@ -214,6 +222,19 @@ impl Resolver<'_> {
                     } => {
                         pending.push(Item::Expression(body));
                         pending.push(Item::Expression(condition));
+                        continue;
+                    }
+                    Statement::For { values, body, .. }
+                        if byte_entry.is_some_and(|scope| {
+                            matches!(&values.kind, ExprKind::Var(name)
+                                if scope.get(name).is_some_and(super::resolve_for::bytes::admits))
+                        }) =>
+                    {
+                        // Construct only the immutable named-byte profile.
+                        // Source verification owns outer-entry availability;
+                        // full HIR replay independently proves every ancestor
+                        // freeze and exact receiver before backend admission.
+                        pending.push(Item::Expression(body));
                         continue;
                     }
                     Statement::For { span, .. }

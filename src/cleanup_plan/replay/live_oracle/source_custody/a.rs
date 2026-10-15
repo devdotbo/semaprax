@@ -1,9 +1,22 @@
+macro_rules! before {
+    ($name:literal) => {
+        include_str!(concat!(
+            "../../../../../docs/evidence/opt810-live-oracle/",
+            $name,
+            ".before"
+        ))
+    };
+}
+macro_rules! prior {
+    ($current:ident, $name:literal) => {
+        assert_eq!($current, before!($name), $name);
+    };
+}
 use super::undo;
 #[test]
 fn complete_original_sources_and_compiled_owning_receivers_remain_exact() {
     {
-        let mut current =
-            include_str!("../../../../bounded_output/classifier_string.rs").to_owned();
+        let mut current = ci_str!("../../../../bounded_output/classifier_string.rs").to_owned();
         undo(
             &mut current,
             r#"mod explicit;
@@ -42,16 +55,10 @@ impl ClassifierLedger {
     }
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__bounded_output__classifier_string.rs.before"
-            ),
-            "src/bounded_output/classifier_string.rs"
-        );
+        prior!(current, "src__bounded_output__classifier_string.rs");
     }
     {
-        let mut current = include_str!("../../../../cleanup_plan.rs").to_owned();
+        let mut current = ci_str!("../../../../cleanup_plan.rs").to_owned();
         undo(
             &mut current,
             r#"
@@ -66,27 +73,35 @@ pub(crate) use replay::with_financed_test_oracles;
 pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan.rs.before"
-            ),
-            "src/cleanup_plan.rs"
-        );
+        prior!(current, "src__cleanup_plan.rs");
     }
     {
-        let mut current = include_str!("../../../replay.rs").to_owned(); undo(&mut current, "    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;\n", ""); undo(&mut current, "    let mut budget = ReplayBudget::new();\n    let helpers = ordinary_renewals::index(full, &mut budget)?;", "    let mut budget = ReplayBudget::new();\n    let mut continuations = continuation_storage::Storage::new(full);\n    let helpers = ordinary_renewals::index(full, &mut budget)?;");
+        let mut current = ci_str!("../../../replay.rs").to_owned();
+        undo(&mut current, "    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;\n", "");
+        undo(&mut current, "    let mut budget = ReplayBudget::new();\n    let helpers = ordinary_renewals::index(full, &mut budget)?;", "    let mut budget = ReplayBudget::new();\n    let mut continuations = continuation_storage::Storage::new(full);\n    let helpers = ordinary_renewals::index(full, &mut budget)?;");
         undo(&mut current, "    expression_facts::receiving::validate_exits_retained(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n        &statuses,\n    )?;\n", "    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;\n");
-        undo(&mut current,
+        undo(
+            &mut current,
             r#"    let statuses = expression_facts::receiving::validate_status_sources_retained(
         function, &expression_facts, budget,
     )?;"#,
-            r#"    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;"#);
-        undo(&mut current, "    expression_facts::receiving::validate_blocks_and_edges_retained(\n",
-            "    expression_facts::receiving::validate_blocks_and_edges(\n");
-        undo(&mut current, "        budget,\n        &statuses,\n    )?;",
-            "        budget,\n    )?;");
-        undo(&mut current, "pub(crate) use live_oracle::with_financed_test_oracles;", "pub(super) use live_oracle::with_financed_test_oracles;");
+            r#"    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;"#,
+        );
+        undo(
+            &mut current,
+            "    expression_facts::receiving::validate_blocks_and_edges_retained(\n",
+            "    expression_facts::receiving::validate_blocks_and_edges(\n",
+        );
+        undo(
+            &mut current,
+            "        budget,\n        &statuses,\n    )?;",
+            "        budget,\n    )?;",
+        );
+        undo(
+            &mut current,
+            "pub(crate) use live_oracle::with_financed_test_oracles;",
+            "pub(super) use live_oracle::with_financed_test_oracles;",
+        );
         undo(
             &mut current,
             r#"
@@ -134,16 +149,10 @@ pub(super) mod phase_measurement;
     structural_maps::validate_reference_coverage(function, budget)?;
 "####,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay.rs.before"
-            ),
-            "src/cleanup_plan/replay.rs"
-        );
+        prior!(current, "src__cleanup_plan__replay.rs");
     }
     {
-        let mut current = include_str!("../../allocation.rs").to_owned();
+        let mut current = ci_str!("../../allocation.rs").to_owned();
         undo(
             &mut current,
             r#"mod oracle;
@@ -166,16 +175,10 @@ pub(super) fn set_key<K: Ord + ClonePayload>(
     function: &ResolvedFunction,
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation.rs.before"
-            ),
-            "src/cleanup_plan/replay/allocation.rs"
-        );
+        prior!(current, "src__cleanup_plan__replay__allocation.rs");
     }
     {
-        let mut current = include_str!("../../allocation/oracle.rs").to_owned();
+        let mut current = ci_str!("../../allocation/oracle.rs").to_owned();
         undo(
             &mut current,
             r#"mod tests;
@@ -195,16 +198,10 @@ pub(in crate::cleanup_plan::replay) use invocation::{
     authority, authority_for_function, enter, opt_in, opted, InvocationRefusal,
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation__oracle.rs.before"
-            ),
-            "src/cleanup_plan/replay/allocation/oracle.rs"
-        );
+        prior!(current, "src__cleanup_plan__replay__allocation__oracle.rs");
     }
     {
-        let mut current = include_str!("../../allocation/oracle/diagnostic.rs").to_owned();
+        let mut current = ci_str!("../../allocation/oracle/diagnostic.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -269,19 +266,22 @@ pub(in crate::cleanup_plan::replay) use metered::raw as raw_error_metered;
         count,
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation__oracle__diagnostic.rs.before"
-            ),
-            "src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"
+            "src__cleanup_plan__replay__allocation__oracle__diagnostic.rs"
         );
     }
     {
-        let mut current = include_str!("../../factored.rs").to_owned(); undo(&mut current, "        oracle_hook::cross_check_with_storage(\n            program,\n            function,\n            budget,\n            continuations,\n        )?;", "        oracle_hook::cross_check(program, function);"); undo(&mut current, "\n#[cfg(test)]\nmod continuation_receiver;\n", "");
+        let mut current = ci_str!("../../factored.rs").to_owned();
+        undo(&mut current, "        oracle_hook::cross_check_with_storage(\n            program,\n            function,\n            budget,\n            continuations,\n        )?;", "        oracle_hook::cross_check(program, function);");
+        undo(
+            &mut current,
+            "\n#[cfg(test)]\nmod continuation_receiver;\n",
+            "",
+        );
         undo(&mut current, "#[cfg(test)]\nenum CanonicalFrame {\n    Enter(Weighted),\n    Exit(Weighted, u64, Vec<(Label, Weighted)>),\n}\n\n", "");
         // Join the complete relocated old receiver before the existing inverse.
-        let before = include_str!("../../factored/canonical_before.rs");
+        let before = ci_str!("../../factored/canonical_before.rs");
         let original = before
             .strip_prefix(
                 r###"//! Complete pre-sharing receiver; its interior is retained verbatim.
@@ -315,8 +315,16 @@ impl<'a> Receiver<'a> {
 "###,
             )
             .unwrap();
-        undo(&mut current, "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n", "");
-        undo(&mut current, "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n", "");
+        undo(
+            &mut current,
+            "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n",
+            "",
+        );
+        undo(
+            &mut current,
+            "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n",
+            "",
+        );
         undo(
             &mut current,
             "    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);",
@@ -677,19 +685,16 @@ impl<'a> Canonicalizer<'a> {
 "####,
         );
         let joined = format!("{original}{marker}");
-        assert_eq!(current.matches(&joined).count(), 1,
-            "complete compiled old canonical receiver remains byte-exact");
         assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored.rs.before"
-            ),
-            "src/cleanup_plan/replay/factored.rs"
+            current.matches(&joined).count(),
+            1,
+            "complete compiled old canonical receiver remains byte-exact"
         );
+        prior!(current, "src__cleanup_plan__replay__factored.rs");
     }
     {
         let mut current =
-            include_str!("../../factored/borrowed_canonical/dictionary/keys.rs").to_owned();
+            ci_str!("../../factored/borrowed_canonical/dictionary/keys.rs").to_owned();
         undo(
             &mut current,
             r#"        function: &ResolvedFunction,
@@ -713,17 +718,17 @@ impl<'a> Canonicalizer<'a> {
             (Label::End(a), Label::End(b)) => return Ok(a.cmp(b)),
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs.before"
-            ),
-            "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"
+            "src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs"
         );
     }
     {
-        let mut current = include_str!("../../factored/oracle_hook.rs").to_owned(); undo(&mut current, "/// Ordinary storage sharing changes backing only; explicitly opted oracle\n/// routes keep their complete independent account and never borrow this lease.\npub(super) fn cross_check_with_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    storage: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    match super::super::allocation::opted() {\n        Ok(None) => match storage {\n            Some(storage) if storage.has_receiving_owner() => {\n                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage);\n            }\n            _ => super::cross_check(program, function),\n        },\n        Ok(Some(lease)) => cross_check_oracle(program, function, lease),\n        Err(refusal) => panic!(\"opted oracle lease is not live: {refusal:?}\"),\n    }\n    Ok(())\n}\n\n", "");
-        undo(&mut current, r###"
+        let mut current = ci_str!("../../factored/oracle_hook.rs").to_owned();
+        undo(&mut current, "/// Ordinary storage sharing changes backing only; explicitly opted oracle\n/// routes keep their complete independent account and never borrow this lease.\npub(super) fn cross_check_with_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    storage: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    match super::super::allocation::opted() {\n        Ok(None) => match storage {\n            Some(storage) if storage.has_receiving_owner() => {\n                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage);\n            }\n            _ => super::cross_check(program, function),\n        },\n        Ok(Some(lease)) => cross_check_oracle(program, function, lease),\n        Err(refusal) => panic!(\"opted oracle lease is not live: {refusal:?}\"),\n    }\n    Ok(())\n}\n\n", "");
+        undo(
+            &mut current,
+            r###"
 // Classification of an undecided result carries no comparison authority.
 fn require_decided(
     function: &ResolvedFunction,
@@ -738,8 +743,14 @@ fn require_decided(
 
 #[cfg(test)]
 mod closure_controls;
-"###, "");
-        undo(&mut current, "        require_decided(function, &factored);\n", "");
+"###,
+            "",
+        );
+        undo(
+            &mut current,
+            "        require_decided(function, &factored);\n",
+            "",
+        );
         undo(
             &mut current,
             r#"            let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -849,16 +860,13 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
         Ok(Some(lease)) => cross_check_oracle(program, function, lease),
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored__oracle_hook.rs.before"
-            ),
-            "src/cleanup_plan/replay/factored/oracle_hook.rs"
+            "src__cleanup_plan__replay__factored__oracle_hook.rs"
         );
     }
     {
-        let mut current = include_str!("../../nested_shape/paid.rs").to_owned();
+        let mut current = ci_str!("../../nested_shape/paid.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -896,16 +904,10 @@ mod oracle;
     let mut lease = scratch.lease();
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__nested_shape__paid.rs.before"
-            ),
-            "src/cleanup_plan/replay/nested_shape/paid.rs"
-        );
+        prior!(current, "src__cleanup_plan__replay__nested_shape__paid.rs");
     }
     {
-        let mut current = include_str!("../../ordinary_inventory/substitute.rs").to_owned();
+        let mut current = ci_str!("../../ordinary_inventory/substitute.rs").to_owned();
         undo(
             &mut current,
             r#"                    index,
@@ -957,16 +959,13 @@ mod oracle;
         };
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__ordinary_inventory__substitute.rs.before"
-            ),
-            "src/cleanup_plan/replay/ordinary_inventory/substitute.rs"
+            "src__cleanup_plan__replay__ordinary_inventory__substitute.rs"
         );
     }
     {
-        let mut current = include_str!("../../paid_type_facts.rs").to_owned();
+        let mut current = ci_str!("../../paid_type_facts.rs").to_owned();
         undo(
             &mut current,
             r#"mod inventory_lifecycle;
@@ -1024,27 +1023,25 @@ pub(super) mod inventory_summary;
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(&mut current, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+        undo(
+            &mut current,
+            r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
 
 pub(super) struct Payer<'a> {
     function: &'a ResolvedFunction,
     budget: &'a mut ReplayBudget,
-"###, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+"###,
+            r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
 
 struct Payer<'a> {
     function: &'a ResolvedFunction,
     budget: &'a mut ReplayBudget,
-"###);
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts.rs.before"
-            ),
-            "src/cleanup_plan/replay/paid_type_facts.rs"
+"###,
         );
+        prior!(current, "src__cleanup_plan__replay__paid_type_facts.rs");
     }
     {
-        let mut current = include_str!("../../paid_type_facts/inventory_encoded.rs").to_owned();
+        let mut current = ci_str!("../../paid_type_facts/inventory_encoded.rs").to_owned();
         undo(
             &mut current,
             r#"    arguments: fmt::Arguments<'_>,
@@ -1153,17 +1150,13 @@ pub(super) fn capped(
 pub(super) fn capped(
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_encoded.rs.before"
-            ),
-            "src/cleanup_plan/replay/paid_type_facts/inventory_encoded.rs"
+            "src__cleanup_plan__replay__paid_type_facts__inventory_encoded.rs"
         );
     }
     {
-        let mut current =
-            include_str!("../../paid_type_facts/inventory_encoded/tests.rs").to_owned();
+        let mut current = ci_str!("../../paid_type_facts/inventory_encoded/tests.rs").to_owned();
         undo(
             &mut current,
             r###"}
@@ -1194,7 +1187,9 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(&mut current, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+        undo(
+            &mut current,
+            r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     assert_eq!(
         include_str!("../../../../../bounded_output/classifier_string.rs")
             .strip_suffix("\nmod inventory_work;\n")
@@ -1202,7 +1197,8 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         include_str!("../../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
-"###, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+"###,
+            r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     assert_eq!(
         include_str!("../../../../bounded_output/classifier_string.rs")
             .strip_suffix("\nmod inventory_work;\n")
@@ -1210,25 +1206,27 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
-"###);
-        assert_eq!(
+"###,
+        );
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_encoded__tests.rs.before"
-            ),
-            "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs"
+            "src__cleanup_plan__replay__paid_type_facts__inventory_encoded__tests.rs"
         );
     }
     {
-        let mut current = include_str!("../../paid_type_facts/inventory_tests.rs").to_owned();
+        let mut current = ci_str!("../../paid_type_facts/inventory_tests.rs").to_owned();
         // Undo only the unique visibility hook before the complete old receiver.
-        undo(&mut current, r###"    assert_eq!(current.matches("pub(super) struct Payer<'a> {").count(), 1);
+        undo(
+            &mut current,
+            r###"    assert_eq!(current.matches("pub(super) struct Payer<'a> {").count(), 1);
     let current = current.replacen(
         "pub(super) struct Payer<'a> {",
         "struct Payer<'a> {",
         1,
     );
-"###, "");
+"###,
+            "",
+        );
         undo(
             &mut current,
             r###"#[test]
@@ -1258,33 +1256,43 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(&mut current, r###"#[test]
+        undo(
+            &mut current,
+            r###"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../../paid_type_facts.rs");
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
-"###, r###"#[test]
+"###,
+            r###"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../paid_type_facts.rs");
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
-"###);
+"###,
+        );
         // Exact composed receiving hooks; reconstruct every original byte below.
-        undo(&mut current, r###"    for program in tests::fixtures() {
+        undo(
+            &mut current,
+            r###"    for program in tests::fixtures() {
         for function in &program.functions {
             let (results, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
                 let mut budget = ReplayBudget::new();
                 budget.prepare_builder(function).unwrap();
                 reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget)
                     .unwrap();
-"###, r###"    for program in tests::fixtures() {
+"###,
+            r###"    for program in tests::fixtures() {
         for function in &program.functions {
             let mut budget = ReplayBudget::new();
             let (results, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
                 reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget)
                     .unwrap();
-"###);
-        undo(&mut current, r###"    assert!(adapter.contains("text::raw(payer, message)"));
+"###,
+        );
+        undo(
+            &mut current,
+            r###"    assert!(adapter.contains("text::raw(payer, message)"));
 }
 
 // The complete prior setup/body stays compiled against its original pure bool
@@ -1390,19 +1398,18 @@ fn complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_sour
     )
     );
 }
-"###, r###"    assert!(adapter.contains("text::raw(payer, message)"));
+"###,
+            r###"    assert!(adapter.contains("text::raw(payer, message)"));
 }
-"###);
-        assert_eq!(
+"###,
+        );
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs.before"
-            ),
-            "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs"
+            "src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs"
         );
     }
     {
-        let mut current = include_str!("../../skeleton_work/oracle_entry.rs").to_owned();
+        let mut current = ci_str!("../../skeleton_work/oracle_entry.rs").to_owned();
         undo(
             &mut current,
             r#"                Err(error) => return Err(refused(budget, function, error)),
@@ -1465,16 +1472,13 @@ fn complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_sour
                 Err(error) => return Err(refused(budget, function, error)),
 "#,
         );
-        assert_eq!(
+        prior!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__skeleton_work__oracle_entry.rs.before"
-            ),
-            "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"
+            "src__cleanup_plan__replay__skeleton_work__oracle_entry.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/function_value.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/function_value.rs").to_owned();
         undo(
             &mut current,
             r#"    };
@@ -1489,12 +1493,6 @@ pub(crate) use funded::work::{walk_funded_paying_with_work, walk_funded_with_wor
 }
 "#,
         );
-        assert_eq!(
-            current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__hir__function_value.rs.before"
-            ),
-            "src/hir/function_value.rs"
-        );
+        prior!(current, "src__hir__function_value.rs");
     }
 }

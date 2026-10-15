@@ -1449,7 +1449,11 @@ impl Resolver<'_> {
                                 condition, body, ..
                             } => {
                                 self.reject_while_disallowed_scoped(condition, Some(function))?;
-                                self.reject_while_disallowed_scoped(body, Some(function))?;
+                                self.reject_while_disallowed_in_scope(
+                                    body,
+                                    Some(function),
+                                    Some(&scope),
+                                )?;
                                 frames.push(Frame::BlockWhileCondition {
                                     span,
                                     path,

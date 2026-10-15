@@ -10,11 +10,20 @@ fn fixture(fields: usize) -> DeclarationIndex {
     }
     source.push_str("} @id(\"main\") fn main()->i64 {0}");
     let program = crate::check(&source, "leaf-drop.spx").unwrap();
-    DeclarationIndex::from_verified_with_prelude(&program, &[]).unwrap()
+    DeclarationIndex::nominal_original_with_prelude(&program, &[]).unwrap()
 }
 fn old_drop(mut index: DeclarationIndex) {
     let mut pending = Vec::new();
-    index.drain_recursive_types_for_private_contract(|ty| pending.push(ty));
+    // These fixtures own ordinary record vectors. Reproduce the original
+    // complete leaf queue directly; the current disposer intentionally omits
+    // leaf roots and cannot serve as the independent old control.
+    assert!(index.variant_cases.is_empty() && index.case_fields.is_empty());
+    for (_, mut fields) in std::mem::take(&mut index.record_fields) {
+        assert!(!fields.has_shared_owner());
+        for field in fields.iter_mut() {
+            pending.push(std::mem::replace(&mut field.ty, ResolvedType::I64));
+        }
+    }
     while let Some(ty) = pending.pop() {
         if let ResolvedType::Nominal { arguments, .. } = ty {
             pending.extend(arguments);
@@ -25,7 +34,11 @@ fn old_drop(mut index: DeclarationIndex) {
 fn sixteen_actual_leaf_fields_remove_only_the_original_literal_drop_queue() {
     let current = fixture(16);
     let old = current.clone();
-    let roots: usize = current.record_fields.values().map(|fields| fields.len()).sum();
+    let roots: usize = current
+        .record_fields
+        .values()
+        .map(|fields| fields.len())
+        .sum();
     assert_eq!(roots, 16);
     assert!(current.variant_cases.is_empty() && current.case_fields.is_empty());
     let ((), old_metrics) = measure(|| old_drop(old));

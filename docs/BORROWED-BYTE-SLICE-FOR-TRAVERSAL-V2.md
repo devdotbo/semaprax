@@ -1,5 +1,7 @@
 # Borrowed Byte Slice For Traversal v2
 
+Audience: compiler contributors, tool authors, and reviewers.
+
 Status: private source implementation for #780, executable qualification pending. No build, runtime, application-fit or backend-support claim is made by this authored contract. V1 remains the complete independent prior receiver.
 
 ## Narrow additive profile

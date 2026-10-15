@@ -707,7 +707,6 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/workspace_graph/identity_resolution/base.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base/tests.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base/affinity_tests.rs"),
-
         include_str!("../src/hir/function_reuse_source.rs"),
         include_str!("../src/hir/identity_resolution/previous_source.rs")
     );

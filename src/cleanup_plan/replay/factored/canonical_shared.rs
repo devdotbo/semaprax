@@ -4,12 +4,12 @@
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::*;
 
-mod epsilon_alias;
 #[cfg(test)]
 mod before_alias;
-mod memo;
 #[cfg(test)]
 mod before_index;
+mod epsilon_alias;
+mod memo;
 
 type SharedWeighted = Rc<Weighted>;
 
@@ -167,7 +167,8 @@ impl<'a> Canonicalizer<'a> {
                 physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
                 "factored closure shared header",
             )?;
-            self.closures.insert(function, node, budget, || Rc::new(closure))?;
+            self.closures
+                .insert(function, node, budget, || Rc::new(closure))?;
         }
         Ok(self.closures.get(&root).cloned())
     }

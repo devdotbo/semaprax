@@ -1,7 +1,7 @@
 //! Full old AVL shape and complete actual receiver/last-Drop controls.
 use super::*;
-use crate::bounded_output::{ReservationRefusal, with_limit_usage_refusal};
-use crate::test_allocation_observer::{Metrics, current_metrics, measure};
+use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
+use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 
 fn function(keys: &[(&str, StatusLane)]) -> ResolvedFunction {
     let mut program = crate::hir::resolve(&crate::check(
@@ -317,16 +317,14 @@ fn certified_status_foreign_restored_and_wrong_subject_never_reactivate_the_boun
                         .unwrap();
                 let owner = Owner::new(&function, &directory, &mut budget).unwrap();
                 if cached {
-                    assert!(
-                        directory
-                            .insert_certified(
-                                &function,
-                                &function.cleanup_plan.status_sources[0].id,
-                                &mut budget,
-                                &owner
-                            )
-                            .unwrap()
-                    );
+                    assert!(directory
+                        .insert_certified(
+                            &function,
+                            &function.cleanup_plan.status_sources[0].id,
+                            &mut budget,
+                            &owner
+                        )
+                        .unwrap());
                 }
                 let len = directory.len();
                 let pointer = directory.nodes.as_ptr();

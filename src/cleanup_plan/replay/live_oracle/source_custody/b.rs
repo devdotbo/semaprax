@@ -2,7 +2,7 @@ use super::undo;
 #[test]
 fn complete_original_sources_and_compiled_owning_receivers_remain_exact() {
     {
-        let mut current = include_str!("../../../../hir/function_value/funded.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/function_value/funded.rs").to_owned();
         undo(
             &mut current,
             r#"        }
@@ -19,14 +19,14 @@ pub(crate) mod work;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__hir__function_value__funded.rs.before"
             ),
             "src/hir/function_value/funded.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/funded.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/funded.rs").to_owned();
         undo(
             &mut current,
             r#"        assert!(fresh.is_empty(), "a refused charge publishes nothing");
@@ -43,14 +43,12 @@ pub(crate) mod work;
         );
         assert_eq!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__hir__funded.rs.before"
-            ),
+            ci_str!("../../../../../docs/evidence/opt810-live-oracle/src__hir__funded.rs.before"),
             "src/hir/funded.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/ids.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/ids.rs").to_owned();
         undo(
             &mut current,
             r#"mod metered_owner;
@@ -66,22 +64,26 @@ pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(&mut current, r###"#[cfg(test)]
+        undo(
+            &mut current,
+            r###"#[cfg(test)]
 pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
 
 #[cfg(test)]
 pub(in crate::hir) mod fixed_operation_tests;
-"###, r###"#[cfg(test)]
+"###,
+            r###"#[cfg(test)]
 pub(crate) use metered_owner::matches as monomorphic_owner_matches_with_work;
-"###);
+"###,
+        );
         assert_eq!(
             current,
-            include_str!("../../../../../docs/evidence/opt810-live-oracle/src__hir__ids.rs.before"),
+            ci_str!("../../../../../docs/evidence/opt810-live-oracle/src__hir__ids.rs.before"),
             "src/hir/ids.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/ids/metered_owner.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/ids/metered_owner.rs").to_owned();
         undo(
             &mut current,
             r#"        }
@@ -98,14 +100,14 @@ pub(crate) use oracle::matches as general_matches;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__hir__ids__metered_owner.rs.before"
             ),
             "src/hir/ids/metered_owner.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/lexical_exit.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/lexical_exit.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -122,17 +124,19 @@ pub(crate) use owner_funded::{owner_funded_with_work, requires_funded_with_work}
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__hir__lexical_exit.rs.before"
             ),
             "src/hir/lexical_exit.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/lexical_exit/owner_funded.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/lexical_exit/owner_funded.rs").to_owned();
         // Exact #766 test-only extension: retain the whole original plain
         // receiver and all previous source inverses; no production bytes change.
-        undo(&mut current, r#####"
+        undo(
+            &mut current,
+            r#####"
 
         // Keep the complete plain-owner control above. Exercise the actual
         // terminated guard and its already-admitted unterminated receiver with
@@ -244,7 +248,9 @@ pub(crate) use owner_funded::{owner_funded_with_work, requires_funded_with_work}
         assert_eq!(
             debit_pairs[0], debit_pairs[1],
             "same canonical guard has identical charged work and storage"
-        );"#####, "");
+        );"#####,
+            "",
+        );
         undo(
             &mut current,
             r#"        );
@@ -261,14 +267,14 @@ pub(crate) use work::{owner_funded_with_work, requires_funded_with_work};
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__hir__lexical_exit__owner_funded.rs.before"
             ),
             "src/hir/lexical_exit/owner_funded.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../hir/lexical_exit/walk.rs").to_owned();
+        let mut current = ci_str!("../../../../hir/lexical_exit/walk.rs").to_owned();
         undo(
             &mut current,
             r#"
@@ -356,14 +362,14 @@ mod tests;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__hir__lexical_exit__walk.rs.before"
             ),
             "src/hir/lexical_exit/walk.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../literal_format.rs").to_owned();
+        let mut current = ci_str!("../../../../literal_format.rs").to_owned();
         undo(
             &mut current,
             r#"        }
@@ -380,14 +386,14 @@ pub(crate) use funded::work::checked_moving_string_operands_funded_with_work;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__literal_format.rs.before"
             ),
             "src/literal_format.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../literal_format/funded.rs").to_owned();
+        let mut current = ci_str!("../../../../literal_format/funded.rs").to_owned();
         undo(
             &mut current,
             r#"        assert_eq!(active, 0);
@@ -404,7 +410,7 @@ pub(crate) mod work;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__literal_format__funded.rs.before"
             ),
             "src/literal_format/funded.rs"
@@ -412,8 +418,12 @@ pub(crate) mod work;
     }
     {
         let mut current =
-            include_str!("../../../../project/incremental/cold_source_tests.rs").to_owned();
-        undo(&mut current, "#[path = \"cold_source_tests/oracle_owner_before.rs\"]\n", "");
+            ci_str!("../../../../project/incremental/cold_source_tests.rs").to_owned();
+        undo(
+            &mut current,
+            "#[path = \"cold_source_tests/oracle_owner_before.rs\"]\n",
+            "",
+        );
         undo(
             &mut current,
             r#"    );
@@ -444,12 +454,10 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
                 r#"
 #[test]
 "#,
-                include_str!(
-                    "../../../../project/incremental/cold_source_tests/oracle_owner_before.rs"
-                )
-                .strip_prefix("use super::*;\n\npub(super) ")
-                .unwrap()
-                .trim_end_matches('\n'),
+                ci_str!("../../../../project/incremental/cold_source_tests/oracle_owner_before.rs")
+                    .strip_prefix("use super::*;\n\npub(super) ")
+                    .unwrap()
+                    .trim_end_matches('\n'),
                 r#"
 
 #[test]
@@ -457,7 +465,9 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
             ),
         );
         // Restore the complete original child before applying every prior parent hook.
-        undo(&mut current, r####"fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
+        undo(
+            &mut current,
+            r####"fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     use crate::bounded_output::identity_reservation::{IdentityReservation, Refused};
     use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
     let source = "module cold; @id(\"helper\") fn helper(value:i64)->i64 {value+1} @id(\"main\") fn main()->i64 {helper(1)}";
@@ -620,7 +630,8 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     );
     assert_eq!(legacy.function_costs["main"], 0);
     assert_eq!(legacy.function_costs["helper"], saved_helper_cost);
-}"####, r####"fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
+}"####,
+            r####"fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     use crate::bounded_output::identity_reservation::{IdentityReservation, Refused};
     use crate::bounded_output::{with_limit_usage, with_limit_usage_refusal};
     let source = "module cold; @id(\"helper\") fn helper(value:i64)->i64 {value+1} @id(\"main\") fn main()->i64 {helper(1)}";
@@ -747,9 +758,12 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
     );
     assert_eq!(legacy.function_costs["main"], 0);
     assert_eq!(legacy.function_costs["helper"], saved_helper_cost);
-}"####);
+}"####,
+        );
         // Exact composed receiving hooks; reconstruct every original byte below.
-        undo(&mut current, r###"        let mut owner =
+        undo(
+            &mut current,
+            r###"        let mut owner =
             crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
         let before = crate::bounded_output::active_remaining();
         assert!(pass
@@ -759,22 +773,24 @@ fn explicit_owner_siblings_match_legacy_selective_routes_and_body_reuse() {
         pass.resolve_borrowed_source_paid(&program.path, &changed_view, None, &mut owner)
             .unwrap()
             .unwrap()
-"###, r###"        let mut owner =
+"###,
+            r###"        let mut owner =
             crate::bounded_output::identity_reservation::IdentityReservation::acquire().unwrap();
         pass.resolve_borrowed_cold_source_paid(&program.path, &changed_view, None, &mut owner)
             .unwrap()
             .unwrap()
-"###);
+"###,
+        );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__project__incremental__cold_source_tests.rs.before"
             ),
             "src/project/incremental/cold_source_tests.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../string_ops.rs").to_owned();
+        let mut current = ci_str!("../../../../string_ops.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -849,14 +865,12 @@ pub(crate) fn by_id_with_work<E>(
         );
         assert_eq!(
             current,
-            include_str!(
-                "../../../../../docs/evidence/opt810-live-oracle/src__string_ops.rs.before"
-            ),
+            ci_str!("../../../../../docs/evidence/opt810-live-oracle/src__string_ops.rs.before"),
             "src/string_ops.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../string_ops/concat_funded.rs").to_owned();
+        let mut current = ci_str!("../../../../string_ops/concat_funded.rs").to_owned();
         undo(
             &mut current,
             r#"        assert!(value && calls > 1 && charged > 0);
@@ -873,14 +887,14 @@ pub(crate) mod work;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__string_ops__concat_funded.rs.before"
             ),
             "src/string_ops/concat_funded.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../string_ops/conditions.rs").to_owned();
+        let mut current = ci_str!("../../../../string_ops/conditions.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -942,14 +956,14 @@ pub(crate) fn resolved_operands_with_work<'a, E>(
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__string_ops__conditions.rs.before"
             ),
             "src/string_ops/conditions.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../string_ops/conditions/funded.rs").to_owned();
+        let mut current = ci_str!("../../../../string_ops/conditions/funded.rs").to_owned();
         undo(
             &mut current,
             r#"        assert_eq!(active, 0);
@@ -966,14 +980,14 @@ pub(crate) mod work;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__string_ops__conditions__funded.rs.before"
             ),
             "src/string_ops/conditions/funded.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../string_ops/take.rs").to_owned();
+        let mut current = ci_str!("../../../../string_ops/take.rs").to_owned();
         undo(
             &mut current,
             r#"
@@ -1026,7 +1040,7 @@ mod tests;
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__string_ops__take.rs.before"
             ),
             "src/string_ops/take.rs"
@@ -1034,7 +1048,7 @@ mod tests;
     }
     {
         let mut current =
-            include_str!("../../../../workspace_graph/identity_resolution/tests.rs").to_owned();
+            ci_str!("../../../../workspace_graph/identity_resolution/tests.rs").to_owned();
         undo(
             &mut current,
             r#"        assert_eq!(actual.1.costs(), expected_costs);
@@ -1065,7 +1079,7 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
                 r#"/// Both results remain live until Drop inside the allocation observation.
 #[test]
 "#,
-                include_str!(
+                ci_str!(
                     "../../../../workspace_graph/identity_resolution/tests/oracle_owner_before.rs"
                 )
                 .strip_prefix("use super::*;\n\npub(super) ")
@@ -1079,45 +1093,63 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
         );
         assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/src__workspace_graph__identity_resolution__tests.rs.before"
             ),
             "src/workspace_graph/identity_resolution/tests.rs"
         );
     }
     {
-        let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        let mut current = ci_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
         undo(&mut current, "        include_str!(\"../src/hir/nominal_payload/legacy.rs\"),\n        include_str!(\"../src/hir/nominal_payload/legacy/clone.rs\"),\n        include_str!(\"../src/hir/nominal_payload/legacy/tests.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal/legacy.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_tests/legacy.rs\"),\n        include_str!(\"../src/hir/nominal_payload/legacy/source_tests.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/cleanup_plan/replay/selected_context/paid.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/selected_owner/paid.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/selected_profile/paid.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/selected_entry/tests/session_errors.rs\"),\n", "");
         undo(&mut current, "            include_str!(\"../src/hir/validation/byte_traversal.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/before_nested.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/slot.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/check.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/index.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/intervals.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/shape.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/storage.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/tests.rs\"),\n            include_str!(\"../src/hir/validation/byte_traversal/nested/walk.rs\"),\n", "            include_str!(\"../src/hir/validation/byte_traversal.rs\"),\n");
         undo(&mut current, "            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/leaf_index.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/leaf_index/paid.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/loan_plan/paid_plan/retained_before_dense.rs\"),\n        include_str!(\"../src/loan_plan/funded_flat/before_dense.rs\"),\n", "");
-        undo(&mut current, r###"        include_str!("../src/loan_plan/paid_live.rs"),
+        undo(
+            &mut current,
+            r###"        include_str!("../src/loan_plan/paid_live.rs"),
         include_str!("../src/loan_plan/paid_live/dense.rs"),
         include_str!("../src/loan_plan/paid_live/dense/tests.rs"),
-"###, "");
-        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
+"###,
+            "",
+        );
+        undo(
+            &mut current,
+            r###"        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
-"###, "");
+"###,
+            "",
+        );
         undo(&mut current, "            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining/selected.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/continuation_storage/paid_receiving.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/continuation_receiver.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/continuation_receiver/tests.rs\"),", "        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),");
-        undo(&mut current, r####"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
+        undo(
+            &mut current,
+            r####"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
                     include_str!("../src/bounded_output/loan_inner_stage_tests.rs"),
-"####, r####"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
-"####);
-      undo(&mut current, r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),
+"####,
+            r####"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
+"####,
+        );
+        undo(
+            &mut current,
+            r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),
         include_str!("../src/hir/prelude_bundle/extension_work.rs"),
         include_str!("../src/hir/prelude_bundle/extension_model.rs"),
         include_str!("../src/hir/prelude_bundle/extension_producer.rs"),
         include_str!("../src/hir/prelude_bundle/extension_staging.rs"),
         include_str!("../src/hir/prelude_bundle/vector_extension.rs"),
         include_str!("../src/hir/prelude_bundle/vector_extension/tests.rs"),
-        include_str!("../src/workspace_graph/identity_resolution/base/vector_tests.rs"),"#####, r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),"#####);
+        include_str!("../src/workspace_graph/identity_resolution/base/vector_tests.rs"),"#####,
+            r#####"        include_str!("../src/hir/prelude_bundle/invocation.rs"),"#####,
+        );
         // Full exit prefix proof, complete prior receiver and owning controls.
-        undo(&mut current, r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+        undo(
+            &mut current,
+            r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
@@ -1126,42 +1158,62 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########, r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########,
+            r########"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########);
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"########,
+        );
         // Exact additive full status-fact receiving and complete old/control join.
-        undo(&mut current, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+        undo(
+            &mut current,
+            r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######, r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######,
+            r#######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######);
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"#######,
+        );
         // Remove only the exact new full receiver/oracle/control join before prior hooks.
-        undo(&mut current, r######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
+        undo(
+            &mut current,
+            r######"concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"######, r######"include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs")"######);
-        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs"))"######,
+            r######"include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs")"######,
+        );
+        undo(
+            &mut current,
+            r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
         include_str!("../src/hir/declaration_index/linked_owned_data.rs"),
         include_str!("../src/hir/declaration_index/linked_owned_data/original.rs"),
         include_str!("../src/hir/declaration_index/linked_owned_data/tests.rs"),
-"####, r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
-"####);
-        undo(&mut current, r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
+"####,
+            r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
+"####,
+        );
+        undo(
+            &mut current,
+            r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
         include_str!("../src/hir/identity_resolution/nominal_invalid_layout_tests.rs"),
-"####, r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
-"####);
-        undo(&mut current, r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),
+"####,
+            r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
+"####,
+        );
+        undo(
+            &mut current,
+            r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),
         include_str!("../src/loan_plan/paid_candidate.rs"),
         include_str!("../src/loan_plan/paid_candidate/retained.rs"),
         include_str!("../src/loan_plan/paid_candidate/retained/inventory.rs"),
@@ -1169,48 +1221,92 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
         include_str!("../src/loan_plan/paid_plan.rs"),
         include_str!("../src/loan_plan/paid_plan/retained.rs"),
         include_str!("../src/loan_plan/funded_flat.rs"),
-        include_str!("../src/loan_plan/funded_flat/inventory_before.rs"),"#####, r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),"#####);
-        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),
-        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####);
-        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),
+        include_str!("../src/loan_plan/funded_flat/inventory_before.rs"),"#####,
+            r#####"        include_str!("../src/loan_plan/paid_candidate_before.rs"),"#####,
+        );
+        undo(
+            &mut current,
+            r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),
+        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),"####,
+            r####"        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####,
+        );
+        undo(
+            &mut current,
+            r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),
         include_str!("../src/hir/declaration_index/nominal_paid_values.rs"),
-        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####);
+        include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),"####,
+            r####"        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####,
+        );
         // Additive current child join, before every unchanged original inventory hook.
-        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),
+        undo(
+            &mut current,
+            r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),
         include_str!("../src/hir/declaration_index/nominal_construction.rs"),
-        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####, r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),"####);
-        undo(&mut current, r#####"        concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
+        include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),"####,
+            r####"        include_str!("../src/hir/declaration_index/nominal_rollback.rs"),"####,
+        );
+        undo(
+            &mut current,
+            r#####"        concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix.rs"),
-            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),"#####, r#####"        include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),"#####);
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),"#####,
+            r#####"        include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),"#####,
+        );
         // Exact full pre-stage shared-sealing receiver join.
-        undo(&mut current, r###"                    include_str!("../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"),
-"###, "");
+        undo(
+            &mut current,
+            r###"                    include_str!("../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"),
+"###,
+            "",
+        );
         // Exact additive canonical-stage controls remain in the full source scan.
-        undo(&mut current, r###"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
+        undo(
+            &mut current,
+            r###"                    include_str!("../src/bounded_output/canonical_stage_tests.rs"),
                     include_str!("../src/hir/canonical_loan_storage/caller/stage_tests.rs"),
-"###, "");
-        undo(&mut current, r###"                include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"),
+"###,
+            "",
+        );
+        undo(
+            &mut current,
+            r###"                include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"),
                 include_str!("../src/hir/validation/function_scope/lifecycle/completed/inline_path/tests.rs"),
                 include_str!("../src/hir/validation/function_scope/lifecycle/completed/before_inline.rs"),
-"###, "");
+"###,
+            "",
+        );
         // Undo only the two additive complete checkpoint merge receiver joins.
-        undo(&mut current, r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
+        undo(
+            &mut current,
+            r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/merge/saved.rs"),
                 include_str!("../src/hir/validation/scope_checkpoint/merge/tests.rs"),
-"###, r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
-"###);
+"###,
+            r###"                include_str!("../src/hir/validation/scope_checkpoint/merge.rs"),
+"###,
+        );
         // Exact formatting hook for the complete additive generic call-graph union.
-        undo(&mut current, r###"concat!(
+        undo(
+            &mut current,
+            r###"concat!(
             include_str!("../src/hir/validation/generic_template.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph/original.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph/tests.rs")
-        )"###, r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###);
-        undo(&mut current, r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###, r###"include_str!("../src/hir/validation/generic_template.rs")"###);
+        )"###,
+            r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###,
+        );
+        undo(
+            &mut current,
+            r###"concat!(include_str!("../src/hir/validation/generic_template.rs"), include_str!("../src/hir/validation/generic_template/call_graph.rs"), include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"), include_str!("../src/hir/validation/generic_template/call_graph/original.rs"), include_str!("../src/hir/validation/generic_template/call_graph/tests.rs"))"###,
+            r###"include_str!("../src/hir/validation/generic_template.rs")"###,
+        );
         // Undo only the additive complete intrinsic source union.
         // Exact formatting hook; all intrinsic union members remain covered.
-        undo(&mut current, r###"concat!(
+        undo(
+            &mut current,
+            r###"concat!(
                         include_str!("../src/hir/validation/constructor_seed/original.rs"),
                         include_str!("../src/list_ops/original_constructor.rs"),
                         include_str!("../src/iterator_ops/original_constructor.rs"),
@@ -1218,45 +1314,77 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
                             "../src/hir/validation/constructor_seed/original_intrinsics.rs"
                         ),
                         include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs")
-                    )"###, r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###);
-        undo(&mut current, r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###, r###"include_str!("../src/hir/validation/constructor_seed/original.rs")"###);
+                    )"###,
+            r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###,
+        );
+        undo(
+            &mut current,
+            r###"concat!(include_str!("../src/hir/validation/constructor_seed/original.rs"), include_str!("../src/list_ops/original_constructor.rs"), include_str!("../src/iterator_ops/original_constructor.rs"), include_str!("../src/hir/validation/constructor_seed/original_intrinsics.rs"), include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs"))"###,
+            r###"include_str!("../src/hir/validation/constructor_seed/original.rs")"###,
+        );
         // Exact 824 child joins retain full live coverage; the final comparison
         // still reconstructs the complete unchanged original HIR inventory.
-        undo(&mut current, r###"                concat!(
+        undo(
+            &mut current,
+            r###"                concat!(
                     include_str!("../src/hir/validation/function_lookup.rs"),
                     include_str!("../src/hir/validation/function_lookup/original.rs"),
                     include_str!("../src/hir/validation/function_lookup/paid_custody.rs")
                 ),
-"###, r###"                include_str!("../src/hir/validation/function_lookup.rs"),
-"###);
-        undo(&mut current, r###"                concat!(
+"###,
+            r###"                include_str!("../src/hir/validation/function_lookup.rs"),
+"###,
+        );
+        undo(
+            &mut current,
+            r###"                concat!(
                     include_str!("../src/hir/validation/constructor_seed.rs"),
                     include_str!("../src/hir/validation/constructor_seed/original.rs")
                 ),
-"###, r###"                include_str!("../src/hir/validation/constructor_seed.rs"),
-"###);
-        undo(&mut current, r###"        concat!(
+"###,
+            r###"                include_str!("../src/hir/validation/constructor_seed.rs"),
+"###,
+        );
+        undo(
+            &mut current,
+            r###"        concat!(
             include_str!("../src/hir/validation/stdin_stream.rs"),
             include_str!("../src/hir/validation/stdin_stream/paid.rs"),
             include_str!("../src/hir/validation/stdin_stream/paid/analysis.rs"),
             include_str!("../src/hir/validation/stdin_stream/paid/tests.rs")
         ),
-"###, r###"        include_str!("../src/hir/validation/stdin_stream.rs"),
-"###);
-        undo(&mut current, r###"
+"###,
+            r###"        include_str!("../src/hir/validation/stdin_stream.rs"),
+"###,
+        );
+        undo(
+            &mut current,
+            r###"
 #[cfg(test)]
 #[path = "hir_module_boundaries/oracle_source_inventory.rs"]
 mod oracle_source_inventory;
-"###, "");
-        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
-"###, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
+"###,
+            "",
+        );
+        undo(
+            &mut current,
+            r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
+"###,
+            r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_profile/tests.rs"),
-"###);
-        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
-"###, r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
+"###,
+        );
+        undo(
+            &mut current,
+            r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
+"###,
+            r###"        include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/inventory_summary/tests.rs"),
-"###);
-        undo(&mut current, r###"                include_str!("../src/hir/validation/held_profiles.rs"),
+"###,
+        );
+        undo(
+            &mut current,
+            r###"                include_str!("../src/hir/validation/held_profiles.rs"),
                 include_str!("../src/hir/validation/held_profiles/tests.rs"),
                 include_str!("../src/hir/validation/held_profiles/source_audit.rs"),
                 include_str!("../src/hir/validation/executable_profiles/held.rs"),
@@ -1267,15 +1395,25 @@ mod oracle_source_inventory;
                 include_str!("../src/hir/resolve_box_call/map/identity_tests.rs"),
                 include_str!("../src/hir/resolve_box_call/list/identity_tests.rs"),
                 include_str!("../src/hir/resolve_box_call/iterator/identity_tests.rs"),
-"###, "");
+"###,
+            "",
+        );
         undo(&mut current, "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/before_alias.rs\"),\n", "");
         undo(&mut current, "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs\"),\n", "");
-        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
+        undo(
+            &mut current,
+            r###"        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_before.rs"),
-"###, "");
-        undo(&mut current, r###"        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
-"###, "");
+"###,
+            "",
+        );
+        undo(
+            &mut current,
+            r###"        include_str!("../src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"),
+"###,
+            "",
+        );
         undo(
             &mut current,
             r#"        include_str!("../src/hir/iterator_loop/renewal/paid_scan.rs"),
@@ -1338,10 +1476,10 @@ mod oracle_source_inventory;
                 include_str!("../src/hir/ordinary_scan.rs"),
 "####,
         );
-            undo(&mut current, "        include_str!(\"../src/hir.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/base_prelude.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/base_prelude/tests.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/producer_failure.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_base.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_original.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_rollback.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_original.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../src/hir/nominal_payload.rs\"),\n        include_str!(\"../src/hir/nominal_payload/codec.rs\"),\n        include_str!(\"../src/hir/nominal_payload/elements.rs\"),\n        include_str!(\"../src/hir/nominal_payload/map.rs\"),\n        include_str!(\"../src/hir/nominal_payload/tests.rs\"),\n        include_str!(\"../src/hir/prelude_bundle.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/borrowed.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/merge.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/original.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/overlay.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/paid.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/producer.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/tests.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/work_model.rs\"),\n        include_str!(\"../src/project/incremental/paid_resolution/base.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base/tests.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base/affinity_tests.rs\"),\n\n        include_str!(\"../src/hir/function_reuse_source.rs\"),\n", "        include_str!(\"../src/hir.rs\"),\n        include_str!(\"../src/hir/function_reuse_source.rs\"),\n");
-assert_eq!(
+        undo(&mut current, "        include_str!(\"../src/hir.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/base_prelude.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/base_prelude/tests.rs\"),\n        include_str!(\"../src/bounded_output/identity_reservation/producer_failure.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_base.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_original.rs\"),\n        include_str!(\"../src/hir/declaration_index/nominal_rollback.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_original.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../src/hir/nominal_payload.rs\"),\n        include_str!(\"../src/hir/nominal_payload/codec.rs\"),\n        include_str!(\"../src/hir/nominal_payload/elements.rs\"),\n        include_str!(\"../src/hir/nominal_payload/map.rs\"),\n        include_str!(\"../src/hir/nominal_payload/tests.rs\"),\n        include_str!(\"../src/hir/prelude_bundle.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/borrowed.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/fixed_work.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/invocation.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/materialize.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/merge.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/original.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/overlay.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/paid.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/producer.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/tests.rs\"),\n        include_str!(\"../src/hir/prelude_bundle/work_model.rs\"),\n        include_str!(\"../src/project/incremental/paid_resolution/base.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base/tests.rs\"),\n        include_str!(\"../src/workspace_graph/identity_resolution/base/affinity_tests.rs\"),\n\n        include_str!(\"../src/hir/function_reuse_source.rs\"),\n", "        include_str!(\"../src/hir.rs\"),\n        include_str!(\"../src/hir/function_reuse_source.rs\"),\n");
+        assert_eq!(
             current,
-            include_str!(
+            ci_str!(
                 "../../../../../docs/evidence/opt810-live-oracle/tests__hir_module_boundaries.rs.before"
             ),
             "tests/hir_module_boundaries.rs"

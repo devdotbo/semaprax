@@ -153,7 +153,7 @@ fn legacy_postpass_keeps_full_original_diagnostics_before_any_canonicalization()
         SOURCE.replace("Child : Base", "Child : Missing"),
         SOURCE.replace("class Base {", "class Base : Child {"),
         SOURCE.replace("@id(\"child.read\")", "@id(\"base.read\")"),
-        "module legacy.recursive; @id(\"r\") record R {@id(\"r.x\") x:R,}".to_owned(),
+        "module legacy.recursive; @id(\"r\") record R {@id(\"r.x\") x:R,} @id(\"app.main\") fn main()->i64 {0}".to_owned(),
     ] {
         let program = crate::parse(&source, "legacy-invalid.spx").unwrap();
         let prelude = crate::prelude::declarations_for_program(&program);

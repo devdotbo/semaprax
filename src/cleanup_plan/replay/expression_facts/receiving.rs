@@ -6,7 +6,7 @@ mod retained;
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) use retained::before_status_retention;
 pub(in crate::cleanup_plan::replay) use retained::{
-    validate_blocks_and_edges_retained, validate_status_sources_retained, validate_exits_retained,
+    validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_retained,
 };
 mod regions_entry;
 mod remaining;
@@ -195,8 +195,10 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     destination,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    let source_flags = helpers::validate_place(function, source, storage, leaves, budget)?;
-                    let destination_flags = helpers::validate_place(function, destination, storage, leaves, budget)?;
+                    let source_flags =
+                        helpers::validate_place(function, source, storage, leaves, budget)?;
+                    let destination_flags =
+                        helpers::validate_place(function, destination, storage, leaves, budget)?;
                     let mut source_directory =
                         Directory::new(function, budget, "cleanup transfer source flag directory")?;
                     for flag in source_flags {
@@ -266,8 +268,10 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                     variant,
                 } => {
                     require_expression(function, expressions, at, budget)?;
-                    let source_flags = helpers::validate_place(function, source, storage, leaves, budget)?;
-                    let destination_flags = helpers::validate_place(function, destination, storage, leaves, budget)?;
+                    let source_flags =
+                        helpers::validate_place(function, source, storage, leaves, budget)?;
+                    let destination_flags =
+                        helpers::validate_place(function, destination, storage, leaves, budget)?;
                     if source_flags.len() != destination_flags.len()
                         || function
                             .cleanup_plan
@@ -411,7 +415,13 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(
                                 ));
                             }
                         }
-                        for flag in helpers::validate_place(function, &argument.source, storage, leaves, budget)? {
+                        for flag in helpers::validate_place(
+                            function,
+                            &argument.source,
+                            storage,
+                            leaves,
+                            budget,
+                        )? {
                             if !consumed.insert(function, flag, budget)? {
                                 return Err(replay_error(
                                     function,

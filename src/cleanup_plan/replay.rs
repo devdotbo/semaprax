@@ -619,7 +619,9 @@ fn validate_structure_with_budget_storage<'hir>(
     let storage = validate_slots_paid(function, budget)?;
     let leaves = collect_leaves_paid(function, budget)?;
     let statuses = expression_facts::receiving::validate_status_sources_retained(
-        function, &expression_facts, budget,
+        function,
+        &expression_facts,
+        budget,
     )?;
     expression_facts::receiving::validate_regions(function, &storage, budget)?;
     expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;

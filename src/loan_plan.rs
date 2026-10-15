@@ -282,6 +282,7 @@ fn has_own_root_candidate(
         }
     }
 
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let provisional = provisional_result::root(function);
     let mut root_ownership = BTreeMap::<ValueId, bool>::new();
     for expression in expressions {
@@ -293,7 +294,7 @@ fn has_own_root_candidate(
             }
         }
         // A borrowed byte traversal freezes its view's ultimate owner.
-        if let Some(region) = crate::hir::byte_traversal_region(expression)? {
+        if let Some(region) = byte_census.region_for(program, expression)? {
             if let Some(place) = expression_place(region.view) {
                 if ultimate_root_is_own(
                     &place.root,

@@ -100,8 +100,10 @@ fn linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts(
                         ResolvedTypeDeclarationKind::Record { fields } => {
                             let held = current.record_payload(&ty.id).unwrap();
                             assert_eq!(held.as_slice(), fields.as_slice());
-                            if fields.is_shared() {
+                            if fields.has_shared_owner() {
                                 assert!(held.same_owner(fields));
+                                assert_eq!(held.is_shared(), fields.is_shared());
+                                assert_eq!(held.is_legacy_shared(), fields.is_legacy_shared());
                             } else {
                                 assert_ne!(held.as_ptr(), fields.as_ptr());
                             }
