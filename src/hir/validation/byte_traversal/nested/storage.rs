@@ -7,7 +7,7 @@ use std::cell::Cell;
 use std::mem::size_of;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
-pub(super) enum Refused {
+pub(in crate::hir::validation::byte_traversal) enum Refused {
     Budget,
     Detached,
     Layout,

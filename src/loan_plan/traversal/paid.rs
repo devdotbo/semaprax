@@ -186,6 +186,7 @@ pub(in crate::loan_plan) fn draft(
 /// Borrowed `Slice<u8>` traversal: the view's resolved owner is frozen from
 /// before the complete lowered region until after it. The loan is independent
 /// of the view's own liveness, which may end at its last read inside the body.
+#[cfg(test)]
 pub(in crate::loan_plan) fn draft_bytes(
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,

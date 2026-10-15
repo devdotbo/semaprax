@@ -638,10 +638,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
 #[test]
 fn record_renewal_named_view_admission_agrees_with_iterative_verifier() {
     use crate::diagnostic::Diagnostic;
-    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_before_nested_oracle;
+    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_oracle as reject_while_disallowed_before_nested_oracle;
     use crate::source_verify::type_table::TypeTable;
     use std::collections::HashMap;
-    let source = include_str!("../../../tests/language/while_loops/record_borrow_renewal.spx");
+    let source = include_str!("../../../../tests/language/while_loops/record_borrow_renewal.spx");
     for (setup, arguments) in [
         (
             "bytes_as_slice(source)",
@@ -714,7 +714,7 @@ fn record_renewal_named_view_admission_agrees_with_iterative_verifier() {
 
 #[cfg(test)]
 fn string_slot_loop_admission(source: &str, admitted: bool) {
-    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_before_nested_oracle;
+    use crate::source_verify::oracle::while_oracle::reject_while_disallowed_oracle as reject_while_disallowed_before_nested_oracle;
     use crate::source_verify::type_table::TypeTable;
     use std::collections::HashMap;
     let program = crate::parse(source, std::path::Path::new("slots-loop.spx")).unwrap();
@@ -775,14 +775,14 @@ fn string_slot_loop_admission(source: &str, admitted: bool) {
 
 #[test]
 fn string_slot_named_root_fused_loop_source_matches_independent_oracle() {
-    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    let source = include_str!("../../../../tests/fixtures/string-slot-views.spx");
     crate::check(source, "slots-loop.spx").unwrap();
     string_slot_loop_admission(source, true);
 }
 
 #[test]
 fn string_slot_explicit_types_and_computed_roots_keep_exact_loop_refusal() {
-    let source = include_str!("../../../tests/fixtures/string-slot-views.spx");
+    let source = include_str!("../../../../tests/fixtures/string-slot-views.spx");
     for replacement in [
         "str_as_bytes(vec_str_at<string>(values,0usize))",
         "str_as_bytes(vec_str_at({values},0usize))",

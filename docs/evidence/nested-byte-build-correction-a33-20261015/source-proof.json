@@ -1,0 +1,15 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_EXECUTION",
+  "basis": "a33c16996b4f095ffa2cf631bc39db4589e28302",
+  "full_byte_packet_rows": 41,
+  "exact_current_to_prior_repairs": [
+    "src/hir/validation/byte_traversal/nested/storage.rs",
+    "src/hir/validation/byte_traversal/nested/walk.rs",
+    "src/loan_plan/traversal.rs",
+    "src/loan_plan/traversal/paid.rs",
+    "src/source_verify/iterative/while_rules/before_nested.rs"
+  ],
+  "all_originals_preserved": true,
+  "packet_before_sha256": "41f119ed8016cecfe9b12889259af7a94360feb3e0e1cc4bc911774c950daf48",
+  "packet_after_sha256": "da9d2aa332695f9299f8024bd841306167db345ee10e19006fea373835f747e2"
+}

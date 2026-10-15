@@ -18,7 +18,7 @@ pub(super) enum Event<'a> {
         position: usize,
     },
     Exit {
-        expression: &'a ResolvedExpr,
+        _expression: &'a ResolvedExpr,
         position: usize,
         end: usize,
     },
@@ -100,7 +100,7 @@ impl<'a> Walker<'a> {
                 len += 1;
             } else {
                 visit(Event::Exit {
-                    expression,
+                    _expression: expression,
                     position: current.position,
                     end: *ordinal,
                 })?;

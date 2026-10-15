@@ -219,6 +219,7 @@ pub(super) fn draft(
 /// Borrowed `Slice<u8>` traversal: the view's resolved owner is frozen from
 /// before the complete lowered region until after it. The loan is independent
 /// of the view's own liveness, which may end at its last read inside the body.
+#[cfg(test)]
 pub(super) fn draft_bytes(
     expression: &ResolvedExpr,
     cfg: &Cfg<'_>,
