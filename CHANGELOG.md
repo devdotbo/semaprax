@@ -1,5 +1,12 @@
 # Changelog
 
+- Author authenticated numeric cleanup-closure memo chunks and reuse immutable
+  single-epsilon child backing (#830), retaining every logical work charge and
+  the complete original receivers. Add prepaid static local Session refusals
+  (#781), retaining original Owned controls and the actual paid-report boundary.
+  The combined focused runtime/Clippy campaign is pending; no application-fit
+  or live token/cost improvement is claimed.
+
 - Author narrowly scoped immutable byte-to-byte nesting (#780), with exact
   outer-entry views, a function-bound borrowed HIR census and complete ancestor
   freezes. Keep full v1 receivers, mixed source nesting restrictions and actual

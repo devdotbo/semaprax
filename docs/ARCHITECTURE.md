@@ -2150,6 +2150,12 @@ view refusal (`ViewRefusal`). The actual selected lexical replay caller in
 carrier (`cleanup_plan/replay/selected_entry/paid.rs`) on its module ledger
 before preparation. Acquisition, preparation and Session retain the report and
 its ledger as one affine stage; refusal and finish accept no foreign carrier.
+The closed local guard family in
+`cleanup_plan/replay/selected_context/paid.rs` acquires its refusal controls
+before constructing a static `semantic_refusal::Receipt`.
+`selected_owner/paid.rs` and `selected_profile/paid.rs` retain the original
+member and profile checks; the retained first receipt selects the outward
+stage. Arbitrary child Diagnostics retain their explicit Owned boundary.
 Every later refusal transfers that carrier, together with
 the exact failed ledger owner. The authenticators and selected declaration
 constructors on that route refuse with the Copy `SelectedReplayRefused`. A
