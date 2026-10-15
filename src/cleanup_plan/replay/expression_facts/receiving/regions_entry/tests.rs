@@ -388,6 +388,23 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
             record["sha256"].as_str().unwrap()
         );
         let mut current = current.to_owned();
+        // The later status-prefix owner is a separate compiled child. Its
+        // registration adds no directory implementation to this frozen root.
+        if record["source"] == "src/cleanup_plan/replay/expression_facts/receiving/directory.rs" {
+            let registration = "\nmod status_prefix;\npub(super) use status_prefix::Owner as StatusInsertionOwner;\n";
+            assert!(current.ends_with(registration));
+            assert_eq!(current.matches(registration).count(), 1);
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(
+                        include_str!("../directory/status_prefix.rs").as_bytes()
+                    ))
+                ),
+                "914e1a78079f871cb37462414b1991cde6722e78b7af39cb7979e11f16f767e9"
+            );
+            current.truncate(current.len() - registration.len());
+        }
         for edit in record["edits"].as_array().unwrap().iter().rev() {
             let after = edit["after"].as_str().unwrap();
             assert_eq!(current.matches(after).count(), 1);
@@ -421,7 +438,7 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
         );
         assert_eq!(record["before"].as_str().unwrap(), original);
         let after = record["after"].as_str().unwrap();
-        assert_eq!(ci_str!("../regions_entry.rs").matches(after).count(), 1);
+        assert_eq!(original_receiver.matches(after).count(), 1);
         assert_eq!(
             ci_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
