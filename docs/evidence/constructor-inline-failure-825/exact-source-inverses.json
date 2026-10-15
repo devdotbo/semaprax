@@ -85,7 +85,7 @@
     },
     {
       "source": "src/workspace_graph/expected_projection/borrowed_imports/inline.rs",
-      "sha256": "2ec35500f7636cd17a12560f0da8d1a83f315f413fd95e241cbfd546aedf01cd"
+      "sha256": "21e084ec204ca71b1b43aae82bf850176e60b972020efc3971b9ff3db08166f3"
     },
     {
       "source": "src/workspace_graph/expected_projection/defaults/inline_tests.rs",

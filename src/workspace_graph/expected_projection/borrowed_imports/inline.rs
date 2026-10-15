@@ -1,5 +1,13 @@
 //! Complete overlay walk; only default refusal custody changes.
-use super::*;
+use super::{
+    alias_clone, ast_function_cost, ast_function_signature_cost, ast_type_declaration_cost,
+    budgeted_format, directory, eligible, graph_error, import_stub, iterative,
+    pay_default_teardown, pay_signature, pay_teardown, pay_teardown_minimum, pay_type, refusal,
+    reserve_builder_structure, type_rewrite, AuthoredDeclaration, LayoutRegistry, StructuralCost,
+};
+use crate::ast::program_source::{generated_roots::GeneratedRoots, SyntheticProgramView};
+use crate::ast::{Expr, ExprKind, Function, ModuleUseKind, Program, Type, TypeDeclaration};
+use std::collections::BTreeMap;
 use crate::workspace_graph::constructor_failure::{reserve, Failure};
 
 pub(in crate::workspace_graph) fn construct_using<'p, 'a>(
