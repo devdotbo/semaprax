@@ -1,5 +1,7 @@
 # Changelog
 
+- Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
+
 - Share the exact explicit-record presence census within one immutable renewal-directory phase, authenticating its declaration index on reuse and preserving full consuming checks under the unchanged work limit.
 
 - Box ownership path-state tree keys with separate prepaid backing, preserving complete value ordering, full join/replay checks, the original receiver, and exact-budget/allocation controls under the unchanged builder limit.

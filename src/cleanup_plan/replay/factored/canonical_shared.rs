@@ -8,8 +8,13 @@ use super::*;
 mod before_alias;
 #[cfg(test)]
 mod before_index;
+#[cfg(test)]
+mod before_unit;
 mod epsilon_alias;
 mod memo;
+mod unit_weight;
+#[cfg(test)]
+mod unit_weight_tests;
 
 type SharedWeighted = Rc<Weighted>;
 
@@ -181,30 +186,59 @@ impl<'a> Canonicalizer<'a> {
         state: &SharedWeighted,
         budget: &mut ReplayBudget,
     ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
-        let mut closed = BTreeMap::<usize, u64>::new();
-        for (node, weight) in state.iter() {
+        #[cfg(test)]
+        if unit_weight_tests::original_selected() {
+            return self.successors_before_unit(function, state, budget);
+        }
+        // The id() entry authenticated the exact memo/function/payer first.
+        // Pay both new Option constructions and the borrowed receiving view.
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                unit_weight::RECEIVER_BYTES,
+                "factored weighted closure receiving view",
+            )?;
+        }
+        budget.reserve_bytes(
+            function,
+            0,
+            "factored weighted closure receiver authentication",
+        )?;
+        let alias = if let [(node, 1)] = state.as_slice() {
             let Some(closure) = self.closure(function, *node, budget)? else {
                 return Ok(None);
             };
-            for (inner, routes) in closure.iter() {
-                let Some(sum) = routes.checked_mul(*weight).and_then(|product| {
-                    closed.get(inner).copied().unwrap_or(0).checked_add(product)
-                }) else {
+            Some(unit_weight::receive(function, closure, budget)?)
+        } else {
+            None
+        };
+        let mut closed = BTreeMap::<usize, u64>::new();
+        if alias.is_none() {
+            for (node, weight) in state.iter() {
+                let Some(closure) = self.closure(function, *node, budget)? else {
                     return Ok(None);
                 };
-                budget.charge(function, 1, "factored weighted route addition")?;
-                if !closed.contains_key(inner) {
-                    budget.reserve_btree_node::<usize, u64>(
-                        function,
-                        "factored weighted closure node",
-                    )?;
+                for (inner, routes) in closure.iter() {
+                    let Some(sum) = routes.checked_mul(*weight).and_then(|product| {
+                        closed.get(inner).copied().unwrap_or(0).checked_add(product)
+                    }) else {
+                        return Ok(None);
+                    };
+                    budget.charge(function, 1, "factored weighted route addition")?;
+                    if !closed.contains_key(inner) {
+                        budget.reserve_btree_node::<usize, u64>(
+                            function,
+                            "factored weighted closure node",
+                        )?;
+                    }
+                    closed.insert(*inner, sum);
                 }
-                closed.insert(*inner, sum);
             }
         }
+        let closed = alias.as_deref().unwrap_or(&closed);
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         let mut successors = BTreeMap::<Label, BTreeMap<usize, u64>>::new();
-        for (node, weight) in &closed {
+        for (node, weight) in closed {
             let moves = &self.automaton.nodes[*node].moves;
             budget.charge(
                 function,
