@@ -56,28 +56,25 @@ pub(super) fn materialize<S>(
     }
     let mut endpoints = cfg_directory::vector(cfg.points.len(), payer)?;
     for (node, point) in cfg.points.iter().enumerate() {
-        let mut live_before = cfg_directory::Set::new(payer)?;
-        for edge in cfg
-            .predecessors(node)
-            .iter()
-            .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
-        {
-            for id in &edge_live[edge] {
-                cfg_directory::set_insert(&mut live_before, *id, Some(payer))?;
-            }
-        }
-        let mut live_after = cfg_directory::Set::new(payer)?;
-        for edge in cfg
-            .successors(node)
-            .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
-        {
-            for id in &edge_live[edge] {
-                cfg_directory::set_insert(&mut live_after, *id, Some(payer))?;
-            }
-        }
+        // Both producers append LoanId in increasing loan-index order. Merge
+        // borrowed edge rows; never sort or repair canonical plan vectors.
+        let live_before = ordered_union::merge(
+            cfg.predecessors(node)
+                .iter()
+                .filter_map(|from| cfg.edges.binary_search(&(*from, node as u16)).ok())
+                .map(|edge| edge_live[edge].as_slice()),
+            payer,
+        )?;
+        let live_after = ordered_union::merge(
+            cfg.successor_edges(node)
+                .map(|edge| cfg.edges[edge as usize].1)
+                .filter_map(|to| cfg.edges.binary_search(&(node as u16, to)).ok())
+                .map(|edge| edge_live[edge].as_slice()),
+            payer,
+        )?;
         endpoints.push(LoanEndpoint {
             point: point.clone(),
-            live_before: compact_ids::from_vec_paid(set_vector(live_before, payer)?, payer)?,
+            live_before: compact_ids::from_vec_paid(live_before, payer)?,
             starts: compact_ids::from_vec_paid(
                 storage::clone_vec(&starts[node], Some(payer))?,
                 payer,
@@ -86,7 +83,7 @@ pub(super) fn materialize<S>(
                 storage::clone_vec(&kills[node], Some(payer))?,
                 payer,
             )?,
-            live_after: compact_ids::from_vec_paid(set_vector(live_after, payer)?, payer)?,
+            live_after: compact_ids::from_vec_paid(live_after, payer)?,
         });
     }
     let mut edges = cfg_directory::vector(cfg.edges.len(), payer)?;
@@ -119,9 +116,8 @@ pub(super) fn materialize<S>(
     })
 }
 
-fn set_vector(
-    values: cfg_directory::Set<LoanId>,
-    payer: &crate::bounded_output::cfg_reservation::CfgReservation,
-) -> Result<Vec<LoanId>, Diagnostic> {
-    values.into_vec(payer)
-}
+#[cfg(test)]
+mod before;
+mod ordered_union;
+#[cfg(test)]
+mod tests;

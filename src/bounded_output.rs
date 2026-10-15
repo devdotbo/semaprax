@@ -56,6 +56,8 @@ pub(crate) enum ReservationStage {
     LoanCfgPoints,
     LoanCfgEdges,
     LoanCanonicalAppend,
+    LoanOrderedDirectoryNode,
+    LoanVectorBacking,
 
     RetainedModule,
     LoanIdentityInventory,
@@ -100,6 +102,8 @@ impl ReservationStage {
             Self::LoanCfgPoints => "loan CFG point directory construction",
             Self::LoanCfgEdges => "loan CFG edge construction",
             Self::LoanCanonicalAppend => "canonical loan directory append",
+            Self::LoanOrderedDirectoryNode => "loan ordered directory node allocation",
+            Self::LoanVectorBacking => "loan vector backing allocation",
             Self::RetainedModule => "resolved module retention",
             Self::LoanIdentityInventory => "loan identity inventory",
             Self::RetainedLoanScratch => "retained loan scratch allocation",
@@ -233,6 +237,18 @@ pub(crate) fn reservation_stage_guard(stage: ReservationStage) -> ReservationSta
     ReservationStageGuard(active().map(|budget| {
         let previous = budget.stage.replace(Some(stage));
         (budget, previous)
+    }))
+}
+
+/// Classify only the otherwise unlabelled outer loan-storage operation. An
+/// existing semantic phase always wins; no new owner, state or debit is made.
+pub(crate) fn loan_allocation_stage_guard(stage: ReservationStage) -> ReservationStageGuard {
+    ReservationStageGuard(active().and_then(|budget| {
+        if budget.stage.get() != Some(ReservationStage::CanonicalLoanStorage) {
+            return None;
+        }
+        let previous = budget.stage.replace(Some(stage));
+        Some((budget, previous))
     }))
 }
 

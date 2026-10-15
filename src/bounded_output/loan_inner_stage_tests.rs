@@ -244,3 +244,128 @@ fn loan_inner_first_refusal_stays_exact_across_later_scopes_nested_owner_and_unw
         );
     }
 }
+
+#[test]
+fn loan_allocation_class_fallback_preserves_all_inner_phases_and_unchanged_layouts() {
+    let ((), refused, debit, first) = with_limit_usage_refusal(usize::MAX, || {
+        let budget = active().unwrap();
+        let (_, metrics) = measure(|| {
+            for outer in [None, Some(ReservationStage::HirValidation)]
+                .into_iter()
+                .chain(INNER.into_iter().map(Some))
+            {
+                budget.stage.set(outer);
+                for class in [
+                    ReservationStage::LoanOrderedDirectoryNode,
+                    ReservationStage::LoanVectorBacking,
+                ] {
+                    let guard = loan_allocation_stage_guard(class);
+                    assert_eq!(budget.stage.get(), outer);
+                    drop(guard);
+                    assert_eq!(budget.stage.get(), outer);
+                }
+            }
+            budget
+                .stage
+                .set(Some(ReservationStage::CanonicalLoanStorage));
+            let guard = loan_allocation_stage_guard(ReservationStage::LoanVectorBacking);
+            assert_eq!(
+                budget.stage.get(),
+                Some(ReservationStage::LoanVectorBacking)
+            );
+            drop(guard);
+            assert_eq!(
+                budget.stage.get(),
+                Some(ReservationStage::CanonicalLoanStorage)
+            );
+        });
+        assert_eq!(metrics.allocated, 0);
+        assert_eq!(metrics.live, 0);
+        assert!(!metrics.invalid);
+        assert_eq!(size_of::<ReservationStage>(), 1);
+        assert_eq!(size_of::<Option<ReservationStage>>(), 1);
+    });
+    assert!(!refused);
+    assert_eq!(debit, 0);
+    assert_eq!(first, None);
+}
+#[test]
+fn loan_allocation_class_first_receipt_is_sticky_through_foreign_owner_and_unwind() {
+    for class in [
+        ReservationStage::LoanOrderedDirectoryNode,
+        ReservationStage::LoanVectorBacking,
+    ] {
+        let ((), refused, debit, first) = with_limit_usage_refusal(0, || {
+            let budget = active().unwrap();
+            budget
+                .stage
+                .set(Some(ReservationStage::CanonicalLoanStorage));
+            let guard = loan_allocation_stage_guard(class);
+            let (_, metrics) = measure(|| {
+                assert!(!reserve_active_required(1));
+            });
+            assert_eq!(metrics.allocated, 0);
+            let selected = budget.first_refusal.get().unwrap();
+            assert_eq!(
+                selected,
+                ReservationRefusal {
+                    requested: 1,
+                    remaining: 0,
+                    floor: 0,
+                    stage: Some(class)
+                }
+            );
+            // The harness owns a distinct nested Budget allocation; guard
+            // operations themselves remain zero-allocation and zero-debit.
+            let ((), nested_refused, nested_debit, nested_first) =
+                with_limit_usage_refusal(9, || {
+                    let (_, metrics) = measure(|| {
+                        let _nested =
+                            loan_allocation_stage_guard(ReservationStage::LoanOrderedDirectoryNode);
+                        assert!(reserve_active_required(0));
+                        assert_eq!(budget.first_refusal.get(), Some(selected));
+                    });
+                    assert_eq!(metrics.allocated, 0);
+                    assert_eq!(metrics.live, 0);
+                });
+            assert!(!nested_refused);
+            assert_eq!(nested_debit, 0);
+            assert_eq!(nested_first, None);
+            let (_, metrics) = measure(|| {
+                drop(guard);
+                assert_eq!(
+                    budget.stage.get(),
+                    Some(ReservationStage::CanonicalLoanStorage)
+                );
+                assert!(!reserve_active_required(0));
+                assert_eq!(budget.first_refusal.get(), Some(selected));
+            });
+            assert_eq!(metrics.allocated, 0);
+            assert_eq!(metrics.live, 0);
+            assert!(!metrics.invalid);
+        });
+        assert!(refused);
+        assert_eq!(debit, 0);
+        assert_eq!(first.unwrap().stage, Some(class));
+    }
+    let ((), refused, debit, first) = with_limit_usage_refusal(0, || {
+        let budget = active().unwrap();
+        budget
+            .stage
+            .set(Some(ReservationStage::CanonicalLoanStorage));
+        // The panic payload is preexisting static text, outside the physical
+        // guard observer; this checks RAII restoration, not panic allocation.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _guard = loan_allocation_stage_guard(ReservationStage::LoanVectorBacking);
+            panic!("class guard unwind");
+        }));
+        assert!(result.is_err());
+        assert_eq!(
+            budget.stage.get(),
+            Some(ReservationStage::CanonicalLoanStorage)
+        );
+    });
+    assert!(!refused);
+    assert_eq!(debit, 0);
+    assert_eq!(first, None);
+}

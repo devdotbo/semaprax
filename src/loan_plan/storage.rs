@@ -14,6 +14,9 @@ pub(super) fn vector<T>(
     let Some(payer) = payer else {
         return Ok(Vec::with_capacity(capacity));
     };
+    let _allocation_stage = crate::bounded_output::loan_allocation_stage_guard(
+        crate::bounded_output::ReservationStage::LoanVectorBacking,
+    );
     payer.array::<T>(capacity).map_err(|_| marker())?;
     let requested = std::alloc::Layout::array::<T>(capacity)
         .expect("array layout checked by payer")
@@ -79,6 +82,9 @@ pub(super) fn push<T>(
             payer.arithmetic();
             return Err(marker());
         };
+        let _allocation_stage = crate::bounded_output::loan_allocation_stage_guard(
+            crate::bounded_output::ReservationStage::LoanVectorBacking,
+        );
         payer.array::<T>(target).map_err(|_| marker())?;
         let requested = std::alloc::Layout::array::<T>(target)
             .expect("array layout checked by payer")

@@ -39,6 +39,9 @@ impl<K: Ord, V> Map<K, V> {
                 payer.arithmetic();
                 return Err(storage::marker());
             };
+            let _allocation_stage = crate::bounded_output::loan_allocation_stage_guard(
+                crate::bounded_output::ReservationStage::LoanOrderedDirectoryNode,
+            );
             // Box heap and literal initializer are paid before construction.
             payer.reserve(bytes).map_err(|_| storage::marker())?;
             Some(Box::new(tree::Node::leaf(key, value)))
