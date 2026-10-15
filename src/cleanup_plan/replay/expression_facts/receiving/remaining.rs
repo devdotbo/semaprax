@@ -1,6 +1,6 @@
 //! Complete exits/finalizers: paid retained directories, unchanged place/chain helpers.
 use super::*;
-mod selected;
+pub(super) mod selected;
 
 pub(in crate::cleanup_plan::replay) fn validate_exits(
     program: &dyn crate::cleanup::ReplayContext,
@@ -159,7 +159,7 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
     Ok(())
 }
 
-fn validate_finalizer_actions(
+pub(super) fn validate_finalizer_actions(
     function: &ResolvedFunction,
     actions: &[crate::cleanup_plan::FinalizeAction],
     storage: &BTreeSet<StorageId>,

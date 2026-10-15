@@ -630,3 +630,6 @@ mod exit_prefix;
 mod exit_before;
 #[cfg(test)]
 mod exit_tests;
+
+mod exits;
+pub(in crate::cleanup_plan::replay) use exits::validate_exits_retained;

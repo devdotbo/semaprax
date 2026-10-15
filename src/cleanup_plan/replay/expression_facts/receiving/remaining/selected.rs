@@ -1,6 +1,6 @@
 //! Full ordered pure scan; no selected-status Vec acquisition.
 use super::*;
-pub(super) fn unique_status(transitions: &[CleanupTransition], source: &StatusSourceId) -> bool {
+pub(in crate::cleanup_plan::replay::expression_facts::receiving) fn unique_status(transitions: &[CleanupTransition], source: &StatusSourceId) -> bool {
     let mut count = 0usize;
     let mut same = true;
     for transition in transitions {

@@ -633,13 +633,14 @@ fn validate_structure_with_budget_storage<'hir>(
         budget,
         &statuses,
     )?;
-    expression_facts::receiving::validate_exits(
+    expression_facts::receiving::validate_exits_retained(
         program,
         function,
         &storage,
         &leaves,
         &BTreeSet::new(),
         budget,
+        &statuses,
     )?;
     structural_maps::validate_reference_coverage(function, budget)?;
     structural_control::validate_ordinary_cfg(function, budget)?;
