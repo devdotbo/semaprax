@@ -1048,9 +1048,12 @@ ascending order, with a fresh immutable `u8` item. Name a view from
 checked byte read and loop counter; no buffer copy is needed. The underlying
 owner stays frozen for the whole traversal, including through subrange aliases.
 `continue` advances once; `break` and `return` leave without advancing.
-Computed or mutable iterable views, item mutation/shadowing and nested traversals
-remain refused. Executable qualification is pending; see
-[Borrowed Byte Slice For Traversal v1](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md).
+Nested immutable byte loops may use views already named before the outermost
+byte loop. Each ancestor owner stays frozen until its own loop ends. Computed
+or mutable iterable views, inside-body view declarations, item mutation/shadowing
+and mixed source-for nesting remain refused. Ordinary safe while/Vec operations
+keep their existing rules. Executable qualification is pending; see
+[Borrowed Byte Slice For Traversal v2](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V2.md).
 
 `for borrow row at index in rows { body }` is a scoped row view; `at index`
 is optional. Qualification remains pending. See `help language detail:record-traversal` for complete row and loan rules

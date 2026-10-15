@@ -323,3 +323,120 @@ fn nested_byte_census_funds_exact_short_zero_every_frontier_sticky_and_complete_
     assert_eq!(first.unwrap().requested, 1);
     assert_eq!(metrics.allocated, 0);
 }
+
+fn retarget(expression: &mut ResolvedExpr, site: &ExpressionId) -> usize {
+    match &mut expression.kind {
+        ResolvedExprKind::LexicalExit {
+            kind: crate::ast::LexicalExitKind::Break | crate::ast::LexicalExitKind::Continue,
+            target: ControlTarget::Loop { site: actual, .. },
+            ..
+        } => {
+            *actual = site.clone();
+            1
+        }
+        ResolvedExprKind::Block { statements, tail } => {
+            let mut count = retarget(tail, site);
+            for statement in statements {
+                count += match statement {
+                    ResolvedStatement::While {
+                        condition, body, ..
+                    }
+                    | ResolvedStatement::LexicalWhile {
+                        condition, body, ..
+                    } => retarget(condition, site) + retarget(body, site),
+                    ResolvedStatement::Let { value, .. }
+                    | ResolvedStatement::Assign { value, .. }
+                    | ResolvedStatement::CopyDiscard { value, .. } => retarget(value, site),
+                    ResolvedStatement::Unsafe { body, .. } => retarget(body, site),
+                };
+            }
+            count
+        }
+        ResolvedExprKind::If {
+            condition,
+            then_branch,
+            else_branch,
+        } => retarget(condition, site) + retarget(then_branch, site) + retarget(else_branch, site),
+        _ => 0,
+    }
+}
+#[test]
+fn nested_byte_while_bridge_and_inner_only_exits_replay_exact_nearest_targets() {
+    let program = resolved(SOURCE);
+    for name in ["exits", "while_bridge"] {
+        let function = function(&program, name);
+        let owner = FunctionExecutionId::Monomorphic(function.id.clone());
+        crate::hir::lexical_exit::validate_function(&program, function, &owner).unwrap();
+        assert!(Census::optional(&program, function).unwrap().is_some());
+    }
+    let mut forged = program.clone();
+    let exits = forged
+        .functions
+        .iter_mut()
+        .find(|function| function.name == "exits")
+        .unwrap();
+    let region = super::tests::outer(exits);
+    let ResolvedExprKind::Block { statements, .. } = &region.kind else {
+        panic!("outer region")
+    };
+    let (ResolvedStatement::While { condition, .. }
+    | ResolvedStatement::LexicalWhile { condition, .. }) = &statements[2]
+    else {
+        panic!("outer loop")
+    };
+    let site = condition.id.clone();
+    assert_eq!(
+        retarget(region, &site),
+        2,
+        "both inner Break/Continue are kept"
+    );
+    let exits = function(&forged, "exits");
+    let owner = FunctionExecutionId::Monomorphic(exits.id.clone());
+    let error = crate::hir::lexical_exit::validate_function(&forged, exits, &owner).unwrap_err();
+    assert_eq!(
+        error,
+        Diagnostic::io(
+            "SPX-H006",
+            "lexical exit kind, value or exact nearest target is inconsistent"
+        )
+    );
+    assert!(crate::hir::validate(&forged).is_err());
+    // An ordinary Vec accumulator is unrelated to byte receiver authority.
+    // Source-for nesting remains closed for Vec; ordinary safe primitives do not.
+    let accumulated = SOURCE.replacen("let mut total = 0;", "let mut total = 0; let mut accumulated = vec_with_capacity<i64>(6usize);", 1)
+        .replacen("for inner in right { total", "for inner in right { accumulated = vec_push<i64>(accumulated, i64_from_u8(inner)); total", 1);
+    let accumulated = resolved(&accumulated);
+    super::super::validate_function(&accumulated.declarations, function(&accumulated, "sum"))
+        .unwrap();
+}
+#[test]
+fn nested_byte_same_root_release_does_not_allow_outer_move_or_renewal() {
+    const ROOTED: &str = r#"module nested.freeze;
+@id("nested.main") fn main()->i64 {
+ let data=[1u8,2u8]; let mut owned=bytes_copy(array_as_slice(data));
+ let whole=bytes_as_slice(owned); let view=byte_range(whole,0usize,1usize);
+ for outer in whole { for inner in view { let copied=inner; 0 } let first=outer; 0 }
+ 0
+}
+"#;
+    resolved(ROOTED);
+    for source in [
+        ROOTED.replace("let first=outer;", "let first=outer; let stolen=owned;"),
+        ROOTED.replace(
+            "let first=outer;",
+            "let first=outer; owned=bytes_copy(array_as_slice(data));",
+        ),
+        ROOTED
+            .replace("for outer in whole", "for outer in view")
+            .replace("for inner in view", "for inner in whole")
+            .replace("let first=outer;", "let first=outer; let stolen=owned;"),
+    ] {
+        let ast = crate::parse(&source, "nested-freeze.spx").unwrap();
+        let diagnostics = crate::verify::verify(&ast);
+        assert!(
+            diagnostics.iter().any(|error| error.code == "SPX-T265"),
+            "{diagnostics:?}"
+        );
+        assert!(crate::hir::resolve(&ast).is_err());
+    }
+}

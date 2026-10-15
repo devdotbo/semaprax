@@ -2,6 +2,10 @@
 
 Audience: language users, standard-library authors, and compiler contributors.
 
+The additive [v2 private source profile](BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V2.md)
+adds narrowly scoped byte-to-byte nesting; the complete prior v1 contract and
+receiver remain independent controls. V2 qualification is pending.
+
 Status: source implementation authored for issue #780 (OPT780); **unexecuted**.
 No build, test, runtime, fit, or performance evidence exists yet, and nothing
 here claims hosted, physical-device, or production support. The focused

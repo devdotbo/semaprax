@@ -64,6 +64,16 @@ impl<'a> Census<'a> {
         context: &'a dyn crate::cleanup::ReplayContext,
         function: &'a ResolvedFunction,
     ) -> Result<Option<Self>, Diagnostic> {
+        // Pure selection cannot proceed past an already selected caller error.
+        // This uses the current owner only; the retained proof subsequently
+        // captures and checks its exact ledger before acquisition and reuse.
+        if crate::bounded_output::active_remaining().is_some()
+            && !crate::bounded_output::reserve_active_required(0)
+        {
+            #[cfg(test)]
+            tests::record_failure();
+            return Err(Failure::Storage(Refused::Budget).diagnostic());
+        }
         if !contains_nested(function)? {
             return Ok(None);
         }

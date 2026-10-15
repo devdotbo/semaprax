@@ -159,10 +159,10 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Core interpreter/native/Wasm contracts and exact status: docs/COPY-RECORD-COLLECTIONS-V1.md. Native v29 private command transport: help language author:stream-data-v2.\n"
         ).to_owned()),
         "author:byte-traversal" => Ok(concat!(
-            "Borrowed byte-slice traversal v1; source implementation, executable qualification pending.\n",
+            "Borrowed byte-slice traversal v2; source implementation, executable qualification pending.\n",
             "Use one named immutable Slice<u8>: a borrow parameter or local whole/subrange view. No manual counter or Option-get is needed. The item is fresh immutable Copy u8.\n",
             "The loop snapshots length once and visits ascending indices. Continue advances exactly once; Break/Return do not advance. The authenticated underlying owner stays frozen through the traversal, including subrange aliases. Existing provenance, root bounds, loans and ABI authority remain unchanged.\n",
-            "Computed or mutable sources and nested traversal refuse SPX-T284; item shadowing refuses SPX-T209 and item reassignment stays closed. Name the view before the loop; do not move, replace or mutate its owner.\n",
+            "Computed or mutable sources and mixed nested traversal refuse SPX-T284; item shadowing refuses SPX-T209 and item reassignment stays closed. Nested byte loops require views named before the outermost byte loop. Every ancestor owner stays frozen; ordinary safe while/Vec operations keep their existing rules. Do not move, replace or mutate a frozen owner.\n",
             "```spx\n",
             "module help.bytes;\n",
             "@id(\"help.sum\") fn sum(view: borrow Slice<u8>) -> i64 {\n",
@@ -177,7 +177,7 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "}\n",
             "@id(\"help.main\") fn main() -> i64 {let data = [1u8, 0u8, 2u8]; let view = array_as_slice(data); sum(view)}\n",
             "```\n",
-            "Exact scope: docs/BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V1.md. This card grants no additional profile or backend qualification.\n"
+            "Exact scope: docs/BORROWED-BYTE-SLICE-FOR-TRAVERSAL-V2.md. This card grants no additional profile or backend qualification.\n"
         ).to_owned()),
         "author:record-traversal" => Ok(concat!(
             "Scoped record traversal source implementation; executable qualification pending.\n",
@@ -447,7 +447,9 @@ mod tests {
             "owner stays frozen",
             "subrange aliases",
             "Computed or mutable sources",
-            "nested traversal refuse SPX-T284",
+            "mixed nested traversal refuse SPX-T284",
+            "views named before the outermost byte loop",
+            "ordinary safe while/Vec operations",
             "shadowing refuses SPX-T209",
             "provenance, root bounds, loans and ABI authority",
         ] {

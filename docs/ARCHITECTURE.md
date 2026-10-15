@@ -1511,6 +1511,13 @@ HIR admits to that receiver and freezes the view's authenticated provenance
 root. `src/loan_plan/traversal.rs` adds the region-spanning `TraversalFreeze`
 loan on the resolved owner. `src/source_verify/byte_traversal.rs` freezes the
 same root at source. `src/graph/byte_traversal.rs` selects Graph v83 over the row-loan v82 layer.
+The private `validation/byte_traversal/nested` census lends exact immutable
+function/context/region references to the actual loan-plan and lexical contour
+receivers. Its paid borrowed node/definition indexes and ancestor freeze intervals
+are structural proof; late replay independently adds freshly authenticated
+provenance roots. No nested authority persists in HIR/cache markers, and the
+complete contextless v1 receiver remains strict. The additive v2 source profile
+and all cross-engine/refusal controls await executable qualification.
 
 `src/hir/iterator_loop/renewal.rs` recognizes only compiler-owned same-owner
 Vec intrinsic assignments in `If` branches of an authenticated `for own` body.
