@@ -133,14 +133,17 @@ fn latest_previous(source: &str, current: &str) -> String {
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main7f-source-successor-20261015/current-to-9365.json")), source, current)
 }
 pub(crate) fn main(source: &str, current: &str) -> String {
-    let physical = current;
+    if source == "src/cleanup_plan/replay/skeleton_work/ordinary_dag/tests.rs" {
+        return main_f045_input(source, current);
+    }
+    let physical = before_f045(source, current);
     // Authenticate the complete inherited f813 route in its named older view.
     // The live CI consumer keeps the newer87-record main tuple below.
     let _prior = prior_main(source, current);
     let corrected = corrected_previous(source, current);
     let current = corrected.as_str();
     let _historical_main7f = project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main7f-source-successor-20261015/current-to-main7f.json")), source, current);
-    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/mainff869-source-successor-20261015/current-to-mainff.json")), source, physical)
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/mainff869-source-successor-20261015/current-to-mainff.json")), source, &physical)
 }
 
 // Actual corrective owners authenticate before the immutable d1bb source view.
@@ -178,5 +181,16 @@ pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> Strin
 
 // Strict newest merge input; protected ae91 and older tables remain immutable.
 fn ff_previous(source: &str, current: &str) -> String {
+    let predecessor = before_f045(source, current);
+    let current = predecessor.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/mainff869-source-successor-20261015/current-to-ae91.json")), source, current)
+}
+
+// MAIN's new exact guard uses its own complete immutable physical source view.
+// This does not reinterpret the inherited87/92 predecessor contracts.
+pub(crate) fn main_f045_input(source: &str, current: &str) -> String {
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/mainf045-source-successor-20261015/current-to-f045.json")), source, current)
+}
+fn before_f045(source: &str, current: &str) -> String {
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/mainf045-source-successor-20261015/current-to-0bf.json")), source, current)
 }
