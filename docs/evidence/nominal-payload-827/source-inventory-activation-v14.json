@@ -68,7 +68,7 @@
     },
     {
       "source": "src/hir/declaration_index.rs",
-      "sha256": "8bbacb7f8e132534578bf996fd5d4809d65d62f42e8dc367b770333f179d007e",
+      "sha256": "5f03b320fef7a328db35d24b8a12c891111155ac975336755dc88f36e8f41539",
       "original": "docs/evidence/nominal-payload-827/original/src/hir/declaration_index.rs",
       "original_sha256": "586684b48f58eea49ca017a4f1b8ab54fee3a874366d9ef0e10c2e31b8cd46c3",
       "new_file": false
@@ -559,5 +559,5 @@
     }
   ],
   "previous_packet": "source-inventory-activation-v13.json",
-  "repair_basis": "339d7f7b3 complete selected compiler suffix; no production qualification claimed"
+  "repair_basis": "81be05249ec2eccfe94eda5a055eff0d7cc68a58 assembled ROOT source binding; preserve all previous edits/originals"
 }
