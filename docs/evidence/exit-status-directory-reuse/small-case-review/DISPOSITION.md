@@ -1,0 +1,8 @@
+Actual review completed once50.9309s, Sonnet5.5, provider listUSD0.07305, actualbillingunknown. No runtime or final revised approval claimed.
+
+B1: strengthened exact_accounting itself with full success/no-refusal/firstNone preconditions, independent of current caller conditions. Tuples print before these conditions.
+B2: actual source already has separate many.main >=2-status and strict work/byte/heap assertions. That caller tail was not included in the bounded packet, so the finding reflects unavailable context. No synthetic status insertion/baseline modification.
+B3: strengthened one-status physical sign assertions removed_bytes>BORROW_BYTES and actualremovedallocation>0, plus strict whole raw debit/heap savings. The logical+3 is derived exactly from the old firstnode relocation1+insertion3 versus new7. Byte/heap additivity equations compare real independent allocator receipts, not invented/fitted byte constants; small physical sign remains a runtime gate.
+B4: zero-case now asserts isolated tuple(0,0,0), exact new positive work/byte fees and equal whole heap allocation. Full Drop remains observed.
+
+Source old insertion loop is preserved byte-exact in remaining.rs and uses every status_source in source order with no filtering. New calibrator repeats those exact operations and same static phase. Metrics are the repository's existing thread-local full allocation observer; the same active payer bootstrap and held producer token precede the isolated measurement. No production fee reduction or old baseline change. Existing small/hostile tests and complete Diagnostic comparison retained.
