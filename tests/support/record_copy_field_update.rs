@@ -298,10 +298,21 @@ fn assert_coverage_sources() {
 // Each original full-source table retains its own authenticated physical domain.
 fn source_input(domain: &str, source: &str, current: &str) -> String {
     use sha2::{Digest, Sha256};
-    let views: serde_json::Value = serde_json::from_str(include_str!(
-        "../../docs/evidence/record-field-while-836-20261015/backend-input-views.json"
-    ))
-    .unwrap();
+    let predecessor;
+    let current = if domain == "assembly" {
+        current
+    } else {
+        predecessor = source_input("assembly", source, current);
+        predecessor.as_str()
+    };
+    let data = if domain == "assembly" {
+        include_str!(
+            "../../docs/evidence/ready-main-844-846-836-assembly-20261015/final-to-836.json"
+        )
+    } else {
+        include_str!("../../docs/evidence/record-field-while-836-20261015/backend-input-views.json")
+    };
+    let views: serde_json::Value = serde_json::from_str(data).unwrap();
     let rows = views[domain].as_array().expect("named whole-input domain");
     let mut matching = rows.iter().filter(|row| row["source"] == source);
     let Some(row) = matching.next() else {
