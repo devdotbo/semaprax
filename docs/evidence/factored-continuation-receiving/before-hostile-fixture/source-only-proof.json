@@ -1,0 +1,103 @@
+{
+  "basis": "a2311ae7be96f5529b63b9a8f38deef709a8e51c",
+  "scope": "source-only reconstruction; no Rust execution",
+  "old_test_sha256": "1c354ae0c5d9b5e7f13dadf68c15192fb97e6f6458915c32f2eb33c52102cc67",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1,
+        1,
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/continuation_storage.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1,
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1,
+        1,
+        1,
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1,
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1
+      ],
+      "original_reconstructed": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver/tests.rs",
+      "current_binding_matches": true,
+      "exact_inverse_counts": [
+        1,
+        1
+      ],
+      "original_reconstructed": true
+    }
+  ]
+}
