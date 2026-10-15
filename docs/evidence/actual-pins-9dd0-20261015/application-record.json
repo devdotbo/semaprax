@@ -1,0 +1,14 @@
+{
+  "producer_source": "9dd051bce67bdfbb409c1833617161465bd57591",
+  "application_head_before": "bcf8d1d6933a747e841a68c6b5054542b7cbc6e4",
+  "historical_only_validation": true,
+  "original_live_head_check_refusal_preserved": true,
+  "all_target_old_sources_preflighted": true,
+  "all_candidate_hashes_matched": true,
+  "producer_reexecuted_at_application_head": false,
+  "literal_edits": 11,
+  "public_budget_delta": -600,
+  "exclusive_cause_or_gain_claim": false,
+  "application_recovery": false,
+  "patch_sha256": "67967402672cff38192fe2d46eebfe7f953f085807acc8ee13a54b8b6aaf65fc"
+}
