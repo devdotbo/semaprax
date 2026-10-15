@@ -883,6 +883,15 @@ fn joined_feature_input(stage: &str, source: &str, current: &str) -> String {
 
 // Independent final raw fronts for MAIN integration versus retained alias owners.
 fn combined_ready_input(stage: &str, source: &str, current: &str) -> String {
+    let raw848 = project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/runtime-selected-child-fixture-848/current-to-c37.json"
+        )),
+        source,
+        current,
+    );
+    let current = raw848.as_str();
     let previous_raw = project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
@@ -907,4 +916,9 @@ fn combined_ready_input(stage: &str, source: &str, current: &str) -> String {
         _ => panic!("unknown exact final source front"),
     };
     project(rows, source, current)
+}
+
+// Independent current848 input; a later compositor supplies its full raw view.
+pub(crate) fn runtime848_input(_source: &str, current: &str) -> String {
+    current.to_owned()
 }
