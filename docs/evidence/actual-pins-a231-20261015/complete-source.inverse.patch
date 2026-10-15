@@ -1,0 +1,98 @@
+--- a/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
++++ b/docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json
+@@ -303,46 +303,6 @@
+       {
+         "before": "sha256:8723fc1b989ca32554c881347f2cef1992bfbca78b897022ce66f5ca9b14390b",
+         "after": "sha256:4f77687750678e2ec49078f588b7f8555dcb89115d8962273bb9e0536cda4e3f"
+-      },
+-      {
+-        "before": "assert_eq!(graph.budget().used_builder_bytes(), 1_416_339);",
+-        "after": "assert_eq!(graph.budget().used_builder_bytes(), 1_416_776);"
+-      },
+-      {
+-        "before": "sha256:f3b8715ef4ff6018b01521022318ed4a1b330efa598d9fd07d0b1122c7432d50",
+-        "after": "sha256:c763f63cb8069792500247eda33db0b7945ceeba3cf5214dca955aac19cee65e"
+-      },
+-      {
+-        "before": "sha256:a67f0151ba1b9738bb17f59ac4c39492c04ab243c392017c2b72ab6f50ff1175",
+-        "after": "sha256:019972b9184a6565a569a99a15bf55a3a8260ef22782be8f6cf54df5d679b09f"
+-      },
+-      {
+-        "before": "sha256:12f58d2f0e534790d78303370fc646eafdfdc22745668bbb7d33d17b9a45255b",
+-        "after": "sha256:b42432cc717693d3a1eff2e2614893da6286bb584178ef3e2c6781c629e5e238"
+-      },
+-      {
+-        "before": "sha256:ad073a050b4734f8a28f3525a63db87ebfc5d6bbcf4e9c4374c9988c24b23317",
+-        "after": "sha256:f6f860de3fbb595a0d42388260938737a0faf052cc42099368cb21fb8c0a8865"
+-      },
+-      {
+-        "before": "sha256:3b90520d18ab1373f4dbb7b81c1bb1e8741c00df1b1ef9f3750e13b1e6bd3a54",
+-        "after": "sha256:b441b1a6536d62c4ea8a48100a24d62bce58cd127bae77dc0a5fe0e7d028998d"
+-      },
+-      {
+-        "before": "sha256:304888f0f8b23564016488e8c54612377a8c68d377fb3890d07b8f8e2ed972d1",
+-        "after": "sha256:c7633671d9fc515a9b1badfbf335684695f019c7d225eb693e3ce056b75d61dc"
+-      },
+-      {
+-        "before": "sha256:e530a5a009cbf938c7a9b0d88bd8cc5d10d4258313f07d49bcb9748415ad7f8a",
+-        "after": "sha256:5ab277442789ceea4be959e3cb29d8eed96499152f1e02a419b1ce46605a9e61"
+-      },
+-      {
+-        "before": "sha256:e6986a928fdf420135acb640a006f410a082220363146913defaeebdfcb8ce77",
+-        "after": "sha256:7af1da899052425fcdda8b0fdded9dc6e783fee1dd1e2e0a8a745dbefc42f057"
+-      },
+-      {
+-        "before": "sha256:4f77687750678e2ec49078f588b7f8555dcb89115d8962273bb9e0536cda4e3f",
+-        "after": "sha256:668b6bd2a5364e5976042de210274a4e0def7d558a5fbb7fb743fcc895899226"
+       }
+     ]
+   },
+--- a/src/workspace_graph/type_proof_tests.rs
++++ b/src/workspace_graph/type_proof_tests.rs
+@@ -895,7 +895,7 @@
+         // digest over it move.
+         assert_eq!(
+             document_sha,
+-            "sha256:56f4d10a2a52fb2227a2a5a56c0ec9686d84a7adea33a79ce2965ed04c421cb0"
++            "sha256:d18a9ba4c3fa0096f9d9f6031af87b22f02a2ec11ef33c70a2bf18652f42d1b4"
+         );
+         assert!(json.starts_with(
+                 "{\"schema\":\"semaprax.workspace-semantic-graph.v1\",\"workspace_manifest_schema\":\"semaprax.workspace-semantic-manifest.v1\",\"workspace_revision\":\"sha256:workspace\",\"graph_digest\":\"sha256:"
+--- a/tests/workspace/semantic_graph.rs
++++ b/tests/workspace/semantic_graph.rs
+@@ -618,10 +618,10 @@
+     );
+     // Restoring the prior 336449-byte debit and authenticated digest chain
+     // independently reproduces all nine original whole-document KATs.
+-    assert_eq!(graph.budget().used_builder_bytes(), 1_416_776);
++    assert_eq!(graph.budget().used_builder_bytes(), 1_416_339);
+     assert_eq!(
+         document_digest(graph.to_json().as_bytes()),
+-        "sha256:c763f63cb8069792500247eda33db0b7945ceeba3cf5214dca955aac19cee65e"
++        "sha256:f3b8715ef4ff6018b01521022318ed4a1b330efa598d9fd07d0b1122c7432d50"
+     );
+ 
+     let output = Command::new(env!("CARGO_BIN_EXE_semaprax"))
+@@ -1050,14 +1050,14 @@
+             document_digest(capability_review.as_bytes()),
+         ],
+         [
+-            "sha256:019972b9184a6565a569a99a15bf55a3a8260ef22782be8f6cf54df5d679b09f",
+-            "sha256:b42432cc717693d3a1eff2e2614893da6286bb584178ef3e2c6781c629e5e238",
+-            "sha256:f6f860de3fbb595a0d42388260938737a0faf052cc42099368cb21fb8c0a8865",
+-            "sha256:b441b1a6536d62c4ea8a48100a24d62bce58cd127bae77dc0a5fe0e7d028998d",
+-            "sha256:c7633671d9fc515a9b1badfbf335684695f019c7d225eb693e3ce056b75d61dc",
+-            "sha256:5ab277442789ceea4be959e3cb29d8eed96499152f1e02a419b1ce46605a9e61",
+-            "sha256:7af1da899052425fcdda8b0fdded9dc6e783fee1dd1e2e0a8a745dbefc42f057",
+-            "sha256:668b6bd2a5364e5976042de210274a4e0def7d558a5fbb7fb743fcc895899226",
++            "sha256:a67f0151ba1b9738bb17f59ac4c39492c04ab243c392017c2b72ab6f50ff1175",
++            "sha256:12f58d2f0e534790d78303370fc646eafdfdc22745668bbb7d33d17b9a45255b",
++            "sha256:ad073a050b4734f8a28f3525a63db87ebfc5d6bbcf4e9c4374c9988c24b23317",
++            "sha256:3b90520d18ab1373f4dbb7b81c1bb1e8741c00df1b1ef9f3750e13b1e6bd3a54",
++            "sha256:304888f0f8b23564016488e8c54612377a8c68d377fb3890d07b8f8e2ed972d1",
++            "sha256:e530a5a009cbf938c7a9b0d88bd8cc5d10d4258313f07d49bcb9748415ad7f8a",
++            "sha256:e6986a928fdf420135acb640a006f410a082220363146913defaeebdfcb8ce77",
++            "sha256:4f77687750678e2ec49078f588b7f8555dcb89115d8962273bb9e0536cda4e3f",
+         ]
+     );
+ 
