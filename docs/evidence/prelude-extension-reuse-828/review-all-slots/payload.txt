@@ -1,0 +1,325 @@
+Review NEW nine-slot bounds/partial variant Drop. No tools/execution. Actual finite compiler AST: records Vec<T>,Box<T>,Iter<T>,List<T>,StdinReader,Map<K,V>,Set<K>; variants IterStep<T>=Done|Yield{item:T,rest:Iter<T>}, ListStep<T>=Nil|Cons{head:T,tail:List<T>}. Caller authenticates exact static AST prefix; per-slot WORK bound once, same byte owner, byte0 before work, whole-invocation sticky first raw E/work. Caller prepays catalog/output/mapped Results. Omitted helpers: vector<T> pays Vec+Result+exact backing before reserve. identity pays ID/raw+mapped Results then len work+exact backing. text pays String/byteVec/raw UTF8+mapped Results then len work, paid byteVec, len work, UTF8 convert. NominalPayload::from_funded_vec pays control/owner/iterative scratch before moving; E preserves input. Error enums allocate nothing. Staging omits allocation-free Deref helpers. Excerpts remove indentation/comments/blank lines. Find wrong bounds, unpaid carriers, post-refusal alloc or recursive Drop; distinguish uncertainties.
+
+FILE src/hir/prelude_bundle/extension_model.rs
+pub(super) const NAMES: [&str; 9] = [
+"Vec",
+"Box",
+"Iter",
+"IterStep",
+"List",
+"ListStep",
+"StdinReader",
+"Map",
+"Set",
+];
+const fn text(value: &str) -> usize {
+2 * value.len()
+}
+const fn record(id: &str, name: &str, parameters: &[&str]) -> usize {
+let mut n = 3 + id.len() + text(name);
+let mut i = 0;
+while i < parameters.len() {
+n += 1 + text(parameters[i]);
+i += 1;
+}
+n
+}
+const fn nominal_argument(current: usize, target: usize) -> usize {
+let mut n = 1;
+let mut i = 0;
+while i < current {
+n += NAMES[i].len() + NAMES[target].len();
+if i == target {
+break;
+}
+i += 1;
+}
+n + 3 // enter T, compare its two one-byte spellings
+}
+const fn case(id: &str, name: &str) -> usize {
+1 + id.len() + text(name)
+}
+const fn field(id: &str, name: &str, ty: usize) -> usize {
+1 + id.len() + text(name) + ty
+}
+const fn iterator_step() -> usize {
+record(crate::iterator_ops::STEP_ID, "IterStep", &["T"])
++ case(crate::iterator_ops::DONE_ID, "Done")
++ case(crate::iterator_ops::YIELD_ID, "Yield")
++ field(crate::iterator_ops::ITEM_ID, "item", 3)
++ field(crate::iterator_ops::REST_ID, "rest", nominal_argument(3, 2))
+}
+const fn list_step() -> usize {
+record(crate::list_ops::STEP_ID, "ListStep", &["T"])
++ case(crate::list_ops::NIL_CASE_ID, "Nil")
++ case(crate::list_ops::CONS_CASE_ID, "Cons")
++ field(crate::list_ops::HEAD_ID, "head", 3)
++ field(crate::list_ops::TAIL_ID, "tail", nominal_argument(5, 4))
+}
+pub(super) const WORK: [usize; 9] = [
+record(crate::prelude::VEC_ID, "Vec", &["T"]),
+record(crate::prelude::BOX_ID, "Box", &["T"]),
+record(crate::iterator_ops::ITER_ID, "Iter", &["T"]),
+iterator_step(),
+record(crate::list_ops::LIST_ID, "List", &["T"]),
+list_step(),
+record(crate::stdin_stream_ops::READER_ID, "StdinReader", &[]),
+record(crate::map_ops::MAP_ID, "Map", &["K", "V"]),
+record(crate::map_ops::SET_ID, "Set", &["K"]),
+];
+
+FILE src/hir/prelude_bundle/extension_producer.rs
+use super::extension_staging::{Cases, Fields, Type as StagedType};
+use super::*;
+use crate::ast::{Type, TypeDeclaration, TypeDeclarationKind};
+use std::mem::size_of;
+type Prior = [Option<ResolvedTypeDeclaration>; 9];
+fn bytes<P: Payer, T>(payer: &mut P) -> Result<(), Failure<P::Error>> {
+payer.bytes(size_of::<T>()).map_err(Failure::Payer)
+}
+fn field_type<P: Payer>(
+ty: &Type,
+source: &TypeDeclaration,
+owner: &DeclarationId,
+slot: usize,
+prior: &Prior,
+payer: &mut P,
+) -> Result<StagedType, Failure<P::Error>> {
+bytes::<P, StagedType>(payer)?;
+bytes::<P, Option<ResolvedType>>(payer)?;
+payer.work(1).map_err(Failure::Payer)?;
+let Type::Named { name, arguments } = ty else {
+return Err(Failure::Schema);
+};
+if arguments.is_empty() {
+for (index, parameter) in source.type_parameters.iter().enumerate() {
+payer
+.work(
+parameter
+.name
+.len()
+.checked_add(name.len())
+.ok_or(Failure::Layout)?,
+)
+.map_err(Failure::Payer)?;
+if parameter.name == *name {
+return Ok(StagedType(Some(ResolvedType::TypeParameter {
+owner: owner.clone(),
+index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+})));
+}
+}
+return Err(Failure::Schema);
+}
+let [argument] = arguments.as_slice() else {
+return Err(Failure::Schema);
+};
+let Type::Named {
+arguments: inner, ..
+} = argument
+else {
+return Err(Failure::Schema);
+};
+if !inner.is_empty() {
+return Err(Failure::Schema);
+}
+let mut target = None;
+for (index, entry) in prior.iter().enumerate().take(slot) {
+let entry = entry.as_ref().ok_or(Failure::Schema)?;
+payer
+.work(
+entry
+.name
+.len()
+.checked_add(name.len())
+.ok_or(Failure::Layout)?,
+)
+.map_err(Failure::Payer)?;
+if entry.name == *name {
+target = Some(index);
+break;
+}
+}
+let declaration = prior[target.ok_or(Failure::Schema)?]
+.as_ref()
+.ok_or(Failure::Schema)?
+.id
+.clone();
+let value = field_type(argument, source, owner, slot, prior, payer)?;
+let mut arguments = vector(1, payer)?;
+arguments.push(value.take()); // no callback until the completed root is guarded
+Ok(StagedType(Some(ResolvedType::Nominal {
+declaration,
+arguments,
+})))
+}
+fn fields<P: Payer>(
+input: &[crate::ast::FieldDeclaration],
+source: &TypeDeclaration,
+owner: &DeclarationId,
+slot: usize,
+prior: &Prior,
+payer: &mut P,
+) -> Result<Fields, Failure<P::Error>> {
+bytes::<P, Fields>(payer)?;
+bytes::<P, Option<ResolvedType>>(payer)?;
+let mut out = Fields(vector(input.len(), payer)?);
+for (index, field) in input.iter().enumerate() {
+payer.work(1).map_err(Failure::Payer)?;
+bytes::<P, ResolvedFieldDeclaration>(payer)?;
+let id = identity(&field.stable_id, payer)?;
+let name = VectorExtension::text(&field.name, payer)?;
+let ty = field_type(&field.ty, source, owner, slot, prior, payer)?;
+out.push(ResolvedFieldDeclaration {
+id,
+name,
+index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+ty: ty.take(),
+span: field.span,
+});
+}
+Ok(out)
+}
+pub(super) fn acquire<P: Payer>(
+slot: usize,
+prior: &Prior,
+payer: &mut P,
+) -> Result<ResolvedTypeDeclaration, Failure<P::Error>> {
+let source = crate::prelude::declarations()
+.get(slot.checked_add(2).ok_or(Failure::Layout)?)
+.ok_or(Failure::Schema)?;
+payer
+.bytes(
+2 * size_of::<ResolvedTypeDeclaration>()
++ size_of::<Option<ResolvedTypeDeclaration>>()
++ size_of::<Result<ResolvedTypeDeclaration, Failure<P::Error>>>(),
+)
+.map_err(Failure::Payer)?;
+payer.work(1).map_err(Failure::Payer)?;
+payer.work(1).map_err(Failure::Payer)?;
+let record = match &source.kind {
+TypeDeclarationKind::Record { fields } if fields.is_empty() => true,
+TypeDeclarationKind::Variant { .. } => false,
+_ => return Err(Failure::Schema),
+};
+payer.work(1).map_err(Failure::Payer)?;
+if source.type_parameters.len() > 2 {
+return Err(Failure::Schema);
+}
+let id = identity(&source.stable_id, payer)?;
+let name = VectorExtension::text(&source.name, payer)?;
+let mut parameters = vector(source.type_parameters.len(), payer)?;
+for (index, parameter) in source.type_parameters.iter().enumerate() {
+payer.work(1).map_err(Failure::Payer)?;
+bytes::<P, ResolvedTypeParameterDeclaration>(payer)?;
+parameters.push(ResolvedTypeParameterDeclaration {
+name: VectorExtension::text(&parameter.name, payer)?,
+index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+span: parameter.span,
+});
+}
+bytes::<P, Result<NominalPayload<ResolvedTypeParameterDeclaration>, Failure<P::Error>>>(payer)?;
+let type_parameters = if parameters.is_empty() {
+parameters.into()
+} else {
+NominalPayload::from_funded_vec(&mut parameters, |n| payer.bytes(n))
+.map_err(Failure::Payer)?
+};
+let kind = if record {
+bytes::<P, Vec<ResolvedFieldDeclaration>>(payer)?;
+bytes::<P, NominalPayload<ResolvedFieldDeclaration>>(payer)?;
+ResolvedTypeDeclarationKind::Record {
+fields: Vec::new().into(),
+}
+} else {
+let TypeDeclarationKind::Variant { cases: input } = &source.kind else {
+unreachable!()
+};
+bytes::<P, Cases>(payer)?;
+bytes::<P, Option<ResolvedType>>(payer)?;
+let mut cases = Cases(vector(input.len(), payer)?);
+for (index, case) in input.iter().enumerate() {
+payer.work(1).map_err(Failure::Payer)?;
+bytes::<P, ResolvedVariantCaseDeclaration>(payer)?;
+let case_id = identity(&case.stable_id, payer)?;
+let case_name = VectorExtension::text(&case.name, payer)?;
+let fields = fields(&case.fields, source, &id, slot, prior, payer)?;
+cases.push(ResolvedVariantCaseDeclaration {
+id: case_id,
+name: case_name,
+index: u32::try_from(index).map_err(|_| Failure::Schema)?,
+fields: fields.take(),
+span: case.span,
+});
+}
+bytes::<P, Result<NominalPayload<ResolvedVariantCaseDeclaration>, Failure<P::Error>>>(
+payer,
+)?;
+let cases = NominalPayload::from_funded_vec(&mut cases.0, |n| payer.bytes(n))
+.map_err(Failure::Payer)?;
+ResolvedTypeDeclarationKind::Variant { cases }
+};
+Ok(ResolvedTypeDeclaration {
+id,
+name,
+type_parameters,
+kind,
+span: source.span,
+})
+}
+
+FILE src/hir/prelude_bundle/extension_staging.rs
+use super::*;
+use std::ops::{Deref, DerefMut};
+fn dispose(ty: ResolvedType) {
+let mut pending: Option<ResolvedType> = Some(ty);
+while let Some(ty) = pending.take() {
+match ty {
+ResolvedType::Nominal { mut arguments, .. } => {
+assert!(
+arguments.len() <= 1,
+"fixed compiler extension disposal frontier"
+);
+pending = arguments.pop();
+}
+ResolvedType::Function { .. } => unreachable!("not an extension field schema"),
+_ => {}
+}
+}
+}
+pub(super) struct Type(pub(super) Option<ResolvedType>);
+impl Type {
+pub(super) fn take(mut self) -> ResolvedType {
+self.0.take().expect("staged compiler type")
+}
+}
+impl Drop for Type {
+fn drop(&mut self) {
+if let Some(ty) = self.0.take() {
+dispose(ty);
+}
+}
+}
+pub(super) struct Fields(pub(super) Vec<ResolvedFieldDeclaration>);
+impl Fields {
+pub(super) fn take(mut self) -> Vec<ResolvedFieldDeclaration> {
+std::mem::take(&mut self.0)
+}
+}
+impl Drop for Fields {
+fn drop(&mut self) {
+for f in &mut self.0 {
+dispose(std::mem::replace(&mut f.ty, ResolvedType::Unit));
+}
+}
+}
+pub(super) struct Cases(pub(super) Vec<ResolvedVariantCaseDeclaration>);
+impl Drop for Cases {
+fn drop(&mut self) {
+for c in &mut self.0 {
+for f in &mut c.fields {
+dispose(std::mem::replace(&mut f.ty, ResolvedType::Unit));
+}
+}
+}
+}

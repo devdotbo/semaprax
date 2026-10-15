@@ -13,6 +13,37 @@ fn all_selected_prefixes_keep_full_old_index_wire_and_reuse_only_selected_vec_pa
         "extension.spx",
     )
     .unwrap();
+    let source = crate::prelude::declarations();
+    let ids = [
+        crate::prelude::VEC_ID,
+        crate::prelude::BOX_ID,
+        crate::iterator_ops::ITER_ID,
+        crate::iterator_ops::STEP_ID,
+        crate::list_ops::LIST_ID,
+        crate::list_ops::STEP_ID,
+        crate::stdin_stream_ops::READER_ID,
+        crate::map_ops::MAP_ID,
+        crate::map_ops::SET_ID,
+    ];
+    for slot in 0..9 {
+        assert_eq!(
+            source[slot + 2].name,
+            crate::hir::prelude_bundle::extension_model::NAMES[slot]
+        );
+        assert_eq!(source[slot + 2].stable_id, ids[slot]);
+        assert_eq!(
+            matches!(
+                source[slot + 2].kind,
+                crate::ast::TypeDeclarationKind::Variant { .. }
+            ),
+            matches!(slot, 3 | 5)
+        );
+        if !matches!(slot, 3 | 5) {
+            assert!(
+                matches!(&source[slot + 2].kind, crate::ast::TypeDeclarationKind::Record { fields } if fields.is_empty())
+            );
+        }
+    }
     for count in [2, 3, 4, 6, 8, 9, 11] {
         let prelude = &crate::prelude::declarations()[..count];
         let old =

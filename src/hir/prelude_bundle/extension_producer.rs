@@ -27,6 +27,7 @@ fn field_type<P: Payer>(
     payer: &mut P,
 ) -> Result<StagedType, Failure<P::Error>> {
     bytes::<P, StagedType>(payer)?;
+    bytes::<P, Result<StagedType, Failure<P::Error>>>(payer)?;
     bytes::<P, Option<ResolvedType>>(payer)?;
     payer.work(1).map_err(Failure::Payer)?;
     let Type::Named { name, arguments } = ty else {
@@ -45,6 +46,7 @@ fn field_type<P: Payer>(
                 .map_err(Failure::Payer)?;
             if parameter.name == *name {
                 return Ok(StagedType(Some(ResolvedType::TypeParameter {
+                    // DeclarationId Clone retains static/Arc text without allocation.
                     owner: owner.clone(),
                     index: u32::try_from(index).map_err(|_| Failure::Schema)?,
                 })));
@@ -104,6 +106,7 @@ fn fields<P: Payer>(
     payer: &mut P,
 ) -> Result<Fields, Failure<P::Error>> {
     bytes::<P, Fields>(payer)?;
+    bytes::<P, Result<Fields, Failure<P::Error>>>(payer)?;
     bytes::<P, Option<ResolvedType>>(payer)?;
     let mut out = Fields(vector(input.len(), payer)?);
     for (index, field) in input.iter().enumerate() {

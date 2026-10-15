@@ -524,7 +524,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/vector_extension/tests.rs",
-      "sha256": "fc14b0e10772cc615541771475d64db8fcc258f8d6c93fb73d46a38929df50bf",
+      "sha256": "49421cdb9778e9530665ecc6585ada126d5c72a8a2c58ff9eacd5ff17c17a566",
       "original": null,
       "original_sha256": null,
       "new_file": true
@@ -545,7 +545,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/extension_producer.rs",
-      "sha256": "560666486fa0478dfe3337f9fb57f3f87f182919e0c4058fc79a1e92665fe5a1",
+      "sha256": "b20dc8b2f9db848c24b52d434e05495600a82c188a0ab9593870a0a672298053",
       "original": null,
       "original_sha256": null,
       "new_file": true

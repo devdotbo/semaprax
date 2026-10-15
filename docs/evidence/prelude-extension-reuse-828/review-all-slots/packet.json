@@ -1,0 +1,10 @@
+{
+  "source_commit": "91f8a2fca",
+  "payload_sha256": "1b0b862dde7f6920b08a2c4f8c98f263caeb7801871d2f70d595844e544ccade",
+  "bytes": 9905,
+  "sources": {
+    "src/hir/prelude_bundle/extension_model.rs": "c6b5c1426ac2c3b262c572c4b23290287d6827dfba4ee4862d89c323b9c89ff4",
+    "src/hir/prelude_bundle/extension_producer.rs": "560666486fa0478dfe3337f9fb57f3f87f182919e0c4058fc79a1e92665fe5a1",
+    "src/hir/prelude_bundle/extension_staging.rs": "4f003b64d7d57364fd9726fb6ac9f435fa6e96a5af64a72003e7d6a9a3c47d0a"
+  }
+}
