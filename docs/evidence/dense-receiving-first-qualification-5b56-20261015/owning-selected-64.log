@@ -1,0 +1,6 @@
+
+running 1 test
+test workspace_graph::source_schema::tests::explicit_host_materialization_preserves_complete_original_hostile_controls ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.00s
+

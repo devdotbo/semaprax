@@ -1,0 +1,22 @@
+
+running 1 test
+test project::incremental::checked_hir::tests::lifecycle::actual_cold_warm_cache_core_and_publication_match_owned_receiver_through_drop ... OPT777 stage scope=cold_parse_to_publication_drop stage=cache_new metrics=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=build metrics=Metrics { allocations: 23608, reallocations: 2728, allocated: 11597586, freed: 11450402, live: 147184, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=independent_parity metrics=Metrics { allocations: 26685, reallocations: 3014, allocated: 13553215, freed: 13406031, live: 147184, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=json_report metrics=Metrics { allocations: 26746, reallocations: 3015, allocated: 13559346, freed: 13406159, live: 153187, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=publication_drop metrics=Metrics { allocations: 26746, reallocations: 3015, allocated: 13559346, freed: 13485429, live: 73917, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=cache_drop metrics=Metrics { allocations: 26746, reallocations: 3015, allocated: 13559346, freed: 13553343, live: 6003, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=cold_parse_to_publication_drop stage=report_drop metrics=Metrics { allocations: 26746, reallocations: 3015, allocated: 13559346, freed: 13559346, live: 0, highwater: 300403, invalid: false } fixed_copy_observation=excluded
+OPT777 requested-layout scope=cold_parse_to_publication_drop allocations=26746 reallocations=3015 requested=13559346 highwater=300403 freed=13559346 live=0 observer_metadata=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=cache_new metrics=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=build metrics=Metrics { allocations: 22046, reallocations: 2556, allocated: 11360832, freed: 11274711, live: 86121, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=independent_parity metrics=Metrics { allocations: 25123, reallocations: 2842, allocated: 13316461, freed: 13230340, live: 86121, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=json_report metrics=Metrics { allocations: 25180, reallocations: 2843, allocated: 13322428, freed: 13230468, live: 91960, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=publication_drop metrics=Metrics { allocations: 25180, reallocations: 2843, allocated: 13322428, freed: 13309738, live: 12690, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=cache_drop metrics=Metrics { allocations: 25180, reallocations: 2843, allocated: 13322428, freed: 13316589, live: 5839, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 stage scope=warm_lookup_to_publication_drop stage=report_drop metrics=Metrics { allocations: 25180, reallocations: 2843, allocated: 13322428, freed: 13322428, live: 0, highwater: 239428, invalid: false } fixed_copy_observation=excluded
+OPT777 requested-layout scope=warm_lookup_to_publication_drop allocations=25180 reallocations=2843 requested=13322428 highwater=239428 freed=13322428 live=0 observer_metadata=excluded
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 1.04s
+

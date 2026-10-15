@@ -1,0 +1,7 @@
+
+running 1 test
+test cleanup_plan::replay::factored::continuation_receiver::tests::current_factored_storage_preserves_old_automata_work_and_full_hostile_diagnostic ... malformed old/current compiler panic observation: Metrics { allocations: 206, reallocations: 52, allocated: 157154, freed: 157154, live: 0, highwater: 73858, invalid: false }; invalid_reason=None
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.13s
+

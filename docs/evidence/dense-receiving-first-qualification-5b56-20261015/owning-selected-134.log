@@ -1,0 +1,12 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop ... exit-status-cost function=exit.read statuses=1 old=(true, 230, 2821, false, None, 673) current=(true, 233, 2822, false, None, 625) borrow=(7,49)
+exit-status-removed function=exit.read cost=(4, 48, 48)
+exit-status-cost function=exit.main statuses=1 old=(true, 470, 6469, false, None, 913) current=(true, 473, 6470, false, None, 865) borrow=(7,49)
+exit-status-removed function=exit.main cost=(4, 48, 48)
+exit-status-cost function=many.main statuses=3 old=(true, 2431, 16287, false, None, 2289) current=(true, 2144, 16000, false, None, 1953) borrow=(7,49)
+exit-status-removed function=many.main cost=(294, 336, 336)
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.04s
+

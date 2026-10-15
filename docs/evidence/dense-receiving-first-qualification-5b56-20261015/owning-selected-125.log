@@ -1,0 +1,6 @@
+
+running 1 test
+test bounded_output::canonical_stage_tests::canonical_stage_preserves_actual_budget_receipt_guard_and_paid_carrier_layouts ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.00s
+

@@ -1,0 +1,13 @@
+
+running 1 test
+test bounded_output::canonical_stage_tests::canonical_stage_nested_foreign_detached_unwind_floor_and_sticky_receipts_stay_local ... 
+thread 'bounded_output::canonical_stage_tests::canonical_stage_nested_foreign_detached_unwind_floor_and_sticky_receipts_stay_local' (3872067) panicked at src/bounded_output/canonical_stage_tests.rs:208:13:
+stage restoration witness
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'bounded_output::canonical_stage_tests::canonical_stage_nested_foreign_detached_unwind_floor_and_sticky_receipts_stay_local' (3872067) panicked at src/bounded_output/canonical_stage_tests.rs:216:13:
+first sticky stage survives unwind
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.07s
+

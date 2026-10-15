@@ -1,0 +1,17 @@
+
+running 1 test
+test loan_plan::paid_live::dense::tests::dense_live_foreign_then_restored_owner_cannot_publish_or_allocate ... 
+thread 'loan_plan::paid_live::dense::tests::dense_live_foreign_then_restored_owner_cannot_publish_or_allocate' (3882677) panicked at src/loan_plan/paid_live/dense/tests.rs:119:17:
+assertion `left == right` failed
+  left: 126
+ right: 46
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    loan_plan::paid_live::dense::tests::dense_live_foreign_then_restored_owner_cannot_publish_or_allocate
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.07s
+

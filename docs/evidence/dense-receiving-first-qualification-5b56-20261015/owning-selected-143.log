@@ -1,0 +1,6 @@
+
+running 1 test
+test loan_plan::paid_live::dense::tests::dense_complete_plans_and_late_full_diagnostics_keep_old_constructor_and_last_drop ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.02s
+

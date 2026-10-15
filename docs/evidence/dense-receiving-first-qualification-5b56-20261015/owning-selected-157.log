@@ -1,0 +1,6 @@
+
+running 1 test
+test project::json_codec::nested_response::tests::nested_response_v2_preserves_two_path_bounds_and_frozen_request_policy ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 8807 filtered out; finished in 0.00s
+
