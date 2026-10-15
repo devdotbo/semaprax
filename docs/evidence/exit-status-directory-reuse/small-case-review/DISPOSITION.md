@@ -6,3 +6,7 @@ B3: strengthened one-status physical sign assertions removed_bytes>BORROW_BYTES 
 B4: zero-case now asserts isolated tuple(0,0,0), exact new positive work/byte fees and equal whole heap allocation. Full Drop remains observed.
 
 Source old insertion loop is preserved byte-exact in remaining.rs and uses every status_source in source order with no filtering. New calibrator repeats those exact operations and same static phase. Metrics are the repository's existing thread-local full allocation observer; the same active payer bootstrap and held producer token precede the isolated measurement. No production fee reduction or old baseline change. Existing small/hostile tests and complete Diagnostic comparison retained.
+
+### Subsequent actual a93 evidence
+
+The earlier B3 one-status byte-sign choice was wrong. The review explicitly warned that single-node backing could be below49bytes; actual old backing is48. The final test now requires exact+1debit and−48heap on this host using sizeof-derived controls, retaining+3work. No production fee/input/cap changes. Actual raw failed receipt and full log are saved separately. The original completed review is not represented as approval of this later correction or as a passed runtime. The multi-status strict assertion is unchanged and awaits actual execution.

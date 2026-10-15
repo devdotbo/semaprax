@@ -1,0 +1,35 @@
+{
+  "source_head": "a93c11777d1309f4a67c3c7e83c5204f42a7a58b",
+  "log_sha256": "15dcbf8b1e815d4d778fd2ce43843fa7e71501ef2445b279b6049c7f8cd474a6",
+  "selector": "cleanup_plan::replay::expression_facts::receiving::retained::exits::tests::complete_exit_status_receivers_keep_six_fields_order_and_drop",
+  "actual_result": "FAIL",
+  "function": "exit.read",
+  "statuses": 1,
+  "old": {
+    "success": true,
+    "work": 200,
+    "debit": 1553,
+    "refused": false,
+    "first": null,
+    "allocated": 697
+  },
+  "current": {
+    "success": true,
+    "work": 203,
+    "debit": 1554,
+    "refused": false,
+    "first": null,
+    "allocated": 649
+  },
+  "removed": {
+    "work": 4,
+    "debit": 48,
+    "allocated": 48
+  },
+  "borrow": {
+    "work": 7,
+    "bytes": 49
+  },
+  "local_rust_execution": false,
+  "multi_status_representative_executed": false
+}
