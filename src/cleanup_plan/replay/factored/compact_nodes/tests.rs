@@ -508,3 +508,53 @@ fn complete_build_comparison_and_canonical_receivers_report_physical_costs_throu
         assert!(!zero && refused && !m.invalid && m.live == 0);
     }
 }
+
+#[test]
+fn immediate_parent_831_and_compact_storage_have_independent_complete_source_domains() {
+    use sha2::{Digest, Sha256};
+    let digest = |s: &str| {
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(s.as_bytes()))
+        )
+    };
+    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/compact-automaton-844-immediate7a87/immediate-old-receivers.json"
+    )))
+    .unwrap();
+    assert_eq!(rows.as_array().unwrap().len(), 5);
+    for row in rows.as_array().unwrap() {
+        let path = row["source"].as_str().unwrap();
+        let raw =
+            std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path))
+                .unwrap();
+        let compiled = crate::source_reflows_merge::compact844_current_input(path, &raw);
+        assert_eq!(compiled, row["compiled"]);
+        assert_eq!(digest(&compiled), row["compiled_sha256"]);
+        let original = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(row["archive"].as_str().unwrap()),
+        )
+        .unwrap();
+        assert_eq!(original, row["original"]);
+        assert_eq!(digest(&original), row["original_sha256"]);
+    }
+    let owners: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/compact-automaton-844-immediate7a87/new-owners.json"
+    )))
+    .unwrap();
+    assert_eq!(owners.as_array().unwrap().len(), 7);
+    for row in owners.as_array().unwrap() {
+        let path = row["source"].as_str().unwrap();
+        let raw =
+            std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path))
+                .unwrap();
+        assert_eq!(
+            digest(&crate::source_reflows_merge::compact844_current_input(
+                path, &raw
+            )),
+            row["sha256"]
+        );
+    }
+}

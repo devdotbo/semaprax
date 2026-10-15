@@ -40,7 +40,7 @@ use storage::{memo_insert, push_end, push_frame, reserve_transition_observation}
 /// Path count above which the factored comparison replaces enumeration.
 const FACTORED_PATH_THRESHOLD: usize = 4_096;
 
-// Label is the byte-exact unchanged original enum; Node/Automaton are independent.
+// Byte-exact original Label shared; old Node/Automaton remain independent.
 use super::super::Label;
 
 #[derive(Default)]
@@ -207,8 +207,15 @@ fn compare_with_index_storage<'hir>(
     }
 
     let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
+    if budget.pays_allocations() {
+        budget.reserve_bytes(
+            function,
+            canonical_shared::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+            "factored held closure invocation controls",
+        )?;
+    }
     let mut receiving =
-        canonical_shared::closure_receiving::ClosureReceiving::acquire(function, budget)?;
+        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
     let Some(hir) =
         canonical.id_with_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?

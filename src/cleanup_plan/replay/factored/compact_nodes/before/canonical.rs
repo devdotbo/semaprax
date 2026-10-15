@@ -1,4 +1,4 @@
-//! Complete preceding canonical algorithm, independently compiled over old Node/Automaton.
+//! Complete immediate7a87 canonical algorithm over independent old two-Vec nodes.
 use super::super::compact_nodes::before::{Automaton, Weighted};
 use super::super::{
     physical_clone, replay_error, BTreeMap, Diagnostic, Label, Rc, ReplayBudget, ResolvedFunction,
@@ -123,7 +123,14 @@ impl<'a> Canonicalizer<'a> {
         if self.closures.failed() {
             return Err(self.closures.failure());
         }
-        let mut receiving = closure_receiving::ClosureReceiving::acquire(function, budget)?;
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
         self.id_with_receiving(function, root, budget, &mut receiving)
     }
     #[cfg(test)]
@@ -133,7 +140,14 @@ impl<'a> Canonicalizer<'a> {
         state: &SharedWeighted,
         budget: &mut ReplayBudget,
     ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
-        let mut receiving = closure_receiving::ClosureReceiving::acquire(function, budget)?;
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
         self.successors_with_receiving(function, state, budget, &mut receiving)
     }
     #[cfg(test)]
@@ -151,7 +165,14 @@ impl<'a> Canonicalizer<'a> {
             budget.charge(function, 1, "factored closure cursor")?;
             return Ok(self.closures.get(&root).cloned());
         }
-        let mut receiving = closure_receiving::ClosureReceiving::acquire(function, budget)?;
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
         self.closure_with_receiving(function, root, budget, &mut receiving)
     }
     fn closure_with_receiving(
@@ -666,7 +687,25 @@ impl<'a> Canonicalizer<'a> {
             1,
             "factored canonical initial frame",
         )?;
-        let root = own_weighted(function, budget, root)?;
+        // This direct root construction has no Diagnostic-bearing helper Result.
+        // Both enum values, actual Rc initializer/receiving values and payment
+        // Result remain real and prepaid; the general successor helper is unchanged.
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                2 * std::mem::size_of::<SmallWeighted>()
+                    + 2 * std::mem::size_of::<SharedWeighted>()
+                    + std::mem::size_of::<Result<(), Diagnostic>>(),
+                "factored direct root enum receiving",
+            )?;
+        }
+        budget.reserve_bytes(
+            function,
+            physical_clone::rc_backing_bytes::<SmallWeighted>(),
+            "factored weighted shared header",
+        )?;
+        let shared = SmallWeighted::Many(root);
+        let root = Rc::new(shared);
         let root_copy = share_weighted(function, budget, &root)?;
         self.frames.push(CanonicalFrame::Enter(root_copy));
         while let Some(frame) = self.frames.pop() {

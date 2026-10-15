@@ -97,15 +97,15 @@ pub(crate) fn held(source: &str, current: &str) -> String {
 }
 
 pub(crate) fn weighted(path: &str, current: &str) -> String {
-    let compact = if path == "../epsilon_alias/tests.rs" {
-        before_compact844(
+    let staged = if path == "../epsilon_alias/tests.rs" {
+        compact844_parent_input(
             "src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias/tests.rs",
             current,
         )
     } else {
         current.to_owned()
     };
-    let current = compact.as_str();
+    let current = staged.as_str();
     if path == "../../../../../../docs/ARCHITECTURE.md" {
         return assembled_previous("docs/ARCHITECTURE.md", current);
     }
@@ -627,7 +627,7 @@ pub(crate) fn compressed_fixture_input(source: &str, current: &str) -> String {
 
 // The retained registry owner and inherited guards have distinct whole inputs.
 fn before_retained833(source: &str, current: &str) -> String {
-    let previous = before_compact844(source, current);
+    let previous = before_main66517(source, current);
     let current = previous.as_str();
     project(
         include_str!(concat!(
@@ -639,7 +639,7 @@ fn before_retained833(source: &str, current: &str) -> String {
     )
 }
 pub(crate) fn retained833_input(source: &str, current: &str) -> String {
-    let previous = before_compact844(source, current);
+    let previous = before_main66517(source, current);
     let current = previous.as_str();
     project(
         include_str!(concat!(
@@ -651,17 +651,81 @@ pub(crate) fn retained833_input(source: &str, current: &str) -> String {
     )
 }
 
-// A strict immediate successor; old tables and their assertion domains stay exact.
-fn before_compact844(source: &str, current: &str) -> String {
+// Latest MAIN source enters the immutable combined833/841 checkpoint first.
+fn before_main66517(source: &str, current: &str) -> String {
+    let previous = before_retry_guard(source, current);
+    let current = previous.as_str();
     project(
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
-            "/docs/evidence/compact-automaton-844/source-inverses.json"
+            "/docs/evidence/main66517-source-assembly-20261015/current-to-397.json"
         )),
         source,
         current,
     )
 }
-pub(crate) fn compact844_input(_source: &str, current: &str) -> String {
+
+// Preserve the complete old runtime input before every inherited source domain.
+fn before_retry_guard(source: &str, current: &str) -> String {
+    let previous = before_direct_carriers831(source, current);
+    let current = previous.as_str();
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retry-fixture-full-source-view-61f-20261015/current-to-61f.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn retry_fixture_input(source: &str, current: &str) -> String {
+    let previous = before_direct_carriers831(source, current);
+    let current = previous.as_str();
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/retry-fixture-full-source-view-61f-20261015/runtime-view.json"
+        )),
+        source,
+        current,
+    )
+}
+
+// Every older runtime source guard retains the exact297 physical domain.
+fn before_direct_carriers831(source: &str, current: &str) -> String {
+    let staged = compact844_parent_input(source, current);
+    let current = staged.as_str();
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/direct-canonical-carriers-831-20261015/current-to-297.json"
+        )),
+        source,
+        current,
+    )
+}
+
+// Independent immediate parent and historical candidate domains, never serial aliases.
+fn compact844_parent_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compact-automaton-844-immediate7a87/current-to-parent.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn compact844_input(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/compact-automaton-844-immediate7a87/current-to-a3.json"
+        )),
+        source,
+        current,
+    )
+}
+pub(crate) fn compact844_current_input(_source: &str, current: &str) -> String {
     current.to_owned()
 }
