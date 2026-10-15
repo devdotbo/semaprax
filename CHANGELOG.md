@@ -2,6 +2,14 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Add a macOS CI tool-link reference that exposes native compiler stderr under an empty child environment while preserving the held SDK builder's diagnostic and publication contracts.
+
+- Complete hosted full-profile coverage with benchmark-target execution and explicit checks and formatting of the remaining named examples, including the nested calculator callback.
+
+- Acquire branch-history clone backing at the capacity of its immediately following push, preserving complete path enumeration, work debits and later growth while retaining the original clone and push controls.
+
+- Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
+
 - Author fixed authenticated runtime transport for the test-only source-view helper (#848): preserve all 89 original JSON files (93,590,460 bytes), projection logic, stage order, and source guards, with a separate custody fixture. Join every new loader child into the three audits. Repository fixtures are required at test runtime; executable qualification and measured RAM benefit remain pending.
 
 - Author the sealed initial builder-report policy and actual typed CLI propagation (#845), provider-bound borrowed function aliases on the closed uncached route (#847), and a separate cached-prelude report acquisition observer (#796). Preserve original compatibility receivers, source assertions and unfunded output boundaries; executable qualification remains pending.

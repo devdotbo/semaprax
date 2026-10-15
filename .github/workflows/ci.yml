@@ -1356,6 +1356,9 @@ jobs:
         run: |
           cargo fetch --locked
           cargo fetch --locked --manifest-path examples/calculator-rust/Cargo.toml
+      - name: Expose Darwin native tool link prerequisites
+        if: runner.os == 'macOS'
+        run: python3 scripts/ci-darwin-native-reference.py
       - name: Require exact reproducible Darwin archive admission
         if: runner.os == 'macOS'
         env:
@@ -1809,6 +1812,11 @@ jobs:
           exclude=()
           if [[ "$RUNNER_OS" == Windows ]]; then exclude=(--exclude semaprax-harness); fi
           cargo test --locked --workspace "${exclude[@]}" --all-features --doc
+      - name: Execute every benchmark target in the full test profile
+        if: runner.os == 'Linux'
+        # The unit/integration shard planner deliberately leaves benches here.
+        # Use cargo test: cargo bench adds --bench to custom harness arguments.
+        run: cargo test --locked --workspace --all-features --bench '*'
       - shell: bash
         run: |
           exclude=()
@@ -1834,6 +1842,15 @@ jobs:
       - run: cargo run --locked -p semaprax -- fmt examples/control_flow.spx --check
       - run: cargo run --locked -p semaprax -- fmt examples/records.spx --check
       - run: cargo run --locked -p semaprax -- fmt examples/native_callable.spx --check
+      - name: Check and format the remaining full-profile examples
+        if: runner.os == 'Linux'
+        shell: bash
+        run: |
+          set -euo pipefail
+          for source in chars integers_i32 bytes_u8 explicit_mutation string_ops field_mutation while_loops inheritance calculator-rust/callback; do
+            cargo run --locked -p semaprax -- check "examples/$source.spx"
+            cargo run --locked -p semaprax -- fmt "examples/$source.spx" --check
+          done
       - name: Build public native-callable bundle
         run: cargo run --locked -p semaprax -- build examples/native_callable.spx --target native-callable --function example.token.identity -o target/native-callable-example
       - name: Build and run native example (Unix)
