@@ -6,6 +6,7 @@ use super::Payer;
 // Exact actual work sites in vector_extension::acquire: entry, kind and
 // parameter-shape branches, parameter initializer, identity copy, and two
 // UTF-8/name byte passes for each of the type and parameter names.
+#[cfg(test)]
 pub(super) const VECTOR_WORK: usize =
     4 + crate::prelude::VEC_ID.len() + 2 * "Vec".len() + 2 * "T".len();
 
@@ -19,6 +20,7 @@ pub(super) struct ExtensionPayer<'a, E: Copy> {
     first: Option<FixedFailure<E>>,
 }
 impl<'a, E: Copy> ExtensionPayer<'a, E> {
+    #[cfg(test)]
     pub(super) fn acquire(reserve: &'a mut dyn FnMut(usize) -> Result<(), E>) -> Result<Self, E> {
         Self::acquire_for(0, reserve)
     }

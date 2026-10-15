@@ -510,7 +510,7 @@
     },
     {
       "source": "src/hir/prelude_bundle/extension_work.rs",
-      "sha256": "b1ed36747a454ca5ae465c933b02d25f5f8257d92d2f4df4ac9ae46d8660f50a",
+      "sha256": "88d092b02c9c154fcaf0503089b1b3ee6a108de5eeed1a02b11379eb2ba2a3d9",
       "original": null,
       "original_sha256": null,
       "new_file": true
