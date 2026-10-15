@@ -1,0 +1,30 @@
+{
+  "source_subject": "8795285cc9f2de1113f9f34b66af6ee11ad75ff7",
+  "source_tree": "e4d0fd5863f4ce00ead59184015ebf617568e8f4",
+  "build_exit_code": 101,
+  "production_lib_exit_code": 0,
+  "selected_test_no_run_exit_code": 101,
+  "executed_test_bodies": 0,
+  "compiler_error_count": 4,
+  "failure_scope": "test-only Session error controls: three bounded_output tuple destructures and one private acquire call",
+  "full_suite": false,
+  "runtime_results": null,
+  "application_recovery": false,
+  "new_live_benchmark": false,
+  "maximum_positive_swap_used_delta_bytes": 0,
+  "raw_files_sha256": {
+    "expected-counts.json": "9c2832a0c72ad49bc6ab199147732107151969340d5f9d2574a2f477373fe232",
+    "preparation-receipt.json": "301d7ec6fbc87afdac577f77334cd72a924d266f3cd34ad80d4b55c850b90ff3",
+    "owning-build-result.json": "eb60c90b45b6b103536412e0703dad799fe19ac037116071d4e617f396deab49",
+    "owning-build.log": "278cbea0be40fc96ace3b9bc9f8463e372631626776be6f2df11d675ad6bebe2",
+    "owning-build.jsonl": "3fef463cbc478d1de951a3a39357afe8b2cd3054bbe80bf4e9e1c23a3c17ef53",
+    "memory-samples.jsonl": "814c59f58d58f83b2351f4c20338e66964c58f3073c90803df817fa7f7183602",
+    "compiler-errors.json": "f5eeacc8f1ee1cf5f300a8c2436a904544e3895eccdecd24b2e38e17109844b6",
+    "clippy-production-result.json": "771673594bfca6735ebf2d4dba84f797ef07f4338c69fcfde385d7f1eac8a60d",
+    "clippy-production.log": "7d3e3a548d539947aca475f4b0c2c291e5ea82051204771dbabf90e11b1aa79e",
+    "clippy-production-memory-samples.jsonl": "25c5dba502ef5603435d829e63993a08707c8b7de5d9589cebe11ead3c67fbf5"
+  },
+  "clippy_production_lib_cli_exit_code": 0,
+  "clippy_peak_process_group_rss_bytes": 4867260416,
+  "clippy_maximum_positive_swap_used_delta_bytes": 0
+}
