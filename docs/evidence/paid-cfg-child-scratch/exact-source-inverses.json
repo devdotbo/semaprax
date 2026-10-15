@@ -5,6 +5,10 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "after": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n"
+      },
+      {
         "after": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n"
       },

@@ -159,8 +159,14 @@
     "source": "tests/workspace/semantic_graph/source_inventory.rs",
     "archive": "docs/evidence/borrowed-generic-membership-index-39c6/source_inventory.rs.before.txt",
     "original_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
-    "current_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
+    "current_sha256": "b73afa30844e32b5d953776e8726d7c8593a9b981ba3233a2d3ff3f7ed85ceb7",
     "hooks": [
+      {
+        "after": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n",
+        "name": "linked-nominal-views-complete-source",
+        "count": 1
+      },
       {
         "after": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n",

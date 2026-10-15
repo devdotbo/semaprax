@@ -8,6 +8,11 @@
 use super::super::*;
 use super::DeclarationIndex;
 
+#[cfg(test)]
+mod original;
+#[cfg(test)]
+mod tests;
+
 impl DeclarationIndex {
     /// Extend the canonical compiler prelude with exactly one authenticated
     /// Project-v8 closure. Every retained declaration must have one matching
@@ -134,13 +139,13 @@ impl DeclarationIndex {
                             DeclarationKind::Field,
                             Some(&declaration.id),
                         )?;
-                        self.insert_field(declaration.id.clone(), field.clone(), fact.origin);
+                        self.insert_field_view(declaration.id.clone(), field, fact.origin);
                     }
                     self.record_fields
                         .insert(declaration.id.clone(), fields.clone());
                 }
                 ResolvedTypeDeclarationKind::Variant { cases } => {
-                    for case in cases {
+                    for (ordinal, case) in cases.iter().enumerate() {
                         let fact = require_fact(
                             facts,
                             &mut used,
@@ -162,10 +167,17 @@ impl DeclarationIndex {
                                 DeclarationKind::CaseField,
                                 Some(&case.id),
                             )?;
-                            self.insert_case_field(case.id.clone(), field.clone(), fact.origin);
+                            self.insert_case_field_view(case.id.clone(), field, fact.origin);
                         }
-                        self.case_fields
-                            .insert(case.id.clone(), case.fields.clone());
+                        // Only an already acquired immutable owner can back
+                        // coordinates. Legacy/decoded values retain their own
+                        // complete field facts; this route grants no payer.
+                        let fields: nominal_payload::map::CaseFields = if cases.is_shared() {
+                            nominal_payload::map::CaseFields::canonical(cases.clone(), ordinal)
+                        } else {
+                            case.fields.clone().into()
+                        };
+                        self.case_fields.insert(case.id.clone(), fields);
                     }
                     self.variant_cases
                         .insert(declaration.id.clone(), cases.clone());

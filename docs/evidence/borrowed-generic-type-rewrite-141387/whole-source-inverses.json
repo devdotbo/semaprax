@@ -76,6 +76,12 @@
     "archive": "docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt",
     "hooks": [
       {
+        "after": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n",
+        "name": "linked-nominal-views-complete-source",
+        "count": 1
+      },
+      {
         "after": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n",
         "name": "nominal-invalid-layout-complete-source",
@@ -169,9 +175,9 @@
       }
     ],
     "original_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
-    "current_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
+    "current_sha256": "b73afa30844e32b5d953776e8726d7c8593a9b981ba3233a2d3ff3f7ed85ceb7",
     "original_bytes": 23895,
-    "current_bytes": 29869,
+    "current_bytes": 30118,
     "whole_inverse": "PASS-source-only"
   }
 ]

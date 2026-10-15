@@ -20,6 +20,10 @@
     "original_sha256": "1efc02b5a6d87c7bf56e17bcd40b3bd00adb70be3e8a3c50b0a844f5ba7dd903",
     "edits": [
       {
+        "after": "        include_str!(\"../src/hir/declaration_index/nominal_paid_facts.rs\"),\n        include_str!(\"../src/hir/declaration_index/linked_owned_data.rs\"),\n        include_str!(\"../src/hir/declaration_index/linked_owned_data/original.rs\"),\n        include_str!(\"../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "        include_str!(\"../src/hir/declaration_index/nominal_paid_facts.rs\"),\n"
+      },
+      {
         "after": "        include_str!(\"../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../src/hir/identity_resolution/nominal_tests.rs\"),\n"
       },
@@ -70,6 +74,10 @@
     "archive": "interop_source_inventory.rs.before.txt",
     "original_sha256": "49c78bc2b79880849076544e19874e744374f238ee0c0f49e38a7d5c3bb47316",
     "edits": [
+      {
+        "after": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n"
+      },
       {
         "after": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n"

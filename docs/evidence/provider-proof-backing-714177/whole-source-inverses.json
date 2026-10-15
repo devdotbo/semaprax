@@ -298,8 +298,13 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "86c3d5982342e40c8d3ab6f3c137d9ea4f589adfb87f3939da26bb45cdaa6d4d",
+      "current_sha256": "b73afa30844e32b5d953776e8726d7c8593a9b981ba3233a2d3ff3f7ed85ceb7",
       "inverse": [
+        {
+          "hook": "linked-nominal-views-complete-source",
+          "current": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n        include_str!(\"../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+          "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),\n"
+        },
         {
           "hook": "nominal-invalid-layout-complete-source",
           "current": "        include_str!(\"../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
@@ -372,8 +377,18 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "352293712245623f1c371e81b57e885105064a5170cc624471747743b6cc5c26",
+      "current_sha256": "3db281494bd6c3fe300b334f6e4c35534df6fa44c9e79dbdd5a5f4dae0119c80",
       "inverse": [
+        {
+          "hook": "existing-retained-loan-children-complete-source",
+          "current": "            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/inventory.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_candidate/retained/tests.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan.rs\"),\n        include_str!(\"../../../../../src/loan_plan/paid_plan/retained.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat.rs\"),\n        include_str!(\"../../../../../src/loan_plan/funded_flat/inventory_before.rs\"),\n",
+          "before": "            include_str!(\"../../../../../src/loan_plan/paid_candidate.rs\"),\n"
+        },
+        {
+          "hook": "linked-nominal-views-complete-source",
+          "current": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+          "before": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n"
+        },
         {
           "hook": "nominal-invalid-layout-complete-source",
           "current": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",

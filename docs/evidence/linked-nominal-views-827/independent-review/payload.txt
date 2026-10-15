@@ -1,0 +1,142 @@
+Review this bounded storage-only linker patch. No tools/execution. Full linker unchanged except diff; old independent full implementation preserved. Caller authenticates Phase-A facts in exactly same order; this compatibility route has no payer and makes no full funding claim. Check allocation/ownership/error precedence and Rust API hazards.
+diff --git a/src/hir/declaration_index/linked_owned_data.rs b/src/hir/declaration_index/linked_owned_data.rs
+index d97476a6c..2cdb169c0 100644
+--- a/src/hir/declaration_index/linked_owned_data.rs
++++ b/src/hir/declaration_index/linked_owned_data.rs
+@@ -8,6 +8,11 @@
+ use super::super::*;
+ use super::DeclarationIndex;
+ 
++#[cfg(test)]
++mod original;
++#[cfg(test)]
++mod tests;
++
+ impl DeclarationIndex {
+     /// Extend the canonical compiler prelude with exactly one authenticated
+     /// Project-v8 closure. Every retained declaration must have one matching
+@@ -134,13 +139,13 @@ impl DeclarationIndex {
+                             DeclarationKind::Field,
+                             Some(&declaration.id),
+                         )?;
+-                        self.insert_field(declaration.id.clone(), field.clone(), fact.origin);
++                        self.insert_field_view(declaration.id.clone(), field, fact.origin);
+                     }
+                     self.record_fields
+                         .insert(declaration.id.clone(), fields.clone());
+                 }
+                 ResolvedTypeDeclarationKind::Variant { cases } => {
+-                    for case in cases {
++                    for (ordinal, case) in cases.iter().enumerate() {
+                         let fact = require_fact(
+                             facts,
+                             &mut used,
+@@ -162,10 +167,17 @@ impl DeclarationIndex {
+                                 DeclarationKind::CaseField,
+                                 Some(&case.id),
+                             )?;
+-                            self.insert_case_field(case.id.clone(), field.clone(), fact.origin);
++                            self.insert_case_field_view(case.id.clone(), field, fact.origin);
+                         }
+-                        self.case_fields
+-                            .insert(case.id.clone(), case.fields.clone());
++                        // Only an already acquired immutable owner can back
++                        // coordinates. Legacy/decoded values retain their own
++                        // complete field facts; this route grants no payer.
++                        let fields: nominal_payload::map::CaseFields = if cases.is_shared() {
++                            nominal_payload::map::CaseFields::canonical(cases.clone(), ordinal)
++                        } else {
++                            case.fields.clone().into()
++                        };
++                        self.case_fields.insert(case.id.clone(), fields);
+                     }
+                     self.variant_cases
+                         .insert(declaration.id.clone(), cases.clone());
+
+Existing borrowed metadata helpers:
+    pub(super) fn insert_field_view(
+        &mut self,
+        owner: DeclarationId,
+        field: &ResolvedFieldDeclaration,
+        origin: IdentityOrigin,
+    ) {
+        self.fields_by_owner_name
+            .insert((owner.clone(), field.name.clone()), field.id.clone());
+        self.declarations.insert(
+            field.id.clone(),
+            Declaration {
+                id: field.id.clone(),
+                name: field.name.clone(),
+                kind: DeclarationKind::Field,
+                identity_origin: origin,
+                owner: Some(owner),
+            },
+        );
+    }
+    pub(super) fn insert_case_field_view(
+        &mut self,
+        owner: DeclarationId,
+        field: &ResolvedFieldDeclaration,
+        origin: IdentityOrigin,
+    ) {
+        self.fields_by_owner_name
+            .insert((owner.clone(), field.name.clone()), field.id.clone());
+        self.declarations.insert(
+            field.id.clone(),
+            Declaration {
+                id: field.id.clone(),
+                name: field.name.clone(),
+                kind: DeclarationKind::CaseField,
+                identity_origin: origin,
+                owner: Some(owner),
+            },
+        );
+    }
+}
+
+CaseFields representation and canonical constructor:
+/// One case ordinal retains the same canonical outer cases owner. It allocates
+/// no per-case Arc or field Vec; legacy hostile/decoded indexes keep full Vecs.
+#[derive(Clone)]
+pub(crate) struct CaseFields {
+    storage: CaseStorage,
+}
+#[derive(Clone)]
+enum CaseStorage {
+    Owned(NominalPayload<ResolvedFieldDeclaration>),
+    Case {
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    },
+}
+impl CaseFields {
+    pub(crate) fn canonical(
+        owner: NominalPayload<ResolvedVariantCaseDeclaration>,
+        ordinal: usize,
+    ) -> Self {
+        assert!(owner.is_shared());
+        assert!(ordinal < owner.len());
+        Self {
+            storage: CaseStorage::Case { owner, ordinal },
+        }
+    }
+    pub(crate) fn drain(self, dispose: &mut impl FnMut(ResolvedType)) {
+        if let CaseStorage::Owned(fields) = self.storage {
+            fields.drain_recursive_types(dispose);
+        }
+    }
+}
+
+NominalPayload existing Clone and predicate:
+ {
+    fn clone(&self) -> Self {
+        match &self.storage {
+            Storage::Owned(v) => v.clone().into(),
+            Storage::Shared(v) => Self {
+                storage: Storage::Shared(v.clone()),
+            },
+        }
+    }
+}
+
+Authored controls (unexecuted): complete old/current maps+wire under Owned, acquired Shared and decode→Owned inputs; full6field missing/wrongkind/wrongowner/unrelatedfact/duplicatetype errors plus partialmaps; actual observer old/current allocation count and complete input/index disposal lifetime. No Cap/P/work change. Oldoriginal methods are verbatim body apart from3associatedfunction names andimport paths.

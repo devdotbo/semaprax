@@ -89,6 +89,12 @@
     "before_sha256": "999318a8ff110aa92e3a696ed649ca95c3374cfe47991d036d26aab2f492dbf6",
     "hooks": [
       {
+        "after": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/original.rs\"),\n            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data/tests.rs\"),\n",
+        "before": "            include_str!(\"../../../../../src/hir/declaration_index/linked_owned_data.rs\"),\n",
+        "name": "linked-nominal-views-complete-source",
+        "count": 1
+      },
+      {
         "after": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n        include_str!(\"../../../../../src/hir/identity_resolution/nominal_invalid_layout_tests.rs\"),\n",
         "before": "        include_str!(\"../../../../../src/hir/identity_resolution/nominal_tests.rs\"),\n",
         "name": "nominal-invalid-layout-complete-source",

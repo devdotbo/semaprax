@@ -1087,6 +1087,12 @@ fn one_mib_ledger_preserves_first_cursor_refusal_and_sticky_retries() {
     }
     {
         let mut current = include_str!("../../../../../tests/hir_module_boundaries.rs").to_owned();
+        undo(&mut current, r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
+        include_str!("../src/hir/declaration_index/linked_owned_data.rs"),
+        include_str!("../src/hir/declaration_index/linked_owned_data/original.rs"),
+        include_str!("../src/hir/declaration_index/linked_owned_data/tests.rs"),
+"####, r####"        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
+"####);
         undo(&mut current, r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
         include_str!("../src/hir/identity_resolution/nominal_invalid_layout_tests.rs"),
 "####, r####"        include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
