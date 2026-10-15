@@ -76,6 +76,11 @@
     "archive": "docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt",
     "hooks": [
       {
+        "after": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
+        "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
+        "count": 1
+      },
+      {
         "after": "        include_str!(\"../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
         "before": "        include_str!(\"../../src/hir/declaration_index/nominal_construction/types.rs\"),",
         "count": 1
@@ -158,9 +163,9 @@
       }
     ],
     "original_sha256": "09709f230713532dd49a29270b37496701773ef55a6ffab290f2472498a8f829",
-    "current_sha256": "01cd2bd61f15abe587e26ad3e73427f3235ecfd3943081c56cde259885bcc291",
+    "current_sha256": "549fbe4fbad5eba571927db49a83236dcf769da184f4e55e8cfd2be390ad992e",
     "original_bytes": 23895,
-    "current_bytes": 29699,
+    "current_bytes": 29778,
     "whole_inverse": "PASS-source-only"
   }
 ]

@@ -159,8 +159,13 @@
     "source": "tests/workspace/semantic_graph/source_inventory.rs",
     "archive": "docs/evidence/borrowed-generic-membership-index-39c6/source_inventory.rs.before.txt",
     "original_sha256": "42e3770bf56afc50f4a831e7b448df5a238d0be844d571d6b01a9defe399bcb5",
-    "current_sha256": "01cd2bd61f15abe587e26ad3e73427f3235ecfd3943081c56cde259885bcc291",
+    "current_sha256": "549fbe4fbad5eba571927db49a83236dcf769da184f4e55e8cfd2be390ad992e",
     "hooks": [
+      {
+        "after": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
+        "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
+        "count": 1
+      },
       {
         "after": "        include_str!(\"../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
         "before": "        include_str!(\"../../src/hir/declaration_index/nominal_construction/types.rs\"),",

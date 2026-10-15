@@ -64,6 +64,7 @@ macro_rules! semantic_graph_root_source_inventory {
         include_str!("../../src/hir/declaration_index/nominal_construction/types.rs"),
         include_str!("../../src/hir/declaration_index/nominal_paid_values.rs"),
         include_str!("../../src/hir/declaration_index/nominal_paid_inheritance.rs"),
+        include_str!("../../src/hir/declaration_index/nominal_paid_facts.rs"),
         include_str!("../../src/hir/identity_resolution/nominal.rs"),
         include_str!("../../src/hir/identity_resolution/nominal_original.rs"),
         include_str!("../../src/hir/identity_resolution/nominal_tests.rs"),

@@ -298,8 +298,13 @@
       "archive": "10.before.txt",
       "original_sha256": "57b7b38cd8b69c9f3f63655734fa504b8af2132f89490c5215235c11163c3122",
       "original_bytes": 25059,
-      "current_sha256": "01cd2bd61f15abe587e26ad3e73427f3235ecfd3943081c56cde259885bcc291",
+      "current_sha256": "549fbe4fbad5eba571927db49a83236dcf769da184f4e55e8cfd2be390ad992e",
       "inverse": [
+        {
+          "hook": "complete-paid-facts-current-source-join",
+          "current": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
+          "before": "        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),"
+        },
         {
           "hook": "paid-inheritance-current-child-source-join",
           "current": "        include_str!(\"../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
@@ -362,8 +367,13 @@
       "archive": "11.before.txt",
       "original_sha256": "950e3c2350a851473feb69cd3cc5c9ed0775de272bf75ed98670953879dffe5c",
       "original_bytes": 85667,
-      "current_sha256": "7ad0adbd0bc0714762ce345114ed2e325d69182a6d5d2f117a0829a254d7ff93",
+      "current_sha256": "e3a2aa8df810c083f626f75a8f579d7e0a9d524bd0dca38d31cbc283358ca6bf",
       "inverse": [
+        {
+          "hook": "complete-paid-facts-current-source-join",
+          "current": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
+          "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),"
+        },
         {
           "hook": "paid-inheritance-current-child-source-join",
           "current": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",

@@ -5,6 +5,10 @@
     "before_sha256": "4283b115d287a7bba8a3bad71a9fa65748d28dfc06bbcfe87ed4f4b12d78dfd7",
     "edits": [
       {
+        "after": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_facts.rs\"),",
+        "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),"
+      },
+      {
         "after": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_values.rs\"),\n        include_str!(\"../../../../../src/hir/declaration_index/nominal_paid_inheritance.rs\"),",
         "before": "        include_str!(\"../../../../../src/hir/declaration_index/nominal_construction/types.rs\"),"
       },

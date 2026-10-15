@@ -603,6 +603,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/declaration_index/nominal_construction/types.rs"),
         include_str!("../src/hir/declaration_index/nominal_paid_values.rs"),
         include_str!("../src/hir/declaration_index/nominal_paid_inheritance.rs"),
+        include_str!("../src/hir/declaration_index/nominal_paid_facts.rs"),
         include_str!("../src/hir/identity_resolution/nominal.rs"),
         include_str!("../src/hir/identity_resolution/nominal_original.rs"),
         include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
