@@ -152,8 +152,6 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
         validate_edge_condition(function, &edge.condition, expressions, statuses, budget)?;
     }
 
-    let mut referenced_edges =
-        Directory::new(function, budget, "cleanup referenced edge directory")?;
     let mut referenced_exits =
         Directory::new(function, budget, "cleanup referenced exit directory")?;
     let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
@@ -461,7 +459,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
         }
         match &block.terminator {
             CleanupTerminator::Goto(edge) => {
-                validate_owned_edge_paid(function, block.id, *edge, &mut referenced_edges, budget)?;
+                validate_owned_edge_unique(function, block.id, *edge)?;
                 if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)
                     && !(matches!(
                         function.cleanup_plan.schema,
@@ -495,13 +493,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_retained(
                     ));
                 }
                 for edge in edges {
-                    validate_owned_edge_paid(
-                        function,
-                        block.id,
-                        *edge,
-                        &mut referenced_edges,
-                        budget,
-                    )?;
+                    validate_owned_edge_unique(function, block.id, *edge)?;
                 }
                 validate_branch_pair(
                     function,
@@ -565,3 +557,27 @@ pub(in crate::cleanup_plan::replay) fn before_status_retention(path: &str, sourc
     }
     restored
 }
+
+// Every block preceding this call has its exact contiguous enumeration ID.
+// Goto has one edge; Branch rejects equal edge IDs before either call. An
+// accepted immutable edge has exactly this owner, so no edge can have passed
+// in an earlier distinct block. A second directory traversal proves nothing new.
+fn validate_owned_edge_unique(
+    function: &ResolvedFunction,
+    owner: BlockId,
+    edge: EdgeId,
+) -> Result<(), Diagnostic> {
+    let Some(item) = function.cleanup_plan.edges.get(edge.0 as usize) else {
+        return Err(replay_error(function, "cleanup terminator references unknown edge"));
+    };
+    if item.id != edge || item.from != owner {
+        return Err(replay_error(function,
+            "cleanup edge has the wrong owner or is referenced repeatedly"));
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod edge_before;
+#[cfg(test)]
+mod edge_tests;

@@ -1,0 +1,203 @@
+Review DISTINCT source-only elimination of write-only referenced_edges AVL set. No execution/tools. Give concrete semantic/error-order/accounting blockers. Complete old450line receiver independently compiled unchanged. Caps/unit prices unchanged, no newcarrier/cache/authority/state.
+Proof: Block guard before transitions authenticates block.id==enumeration index; earlier accepted blocks distinct. Each accepted immutable edge has exact addressed ID and from==current block ID. Goto has1edge; Branch prechecks2distinct IDs. Thus same edge cannot pass twice across/in blocks. No post-loop set reads (only old declaration+2insert paths). All transitions unchanged, function immutable. Edge loop authenticates contiguous IDs/endpoints first. Only redundant probe/insertion/growth/AVL rotations disappear, no unit repricing. Exits directory preserved because duplicate/wrongowner diagnostics differ. Does any malformed/foreign/equalcount plan violate proof/error order?
+OLD helper:
+fn validate_owned_edge_paid(
+function: &ResolvedFunction,
+owner: BlockId,
+edge: EdgeId,
+referenced: &mut Directory<EdgeId>,
+budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+let plan = &function.cleanup_plan;
+let Some(item) = plan.edges.get(edge.0 as usize) else {
+return Err(replay_error(
+function,
+"cleanup terminator references unknown edge",
+));
+};
+if item.id != edge || item.from != owner || !referenced.insert(function, edge, budget)? {
+return Err(replay_error(
+function,
+"cleanup edge has the wrong owner or is referenced repeatedly",
+));
+}
+Ok(())
+}
+
+ACTUAL authentication/edge loop/block guard:
+if !std::ptr::eq(function, validated.function)
+|| !std::ptr::eq(budget, validated.budget)
+{
+return Err(replay_error(function, "status directory belongs to another function or budget"));
+}
+if !validated.ledger.current() {
+return Err(budget.budget_refusal(function, "retained status invocation owner changed", ""));
+}
+// Authenticate the unchanged payer even though retaining the directory allocates nothing.
+budget.reserve_bytes(function, 0, "retained cleanup status directory")?;
+budget.charge(function, 0, "retained cleanup status directory")?;
+if let Facts::Tree(tree) = facts {
+return super::super::super::validate_blocks_and_edges(
+program, function, tree, storage, leaves, helpers, budget,
+);
+}
+let expressions: &dyn Lookup = facts;
+let plan = &function.cleanup_plan;
+let statuses = validated.ids.as_ref().ok_or_else(|| {
+replay_error(function, "retained status directory has no metered keys")
+})?;
+for (index, edge) in plan.edges.iter().enumerate() {
+if edge.id.0 != u32_index(function, index, "cleanup edge")?
+|| !block_exists(function, edge.from)
+|| !block_exists(function, edge.to)
+{
+return Err(replay_error(
+function,
+"cleanup edge has a non-contiguous ID or unknown endpoint",
+));
+}
+validate_edge_condition(function, &edge.condition, expressions, statuses, budget)?;
+}
+
+let mut referenced_exits =
+Directory::new(function, budget, "cleanup referenced exit directory")?;
+let mut committed_calls = Directory::new(function, budget, "cleanup committed call directory")?;
+for (index, block) in plan.blocks.iter().enumerate() {
+if block.id.0 != u32_index(function, index, "cleanup block")?
+|| usize::try_from(block.region.0)
+.ok()
+.is_none_or(|region| region >= plan.regions.len())
+{
+return Err(replay_error(
+function,
+"cleanup block has a non-contiguous ID or unknown region",
+));
+}
+
+ACTUAL complete terminator dispatch:
+match &block.terminator {
+CleanupTerminator::Goto(edge) => {
+validate_owned_edge_unique(function, block.id, *edge)?;
+if !matches!(plan.edges[edge.0 as usize].condition, EdgeCondition::Always)
+&& !(matches!(
+function.cleanup_plan.schema,
+CLEANUP_PLAN_SCHEMA_V6
+| CLEANUP_PLAN_SCHEMA_V7
+| CLEANUP_PLAN_SCHEMA_V8
+| CLEANUP_PLAN_SCHEMA_V9
+| CLEANUP_PLAN_SCHEMA_V10
+| CLEANUP_PLAN_SCHEMA_V11
+| CLEANUP_PLAN_SCHEMA_V12
+| CLEANUP_PLAN_SCHEMA_V13
+| CLEANUP_PLAN_SCHEMA_V15
+| CLEANUP_PLAN_SCHEMA_V16
+| crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17
+| crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18
+| crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
+| CLEANUP_PLAN_SCHEMA_V14
+) && matches!(
+plan.edges[edge.0 as usize].condition,
+EdgeCondition::VariantCase { matches: true, .. }
+))
+{
+return Err(replay_error(function, "goto edge is conditional"));
+}
+}
+CleanupTerminator::Branch(edges) => {
+if edges.len() != 2 || edges[0] == edges[1] {
+return Err(replay_error(
+function,
+"cleanup branch must own exactly two distinct edges",
+));
+}
+for edge in edges {
+validate_owned_edge_unique(function, block.id, *edge)?;
+}
+validate_branch_pair(
+function,
+&plan.edges[edges[0].0 as usize].condition,
+&plan.edges[edges[1].0 as usize].condition,
+)?;
+}
+CleanupTerminator::Exit(exit) => {
+if usize::try_from(exit.0)
+.ok()
+.is_none_or(|value| value >= plan.exits.len())
+|| !referenced_exits.insert(function, *exit, budget)?
+{
+return Err(replay_error(
+function,
+"cleanup block references an unknown or repeated exit",
+));
+}
+if plan.exits[exit.0 as usize].from != block.id {
+return Err(replay_error(
+function,
+"cleanup exit is owned by the wrong block",
+));
+}
+}
+}
+}
+
+ACTUAL new helper:
+// Every block preceding this call has its exact contiguous enumeration ID.
+// Goto has one edge; Branch rejects equal edge IDs before either call. An
+// accepted immutable edge has exactly this owner, so no edge can have passed
+// in an earlier distinct block. A second directory traversal proves nothing new.
+fn validate_owned_edge_unique(
+function: &ResolvedFunction,
+owner: BlockId,
+edge: EdgeId,
+) -> Result<(), Diagnostic> {
+let Some(item) = function.cleanup_plan.edges.get(edge.0 as usize) else {
+return Err(replay_error(function, "cleanup terminator references unknown edge"));
+};
+if item.id != edge || item.from != owner {
+return Err(replay_error(function,
+"cleanup edge has the wrong owner or is referenced repeatedly"));
+}
+Ok(())
+}
+
+OLD unchanged AVL insert:
+pub(super) fn insert(
+&mut self,
+function: &ResolvedFunction,
+key: K,
+budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+self.authenticate(function, budget)?;
+let probe = self.probe(function, &key, budget)?;
+if probe.found {
+return Ok(false);
+}
+self.grow(function, budget)?;
+budget.charge(function, VISIT_UNITS, self.phase)?;
+let index = self.nodes.len();
+self.nodes.push(Node {
+key,
+left: NIL,
+right: NIL,
+parent: probe.parent,
+next: probe.after,
+height: 1,
+});
+if probe.before == NIL {
+self.first = index;
+} else {
+self.nodes[probe.before].next = index;
+}
+if probe.parent == NIL {
+self.root = index;
+} else if probe.side == Ordering::Less {
+self.nodes[probe.parent].left = index;
+} else {
+self.nodes[probe.parent].right = index;
+}
+self.rebalance(probe.parent, function, budget)?;
+Ok(true)
+}
+
+
+Payment: Directory::new authenticates reserve_bytes0+charge0. Probe charges3visits+1actual numeric comparison pernode. Insert prepays fullreplacement Vec+relocation,3visit+16rebalance/20rotation. New helper retains sameget/id/from before eliminatedsetaccess, no extra state. StatusSources exactfunction+budgetaddress+capturedACTIVE checks and Tree fallback unchanged. Pending controls compare fullold/current6fields/errororder for forgedID/from/branchduplicates/unknown/foreignblock/equalcounts; actualfullreceiver work andbytes exact/short/zero/Drop. No runtimeclaim. Flag actualcounterexample/missingpayment only; distinguish uncertainties.

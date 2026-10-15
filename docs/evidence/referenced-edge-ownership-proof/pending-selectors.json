@@ -1,0 +1,10 @@
+{
+  "harness": "semaprax --lib",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::edge_tests::complete_edge_receivers_preserve_full_diagnostics_order_and_drop",
+    "cleanup_plan::replay::expression_facts::receiving::retained::edge_tests::actual_edge_receivers_keep_own_exact_short_zero_work_and_bytes",
+    "cleanup_plan::replay::expression_facts::receiving::retained::edge_tests::complete_before_edge_receiver_and_current_full_source_remain_exact"
+  ],
+  "existing_retry": "workspace_graph::tests::builder_limits::identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal",
+  "execution": "pending"
+}
