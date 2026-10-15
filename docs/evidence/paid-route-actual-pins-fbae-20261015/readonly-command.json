@@ -1,0 +1,15 @@
+[
+  "python3",
+  "/Volumes/Semaprax/provenance/paid-route-pin-plan-fbae-20261015/update-pins-fbae-only.py",
+  "/Volumes/Semaprax/provenance/paid-lookup-actual-pin-capture-fbae-20261015",
+  "--repo",
+  "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "--expected-capture-head",
+  "fbae9cd048ef467e5798b538759bb8b9ed8625ce",
+  "--round",
+  "/Volumes/Semaprax/lane-prompts/paid-lookup-fbae-20261015",
+  "--expected-build-receipt-sha256",
+  "5bc611662ab9325431ceeb3a236879ff2d3b48e9a6322df243602850b5d6ea0a",
+  "--expected-producer-receipt-sha256",
+  "a3a18f17d0dee2d325a3dba54bfe779f2ecc75b3874947a4e3849242be121624"
+]

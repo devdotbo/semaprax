@@ -1,0 +1,8 @@
+{
+  "exit_code": 0,
+  "apply": false,
+  "producer_or_build_execution": false,
+  "source_head": "fbae9cd048ef467e5798b538759bb8b9ed8625ce",
+  "build_receipt_sha256": "5bc611662ab9325431ceeb3a236879ff2d3b48e9a6322df243602850b5d6ea0a",
+  "producer_receipt_sha256": "a3a18f17d0dee2d325a3dba54bfe779f2ecc75b3874947a4e3849242be121624"
+}
