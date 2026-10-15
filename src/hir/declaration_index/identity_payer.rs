@@ -2,6 +2,7 @@
 //! Semantic diagnostics retain their original owned compatibility contract.
 //! Identity refusal returns the exact caller error, without rendering a new
 //! Diagnostic, allocating a report, or consulting an ambient ledger.
+use super::nominal_construction::Payer;
 use super::*;
 
 #[derive(Debug)]
@@ -58,10 +59,16 @@ impl DeclarationIndex {
         }
         let workspace = super::nominal_rollback::Workspace::acquire(program, prelude, &mut reserve)
             .map_err(IdentityIndexError::Identity)?;
+        reserve(
+            2 * std::mem::size_of::<Payer<'_, E>>()
+                + 2 * std::mem::size_of::<Self>()
+                + std::mem::size_of::<Result<Self, IdentityIndexError<E>>>(),
+        )
+        .map_err(IdentityIndexError::Identity)?;
         let mut index = Self::build_nominal_index(
             program,
             prelude,
-            &mut |text| DeclarationId::paid_borrowed(text, &mut reserve),
+            &mut Payer::Funded(&mut reserve),
             true,
             workspace,
             base,
@@ -84,7 +91,7 @@ impl DeclarationIndex {
         Self::build_nominal_index(
             program,
             prelude,
-            identity,
+            &mut Payer::Legacy(identity),
             false,
             super::nominal_rollback::Workspace::default(),
             None,
@@ -94,7 +101,7 @@ impl DeclarationIndex {
     fn build_nominal_index<E>(
         program: &dyn ProgramSource,
         prelude: &[crate::ast::TypeDeclaration],
-        identity: &mut dyn FnMut(&str) -> Result<DeclarationId, E>,
+        payer: &mut Payer<'_, E>,
         canonical_nominals: bool,
         workspace: super::nominal_rollback::Workspace,
         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
@@ -103,8 +110,11 @@ impl DeclarationIndex {
         index.nominal_drop_workspace = workspace;
         for declaration in program.types().iter().chain(prelude) {
             if let Some(ty) = Self::base_type_for_source(base, prelude, declaration) {
+                payer
+                    .top(&ty.name, DeclarationKind::Variant)
+                    .map_err(IdentityIndexError::Identity)?;
                 index.insert_top_level(
-                    ty.name.clone(),
+                    payer.text(&ty.name).map_err(IdentityIndexError::Identity)?,
                     ty.id.clone(),
                     DeclarationKind::Variant,
                     IdentityOrigin::CompilerOwned,
@@ -120,9 +130,16 @@ impl DeclarationIndex {
                 TypeDeclarationKind::Class { .. } => DeclarationKind::Class,
                 TypeDeclarationKind::Variant { .. } => DeclarationKind::Variant,
             };
+            payer
+                .top(&declaration.name, kind)
+                .map_err(IdentityIndexError::Identity)?;
             index.insert_top_level(
-                declaration.name.clone(),
-                identity(&declaration.stable_id).map_err(IdentityIndexError::Identity)?,
+                payer
+                    .text(&declaration.name)
+                    .map_err(IdentityIndexError::Identity)?,
+                payer
+                    .identity(&declaration.stable_id)
+                    .map_err(IdentityIndexError::Identity)?,
                 kind,
                 if crate::prelude::is_compiler_owned_id(&declaration.stable_id) {
                     IdentityOrigin::CompilerOwned
@@ -133,50 +150,72 @@ impl DeclarationIndex {
                 },
             );
             let owner = index.inserted_identity(&declaration.stable_id);
-            let parameters = declaration
-                .type_parameters
-                .iter()
-                .enumerate()
-                .map(|(ordinal, parameter)| {
-                    Ok(ResolvedTypeParameterDeclaration {
-                        name: parameter.name.clone(),
-                        index: u32::try_from(ordinal).map_err(|_| {
-                            Diagnostic::error(
-                                "SPX-H006",
-                                format!("type `{}` has too many parameters", declaration.name),
-                                declaration.span,
-                            )
-                            .at_path(program.path())
-                        })?,
-                        span: parameter.span,
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
+            let mut parameters = payer
+                .vec::<ResolvedTypeParameterDeclaration>(declaration.type_parameters.len())
+                .map_err(IdentityIndexError::Identity)?;
+            for (ordinal, parameter) in declaration.type_parameters.iter().enumerate() {
+                parameters.push(ResolvedTypeParameterDeclaration {
+                    name: payer
+                        .text(&parameter.name)
+                        .map_err(IdentityIndexError::Identity)?,
+                    index: u32::try_from(ordinal).map_err(|_| {
+                        Diagnostic::error(
+                            "SPX-H006",
+                            format!("type `{}` has too many parameters", declaration.name),
+                            declaration.span,
+                        )
+                        .at_path(program.path())
+                    })?,
+                    span: parameter.span,
+                });
+            }
             index.type_parameters.insert(owner, parameters);
         }
         for interface in program.interfaces() {
-            let interface_id =
-                identity(&interface.stable_id).map_err(IdentityIndexError::Identity)?;
+            let interface_id = payer
+                .identity(&interface.stable_id)
+                .map_err(IdentityIndexError::Identity)?;
+            payer
+                .top(&interface.name, DeclarationKind::Interface)
+                .map_err(IdentityIndexError::Identity)?;
             index.insert_top_level(
-                interface.name.clone(),
+                payer
+                    .text(&interface.name)
+                    .map_err(IdentityIndexError::Identity)?,
                 interface_id.clone(),
                 DeclarationKind::Interface,
                 IdentityOrigin::Explicit,
             );
             for import in &interface.imports {
-                let import_id =
-                    identity(&import.stable_id).map_err(IdentityIndexError::Identity)?;
-                index
-                    .imports_by_key
-                    .insert(import.stable_id.clone(), import_id.clone());
+                let import_id = payer
+                    .identity(&import.stable_id)
+                    .map_err(IdentityIndexError::Identity)?;
+                payer
+                    .node::<String, DeclarationId>()
+                    .map_err(IdentityIndexError::Identity)?;
+                index.imports_by_key.insert(
+                    payer
+                        .text(&import.stable_id)
+                        .map_err(IdentityIndexError::Identity)?,
+                    import_id.clone(),
+                );
                 if import.native_rust {
-                    index
-                        .native_rust_imports_by_name
-                        .insert(import.name.clone(), import_id.clone());
+                    payer
+                        .node::<String, DeclarationId>()
+                        .map_err(IdentityIndexError::Identity)?;
+                    index.native_rust_imports_by_name.insert(
+                        payer
+                            .text(&import.name)
+                            .map_err(IdentityIndexError::Identity)?,
+                        import_id.clone(),
+                    );
                 }
+                payer.owned().map_err(IdentityIndexError::Identity)?;
                 index.insert_owned_declaration(
                     interface_id.clone(),
-                    import.name.clone(),
+                    payer
+                        .text(&import.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     import_id,
                     DeclarationKind::Import,
                     IdentityOrigin::Explicit,
@@ -192,19 +231,29 @@ impl DeclarationIndex {
                     .stable_id
                     .as_ref()
                     .expect("verified lifecycle has an explicit identity");
+                payer.owned().map_err(IdentityIndexError::Identity)?;
                 index.insert_owned_declaration(
                     index.inserted_identity(&declaration.stable_id),
-                    "drop".to_owned(),
-                    identity(lifecycle_id).map_err(IdentityIndexError::Identity)?,
+                    payer.text("drop").map_err(IdentityIndexError::Identity)?,
+                    payer
+                        .identity(lifecycle_id)
+                        .map_err(IdentityIndexError::Identity)?,
                     DeclarationKind::ResourceDrop,
                     IdentityOrigin::Explicit,
                 );
             }
         }
         for function in program.functions() {
-            let owner = identity(&function.stable_id).map_err(IdentityIndexError::Identity)?;
+            let owner = payer
+                .identity(&function.stable_id)
+                .map_err(IdentityIndexError::Identity)?;
+            payer
+                .top(&function.name, DeclarationKind::Function)
+                .map_err(IdentityIndexError::Identity)?;
             index.insert_top_level(
-                function.name.clone(),
+                payer
+                    .text(&function.name)
+                    .map_err(IdentityIndexError::Identity)?,
                 owner.clone(),
                 DeclarationKind::Function,
                 if super::record_invariants::is_synthesized(&function.name) {
@@ -215,25 +264,25 @@ impl DeclarationIndex {
                     IdentityOrigin::Automatic
                 },
             );
-            let parameters = function
-                .type_parameters
-                .iter()
-                .enumerate()
-                .map(|(ordinal, parameter)| {
-                    Ok(ResolvedTypeParameterDeclaration {
-                        name: parameter.name.clone(),
-                        index: u32::try_from(ordinal).map_err(|_| {
-                            Diagnostic::error(
-                                "SPX-H006",
-                                format!("function `{}` has too many parameters", function.name),
-                                function.span,
-                            )
-                            .at_path(program.path())
-                        })?,
-                        span: parameter.span,
-                    })
-                })
-                .collect::<Result<Vec<_>, Diagnostic>>()?;
+            let mut parameters = payer
+                .vec::<ResolvedTypeParameterDeclaration>(function.type_parameters.len())
+                .map_err(IdentityIndexError::Identity)?;
+            for (ordinal, parameter) in function.type_parameters.iter().enumerate() {
+                parameters.push(ResolvedTypeParameterDeclaration {
+                    name: payer
+                        .text(&parameter.name)
+                        .map_err(IdentityIndexError::Identity)?,
+                    index: u32::try_from(ordinal).map_err(|_| {
+                        Diagnostic::error(
+                            "SPX-H006",
+                            format!("function `{}` has too many parameters", function.name),
+                            function.span,
+                        )
+                        .at_path(program.path())
+                    })?,
+                    span: parameter.span,
+                });
+            }
             index.type_parameters.insert(owner, parameters);
         }
         if program
@@ -259,12 +308,16 @@ impl DeclarationIndex {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
+            payer
+                .vector::<ResolvedFieldDeclaration>(fields.len())
+                .map_err(IdentityIndexError::Identity)?;
             let mut resolved_fields = index
                 .nominal_drop_workspace
                 .fields::<ResolvedFieldDeclaration>(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
-                let ty = index
-                    .resolve_source_type(&field.ty, Some(&owner))
+                let ty = payer
+                    .resolve_type(&index, &field.ty, Some(&owner))
+                    .map_err(IdentityIndexError::Identity)?
                     .ok_or_else(|| {
                         Diagnostic::error(
                             "SPX-H001",
@@ -283,22 +336,30 @@ impl DeclarationIndex {
                 })?;
                 let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
-                    id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
-                    name: field.name.clone(),
+                    id: payer
+                        .identity(&field.stable_id)
+                        .map_err(IdentityIndexError::Identity)?,
+                    name: payer
+                        .text(&field.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     index: field_index,
                     ty: ty.into_type(),
                     span: field.span,
                 };
-                index.insert_field(
+                resolved_fields.push(resolved);
+                let resolved = resolved_fields.last().expect("guarded constructed field");
+                payer
+                    .field(&resolved.name)
+                    .map_err(IdentityIndexError::Identity)?;
+                index.insert_field_view(
                     owner.clone(),
-                    resolved.clone(),
+                    resolved,
                     if field.explicit_id {
                         IdentityOrigin::Explicit
                     } else {
                         IdentityOrigin::Automatic
                     },
                 );
-                resolved_fields.push(resolved);
             }
             index
                 .record_fields
@@ -309,12 +370,16 @@ impl DeclarationIndex {
                 continue;
             };
             let owner = index.inserted_identity(&declaration.stable_id);
+            payer
+                .vector::<ResolvedFieldDeclaration>(fields.len())
+                .map_err(IdentityIndexError::Identity)?;
             let mut resolved_fields = index
                 .nominal_drop_workspace
                 .fields::<ResolvedFieldDeclaration>(fields.len());
             for (ordinal, field) in fields.iter().enumerate() {
-                let ty = index
-                    .resolve_source_type(&field.ty, Some(&owner))
+                let ty = payer
+                    .resolve_type(&index, &field.ty, Some(&owner))
+                    .map_err(IdentityIndexError::Identity)?
                     .ok_or_else(|| {
                         Diagnostic::error(
                             "SPX-H001",
@@ -333,29 +398,38 @@ impl DeclarationIndex {
                 })?;
                 let ty = index.nominal_drop_workspace.resolved_type(ty);
                 let resolved = ResolvedFieldDeclaration {
-                    id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
-                    name: field.name.clone(),
+                    id: payer
+                        .identity(&field.stable_id)
+                        .map_err(IdentityIndexError::Identity)?,
+                    name: payer
+                        .text(&field.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     index: field_index,
                     ty: ty.into_type(),
                     span: field.span,
                 };
-                index.insert_field(
+                resolved_fields.push(resolved);
+                let resolved = resolved_fields.last().expect("guarded constructed field");
+                payer
+                    .field(&resolved.name)
+                    .map_err(IdentityIndexError::Identity)?;
+                index.insert_field_view(
                     owner.clone(),
-                    resolved.clone(),
+                    resolved,
                     if field.explicit_id {
                         IdentityOrigin::Explicit
                     } else {
                         IdentityOrigin::Automatic
                     },
                 );
-                resolved_fields.push(resolved);
             }
             index
                 .record_fields
                 .insert(owner.clone(), resolved_fields.into_vec());
             for method in methods {
-                let method_id =
-                    identity(&method.stable_id).map_err(IdentityIndexError::Identity)?;
+                let method_id = payer
+                    .identity(&method.stable_id)
+                    .map_err(IdentityIndexError::Identity)?;
                 if index.declarations.contains_key(&method_id) {
                     return Err(IdentityIndexError::Semantic(
                         Diagnostic::error(
@@ -366,9 +440,12 @@ impl DeclarationIndex {
                         .at_path(program.path()),
                     ));
                 }
+                payer.owned().map_err(IdentityIndexError::Identity)?;
                 index.insert_owned_declaration(
                     owner.clone(),
-                    method.name.clone(),
+                    payer
+                        .text(&method.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     method_id,
                     DeclarationKind::Function,
                     if method.explicit_id {
@@ -404,11 +481,16 @@ impl DeclarationIndex {
                 continue;
             }
             let owner = index.inserted_identity(&declaration.stable_id);
+            payer
+                .vector::<ResolvedVariantCaseDeclaration>(cases.len())
+                .map_err(IdentityIndexError::Identity)?;
             let mut resolved_cases = index
                 .nominal_drop_workspace
                 .fields::<ResolvedVariantCaseDeclaration>(cases.len());
             for (case_ordinal, case) in cases.iter().enumerate() {
-                let case_id = identity(&case.stable_id).map_err(IdentityIndexError::Identity)?;
+                let case_id = payer
+                    .identity(&case.stable_id)
+                    .map_err(IdentityIndexError::Identity)?;
                 let case_index = u32::try_from(case_ordinal).map_err(|_| {
                     Diagnostic::error(
                         "SPX-H006",
@@ -417,9 +499,14 @@ impl DeclarationIndex {
                     )
                     .at_path(program.path())
                 })?;
+                payer
+                    .case(&case.name)
+                    .map_err(IdentityIndexError::Identity)?;
                 index.insert_case(
                     owner.clone(),
-                    case.name.clone(),
+                    payer
+                        .text(&case.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     case_id.clone(),
                     if crate::prelude::is_compiler_owned_id(&case.stable_id) {
                         IdentityOrigin::CompilerOwned
@@ -429,12 +516,16 @@ impl DeclarationIndex {
                         IdentityOrigin::Automatic
                     },
                 );
+                payer
+                    .vector::<ResolvedFieldDeclaration>(case.fields.len())
+                    .map_err(IdentityIndexError::Identity)?;
                 let mut resolved_fields = index
                     .nominal_drop_workspace
                     .fields::<ResolvedFieldDeclaration>(case.fields.len());
                 for (field_ordinal, field) in case.fields.iter().enumerate() {
-                    let ty = index
-                        .resolve_source_type(&field.ty, Some(&owner))
+                    let ty = payer
+                        .resolve_type(&index, &field.ty, Some(&owner))
+                        .map_err(IdentityIndexError::Identity)?
                         .ok_or_else(|| {
                             Diagnostic::error(
                                 "SPX-H001",
@@ -456,15 +547,24 @@ impl DeclarationIndex {
                     })?;
                     let ty = index.nominal_drop_workspace.resolved_type(ty);
                     let resolved = ResolvedFieldDeclaration {
-                        id: identity(&field.stable_id).map_err(IdentityIndexError::Identity)?,
-                        name: field.name.clone(),
+                        id: payer
+                            .identity(&field.stable_id)
+                            .map_err(IdentityIndexError::Identity)?,
+                        name: payer
+                            .text(&field.name)
+                            .map_err(IdentityIndexError::Identity)?,
                         index: field_index,
                         ty: ty.into_type(),
                         span: field.span,
                     };
-                    index.insert_case_field(
+                    resolved_fields.push(resolved);
+                    let resolved = resolved_fields.last().expect("guarded constructed field");
+                    payer
+                        .field(&resolved.name)
+                        .map_err(IdentityIndexError::Identity)?;
+                    index.insert_case_field_view(
                         case_id.clone(),
-                        resolved.clone(),
+                        resolved,
                         if crate::prelude::is_compiler_owned_id(&field.stable_id) {
                             IdentityOrigin::CompilerOwned
                         } else if field.explicit_id {
@@ -473,7 +573,6 @@ impl DeclarationIndex {
                             IdentityOrigin::Automatic
                         },
                     );
-                    resolved_fields.push(resolved);
                 }
                 if !canonical_nominals {
                     index
@@ -482,7 +581,9 @@ impl DeclarationIndex {
                 }
                 resolved_cases.push(ResolvedVariantCaseDeclaration {
                     id: case_id,
-                    name: case.name.clone(),
+                    name: payer
+                        .text(&case.name)
+                        .map_err(IdentityIndexError::Identity)?,
                     index: case_index,
                     fields: resolved_fields.into_vec(),
                     span: case.span,
@@ -490,8 +591,17 @@ impl DeclarationIndex {
             }
             index.variant_cases.insert(owner, resolved_cases.into_vec());
         }
-        index.materialize_class_inheritance(program)?;
-        if !index.populate_type_facts() {
+        if canonical_nominals {
+            index.materialize_class_inheritance_paid(program, &mut |n| payer.bytes(n))?;
+        } else {
+            index.materialize_class_inheritance(program)?;
+        }
+        let facts = if canonical_nominals {
+            index.populate_type_facts_paid(&mut |n| payer.bytes(n))?
+        } else {
+            index.populate_type_facts()
+        };
+        if !facts {
             return Err(IdentityIndexError::Semantic(
                 Diagnostic::error(
                     "SPX-T217",
