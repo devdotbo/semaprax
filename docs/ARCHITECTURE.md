@@ -4952,3 +4952,13 @@ of the modern retained canonicalizer. Its eleven source owners participate in
 all three raw source inventories; their measurements describe that historical
 receiver rather than the production route. The function-alias graph/Image
 control compares real Project outputs against the complete immediate-old core.
+
+Canonical empty-closure bookkeeping is invocation-owned by `empty_memo` and
+its retained unit receiver. A bounded bitmap records only empty results; the
+ordinary Memo and general weighted closure remain separate owners. Complete
+prechange receivers remain compiled under the test-only `before_empty` tree.
+The singleton incoming-state route stays in `path_join`: it runs the complete
+validators and original scheduling tail while avoiding constructors used only
+to group multiple states. Its full old route remains an independent test owner.
+These NEXT changes are source-ready and await their focused executable gates;
+no application-cap or universal physical-cost improvement is certified here.
