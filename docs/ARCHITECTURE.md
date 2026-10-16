@@ -4953,8 +4953,12 @@ all three raw source inventories; their measurements describe that historical
 receiver rather than the production route. The function-alias graph/Image
 control compares real Project outputs against the complete immediate-old core.
 
-Canonical empty-closure bookkeeping is invocation-owned by `empty_memo` and
-its retained unit receiver. A bounded bitmap records only empty results; the
+Canonical empty-closure bookkeeping is invocation-owned by `empty_memo`.
+Its cold admission retains the original receipt/binding boundary; warm auth and
+unit id/publication use the one paid invocation `ClosureReceiving` destination,
+without a second retained Diagnostic owner or an inner id Result. The ordinary
+Memo/Retained receivers remain independent. Complete immediate2d4b controls are
+compiled under `before_unit`; all new gates are pending execution. A bounded bitmap records only empty results; the
 ordinary Memo and general weighted closure remain separate owners. Complete
 prechange receivers remain compiled under the test-only `before_empty` tree.
 The singleton incoming-state route stays in `path_join`: it runs the complete
