@@ -1,5 +1,7 @@
 # Changelog
 
+- Separate loan-plan presence, lexical validation and candidate construction into non-inlined stack phases, retaining the complete original planner and low-stack regression.
+
 - Restore later allocation-test and provider inventory inputs through explicit whole-source custody, retaining original formatting hashes, all fourteen receiver proofs and complete historical source assertions.
 
 - Fall back to complete fresh resolution before selecting an unaffordable checked-cache candidate, retaining original validation, residual charges and failed-attempt receipts.
