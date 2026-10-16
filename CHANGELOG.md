@@ -1,5 +1,7 @@
 # Changelog
 
+- Restore the fixed supplemental cursor for unobserved legacy replay so geometric relocation does not change its original work counters; retain every funded growth frontier and full before/current inventory assertion.
+
 - Refresh browser graph pins from complete hosted 524a80bc9 captures after a 36,720-byte builder-bill reduction, preserving all earlier whole-wire, source, and tamper controls.
 
 - Separate loan-plan presence, lexical validation and candidate construction into non-inlined stack phases, retaining the complete original planner and low-stack regression.
