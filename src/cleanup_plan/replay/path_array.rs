@@ -105,3 +105,13 @@ mod tests;
 mod completed_tests;
 #[cfg(test)]
 mod final_before;
+
+#[cfg(test)]
+pub(super) fn original_route_selected() -> bool {
+    tests::original_selected()
+}
+
+#[cfg(test)]
+pub(super) fn fixture_program() -> ResolvedProgram {
+    tests::program()
+}

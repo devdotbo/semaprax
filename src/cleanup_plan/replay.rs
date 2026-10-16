@@ -33,6 +33,7 @@ mod selected_callees;
 mod selected_context;
 mod selected_entry;
 mod sequence_prefix;
+mod sequence_vector;
 mod shape_cursor;
 mod status_construction;
 mod structural_control;
@@ -2939,6 +2940,18 @@ fn sequence_skeleton_paths(
     let prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
+    if sequence_vector::can_reuse(sequence_vector::Candidate {
+        prefixes: &prefixes,
+        suffixes: &suffixes,
+        budget: work.budget,
+    }) {
+        work.budget.reserve_array::<u8>(
+            work.function,
+            sequence_vector::receiving_bytes(),
+            "single-successor receiving frame",
+        )?;
+        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);
+    }
     let mut combined = Vec::new();
     if !suffixes.is_empty() {
         path_array::minimum(

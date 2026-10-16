@@ -4901,6 +4901,14 @@ tests remain independently compiled in `sequence_prefix/before_wrapper.rs` and
 `before_wrapper_tests.rs`; fixed source hashes permit only their module wiring
 adaptations. Exact-minimum-prefix controls exercise the full live receiver.
 
+`sequence_vector.rs` owns same-capacity vector reuse for one successor per
+prefix. A header-only probe admits only ordinary paid inputs whose removed
+backing covers the complete receiving layout. The caller reserves that layout
+before moving the vector. Safe slot replacement preserves every clone/transfer,
+continuation, logical debit and materialization, and keeps the original push's
+zero-byte sticky reservation. The previous whole receiver remains compiled;
+legacy, selected, oracle and other-capacity inputs retain its fallback.
+
 Finished HIR skeleton conversion uses `path_array::completed_minimum` after
 all postconditions, when the output length is known. It funds the complete
 `SkeletonPath` receiving layout and acquires the old final capacity once; the

@@ -303,6 +303,13 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
                 1,
             );
         }
+        if name == "sequence_skeleton_paths" {
+            current = current.replacen(
+                "    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n",
+                "    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n    if sequence_vector::can_reuse(sequence_vector::Candidate {\n        prefixes: &prefixes,\n        suffixes: &suffixes,\n        budget: work.budget,\n    }) {\n        work.budget.reserve_array::<u8>(\n            work.function,\n            sequence_vector::receiving_bytes(),\n            \"single-successor receiving frame\",\n        )?;\n        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);\n    }\n",
+                1,
+            );
+        }
         assert_eq!(root.matches(&current).count(), 1, "{name}");
     }
 }
