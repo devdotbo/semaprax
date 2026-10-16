@@ -1830,7 +1830,7 @@ dependencies = [
  "socket2",
  "tokio",
  "wasm-encoder",
- "wasmparser 0.259.0",
+ "wasmparser",
  "webpki-roots",
  "winapi-util",
  "x509-cert 0.3.0",
@@ -2689,17 +2689,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2608e8bb6d67fd68f5a8d0eb1363d6e7bcbc1f8ded5a0bd3a1e382462b876b22"
 dependencies = [
  "leb128fmt",
- "wasmparser 0.261.0",
-]
-
-[[package]]
-name = "wasmparser"
-version = "0.259.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f7c12eac7bb587801590f6a67ff0bc84d0748513864b71108e4b311cc3df694"
-dependencies = [
- "bitflags 2.13.1",
- "semver",
+ "wasmparser",
 ]
 
 [[package]]
