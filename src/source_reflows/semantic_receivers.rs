@@ -50,19 +50,22 @@ pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
     Some(invert(proof, current))
 }
 
+pub(super) fn contains(path: &str) -> bool {
+    proofs().iter().any(|proof| proof["path"] == path)
+}
+
 #[test]
 fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut paths = std::collections::BTreeSet::new();
-    assert_eq!(proofs().len(), 3);
+    assert_eq!(proofs().len(), 4);
     for proof in proofs() {
         let path = proof["path"].as_str().unwrap();
         assert!(paths.insert(path));
-        let repair = records()
-            .iter()
-            .find(|repair| repair["path"] == path)
-            .unwrap();
-        assert_eq!(proof["before_sha256"], repair["after_sha256"]);
+        let repair = records().iter().find(|repair| repair["path"] == path);
+        if let Some(repair) = repair {
+            assert_eq!(proof["before_sha256"], repair["after_sha256"]);
+        }
         let current = std::fs::read_to_string(root.join(path)).unwrap();
         let restored = invert(proof, &current);
         let archive = root
@@ -71,7 +74,9 @@ fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
         assert_eq!(restored, std::fs::read_to_string(archive).unwrap());
         assert_ne!(current, restored);
         // Execute the unchanged formatting inverse and its whole-file digest.
-        assert_ne!(restore(repair, &restored), restored);
+        if let Some(repair) = repair {
+            assert_ne!(restore(repair, &restored), restored);
+        }
     }
     assert!(predecessor("src/source_reflows.rs", "unregistered source").is_none());
 }

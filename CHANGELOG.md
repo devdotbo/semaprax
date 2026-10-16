@@ -1,5 +1,7 @@
 # Changelog
 
+- Acquire known minimum ownership-path array capacity once, retaining complete path traversal, work charges, future growth, and independently compiled old receivers under the unchanged builder limit.
+
 - Reuse a sole incoming ownership-state tree as its identity control partition, retaining complete key construction, work charges, all join/replay checks and the original grouped producer while prepaying new receiving layouts.
 
 - Configure ordinary macOS Cargo native builds with the paired CLT developer and SDK roots, and check standard-header discovery independently of the held tools' empty-environment route.

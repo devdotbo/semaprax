@@ -5,6 +5,7 @@ mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
 mod continuation_storage;
+mod path_array;
 use constructed_variant::materialize_constructed_variant;
 pub(in crate::cleanup_plan) mod allocation_coverage;
 mod allocation_paths;
@@ -2930,6 +2931,14 @@ fn sequence_skeleton_paths(
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut combined = Vec::new();
+    if !suffixes.is_empty() {
+        path_array::minimum(
+            &mut combined,
+            prefixes.len(),
+            work,
+            "sequenced path capacity",
+        )?;
+    }
     for mut prefix in prefixes {
         if prefix.failed || prefix.residual {
             work.push_expr_path(&mut combined, prefix, "short-circuited skeleton path")?;
@@ -5759,6 +5768,7 @@ fn append_expr_paths(
     work: &mut SkeletonWork<'_, '_>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
+    path_array::minimum(target, paths.len(), work, phase)?;
     for path in paths {
         work.push_expr_path(target, path, phase)?;
     }
@@ -6213,6 +6223,7 @@ fn split_status_paths(
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let mut results = Vec::new();
+    path_array::minimum(&mut results, paths.len(), work, "status path capacity")?;
     for mut path in paths {
         if path.failed || path.residual {
             work.push_expr_path(&mut results, path, "short-circuited status path")?;
@@ -6252,6 +6263,7 @@ fn split_contract(
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     let mut results = Vec::new();
+    path_array::minimum(&mut results, paths.len(), work, "contract path capacity")?;
     for mut path in paths {
         if path.failed || path.residual {
             work.push_expr_path(&mut results, path, "short-circuited contract path")?;

@@ -17,3 +17,9 @@ from commit `87612d690`. Tests reject a changed current byte and a forged
 predecessor digest for every record. Existing receiver implementations, source
 assertions, and semantic regression tests remain compiled at their live paths.
 The live source inventories still inspect the current modules and children.
+
+The minimum path-array receiver adds explicit inverses for its four capacity
+hooks and registration, plus three entries in each source inventory. The second
+inventory has no formatting repair; its fourth named custody record directly
+preserves the complete input from `091c0d6de`. Every original formatting record
+and archive remains unchanged.
