@@ -3,6 +3,8 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Source-only #851 admits exact capacity-witness control layouts before eligibility/length receivers and reserves optional String backing separately; preserve the complete Main receiver and all three original controls independently, with truthful paid-control spend on later backing refusal. Output, primary fields, sticky/floor behavior and limits remain; focused qualification is pending.
+
 - Add bounded V6 checked task/profile pages with repeated complete prerequisites, exact imported declaration rows and deterministic continuation; preserve V5 cards and scaffold capsules, explicitly refuse unverified stdin JSON composition, and leave executable qualification and agent-cost improvement unclaimed.
 - Reuse the already-built exact HIR/plan comparison for fitting ordinary lexical proof after unchanged enumeration admission/reservation; retain complete forced old enumeration and all weighted receiver payments, with no allowance refund or measured application/agent improvement claim.
 
