@@ -19,6 +19,11 @@ type Cache = HashMap<(&'static str, &'static str), &'static str>;
 static CACHE: OnceLock<Mutex<Cache>> = OnceLock::new();
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 
+// Semantic successors have their own named, whole-file custody proof. Keep
+// those edits separate from the original formatting/lint repair registry.
+#[path = "source_reflows/semantic_receivers.rs"]
+mod semantic_receivers;
+
 fn records() -> &'static [serde_json::Value] {
     RECORDS
         .get_or_init(|| serde_json::from_str(REPAIRS).unwrap())
@@ -93,6 +98,8 @@ pub(crate) fn source(
     };
     let mut cache = CACHE.get_or_init(Mutex::default).lock().unwrap();
     cache.entry((caller, included)).or_insert_with(|| {
+        let predecessor = semantic_receivers::predecessor(&path, current);
+        let current = predecessor.as_deref().unwrap_or(current);
         // One bounded fixture allocation per included file, retained only for
         // this test process. This helper is absent from production builds.
         Box::leak(restore(record, current).into_boxed_str())
@@ -107,7 +114,8 @@ fn approved_reflows_authenticate_full_inputs_and_reconstruct_full_predecessors()
         let path = record["path"].as_str().unwrap();
         assert!(paths.insert(path));
         let current = std::fs::read_to_string(root.join(path)).unwrap();
-        let old = restore(record, &current);
+        let predecessor = semantic_receivers::predecessor(path, &current);
+        let old = restore(record, predecessor.as_deref().unwrap_or(&current));
         assert_ne!(current, old);
     }
 }

@@ -1,0 +1,62 @@
+[
+  {
+    "path": "src/cleanup_plan/replay.rs",
+    "after_sha256": "342cb55dae785e8353f76810c6eccb1a2f74c9c840d36c83ed5c449db971d0b8",
+    "before_sha256": "1ee09bd6f221d0eb3e272016f243a00c67815d56fcc246b794975c9ee00a5220",
+    "archive": "src__cleanup_plan__replay.rs.before.txt",
+    "inverse": [
+      {
+        "after": "// Private prerequisite only: no selected replay admission hook.\nmod branch_clone;\nmod constructed_variant;\n",
+        "before": "// Private prerequisite only: no selected replay admission hook.\nmod constructed_variant;\n"
+      },
+      {
+        "after": "\n#[track_caller]\nfn skeleton_clone<T: Clone + ClonePayload>(\n",
+        "before": "\nfn skeleton_clone<T: Clone + ClonePayload>(\n"
+      },
+      {
+        "after": "\n#[track_caller]\nfn skeleton_push<T>(\n",
+        "before": "\nfn skeleton_push<T>(\n"
+      },
+      {
+        "after": "\n#[track_caller]\nfn skeleton_queue_push<T>(\n",
+        "before": "\nfn skeleton_queue_push<T>(\n"
+      },
+      {
+        "after": "                    };\n                    let mut branch = branch_clone::for_push(\n                        budget,\n",
+        "before": "                    };\n                    let mut branch = skeleton_clone(\n                        budget,\n"
+      }
+    ]
+  },
+  {
+    "path": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+    "after_sha256": "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
+    "before_sha256": "aefe0d06e3f7a6b4ae36bc11160a9c7aed2bd9b30b6041308f619ada3266f707",
+    "archive": "src__cleanup_plan__replay__factored__oracle_hook.rs.before.txt",
+    "inverse": [
+      {
+        "after": "                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage)?;\n            }\n",
+        "before": "                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage);\n            }\n"
+      }
+    ]
+  },
+  {
+    "path": "tests/hir_module_boundaries.rs",
+    "after_sha256": "b20089067d4d299daeb1e743d1abc96e7f92c83a3a99cfab72c143fc71f948b3",
+    "before_sha256": "444261bea247a81d21553b5c52d19dbad5b3f3cd55304774479aa9fb8ef9938d",
+    "archive": "tests__hir_module_boundaries.rs.before.txt",
+    "inverse": [
+      {
+        "after": "        ),\n        include_str!(\"../src/cleanup_plan/replay/path_join/grouping.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_join/grouping/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_join/grouping/source_custody.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/branch_clone.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/branch_clone/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n",
+        "before": "        ),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared.rs\"),\n"
+      },
+      {
+        "after": "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/unit_weight.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/unit_weight/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/unit_weight_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n",
+        "before": "        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs\"),\n"
+      },
+      {
+        "after": "            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/mod.rs\"),\n            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/record_presence.rs\"),\n            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/record_presence/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/scratch.rs\"),\n",
+        "before": "            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/mod.rs\"),\n            include_str!(\"../src/cleanup_plan/renewal_profile/ordinary/scratch.rs\"),\n"
+      }
+    ]
+  }
+]
