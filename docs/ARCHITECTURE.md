@@ -4876,3 +4876,13 @@ children own the affine typed caller forks. They reuse the authenticated read
 and commit authorities; `workspace_report` retains the selected primary owner
 when the original unlock diagnostic overrides its outward report. The original
 Vec APIs remain independent compatibility receivers.
+
+
+`cleanup_plan/replay/sequence_prefix.rs` transfers the complete already funded
+observation prefix into its sole successor. It retains observation identities,
+DAG ownership, order, path fields, one logical clone debit and materialization.
+An allocation-free header check requires enough avoided clone backing to fund
+the complete receiving layout, and enough spare capacity for a flat suffix.
+Other fanouts, small prefixes, legacy, selected and oracle routes retain the
+original clone. The independently compiled complete previous sequencing receiver
+and both source inventories remain bound to their exact predecessor bytes.

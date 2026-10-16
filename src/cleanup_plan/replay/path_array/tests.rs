@@ -55,8 +55,8 @@ fn four_complete_original_receivers_keep_all_path_fields_order_and_work() {
         measure(|| {
             for count in [0, 1, 7, 8, 9, 16, 17] {
                 for receiver in 0..4 {
-                    let mut old_budget = ReplayBudget::new();
-                    let mut budget = ReplayBudget::new();
+                    let mut old_budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
                     let mut old_work = SkeletonWork::new(&program, function, &mut old_budget);
                     let mut work = SkeletonWork::new(&program, function, &mut budget);
                     let old_input = seed(count, &mut old_work);
@@ -136,7 +136,7 @@ fn append_pays_complete_backing_and_drop_with_exact_short_and_zero_controls() {
         let observe = |original, limit| {
             with_limit_usage_refusal(limit, || {
                 measure(|| {
-                    let mut budget = ReplayBudget::new();
+                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
                     let before = skeleton_materializations();
                     let result = (|| {
                         let mut work =
@@ -201,14 +201,20 @@ fn complete_hir_enumeration_keeps_paths_work_materializations_and_legacy() {
                 measure(|| {
                     for function in &program.functions {
                         let mut old = if paid {
-                            ReplayBudget::new()
+                            ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS)
                         } else {
-                            ReplayBudget::unobserved()
+                            ReplayBudget {
+                                skeleton_remaining: MAX_REPLAY_WORK_UNITS,
+                                ..ReplayBudget::unobserved()
+                            }
                         };
                         let mut current = if paid {
-                            ReplayBudget::new()
+                            ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS)
                         } else {
-                            ReplayBudget::unobserved()
+                            ReplayBudget {
+                                skeleton_remaining: MAX_REPLAY_WORK_UNITS,
+                                ..ReplayBudget::unobserved()
+                            }
                         };
                         let before = skeleton_materializations();
                         let expected =
@@ -269,6 +275,20 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
             "split_status_paths" => current = current.replacen("    let mut results = Vec::new();\n", "    let mut results = Vec::new();\n    path_array::minimum(&mut results, paths.len(), work, \"status path capacity\")?;\n", 1),
             "split_contract" => current = current.replacen("    let mut results = Vec::new();\n", "    let mut results = Vec::new();\n    path_array::minimum(&mut results, paths.len(), work, \"contract path capacity\")?;\n", 1),
             _ => panic!("unregistered receiver"),
+        }
+        if name == "sequence_skeleton_paths" {
+            // Compose the later independently frozen prefix-transfer receiver;
+            // keep this complete predecessor and every original assertion.
+            let intermediate = include_str!("../sequence_prefix/before.rs");
+            assert!(intermediate.contains(&current.replacen(
+                "fn sequence_skeleton_paths(",
+                "pub(super) fn sequence_skeleton_paths(",
+                1
+            )));
+            current = current.replacen(
+                "            let observations =\n                work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?;",
+                "            let observations = match sequence_prefix::try_take(\n                &mut prefix.observations,\n                &suffix.observations,\n                suffixes.len(),\n                work.function,\n                work.budget,\n                \"skeleton prefix clone\",\n            )? {\n                Some(observations) => observations,\n                None => work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?,\n            };", 1
+            );
         }
         assert_eq!(root.matches(&current).count(), 1, "{name}");
     }

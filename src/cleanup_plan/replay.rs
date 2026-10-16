@@ -32,6 +32,7 @@ mod scalar_replay_tree;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
+mod sequence_prefix;
 mod shape_cursor;
 mod status_construction;
 mod structural_control;
@@ -2950,8 +2951,17 @@ fn sequence_skeleton_paths(
             work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
-            let observations =
-                work.clone_observations(&prefix.observations, "skeleton prefix clone")?;
+            let observations = match sequence_prefix::try_take(
+                &mut prefix.observations,
+                &suffix.observations,
+                suffixes.len(),
+                work.function,
+                work.budget,
+                "skeleton prefix clone",
+            )? {
+                Some(observations) => observations,
+                None => work.clone_observations(&prefix.observations, "skeleton prefix clone")?,
+            };
             let observations = work.extend_owned_observations(
                 observations,
                 &suffix.observations,

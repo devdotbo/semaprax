@@ -1,5 +1,7 @@
 # Changelog
 
+- Transfer an already funded cleanup observation prefix to its sole successor, preserving full replay checks, work, ordering, and complete previous receivers under unchanged limits.
+
 - Retain the original mixed String/Bytes programs as source, HIR and canonical graph acceptance regressions; keep unsupported-array declaration and pattern refusals under the existing exact diagnostics.
 
 - Adapt the final Option residual forgery check and move boxed residual types into the native builder’s unchanged iterative-disposal frames.
