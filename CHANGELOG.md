@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted f82cec490 records after an observed 8,834-byte net builder-bill decrease, retaining every older compiled bridge and exact whole-wire/source control.
+
 - Give direct compact-stage and branch-clone receiver fixtures their explicit post-preflight skeleton allowance while retaining zero/exact/short allocation accounts; preserve failed macOS CI unit executables with exact Cargo/commit/byte provenance for bounded replay on the external SSD.
 
 - Classify imported nominal graph profiles with borrowed authenticated type context while retaining local declaration payloads, conservative frozen-profile guards, and the original imported-record v67 / Prelude v11 ProgramRoot gate.
