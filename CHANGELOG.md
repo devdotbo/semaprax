@@ -1,5 +1,7 @@
 # Changelog
 
+- Adapt the final Option residual forgery check and move boxed residual types into the native builder’s unchanged iterative-disposal frames.
+
 - Compact HIR expression storage with funded residual-type boxes, preserving full type data, private cache bytes and limits, complete previous expression definitions, and physical allocation/refusal controls.
 
 - Audit the test-only allocation observer in the root unsafe quarantine, requiring its test-only module boundary and single System allocator implementation.

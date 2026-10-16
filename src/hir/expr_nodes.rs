@@ -40,6 +40,13 @@ impl ResolvedResidualType {
         }
         Some(Self(Box::new(value)))
     }
+
+    /// Move the complete type into its caller's receiving slot without a new
+    /// allocation. Iterative disposal releases this box before traversing the
+    /// type's existing children, preserving its fixed frame-stack capacity.
+    pub fn into_inner(self) -> ResolvedType {
+        *self.0
+    }
 }
 impl std::ops::Deref for ResolvedResidualType {
     type Target = ResolvedType;
@@ -656,7 +663,9 @@ mod residual_payload_tests {
                         let constructed = value.is_some();
                         if let Some(value) = value {
                             assert_eq!(*value, ResolvedType::Bool);
-                            drop(value);
+                            let inner = value.into_inner();
+                            assert_eq!(inner, ResolvedType::Bool);
+                            drop(inner);
                         }
                         constructed
                     })
@@ -778,6 +787,49 @@ mod residual_payload_tests {
         };
         **residual_type = ResolvedType::Bool;
         assert_ne!(changed, current);
+    }
+
+    #[test]
+    fn residual_payload_owned_handoff_preserves_children_without_allocation_or_budget() {
+        for sticky in [false, true] {
+            // This is the receiver's existing preallocated Type slot. Unboxing
+            // cannot require a new disposal frame, reserve or allocation.
+            let mut frames = Vec::<ResolvedType>::with_capacity(1);
+            let (_, allocation) = measure(|| {
+                let wrapped = ResolvedResidualType::try_new(ResolvedType::Function {
+                    parameters: vec![ResolvedType::I64, ResolvedType::Bool],
+                    result: Box::new(ResolvedType::Bytes),
+                })
+                .unwrap();
+                let (_, refused, used, first, _) = output::with_limit_usage_refusal_site(0, || {
+                    if sticky {
+                        assert!(!output::reserve_active_required(1));
+                    }
+                    let before = crate::test_allocation_observer::current_metrics();
+                    frames.push(wrapped.into_inner());
+                    let after = crate::test_allocation_observer::current_metrics();
+                    assert_eq!(after.allocated, before.allocated);
+                    assert_eq!(after.allocations, before.allocations);
+                    assert_eq!(after.freed - before.freed, size_of::<ResolvedType>());
+                });
+                assert_eq!(refused, sticky);
+                assert_eq!(used, 0);
+                assert_eq!(first.map(|r| r.requested), sticky.then_some(1));
+                assert_eq!(frames.capacity(), 1);
+                let ResolvedType::Function { parameters, result } = frames.pop().unwrap() else {
+                    panic!("owned residual changed type during handoff")
+                };
+                assert_eq!(
+                    parameters.as_slice(),
+                    [ResolvedType::I64, ResolvedType::Bool]
+                );
+                assert_eq!(*result, ResolvedType::Bytes);
+            });
+            assert!(frames.is_empty());
+            assert!(!allocation.invalid);
+            assert_eq!(allocation.allocated, allocation.freed);
+            assert_eq!(allocation.live, 0);
+        }
     }
 
     #[test]
