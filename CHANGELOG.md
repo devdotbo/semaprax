@@ -1374,6 +1374,14 @@ format: `Unreleased` then release buckets, grouped by impact.
 
 ## Unreleased
 
+- Source-only #808 moves an owned prefix into the sole HIR suffix or final
+  two-edge plan sibling when its existing buffer has spare capacity. Original
+  logical work, multiplicities and failure selection remain; complete old
+  receivers and the earlier inline-fusion footprint claim stay independent.
+  New whole-owner/capacity/removed-buffer and refusal/Drop controls are pending
+  execution. Full-capacity plan growth remains unchanged; no application-fit,
+  allocation-total or peak-memory improvement is claimed.
+
 - Source-only #836 adds consuming `vec_update_field<Row>(rows,index,value,"field")`
   for exact Copy scalar slots of invariant-free flat owned-leaf records, with
   independent source/HIR/graph/cache checks, ordinary sticky preflight cleanup,

@@ -4981,5 +4981,13 @@ test-only controls.
 The branch clone/push producer is owned inline by the existing cleanup plan
 enumerator in `replay.rs`; its nested work/census/backing Results remain paid,
 while the prior standalone helper and complete enumerator stay test-only controls.
+The `final_output` module owns fixed receiving-layout payments for the exact
+one-suffix HIR and two-edge/spare-capacity plan routes. The final output receives
+its already-owned flat prefix; the original work, observation identity, suffix
+extension and queue order remain. Full-capacity and other arities retain their
+complete old loops. Independent immediate-old functions and the historical
+inline-fusion footprint contract remain test-only; direct shipping observers
+report retained capacities, removed buffers and complete Drop. No shared-history
+representation or universal cost improvement follows from this transfer.
 These NEXT changes are source-ready and await their focused executable gates;
 no application-cap or universal physical-cost improvement is certified here.
