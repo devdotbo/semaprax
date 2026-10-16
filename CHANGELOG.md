@@ -1,5 +1,7 @@
 # Changelog
 
+- Retain the original mixed String/Bytes programs as source, HIR and canonical graph acceptance regressions; keep unsupported-array declaration and pattern refusals under the existing exact diagnostics.
+
 - Adapt the final Option residual forgery check and move boxed residual types into the native builder’s unchanged iterative-disposal frames.
 
 - Compact HIR expression storage with funded residual-type boxes, preserving full type data, private cache bytes and limits, complete previous expression definitions, and physical allocation/refusal controls.
