@@ -4,13 +4,19 @@
 use super::*;
 
 const PROOFS: &str = include_str!("../../docs/evidence/receiver-source-custody-v1/inverse.json");
-static PROOF_RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
+const LIVE_AUDITS: &str =
+    include_str!("../../docs/evidence/live-source-audit-custody-v1/inverse.json");
+static PROOF_RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
 
 fn proofs() -> &'static [serde_json::Value] {
-    PROOF_RECORDS
-        .get_or_init(|| serde_json::from_str(PROOFS).unwrap())
-        .as_array()
-        .unwrap()
+    PROOF_RECORDS.get_or_init(|| {
+        let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
+        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
+        assert_eq!(original.len(), 12);
+        assert_eq!(additional.len(), 2);
+        original.extend(additional);
+        original
+    })
 }
 
 fn digest(source: &str) -> String {
@@ -58,7 +64,7 @@ pub(super) fn contains(path: &str) -> bool {
 fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut paths = std::collections::BTreeSet::new();
-    assert_eq!(proofs().len(), 12);
+    assert_eq!(proofs().len(), 14);
     for proof in proofs() {
         let path = proof["path"].as_str().unwrap();
         assert!(paths.insert(path));
@@ -68,8 +74,14 @@ fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
         }
         let current = std::fs::read_to_string(root.join(path)).unwrap();
         let restored = invert(proof, &current);
+        let source_audits: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
+        let archive_root = if source_audits.iter().any(|audit| audit["path"] == path) {
+            "docs/evidence/live-source-audit-custody-v1"
+        } else {
+            "docs/evidence/receiver-source-custody-v1"
+        };
         let archive = root
-            .join("docs/evidence/receiver-source-custody-v1")
+            .join(archive_root)
             .join(proof["archive"].as_str().unwrap());
         assert_eq!(restored, std::fs::read_to_string(archive).unwrap());
         assert_ne!(current, restored);

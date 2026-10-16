@@ -1,5 +1,7 @@
 # Changelog
 
+- Compose source-audit inverses through later module additions, preserving every original archive and fixed hash; authenticate both complete live source-reader successors before replaying their historical formatting controls.
+
 - Use the contracted fixed construction cap for C++ package source replay while retaining the exact configured output-envelope limit.
 
 - Reserve a proved sequencing minimum from the first active prefix, skipping intermediate path-vector backing while preserving the complete original loop, capacity, work, paid fallback and verification route.
