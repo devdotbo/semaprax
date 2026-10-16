@@ -1,5 +1,7 @@
 # Changelog
 
+- Provision GDB explicitly for hosted low-stack diagnostics when the runner image does not include it.
+
 - Allow manual capture of the unchanged low-stack case with the unit shard's compiler, feature unification and profile, independently of superseded CI runs.
 
 - Preserve borrowed-root hostile census checks while applying nested freeze-loan assertions to local owned storage; separate nested test-ledger backing from production refusal allocations.

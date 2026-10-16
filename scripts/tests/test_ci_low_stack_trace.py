@@ -74,6 +74,13 @@ class ManualDiagnosticWorkflow(unittest.TestCase):
         self.assertNotIn("actions/upload-artifact", workflow)
         self.assertEqual(workflow.count("python3 scripts/ci-low-stack-trace.py"), 1)
         self.assertIn("run: cargo fetch --locked", workflow)
+        install = "sudo apt-get install --yes --no-install-recommends gdb"
+        self.assertIn(install, workflow)
+        unit = (root / ".github/workflows/ci.yml").read_text()
+        trace = unit.split("      - name: Trace the unchanged low-stack case", 1)[1].split("\n      - name:", 1)[0]
+        self.assertIn(install, trace)
+        self.assertLess(trace.index(install), trace.index("python3 scripts/ci-low-stack-trace.py"))
+
 
     def test_manual_trace_keeps_the_unit_shard_profile_and_compiler(self):
         root = Path(__file__).resolve().parents[2]
