@@ -1,5 +1,7 @@
 # Changelog
 
+- Select the complete factored verifier earlier for scalar path products, retaining original resource-bearing selection, every enumeration cross-check, all limits, and sticky comparison failures.
+
 - Restore the fixed supplemental cursor for unobserved legacy replay so geometric relocation does not change its original work counters; retain every funded growth frontier and full before/current inventory assertion.
 
 - Refresh browser graph pins from complete hosted 524a80bc9 captures after a 36,720-byte builder-bill reduction, preserving all earlier whole-wire, source, and tamper controls.
