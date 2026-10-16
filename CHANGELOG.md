@@ -3,6 +3,8 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Execute the paid cleanup branch clone/push producer inline in its existing enumerator, removing actual Vec Result and forwarding receivers while retaining every nested charge and complete old controls; focused execution and application savings remain pending.
+
 - Reuse a sole incoming ownership-state tree as its identity control partition, retaining complete key construction, work charges, all join/replay checks and the original grouped producer while prepaying new receiving layouts.
 
 - Configure ordinary macOS Cargo native builds with the paired CLT developer and SDK roots, and check standard-header discovery independently of the held tools' empty-environment route.

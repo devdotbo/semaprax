@@ -4968,5 +4968,8 @@ The test-only `path_join::main_single_groups` namespace preserves the complete
 Main531 grouping producer, key constructors, prior boxed receiver and original
 controls independently. Production keeps its direct singleton route; historical
 Main measurements grant no production-cost or application-fit claim.
+The branch clone/push producer is owned inline by the existing cleanup plan
+enumerator in `replay.rs`; its nested work/census/backing Results remain paid,
+while the prior standalone helper and complete enumerator stay test-only controls.
 These NEXT changes are source-ready and await their focused executable gates;
 no application-cap or universal physical-cost improvement is certified here.
