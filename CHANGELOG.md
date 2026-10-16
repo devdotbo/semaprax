@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted 75b314f70 records after an observed 4,756-byte builder-bill decrease, preserving every prior whole-wire bridge and source control.
+
 - Compare every private expression-path field explicitly in vector-reuse controls, retaining the production carrier's existing traits and all parity assertions.
 
 - Clone ownership-classifier leaf types without acquiring a recursive census cursor, preserving sticky authentication and the full paid recursive fallback.
