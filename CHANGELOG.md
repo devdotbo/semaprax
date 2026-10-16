@@ -1,5 +1,7 @@
 # Changelog
 
+- Build paid factored successor weights directly in sorted vectors and move their backing into shared states, retaining checked multiplicity, the original unobserved work path and all historical source proofs.
+
 - Capture bounded stopped-frame layouts and function prologues for the unchanged 128 KiB diagnostic case after constructor phase isolation still crashed.
 
 - Select the complete factored verifier earlier for scalar path products, retaining original resource-bearing selection, every enumeration cross-check, all limits, and sticky comparison failures.

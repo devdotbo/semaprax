@@ -237,7 +237,7 @@ impl<'a> Canonicalizer<'a> {
         }
         let closed = alias.as_deref().unwrap_or(&closed);
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
-        let mut successors = BTreeMap::<Label, BTreeMap<usize, u64>>::new();
+        let mut successors = BTreeMap::<Label, targets::Targets>::new();
         for (node, weight) in closed {
             let moves = &self.automaton.nodes[*node].moves;
             budget.charge(
@@ -247,23 +247,17 @@ impl<'a> Canonicalizer<'a> {
             )?;
             for (label, child) in moves {
                 if !successors.contains_key(label) {
-                    budget.reserve_btree_node::<Label, BTreeMap<usize, u64>>(
+                    budget.reserve_btree_node::<Label, targets::Targets>(
                         function,
                         "factored successor label node",
                     )?;
                 }
-                let targets = successors.entry(label.clone()).or_default();
-                if !targets.contains_key(child) {
-                    budget.reserve_btree_node::<usize, u64>(
-                        function,
-                        "factored successor target node",
-                    )?;
-                }
-                let slot = targets.entry(*child).or_insert(0);
-                let Some(sum) = slot.checked_add(*weight) else {
+                let targets = successors
+                    .entry(label.clone())
+                    .or_insert_with(|| targets::Targets::new(budget.pays_allocations()));
+                if !targets.add(function, budget, *child, *weight)? {
                     return Ok(None);
-                };
-                *slot = sum;
+                }
             }
         }
         budget.reserve_array::<(Label, SharedWeighted)>(
@@ -273,7 +267,7 @@ impl<'a> Canonicalizer<'a> {
         )?;
         let mut result = Vec::with_capacity(successors.len());
         for (label, targets) in successors {
-            result.push((label, weighted_successor(function, budget, targets)?));
+            result.push((label, targets.share(function, budget)?));
         }
         Ok(Some((accepted, result)))
     }
@@ -385,3 +379,83 @@ impl<'a> Canonicalizer<'a> {
 
 #[cfg(test)]
 mod tests;
+
+// Sorted target storage is part of this audited canonical receiver.
+mod targets {
+    use super::*;
+
+    pub(super) enum Targets {
+        Legacy(BTreeMap<usize, u64>),
+        Paid(Weighted),
+    }
+
+    impl Targets {
+        pub(super) fn new(paid: bool) -> Self {
+            if paid {
+                Self::Paid(Vec::new())
+            } else {
+                Self::Legacy(BTreeMap::new())
+            }
+        }
+
+        /// False retains the original checked route-multiplicity overflow verdict.
+        pub(super) fn add(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+            child: usize,
+            weight: u64,
+        ) -> Result<bool, Diagnostic> {
+            match self {
+                Self::Legacy(targets) => {
+                    if !targets.contains_key(&child) {
+                        budget.reserve_btree_node::<usize, u64>(
+                            function,
+                            "factored successor target node",
+                        )?;
+                    }
+                    let slot = targets.entry(child).or_insert(0);
+                    let Some(sum) = slot.checked_add(weight) else {
+                        return Ok(false);
+                    };
+                    *slot = sum;
+                }
+                Self::Paid(targets) => {
+                    budget.reserve_bytes(function, 0, "factored target authentication")?;
+                    // Binary search performs at most floor(log2(len)) + 2 probes.
+                    let comparisons = (usize::BITS - targets.len().leading_zeros()) as usize + 1;
+                    budget.charge(function, comparisons, "factored target search")?;
+                    match targets.binary_search_by_key(&child, |(node, _)| *node) {
+                        Ok(index) => {
+                            let Some(sum) = targets[index].1.checked_add(weight) else {
+                                return Ok(false);
+                            };
+                            targets[index].1 = sum;
+                        }
+                        Err(index) => {
+                            budget.charge(
+                                function,
+                                targets.len() - index + 1,
+                                "factored target insertion and shifts",
+                            )?;
+                            budget.reserve_vec(function, targets, 1, "factored target weights")?;
+                            targets.insert(index, (child, weight));
+                        }
+                    }
+                }
+            }
+            Ok(true)
+        }
+
+        pub(super) fn share(
+            self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+        ) -> Result<SharedWeighted, Diagnostic> {
+            match self {
+                Self::Legacy(targets) => weighted_successor(function, budget, targets),
+                Self::Paid(targets) => own_weighted(function, budget, targets),
+            }
+        }
+    }
+}
