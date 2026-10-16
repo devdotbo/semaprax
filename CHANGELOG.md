@@ -1,5 +1,7 @@
 # Changelog
 
+- Preserve the first HIR diagnostic before selecting lexical Copy-discard graph profiles, retaining current native-import and finite-composition guards after HIR authentication.
+
 - Refresh browser graph pins from complete hosted f82cec490 records after an observed 8,834-byte net builder-bill decrease, retaining every older compiled bridge and exact whole-wire/source control.
 
 - Give direct compact-stage and branch-clone receiver fixtures their explicit post-preflight skeleton allowance while retaining zero/exact/short allocation accounts; preserve failed macOS CI unit executables with exact Cargo/commit/byte provenance for bounded replay on the external SSD.
