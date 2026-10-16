@@ -1,5 +1,9 @@
 # Changelog
 
+- Restore later allocation-test and provider inventory inputs through explicit whole-source custody, retaining original formatting hashes, all fourteen receiver proofs and complete historical source assertions.
+
+- Fall back to complete fresh resolution before selecting an unaffordable checked-cache candidate, retaining original validation, residual charges and failed-attempt receipts.
+
 - Avoid constructing the recursive type census for ordinary scalar clones while retaining the original fee controls, full compound fallback and sticky allocation authentication.
 
 - Compact borrowed child traversal state without changing enumeration, work refusals or depth bounds, retaining the complete original cursor and low-stack constructor regression.

@@ -144,6 +144,7 @@ pub(super) use base::resolve_module_with_core;
 
 #[cfg(test)]
 pub(super) use base::cache_billing::source_reference::{
-    historical_inline_inventory, historical_inline_root, historical_root,
+    historical_inline_inventory, historical_inline_root, historical_provider_inventory,
+    historical_root,
 };
 pub(super) use base::cache_billing::{local_resolution_bytes, replay_cached_prelude};

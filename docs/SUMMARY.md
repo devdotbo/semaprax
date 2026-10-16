@@ -1143,3 +1143,5 @@ Audience: all documentation readers.
 - [Reuse the complete unit-weight closure](evidence/unit-weight-closure-v1/README.md)
 - [Compact borrowed child cursor](evidence/compact-child-cursor-v1/README.md)
 - [Ordinary scalar type clone cursor](evidence/scalar-clone-cursor-v1/README.md)
+- [Checked-cache eligibility in bounded attempts](evidence/checked-cache-attempt-fit-v1/README.md)
+- [Later source-reader custody](evidence/source-reader-followups-20261016/README.md)

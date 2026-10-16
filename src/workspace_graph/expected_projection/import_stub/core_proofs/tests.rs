@@ -543,6 +543,13 @@ fn complete_original_receivers_and_all_literal_source_inverses_remain_byte_exact
     .unwrap();
     let rows = manifest["whole_sources"].as_array().unwrap();
     assert_eq!(rows.len(), 17);
+    let provider_inventory =
+        crate::workspace_graph::identity_resolution::historical_provider_inventory(ci_str!(
+            "../../../../../tests/workspace/semantic_graph/source_inventory.rs"
+        ));
+    let provider_native_inventory = crate::workspace_graph::identity_resolution::historical_provider_inventory(
+        ci_str!("../../../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")
+    );
     for row in rows {
         let (current, original) = match row["file"].as_str().unwrap() {
             "src/loop_calls/byte_writer/source_index.rs" => (ci_str!("../../../../../src/loop_calls/byte_writer/source_index.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/0.before.txt")),
@@ -555,8 +562,8 @@ fn complete_original_receivers_and_all_literal_source_inverses_remain_byte_exact
             "src/workspace_graph/expected_projection/uncached_peak.rs" => (ci_str!("../../../../../src/workspace_graph/expected_projection/uncached_peak.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/7.before.txt")),
             "src/workspace_graph/expected_projection.rs" => (ci_str!("../../../../../src/workspace_graph/expected_projection.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/8.before.txt")),
             "src/workspace_graph.rs" => (crate::workspace_graph::identity_resolution::historical_root(), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/9.before.txt")),
-            "tests/workspace/semantic_graph/source_inventory.rs" => (ci_str!("../../../../../tests/workspace/semantic_graph/source_inventory.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/10.before.txt")),
-            "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => (ci_str!("../../../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/11.before.txt")),
+            "tests/workspace/semantic_graph/source_inventory.rs" => (provider_inventory.as_str(), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/10.before.txt")),
+            "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => (provider_native_inventory.as_str(), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/11.before.txt")),
             "src/loop_calls/byte_writer/source_index_original.rs" => (ci_str!("../../../../../src/loop_calls/byte_writer/source_index_original.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/0.before.txt")),
             "src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs" => (ci_str!("../../../../../src/workspace_graph/expected_projection/import_stub/byte_helper_original.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/2.before.txt")),
             "src/workspace_graph/expected_projection/import_stub_original.rs" => (ci_str!("../../../../../src/workspace_graph/expected_projection/import_stub_original.rs"), ci_str!("../../../../../docs/evidence/provider-proof-backing-714177/3.before.txt")),

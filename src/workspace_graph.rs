@@ -4414,15 +4414,24 @@ fn build_resolved_core_current(
             )
             .map_err(constructor_failure::Failure::into_legacy_unfunded)
         )?;
+        // Unaffordable candidates take the complete fresh route before either
+        // cache hit counters or staged checked owners can change. Their partial
+        // failure bill must keep the original fine-grained reservation frontier.
+        let reuse_fits = frontend
+            .as_deref()
+            .is_none_or(|cache| cache.checked_reuse_fits_active_attempt(&program.path));
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
             FrontendLookup,
-            frontend.as_deref_mut().and_then(|cache| match &synthetic {
-                expected_projection::borrowed_leaf::Input::Owned(input) =>
-                    cache.checked_module(&program.path, input),
-                expected_projection::borrowed_leaf::Input::Borrowed(input) =>
-                    cache.checked_module_source(&program.path, input),
-            })
+            frontend
+                .as_deref_mut()
+                .filter(|_| reuse_fits)
+                .and_then(|cache| match &synthetic {
+                    expected_projection::borrowed_leaf::Input::Owned(input) =>
+                        cache.checked_module(&program.path, input),
+                    expected_projection::borrowed_leaf::Input::Borrowed(input) =>
+                        cache.checked_module_source(&program.path, input),
+                })
         );
         let shared_before = core_proofs.base_prelude.selected_bytes();
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
@@ -4475,7 +4484,7 @@ fn build_resolved_core_current(
             let (resolved, function_costs, reused_functions, static_text) =
                 identity_resolution::resolve_module_with_core(
                     &mut core_proofs,
-                    frontend.as_deref(),
+                    frontend.as_deref().filter(|_| reuse_fits),
                     &program.path,
                     &synthetic,
                     private,

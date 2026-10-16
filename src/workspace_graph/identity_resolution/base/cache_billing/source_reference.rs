@@ -10,7 +10,24 @@ fn digest(source: &str) -> String {
         crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
     )
 }
+fn restore_cache_attempt_fit(current: &str) -> String {
+    let record: serde_json::Value = serde_json::from_str(include_str!(
+        "../../../../../docs/evidence/checked-cache-attempt-fit-v1/root-inverse.json"
+    ))
+    .unwrap();
+    assert_eq!(digest(current), record["after_sha256"].as_str().unwrap());
+    let mut restored = current.to_owned();
+    for edit in record["inverse"].as_array().unwrap() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(restored.matches(after).count(), 1);
+        restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(digest(&restored), record["before_sha256"].as_str().unwrap());
+    restored
+}
 fn restore(current: &str) -> String {
+    let cache_fit = restore_cache_attempt_fit(current);
+    let current = cache_fit.as_str();
     assert_eq!(
         digest(current),
         "811b1dae18de462dedf10c6b683ef6f3ea1c835cc0d92964baa39476c97936e4"
@@ -172,7 +189,41 @@ pub(in crate::workspace_graph) fn historical_inline_root() -> &'static str {
 
 /// Later additive audit registrations stay in the actual compiled source union.
 /// Bind that complete current inventory before restoring its older snapshot.
+/// Exact older inventory view for the provider proof; the live source union
+/// and the original fourteen receiver-custody archives remain unchanged.
+pub(in crate::workspace_graph) fn historical_provider_inventory(current: &str) -> String {
+    let current_digest = digest(current);
+    let records = [
+        include_str!(
+            "../../../../../docs/evidence/source-reader-followups-20261016/inventory.json"
+        ),
+        include_str!(
+            "../../../../../docs/evidence/source-reader-followups-20261016/native-inventory.json"
+        ),
+    ];
+    let record = records
+        .into_iter()
+        .map(|text| serde_json::from_str::<serde_json::Value>(text).unwrap())
+        .find(|record| record["after_sha256"] == current_digest)
+        .expect("exact current workspace or native source inventory");
+    let mut original = current.to_owned();
+    for edit in record["inverse"].as_array().unwrap() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(original.matches(after).count(), 1);
+        original = original.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(digest(&original), record["before_sha256"].as_str().unwrap());
+    original
+}
+
 pub(in crate::workspace_graph) fn historical_inline_inventory(current: &str) -> String {
+    let current_inventory =
+        if digest(current) == "e55bd484d5c38c005501cbb3b48493907cd7fc370ab083b810cc71a4b3b0ce0b" {
+            current.to_owned()
+        } else {
+            historical_provider_inventory(current)
+        };
+    let current = current_inventory.as_str();
     assert_eq!(
         digest(current),
         "e55bd484d5c38c005501cbb3b48493907cd7fc370ab083b810cc71a4b3b0ce0b"
