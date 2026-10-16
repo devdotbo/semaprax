@@ -8,6 +8,8 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Move 36 additional immutable test-only source-view JSON documents (2,612,409 unique bytes) behind a separate fixed authenticated runtime inventory; preserve live Rust snapshots, the original90 inventory and every predecessor assertion. Static transport reduction is not a measured memory claim.
+
 - Prepare the source-only #848 bulk90 embedded/runtime comparison: fixed common transport modules, one active module selector, unchanged file-loader/hostile controls, exact arm source custody, and per-arm truthful authority metadata. No matched build or memory benefit is claimed.
 
 - Source-only #781 followup routes the duplicated paid lexical/scalar driver

@@ -4472,6 +4472,13 @@ An exact complete-source arm adapter restores the common selector before older
 source views; actual authority manifests are regenerated per arm, without
 relaxing their current-file checks. This preparation adds no measured memory
 claim and does not make embedded-arm file availability optional for that owner.
+A separate fixed metadata inventory moves the remaining 36 immutable source-view
+JSON documents behind the same bounded file reader and exact compiled
+source-key membership. Both bulk90 experiment arms use this same runtime
+context. Its all-file owner authenticates every complete file and key
+multiplicity; it does not embed a second copy of those JSON payloads. Live Rust
+source snapshots remain compile-time inputs. No measured RAM benefit follows
+from the static byte inventory alone.
 
 
 The bounded generic inference helpers in `source_verify/generic_inference` and

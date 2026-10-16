@@ -41,6 +41,12 @@ enum Failure {
 fn digest(bytes: &[u8]) -> [u8; 32] {
     Sha256::digest(bytes).into()
 }
+// Sealed sibling inventory only; no arbitrary path or live-source API.
+pub(super) fn metadata(fixture: super::metadata_json::Fixture) -> String {
+    let spec = fixture.spec();
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated immutable source metadata")
+}
 pub(super) fn load(fixture: Fixture) -> String {
     let spec = fixture.spec();
     read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
