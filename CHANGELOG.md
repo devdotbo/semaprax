@@ -1,5 +1,7 @@
 # Changelog
 
+- Clone ownership-classifier leaf types without acquiring a recursive census cursor, preserving sticky authentication and the full paid recursive fallback.
+
 - Restore artifact-free release-blocking test jobs by removing failed-unit executable uploads and their unused collector.
 
 - Reuse an already-owned same-capacity path vector for a single successor, funding the complete receiving frame and preserving original fallback, canonical fields, logical work, materializations and future growth under unchanged limits.
