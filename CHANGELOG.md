@@ -1,5 +1,7 @@
 # Changelog
 
+- Select existing inline String storage for private metered Core-Wasm stage builds, retaining unmetered public profile refusals and the original lexical fuel/cleanup parity fixture.
+
 - Provision GDB explicitly for hosted low-stack diagnostics when the runner image does not include it.
 
 - Allow manual capture of the unchanged low-stack case with the unit shard's compiler, feature unification and profile, independently of superseded CI runs.
