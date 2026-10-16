@@ -91,9 +91,9 @@ impl<T> Memo<T> {
     }
     // Identity-only preflight precedes acquiring a fresh invocation destination.
     // It neither asks a foreign payer nor constructs a diagnostic receiver.
-    pub(super) fn preflight(&mut self, function: &ResolvedFunction, budget: &ReplayBudget) {
+    pub(super) fn preflight(&mut self, function: &ResolvedFunction, budget: &ReplayBudget) -> bool {
         if self.failed {
-            return;
+            return false;
         }
         if let Some(binding) = &self.binding {
             let ledger_matches = binding.ledger.current();
@@ -103,6 +103,9 @@ impl<T> Memo<T> {
             {
                 self.failed = true;
             }
+            true
+        } else {
+            false
         }
     }
     pub(super) fn failed(&self) -> bool {

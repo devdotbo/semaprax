@@ -56,22 +56,27 @@ use inline_weighted::SmallWeighted;
 // the old zero-auth call borrows the already-live invocation refusal field here.
 macro_rules! authenticate_closure {
     ($this:ident, $function:ident, $budget:ident, $receiving:ident) => {{
-        $this.closures.preflight($function, $budget);
-        if $this.closures.failed() {
+        // The returned branch predicate replaces the former controls_paid /
+        // binding branch; no second Option<Binding> borrow or named local exists.
+        if $this.closures.preflight($function, $budget) {
+            if $this.closures.failed() {
+                $receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
+            } else {
+                $budget.authenticate_zero_into(
+                    $function,
+                    "factored closure memo authentication",
+                    &mut $receiving.refusal,
+                );
+                if $receiving.refusal.is_some() {
+                    $this.closures.failed = true;
+                }
+            }
+        } else if $this.closures.failed() {
             $receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
-        } else if $this.closures.binding.is_none() {
+        } else {
             // Preserve complete original cold admission/receipt/binding order.
             if let Err(error) = $this.closures.authenticate($function, $budget) {
                 $receiving.refusal = Some(error);
-            }
-        } else {
-            $budget.authenticate_zero_into(
-                $function,
-                "factored closure memo authentication",
-                &mut $receiving.refusal,
-            );
-            if $receiving.refusal.is_some() {
-                $this.closures.failed = true;
             }
         }
     }};
@@ -201,11 +206,14 @@ impl<'a> Canonicalizer<'a> {
     ) -> Result<Option<usize>, Diagnostic> {
         // Preserve the old entry's owner rejection before a fresh test-only slot
         // can query or charge a foreign payer. A valid call still pays acquisition.
-        self.closures.preflight(function, budget);
-        if self.closures.failed() {
-            return Err(Diagnostic::io("SPX-H006", String::new()));
-        }
-        if self.closures.binding.is_none() {
+        if self.closures.preflight(function, budget) {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+        } else {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
             self.closures.authenticate(function, budget)?;
         }
         if budget.pays_allocations() {
@@ -243,11 +251,14 @@ impl<'a> Canonicalizer<'a> {
         budget: &mut ReplayBudget,
     ) -> Result<Option<empty_closure::Closure>, Diagnostic> {
         // Reject foreign/sticky owners before any adapter payment.
-        self.closures.preflight(function, budget);
-        if self.closures.failed() {
-            return Err(Diagnostic::io("SPX-H006", String::new()));
-        }
-        if self.closures.binding.is_none() {
+        if self.closures.preflight(function, budget) {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+        } else {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
             self.closures.authenticate(function, budget)?;
         }
         if budget.pays_allocations() {

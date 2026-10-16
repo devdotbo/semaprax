@@ -41,6 +41,8 @@ pub(crate) fn boxed849_previous(source: &str, current: &str) -> String {
 }
 // Direct current831 owner; inherited guards first receive the exact2d4b input.
 pub(crate) fn unit831_input(source: &str, current: &str) -> String {
+    let preflight = project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/closure-unit-receiving-831-next-20261016/preflight-binding-successor/current-to-fac.json")), source, current);
+    let current = preflight.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/closure-unit-receiving-831-next-20261016/current-to-2d4b.json")), source, current)
 }
 pub(crate) fn compile_fixture_input(source: &str, current: &str) -> String {
