@@ -66,7 +66,7 @@ fn list(value: &Value) -> String {
         .join(", ")
 }
 fn capsule(route: &Value) -> String {
-    let mut out = format!("Task v6: {}\nChecked starter subset; not whole-profile/library admission. Qualification: existing starter definitions; help asserts no new executable result.\nnew app --template {}\nProject profile {}; target {}; input {}\nManifest semaprax.toml (tables); sources {}\nCapabilities (declare AND grant): {}\n",
+    let mut out = format!("Task v6: {}\nChecked starter subset; not whole-profile/library admission.\nnew app --template {}\nProject profile {}; target {}; input {}\nManifest semaprax.toml (tables); sources {}\nCapabilities (declare AND grant): {}\n",
         text(route,"task"), text(route,"template"), text(route,"project_profile"), text(route,"target"),text(route,"input"),list(&route["sources"]),list(&route["capabilities"]));
     for (name, version) in route["dependencies"].as_object().expect("dependencies") {
         writeln!(
