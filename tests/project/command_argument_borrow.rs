@@ -124,7 +124,9 @@ fn retained_hir_still_rejects_a_mutable_command_argument_alias_independently() {
     let project = fixture(example, files);
     let mut program = with_authenticated_project(&project.0.join("semaprax.toml"), |snapshot| {
         snapshot.check()?;
-        Ok(snapshot.entry_program().clone())
+        // `main` returns zero independently. The configured command is a
+        // selected export, retained in the public API closure of this revision.
+        Ok(snapshot.retain_revision().public_api_program().clone())
     })
     .unwrap();
     hir::validate(&program).unwrap();
@@ -132,7 +134,7 @@ fn retained_hir_still_rejects_a_mutable_command_argument_alias_independently() {
         .functions
         .iter_mut()
         .find(|function| function.id.as_str() == "spxgrep-lines.run")
-        .unwrap();
+        .expect("the retained selected-export closure must contain its command");
     let ResolvedExprKind::Block { tail, .. } = &mut function.body.kind else {
         panic!("the checked command retains its block body");
     };
