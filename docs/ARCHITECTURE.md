@@ -4959,6 +4959,11 @@ of the modern retained canonicalizer. Its eleven source owners participate in
 all three raw source inventories; their measurements describe that historical
 receiver rather than the production route. The function-alias graph/Image
 control compares real Project outputs against the complete immediate-old core.
+The same paid retained-wrapper alias producer is selected on the first ordinary
+uncached attempt as well as compact output attempts. Its provider AST borrow
+ends at resolution; both routes retain owned resolved HIR. Cache-enabled calls
+and invariant-rewriting programs retain the original constructor. This does
+not change the conservative forecast, dynamic payments or failure limits.
 
 Canonical empty-closure bookkeeping is invocation-owned by `empty_memo`.
 Its cold admission retains the original receipt/binding boundary; warm auth and
