@@ -2954,9 +2954,10 @@ fn sequence_skeleton_paths(
     }
     let mut combined = Vec::new();
     if !suffixes.is_empty() {
-        path_array::minimum(
+        path_array::sequence::minimum(
             &mut combined,
-            prefixes.len(),
+            &prefixes,
+            &suffixes,
             work,
             "sequenced path capacity",
         )?;

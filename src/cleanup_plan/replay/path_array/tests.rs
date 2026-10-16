@@ -310,6 +310,13 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
                 1,
             );
         }
+        if name == "sequence_skeleton_paths" {
+            current = current.replacen(
+                "path_array::minimum(\n            &mut combined,\n            prefixes.len(),",
+                "path_array::sequence::minimum(\n            &mut combined,\n            &prefixes,\n            &suffixes,",
+                1,
+            );
+        }
         assert_eq!(root.matches(&current).count(), 1, "{name}");
     }
 }

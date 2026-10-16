@@ -1014,8 +1014,8 @@ mod validation_diagnostic_tests {
         let pointer = help.as_ptr();
         let capacity = help.capacity();
         let diagnostics = vec![
-            Diagnostic::io_static("SPX-G171", "builder limit").with_help(help),
-            Diagnostic::io_static("SPX-T105", "later failure").with_help("later explanation"),
+            Diagnostic::io_static("TST-A001", "builder limit").with_help(help),
+            Diagnostic::io_static("TST-B002", "later failure").with_help("later explanation"),
         ];
         let failure = scaffold_validation_error("service", diagnostics);
         assert_eq!(failure.len(), 1);
@@ -1035,8 +1035,8 @@ mod validation_diagnostic_tests {
         let failure = scaffold_validation_error(
             "library",
             vec![
-                Diagnostic::io_static("SPX-T105", "first failure"),
-                Diagnostic::io_static("SPX-G171", "later failure").with_help("unselected help"),
+                Diagnostic::io_static("TST-B002", "first failure"),
+                Diagnostic::io_static("TST-A001", "later failure").with_help("unselected help"),
             ],
         );
         assert_eq!(failure[0].code, "SPX-J115");

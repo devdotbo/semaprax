@@ -1,5 +1,9 @@
 # Changelog
 
+- Use the contracted fixed construction cap for C++ package source replay while retaining the exact configured output-envelope limit.
+
+- Reserve a proved sequencing minimum from the first active prefix, skipping intermediate path-vector backing while preserving the complete original loop, capacity, work, paid fallback and verification route.
+
 - Preserve selected inner diagnostic help on scaffold validation failures and capture complete cold/warm cache wires after the owning CI shard fails.
 
 - Preserve complete pre-site budget layout controls while explicitly checking the later sticky call-site pointer against the full current budget definition.

@@ -301,6 +301,11 @@ fn complete_predecessor_and_original_push_operations_stay_source_bound() {
         &format!("    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n{hook}"),
         1,
     );
+    let expected = expected.replacen(
+        "path_array::minimum(\n            &mut combined,\n            prefixes.len(),",
+        "path_array::sequence::minimum(\n            &mut combined,\n            &prefixes,\n            &suffixes,",
+        1,
+    );
     assert_eq!(root.matches(&expected).count(), 1);
     let work = include_str!("../skeleton_work.rs");
     let original_push = "        self.charge(1, phase)?;\n        note_skeleton_materialization();\n        self.budget.reserve_vec(self.function, paths, 1, phase)?;\n        paths.push(path);";

@@ -115,3 +115,5 @@ pub(super) fn original_route_selected() -> bool {
 pub(super) fn fixture_program() -> ResolvedProgram {
     tests::program()
 }
+
+pub(super) mod sequence;
