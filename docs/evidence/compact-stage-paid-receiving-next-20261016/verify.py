@@ -27,4 +27,26 @@ assert 'source: StagedCopyResultSource' in s
 oracle=(root/'src/cleanup_plan/replay/factored/oracle_order.rs').read_text()
 assert 'staged(a.canonical(), b.canonical(), function, budget)' not in oracle
 assert 'canonical_staged!(a, b, function, budget)' in oracle
-print('PASS six complete Main source inverses, all original test assertions, explicit imports and lexical residual comparison')
+# The lexical comparator keeps the full original field order/work after its
+# original first kind charge is moved before the new metadata frontier.
+def function_body(text, name):
+    start=text.index(name);begin=text.index('{',start);end=begin+1;level=1
+    while level:
+        if text[end]=='{':level+=1
+        elif text[end]=='}':level-=1
+        end+=1
+    return text[begin+1:end-1]
+old_oracle=(packet/'before/src/cleanup_plan/replay/factored/oracle_order.rs').read_text()
+original=function_body(old_oracle,'pub(super) fn staged(')
+original=original.replace('    budget.charge(function, 1, "oracle staged source kind")?;\n','',1)
+start=original.index('    macro_rules! ids {');end=original.index('    match (a, b)',start)
+original=original[:start]+original[end:]
+def expand(match):
+    return '\n'.join('decide!(text('+piece.strip().replace(',', '.as_str(),',1)+'.as_str(), function, budget)?);' for piece in match.group(1).split(';') if piece.strip())
+original=re.sub(r'ids!\(([^)]*)\);',expand,original)
+macro=oracle[oracle.index('macro_rules! canonical_staged'):oracle.index('fn compact_staged(')]
+macro=macro[macro.index('=> {{')+5:macro.rindex('}};')]
+for word in ['a','b','function','budget']:
+    macro=macro.replace('$'+word,word)
+assert ''.join(original.split())==''.join(macro.split())
+print('PASS six complete Main source inverses, every original assertion, complete lexical canonical comparison, explicit imports')
