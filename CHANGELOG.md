@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted c11a63509 records after a measured 3,452-byte builder-bill reduction, preserving every previous compiled bridge and whole-wire control.
+
 - Share the compiled cleanup predecessor between receiver controls and check constant allocation thresholds at compile time.
 
 - Keep fallible prefix transfer in its existing cleanup receiver and fund a pure borrowed probe, retaining the complete shipped wrapper and its original tests.
