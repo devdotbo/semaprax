@@ -1,3 +1,4 @@
+<!-- OPT831 source checkpoint: closure-specific duplicate refusal owner and inner id Result removed; unchanged strict qualification pending, no measured gain claimed. -->
 <!-- Source-only #833: invocation-owned identifier census scratch reuse across
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
