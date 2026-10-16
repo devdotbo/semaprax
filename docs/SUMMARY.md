@@ -1114,6 +1114,7 @@ Audience: all documentation readers.
 - [Branch clone capacity](evidence/branch-clone-capacity-v1/README.md)
 - [Hosted graph bill after paid-scratch changes](evidence/browser-graph-pins-17104e20c/README.md)
 - [Hosted graph bill after replay allocation changes](evidence/browser-graph-pins-2600e49eb/README.md)
+- [Hosted graph bill after compact observations and borrowed status sets](evidence/browser-graph-pins-c451086ce/README.md)
 - [Hosted paid-cursor graph bills](evidence/browser-graph-pins-268cb0523/README.md)
 - [Hosted browser graph pins](evidence/browser-graph-pins-841efe3e2/README.md)
 - [Darwin native tool reference](evidence/darwin-native-link-reference-v1/README.md)
