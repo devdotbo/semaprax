@@ -3,6 +3,7 @@
 use super::*;
 use std::fmt::{self, Write};
 mod byte_helper;
+mod nominal_context;
 mod scalar_lexical;
 mod static_text;
 pub(super) use byte_helper::Proofs;
@@ -451,6 +452,7 @@ fn select<'a>(
             schema
         });
     }
+    let types = nominal_context::Types::new(module, modules, facts)?;
     if !module
         .functions
         .iter()
@@ -464,7 +466,7 @@ fn select<'a>(
     {
         return graph::graph_schema_from_parts_and_instances(
             &module.interfaces,
-            &module.types,
+            &types,
             &module.functions,
             &module.function_templates,
             &module.function_instances,
@@ -473,7 +475,7 @@ fn select<'a>(
     }
     graph::graph_schema_from_parts_and_instances_with_renewal_authority(
         &module.interfaces,
-        &module.types,
+        &types,
         &module.functions,
         &module.function_templates,
         &module.function_instances,

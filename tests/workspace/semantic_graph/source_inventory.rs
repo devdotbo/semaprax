@@ -279,7 +279,7 @@ include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/inl
                     include_str!("../../src/workspace_graph/record_traversal/field_origin.rs")
                 ),
                 "\n",
-                include_str!("../../src/workspace_graph/source_schema.rs"),
+                concat!(include_str!("../../src/workspace_graph/source_schema.rs"),include_str!("../../src/workspace_graph/source_schema/nominal_context.rs"),include_str!("../../src/workspace_graph/source_schema/nominal_context/tests.rs")),
                 include_str!("../../src/workspace_graph/source_schema/scalar_lexical.rs"),
                 include_str!("../../src/workspace_graph/source_schema/scalar_lexical/received.rs"),
                 include_str!("../../src/workspace_graph/source_schema/scalar_lexical/tests.rs"),

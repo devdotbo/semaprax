@@ -2147,7 +2147,13 @@ own replacements-only evidence and publication. Operations and structural
 change are separate, bounded derivation layers in
 `src/semantic_workspace_operations.rs` and
 `src/semantic_workspace_structural_change.rs`.
-`workspace_graph/source_schema.rs` owns retained module schema selection. It
+`workspace_graph/source_schema.rs` owns retained module schema selection. Its
+`nominal_context` child borrows unique type declarations from their authenticated
+module/fact owners when classifying imported nominal profiles. `ItemSource`
+keeps the emitted view local and defaults contextual lookup to that same view;
+only this metadata adapter supplies cross-module lookup. Missing, foreign or
+duplicate context keeps the existing conservative profile guard. The adapter
+reserves its own carrier before construction and clones no HIR. It
 borrows existing authored type declarations and exact origin/owner facts,
 replays field layouts against independently retained checked type facts, and
 passes renewal authority explicitly through the Graph classifiers for that
