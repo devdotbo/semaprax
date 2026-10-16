@@ -1,5 +1,7 @@
 # Changelog
 
+- Restore artifact-free release-blocking test jobs by removing failed-unit executable uploads and their unused collector.
+
 - Reuse an already-owned same-capacity path vector for a single successor, funding the complete receiving frame and preserving original fallback, canonical fields, logical work, materializations and future growth under unchanged limits.
 
 - Preserve the first HIR diagnostic before selecting lexical Copy-discard graph profiles, retaining current native-import and finite-composition guards after HIR authentication.
