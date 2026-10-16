@@ -36,12 +36,13 @@ fn full_plan_enumerator_keeps_every_original_path_work_and_materialization() {
                 let mut current = ReplayBudget::new();
                 assert!(old.pays_allocations() && current.pays_allocations());
                 let before = skeleton_materializations();
-                let expected = with_original(|| plan_skeleton_paths(function, &mut old)).unwrap();
+                let expected =
+                    with_original(|| compact_stage::original_paths(function, &mut old)).unwrap();
                 let old_count = skeleton_materializations() - before;
                 let before = skeleton_materializations();
                 let actual = plan_skeleton_paths(function, &mut current).unwrap();
                 assert_eq!(skeleton_materializations() - before, old_count);
-                assert_eq!(actual, expected);
+                assert!(compact_stage::paths_match(&actual, &expected));
                 assert_eq!(current.remaining, old.remaining);
                 assert_eq!(current.skeleton_remaining, old.skeleton_remaining);
                 drop(expected);
@@ -147,7 +148,7 @@ fn clone_and_push_keep_capacity_contents_work_and_drop_with_less_backing() {
 #[test]
 fn whole_original_enumerator_and_clone_push_helpers_remain_byte_exact() {
     use sha2::{Digest, Sha256};
-    let root = include_str!("../../replay.rs");
+    let root = compact_stage::source_custody::before_root(include_str!("../../replay.rs"));
     let packets = [
         (
             include_str!(concat!(

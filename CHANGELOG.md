@@ -1,5 +1,7 @@
 # Changelog
 
+- Compact private staged-result observations with inline body fields and prepaid residual backing, retaining canonical cleanup sources, complete old producers, ordering, work, and source-custody controls under unchanged limits.
+
 - Preserve both the causal publication witness and the bounded-output repair hint, with exact optional funding and sticky-refusal controls.
 
 - Launch fused-source Wasm package test drivers from their fixture directory using relative names so Node does not receive Windows verbatim paths as its main script.

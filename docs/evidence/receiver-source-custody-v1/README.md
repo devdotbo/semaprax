@@ -28,3 +28,10 @@ A fifth record preserves the complete `0ab1bb6cc` source-verifier declaration
 receiver across its one presentation hook. The live receiver now supplements
 the causal capacity witness with its already selected authoring repair. The
 independent original public-signature verifier stays unchanged and compiled.
+
+Four additional records preserve the complete `8fb7b0255` branch tests,
+factored producer, borrowed scalar key comparator and its fixture across the
+compact staged-source representation. The root and both inventory records
+compose the same named receiving inverse with their existing exact histories.
+The separate compact-observation packet authenticates every current byte and
+retains the complete original producer and all original branch-test assertions.

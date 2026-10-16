@@ -1108,6 +1108,7 @@ Audience: all documentation readers.
 
 ## Recent private implementation evidence
 
+- [Compact staged-result observations](evidence/compact-staged-observations-v1/README.md)
 - [Minimum ownership path array capacity](evidence/minimum-path-array-v1/README.md)
 - [Paid boxed ownership path states](evidence/boxed-path-states-v1/README.md)
 - [Branch clone capacity](evidence/branch-clone-capacity-v1/README.md)

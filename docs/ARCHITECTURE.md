@@ -131,6 +131,13 @@ has no authority. Expression-scoped Copy discovery closes before caller-prefix
 sequencing. The held automata, weighted proof and selected physical backing share
 one cumulative ledger; the selected provider/type profile remains separate.
 
+`cleanup_plan/replay/compact_stage.rs` owns the private staged-result observation
+representation: body fields stay inline and residuals retain the complete
+canonical source behind prepaid backing. Canonical CleanupPlan data remains
+the admission and replay input. Its test children retain the full original flat
+plan producer, observation shape, header traits, and lexical marker producer;
+the live producer and borrowed-key comparator retain all semantic work.
+
 `factored/canonical_shared.rs` owns ordinary immutable weighted payload sharing
 for both ordinary and selected lexical canonicalization. Moved vectors retain
 full backing reservations; Rc headers, frame slots and map nodes acquire their
