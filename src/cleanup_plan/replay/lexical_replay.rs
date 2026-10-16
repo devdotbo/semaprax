@@ -152,7 +152,7 @@ pub(super) fn validate_paid(
     };
     // Keep the independently validated operand inventory live through certificate authentication.
     let _return_operands = return_operands;
-    let auth = lexical_cert::authenticate(program, function, &owner, &facts, budget)?;
+    let auth = lexical_cert::paid::authenticate(program, function, &owner, &facts, budget)?;
     if selected {
         structural_maps::paid_reference::validate(function, budget)?;
         structural_control::validate_reachable_acyclic_cfg(function, budget)?;
@@ -342,3 +342,6 @@ pub(in crate::cleanup_plan::replay) mod before_owned_families;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_status_scalar;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_certificate;

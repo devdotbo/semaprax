@@ -52,7 +52,7 @@ pub(super) fn validate(
                         // this exact real ReplayBudget charge callback. Keep
                         // its original Diagnostic Result; no extra Deferred
                         // primitive wrapper is introduced per root probe.
-                        let _borrowed_permit = Permit::profile::<bool>(function, budget)?;
+                        let _borrowed_permit = Permit::acquire::<bool>(function, budget)?;
                         crate::hir::borrowed_scalar::expression(
                             function,
                             cursor.expression(),

@@ -41,7 +41,7 @@ pub(in crate::cleanup_plan::replay) fn signature(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Error> {
-    let _permit = Permit::profile::<bool>(function, budget)?;
+    let _permit = Permit::acquire::<bool>(function, budget)?;
     if !crate::hir::is_scalar_resolved_type(&function.return_type) {
         return Ok(false);
     }
@@ -65,7 +65,7 @@ fn fields<'a>(
     ty: &'a ResolvedType,
     budget: &mut ReplayBudget,
 ) -> Result<&'a [crate::hir::ResolvedFieldDeclaration], Error> {
-    let permit = Permit::profile::<&'a [crate::hir::ResolvedFieldDeclaration]>(function, budget)?;
+    let permit = Permit::acquire::<&'a [crate::hir::ResolvedFieldDeclaration]>(function, budget)?;
     paid_children::prepay(program, function, type_key!(permit, ty), budget)?;
     match crate::cleanup::selected_inline::selected_flat_record_fields_inline(program, ty) {
         Ok(Some((_, fields))) => Ok(fields),
@@ -80,7 +80,7 @@ fn root(
     expression: &ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Error> {
-    let permit = Permit::profile::<bool>(function, budget)?;
+    let permit = Permit::acquire::<bool>(function, budget)?;
     let ResolvedExprKind::Place(place) = &expression.kind else {
         return Ok(false);
     };
@@ -138,7 +138,7 @@ fn projected_place(
     place: &crate::hir::Place,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Error> {
-    let permit = Permit::profile::<bool>(function, budget)?;
+    let permit = Permit::acquire::<bool>(function, budget)?;
     budget.charge(function, 1, "scalar record projection shape")?;
     let [crate::hir::PlaceProjection::Field(field)] = place.projections.as_slice() else {
         return Ok(false);
@@ -208,7 +208,7 @@ pub(in crate::cleanup_plan::replay) fn expression(
     expression: &ResolvedExpr,
     budget: &mut ReplayBudget,
 ) -> Result<Option<bool>, Error> {
-    let permit = Permit::profile::<Option<bool>>(function, budget)?;
+    let permit = Permit::acquire::<Option<bool>>(function, budget)?;
     match &expression.kind {
         ResolvedExprKind::Place(place) if !place.projections.is_empty() => Ok(Some(
             projected_place(program, function, expression, place, budget)?,

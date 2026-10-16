@@ -5030,3 +5030,10 @@ serialized-key authority. These owners do not cover inventory construction,
 lexical certificates, schema adapters or path/factored child diagnostics.
 
 The private #854 canonical interning component keeps same-comparison weighted states and signatures in prepaid ordered AVL arenas. Its borrowed query resolves every child identity before lookup, and only a missing signature receives an owning label/ID vector. Separate immediate-parent BTree receivers and complete source views remain test-only; scratch capacity, new owner controls and growth overlap are admitted on the original budget before acquisition. Qualification and application effects remain pending.
+
+The selected lexical certificate receiving twin in
+`cleanup_plan/replay/lexical_cert/paid.rs` and its `paid/storage.rs` child owns
+closed certificate refusals and same-ledger primitive receiving. The original
+certificate stays independent; borrowed chain/type/drop/boundary Diagnostics
+remain explicit residual boundaries. Read-only scalar children use the
+existing acquire bank where no Deferred exists in that call's own scope.

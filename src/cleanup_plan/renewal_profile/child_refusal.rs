@@ -8,6 +8,7 @@ pub(crate) enum Refusal {
     Structural(super::structural_refusal::StructuralRefusal),
     Status(super::status_refusal::StatusRefusal),
     Scalar(super::scalar_refusal::ScalarRefusal),
+    Certificate(super::certificate_refusal::CertificateRefusal),
     LexicalDepth,
     RenewalCensus,
     HelperCensus,
@@ -23,6 +24,7 @@ impl Refusal {
             Self::Structural(reason) => reason.detail(),
             Self::Status(reason) => reason.detail(),
             Self::Scalar(reason) => reason.detail(),
+            Self::Certificate(reason) => reason.detail(),
             Self::LexicalDepth => "lexical control scan exceeds admitted expression depth",
             Self::RenewalCensus => "selected primitive renewal census refused",
             Self::HelperCensus => {
@@ -36,7 +38,7 @@ impl Refusal {
     pub(crate) fn prefixed(self) -> bool {
         match self {
             Self::Profile(reason) => reason.prefixed(),
-            Self::ReferenceCoverage(_) | Self::Structural(_) | Self::Status(_) | Self::Scalar(_) => true,
+            Self::ReferenceCoverage(_) | Self::Structural(_) | Self::Status(_) | Self::Scalar(_) | Self::Certificate(_) => true,
             _ => matches!(self, Self::RenewalWork | Self::LostPhysical),
         }
     }

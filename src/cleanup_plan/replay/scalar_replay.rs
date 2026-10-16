@@ -27,7 +27,7 @@ pub(super) fn validate_paid(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<(), expression_facts::errors::EngineError> {
-    let permit = selected_context::child::Permit::profile::<()>(function, budget)?;
+    let permit = selected_context::child::Permit::acquire::<()>(function, budget)?;
     if !records::paid::signature(program, function, budget)? {
         return Err(permit.refuse(
             crate::cleanup_plan::renewal_profile::child_refusal::Refusal::Scalar(
@@ -345,3 +345,6 @@ mod paid_nodes;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_status_scalar;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_certificate;

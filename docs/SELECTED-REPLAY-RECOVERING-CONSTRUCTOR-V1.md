@@ -687,3 +687,25 @@ callbacks, lexical certificates, scalar schema/borrowed-test adapters, CFG,
 path and factored descendants still include original owned Diagnostics.
 Those genuine boundaries require separate typed cuts; no late relabeling or
 whole-Session closure is claimed. Ordinary and legacy paths remain allocating.
+
+## Certificate receiving and dead Deferred slots (#781, source-only)
+
+The selected lexical certificate entry and its dictionary/DFS children acquire
+the existing per-call same-ledger receiving banks before real array, clone,
+Vec or conditional node arguments. Fifty-two static semantic failures carry
+closed certificate data. Original traversal, branch order, normal-end checks,
+work and error text remain; original certificate and complete immediate-prior
+paid drivers remain independently executable. Borrowed chain, type/drop and
+lexical-boundary children still forward their original owned Diagnostics and
+are explicit residuals. No arbitrary Diagnostic is certified after creation.
+
+Five scalar-record helpers, the scalar driver entry and the borrowed-scalar
+bool receiver use the existing acquire bank: their own scopes never construct
+or resolve Deferred, including genuine old budget-error forwarding. Real
+child Deferred producers retain their own profile banks. This removes exactly
+the dead four-slot profile tuple and its initializer work, without a refund or
+new protocol. Initial receiving payments remain genuine earlier refusal
+frontiers. Four unexecuted owners cover full certificate fields/hostile order,
+actual bill/work/exact-short-zero/Drop, complete old/current drivers and exact
+read-only slot removal. #781 remains OPEN for unmigrated descendants; there is
+no measured saving, application-fit or closure claim.

@@ -7365,3 +7365,8 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
 - Source-only #854 adds prepaid canonical state/signature arenas and borrowed signature hits, with complete independent immediate-parent receivers and explicit unfavorable tiny/unique-wide cases. Runtime qualification and application effects remain pending.
 
 - The private #854 receiving successor explicitly admits both inner arena Vec header constructions and query/traversal borrow receiver pairs; generic search/mutation roles carry no numeric removed-layout credit. Earlier source checkpoints and all original physical assertions remain preserved.
+
+- Source-only #781 certificate receiving: preserve complete original receivers,
+  add closed static refusals and real same-ledger primitive banks, and remove
+  dead Deferred slots from seven read-only scalar entry scopes. Actual runtime
+  gates remain pending; transitive owned-Diagnostic residuals remain open.

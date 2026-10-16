@@ -7,7 +7,7 @@ pub(in super::super) struct Permit<'a> {
     subject: &'a ResolvedFunction,
 }
 impl<'a> Permit<'a> {
-    pub(super) fn acquire<T>(
+    pub(in super::super) fn acquire<T>(
         subject: &'a ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<Self, Error> {

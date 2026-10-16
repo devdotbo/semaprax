@@ -310,3 +310,5 @@ pub(crate) mod structural_refusal;
 pub(crate) mod status_refusal;
 
 pub(crate) mod scalar_refusal;
+
+pub(crate) mod certificate_refusal;

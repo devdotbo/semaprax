@@ -334,3 +334,6 @@ mod receiving_families;
 
 #[path = "tests/receiving_status_scalar.rs"]
 mod receiving_status_scalar;
+
+#[path = "tests/receiving_certificate.rs"]
+mod receiving_certificate;
