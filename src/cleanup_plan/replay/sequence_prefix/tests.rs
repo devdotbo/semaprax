@@ -16,6 +16,32 @@ fn with_original<T>(run: impl FnOnce() -> T) -> T {
     let _restore = Restore(ORIGINAL.with(|flag| flag.replace(true)));
     run()
 }
+fn minimum_items() -> usize {
+    MINIMUM_ITEMS
+}
+// Direct physical/pointer controls use the same admission and transfer as the
+// live arm. Full receiver tests below execute that arm itself, not this adapter.
+fn try_take(
+    prefix: &mut Observations,
+    suffix: &Observations,
+    suffix_count: usize,
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+    phase: &str,
+) -> Result<Option<Observations>, Diagnostic> {
+    if !can_take(Candidate {
+        prefix,
+        suffix,
+        suffix_count,
+        budget,
+    }) {
+        return Ok(None);
+    }
+    budget.charge_skeleton(function, 1, phase)?;
+    budget.reserve_array::<u8>(function, RECEIVING_BYTES, phase)?;
+    note_skeleton_materialization();
+    Ok(Some(std::mem::take(prefix)))
+}
 fn program() -> ResolvedProgram {
     let source =
         "module prefix_move; @id(\"f\") fn f()->i64 {0} @id(\"main\") fn main()->i64 {f()}";
@@ -200,7 +226,7 @@ fn complete_transfer_receiver_pays_before_allocation_at_zero_exact_and_short_lim
                 let before = skeleton_materializations();
                 let result = (|| {
                     let mut work = SkeletonWork::with_index(&program, function, &mut budget, None)?;
-                    let count = minimum_items() + 9;
+                    let count = minimum_items();
                     let input = seed(count, count + 16, &mut work)?;
                     let mut inputs = Vec::new();
                     work.push_expr_path(&mut inputs, input, "finite prefix")?;
@@ -292,4 +318,34 @@ fn bypasses_and_sticky_refusals_leave_the_complete_input_untouched() {
         assert_eq!(input, saved);
         assert_eq!(input.items.as_ptr(), pointer);
     });
+}
+
+#[test]
+fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        RECEIVING_BYTES,
+        2 * std::mem::size_of::<Candidate<'static>>() + 2 * std::mem::size_of::<bool>()
+    );
+    assert!((MINIMUM_ITEMS - 1) * ITEM_BYTES < RECEIVING_BYTES);
+    assert!(MINIMUM_ITEMS * ITEM_BYTES >= RECEIVING_BYTES);
+    let full = include_str!("before_wrapper.rs")
+        .replace("#[path = \"before.rs\"]\n", "")
+        .replace("#[path = \"before_wrapper_tests.rs\"]\n", "");
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(full.as_bytes()))
+        ),
+        "bd6e2b4576dbacb62f8b2698591a4afcf15809d2994c6b01010b5a0a397b8218"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(
+                include_str!("before_wrapper_tests.rs").as_bytes()
+            ))
+        ),
+        "38f11a53d0a21dc60470dc7ac46fda2a86d191ade68bd7abf5c40ab4da783846"
+    );
 }

@@ -2951,16 +2951,24 @@ fn sequence_skeleton_paths(
             work.share_prefix_tail(&mut prefix.observations)?;
         }
         for suffix in suffixes.iter() {
-            let observations = match sequence_prefix::try_take(
-                &mut prefix.observations,
-                &suffix.observations,
-                suffixes.len(),
-                work.function,
-                work.budget,
-                "skeleton prefix clone",
-            )? {
-                Some(observations) => observations,
-                None => work.clone_observations(&prefix.observations, "skeleton prefix clone")?,
+            let observations = if sequence_prefix::can_take(sequence_prefix::Candidate {
+                prefix: &prefix.observations,
+                suffix: &suffix.observations,
+                suffix_count: suffixes.len(),
+                budget: work.budget,
+            }) {
+                // Retain the original clone's work and materialization, while
+                // funding the pure probe before transferring any owned field.
+                work.charge(1, "skeleton prefix clone")?;
+                work.budget.reserve_array::<u8>(
+                    work.function,
+                    sequence_prefix::RECEIVING_BYTES,
+                    "skeleton prefix clone",
+                )?;
+                note_skeleton_materialization();
+                std::mem::take(&mut prefix.observations)
+            } else {
+                work.clone_observations(&prefix.observations, "skeleton prefix clone")?
             };
             let observations = work.extend_owned_observations(
                 observations,

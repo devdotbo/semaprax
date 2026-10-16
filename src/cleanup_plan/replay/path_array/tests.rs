@@ -290,6 +290,11 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
                 "            let observations = match sequence_prefix::try_take(\n                &mut prefix.observations,\n                &suffix.observations,\n                suffixes.len(),\n                work.function,\n                work.budget,\n                \"skeleton prefix clone\",\n            )? {\n                Some(observations) => observations,\n                None => work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?,\n            };", 1
             );
         }
+        if name == "sequence_skeleton_paths" {
+            // Compose the pure-probe follow-up without changing either full
+            // predecessor, the earlier inverse, or the final exact match.
+            current = current.replacen("            let observations = match sequence_prefix::try_take(\n                &mut prefix.observations,\n                &suffix.observations,\n                suffixes.len(),\n                work.function,\n                work.budget,\n                \"skeleton prefix clone\",\n            )? {\n                Some(observations) => observations,\n                None => work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?,\n            };","            let observations = if sequence_prefix::can_take(sequence_prefix::Candidate {\n                prefix: &prefix.observations,\n                suffix: &suffix.observations,\n                suffix_count: suffixes.len(),\n                budget: work.budget,\n            }) {\n                // Retain the original clone's work and materialization, while\n                // funding the pure probe before transferring any owned field.\n                work.charge(1, \"skeleton prefix clone\")?;\n                work.budget.reserve_array::<u8>(\n                    work.function,\n                    sequence_prefix::RECEIVING_BYTES,\n                    \"skeleton prefix clone\",\n                )?;\n                note_skeleton_materialization();\n                std::mem::take(&mut prefix.observations)\n            } else {\n                work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?\n            };", 1);
+        }
         assert_eq!(root.matches(&current).count(), 1, "{name}");
     }
 }

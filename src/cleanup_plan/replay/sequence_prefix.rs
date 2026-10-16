@@ -1,62 +1,41 @@
-//! Transfer an already paid prefix only when its single successor owns it.
-//! Probe existing headers only; all other lanes retain the complete clone.
+//! A pure borrowed shape probe; the existing receiver owns fallible transfer.
 use super::*;
 
-fn receiving_bytes() -> usize {
-    use std::mem::size_of;
-    2 * size_of::<Result<Option<Observations>, Diagnostic>>()
-        + size_of::<&ResolvedFunction>()
-        + size_of::<&mut ReplayBudget>()
-        + size_of::<&mut Observations>()
-        + size_of::<&Observations>()
-        + size_of::<&str>()
-        + size_of::<Observations>()
-        + 3 * size_of::<usize>()
-        + size_of::<bool>()
+pub(super) struct Candidate<'a> {
+    pub(super) prefix: &'a Observations,
+    pub(super) suffix: &'a Observations,
+    pub(super) suffix_count: usize,
+    pub(super) budget: &'a ReplayBudget,
 }
-fn minimum_items() -> usize {
-    receiving_bytes().div_ceil(std::mem::size_of::<std::rc::Rc<SkeletonObservation>>())
-}
+// Both complete incoming/callee headers and both boolean result slots. The
+// transfer stays in the existing sequencing receiver, whose observation/result
+// carriers already existed in the original clone. No new fallible sum crosses
+// this probe. The old vector clone alone must cover this complete new layout.
+pub(super) const RECEIVING_BYTES: usize =
+    2 * std::mem::size_of::<Candidate<'static>>() + 2 * std::mem::size_of::<bool>();
+const ITEM_BYTES: usize = std::mem::size_of::<std::rc::Rc<SkeletonObservation>>();
+const MINIMUM_ITEMS: usize = RECEIVING_BYTES.div_ceil(ITEM_BYTES);
 
-pub(super) fn try_take(
-    prefix: &mut Observations,
-    suffix: &Observations,
-    suffix_count: usize,
-    function: &ResolvedFunction,
-    budget: &mut ReplayBudget,
-    phase: &str,
-) -> Result<Option<Observations>, Diagnostic> {
+pub(super) fn can_take(input: Candidate<'_>) -> bool {
     #[cfg(test)]
     if tests::original_selected() {
-        return Ok(None);
+        return false;
     }
     #[cfg(test)]
-    if budget.oracle_lease().is_some() {
-        return Ok(None);
+    if input.budget.oracle_lease().is_some() {
+        return false;
     }
-    // The old clone alone costs at least the complete new receiving layout.
-    // Reusing spare storage cannot introduce a larger growth acquisition. A
-    // DAG suffix freezes the prefix unchanged instead of extending its tail.
-    // These are allocation-free shape probes, not a new fact/cache authority.
-    if !budget.pays_allocations()
-        || budget.selected()
-        || suffix_count != 1
-        || prefix.items.len() < minimum_items()
-        || (suffix.prefix.is_none()
-            && suffix.items.len() > prefix.items.capacity() - prefix.items.len())
-    {
-        return Ok(None);
-    }
-    // Same logical clone operation and materialization as the old receiver.
-    // Its actual vector clone and clone cursor are absent: every observation
-    // and the immutable prefix transfer intact. Existing backing stays paid.
-    budget.charge_skeleton(function, 1, phase)?;
-    budget.reserve_array::<u8>(function, receiving_bytes(), phase)?;
-    note_skeleton_materialization();
-    Ok(Some(std::mem::take(prefix)))
+    input.budget.pays_allocations()
+        && !input.budget.selected()
+        && input.suffix_count == 1
+        && input.prefix.items.len() >= MINIMUM_ITEMS
+        && (input.suffix.prefix.is_some()
+            || input.suffix.items.len() <= input.prefix.items.capacity() - input.prefix.items.len())
 }
 
 #[cfg(test)]
 mod before;
+#[cfg(test)]
+mod before_wrapper;
 #[cfg(test)]
 mod tests;

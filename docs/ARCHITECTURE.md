@@ -4878,11 +4878,19 @@ when the original unlock diagnostic overrides its outward report. The original
 Vec APIs remain independent compatibility receivers.
 
 
-`cleanup_plan/replay/sequence_prefix.rs` transfers the complete already funded
-observation prefix into its sole successor. It retains observation identities,
+`cleanup_plan/replay.rs` transfers the complete already funded observation
+prefix into its sole successor; `sequence_prefix.rs` owns its borrowed probe. It retains observation identities,
 DAG ownership, order, path fields, one logical clone debit and materialization.
 An allocation-free header check requires enough avoided clone backing to fund
 the complete receiving layout, and enough spare capacity for a flat suffix.
 Other fanouts, small prefixes, legacy, selected and oracle routes retain the
 original clone. The independently compiled complete previous sequencing receiver
 and both source inventories remain bound to their exact predecessor bytes.
+
+The sole-successor probe uses `sequence_prefix::Candidate`, two fully funded
+borrowed headers and two boolean slots. Fallible work/reservation and field
+transfer stay in the original sequencing receiver, eliminating the additional
+fallible observation wrapper. The entire shipped wrapper and all five original
+tests remain independently compiled in `sequence_prefix/before_wrapper.rs` and
+`before_wrapper_tests.rs`; fixed source hashes permit only their module wiring
+adaptations. Exact-minimum-prefix controls exercise the full live receiver.

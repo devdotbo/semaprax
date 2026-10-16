@@ -1,5 +1,7 @@
 # Changelog
 
+- Keep fallible prefix transfer in its existing cleanup receiver and fund a pure borrowed probe, retaining the complete shipped wrapper and its original tests.
+
 - Transfer an already funded cleanup observation prefix to its sole successor, preserving full replay checks, work, ordering, and complete previous receivers under unchanged limits.
 
 - Retain the original mixed String/Bytes programs as source, HIR and canonical graph acceptance regressions; keep unsupported-array declaration and pattern refusals under the existing exact diagnostics.

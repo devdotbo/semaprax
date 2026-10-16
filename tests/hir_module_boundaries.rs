@@ -448,6 +448,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/sequence_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/sequence_prefix/before.rs"),
         include_str!("../src/cleanup_plan/replay/sequence_prefix/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/sequence_prefix/before_wrapper.rs"),
+        include_str!("../src/cleanup_plan/replay/sequence_prefix/before_wrapper_tests.rs"),
         include_str!("../src/cleanup_plan/replay/branch_clone.rs"),
         include_str!("../src/cleanup_plan/replay/branch_clone/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
