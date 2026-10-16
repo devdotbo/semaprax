@@ -1,5 +1,7 @@
 # Changelog
 
+- Compact borrowed child traversal state without changing enumeration, work refusals or depth bounds, retaining the complete original cursor and low-stack constructor regression.
+
 - Select existing inline String storage for private metered Core-Wasm stage builds, retaining unmetered public profile refusals and the original lexical fuel/cleanup parity fixture.
 
 - Provision GDB explicitly for hosted low-stack diagnostics when the runner image does not include it.
