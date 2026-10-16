@@ -7348,3 +7348,5 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
   no cap changes or application recovery claim.
 
 - Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
+
+- Source-only #854 adds prepaid canonical state/signature arenas and borrowed signature hits, with complete independent immediate-parent receivers and explicit unfavorable tiny/unique-wide cases. Runtime qualification and application effects remain pending.

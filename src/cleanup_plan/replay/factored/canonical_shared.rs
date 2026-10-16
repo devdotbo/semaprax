@@ -1374,3 +1374,6 @@ mod main_unit_weight;
 
 #[cfg(test)]
 mod arena_tests;
+
+#[cfg(test)]
+mod arena_source;

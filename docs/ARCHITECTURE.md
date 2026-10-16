@@ -5003,3 +5003,5 @@ report retained capacities, removed buffers and complete Drop. No shared-history
 representation or universal cost improvement follows from this transfer.
 These NEXT changes are source-ready and await their focused executable gates;
 no application-cap or universal physical-cost improvement is certified here.
+
+The private #854 canonical interning component keeps same-comparison weighted states and signatures in prepaid ordered AVL arenas. Its borrowed query resolves every child identity before lookup, and only a missing signature receives an owning label/ID vector. Separate immediate-parent BTree receivers and complete source views remain test-only; scratch capacity, new owner controls and growth overlap are admitted on the original budget before acquisition. Qualification and application effects remain pending.

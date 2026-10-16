@@ -727,8 +727,21 @@ fn before_storage_oracle_join(source: &str, current: &str) -> String {
 
 // Independent complete Main and pre-Main source domains.
 pub(crate) fn main_b80_input(source: &str, current: &str) -> String {
+    let prior = arena854_previous(source, current);
+    let current = prior.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main-b80-complete-source-join-20261016/current-to-main.json")), source, current)
 }
 pub(crate) fn main_b80_prior_input(source: &str, current: &str) -> String {
+    let prior = arena854_previous(source, current);
+    let current = prior.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main-b80-complete-source-join-20261016/current-to-df2.json")), source, current)
+}
+
+// New owner and inherited domains remain independent; all old tables stay exact.
+pub(crate) fn arena854_input(source: &str, current: &str) -> String {
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-intern-arena-854-joined-20261016/current-to-ab13.json")), source, current)
+}
+pub(crate) fn arena854_previous(source: &str, current: &str) -> String {
+    let component = arena854_input(source, current);
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-intern-arena-854-next-20261016/current-to-3c388.json")), source, &component)
 }
