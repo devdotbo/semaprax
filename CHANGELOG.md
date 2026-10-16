@@ -8,6 +8,8 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Source-only #781 extends closed selected receipts to slot/region/leaf and flat-leaf/storage-index construction, with per-actual-call clone/vector/node receiving on the same ledger and complete independent old drivers. Earlier receiving frontiers and remaining inventory/status/certificate/path diagnostics are explicit; focused execution and transitive closure remain pending.
+
 - Source-only #781 followup routes the duplicated paid lexical/scalar driver
   profile and member guards through their existing prepaid receipt twins.
   Complete old drivers and report/ledger/Drop controls remain; transitive dynamic

@@ -69,16 +69,16 @@ pub(super) fn validate_paid(
     let (storage, leaves) = if selected {
         inventory_coverage::validate_inventory_coverage(program, function, budget)?;
         status_construction::validate_required_status_sources(program, function, budget)?;
-        let storage = structural_maps::validate_slots_core::<expression_facts::errors::EngineError>(
+        let storage = structural_maps::paid::slots(
             function, budget,
         )?;
-        let leaves = structural_maps::collect_leaves(function, budget)?;
+        let leaves = structural_maps::paid::leaves(function, budget)?;
         status_validation::validate_core::<expression_facts::errors::EngineError>(
             function,
             &expression_facts,
             budget,
         )?;
-        structural_maps::validate_regions(function, &storage, budget)?;
+        structural_maps::paid::regions(function, &storage, budget)?;
         structural_control::validate_entry(function, &storage, &leaves, budget)?;
         let renewals = program.primitive_renewals(function).ok_or_else(|| {
             replay_error(
@@ -338,3 +338,6 @@ fn validate_core<'hir, E: structural_control::call_receiving::Policy>(
     )
     .map_err(E::from)
 }
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_owned_families;

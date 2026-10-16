@@ -304,3 +304,5 @@ mod tests {
         }
     }
 }
+
+pub(crate) mod structural_refusal;

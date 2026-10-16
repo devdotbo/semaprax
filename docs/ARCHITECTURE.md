@@ -2266,6 +2266,16 @@ Semantic Graph: `semaprax.workspace-semantic-graph.v2`, selected only for a
 workspace with at least one declaring module, with one fact per declaration
 bound to its owning module, path, `@id`, span, and checked `via` functions
 (see `docs/SESSION-PROTOCOL-TYPES-V1.md`).
+The sibling `structural_maps/paid` owns selected slot/region/leaf traversal with
+closed structural receipts. `flat_records/paid_leaves` and `leaf_index/receiving`
+own the attached-leaf and storage-index constructors; each real clone, node or
+vector wrapper acquires its exact same-ledger receiving bank before arguments.
+The shared lexical bank expansion lives in `selected_context/child/receiving`;
+only genuine ReplayBudget primitives can create its sealed budget-failure arm.
+Complete old constructors and paid drivers remain independent test receivers.
+Inventory construction and other unconverted Session families still return
+owned Diagnostics; these finite routes do not certify transitive #781 funding.
+
 
 Only the live workspace invocation may publish. Evidence capsules never carry
 reusable authority.

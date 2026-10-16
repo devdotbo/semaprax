@@ -628,3 +628,27 @@ wrappers stay unchanged. This finite family and the prior profile/owner tranche
 do not complete the remaining dynamic Session validator families: #781 stays
 open. Focused semantic, exact/short/zero, duplicate, ledger and Drop controls are
 authored; no execution or savings claim follows from this source checkpoint.
+
+## Structural leaf-family receiving cut (#781, source-only)
+
+Paid lexical and scalar drivers use complete slot, region and leaf algorithms
+with closed static labels and the existing shared-identity dynamic atoms. The
+attached flat-record leaf collector and storage-index constructor preserve all
+membership, insertion, field, flag and error ordering. Every actual clone and
+vector forwarding call acquires its nine/ten-slot receiving layout on the SAME
+budget before arguments; conditional nodes retain their eight-slot bank only
+when the original membership test admits insertion. The lexical expansion adds
+no extra forwarding function or Result. Original nested budget Results remain.
+Each helper acquires its existing profile permit for its actual return type;
+slot dynamic Atom initialization/receiving has a separate two-Atom bank.
+
+These payments and initializer work are genuine earlier refusal frontiers, not
+old-fee credit or a refund. Genuine budget errors alone use sealed
+BudgetDiagnostic; static and shared-identity semantic failures remain closed
+receipts for the already-funded report. Compatibility Diagnostic renderers and
+full immediate-old drivers remain independent. The initial receiving boundary
+retains the existing report/ledger contract; no arbitrary child Diagnostic is
+certified after construction. The inventory builder still returns an owned
+Diagnostic through its raw physical callback; status, certificate, path and
+other unmigrated families remain residual, so #781 stays OPEN. No runtime,
+allocation reduction, application-fit or end-to-end funding claim follows.

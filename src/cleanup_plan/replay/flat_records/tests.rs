@@ -328,3 +328,6 @@ fn whole_record_shape_backing_is_cumulative_across_work_reset_and_refusal_sticky
     );
     assert!(short.physical.as_mut().unwrap().reserve(0).is_err());
 }
+
+#[path = "tests/receiving_families.rs"]
+mod receiving_families;
