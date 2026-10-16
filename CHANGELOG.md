@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted 524a80bc9 captures after a 36,720-byte builder-bill reduction, preserving all earlier whole-wire, source, and tamper controls.
+
 - Separate loan-plan presence, lexical validation and candidate construction into non-inlined stack phases, retaining the complete original planner and low-stack regression.
 
 - Restore later allocation-test and provider inventory inputs through explicit whole-source custody, retaining original formatting hashes, all fourteen receiver proofs and complete historical source assertions.

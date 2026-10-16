@@ -1123,6 +1123,7 @@ Audience: all documentation readers.
 - [Hosted graph bill after HIR and replay storage changes](evidence/browser-graph-pins-c11a63509/README.md)
 - [Hosted graph bill after final path receivers and nominal context](evidence/browser-graph-pins-f82cec490/README.md)
 - [Hosted graph bill after single-successor vector reuse](evidence/browser-graph-pins-75b314f70/README.md)
+- [Hosted graph bill after clone cursor savings](evidence/browser-graph-pins-524a80bc9/README.md)
 - [Hosted paid-cursor graph bills](evidence/browser-graph-pins-268cb0523/README.md)
 - [Hosted browser graph pins](evidence/browser-graph-pins-841efe3e2/README.md)
 - [Darwin native tool reference](evidence/darwin-native-link-reference-v1/README.md)
