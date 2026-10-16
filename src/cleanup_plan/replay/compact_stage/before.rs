@@ -549,8 +549,10 @@ pub(super) fn plan_skeleton_paths(
 #[path = "lexical_before.rs"]
 mod lexical_skeleton;
 
-impl IntoReplay<std::rc::Rc<SkeletonObservation>> for SkeletonObservation {
+impl crate::cleanup_plan::replay::physical_clone::IntoReplay<std::rc::Rc<SkeletonObservation>>
+    for SkeletonObservation
+{
     fn conversion_bytes() -> usize {
-        physical_clone::rc_backing_bytes::<SkeletonObservation>()
+        crate::cleanup_plan::replay::physical_clone::rc_backing_bytes::<SkeletonObservation>()
     }
 }
