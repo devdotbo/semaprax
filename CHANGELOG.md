@@ -1,5 +1,7 @@
 # Changelog
 
+- Report the first native-provider builder reservation and caller in outward C++ package diagnostic help, preserving primary diagnostics, all limits, and complete verification.
+
 - Acquire known minimum ownership-path array capacity once, retaining complete path traversal, work charges, future growth, and independently compiled old receivers under the unchanged builder limit.
 
 - Reuse a sole incoming ownership-state tree as its identity control partition, retaining complete key construction, work charges, all join/replay checks and the original grouped producer while prepaying new receiving layouts.
