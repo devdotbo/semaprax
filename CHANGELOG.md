@@ -1,5 +1,7 @@
 # Changelog
 
+- Give direct compact-stage and branch-clone receiver fixtures their explicit post-preflight skeleton allowance while retaining zero/exact/short allocation accounts; preserve failed macOS CI unit executables with exact Cargo/commit/byte provenance for bounded replay on the external SSD.
+
 - Classify imported nominal graph profiles with borrowed authenticated type context while retaining local declaration payloads, conservative frozen-profile guards, and the original imported-record v67 / Prelude v11 ProgramRoot gate.
 
 - Bind historical arena, nominal and selected-session source controls directly to complete live inputs and extend exact inverses while preserving all original archives and hashes; bind both residual-box capacity additions to the complete original census.

@@ -1,6 +1,9 @@
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
+// These direct receivers start after skeleton preflight. Supply its explicit
+// work allowance; new() intentionally leaves that allowance unset. Allocation
+// zero/exact/short accounts below keep their original limits and assertions.
 use std::cell::Cell;
 use std::rc::Rc;
 thread_local! { static ORIGINAL: Cell<bool> = const { Cell::new(false) }; }
@@ -32,8 +35,8 @@ fn full_plan_enumerator_keeps_every_original_path_work_and_materialization() {
     let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
         measure(|| {
             for function in &program.functions {
-                let mut old = ReplayBudget::new();
-                let mut current = ReplayBudget::new();
+                let mut old = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let mut current = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
                 assert!(old.pays_allocations() && current.pays_allocations());
                 let before = skeleton_materializations();
                 let expected =
@@ -69,7 +72,7 @@ fn clone_and_push_keep_capacity_contents_work_and_drop_with_less_backing() {
             let observe = |original, limit| {
                 with_limit_usage_refusal(limit, || {
                     measure(|| {
-                        let mut budget = ReplayBudget::new();
+                        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
                         let before = skeleton_materializations();
                         let result = (|| {
                             let mut copy = if original {
