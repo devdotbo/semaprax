@@ -8,9 +8,17 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Port Main44 sequencing capacity to the lexical first active output work frontier with prepaid complete query controls, while retaining its complete independent implementation and original source domains. Report paid no-saving probes without refunds; combined execution qualification remains pending.
+
 - Reconcile Main8a finished-path capacity, arbitrary final-suffix transfer and borrowed nominal context with lexical paid receiving; preserve original work-before-optional-payment priority and complete Main controls. Qualification and net application cost remain pending.
 
 - Reconcile Main24 as an independent historical prefix probe/transfer receiver with all six current and five prior-wrapper controls; retain the shipping lexical single-successor transfer and exact path-array preflight.
+- Use the contracted fixed construction cap for C++ package source replay while retaining the exact configured output-envelope limit.
+
+- Reserve a proved sequencing minimum from the first active prefix, skipping intermediate path-vector backing while preserving the complete original loop, capacity, work, paid fallback and verification route.
+
+- Preserve selected inner diagnostic help on scaffold validation failures and capture complete cold/warm cache wires after the owning CI shard fails.
+
 - Preserve complete pre-site budget layout controls while explicitly checking the later sticky call-site pointer against the full current budget definition.
 
 - Refresh browser graph pins from complete hosted 75b314f70 records after an observed 4,756-byte builder-bill decrease, preserving every prior whole-wire bridge and source control.
