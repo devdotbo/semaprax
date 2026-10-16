@@ -1,5 +1,7 @@
 # Changelog
 
+- Avoid constructing the recursive type census for ordinary scalar clones while retaining the original fee controls, full compound fallback and sticky allocation authentication.
+
 - Compact borrowed child traversal state without changing enumeration, work refusals or depth bounds, retaining the complete original cursor and low-stack constructor regression.
 
 - Select existing inline String storage for private metered Core-Wasm stage builds, retaining unmetered public profile refusals and the original lexical fuel/cleanup parity fixture.
