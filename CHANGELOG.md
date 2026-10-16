@@ -1,5 +1,7 @@
 # Changelog
 
+- Capture a bounded debugger trace from the exact current Linux unit executable after its owning shard fails, retaining the original low-stack test and failure result.
+
 - Compose source-audit inverses through later module additions, preserving every original archive and fixed hash; authenticate both complete live source-reader successors before replaying their historical formatting controls.
 
 - Use the contracted fixed construction cap for C++ package source replay while retaining the exact configured output-envelope limit.
