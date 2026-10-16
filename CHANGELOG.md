@@ -1,5 +1,7 @@
 # Changelog
 
+- Bind allocation release-order watches to the initial allocation lifetime, retaining duplicate/missing-free refusals when System reuses an address during DAG destruction.
+
 - Require the checked agent-function boundary to reject forged match ownership while preserving the complete legacy mode-encoding assertions through the existing query serializer.
 
 - Match the documented canonical function-brace layout in the 512-payload formatter golden, retaining its complete byte equality and unchanged scratch budget.
