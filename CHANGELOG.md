@@ -1,5 +1,9 @@
 # Changelog
 
+- Bind historical arena, nominal and selected-session source controls directly to complete live inputs and extend exact inverses while preserving all original archives and hashes; bind both residual-box capacity additions to the complete original census.
+
+- Keep archived private Rust implementation source outside the public Cargo package, and include the admitted current scaffold layout in the exact CLI help pin.
+
 - Restore complete submodule text in source-locked native layout, HIR, workspace, CLI and routing audits without changing their assertions or coverage baseline.
 
 - Acquire finished cleanup path capacity once and transfer a complete prefix to its final successor, preserving original receiver controls, logical work, order and unchanged builder limits.
