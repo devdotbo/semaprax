@@ -5054,3 +5054,9 @@ closed certificate refusals and same-ledger primitive receiving. The original
 certificate stays independent; borrowed chain/type/drop/boundary Diagnostics
 remain explicit residual boundaries. Read-only scalar children use the
 existing acquire bank where no Deferred exists in that call's own scope.
+
+`cleanup_plan/replay/lexical_boundary/paid.rs` owns selected boundary admission
+with lexical callback expansion. Selected certificate storage owns the paid region-chain array; its borrowed
+chain query stays original. Original path-state boundary checking,
+a deliberately error-swallowing boolean chain query, and type/schema children
+remain separate original Diagnostic boundaries.

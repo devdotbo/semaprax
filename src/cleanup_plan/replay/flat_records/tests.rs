@@ -337,3 +337,6 @@ mod receiving_status_scalar;
 
 #[path = "tests/receiving_certificate.rs"]
 mod receiving_certificate;
+
+#[path="tests/receiving_boundary.rs"]
+mod receiving_boundary;

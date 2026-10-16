@@ -709,3 +709,24 @@ frontiers. Four unexecuted owners cover full certificate fields/hostile order,
 actual bill/work/exact-short-zero/Drop, complete old/current drivers and exact
 read-only slot removal. #781 remains OPEN for unmigrated descendants; there is
 no measured saving, application-fit or closure claim.
+
+## Boundary admission and selected region chains (#781, source-only)
+
+The selected certificate calls a complete boundary-admission twin. Its original
+FnMut admission callback is expanded lexically at the same ordered call sites,
+so no new forwarding Result or closure captures a successful affine permit.
+Ten boundary/chain failures carry exact closed text; real dictionary nodes and
+region-chain arrays use the existing per-call same-ledger primitive receiving.
+The original borrowed chain query stays an explicit owned-error residual;
+its boolean parameter is not replaced by a new mutable-budget forwarding ABI. Admission payments precede new
+receivers and may refuse earlier than old semantic/backing failures.
+
+One original chain query is intentionally consumed by a boolean any predicate
+with unwrap_or(false). It remains on the complete original query; routing a new
+paid refusal into that swallow would be unsound. Type/drop, scalar schema, raw
+inventory, path-state boundary checking and other unmigrated children remain
+owned-Diagnostic residuals. No complete #781 funding/closure is claimed. Four
+unexecuted owners compare complete Auth fields and hostile order, physical
+exact/short/work/Drop, full prior/current paid drivers, and chain order/cycle/
+unknown diagnostics. Immediate-prior certificate/storage/driver receivers are
+independent, with complete source custody. No savings or fit is measured.

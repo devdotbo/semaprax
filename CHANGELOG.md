@@ -7374,3 +7374,7 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
   add closed static refusals and real same-ledger primitive banks, and remove
   dead Deferred slots from seven read-only scalar entry scopes. Actual runtime
   gates remain pending; transitive owned-Diagnostic residuals remain open.
+
+- Source-only #781 boundary admission and selected chain receiving: preserve
+  complete prior algorithms, lexical callback/order semantics, and explicit
+  unmigrated Diagnostic children. Four runtime owners remain unexecuted.

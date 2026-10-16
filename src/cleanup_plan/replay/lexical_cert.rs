@@ -934,3 +934,6 @@ fn validate_normal_ends(
 }
 
 pub(in crate::cleanup_plan::replay) mod paid;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_boundary;

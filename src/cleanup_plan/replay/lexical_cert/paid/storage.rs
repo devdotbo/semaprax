@@ -8,11 +8,22 @@ use crate::cleanup_plan::replay::selected_context::child::{
     ArrayReceiving, NodeReceiving, Permit, VecReceiving,
 };
 type Error = crate::cleanup_plan::replay::expression_facts::errors::EngineError;
-// This original borrowed chain query still owns its original Diagnostic on
-// malformed region trees; it is an explicit remaining child, never relabelled.
+use crate::cleanup_plan::renewal_profile::{
+    boundary_refusal::BoundaryRefusal, child_refusal::Refusal,
+};
+use crate::cleanup_plan::CleanupRegionId;
+macro_rules! required {
+    ($permit:ident,$value:expr,$reason:ident) => {
+        match $value {
+            Some(value) => value,
+            None => return Err($permit.refuse(Refusal::Boundary(BoundaryRefusal::$reason))),
+        }
+    };
+}
+// Original selected borrowed query remains an explicit semantic-error residual.
 pub(super) use super::super::storage::chain_contains;
 
-pub(super) fn insert<K: Ord, V>(
+pub(in crate::cleanup_plan::replay) fn insert<K: Ord, V>(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     map: &mut BTreeMap<K, V>,
@@ -149,4 +160,48 @@ pub(super) fn reach(
         }
     }
     Ok(seen)
+}
+
+pub(in crate::cleanup_plan::replay) fn region_chain(
+    function: &ResolvedFunction,
+    start: CleanupRegionId,
+    budget: &mut ReplayBudget,
+) -> Result<Vec<CleanupRegionId>, Error> {
+    let permit = Permit::profile::<Vec<CleanupRegionId>>(function, budget)?;
+    if !budget.pays_allocations() {
+        return crate::cleanup_plan::replay::region_chain_to_root(function, start)
+            .map_err(Error::Owned);
+    }
+    let mut current = Some(start);
+    let mut count = 0usize;
+    let mut remaining = function.cleanup_plan.regions.len();
+    while let Some(id) = current {
+        remaining = required!(
+            permit,
+            remaining.checked_sub(1),
+            CleanupRegionTreeContainsACycle
+        );
+        let item = required!(
+            permit,
+            function.cleanup_plan.regions.get(id.0 as usize),
+            CleanupRegionChainReferencesAnUnknownRegion
+        );
+        count += 1;
+        current = item.parent;
+    }
+    receive!(
+        function,
+        budget,
+        permit,
+        ArrayReceiving<'_>,
+        9,
+        budget.child_reserve_array::<CleanupRegionId>(function, count, "certificate region chain")
+    );
+    let mut chain = Vec::with_capacity(count);
+    let mut current = Some(start);
+    while let Some(id) = current {
+        chain.push(id);
+        current = function.cleanup_plan.regions[id.0 as usize].parent;
+    }
+    Ok(chain)
 }

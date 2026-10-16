@@ -14,7 +14,7 @@ use crate::cleanup_plan::replay::selected_context::child::{
     ArrayReceiving, CloneReceiving, Permit, VecReceiving,
 };
 type Error = crate::cleanup_plan::replay::expression_facts::errors::EngineError;
-mod storage;
+pub(in crate::cleanup_plan::replay) mod storage;
 macro_rules! required {
     ($permit:ident,$value:expr,$reason:ident) => {
         match $value {
@@ -765,7 +765,7 @@ pub(in crate::cleanup_plan::replay) fn authenticate(
     }
 
     validate_normal_ends(function, control, &domains, budget)?;
-    let boundaries = crate::cleanup_plan::replay::lexical_boundary::authenticate(
+    let boundaries = crate::cleanup_plan::replay::lexical_boundary::paid::authenticate(
         function, facts, &domains, budget,
     )?;
     Ok(LexicalAuth {
@@ -841,7 +841,7 @@ fn validate_normal_ends(
                             .ensures
                             .iter()
                             .any(|clause| clause.id == source.expression)
-                        && storage::chain_contains(
+                        && crate::cleanup_plan::replay::lexical_cert::storage::chain_contains(
                             function,
                             exit.from,
                             plan.blocks[failure.from.0 as usize].region,

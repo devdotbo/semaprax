@@ -300,3 +300,5 @@ pub(super) fn check(
     }
     Ok(())
 }
+
+pub(in crate::cleanup_plan::replay) mod paid;

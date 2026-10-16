@@ -345,3 +345,6 @@ pub(in crate::cleanup_plan::replay) mod before_status_scalar;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_certificate;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_boundary;
