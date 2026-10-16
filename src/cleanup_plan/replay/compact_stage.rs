@@ -17,6 +17,7 @@ pub(super) enum CopySource {
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) struct Residual(Box<StagedCopyResultSource>);
 
+#[cfg(test)]
 impl Residual {
     pub(super) fn canonical(&self) -> &StagedCopyResultSource {
         &self.0
