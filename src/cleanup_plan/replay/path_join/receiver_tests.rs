@@ -155,7 +155,7 @@ fn complete_original_receiver_and_exact_current_source_inverse_stay_bound() {
         "/docs/evidence/boxed-path-states-v1/inverse.json"
     )))
     .unwrap();
-    let mut restored = include_str!("../path_join.rs").to_owned();
+    let mut restored = grouping::source_custody::restore_root();
     for change in changes.as_array().unwrap().iter().rev() {
         let start = change[0].as_u64().unwrap() as usize;
         let current = change[1].as_str().unwrap();

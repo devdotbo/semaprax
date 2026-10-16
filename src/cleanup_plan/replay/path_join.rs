@@ -7,6 +7,7 @@ use std::borrow::Borrow;
 mod before;
 mod boxed_states;
 mod branch_join;
+mod grouping;
 #[cfg(test)]
 mod receiver_tests;
 pub(super) mod storage;
@@ -180,35 +181,9 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                         .saturating_add(renewal::retained_units(state))
                 }));
         budget.charge(function, join_units, "all-path ownership replay")?;
-        let mut groups = BTreeMap::<ControlKey, BTreeSet<Box<PathState>>>::new();
-        for state in states {
-            let key = if storage::atomic_controls::selected(&state, budget) {
-                let payload = storage::atomic_controls::reserve(function, &state, budget)?;
-                storage::atomic_controls::copy(payload)
-            } else {
-                storage::reserve_control_clone(function, &state, budget)?;
-                (
-                    state.pending_failure.clone(),
-                    state.selected_failure.clone(),
-                    state.staged_copy_result.clone(),
-                    state.published,
-                    state.returned.clone(),
-                )
-            };
-            if !groups.contains_key(&key) {
-                storage::reserve_btree_node::<ControlKey, BTreeSet<Box<PathState>>>(
-                    function,
-                    budget,
-                    "ownership control groups",
-                )?;
-            }
-            let group = groups.entry(key).or_default();
-            boxed_states::insert_held(group, state, &mut |bytes, phase| {
-                budget.reserve_bytes(function, bytes, phase)
-            })?;
-        }
+        let groups = grouping::partition(function, states, budget)?;
         let block = &plan.blocks[block_id.0 as usize];
-        for states in groups.into_values() {
+        for states in groups {
             // An owning break's fragment rejoins its wrapper's parent: every
             // incoming state must agree exactly, with no ownership or history
             // repair by the generic join below.
