@@ -1,5 +1,7 @@
 # Changelog
 
+- Run complete owned-data JavaScript test hosts from fixture files, preserving their strict guards and argument positions while avoiding Windows command-line limits.
+
 - Compact private staged-result observations with inline body fields and prepaid residual backing, retaining canonical cleanup sources, complete old producers, ordering, work, and source-custody controls under unchanged limits.
 
 - Preserve both the causal publication witness and the bounded-output repair hint, with exact optional funding and sticky-refusal controls.
