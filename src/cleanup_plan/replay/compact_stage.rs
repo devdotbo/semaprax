@@ -17,6 +17,12 @@ pub(super) enum CopySource {
 #[derive(Clone, Eq, Ord, PartialEq, PartialOrd)]
 pub(super) struct Residual(Box<StagedCopyResultSource>);
 
+impl Residual {
+    pub(super) fn canonical(&self) -> &StagedCopyResultSource {
+        &self.0
+    }
+}
+
 impl CopySource {
     fn receiving_bytes() -> usize {
         use std::mem::size_of;
