@@ -761,7 +761,14 @@ fn reference_family_input(source: &str, current: &str) -> String {
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/session-reference-instance-joined-20261016/current-to-reference.json")), source, current)
 }
 
+// A later compositor uses this normalization-only front BEFORE its raw table.
+pub(crate) fn bulk848_arm_input(source: &str, current: &str) -> String {
+    runtime_json::pair_normalize(source, current)
+}
+
 // Main's compiled test corpus keeps every original source-domain check.
 fn main_dd0_previous(source: &str, current: &str) -> String {
+    let pair = runtime_json::pair_previous(source, current);
+    let current = pair.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main-dd0-compiled-custody-join-20261016/current-to-83ca.json")), source, current)
 }

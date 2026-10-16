@@ -4462,6 +4462,16 @@ original projection logic, stage order, JSON bytes, and source assertions remain
 intact; the three source audits include every new child. Test binaries require
 the repository fixtures at runtime. This source-only transport change has no
 measured RAM benefit yet.
+The bulk-fixture matched experiment keeps both fixed transport modules as common
+source, with one `#[path]` selector choosing runtime files or embedded bytes.
+Only the selected module is compiled. Both return an authenticated owned string
+through the same bounded byte reader before the unchanged projection. The
+original all-fixture runtime-loader and hostile-I/O owner remains compiled in
+both arms and additionally compares the selected transport for every fixture.
+An exact complete-source arm adapter restores the common selector before older
+source views; actual authority manifests are regenerated per arm, without
+relaxing their current-file checks. This preparation adds no measured memory
+claim and does not make embedded-arm file availability optional for that owner.
 
 
 The bounded generic inference helpers in `source_verify/generic_inference` and
