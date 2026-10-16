@@ -1,5 +1,7 @@
 # Changelog
 
+- Match the documented canonical function-brace layout in the 512-payload formatter golden, retaining its complete byte equality and unchanged scratch budget.
+
 - Capture a bounded debugger trace from the exact current Linux unit executable after its owning shard fails, retaining the original low-stack test and failure result.
 
 - Compose source-audit inverses through later module additions, preserving every original archive and fixed hash; authenticate both complete live source-reader successors before replaying their historical formatting controls.
