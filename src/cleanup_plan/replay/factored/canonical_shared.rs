@@ -223,6 +223,8 @@ impl<'a> Canonicalizer<'a> {
     pub(super) const CONSTRUCTOR_CONTROLS: usize = 2 * std::mem::size_of::<Self>()
         + 2 * std::mem::size_of::<intern_arena::Arena<SharedWeighted>>()
         + 2 * std::mem::size_of::<intern_arena::Arena<intern_arena::Signature>>()
+        + 2 * std::mem::size_of::<Vec<intern_arena::Node<SharedWeighted>>>()
+        + 2 * std::mem::size_of::<Vec<intern_arena::Node<intern_arena::Signature>>>()
         + 2 * std::mem::size_of::<Vec<usize>>()
         + std::mem::size_of::<Result<(), Diagnostic>>();
 

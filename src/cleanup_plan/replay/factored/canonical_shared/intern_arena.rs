@@ -41,17 +41,17 @@ pub(super) struct SignatureQuery<'a> {
 }
 impl SignatureQuery<'_> {
     pub(super) const CONTROLS: usize = 2 * size_of::<Self>()
-        + size_of::<&Vec<(Label, SharedWeighted)>>()
-        + size_of::<&Vec<usize>>()
+        + 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
+        + 2 * size_of::<&Vec<usize>>()
         + size_of::<&[(Label, SharedWeighted)]>()
         + size_of::<&[usize]>();
     // Additional per-exit producers: this positive admission, retained scratch
-    // growth, and child tuple admission. The original signature reserve_array
+    // growth, and child scalar admission. The original signature reserve_array
     // still exists on misses; no old Result is credited as a reused grant.
     pub(super) const EXIT_CONTROLS: usize = Self::CONTROLS
         + 3 * size_of::<Result<(), super::Diagnostic>>()
         + 2 * size_of::<std::slice::Iter<'static, (Label, SharedWeighted)>>()
-        + size_of::<&Vec<(Label, SharedWeighted)>>()
+        + 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
         + size_of::<&[(Label, SharedWeighted)]>();
 }
 impl Query<Signature> for SignatureQuery<'_> {

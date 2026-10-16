@@ -739,6 +739,8 @@ pub(crate) fn main_b80_prior_input(source: &str, current: &str) -> String {
 
 // New owner and inherited domains remain independent; all old tables stay exact.
 pub(crate) fn arena854_input(source: &str, current: &str) -> String {
+    let receiving = project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-intern-arena-854-receiving-20261016/current-to-9db.json")), source, current);
+    let current = receiving.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-intern-arena-854-joined-20261016/current-to-ab13.json")), source, current)
 }
 pub(crate) fn arena854_previous(source: &str, current: &str) -> String {

@@ -35,6 +35,9 @@ fn complete_old_receiver_and_full_source_views_remain_bound() {
     ];
     assert_eq!(owners.as_array().unwrap().len(), bodies.len());
     for (row, body) in owners.as_array().unwrap().iter().zip(bodies) {
+        let authenticated =
+            crate::source_reflows_merge::arena854_input(row["source"].as_str().unwrap(), body);
+        let body = authenticated.as_str();
         assert_eq!(
             format!(
                 "{:x}",
