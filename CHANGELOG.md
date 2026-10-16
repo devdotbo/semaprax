@@ -1,5 +1,7 @@
 # Changelog
 
+- Preserve complete pre-site budget layout controls while explicitly checking the later sticky call-site pointer against the full current budget definition.
+
 - Refresh browser graph pins from complete hosted 75b314f70 records after an observed 4,756-byte builder-bill decrease, preserving every prior whole-wire bridge and source control.
 
 - Compare every private expression-path field explicitly in vector-reuse controls, retaining the production carrier's existing traits and all parity assertions.

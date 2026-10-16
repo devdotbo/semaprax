@@ -1113,6 +1113,7 @@ Audience: all documentation readers.
 - [Finished cleanup path array capacity](evidence/completed-skeleton-array-v1/README.md)
 - [Single-successor path vector reuse](evidence/sequence-vector-reuse-v1/README.md)
 - [Ownership classifier leaf cloning](evidence/ownership-leaf-clone-v1/README.md)
+- [Reservation call-site layout follow-up](evidence/reservation-site-layout-v1/README.md)
 - [Paid boxed ownership path states](evidence/boxed-path-states-v1/README.md)
 - [Branch clone capacity](evidence/branch-clone-capacity-v1/README.md)
 - [Hosted graph bill after paid-scratch changes](evidence/browser-graph-pins-17104e20c/README.md)
