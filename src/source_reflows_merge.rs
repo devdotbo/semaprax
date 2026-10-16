@@ -102,7 +102,34 @@ fn actual50_fixture_input(source: &str, current: &str) -> String {
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/actual50-fixture-and-facade-corrections-20261016/current-to-183.json")), source, current)
 }
 fn fitting759_input(source: &str, current: &str) -> String {
+    let previous = main8fb_previous(source, current);
+    let current = previous.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/task722-held-fitting759-join-20261016/current-to-0e7b.json")), source, current)
+}
+// The new Main receiver has one additional, independently authenticated input;
+// its older four owners still use their exact Main696 domains.
+pub(crate) fn main8fb_input(source: &str, current: &str) -> String {
+    if source == "src/source_verify/declaration.rs" {
+        return project(
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/main8fb-source-reconciliation-20261016/current-to-main8fb.json"
+            )),
+            source,
+            current,
+        );
+    }
+    main696_input(source, current)
+}
+fn main8fb_previous(source: &str, current: &str) -> String {
+    project(
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main8fb-source-reconciliation-20261016/current-to-47f.json"
+        )),
+        source,
+        current,
+    )
 }
 fn project(rows: &str, source: &str, current: &str) -> String {
     let rows: serde_json::Value = serde_json::from_str(rows).expect("fixed merge projections");

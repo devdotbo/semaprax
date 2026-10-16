@@ -7,6 +7,9 @@
 - Reuse the already-built exact HIR/plan comparison for fitting ordinary lexical proof after unchanged enumeration admission/reservation; retain complete forced old enumeration and all weighted receiver payments, with no allowance refund or measured application/agent improvement claim.
 
 - Move the validated singleton ownership state and its conditional variants through unchanged normalization, removing absent clones while preserving join validation, work, scheduling and the complete old receiver; focused numerical qualification remains pending.
+- Preserve both the causal publication witness and the bounded-output repair hint, with exact optional funding and sticky-refusal controls.
+
+- Launch fused-source Wasm package test drivers from their fixture directory using relative names so Node does not receive Windows verbatim paths as its main script.
 
 - Report the first native-provider builder reservation and caller in outward C++ package diagnostic help, preserving primary diagnostics, all limits, and complete verification.
 
