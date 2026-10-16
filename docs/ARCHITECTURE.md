@@ -5028,3 +5028,5 @@ available to ordinary replay and independent test drivers. Pure type-key math
 is lexical in the paid record receiver, with no extra forwarding Result or
 serialized-key authority. These owners do not cover inventory construction,
 lexical certificates, schema adapters or path/factored child diagnostics.
+
+The private #854 canonical interning component keeps same-comparison weighted states and signatures in prepaid ordered AVL arenas. Its borrowed query resolves every child identity before lookup, and only a missing signature receives an owning label/ID vector. Separate immediate-parent BTree receivers and complete source views remain test-only; scratch capacity, new owner controls and growth overlap are admitted on the original budget before acquisition. Qualification and application effects remain pending.
