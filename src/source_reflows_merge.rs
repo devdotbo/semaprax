@@ -129,10 +129,17 @@ pub(crate) fn main8fb_input(source: &str, current: &str) -> String {
     main696_input(source, current)
 }
 pub(crate) fn future_bcd_input(source: &str, current: &str) -> String {
+    let joined = post21_input(source, current);
+    let current = joined.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/future-main-output-851-joined-20261016/current-to-bcd.json")), source, current)
 }
 pub(crate) fn future_main8fb_input(source: &str, current: &str) -> String {
+    let joined = post21_input(source, current);
+    let current = joined.as_str();
     project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/future-main-output-851-joined-20261016/current-to-ff5.json")), source, current)
+}
+fn post21_input(source: &str, current: &str) -> String {
+    project(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/post21-alias-observer-source-join-20261016/current-to-36f.json")), source, current)
 }
 fn project(rows: &str, source: &str, current: &str) -> String {
     let rows: serde_json::Value = serde_json::from_str(rows).expect("fixed merge projections");
