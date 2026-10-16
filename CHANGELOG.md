@@ -1,5 +1,7 @@
 # Changelog
 
+- Preserve borrowed-root hostile census checks while applying nested freeze-loan assertions to local owned storage; separate nested test-ledger backing from production refusal allocations.
+
 - Acquire the ordinary replay type-clone cursor only for payloads that can construct it, retaining owned backing charges, conservative recursive fallback and sticky payer authentication.
 
 - Bind allocation release-order watches to the initial allocation lifetime, retaining duplicate/missing-free refusals when System reuses an address during DAG destruction.
