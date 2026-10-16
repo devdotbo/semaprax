@@ -1,5 +1,7 @@
 # Changelog
 
+- Acquire the ordinary replay type-clone cursor only for payloads that can construct it, retaining owned backing charges, conservative recursive fallback and sticky payer authentication.
+
 - Bind allocation release-order watches to the initial allocation lifetime, retaining duplicate/missing-free refusals when System reuses an address during DAG destruction.
 
 - Require the checked agent-function boundary to reject forged match ownership while preserving the complete legacy mode-encoding assertions through the existing query serializer.
