@@ -24,3 +24,26 @@ The ordinary reference is diagnostic evidence only. The existing exact archive
 admission and complete package, consumer, callback and backend-equivalence
 gates remain blocking and unchanged. The production tool environment, process
 settlement, diagnostics and publication authority are unchanged.
+
+## Hosted failure and paired tool selection
+
+The reference in [job 116728654423](https://github.com/wavect/semaprax/actions/runs/38824367721/job/116728654423)
+reproduced the hosted failure before the SDK build. Rust staticlib and C object
+compilation passed. The `/usr/bin/clang` link rejected
+`CommandLineTools/SDKs/MacOSX27.0.sdk/usr/lib/libSystem.B.tbd` with a TAPI
+unknown-architecture error for `arm64e.x1-macos`.
+
+The macOS native CI jobs now select
+`/Library/Developer/CommandLineTools/usr/bin/clang`, whose companion linker
+comes from the same installation as the explicit SDK. The public generic
+consumer job also selects that installation's C++ driver and linker path.
+Linux resolution and every Windows binding remain unchanged. This changes CI
+tool configuration; it does not widen or bypass production authority checks.
+
+The ordinary reference passed locally with the selected CLT driver at a sampled
+aggregate peak of 103,472 KiB. The complete current Unix quarantine probe also
+passed with that driver, including held-image admission and generated executable
+execution; compiler/runtime peaks were 203,264 and 59,888 KiB under the 200 MiB
+guard. The complete Product Acceptance and Public SDK CI contract harnesses
+passed all 12 tests, including the new eight-job tool/SDK pairing regression.
+The hosted CLT 27 configuration and full SDK consumers still need CI evidence.

@@ -2,6 +2,10 @@
      distinct cold callers; full old receiver retained; qualification pending. -->
 # Changelog
 
+- Pair macOS CI Clang, its companion linker and C++ driver with the Command Line Tools installation used by the builder's explicit SDK, preserving held-tool admission and the unchanged SDK profile.
+
+- Refresh browser graph pins from complete hosted 2600e49eb records after measured builder-bill reductions; retain the entire previous compiled bridge and every historical graph and cursor control.
+
 - Publish the scoped #844/#845/#846 acceptance: original 8bb round 56 PASS/20 FAIL and a separate nine-owner supplement 9 PASS, retaining every failure and both scoped Clippy exits 101 for the unrelated #849 arithmetic spelling. Close only those three owning scopes; no whole-batch, application-fit, token or Clippy-PASS claim.
 
 - Author NEXT empty-closure bitmap storage and a singleton incoming-state path that avoids actual ControlKey/group-map/set/insertion constructors, preserving validators, work and order. Retain complete independent old receivers; the six bitmap and three singleton owners remain pending runtime qualification, with no application-fit claim.
