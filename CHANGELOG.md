@@ -1,5 +1,9 @@
 # Changelog
 
+- Restore complete submodule text in source-locked native layout, HIR, workspace, CLI and routing audits without changing their assertions or coverage baseline.
+
+- Acquire finished cleanup path capacity once and transfer a complete prefix to its final successor, preserving original receiver controls, logical work, order and unchanged builder limits.
+
 - Refresh browser graph pins from complete hosted c11a63509 records after a measured 3,452-byte builder-bill reduction, preserving every previous compiled bridge and whole-wire control.
 
 - Share the compiled cleanup predecessor between receiver controls and check constant allocation thresholds at compile time.

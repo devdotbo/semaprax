@@ -2897,6 +2897,12 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
         paths = split_contract(paths, contract, &mut work)?;
     }
     let mut completed = Vec::new();
+    path_array::completed_minimum(
+        &mut completed,
+        paths.len(),
+        &mut work,
+        "completed HIR skeleton capacity",
+    )?;
     for path in paths {
         let terminal = lexical_skeleton::terminal(&path);
         work.push_skeleton_path(
@@ -2950,11 +2956,14 @@ fn sequence_skeleton_paths(
         if share_prefix {
             work.share_prefix_tail(&mut prefix.observations)?;
         }
-        for suffix in suffixes.iter() {
+        // This is the original for-loop's Iter/Option state. Earlier
+        // successors borrow the prefix; the last one can take it intact.
+        let mut remaining_suffixes = suffixes.iter();
+        while let Some(suffix) = remaining_suffixes.next() {
             let observations = if sequence_prefix::can_take(sequence_prefix::Candidate {
                 prefix: &prefix.observations,
                 suffix: &suffix.observations,
-                suffix_count: suffixes.len(),
+                remaining_suffixes: remaining_suffixes.len(),
                 budget: work.budget,
             }) {
                 // Retain the original clone's work and materialization, while

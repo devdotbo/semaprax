@@ -4,7 +4,8 @@ use super::*;
 pub(super) struct Candidate<'a> {
     pub(super) prefix: &'a Observations,
     pub(super) suffix: &'a Observations,
-    pub(super) suffix_count: usize,
+    /// Successors still pending after the currently borrowed successor.
+    pub(super) remaining_suffixes: usize,
     pub(super) budget: &'a ReplayBudget,
 }
 // Both complete incoming/callee headers and both boolean result slots. The
@@ -27,9 +28,10 @@ pub(super) fn can_take(input: Candidate<'_>) -> bool {
     }
     input.budget.pays_allocations()
         && !input.budget.selected()
-        && input.suffix_count == 1
+        && input.remaining_suffixes == 0
         && input.prefix.items.len() >= MINIMUM_ITEMS
         && (input.suffix.prefix.is_some()
+            || input.prefix.items.capacity() == input.prefix.items.len()
             || input.suffix.items.len() <= input.prefix.items.capacity() - input.prefix.items.len())
 }
 

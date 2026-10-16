@@ -4879,18 +4879,33 @@ Vec APIs remain independent compatibility receivers.
 
 
 `cleanup_plan/replay.rs` transfers the complete already funded observation
-prefix into its sole successor; `sequence_prefix.rs` owns its borrowed probe. It retains observation identities,
+prefix into its final successor; `sequence_prefix.rs` owns its borrowed probe. It retains observation identities,
 DAG ownership, order, path fields, one logical clone debit and materialization.
 An allocation-free header check requires enough avoided clone backing to fund
-the complete receiving layout, and enough spare capacity for a flat suffix.
-Other fanouts, small prefixes, legacy, selected and oracle routes retain the
-original clone. The independently compiled complete previous sequencing receiver
+the complete receiving layout, and no larger immediate flat-tail growth than the original clone.
+Earlier successors, small prefixes, legacy, selected and oracle routes retain
+the original clone. The independently compiled complete previous sequencing receiver
 and both source inventories remain bound to their exact predecessor bytes.
 
-The sole-successor probe uses `sequence_prefix::Candidate`, two fully funded
+The final-successor probe uses `sequence_prefix::Candidate`, two fully funded
 borrowed headers and two boolean slots. Fallible work/reservation and field
 transfer stay in the original sequencing receiver, eliminating the additional
 fallible observation wrapper. The entire shipped wrapper and all five original
 tests remain independently compiled in `sequence_prefix/before_wrapper.rs` and
 `before_wrapper_tests.rs`; fixed source hashes permit only their module wiring
 adaptations. Exact-minimum-prefix controls exercise the full live receiver.
+
+Finished HIR skeleton conversion uses `path_array::completed_minimum` after
+all postconditions, when the output length is known. It funds the complete
+`SkeletonPath` receiving layout and acquires the old final capacity once; the
+original terminal/push loop and future growth remain unchanged. Small cases
+whose removed backing cannot cover metadata retain the original route.
+`path_array/final_before.rs` compiles the complete previous receiver, bound to
+its exact source body under `docs/evidence/completed-skeleton-array-v1/`.
+
+The sequencing receiver uses its original borrowed iterator state explicitly.
+Earlier successors clone the prefix; the final successor may transfer its
+complete storage. Flat tails qualify when spare capacity suffices or the full
+vector has the same next growth target as the original clone. The borrowed
+candidate headers and boolean result slots remain fully funded; logical clone
+and materialization charges and canonical observation order remain unchanged.

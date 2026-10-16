@@ -29,12 +29,14 @@ fn try_take(
     budget: &mut ReplayBudget,
     phase: &str,
 ) -> Result<Option<Observations>, Diagnostic> {
-    if !can_take(Candidate {
-        prefix,
-        suffix,
-        suffix_count,
-        budget,
-    }) {
+    if suffix_count != 1
+        || !can_take(Candidate {
+            prefix,
+            suffix,
+            remaining_suffixes: 0,
+            budget,
+        })
+    {
         return Ok(None);
     }
     budget.charge_skeleton(function, 1, phase)?;
@@ -102,7 +104,7 @@ fn complete_original_sequence_keeps_order_path_fields_work_and_materializations(
                 minimum_items(),
                 minimum_items() + 9,
             ] {
-                for fanout in [0, 1, 2] {
+                for fanout in [0, 1, 2, 3] {
                     for stopped in [0, 1, 2] {
                         let mut old_budget =
                             ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
@@ -219,60 +221,67 @@ fn original_receiver_source_remains_complete() {
 fn complete_transfer_receiver_pays_before_allocation_at_zero_exact_and_short_limits() {
     let program = program();
     let function = &program.functions[0];
-    let observe = |original, limit| {
-        with_limit_usage_refusal(limit, || {
-            measure(|| {
-                let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                let before = skeleton_materializations();
-                let result = (|| {
-                    let mut work = SkeletonWork::with_index(&program, function, &mut budget, None)?;
-                    let count = minimum_items();
-                    let input = seed(count, count + 16, &mut work)?;
-                    let mut inputs = Vec::new();
-                    work.push_expr_path(&mut inputs, input, "finite prefix")?;
-                    let tail = seed(3, 3, &mut work)?;
-                    let mut suffixes = Vec::new();
-                    work.push_expr_path(&mut suffixes, tail, "finite suffix")?;
-                    let output = if original {
-                        before::sequence_skeleton_paths(inputs, &suffixes, &mut work)?
-                    } else {
-                        sequence_skeleton_paths(inputs, &suffixes, &mut work)?
-                    };
-                    assert_eq!(output.len(), 1);
-                    assert_eq!(output[0].observations.items.len(), count + 3);
-                    let count = output[0].observations.items.len();
-                    drop(output);
-                    Ok::<_, Diagnostic>(count)
-                })();
-                let out = result.as_ref().ok().copied();
-                drop(result);
-                let logical = (
-                    budget.remaining,
-                    budget.skeleton_remaining,
-                    skeleton_materializations() - before,
-                );
-                drop(budget);
-                (out, logical)
-            })
-        })
-    };
-    let ((expected, old_alloc), old_refused, old_paid, first) = observe(true, usize::MAX);
-    assert!(!old_refused && first.is_none());
-    let ((actual, new_alloc), refused, exact, first) = observe(false, usize::MAX);
-    assert!(!refused && first.is_none());
-    assert_eq!(actual, expected);
-    assert!(new_alloc.allocated < old_alloc.allocated);
-    assert!(exact < old_paid);
-    for limit in [0, exact - 1, exact] {
-        let ((out, alloc), refused, paid, first) = observe(false, limit);
-        assert_eq!(out.0.is_some(), limit == exact);
-        assert_eq!(refused, limit != exact);
-        assert_eq!(first.is_some(), limit != exact);
-        assert!(!alloc.invalid && alloc.live == 0);
-        assert_eq!(alloc.allocated, alloc.freed);
-        assert!(alloc.allocated <= paid);
-        if limit == 0 {
-            assert_eq!(alloc.allocated, 0);
+    for fanout in [1, 2, 3] {
+        for spare in [0, 16] {
+            let observe = |original, limit| {
+                with_limit_usage_refusal(limit, || {
+                    measure(|| {
+                        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                        let before = skeleton_materializations();
+                        let result = (|| {
+                            let mut work =
+                                SkeletonWork::with_index(&program, function, &mut budget, None)?;
+                            let count = minimum_items();
+                            let input = seed(count, count + spare, &mut work)?;
+                            let mut inputs = Vec::new();
+                            work.push_expr_path(&mut inputs, input, "finite prefix")?;
+                            let mut suffixes = Vec::new();
+                            for _ in 0..fanout {
+                                let tail = seed(3, 3, &mut work)?;
+                                work.push_expr_path(&mut suffixes, tail, "finite suffix")?;
+                            }
+                            let output = if original {
+                                before::sequence_skeleton_paths(inputs, &suffixes, &mut work)?
+                            } else {
+                                sequence_skeleton_paths(inputs, &suffixes, &mut work)?
+                            };
+                            assert_eq!(output.len(), fanout);
+                            assert_eq!(output[0].observations.items.len(), count + 3);
+                            let count = output[0].observations.items.len();
+                            drop(output);
+                            Ok::<_, Diagnostic>(count)
+                        })();
+                        let out = result.as_ref().ok().copied();
+                        drop(result);
+                        let logical = (
+                            budget.remaining,
+                            budget.skeleton_remaining,
+                            skeleton_materializations() - before,
+                        );
+                        drop(budget);
+                        (out, logical)
+                    })
+                })
+            };
+            let ((expected, old_alloc), old_refused, old_paid, first) = observe(true, usize::MAX);
+            assert!(!old_refused && first.is_none());
+            let ((actual, new_alloc), refused, exact, first) = observe(false, usize::MAX);
+            assert!(!refused && first.is_none());
+            assert_eq!(actual, expected);
+            assert!(new_alloc.allocated < old_alloc.allocated);
+            assert!(exact < old_paid);
+            for limit in [0, exact - 1, exact] {
+                let ((out, alloc), refused, paid, first) = observe(false, limit);
+                assert_eq!(out.0.is_some(), limit == exact);
+                assert_eq!(refused, limit != exact);
+                assert_eq!(first.is_some(), limit != exact);
+                assert!(!alloc.invalid && alloc.live == 0);
+                assert_eq!(alloc.allocated, alloc.freed);
+                assert!(alloc.allocated <= paid);
+                if limit == 0 {
+                    assert_eq!(alloc.allocated, 0);
+                }
+            }
         }
     }
 }
@@ -350,4 +359,51 @@ fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {
         ),
         "38f11a53d0a21dc60470dc7ac46fda2a86d191ade68bd7abf5c40ab4da783846"
     );
+}
+
+#[test]
+fn only_the_last_successor_reuses_the_full_paid_prefix_backing() {
+    let program = program();
+    let function = &program.functions[0];
+    let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            let mut work = SkeletonWork::new(&program, function, &mut budget);
+            let count = minimum_items() + 9;
+            let prefix = seed(count, count + 16, &mut work).unwrap();
+            let pointer = prefix.observations.items.as_ptr();
+            let capacity = prefix.observations.items.capacity();
+            let mut inputs = Vec::new();
+            work.push_expr_path(&mut inputs, prefix, "last prefix input")
+                .unwrap();
+            let mut suffixes = Vec::new();
+            for _ in 0..3 {
+                let suffix = seed(1, 1, &mut work).unwrap();
+                work.push_expr_path(&mut suffixes, suffix, "last prefix suffix")
+                    .unwrap();
+            }
+            let output = sequence_skeleton_paths(inputs, &suffixes, &mut work).unwrap();
+            assert_eq!(output.len(), 3);
+            let last = &output[2].observations;
+            assert_eq!(last.items.as_ptr(), pointer);
+            assert_eq!(last.items.capacity(), capacity);
+            for earlier in &output[..2] {
+                assert_ne!(earlier.observations.items.as_ptr(), pointer);
+                for n in 0..count {
+                    assert!(std::rc::Rc::ptr_eq(
+                        &earlier.observations.items[n],
+                        &last.items[n]
+                    ));
+                }
+            }
+            drop(output);
+            drop(suffixes);
+            drop(work);
+            drop(budget);
+        })
+    });
+    assert!(!refused && first.is_none());
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    assert!(allocation.allocated <= paid);
 }
