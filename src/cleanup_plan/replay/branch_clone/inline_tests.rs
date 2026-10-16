@@ -54,17 +54,22 @@ fn enumerate(
 fn inline_branch_keeps_complete_paths_work_and_all_six_refusal_fields() {
     let program = program();
     let function = &program.functions[0];
-    let mut old = ReplayBudget::with_skeleton_limit(usize::MAX);
-    let mut actual = ReplayBudget::with_skeleton_limit(usize::MAX);
-    let expected = enumerate(true, function, &mut old).unwrap();
-    let current = enumerate(false, function, &mut actual).unwrap();
-    assert_eq!(current, expected);
-    assert_eq!(actual.skeleton_spent, old.skeleton_spent);
-    assert_eq!(actual.skeleton_remaining, old.skeleton_remaining);
-    assert_eq!(actual.remaining, old.remaining);
-    let spent = actual.skeleton_spent;
-    assert!(spent > 1);
-    drop((current, expected, actual, old));
+    let (spent, refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
+        let mut old = ReplayBudget::with_skeleton_limit(usize::MAX);
+        let mut actual = ReplayBudget::with_skeleton_limit(usize::MAX);
+        assert!(old.pays_allocations() && actual.pays_allocations());
+        let expected = enumerate(true, function, &mut old).unwrap();
+        let current = enumerate(false, function, &mut actual).unwrap();
+        assert_eq!(current, expected);
+        assert_eq!(actual.skeleton_spent, old.skeleton_spent);
+        assert_eq!(actual.skeleton_remaining, old.skeleton_remaining);
+        assert_eq!(actual.remaining, old.remaining);
+        let spent = actual.skeleton_spent;
+        assert!(spent > 1);
+        drop((current, expected, actual, old));
+        spent
+    });
+    assert!(!refused && first.is_none());
     for work in [0, 1, spent - 1, spent] {
         let observe = |old| {
             with_limit_usage_refusal(usize::MAX, || {
