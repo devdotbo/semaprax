@@ -2929,21 +2929,35 @@ fn sequence_skeleton_paths(
     suffixes: &[ExprSkeletonPath],
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::sequence_skeleton_paths(prefixes, suffixes, work);
+    }
     let prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut combined = Vec::new();
-    if !suffixes.is_empty() {
-        path_array::minimum(
-            &mut combined,
-            prefixes.len(),
-            work,
-            "sequenced path capacity",
-        )?;
-    }
+    let minimum = path_array::count!(
+        work,
+        true,
+        if suffixes.is_empty() {
+            0
+        } else {
+            prefixes.len()
+        },
+        "sequenced path capacity"
+    );
+    path_array::select!(first, minimum, &combined, work);
     for mut prefix in prefixes {
         if prefix.failed || prefix.residual {
-            work.push_expr_path(&mut combined, prefix, "short-circuited skeleton path")?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut combined,
+                prefix,
+                "short-circuited skeleton path"
+            );
             continue;
         }
         if share_prefix {
@@ -2961,7 +2975,10 @@ fn sequence_skeleton_paths(
                 &suffix.owned_source,
                 "sequenced skeleton owned-source clone",
             )?;
-            work.push_expr_path(
+            path_array::push!(
+                work,
+                first,
+                minimum,
                 &mut combined,
                 ExprSkeletonPath {
                     observations,
@@ -2974,7 +2991,7 @@ fn sequence_skeleton_paths(
                     ),
                 },
                 "sequenced skeleton path",
-            )?;
+            );
         }
     }
     Ok(combined)
@@ -5771,9 +5788,14 @@ fn append_expr_paths(
     work: &mut SkeletonWork<'_, '_>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
-    path_array::minimum(target, paths.len(), work, phase)?;
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::append_expr_paths(target, paths, work, phase);
+    }
+    let minimum = path_array::count!(work, false, paths.len(), phase);
+    path_array::select!(first, minimum, target, work);
     for path in paths {
-        work.push_expr_path(target, path, phase)?;
+        path_array::push!(work, first, minimum, target, path, phase);
     }
     Ok(())
 }
@@ -6225,11 +6247,23 @@ fn split_status_paths(
     source: StatusSourceId,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::split_status_paths(paths, source, work);
+    }
     let mut results = Vec::new();
-    path_array::minimum(&mut results, paths.len(), work, "status path capacity")?;
+    let minimum = path_array::count!(work, false, paths.len(), "status path capacity");
+    path_array::select!(first, minimum, &results, work);
     for mut path in paths {
         if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited status path")?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                path,
+                "short-circuited status path"
+            );
             continue;
         }
         let mut failure = work.clone_expr_path(&path, "status failure path clone")?;
@@ -6244,7 +6278,14 @@ fn split_status_paths(
         )?;
         failure.failed = true;
         failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "status failure path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            failure,
+            "status failure path"
+        );
         let success_source = work.clone_owned(&source, "success status-source clone")?;
         work.push_observation(
             &mut path,
@@ -6255,7 +6296,14 @@ fn split_status_paths(
             "status success observation",
         )?;
         path.owned_source = None;
-        work.push_expr_path(&mut results, path, "status success path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            path,
+            "status success path"
+        );
     }
     Ok(results)
 }
@@ -6265,11 +6313,23 @@ fn split_contract(
     contract: &ResolvedExpr,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::split_contract(paths, contract, work);
+    }
     let mut results = Vec::new();
-    path_array::minimum(&mut results, paths.len(), work, "contract path capacity")?;
+    let minimum = path_array::count!(work, false, paths.len(), "contract path capacity");
+    path_array::select!(first, minimum, &results, work);
     for mut path in paths {
         if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited contract path")?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                path,
+                "short-circuited contract path"
+            );
             continue;
         }
         let mut failure = work.clone_expr_path(&path, "contract failure path clone")?;
@@ -6285,7 +6345,14 @@ fn split_contract(
         )?;
         failure.failed = true;
         failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "contract failure path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            failure,
+            "contract failure path"
+        );
         let success_expression =
             work.clone_owned(&contract.id, "contract success expression clone")?;
         work.push_observation(
@@ -6297,7 +6364,14 @@ fn split_contract(
             "contract success observation",
         )?;
         path.owned_source = None;
-        work.push_expr_path(&mut results, path, "contract success path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            path,
+            "contract success path"
+        );
     }
     Ok(results)
 }

@@ -1,5 +1,6 @@
 //! Complete independently compiled original path receivers.
 use super::*;
+use super::super::*;
 
 pub(super) fn sequence_skeleton_paths(
     prefixes: Vec<ExprSkeletonPath>,

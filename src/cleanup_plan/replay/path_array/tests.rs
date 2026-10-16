@@ -1,4 +1,6 @@
 use super::*;
+use super::super::*;
+use super::main696::{append_expr_paths, sequence_skeleton_paths, split_status_paths, split_contract, hir_skeleton_paths, receiving_bytes};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 use std::cell::Cell;
@@ -57,6 +59,16 @@ fn four_complete_original_receivers_keep_all_path_fields_order_and_work() {
                 for receiver in 0..4 {
                     let mut old_budget = ReplayBudget::new();
                     let mut budget = ReplayBudget::new();
+                    // Exact seed + receiver work: every third seed is live.
+                    let live = count / 3;
+                    let units = match receiver {
+                        0 => 2 * count,
+                        1 => 2 * count + 1 + 3 * live,
+                        2 => 2 * count + 1 + 6 * live,
+                        _ => 2 * count + 6 * live,
+                    };
+                    old_budget.reserve_skeleton(function, units).unwrap();
+                    budget.reserve_skeleton(function, units).unwrap();
                     let mut old_work = SkeletonWork::new(&program, function, &mut old_budget);
                     let mut work = SkeletonWork::new(&program, function, &mut budget);
                     let old_input = seed(count, &mut old_work);
@@ -139,6 +151,8 @@ fn append_pays_complete_backing_and_drop_with_exact_short_and_zero_controls() {
                     let mut budget = ReplayBudget::new();
                     let before = skeleton_materializations();
                     let result = (|| {
+                        // count seed pushes, count append pushes, three later pushes.
+                        budget.reserve_skeleton(function, 2 * count + 3)?;
                         let mut work =
                             SkeletonWork::with_index(&program, function, &mut budget, None)?;
                         let mut input = Vec::new();
@@ -245,7 +259,8 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         "/docs/evidence/minimum-path-array-v1/functions.json"
     )))
     .unwrap();
-    let root = include_str!("../../replay.rs");
+    let root = crate::source_reflows_merge::main696_input(
+        "src/cleanup_plan/replay.rs", include_str!("../../replay.rs"));
     let compiled = include_str!("before.rs");
     for record in records.as_array().unwrap() {
         let name = record["name"].as_str().unwrap();
