@@ -57,8 +57,7 @@ pub(super) fn try_take(
 }
 
 #[cfg(test)]
-#[path = "before.rs"]
-mod before;
+use super::before;
 #[cfg(test)]
 #[path = "before_wrapper_tests.rs"]
 mod tests;

@@ -1,5 +1,7 @@
 # Changelog
 
+- Share the compiled cleanup predecessor between receiver controls and check constant allocation thresholds at compile time.
+
 - Keep fallible prefix transfer in its existing cleanup receiver and fund a pure borrowed probe, retaining the complete shipped wrapper and its original tests.
 
 - Transfer an already funded cleanup observation prefix to its sole successor, preserving full replay checks, work, ordering, and complete previous receivers under unchanged limits.

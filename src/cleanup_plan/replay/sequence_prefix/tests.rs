@@ -327,10 +327,12 @@ fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {
         RECEIVING_BYTES,
         2 * std::mem::size_of::<Candidate<'static>>() + 2 * std::mem::size_of::<bool>()
     );
-    assert!((MINIMUM_ITEMS - 1) * ITEM_BYTES < RECEIVING_BYTES);
-    assert!(MINIMUM_ITEMS * ITEM_BYTES >= RECEIVING_BYTES);
+    const {
+        assert!((MINIMUM_ITEMS - 1) * ITEM_BYTES < RECEIVING_BYTES);
+        assert!(MINIMUM_ITEMS * ITEM_BYTES >= RECEIVING_BYTES);
+    }
     let full = include_str!("before_wrapper.rs")
-        .replace("#[path = \"before.rs\"]\n", "")
+        .replace("use super::before;", "mod before;")
         .replace("#[path = \"before_wrapper_tests.rs\"]\n", "");
     assert_eq!(
         format!(
