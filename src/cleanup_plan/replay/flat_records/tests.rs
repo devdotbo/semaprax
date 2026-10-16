@@ -331,3 +331,6 @@ fn whole_record_shape_backing_is_cumulative_across_work_reset_and_refusal_sticky
 
 #[path = "tests/receiving_families.rs"]
 mod receiving_families;
+
+#[path = "tests/receiving_status_scalar.rs"]
+mod receiving_status_scalar;

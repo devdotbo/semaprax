@@ -5017,3 +5017,14 @@ report retained capacities, removed buffers and complete Drop. No shared-history
 representation or universal cost improvement follows from this transfer.
 These NEXT changes are source-ready and await their focused executable gates;
 no application-cap or universal physical-cost improvement is certified here.
+
+Selected status reconstruction has an independent `status_construction/paid`
+owner for complete requires/body/ensures traversal. Static refusals remain closed
+labels; unknown-callee receipts retain their shared identity and acquire their
+actual Atom controls only on that error path. `scalar_replay/records/paid` owns
+borrowed-record shape checks, and `scalar_replay/paid_nodes` owns the complete
+selected scalar cursor. Original record, status and scalar-body algorithms stay
+available to ordinary replay and independent test drivers. Pure type-key math
+is lexical in the paid record receiver, with no extra forwarding Result or
+serialized-key authority. These owners do not cover inventory construction,
+lexical certificates, schema adapters or path/factored child diagnostics.

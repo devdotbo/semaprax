@@ -68,10 +68,8 @@ pub(super) fn validate_paid(
     let selected = budget.selected();
     let (storage, leaves) = if selected {
         inventory_coverage::validate_inventory_coverage(program, function, budget)?;
-        status_construction::validate_required_status_sources(program, function, budget)?;
-        let storage = structural_maps::paid::slots(
-            function, budget,
-        )?;
+        status_construction::paid::validate_required_status_sources(program, function, budget)?;
+        let storage = structural_maps::paid::slots(function, budget)?;
         let leaves = structural_maps::paid::leaves(function, budget)?;
         status_validation::validate_core::<expression_facts::errors::EngineError>(
             function,
@@ -341,3 +339,6 @@ fn validate_core<'hir, E: structural_control::call_receiving::Policy>(
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_owned_families;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_status_scalar;
