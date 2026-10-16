@@ -502,7 +502,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/current_view.rs"),
         include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/presence.rs"),
         include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/presence_tests.rs"),
-        include_str!("../src/source_reflows_merge.rs"), include_str!("../src/source_reflows_merge/runtime_json.rs"), include_str!("../src/source_reflows_merge/runtime_json/inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/tests.rs"), include_str!("../tests/support/production_source_inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/membership.rs"),
+        include_str!("../src/source_reflows_merge.rs"), include_str!("../src/source_reflows_merge/runtime_json.rs"), include_str!("../src/source_reflows_merge/runtime_json/inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/tests.rs"), include_str!("../tests/support/production_source_inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/membership.rs"), include_str!("../src/source_reflows_merge/runtime_json/transport_runtime.rs"), include_str!("../src/source_reflows_merge/runtime_json/transport_embedded.rs"), include_str!("../src/source_reflows_merge/runtime_json/pair_custody.rs"),
         include_str!("../src/cleanup_plan/replay/path_join/storage/empty_renewals.rs"), include_str!("../src/cleanup_plan/replay/path_join/before.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/receiver_tests.rs"), include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/before.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_receiving.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs"),
         include_str!("../src/cleanup_plan/replay/path_join/storage/atomic_controls.rs"),
         include_str!("../src/cleanup_plan/replay/path_join/storage/empty_renewals/tests.rs"),
@@ -734,7 +734,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
     );
     let validation = production_source_inventory::production(
         validation_raw,
-        include_str!("../docs/evidence/main-dd0-compiled-custody-join-20261016/hir.json"),
+        include_str!("../docs/evidence/bulk-transport-pair-848-next-20261016/hir.json"),
     );
     for forbidden in [
         "struct Resolver",

@@ -12,6 +12,8 @@
 
 - Source-only #781 extends closed selected receipts to slot/region/leaf and flat-leaf/storage-index construction, with per-actual-call clone/vector/node receiving on the same ledger and complete independent old drivers. Earlier receiving frontiers and remaining inventory/status/certificate/path diagnostics are explicit; focused execution and transitive closure remain pending.
 
+- Prepare the source-only #848 bulk90 embedded/runtime comparison: fixed common transport modules, one active module selector, unchanged file-loader/hostile controls, exact arm source custody, and per-arm truthful authority metadata. No matched build or memory benefit is claimed.
+
 - Source-only #781 followup routes the duplicated paid lexical/scalar driver
   profile and member guards through their existing prepaid receipt twins.
   Complete old drivers and report/ledger/Drop controls remain; transitive dynamic
