@@ -1,5 +1,7 @@
 # Changelog
 
+- Compact HIR expression storage with funded residual-type boxes, preserving full type data, private cache bytes and limits, complete previous expression definitions, and physical allocation/refusal controls.
+
 - Audit the test-only allocation observer in the root unsafe quarantine, requiring its test-only module boundary and single System allocator implementation.
 
 - Run complete owned-data JavaScript test hosts from fixture files, preserving their strict guards and argument positions while avoiding Windows command-line limits.

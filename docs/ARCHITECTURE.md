@@ -131,6 +131,15 @@ has no authority. Expression-scoped Copy discovery closes before caller-prefix
 sequencing. The held automata, weighted proof and selected physical backing share
 one cumulative ledger; the selected provider/type profile remains separate.
 
+`hir/expr_nodes.rs` keeps complete Result/Option residual types in the funded
+`ResolvedResidualType` box, reducing the common expression layout. Resolution
+and generic materialization acquire the new backing and receiving controls
+before construction. Retention censuses include each box; the authored pre-bound
+conservatively includes its backing too. The private cache codec delegates to
+the original Type codec without adding a wire tag, node or depth level. A
+complete previous expression module remains compiled as the layout, full-field,
+Debug and clone-backing control, and both source inventories inspect it.
+
 `cleanup_plan/replay/compact_stage.rs` owns the private staged-result observation
 representation: body fields stay inline and residuals retain the complete
 canonical source behind prepaid backing. Canonical CleanupPlan data remains

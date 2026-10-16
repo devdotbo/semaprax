@@ -5572,7 +5572,7 @@ impl<'a> HirValidator<'a> {
                     declaration: residual_option,
                     arguments: residual_arguments,
                 },
-            ) = (&operand.ty, residual_type)
+            ) = (&operand.ty, &**residual_type)
             else {
                 return Err(hir_error(
                     "resolved Option `?` operand or residual is not nominal Option",
