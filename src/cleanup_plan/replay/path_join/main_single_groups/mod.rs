@@ -444,6 +444,7 @@ fn validate_control_group_with_budget<K: Ord + Borrow<PathState>>(
 }
 
 #[cfg(test)]
+#[path = "../tests.rs"]
 mod tests;
 
 fn joined_ownership_state<K: Ord + Borrow<PathState>>(
