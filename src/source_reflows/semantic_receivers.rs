@@ -58,7 +58,7 @@ pub(super) fn contains(path: &str) -> bool {
 fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let mut paths = std::collections::BTreeSet::new();
-    assert_eq!(proofs().len(), 4);
+    assert_eq!(proofs().len(), 5);
     for proof in proofs() {
         let path = proof["path"].as_str().unwrap();
         assert!(paths.insert(path));

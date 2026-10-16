@@ -1,5 +1,9 @@
 # Changelog
 
+- Preserve both the causal publication witness and the bounded-output repair hint, with exact optional funding and sticky-refusal controls.
+
+- Launch fused-source Wasm package test drivers from their fixture directory using relative names so Node does not receive Windows verbatim paths as its main script.
+
 - Report the first native-provider builder reservation and caller in outward C++ package diagnostic help, preserving primary diagnostics, all limits, and complete verification.
 
 - Acquire known minimum ownership-path array capacity once, retaining complete path traversal, work charges, future growth, and independently compiled old receivers under the unchanged builder limit.
