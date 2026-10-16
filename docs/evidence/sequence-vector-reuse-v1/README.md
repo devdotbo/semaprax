@@ -36,6 +36,10 @@ empty, branching and stopped path sets; every path field, order, capacity, work
 and materialization; exact pointer reuse; complete backing removal and following
 growth; zero/exact/short accounts; sticky refusal and complete paid Drop. A
 separate full-HIR control retains every real function in the existing fixture.
+Expression-path comparisons destructure every field explicitly; the production
+carrier has no equality/debug derives, and adding a field must break the
+exhaustive comparison until that field is checked too. Component probes retain
+that same absence of derives.
 Authored controls do not qualify current-main execution. Hosted owning tests
 and all full quality gates remain required.
 

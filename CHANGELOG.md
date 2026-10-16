@@ -1,5 +1,7 @@
 # Changelog
 
+- Compare every private expression-path field explicitly in vector-reuse controls, retaining the production carrier's existing traits and all parity assertions.
+
 - Clone ownership-classifier leaf types without acquiring a recursive census cursor, preserving sticky authentication and the full paid recursive fallback.
 
 - Restore artifact-free release-blocking test jobs by removing failed-unit executable uploads and their unused collector.

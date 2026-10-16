@@ -49,6 +49,31 @@ fn seed(
     Ok(paths)
 }
 
+fn assert_expr_paths_equal(actual: &[ExprSkeletonPath], expected: &[ExprSkeletonPath]) {
+    assert_eq!(actual.len(), expected.len());
+    for (actual, expected) in actual.iter().zip(expected) {
+        let ExprSkeletonPath {
+            observations,
+            owned_source,
+            failed,
+            residual,
+            continuation,
+        } = actual;
+        let ExprSkeletonPath {
+            observations: old_observations,
+            owned_source: old_owned_source,
+            failed: old_failed,
+            residual: old_residual,
+            continuation: old_continuation,
+        } = expected;
+        assert_eq!(observations, old_observations);
+        assert_eq!(owned_source, old_owned_source);
+        assert_eq!(failed, old_failed);
+        assert_eq!(residual, old_residual);
+        assert_eq!(continuation, old_continuation);
+    }
+}
+
 #[test]
 fn complete_previous_receiver_keeps_every_field_capacity_work_and_paid_drop() {
     let program = path_array::fixture_program();
@@ -88,7 +113,7 @@ fn complete_previous_receiver_keeps_every_field_capacity_work_and_paid_drop() {
                         let before = skeleton_materializations();
                         let actual = sequence_skeleton_paths(inputs, &suffixes, &mut work).unwrap();
                         assert_eq!(skeleton_materializations() - before, old_materializations);
-                        assert_eq!(actual, expected);
+                        assert_expr_paths_equal(&actual, &expected);
                         assert_eq!(actual.capacity(), expected.capacity());
                         if selected {
                             assert_eq!(actual.as_ptr(), pointer);
@@ -330,7 +355,7 @@ fn a_larger_input_backing_keeps_the_complete_original_output_growth_route() {
             let before = skeleton_materializations();
             let actual = sequence_skeleton_paths(inputs, &suffixes, &mut work).unwrap();
             assert_eq!(skeleton_materializations() - before, old_materializations);
-            assert_eq!(actual, expected);
+            assert_expr_paths_equal(&actual, &expected);
             assert_eq!(actual.capacity(), 16);
             assert_eq!(actual.capacity(), expected.capacity());
             drop(work);
