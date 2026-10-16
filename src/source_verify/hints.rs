@@ -783,34 +783,51 @@ pub(super) fn with_authoring_repair_help(mut diagnostic: Diagnostic) -> Diagnost
 
 fn capacity_witness_receiving_bytes() -> usize {
     use std::mem::size_of;
-    size_of::<String>()
-        + 3 * size_of::<usize>()
-        + 2 * size_of::<&str>()
-        + size_of::<Option<usize>>()
+    // Full actual prospective controls, admitted before their first formation.
+    // The existing Diagnostic/witness arguments replace the old with_help
+    // receiver/value; no extra Diagnostic owner or failure Result is introduced.
+    2 * size_of::<String>() // String::new initializer and named composed owner
+        + 19 * size_of::<usize>() // initializer/binding/argument site map in the source packet
+        + 2 * size_of::<Option<usize>>() // two checked-add results, no and_then
+        + size_of::<Option<&str>>() // exact classifier return; no filter transport
+        + size_of::<&Option<String>>() // match the already-owned help field
+        + 6 * size_of::<&String>() // help binding/as_str, message, witness len/push, capacity
+        + 10 * size_of::<&str>() // classifier/selected/comparison/push/len receiving roles
+        + 4 * size_of::<&&str>() // code and exact repair-text equality arguments
+        + 4 * size_of::<&mut String>() // try_reserve_exact and three push_str calls
         + size_of::<Result<(), std::collections::TryReserveError>>()
-        + 2 * size_of::<bool>()
+        + size_of::<&Result<(), std::collections::TryReserveError>>() // is_err
+        + 9 * size_of::<bool>() // two admissions/negations, two guards, error/capacity/OR
 }
 
-/// A causal witness supplements the exact authoring repair instead of replacing
-/// it. If optional composition cannot be funded, retain the complete witness
-/// and the original primary diagnostic, as the previous receiver did.
+/// Optional composition has two real frontiers: control acquisition, then
+/// exact String backing. A later refusal keeps the already-paid control spend;
+/// neither frontier selects a failure or makes the optional String mandatory.
 pub(super) fn with_capacity_witness(mut diagnostic: Diagnostic, witness: String) -> Diagnostic {
-    let repair = diagnostic.help.as_deref().filter(|help| {
-        diagnostic.code == "SPX-T269"
-            && Some(*help) == authoring_repair_help(diagnostic.code, &diagnostic.message)
-    });
-    let Some(repair) = repair else {
+    if !crate::bounded_output::reserve_active_preserving(capacity_witness_receiving_bytes(), 0) {
+        // Initial unreceived admission publishes the already-owned old fallback.
         return diagnostic.with_help(witness);
+    }
+    let repair = match &diagnostic.help {
+        Some(help) if diagnostic.code == "SPX-T269" => {
+            match authoring_repair_help(diagnostic.code, &diagnostic.message) {
+                Some(expected) if expected == help.as_str() => expected,
+                _ => return diagnostic.with_help(witness),
+            }
+        }
+        _ => return diagnostic.with_help(witness),
     };
-    let length = witness
-        .len()
-        .checked_add(2)
-        .and_then(|n| n.checked_add(repair.len()));
-    let payment = length.and_then(|n| n.checked_add(capacity_witness_receiving_bytes()));
-    let (Some(length), Some(payment)) = (length, payment) else {
-        return diagnostic.with_help(witness);
+    let witness_bytes = witness.len();
+    let repair_bytes = repair.len();
+    let with_separator = match witness_bytes.checked_add(2) {
+        Some(length) => length,
+        None => return diagnostic.with_help(witness),
     };
-    if !crate::bounded_output::reserve_active_preserving(payment, 0) {
+    let length = match with_separator.checked_add(repair_bytes) {
+        Some(length) => length,
+        None => return diagnostic.with_help(witness),
+    };
+    if !crate::bounded_output::reserve_active_preserving(length, 0) {
         return diagnostic.with_help(witness);
     }
     let mut composed = String::new();
@@ -823,6 +840,9 @@ pub(super) fn with_capacity_witness(mut diagnostic: Diagnostic, witness: String)
     diagnostic.help = Some(composed);
     diagnostic
 }
+
+#[cfg(test)]
+mod before_capacity_witness;
 
 #[cfg(test)]
 mod authoring_repair_tests {
@@ -898,26 +918,55 @@ mod authoring_repair_tests {
 
     #[test]
     fn publication_witness_keeps_exact_repair_and_primary_at_optional_limits() {
-        use crate::bounded_output::with_limit_usage_refusal;
-        let original = with_authoring_repair_help(Diagnostic::io_static(
+        use crate::bounded_output::{set_active_floor, with_limit_usage_refusal};
+        let mut original = with_authoring_repair_help(Diagnostic::io_static(
             "SPX-T269",
             "stdout_write path reaches 2 sites; limit is 1",
         ));
+        original.path = Some("publication.spx".to_owned());
+        original.span = Some(crate::ast::Span {
+            start: 7,
+            end: 13,
+            line: 2,
+            column: 3,
+        });
         let witness = "call path: app.main -> app.write; first and second stdout sites";
         let expected = format!("{witness}\n\n{}", original.help.as_deref().unwrap());
-        let exact = expected.len() + capacity_witness_receiving_bytes();
-        for limit in [0, exact - 1, exact] {
+        let controls = capacity_witness_receiving_bytes();
+        let exact = controls + expected.len();
+        assert!(controls > 0 && expected.len() > 1);
+        for (limit, floor) in [
+            (0, 0),
+            (controls - 1, 0),
+            (controls, 0),
+            (exact - 1, 0),
+            (exact, 0),
+            (controls, 1),
+            (exact, 1),
+        ] {
             let input = original.clone();
             let proof = witness.to_owned();
-            let (actual, refused, used, first) =
-                with_limit_usage_refusal(limit, || with_capacity_witness(input, proof));
+            let (actual, refused, used, first) = with_limit_usage_refusal(limit, || {
+                assert!(set_active_floor(floor));
+                with_capacity_witness(input, proof)
+            });
             assert!(!refused && first.is_none());
-            if limit == exact {
+            eprintln!("capacity_witness controls={controls} backing={} limit={limit} floor={floor} used={used}", expected.len());
+            if limit == exact && floor == 0 {
                 assert_eq!(used, exact);
                 assert_eq!(actual, original.clone().with_help(&expected));
+                assert_eq!(actual.help.as_ref().unwrap().capacity(), expected.len());
                 assert!(actual.help.as_deref().unwrap().starts_with(witness));
             } else {
-                assert_eq!(used, 0);
+                // Paid control work is not refunded when optional backing is short.
+                assert_eq!(
+                    used,
+                    if limit - floor >= controls {
+                        controls
+                    } else {
+                        0
+                    }
+                );
                 assert_eq!(actual, original.clone().with_help(witness));
             }
         }
@@ -946,6 +995,22 @@ mod authoring_repair_tests {
             with_capacity_witness(unrelated.clone(), "witness".to_owned()),
             unrelated.with_help("witness")
         );
+        // An absent repair and an explicit empty repair remain distinct inputs;
+        // both preserve the old complete Some("") witness fallback.
+        for help in [None, Some(String::new())] {
+            let mut original =
+                Diagnostic::io_static("SPX-T269", "stdout_write path reaches 2 sites; limit is 1");
+            original.help = help;
+            let expected = original.clone().with_help(String::new());
+            let (actual, refused, used, first) =
+                with_limit_usage_refusal(capacity_witness_receiving_bytes(), || {
+                    with_capacity_witness(original, String::new())
+                });
+            assert_eq!(actual, expected);
+            assert_eq!(actual.help.as_deref(), Some(""));
+            assert_eq!(used, capacity_witness_receiving_bytes());
+            assert!(!refused && first.is_none());
+        }
     }
 
     #[test]
@@ -974,5 +1039,51 @@ mod authoring_repair_tests {
         assert!(!allocation.invalid && allocation.live == 0);
         assert_eq!(allocation.allocated, allocation.freed);
         assert!(allocation.allocated <= paid);
+        // Input ownership and every partial Drop are inside this second probe.
+        let controls = capacity_witness_receiving_bytes();
+        let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let diagnostic = with_authoring_repair_help(Diagnostic::io_static(
+                    "SPX-T269",
+                    "stdout_write path reaches 2 sites; limit is 1",
+                ));
+                let witness = "original causal witness";
+                assert!(reserve_active_required(witness.len()));
+                let witness = witness.to_owned();
+                // A floor leaves room only for the real control bank. No String
+                // backing is acquired, and the complete old witness is retained.
+                let remaining = crate::bounded_output::active_remaining().unwrap();
+                assert!(crate::bounded_output::set_active_floor(
+                    remaining - controls
+                ));
+                let diagnostic = with_capacity_witness(diagnostic, witness);
+                assert_eq!(diagnostic.code, "SPX-T269");
+                assert_eq!(diagnostic.help.as_deref(), Some("original causal witness"));
+                drop(diagnostic);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+        assert!(allocation.allocated <= paid);
+        complete_capacity_witness_source_custody();
+    }
+
+    fn complete_capacity_witness_source_custody() {
+        let helpers = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/capacity-witness-controls-851-next-20261016/helpers.before.rs.txt"
+        ));
+        let tests = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/capacity-witness-controls-851-next-20261016/three-tests.before.rs.txt"
+        ));
+        let expected = format!("//! Complete Main8fb capacity-witness receiver and all three original controls.\nuse super::*;\n\n{helpers}\n#[cfg(test)]\nmod tests {{\n    use super::*;\n\n{tests}\n}}\n");
+        assert_eq!(include_str!("hints/before_capacity_witness.rs"), expected);
+        let receiving = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/capacity-witness-controls-851-next-20261016/helpers.after.rs.txt"
+        ));
+        assert_eq!(include_str!("hints.rs").matches(receiving).count(), 1);
     }
 }
