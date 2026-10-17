@@ -589,7 +589,7 @@ include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/inl
                 )
             ),
             include_str!("../../src/workspace_graph/type_names.rs"),
-            include_str!("../../src/workspace_graph/shape_identity.rs"),
+            audit_source_join!(include_str!("../../src/workspace_graph/shape_identity.rs"), include_str!("../../src/workspace_graph/shape_identity/before785.rs"), include_str!("../../src/workspace_graph/shape_identity/before_caller785.rs"), include_str!("../../src/workspace_graph/shape_identity/before_validation785.rs"), include_str!("../../src/workspace_graph/shape_identity/source_controls.rs"), include_str!("../../src/workspace_graph/shape_identity/tests.rs")),
             include_str!("../../src/workspace_graph/operation_sidecar.rs"),
             audit_source_join!(
                 include_str!("../../src/graph/copy_discard.rs"),

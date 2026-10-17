@@ -1437,3 +1437,23 @@ mod cache_eligibility_tests {
         );
     }
 }
+
+/// Keep the original clone's text debit and refusal/floor selection while
+/// borrowing its immutable input instead of allocating a temporary String.
+/// The caller must hold that input through the returned view. This grants no
+/// heap backing or authority and retains the original clone tariff unchanged.
+pub(crate) fn borrowed_clone_view(value: &str) -> &str {
+    let budget = active();
+    if !reserve(budget.as_deref(), value.len()) {
+        return "";
+    }
+    value
+}
+
+// Same input, budget owner, reserve receiver and bool as budgeted_clone. Its
+// old String result slot covers this replacement borrowed-text result; no
+// unused bytes are credited and no heap-carrier allowance is borrowed.
+const _: () = {
+    assert!(std::mem::size_of::<&str>() <= std::mem::size_of::<String>());
+    assert!(std::mem::align_of::<&str>() <= std::mem::align_of::<String>());
+};

@@ -1,4 +1,5 @@
 //! Complete previous full declaration consumer; owning authority stays original.
+use super::shape_identity::before785::top_level_declaration;
 use super::*;
 pub(super) fn reconstruct_workspace_declaration_facts_with_authority(
     modules: &[(String, ResolvedModuleInput)],

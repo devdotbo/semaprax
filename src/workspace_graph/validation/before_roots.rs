@@ -13,8 +13,9 @@ use crate::ast::{ModuleUseKind, Program, TypeDeclarationKind};
 use crate::diagnostic::Diagnostic;
 use crate::hir;
 
+use crate::workspace_graph::shape_identity::before785::top_level_declaration;
 use crate::workspace_graph::{
-    graph_error, prelude_binding, reserve_builder_structure, top_level_declaration,
+    graph_error, prelude_binding, reserve_builder_structure,
     AuthoredDeclaration, ResolvedModuleInput, WorkspaceDeclarationFact,
 };
 
