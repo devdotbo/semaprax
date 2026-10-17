@@ -1,6 +1,6 @@
 use crate::ast::{BinaryOp, Program, UnaryOp};
 use crate::command_io_ops::CommandOperationProfile;
-use crate::diagnostic::{quote_json, Diagnostic};
+use crate::diagnostic::{output_parent, quote_json, Diagnostic};
 use crate::graph;
 use crate::hir::{
     self, DeclarationId, FunctionExecutionId, IdentityOrigin, ResolvedExpr, ResolvedExprKind,
@@ -2987,18 +2987,24 @@ fn publish_scalar_package(output: &Path, artifacts: &[(&str, &[u8])]) -> Result<
         .filter(|parent| !parent.as_os_str().is_empty())
         .unwrap_or_else(|| Path::new("."));
     let parent_metadata = fs::symlink_metadata(parent_path).map_err(|error| {
-        Diagnostic::io(
+        let diagnostic = Diagnostic::io(
             "SPX-I301",
             format!(
                 "cannot inspect Public Scalar Export output parent {}: {error}",
                 parent_path.display()
             ),
-        )
+        );
+        match output_parent::missing_directory_help(parent_path, &error) {
+            Some(help) => diagnostic.with_help(help),
+            None => diagnostic,
+        }
     })?;
     if !is_plain_directory(&parent_metadata) {
-        return Err(Diagnostic::io(
-            "SPX-I301",
-            "Public Scalar Export output parent must be a real non-reparse directory",
+        return Err(output_parent::rejected_directory(
+            "Public Scalar Export output parent",
+            parent_path,
+            output,
+            &parent_metadata,
         ));
     }
     let parent_identity = Handle::from_path(parent_path).map_err(|error| {

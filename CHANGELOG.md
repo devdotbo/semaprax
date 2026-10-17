@@ -1,5 +1,7 @@
 # Changelog
 
+- Name the rejected output parent in SPX-I301 for native, Web package and explicit Project outputs, identify symbolic links with their resolved output path, and hint to create a missing parent, keeping the real non-reparse parent policy.
+
 - Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
 
 - Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.

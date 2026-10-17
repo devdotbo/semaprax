@@ -343,5 +343,8 @@ mod tests {
     }
 }
 
+#[doc(hidden)]
+pub mod output_parent;
+
 #[cfg(test)]
 mod refusal_tests;
