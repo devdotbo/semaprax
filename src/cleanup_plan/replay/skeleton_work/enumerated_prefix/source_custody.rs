@@ -11,6 +11,8 @@ const PACKET: &str = include_str!(concat!(
     "/docs/evidence/ordinary-hir-prefix-877-v1/source-inverse.json"
 ));
 fn restore(current: &str, row: &serde_json::Value) -> String {
+    let acquired = census_checkpoint(row["path"].as_str().unwrap(), current);
+    let current = acquired.as_str();
     assert_eq!(digest(current), row["after_sha256"]);
     let mut text = current.to_owned();
     for edit in row["inverse"].as_array().unwrap().iter().rev() {
@@ -62,4 +64,46 @@ fn six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refus
             assert!(std::panic::catch_unwind(|| restore(&bad, row)).is_err());
         }
     }
+}
+
+// Physical current -> whole4ce29 precedes the unchanged original ten-row packet.
+fn census_checkpoint(source: &str, current: &str) -> String {
+    if !matches!(
+        source,
+        "src/cleanup_plan/replay.rs" | "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs"
+    ) {
+        return current.to_owned();
+    }
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/ordinary-hir-prefix-877-census-20261017/core-inverse.json"
+    ));
+    assert_eq!(raw.len(), 717969);
+    assert_eq!(
+        digest(raw),
+        "6273833f330a9b67129e2425c9bb23970af8b49057fb521db8ddcf042a302375"
+    );
+    let packet: serde_json::Value = serde_json::from_str(raw).unwrap();
+    assert_eq!(
+        packet["checkpoint"],
+        "4ce29a5c509e1fcfb7cfbbdb75fb8b0bd0a223e6"
+    );
+    let rows = packet["files"].as_array().unwrap();
+    assert_eq!(rows.len(), 2);
+    assert_eq!(rows.iter().filter(|row| row["source"] == source).count(), 1);
+    let row = rows.iter().find(|row| row["source"] == source).unwrap();
+    assert_eq!(current.len() as u64, row["after_length"]);
+    assert_eq!(digest(current), row["after_sha256"]);
+    assert_eq!(row["inverse"].as_array().unwrap().len(), 1);
+    assert_eq!(current, row["inverse"][0]["after"].as_str().unwrap());
+    let before = row["inverse"][0]["before"].as_str().unwrap();
+    assert_eq!(before.len() as u64, row["before_length"]);
+    assert_eq!(digest(before), row["before_sha256"]);
+    let archived = match source {
+        "src/cleanup_plan/replay.rs" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ordinary-hir-prefix-877-census-20261017/before/src/cleanup_plan/replay.rs")),
+        "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ordinary-hir-prefix-877-census-20261017/before/src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs")),
+        _ => unreachable!(),
+    };
+    assert_eq!(before, archived);
+    before.to_owned()
 }

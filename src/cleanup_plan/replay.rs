@@ -2825,6 +2825,7 @@ fn validate_typed_control_skeleton_with_index<'hir>(
         ReplayBudget {
             payer: AllocationPayer::ActiveBuilder,
             admission: AdmissionMode::Ordinary,
+            lent_skeleton: false,
             ..
         } => {
             budget.reserve_bytes(

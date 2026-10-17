@@ -155,14 +155,24 @@ pub(in crate::cleanup_plan::replay) fn node(
             "",
         ));
     }
-    let bound = kind.pending_bound().ok_or_else(|| {
+    work.budget.reserve_bytes(
+        work.function,
+        BOUND_CALL,
+        "enumerated HIR destruction bound call receivers",
+    )?;
+    let bound = sequence_pending_bound(work, &kind)?.ok_or_else(|| {
         work.budget.budget_refusal(
             work.function,
             "enumerated HIR destruction bound overflowed",
             "",
         )
     })?;
-    let scratch = work.ordinary_frontier(bound)?;
+    work.budget.reserve_bytes(
+        work.function,
+        FRONTIER_CALL,
+        "enumerated HIR frontier call receivers",
+    )?;
+    let scratch = sequence_frontier(work, bound)?;
     work.budget.reserve_bytes(
         work.function,
         physical_clone::rc_backing_bytes::<ObservationDag>(),
@@ -373,13 +383,6 @@ pub(in crate::cleanup_plan::replay) const ENTRY_CALL: usize = 4 * size_of::<&[Sk
     + 2 * size_of::<&mut [SkeletonPath]>()
     + 2 * size_of::<&ResolvedFunction>()
     + 2 * size_of::<&mut ReplayBudget>()
-    + 2 * size_of::<std::slice::Iter<'static, SkeletonPath>>()
-    + size_of::<
-        std::iter::Chain<
-            std::slice::Iter<'static, SkeletonPath>,
-            std::slice::Iter<'static, SkeletonPath>,
-        >,
-    >()
     + size_of::<Result<bool, Diagnostic>>()
     + size_of::<Result<(), Diagnostic>>()
     + 4 * size_of::<bool>();
@@ -396,7 +399,8 @@ pub(in crate::cleanup_plan::replay) fn sort(
 ) -> Result<(), Diagnostic> {
     // Preserve the former ordering algorithm on flat inputs. Ordinary entry
     // query receivers are charged separately; Selected/Oracle never call here.
-    if paths.iter().all(|path| path.observations.prefix.is_none()) {
+    budget.reserve_bytes(function, FLAT_CALL, "enumerated HIR sort flat probe call")?;
+    if all_flat(paths, function, budget)? {
         paths.sort();
         return Ok(());
     }
@@ -419,11 +423,15 @@ pub(in crate::cleanup_plan::replay) fn equal(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<bool, Diagnostic> {
-    if left
-        .iter()
-        .chain(right)
-        .all(|path| path.observations.prefix.is_none())
-    {
+    budget.reserve_bytes(function, FLAT_CALL, "enumerated HIR left flat probe call")?;
+    let left_flat = all_flat(left, function, budget)?;
+    let both_flat = if left_flat {
+        budget.reserve_bytes(function, FLAT_CALL, "enumerated HIR right flat probe call")?;
+        all_flat(right, function, budget)?
+    } else {
+        false
+    };
+    if both_flat {
         return Ok(left == right);
     }
     budget.reserve_bytes(
@@ -437,7 +445,22 @@ pub(in crate::cleanup_plan::replay) fn equal(
     if left.len() != right.len() {
         return Ok(false);
     }
-    for (left, right) in left.iter().zip(right) {
+    // Own both concrete iterator values and the Zip before forming them.
+    budget.reserve_bytes(
+        function,
+        ZIP_INIT,
+        "enumerated HIR equality zip initializer",
+    )?;
+    let mut pairs = left.iter().zip(right.iter());
+    loop {
+        budget.reserve_bytes(
+            function,
+            ZIP_NEXT,
+            "enumerated HIR equality zip next receivers",
+        )?;
+        let Some((left, right)) = pairs.next() else {
+            break;
+        };
         budget.reserve_bytes(
             function,
             ORDER_CALL,
@@ -542,3 +565,243 @@ pub(in crate::cleanup_plan::replay) fn old_sequence(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     before::sequence_skeleton_paths(prefixes, suffixes, work)
 }
+
+// New callers own these argument/return transports before forwarding them.
+type Scratch = dag_storage::DestructionScratch;
+type ScratchRc = std::rc::Rc<std::cell::RefCell<Scratch>>;
+type NodeRc = std::rc::Rc<ObservationDag>;
+const PAYMENT: usize = 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
+    + 2 * size_of::<Result<(), Diagnostic>>();
+const BOUND_CALL: usize = 2
+    * size_of::<(&mut SkeletonWork<'static, 'static>, &ObservationDagKind)>()
+    + 2 * size_of::<Result<Option<usize>, Diagnostic>>();
+const FRONTIER_CALL: usize = PAYMENT // original frontier zero-reservation transport
+    + 2 * size_of::<(&mut SkeletonWork<'static, 'static>, usize)>()
+    + 2 * size_of::<Result<Option<ScratchRc>, Diagnostic>>()
+    + 2 * size_of::<bool>();
+// pending_bound was a new borrowed call too: explicit match transport and fold.
+fn sequence_pending_bound(
+    work: &mut SkeletonWork<'_, '_>,
+    kind: &ObservationDagKind,
+) -> Result<Option<usize>, Diagnostic> {
+    work.budget.reserve_bytes(
+        work.function,
+        PAYMENT
+            + 2 * size_of::<&ObservationDagKind>()
+            + 2 * size_of::<Option<usize>>()
+            + 2 * size_of::<Result<Option<usize>, Diagnostic>>()
+            + 2 * size_of::<&Option<NodeRc>>()
+            + 2 * size_of::<Option<&NodeRc>>()
+            + 2 * size_of::<&NodeRc>()
+            + 2 * size_of::<bool>(),
+        "enumerated HIR destruction bound borrowed query",
+    )?;
+    match kind {
+        ObservationDagKind::Seq(None, _) => Ok(Some(0)),
+        ObservationDagKind::Seq(Some(child), _) => {
+            Ok(child.pending_bound.map(|bound| bound.max(1)))
+        }
+        ObservationDagKind::Cat(children) | ObservationDagKind::Alt(children) => {
+            work.budget.reserve_bytes(
+                work.function,
+                PAYMENT
+                    + 2 * size_of::<&Vec<NodeRc>>()
+                    + 2 * size_of::<usize>()
+                    + 2 * size_of::<std::slice::Iter<'static, NodeRc>>()
+                    + 2 * size_of::<std::iter::Enumerate<std::slice::Iter<'static, NodeRc>>>(),
+                "enumerated HIR destruction bound fold initializer",
+            )?;
+            let mut bound = children.len();
+            let mut pending = children.iter().enumerate();
+            loop {
+                work.budget.reserve_bytes(work.function,
+                    PAYMENT + 2 * size_of::<&mut std::iter::Enumerate<std::slice::Iter<'static, NodeRc>>>()
+                        + 2 * size_of::<Option<(usize, &NodeRc)>>() + 2 * size_of::<(usize, &NodeRc)>()
+                        + 2 * size_of::<Option<usize>>()
+                        + 3 * size_of::<usize>() + 2 * size_of::<bool>(),
+                    "enumerated HIR destruction bound fold next")?;
+                let Some((ordinal, child)) = pending.next() else {
+                    break;
+                };
+                let Some(child_bound) = child.pending_bound else {
+                    return Ok(None);
+                };
+                let Some(total) = ordinal.checked_add(child_bound) else {
+                    return Ok(None);
+                };
+                bound = bound.max(total);
+            }
+            Ok(Some(bound))
+        }
+    }
+}
+fn sequence_frontier(
+    work: &mut SkeletonWork<'_, '_>,
+    required: usize,
+) -> Result<Option<ScratchRc>, Diagnostic> {
+    // Same original sticky check and capacity algorithm. The old frontier is
+    // untouched; only this new call route acquires these additional receivers.
+    work.budget
+        .reserve_bytes(work.function, 0, "ordinary destruction frontier")?;
+    if required == 0 {
+        return Ok(None);
+    }
+    work.budget.reserve_bytes(
+        work.function,
+        PAYMENT + 2 * size_of::<&Option<ScratchRc>>() + 2 * size_of::<bool>(),
+        "enumerated HIR scratch presence query",
+    )?;
+    if work.ordinary_scratch.is_none() {
+        work.budget.reserve_bytes(
+            work.function,
+            PAYMENT // this receiver-fee call
+                + PAYMENT // the real scratch-header backing call below
+                + 2 * size_of::<Scratch>()
+                + 2 * size_of::<std::cell::RefCell<Scratch>>()
+                + 2 * size_of::<ScratchRc>()
+                + 2 * size_of::<Option<ScratchRc>>()
+                + 2 * size_of::<Vec<NodeRc>>(),
+            "enumerated HIR scratch initializer receivers",
+        )?;
+        work.budget.reserve_bytes(
+            work.function,
+            physical_clone::rc_backing_bytes::<std::cell::RefCell<Scratch>>(),
+            "ordinary destruction scratch header",
+        )?;
+        work.ordinary_scratch = Some(std::rc::Rc::new(std::cell::RefCell::new(Scratch {
+            pending: Vec::new(),
+            registered_edges: 0,
+            next_ordinal: 0,
+        })));
+    }
+    work.budget.reserve_bytes(
+        work.function,
+        PAYMENT
+            + 2 * size_of::<&Option<ScratchRc>>()
+            + 2 * size_of::<Option<&ScratchRc>>()
+            + 2 * size_of::<&ScratchRc>()
+            + 2 * size_of::<ScratchRc>()
+            + 2 * size_of::<&str>()
+            + 2 * size_of::<&std::cell::RefCell<Scratch>>()
+            + 2 * size_of::<std::cell::RefMut<'static, Scratch>>()
+            + 4 * size_of::<&Vec<NodeRc>>()
+            + 2 * size_of::<usize>()
+            + 4 * size_of::<bool>(),
+        "enumerated HIR scratch clone borrow and capacity query",
+    )?;
+    let scratch = work
+        .ordinary_scratch
+        .as_ref()
+        .expect("funded scratch header")
+        .clone();
+    {
+        let mut frontier = scratch.borrow_mut();
+        if !frontier.pending.is_empty() {
+            return Err(work.budget.budget_refusal(
+                work.function,
+                "ordinary destruction frontier is active",
+                "",
+            ));
+        }
+        if required > frontier.pending.capacity() {
+            work.budget.reserve_bytes(
+                work.function,
+                PAYMENT // this receiver-fee call
+                    + PAYMENT // the real replacement-array backing call below
+                    + 2 * size_of::<(usize, usize)>()
+                    + 2 * size_of::<Option<usize>>()
+                    + 2 * size_of::<Result<usize, Diagnostic>>()
+                    + 2 * size_of::<usize>()
+                    + 2 * size_of::<&mut SkeletonWork<'static, 'static>>()
+                    + 2 * size_of::<Vec<NodeRc>>()
+                    + 2 * size_of::<(&mut Vec<NodeRc>, usize)>()
+                    + 2 * size_of::<Result<(), std::collections::TryReserveError>>()
+                    + 2 * size_of::<Result<(), Diagnostic>>()
+                    + 2 * size_of::<&Vec<NodeRc>>()
+                    + 2 * size_of::<bool>(),
+                "enumerated HIR scratch replacement allocator receivers",
+            )?;
+            let capacity =
+                physical_storage::replay_growth_capacity(frontier.pending.capacity(), required)
+                    .ok_or_else(|| {
+                        work.budget.budget_refusal(
+                            work.function,
+                            "ordinary destruction frontier capacity overflowed",
+                            "",
+                        )
+                    })?;
+            work.budget.reserve_array::<NodeRc>(
+                work.function,
+                capacity,
+                "ordinary destruction frontier",
+            )?;
+            let mut replacement = Vec::new();
+            replacement.try_reserve_exact(capacity).map_err(|_| {
+                work.budget.budget_refusal(
+                    work.function,
+                    "ordinary destruction frontier allocation failed",
+                    "",
+                )
+            })?;
+            if replacement.capacity() != capacity {
+                return Err(work.budget.budget_refusal(
+                    work.function,
+                    "ordinary destruction frontier capacity disagrees with its reservation",
+                    "",
+                ));
+            }
+            frontier.pending = replacement;
+        }
+    }
+    Ok(Some(scratch))
+}
+const FLAT_CALL: usize = 2 * size_of::<(&[SkeletonPath], &ResolvedFunction, &mut ReplayBudget)>()
+    + 2 * size_of::<Result<bool, Diagnostic>>()
+    + 2 * size_of::<std::slice::Iter<'static, SkeletonPath>>();
+fn all_flat(
+    paths: &[SkeletonPath],
+    function: &ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    // Root dispatch excludes borrowed-work ownership; a direct caller must
+    // likewise reject it before spending a new metadata traversal debit.
+    if budget.lent_skeleton {
+        return Err(budget.budget_refusal(
+            function,
+            "enumerated HIR flat probe cannot spend a lent skeleton allowance",
+            "",
+        ));
+    }
+    let mut pending = paths.iter();
+    loop {
+        budget.reserve_bytes(
+            function,
+            2 * PAYMENT
+                + 2 * size_of::<&mut std::slice::Iter<'static, SkeletonPath>>()
+                + 2 * size_of::<Option<&SkeletonPath>>()
+                + 2 * size_of::<&SkeletonPath>()
+                + 2 * size_of::<&Option<NodeRc>>()
+                + 2 * size_of::<bool>(),
+            "enumerated HIR flat representation probe receivers",
+        )?;
+        budget.charge(function, 1, "enumerated HIR flat representation probe")?;
+        let Some(path) = pending.next() else {
+            return Ok(true);
+        };
+        if path.observations.prefix.is_some() {
+            return Ok(false);
+        }
+    }
+}
+type PathZip = std::iter::Zip<
+    std::slice::Iter<'static, SkeletonPath>,
+    std::slice::Iter<'static, SkeletonPath>,
+>;
+const ZIP_INIT: usize = PAYMENT
+    + 4 * size_of::<std::slice::Iter<'static, SkeletonPath>>()
+    + 2 * size_of::<PathZip>()
+    + 4 * size_of::<&[SkeletonPath]>();
+const ZIP_NEXT: usize = PAYMENT
+    + 2 * size_of::<&mut PathZip>()
+    + 2 * size_of::<Option<(&SkeletonPath, &SkeletonPath)>>()
+    + 2 * size_of::<(&SkeletonPath, &SkeletonPath)>();
