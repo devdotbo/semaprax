@@ -1038,3 +1038,88 @@ fn projection_audit_scope_preserves_complete_sources_and_all_historical_receiver
         }
     }
 }
+
+#[test]
+fn historical_pin_capture_chains_restore_every_original_source() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let evidence = root.join("docs/evidence/legacy-pin-chain-repair-v1");
+    let before =
+        std::fs::read_to_string(evidence.join("semantic_receivers.rs.before.txt")).unwrap();
+    assert_eq!(
+        digest(&before),
+        "6af473f412874b7c2e09e4e1effa1f18357f74cf8e31b7cab4a16bd85b4a947d"
+    );
+    assert!(
+        std::fs::read_to_string(root.join("src/source_reflows/semantic_receivers.rs"))
+            .unwrap()
+            .starts_with(&before)
+    );
+    let sealed = std::fs::read_to_string(evidence.join("rows.before.json")).unwrap();
+    assert_eq!(
+        digest(&sealed),
+        "7f69e5a087703aa6ab433c52bf7fe5ffd595a5ff4b208d4bb6357fdc6703c5d3"
+    );
+    let sealed: serde_json::Value = serde_json::from_str(&sealed).unwrap();
+    assert_eq!(sealed.as_object().unwrap().len(), 2);
+    for (packet, count) in [
+        (
+            "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+            5,
+        ),
+        (
+            "docs/evidence/prelude-forecast-286/pin-capture/exact-source-inverses.json",
+            2,
+        ),
+        (
+            "docs/evidence/prelude-fixture-source-guard-4ec/exact-source-inverses.json",
+            1,
+        ),
+        (
+            "docs/evidence/prelude-forecast-actual-pins-a184d-20261015/exact-source-inverses.json",
+            2,
+        ),
+        (
+            "docs/evidence/source-reader-followups-20261016/sources.json",
+            3,
+        ),
+    ] {
+        let rows: Vec<serde_json::Value> =
+            serde_json::from_str(&std::fs::read_to_string(root.join(packet)).unwrap()).unwrap();
+        assert_eq!(rows.len(), count);
+        let mut paths = std::collections::BTreeSet::new();
+        for row in &rows {
+            let path = row["path"].as_str().unwrap();
+            assert!(paths.insert(path));
+            let edits = row["edits"].as_array().unwrap();
+            assert!(!edits.is_empty());
+            if let Some(old) = sealed.get(packet).filter(|old| old["path"] == path) {
+                assert_eq!(row["archive"], old["archive"]);
+                assert_eq!(row["sha256"], old["sha256"]);
+                let original_edits = old["edits"].as_array().unwrap();
+                assert_eq!(&edits[..original_edits.len()], original_edits.as_slice());
+            }
+            let (before, after) = if edits[0].get("after").is_some() {
+                ("before", "after")
+            } else {
+                ("old", "new")
+            };
+            let mut restored = std::fs::read_to_string(root.join(path)).unwrap();
+            for edit in edits.iter().rev() {
+                let receiving = edit[after].as_str().unwrap();
+                assert!(!receiving.is_empty());
+                assert_eq!(restored.matches(receiving).count(), 1, "{packet}: {path}");
+                restored = restored.replacen(receiving, edit[before].as_str().unwrap(), 1);
+            }
+            let relative = row["archive"].as_str().unwrap();
+            let direct = root.join(relative);
+            let archive = if direct.is_file() {
+                direct
+            } else {
+                root.join(packet).parent().unwrap().join(relative)
+            };
+            let original = std::fs::read_to_string(archive).unwrap();
+            assert_eq!(digest(&original), row["sha256"]);
+            assert_eq!(restored, original);
+        }
+    }
+}

@@ -446,6 +446,14 @@
       {
         "before": "                let revision = snapshot.retain_revision();\n                previous_digests.push(digest_without_checked_value_cursor_budget(\n",
         "after": "                let revision = snapshot.retain_revision();\n                if let Some(directory) = std::env::var_os(\"SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR\") {\n                    use std::io::Write as _;\n                    let path =\n                        std::path::Path::new(&directory).join(format!(\"calculator-{name}.json\"));\n                    let mut file = std::fs::OpenOptions::new()\n                        .write(true)\n                        .create_new(true)\n                        .open(path)\n                        .expect(\"fresh calculator pin evidence file\");\n                    file.write_all(revision.semantic_graph().as_bytes())\n                        .expect(\"capture complete actual calculator graph\");\n                }\n                previous_digests.push(digest_without_checked_value_cursor_budget(\n"
+      },
+      {
+        "after": "use std::fs;\nuse std::path::Path;\n\nuse sha2::{Digest, Sha256};\n\n#[path = \"scalar_browser_ci_contract/historical_builder.rs\"]\nmod historical_builder;\n\nfn digest_without_checked_value_cursor_budget(graph: &str) -> S",
+        "before": "use std::fs;\nuse std::path::Path;\n\nuse sha2::{Digest, Sha256};\n\nfn digest_without_checked_value_cursor_budget(graph: &str) -> S"
+      },
+      {
+        "after": "raph\");\n                }\n                previous_digests.push(historical_builder::digest(revision.semantic_graph()));\n                let actual = [\n                    revision.",
+        "before": "raph\");\n                }\n                previous_digests.push(digest_without_checked_value_cursor_budget(\n                    revision.semantic_graph(),\n                ));\n                let actual = [\n                    revision."
       }
     ]
   }
