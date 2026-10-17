@@ -1,0 +1,58 @@
+{
+  "before_sha256": "6a544a374b211764583e1cc9bd8a43c728f4dfad9cf9fb9edbdbd3531ffc9ffa",
+  "after_sha256": "65d188683a114318349edc22141faee7e760bfa67b7194e0b08484b67b6faee9",
+  "edits": [
+    {
+      "before": "BASE='f44e687aa7e37e2fec0a74803ccce3e315b69c41';REL='docs/evidence/f44-forwarding-repair-20261017'",
+      "after": "BASE='a6c92a197a21ed3e8c67c842b20886f2240cb0e2';REL='docs/evidence/core300-compile-pin-repair-20261017'",
+      "count": 1
+    },
+    {
+      "before": "import argparse,json,hashlib,subprocess,os,stat,copy",
+      "after": "import argparse,json,hashlib,subprocess,os,stat,copy,difflib,re",
+      "count": 1
+    },
+    {
+      "before": "{'src/source_reflows_merge/main67107_inputs.rs','src/source_reflows_merge/main_e177_final_inputs.rs','src/source_reflows_merge/ordinary_plan_inputs.rs'}",
+      "after": "{'src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs', 'src/source_reflows/semantic_receivers/status_inline.rs', 'src/source_reflows_merge/main_e177_final_inputs.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs', 'src/source_reflows/incoming090_semantic_receivers.rs', 'src/source_reflows_merge/main_e177_inputs.rs', 'src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs', 'src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs'}",
+      "count": 2
+    },
+    {
+      "before": "before={};full={};changed=set()",
+      "after": "\n# Same declarations/classes/chunks; only exact byte offsets move after known\n# import/attribute/pin edits. No parser or registration inference is invoked.\ntransforms={}\ndef remap(parent,at,text):\n old=git('show',BASE+':'+parent);now=held(parent);assert old[at:at+len(text)]==text\n if old==now:return at\n assert parent in {'src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs', 'src/source_reflows/semantic_receivers/status_inline.rs', 'src/source_reflows_merge/main_e177_final_inputs.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs', 'src/source_reflows/incoming090_semantic_receivers.rs', 'src/source_reflows_merge/main_e177_inputs.rs', 'src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs', 'src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs'}\n if parent not in transforms:\n  left=old.splitlines(True);right=now.splitlines(True);lo=[0];ro=[0]\n  for x in left:lo.append(lo[-1]+len(x))\n  for x in right:ro.append(ro[-1]+len(x))\n  transforms[parent]=[(lo[i],lo[i+n],ro[j]-lo[i])for i,j,n in difflib.SequenceMatcher(a=left,b=right,autojunk=False).get_matching_blocks()if n]\n candidates=[at+d for x,y,d in transforms[parent]if x<=at and at+len(text)<=y]\n assert len(candidates)==1,(parent,at,text);result=candidates[0];assert now[result:result+len(text)]==text;return result\n\nbefore={};full={};changed=set()",
+      "count": 1
+    },
+    {
+      "before": "raw=held(edge['parent']);text=edge['text'].encode();assert raw[edge['start']:edge['start']+len(text)]==text",
+      "after": "raw=held(edge['parent']);text=edge['text'].encode();edge['start']=remap(edge['parent'],edge['start'],text);assert raw[edge['start']:edge['start']+len(text)]==text",
+      "count": 1
+    },
+    {
+      "before": "check=copy.deepcopy(m);check['sources']=old['sources'];assert check==old;full[name]=m",
+      "after": "check=copy.deepcopy(m);check['sources']=old['sources']\n for key,cls in check['classes'].items():\n  for chain,original_chain in zip(cls['chains'],old['classes'][key]['chains']):\n   for edge,original_edge in zip(chain['edges'],original_chain['edges']):edge['start']=original_edge['start']\n assert check==old;full[name]=m",
+      "count": 1
+    },
+    {
+      "before": "assert len(owners)==220",
+      "after": "assert len(owners)==230",
+      "count": 1
+    },
+    {
+      "before": "current_owners=220,physical174_unchanged=True,incoming471_unchanged=True",
+      "after": "current_owners=230,physical174_membership_unchanged=True,incoming471_membership_unchanged=True",
+      "count": 1
+    },
+    {
+      "before": "roles_chunks_edges_attributes_unchanged=True",
+      "after": "roles_chunks_declarations_attributes_unchanged=True,exact_registered_edge_offsets_refreshed=sorted(transforms)",
+      "count": 1
+    },
+    {
+      "before": "ONLY_THREE_KNOWN_SOURCE_HASHES_CHANGED_NO_ROLE_CHUNK_EDGE_OR_REGISTRATION_CHANGE",
+      "after": "ONLY_NINE_CLOSED_SOURCE_HASHES_AND_EXACT_EDGE_OFFSETS_NO_ROLE_CHUNK_DECLARATION_OR_REGISTRATION_CHANGE",
+      "count": 1
+    }
+  ],
+  "whole_inverse": true,
+  "source_only_prepared_not_executed": true
+}

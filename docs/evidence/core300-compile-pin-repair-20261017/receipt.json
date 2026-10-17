@@ -1,0 +1,26 @@
+{
+  "status": "SOURCE_ONLY_STRICT58_PASS_NO_CARGO",
+  "source_fix_head": "675247f9bef668e0c41378409e17c2a126c68475",
+  "base": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+  "core_fixes": [
+    "4be8231ee90128722361fd149bc7c3258ab5d5c0",
+    "db1038994698878c49ef15e763b5f0c7acd81d81"
+  ],
+  "source_rows": 74,
+  "old73_order_and_views_retained": true,
+  "strict58_pass": true,
+  "raw3_and_451_ordered_table_unchanged": true,
+  "required_modules": 46,
+  "old_afa54_454_unchanged": true,
+  "incoming471_current_changed_only_status_prefix": true,
+  "main6d7_current_changed_only_status_prefix": true,
+  "source174_changed_only_status_prefix": true,
+  "FINAL6_all_six_sources_byte_identical_to_a6c": true,
+  "FINAL6_refresh_required": false,
+  "roles": 230,
+  "role_declarations_and_classes_unchanged": true,
+  "role_edge_offsets_need_exact_remap": true,
+  "Cargo": false,
+  "Rust_executed": false,
+  "ROOT_writes": false
+}

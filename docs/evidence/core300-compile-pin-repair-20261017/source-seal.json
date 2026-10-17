@@ -1,0 +1,35 @@
+{
+  "status": "SOURCE_ONLY_PENDING_STRICT_CONTROLS",
+  "base": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+  "source_head": "675247f9bef668e0c41378409e17c2a126c68475",
+  "rows": 74,
+  "packet_length": 54780,
+  "packet_sha256": "7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986",
+  "guard_length": 25054,
+  "guard_sha256": "ada0689df63c48a8e4a29c16809f1cb72d370963f73d9d23eb5bfb431bce6310",
+  "updated73": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+    "src/source_reflows_merge/main_e177_inputs.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs"
+  ],
+  "new_row": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+  "changed471": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"
+  ],
+  "changed7": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"
+  ],
+  "FINAL6_six_unchanged": [
+    "src/cleanup_plan/replay.rs",
+    "src/source_reflows_merge.rs",
+    "src/source_reflows_merge/main67107_inputs.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+  ],
+  "raw3_and_ordered_table_unchanged": true,
+  "required_module_count": 46,
+  "strict_cap_unchanged": 262144
+}

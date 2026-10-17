@@ -1,0 +1,17 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs": [
+      39631,
+      "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938"
+    ]
+  },
+  "strict_dependencies": 298,
+  "strict_cap": 262144,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "f62086bbcb0b301f6867c7a9a0330ec481b945b2d4e652d2f98916cc1987fc9c",
+  "wrapper_after_sha256": "041589b958381235f548ee2bbe40b655a52db9be69acc9d20cf5e0c5830d8fa0",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}

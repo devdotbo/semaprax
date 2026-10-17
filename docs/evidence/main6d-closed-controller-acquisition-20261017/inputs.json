@@ -3,54 +3,9 @@
   "main_head": "6d101efd8c255330a3fe5fb0c06e058c6f8c085f",
   "current_source_stage": {
     "kind": "reviewed-working-stage",
-    "git_head": "566bf724d583f2d00040e9336404d6d6f902bd38",
-    "actual_tuples": [
-      {
-        "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
-        "length": 39654,
-        "sha256": "b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458"
-      },
-      {
-        "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
-        "length": 36733,
-        "sha256": "1161e0a666820d35bf0365ecf4b7f871cf463693a413db14871e3a0349a3a74e"
-      },
-      {
-        "source": "tests/hir_module_boundaries.rs",
-        "length": 103016,
-        "sha256": "fa08554873fa7fb49ed7ec5680cb3d09e482903cbc3bbfed9c9d85eae3bc8e49"
-      },
-      {
-        "source": "tests/workspace/semantic_graph/source_inventory.rs",
-        "length": 100916,
-        "sha256": "0a441a45fbb033af2a02afd42b9e62d0a204773d96a9391d37df4eefb3f2353d"
-      },
-      {
-        "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-        "length": 161846,
-        "sha256": "965d9c0abea40a0e806074877222428a814a127b4719bf695126d00828b8eb53"
-      },
-      {
-        "source": "src/source_reflows/semantic_receivers.rs",
-        "length": 37121,
-        "sha256": "8b00af61a5f21c12aa5979f900f428993d70fad597e03e6303c5b1851b9cbaf2"
-      },
-      {
-        "source": "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv",
-        "length": 5676,
-        "sha256": "525254695bb6e275900e616941700ee75a22f7432118baae8f0f21ce5199dbdd"
-      }
-    ],
-    "working_delta_paths": [
-      " M crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      " M docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-      " M docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json",
-      " M src/source_reflows_merge/main_e177_inputs.rs",
-      " M tests/hir_module_boundaries.rs",
-      " M tests/workspace/semantic_graph/source_inventory.rs",
-      "?? docs/evidence/next-core-final-coupling-20261017/471-reseal.json",
-      "?? docs/evidence/next-core-final-coupling-20261017/prior441.whole.tsv.txt",
-      "?? docs/evidence/next-core-final-coupling-20261017/raw-and-table.json"
+    "git_head": "675247f9bef668e0c41378409e17c2a126c68475",
+    "changed_sources": [
+      "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"
     ]
   },
   "control": {
@@ -62,9 +17,9 @@
     {
       "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "current": {
-        "path": "docs/evidence/main6d-closed-controller-acquisition-20261017/current/b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458.txt",
-        "length": 39654,
-        "sha256": "b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458"
+        "path": "docs/evidence/main6d-closed-controller-acquisition-20261017/current/99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938.txt",
+        "length": 39631,
+        "sha256": "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938"
       },
       "incoming": {
         "path": "docs/evidence/main6d-closed-controller-acquisition-20261017/incoming/bcc0e1db38bd8bc567620c61e147cb8f0a9db553a6fb4e941e2648a8e1e5b83f.txt",

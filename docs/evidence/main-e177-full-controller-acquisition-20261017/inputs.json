@@ -2541,8 +2541,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
-      "current_length": 39654,
-      "current_sha256": "b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458",
+      "current_length": 39631,
+      "current_sha256": "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938",
       "main_length": 37900,
       "main_sha256": "aff3b6e7d30470659a80db529b48a8acbb2931b02a7ea813c6d34844f474d20d",
       "main_archive": "docs/evidence/main-e177-full-controller-acquisition-20261017/incoming/aff3b6e7d30470659a80db529b48a8acbb2931b02a7ea813c6d34844f474d20d.txt"

@@ -49,10 +49,10 @@ fn main6d_compiled(source: &str) -> Option<&'static str> {
 }
 fn main6d_packet() -> ::std::io::Result<serde_json::Value> {
     let data=::std::include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"));
-    assert_eq!(data.len(), 8977);
-    assert_eq!(format!("{:x}",crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(data.as_bytes()))), "f6e13a4212d2f297baa543c57ebc4b8e55e370576f00195138a659589e11e351");
+    assert_eq!(data.len(), 6867);
+    assert_eq!(format!("{:x}",crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(data.as_bytes()))), "7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050");
     let root=::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(main6d_held(&root.join("docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"),8977,"f6e13a4212d2f297baa543c57ebc4b8e55e370576f00195138a659589e11e351")?,data,"whole physical and compiled Main6d packet");
+    assert_eq!(main6d_held(&root.join("docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"),6867,"7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050")?,data,"whole physical and compiled Main6d packet");
     let packet:serde_json::Value=serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"],"semaprax.main6d-closed-controller-acquisition.v1");
     assert_eq!(packet["main_head"],"6d101efd8c255330a3fe5fb0c06e058c6f8c085f");

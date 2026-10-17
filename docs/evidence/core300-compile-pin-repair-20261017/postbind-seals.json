@@ -1,0 +1,17 @@
+{
+  "guard": {
+    "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+    "length": 25054,
+    "sha256": "ada0689df63c48a8e4a29c16809f1cb72d370963f73d9d23eb5bfb431bce6310"
+  },
+  "e177": {
+    "path": "docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json",
+    "length": 237696,
+    "sha256": "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44"
+  },
+  "main6d": {
+    "path": "docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json",
+    "length": 6867,
+    "sha256": "7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050"
+  }
+}
