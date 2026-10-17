@@ -1,0 +1,24 @@
+fn invert(proof: &serde_json::Value, current: &str) -> String {
+    let path = proof["path"].as_str().unwrap();
+    assert_eq!(
+        digest(current),
+        proof["after_sha256"],
+        "receiver input drifted: {path}"
+    );
+    let mut restored = current.to_owned();
+    for edit in proof["inverse"].as_array().unwrap() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(
+            restored.matches(after).count(),
+            1,
+            "nonunique receiver inverse: {path}"
+        );
+        restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        digest(&restored),
+        proof["before_sha256"],
+        "receiver predecessor drifted: {path}"
+    );
+    restored
+}

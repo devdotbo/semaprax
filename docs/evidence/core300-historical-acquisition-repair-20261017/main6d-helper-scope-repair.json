@@ -1,0 +1,33 @@
+{
+  "status": "SOURCE_ONLY_EXACT_INCOMING_HELPER_SCOPE_CORRECTION",
+  "base": "9aa0f08d2e0ccf405c6bdad7ff19bc6fde08f3ee",
+  "source": "src/source_reflows/semantic_receivers/status_inline.rs",
+  "before_length": 6516,
+  "before_sha256": "2e0ab1fc87aaa376ead7ccda750905620f01e7c4cd9432c7000d54fbd28ee0da",
+  "after_length": 7423,
+  "after_sha256": "52a0f83335e2769e14dbddf1dc0eee027c641342b260364ed60215df05d5dbf2",
+  "whole_incoming_source": {
+    "head": "6d101efd8c255330a3fe5fb0c06e058c6f8c085f",
+    "source": "src/source_reflows/semantic_receivers.rs",
+    "length": 63593,
+    "sha256": "d0d1b7e116b320f80ddd501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5"
+  },
+  "verbatim_function": {
+    "length": 754,
+    "sha256": "549cd8ee78984b0f714484b82c936b48c73b29018809350c251f8bba1411a4f1",
+    "archive": "docs/evidence/core300-historical-acquisition-repair-20261017/main6d-incoming-invert.rs.txt"
+  },
+  "inverse": {
+    "require_complete_after_sha256": "52a0f83335e2769e14dbddf1dc0eee027c641342b260364ed60215df05d5dbf2",
+    "remove_exact_added_suffix": "\n// Resolve the unchanged incoming controller against its complete incoming\n// inverse, rather than the unrelated current-parent normalization gateway.\nfn invert(proof: &serde_json::Value, current: &str) -> String {\n    let path = proof[\"path\"].as_str().unwrap();\n    assert_eq!(\n        digest(current),\n        proof[\"after_sha256\"],\n        \"receiver input drifted: {path}\"\n    );\n    let mut restored = current.to_owned();\n    for edit in proof[\"inverse\"].as_array().unwrap() {\n        let after = edit[\"after\"].as_str().unwrap();\n        assert_eq!(\n            restored.matches(after).count(),\n            1,\n            \"nonunique receiver inverse: {path}\"\n        );\n        restored = restored.replacen(after, edit[\"before\"].as_str().unwrap(), 1);\n    }\n    assert_eq!(\n        digest(&restored),\n        proof[\"before_sha256\"],\n        \"receiver predecessor drifted: {path}\"\n    );\n    restored\n}\n",
+    "restore_whole_before": "docs/evidence/core300-historical-acquisition-repair-20261017/main6d-status-inline-before.rs.txt"
+  },
+  "closed7_acquisition_unchanged": true,
+  "all_original_27_controller_lines_unchanged": true,
+  "original_whole_SHA_inverse_hostile_checks_unchanged": true,
+  "current_parent_gateway_unchanged": true,
+  "raw_module_count_unchanged": true,
+  "Cargo": false,
+  "tests": false,
+  "ROOT_writes": false
+}
