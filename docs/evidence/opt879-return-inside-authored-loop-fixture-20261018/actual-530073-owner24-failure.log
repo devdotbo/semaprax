@@ -1,0 +1,15 @@
+
+running 1 test
+test cleanup_plan::replay::branch_clone::direct::tests::continue_return_break_and_latch_have_real_bounded_continuation_controls ... 
+thread 'cleanup_plan::replay::branch_clone::direct::tests::continue_return_break_and_latch_have_real_bounded_continuation_controls' (31161415) panicked at src/cleanup_plan/replay/branch_clone/direct/tests.rs:388:5:
+assertion failed: crate::hir::lexical_exit::requires(original).unwrap()
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::branch_clone::direct::tests::continue_return_break_and_latch_have_real_bounded_continuation_controls
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10063 filtered out; finished in 1.79s
+
