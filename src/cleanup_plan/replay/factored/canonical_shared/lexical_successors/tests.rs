@@ -291,7 +291,7 @@ fn actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even
     for length in [0, 1, 4, 64] {
         for weight in [1, 2] {
             let (a, sink, root) = graph(&f, length, 2, false);
-            let old = observe(
+            let old = observe_matched(
                 true,
                 &f,
                 &a,
@@ -302,7 +302,7 @@ fn actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even
                 0,
                 MAX_REPLAY_WORK_UNITS,
             );
-            let current = observe(
+            let current = observe_matched(
                 false,
                 &f,
                 &a,
@@ -652,4 +652,193 @@ fn equal_observation_contents_with_distinct_rc_keep_complete_immediate_grouping(
             );
         }
     }
+}
+
+// Complete original observer, selecting only the whole matched frame route.
+fn observe_matched(
+    old: bool,
+    f: &ResolvedFunction,
+    a: &Automaton,
+    sink: usize,
+    root: usize,
+    weight: u64,
+    limit: usize,
+    floor: usize,
+    work: usize,
+) -> (
+    (Outcome, Metrics),
+    bool,
+    usize,
+    Option<crate::bounded_output::ReservationRefusal>,
+    Option<(&'static str, u32)>,
+) {
+    let (value, refused, paid, receipt, site) = with_limit_usage_refusal_site(limit, || {
+        measure(|| {
+            let mut b = ReplayBudget::with_skeleton_limit(work);
+            b.remaining = work;
+            let observer = census::observe(f, &b);
+            let _phase = census::phase(true);
+            assert!(crate::bounded_output::set_active_floor(floor));
+            let result = (|| {
+                if old {
+                    b.reserve_bytes(
+                        f,
+                        before_lexical_successors::Canonicalizer::CONSTRUCTOR_CONTROLS
+                            + ID_CALL_CONTROLS,
+                        "canonical ordered dictionary owner receiving",
+                    )?;
+                    let mut c = before_lexical_successors::Canonicalizer::new(a, sink);
+                    b.reserve_array::<(usize, u64)>(f, 1, "884 root input")?;
+                    c.matched_884_id(f, vec![(root, weight)], &mut b)
+                } else {
+                    b.reserve_bytes(
+                        f,
+                        Canonicalizer::CONSTRUCTOR_CONTROLS + ID_CALL_CONTROLS,
+                        "canonical ordered dictionary owner receiving",
+                    )?;
+                    let mut c = Canonicalizer::new(a, sink);
+                    b.reserve_array::<(usize, u64)>(f, 1, "884 root input")?;
+                    c.matched_884_id(f, vec![(root, weight)], &mut b)
+                }
+            })();
+            let (result, sticky) = match result {
+                Ok(value) => (Ok(value), None),
+                Err(error) => {
+                    let selected = failure(error);
+                    let bytes = crate::bounded_output::active_remaining();
+                    let work = (b.remaining, b.skeleton_remaining, b.skeleton_spent);
+                    let allocated = crate::test_allocation_observer::current_metrics().allocated;
+                    let ledger =
+                        crate::bounded_output::classifier_string::ClassifierLedger::capture();
+                    let first = ledger.first_refusal();
+                    // A semantic cycle diagnostic does not poison a budget. Only
+                    // a real work/physical refusal has the sticky empty retry.
+                    if !b.refusal_spent && first.is_none() {
+                        (Err(selected), None)
+                    } else {
+                        let retry = failure(b.reserve_bytes(f, 0, "884 sticky retry").unwrap_err());
+                        assert_eq!(bytes, crate::bounded_output::active_remaining());
+                        assert_eq!(first, ledger.first_refusal());
+                        assert_eq!(work, (b.remaining, b.skeleton_remaining, b.skeleton_spent));
+                        assert_eq!(
+                            allocated,
+                            crate::test_allocation_observer::current_metrics().allocated
+                        );
+                        assert_eq!(retry, failure(Diagnostic::io("SPX-H006", String::new())));
+                        (Err(selected), Some(retry))
+                    }
+                }
+            };
+            let value = Outcome {
+                result,
+                ordinary: b.remaining,
+                skeleton: b.skeleton_remaining,
+                spent: b.skeleton_spent,
+                sticky,
+                report: census::take(),
+            };
+            drop(observer);
+            drop(b);
+            crate::bounded_output::clear_active_floor();
+            value
+        })
+    });
+    assert!(!value.1.invalid);
+    assert_eq!(value.1.live, 0);
+    assert_eq!(value.1.allocated, value.1.freed);
+    assert!(value.1.allocated <= paid && value.1.highwater <= paid);
+    (
+        value,
+        refused,
+        paid,
+        receipt,
+        site.map(|p| (p.file(), p.line())),
+    )
+}
+#[test]
+fn composed_current_lexical_successor_adds_the_exact_later_arity_places_to_the_original_equation() {
+    let f = function();
+    assert_eq!(ORIGINAL_RECEIVING, borrowed_labels::one_pass_receiving());
+    for length in [0, 1, 4, 64] {
+        for weight in [1, 2] {
+            let (a, sink, root) = graph(&f, length, 2, false);
+            let old = observe(
+                true,
+                &f,
+                &a,
+                sink,
+                root,
+                weight,
+                1 << 29,
+                0,
+                MAX_REPLAY_WORK_UNITS,
+            );
+            let current = observe(
+                false,
+                &f,
+                &a,
+                sink,
+                root,
+                weight,
+                1 << 29,
+                0,
+                MAX_REPLAY_WORK_UNITS,
+            );
+            assert_eq!(old.0 .0.result, current.0 .0.result);
+            assert_eq!(
+                (old.0 .0.ordinary, old.0 .0.skeleton, old.0 .0.spent),
+                (
+                    current.0 .0.ordinary,
+                    current.0 .0.skeleton,
+                    current.0 .0.spent
+                )
+            );
+            assert!(!old.1 && !current.1);
+            assert_eq!(old.0.1,current.0.1,"same real allocations, reallocations, peak and complete Drop; the candidate removes control frames");
+            assert!(old.0 .0.report.complete && current.0 .0.report.complete);
+            let old_cells = old.0 .0.report.cells[0][1];
+            let cells = current.0 .0.report.cells[1][1];
+            let n = cells.iter().map(|c| c.attempts).sum::<usize>();
+            let m = cells.iter().map(|c| c.primitive_banks).sum::<usize>();
+            assert_eq!(n, old_cells.iter().map(|c| c.attempts).sum::<usize>());
+            assert!(m <= 2);
+            let a = Canonicalizer::CONSTRUCTOR_CONTROLS
+                .checked_sub(before_lexical_successors::Canonicalizer::CONSTRUCTOR_CONTROLS)
+                .unwrap();
+            // This fixture has one root and only arity0/2 signatures. The
+            // length0 weight1 cold terminal forms no frame. Every other input
+            // (including the non-unit terminal) forms exactly one activation.
+            let activations = usize::from(length != 0 || weight != 1);
+            let later = activations * Canonicalizer::BORROWED_EXIT_LOCAL;
+            assert_eq!(Canonicalizer::BORROWED_EXIT_LOCAL,
+                2 * size_of::<usize>() + 4 * size_of::<bool>());
+            let overhead = a + n * PER_USE_SELECTION + later;
+            let gross = (n - m) * PRIMITIVE_FRAMES;
+            assert_eq!(
+                old.2.checked_add(overhead).unwrap(),
+                current.2.checked_add(gross).unwrap(),
+                "complete real bills reconcile without old padding/removed compound credit"
+            );
+            if gross > overhead {
+                assert!(current.2 < old.2);
+            }
+            eprintln!("OPT884 length={length} weight={weight} N={n} M={m} P={PRIMITIVE_FRAMES} A={a} R={PER_USE_SELECTION} old/current paid={}/{} allocated={}/{} peak={}/{} work={}/{} census={:?}/{:?}",old.2,current.2,old.0.1.allocated,current.0.1.allocated,old.0.1.highwater,current.0.1.highwater,old.0.0.ordinary,current.0.0.ordinary,old.0.0.report,current.0.0.report);
+        }
+    }
+}
+#[test]
+fn matched_884_keeps_the_whole_original_equation_and_observer_with_only_route_glue() {
+    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lexical-successor-matched-884-20261018/before/src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"));
+    let current = include_str!("tests.rs");
+    let marker = "#[test]\nfn actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even_without_credit()";
+    let old = before[before.find(marker).unwrap()..].split("\nfn primitive(").next().unwrap();
+    let actual = current[current.find(marker).unwrap()..].split("\nfn primitive(").next().unwrap();
+    assert_eq!(actual, old.replace("let old = observe(", "let old = observe_matched(").replace("let current = observe(", "let current = observe_matched("));
+    let root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lexical-successor-matched-884-20261018/historical-9debb-canonical_shared.rs.txt"));
+    let start = root.find("    pub(super) fn id(").unwrap();
+    let end = root[start..].find("    #[cfg(test)]\n    fn successors(").unwrap() + start;
+    let expected = root[start..end].trim_end().replace("pub(super) fn id(", "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(").replace("self.id_with_receiving(", "self.before_borrowed_single_id_with_receiving(");
+    let frame = include_str!("frame_loop/before_borrowed_single.rs");
+    let start = frame.find("    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(").unwrap();
+    assert_eq!(frame[start..].trim_end().strip_suffix("\n}").unwrap(), expected);
 }

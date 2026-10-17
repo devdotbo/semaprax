@@ -398,3 +398,64 @@ impl Canonicalizer<'_> {
         Ok(Some(receiving.id))
     }
 }
+
+// Whole immediate pre-singleton entry; identifier-only namespace glue.
+impl Canonicalizer<'_> {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(
+        &mut self,
+        function: &ResolvedFunction,
+        root: Weighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<usize>, Diagnostic> {
+        // Preserve the old entry's owner rejection before a fresh test-only slot
+        // can query or charge a foreign payer. A valid call still pays acquisition.
+        if self.closures.preflight_owned(function, budget) {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+        } else {
+            if self.closures.failed() {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+            // Keep the first-cold failure before invocation-slot acquisition.
+            // The outer id Result is unchanged; the inner auth Result is absent.
+            activate_closure!(self, function, budget, error, {
+                return Err(error);
+            });
+        }
+        // Existing received owner place: no copied tag, bool or reference.
+        // scratch_paid=true makes cold_dead_node false by its own definition.
+        if let Self {
+            scratch_paid: false,
+            ..
+        } = self
+        {
+            if budget.pays_allocations() {
+                budget.reserve_bytes(
+                    function,
+                    Self::COLD_ROOT_CONTROLS,
+                    "factored cold terminal root predicate",
+                )?;
+            }
+            if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
+                if budget.pays_allocations() {
+                    budget.reserve_bytes(
+                        function,
+                        Self::COLD_RESULT_CONTROLS,
+                        "factored cold terminal result receiving",
+                    )?;
+                }
+                return self.cold_dead_id(function, root, budget);
+            }
+        }
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
+        self.before_borrowed_single_id_with_receiving(function, root, budget, &mut receiving)
+    }
+}
