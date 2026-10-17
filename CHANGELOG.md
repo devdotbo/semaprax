@@ -1,5 +1,7 @@
 # Changelog
 
+- Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
+
 - Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.
 
 - Record opt-in test-only core retry mode, debit and refusal receipts while preserving the original attempt-count, quota, source and diagnostic controls.
