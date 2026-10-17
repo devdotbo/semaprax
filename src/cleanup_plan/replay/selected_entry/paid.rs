@@ -244,6 +244,14 @@ impl Preparation {
         }
     }
 
+    #[cfg(test)]
+    pub(crate) fn structural_receipt(&self) -> Option<&semantic_refusal::Receipt> {
+        match self.receipt.as_ref() {
+            Some(expression_facts::errors::EngineError::Structural(receipt)) => Some(receipt),
+            _ => None,
+        }
+    }
+
     /// The first retained paid refusal, for owning observations only.
     #[cfg(test)]
     pub(crate) fn receipt(&self) -> Option<&Diagnostic> {

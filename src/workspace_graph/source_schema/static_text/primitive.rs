@@ -163,8 +163,8 @@ pub(super) fn authenticate<'a>(
 /// acquired on this module's ledger before preparation and is the only
 /// outward report: setup, authentication, constructor and Session refusals
 /// transfer it without allocation. Authentication refuses with the Copy
-/// `Refused`; a Session refusal moves its own Diagnostic into the failed
-/// owner as the first receipt, never into the report (the public G410
+/// `Refused`; a Session refusal moves its first typed engine receipt into the
+/// failed owner (or retains an unmigrated Owned Diagnostic), never the report (the public G410
 /// literal is a fixed remapping). A refused carrier returns the rejected
 /// ledger and Copy reason; only the caller's named `Unpaid` boundary may turn
 /// that into an owned, unfunded Diagnostic.
@@ -354,4 +354,53 @@ fn current_module_receipt<'a>(
         modules,
         owner: preparation,
     })
+}
+
+// Whole independently compiled original owned-Diagnostic caller; no admission use.
+#[cfg(test)]
+pub(in crate::workspace_graph) fn replay_owned_before(
+    module: &WorkspaceResolvedModule,
+    modules: &[WorkspaceResolvedModule],
+    facts: &BTreeMap<String, WorkspaceDeclarationFact>,
+    form: SelectedReplayReportForm,
+) -> Result<bool, SelectedReplayRefusal> {
+    let Some(inventory) = module.static_text.as_deref() else {
+        return Ok(false);
+    };
+    if inventory.lexical.is_none() {
+        return Ok(false);
+    }
+    let physical = crate::cleanup_plan::ReplayPhysicalReservation::new(MAX_CHANGE_BUILDER_BYTES);
+    let acquired = SelectedReplayReport::try_acquire(physical, form)?;
+    if inventory
+        .lexical
+        .as_deref()
+        .is_some_and(|inventory| inventory.imported)
+    {
+        helpers::replay(module, modules, facts, acquired)?;
+        return Ok(true);
+    }
+    let Some(anchor) = module.functions.first() else {
+        return Err(acquired.refuse_unprepared());
+    };
+    let mut preparation = acquired.prepare(anchor)?;
+    let (context, lexical) = match members(module, modules, facts, &mut preparation, anchor) {
+        Ok(members) => members,
+        Err(refused) => return Err(preparation.refuse(refused)),
+    };
+    let mut session = preparation.into_paid_session(&context, anchor)?;
+    let mut found = false;
+    for function in lexical {
+        // The first member refusal stops the route: no failed Session is
+        // validated or finished again, so no legacy retry Diagnostic exists.
+        if let Err(error) = session.validate(function) {
+            return Err(session.into_failed_preparation().refuse_session(error));
+        }
+        found = true;
+    }
+    if !found {
+        return Err(session.into_failed_preparation().refuse(Refused::MISMATCH));
+    }
+    drop(session.finish_paid()?);
+    Ok(true)
 }

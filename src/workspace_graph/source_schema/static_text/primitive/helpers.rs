@@ -524,7 +524,7 @@ pub(super) fn authenticate_current<'a>(
 /// Imported closure twin of the primitive paid route. The caller's carrier
 /// was acquired on `physical` before this preparation; every refusal here
 /// transfers it with the exact failed ledger owner. Authentication refuses
-/// inline; a Session refusal moves its own Diagnostic into the failed owner.
+/// inline; a Session refusal retains its first typed engine receipt in the failed owner.
 pub(super) fn replay(
     module: &WorkspaceResolvedModule,
     modules: &[WorkspaceResolvedModule],
