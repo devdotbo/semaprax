@@ -1,0 +1,54 @@
+{
+  "status": "SOURCE_ONLY_COMPILE_REPAIR_EXECUTABLE_QUALIFICATION_PENDING",
+  "source_head_before": "3bf07f076e0c36b1d7fd124564cc7dfa567a12c7",
+  "errors": "Six E0603 historical receiving reexports; one unused observe_core_attempts import.",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs",
+      "before": {
+        "length": 4431,
+        "sha256": "797744a75fae1fff55a7a433b5982632a82e76458440ad4e882bc473da54617b",
+        "archive": "src__cleanup_plan__replay__expression_facts__receiving__retained__case_certified__lookup_caller_before.rs.before.txt"
+      },
+      "after": {
+        "length": 4481,
+        "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc"
+      },
+      "edits": [
+        {
+          "before": "        pub(super) use super::super::super::lookup_before::validate_status_sources_certified;",
+          "after": "        pub(in crate::cleanup_plan::replay) use super::super::super::lookup_before::validate_status_sources_certified;"
+        },
+        {
+          "before": "        pub(super) use crate::cleanup_plan::replay::expression_facts::receiving::*;",
+          "after": "        pub(in crate::cleanup_plan::replay) use crate::cleanup_plan::replay::expression_facts::receiving::*;"
+        }
+      ],
+      "full_inverse_verified": true
+    },
+    {
+      "source": "src/workspace_graph/tests.rs",
+      "before": {
+        "length": 67739,
+        "sha256": "8421df3f60328a6afe238f9be7abf69e6cb187b2b81075e3cbfe57c594db772f",
+        "archive": "src__workspace_graph__tests.rs.before.txt"
+      },
+      "after": {
+        "length": 67696,
+        "sha256": "8eede508d4ebaf2a95276c435d31b552fed2b1cf65bdcd950bfae74141d5df8b"
+      },
+      "edits": [
+        {
+          "before": "pub(super) use core_attempt_trace::{\n    observe as observe_core_attempts, record as record_core_attempt,\n};",
+          "after": "pub(super) use core_attempt_trace::record as record_core_attempt;"
+        }
+      ],
+      "full_inverse_verified": true
+    }
+  ],
+  "historical_caller_body_byteexact": true,
+  "scope": "Only two private wrapper reexport visibilities widened within replay and unused test alias removed. Production functions, historical caller body, fees and controls unchanged.",
+  "new_modules": 0,
+  "Cargo": false,
+  "tests_executed": false
+}

@@ -1,8 +1,6 @@
 #[path = "tests/core_attempt_trace.rs"]
 mod core_attempt_trace;
-pub(super) use core_attempt_trace::{
-    observe as observe_core_attempts, record as record_core_attempt,
-};
+pub(super) use core_attempt_trace::record as record_core_attempt;
 #[path = "../../tests/native/string_settlement/codec_allocation/codec808_frontier.rs"]
 mod codec808_frontier;
 #[path = "tests/cache_stage_debits.rs"]

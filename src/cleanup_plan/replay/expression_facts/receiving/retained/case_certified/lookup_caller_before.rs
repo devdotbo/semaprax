@@ -3,8 +3,8 @@ use crate::cleanup_plan::replay::*;
 mod expression_facts {
     pub(super) use crate::cleanup_plan::replay::expression_facts::with_budget;
     pub(super) mod receiving {
-        pub(super) use super::super::super::lookup_before::validate_status_sources_certified;
-        pub(super) use crate::cleanup_plan::replay::expression_facts::receiving::*;
+        pub(in crate::cleanup_plan::replay) use super::super::super::lookup_before::validate_status_sources_certified;
+        pub(in crate::cleanup_plan::replay) use crate::cleanup_plan::replay::expression_facts::receiving::*;
     }
 }
 pub(super) fn validate_structure_with_budget_storage<'hir>(
