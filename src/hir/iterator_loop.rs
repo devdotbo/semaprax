@@ -5,13 +5,14 @@ mod renewal;
 pub(crate) use renewal::function_has_record_renewal_outside_loop;
 mod paid;
 pub(crate) use paid::validate_function_paid;
+#[cfg(test)]
+pub(crate) use renewal::renewal_binding_funded;
+pub(crate) use renewal::renewal_bindings_funded;
 pub(crate) use renewal::{
     function_has_record_renewal_outside_loop_paid, function_may_require_record_renewal,
     function_requires_record_renewal, function_requires_renewal, is_owner_renewal_record,
     is_record_owner_renewal, renewal_binding, renewal_bindings, template_requires_renewal,
 };
-#[cfg(test)]
-pub(crate) use renewal::{renewal_binding_funded, renewal_bindings_funded};
 
 pub(crate) struct IteratorLoop<'a> {
     pub(crate) step: &'a ResolvedBinding,

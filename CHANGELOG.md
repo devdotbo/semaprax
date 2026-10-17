@@ -1,5 +1,7 @@
 # Changelog
 
+- Fund complete ordinary replay setup through its existing byte account, preserving legacy work, all finite physical controls and complete historical source proofs.
+
 - Acquire test observer backing before activation instead of embedding large arrays in TLS, retaining all capacities, callbacks and physical allocation controls; report ELF TLS layouts in the unchanged low-stack diagnostic.
 
 - Build paid factored successor weights directly in sorted vectors and move their backing into shared states, retaining checked multiplicity, the original unobserved work path and all historical source proofs.

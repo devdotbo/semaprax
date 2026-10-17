@@ -1,15 +1,13 @@
 //! Renewal site identity is derived from HIR, independently of attached transitions.
-#[cfg(test)]
 mod funded;
 pub(crate) mod ordinary;
 mod selected;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
+pub(crate) use funded::bindings_funded;
 #[cfg(test)]
-pub(crate) use funded::{
-    binding_with_index_funded, bindings_funded, bindings_with_index_funded_with_work,
-};
+pub(crate) use funded::{binding_with_index_funded, bindings_with_index_funded_with_work};
 #[cfg(test)]
 pub(crate) use selected::bindings_with_reservation;
 pub(crate) use selected::{bindings_with_reservation_and_work, selected_string_append};
