@@ -3,7 +3,7 @@ use std::io::{self, Write as _};
 use std::path::{Component, Path, PathBuf};
 
 use same_file::Handle;
-use semaprax::diagnostic::output_parent::{missing_directory_help, rejected_directory};
+use semaprax::diagnostic::output_parent::{missing_directory_help, rejected_directory, shown};
 use semaprax::diagnostic::Diagnostic;
 
 use super::project::{
@@ -79,7 +79,7 @@ impl SourceNativeOutput {
             with_optional_help(
                 parent_error(format!(
                     "cannot inspect single-file native output parent {}: {error}",
-                    parent.display()
+                    shown(parent)
                 )),
                 missing_directory_help(parent, &error),
             )
@@ -248,7 +248,7 @@ impl ProjectOutputParent {
             with_optional_help(
                 parent_error(format!(
                     "explicit Project output may create only one missing parent; cannot inspect grandparent {}: {error}",
-                    grandparent.display()
+                    shown(grandparent)
                 )),
                 missing_directory_help(grandparent, &error),
             )
@@ -291,7 +291,7 @@ impl ProjectOutputParent {
         if !is_plain_directory(&parent_metadata) {
             return Err(parent_error(format!(
                 "created explicit Project output parent {} is not a real non-reparse directory",
-                parent.display()
+                shown(parent)
             )));
         }
         let parent_identity = Handle::from_path(parent).map_err(|error| {

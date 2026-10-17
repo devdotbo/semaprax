@@ -4,6 +4,11 @@
 //! enforce the same parent policy: the inspected directory must already be a
 //! real non-reparse directory. These helpers only describe a rejection; they
 //! never relax the policy, follow a link for publication, or create a path.
+//!
+//! Message and help text are printed verbatim by `Diagnostic`'s human
+//! rendering, so every path interpolated here goes through [`shown`], which
+//! escapes control characters the same way the rendered `Diagnostic.path`
+//! is escaped.
 
 use std::fs;
 use std::io;
@@ -43,7 +48,7 @@ pub fn rejected_directory(
         "SPX-I301",
         format!(
             "{subject} {} {kind}; it must be a real non-reparse directory",
-            directory.display()
+            shown(directory)
         ),
     )
     .with_help(help)
@@ -57,9 +62,26 @@ pub fn missing_directory_help(directory: &Path, error: &io::Error) -> Option<Str
     (error.kind() == io::ErrorKind::NotFound).then(|| {
         format!(
             "create the directory {} first, then rerun the build",
-            directory.display()
+            shown(directory)
         )
     })
+}
+
+/// Render a path for interpolation into diagnostic message or help text.
+///
+/// Control characters (newline, escape, delete and the rest) are replaced by
+/// their `char::escape_default` spelling, so a hostile file name cannot
+/// forge diagnostic lines or emit terminal control sequences.
+pub fn shown(path: &Path) -> String {
+    let mut rendered = String::new();
+    for character in path.display().to_string().chars() {
+        if character.is_control() {
+            rendered.extend(character.escape_default());
+        } else {
+            rendered.push(character);
+        }
+    }
+    rendered
 }
 
 fn link_help(directory: &Path, output: &Path) -> String {
@@ -68,24 +90,24 @@ fn link_help(directory: &Path, output: &Path) -> String {
         Ok(resolved) if resolved.is_dir() => match output.strip_prefix(directory) {
             Ok(rest) => format!(
                 "{} resolves to {}; use the resolved output path {}, or {FALLBACK}",
-                directory.display(),
-                resolved.display(),
-                resolved.join(rest).display()
+                shown(directory),
+                shown(&resolved),
+                shown(&resolved.join(rest))
             ),
             Err(_) => format!(
                 "{} resolves to {}; {FALLBACK}",
-                directory.display(),
-                resolved.display()
+                shown(directory),
+                shown(&resolved)
             ),
         },
         Ok(resolved) => format!(
             "{} resolves to {}, which is not a directory; {FALLBACK}",
-            directory.display(),
-            resolved.display()
+            shown(directory),
+            shown(&resolved)
         ),
         Err(error) => format!(
             "cannot resolve the link {}: {error}; {FALLBACK}",
-            directory.display()
+            shown(directory)
         ),
     }
 }
@@ -232,6 +254,53 @@ mod tests {
         assert_eq!(
             diagnostic.help.as_deref(),
             Some("choose an output whose parent is an existing real directory")
+        );
+    }
+
+    #[test]
+    fn hostile_link_and_output_names_render_without_control_characters() {
+        let scratch = Scratch::new("hostile");
+        let real = scratch.0.join("real");
+        let link = scratch.0.join("link\n\u{1b}[31m");
+        fs::create_dir(&real).expect("create real directory");
+        symlink(&real, &link).expect("create link");
+        let resolved = fs::canonicalize(&link).expect("resolve link");
+
+        let diagnostic = reject(
+            &link,
+            &link.join("evil\n\u{1b}[31mFAKE error[SPX-X]: forged\u{7f}"),
+        );
+        let help = diagnostic.help.as_deref().expect("link help");
+        for text in [&*diagnostic.message, help] {
+            assert!(!text.chars().any(char::is_control), "{text:?}");
+        }
+        assert!(diagnostic
+            .message
+            .contains("link\\n\\u{1b}[31m is a symbolic link"));
+        assert!(
+            help.ends_with(&format!(
+                "use the resolved output path {}/evil\\n\\u{{1b}}[31mFAKE error[SPX-X]: forged\\u{{7f}}, or choose an output whose parent is a real directory",
+                resolved.display()
+            )),
+            "{help}"
+        );
+
+        // The only line break in the human rendering is the help separator.
+        let rendered = diagnostic.to_string();
+        assert_eq!(rendered.matches('\n').count(), 1, "{rendered:?}");
+        assert!(!rendered.contains('\u{1b}'), "{rendered:?}");
+        assert!(rendered.contains("\n  help: "), "{rendered:?}");
+
+        let missing = scratch.0.join("absent\u{1b}]0;title\u{7}");
+        assert_eq!(
+            missing_directory_help(&missing, &io::Error::from(io::ErrorKind::NotFound)).as_deref(),
+            Some(
+                format!(
+                    "create the directory {}/absent\\u{{1b}}]0;title\\u{{7}} first, then rerun the build",
+                    scratch.0.display()
+                )
+                .as_str()
+            )
         );
     }
 

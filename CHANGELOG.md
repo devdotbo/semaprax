@@ -1,6 +1,6 @@
 # Changelog
 
-- Name the rejected output parent in SPX-I301 for native, Web package and explicit Project outputs, identify symbolic links with their resolved output path, and hint to create a missing parent, keeping the real non-reparse parent policy.
+- Name the rejected output parent in SPX-I301 for native, Web package and explicit Project outputs, identify symbolic links with their resolved output path, and hint to create a missing parent, keeping the real non-reparse parent policy. Control characters in the named paths are escaped so a hostile file name cannot forge diagnostic lines.
 
 - Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
 
