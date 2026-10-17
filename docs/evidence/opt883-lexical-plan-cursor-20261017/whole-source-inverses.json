@@ -1,0 +1,119 @@
+{
+  "base": "85edab80be892fc691e956cf8460ecc2ded7eb16",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",
+      "before_length": 18710,
+      "before_sha256": "8404df1d42d0df22546e6cc55865ee440d2a2cf0c39afecec58aa6d3b385f510",
+      "archive": "docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt",
+      "current_length": 18710,
+      "current_sha256": "8404df1d42d0df22546e6cc55865ee440d2a2cf0c39afecec58aa6d3b385f510",
+      "inverse_edits": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "before_length": 15025,
+      "before_sha256": "35b9565f8dbe7dc67164bc87540f4f49e9bf46e3dae7bb791dd3ba1b31c0ef78",
+      "archive": "docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt",
+      "current_length": 15154,
+      "current_sha256": "fde9abcf6b1a5c7d5c9f23f7ea087a1e4c254acbb6b04d5967fe543bfe55a4a9",
+      "inverse_edits": [
+        {
+          "new_start": 2,
+          "before": "",
+          "after": "#[macro_use]\nmod lexical_cursor;\n#[cfg(test)]\nmod before_lexical_cursor;\n"
+        },
+        {
+          "new_start": 10,
+          "before": "    cursors: [Cursor; 2],\n",
+          "after": "    left_cursor: Cursor,\n    right_cursor: Cursor,\n"
+        },
+        {
+          "new_start": 28,
+          "before": "// exempts any surviving call. Cursor prepare/next call tariffs remain separate.\n",
+          "after": "// exempts any surviving call. Prepare remains a real independently paid call;\n// lexical PLAN next pays all remaining actual dynamic payloads separately.\n"
+        },
+        {
+          "new_start": 91,
+          "before": "",
+          "after": "    + lexical_cursor::PRIMITIVE_FRAMES\n"
+        },
+        {
+          "new_start": 105,
+          "before": "const NEXT_CALL: usize = 2 * size_of::<&mut Cursor>()\n    + 2 * size_of::<&History>() + 2 * size_of::<&[Segment]>()\n    + 2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&mut ReplayBudget>()\n    + size_of::<Result<Option<&SkeletonObservation>, Diagnostic>>() // fallible forward step return\n    + size_of::<Option<&SkeletonObservation>>(); // named successful item receiver\n",
+          "after": "\n"
+        },
+        {
+          "new_start": 120,
+          "before": "        cursors: [Cursor { links: Vec::new(), segment: 0, item: 0 }, Cursor { links: Vec::new(), segment: 0, item: 0 }],\n",
+          "after": "        left_cursor: Cursor { links: Vec::new(), segment: 0, item: 0 },\n        right_cursor: Cursor { links: Vec::new(), segment: 0, item: 0 },\n"
+        },
+        {
+          "new_start": 128,
+          "before": "    backing!(budget, function, &mut owner.cursors[0].links, actual.max_depth, \"ordinary plan history cursor backing\")?;\n    backing!(budget, function, &mut owner.cursors[1].links, actual.max_depth, \"ordinary plan history cursor backing\")?;\n",
+          "after": "    backing!(budget, function, &mut owner.left_cursor.links, actual.max_depth, \"ordinary plan history cursor backing\")?;\n    backing!(budget, function, &mut owner.right_cursor.links, actual.max_depth, \"ordinary plan history cursor backing\")?;\n"
+        },
+        {
+          "new_start": 174,
+          "before": "                owner.cursors[0].prepare(&actual.paths[owner.left].history, &actual.arena, function, budget)?;\n",
+          "after": "                owner.left_cursor.prepare(&actual.paths[owner.left].history, &actual.arena, function, budget)?;\n"
+        },
+        {
+          "new_start": 176,
+          "before": "                owner.cursors[1].prepare(&actual.paths[owner.right].history, &actual.arena, function, budget)?;\n",
+          "after": "                owner.right_cursor.prepare(&actual.paths[owner.right].history, &actual.arena, function, budget)?;\n"
+        },
+        {
+          "new_start": 181,
+          "before": "                paid!(budget, function, 2 * NEXT_CALL + 4 * PATH_INDEX + PAIR_MATCH, \"ordinary plan history paired cursor next\")?;\n                let left = owner.cursors[0].next(&actual.paths[owner.left].history, &actual.arena, function, budget)?;\n                let right = owner.cursors[1].next(&actual.paths[owner.right].history, &actual.arena, function, budget)?;\n",
+          "after": "                paid!(budget, function, 2 * lexical_cursor::ENTRY + 4 * PATH_INDEX + PAIR_MATCH, \"ordinary plan history paired cursor next\")?;\n                let left = lexical_plan_next!(owner, left_cursor, actual.paths[owner.left].history, actual.arena, function, budget, \"ordinary plan history paired cursor next\");\n                let right = lexical_plan_next!(owner, right_cursor, actual.paths[owner.right].history, actual.arena, function, budget, \"ordinary plan history paired cursor next\");\n"
+        },
+        {
+          "new_start": 229,
+          "before": "        owner.cursors[0].prepare(&path.history, &actual.arena, function, budget)?;\n",
+          "after": "        owner.left_cursor.prepare(&path.history, &actual.arena, function, budget)?;\n"
+        },
+        {
+          "new_start": 242,
+          "before": "                    NEXT_CALL + FLAT_MATCH,\n",
+          "after": "                    lexical_cursor::ENTRY + FLAT_MATCH,\n"
+        },
+        {
+          "new_start": 246,
+          "before": "                    owner.cursors[0].next(&path.history, &actual.arena, function, budget)?,\n",
+          "after": "                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, \"ordinary plan history HIR cursor next\"),\n"
+        },
+        {
+          "new_start": 270,
+          "before": "                    NEXT_CALL + SHARED_MATCH,\n",
+          "after": "                    lexical_cursor::ENTRY + SHARED_MATCH,\n"
+        },
+        {
+          "new_start": 279,
+          "before": "                    owner.cursors[0].next(&path.history, &actual.arena, function, budget)?,\n",
+          "after": "                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, \"ordinary plan history HIR cursor next\"),\n"
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+      "before_length": 12288,
+      "before_sha256": "8bab706f06ddf65a9f439c4dfaa5e1c1d2d828c5af8e9df446686f15e6d58ab5",
+      "archive": "docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt",
+      "current_length": 23065,
+      "current_sha256": "44b08fc5a31796cf0ec4448c36b5be8c233091c25c6eac17c6567e73e24536a3",
+      "inverse_edits": [
+        {
+          "new_start": 214,
+          "before": "",
+          "after": "\n// OPT883 adds complete immediate880 controls; all preceding owners remain exact.\nfn observe_883(function: &ResolvedFunction, expected: &[SkeletonPath], old: bool,\n    physical: usize, floor: usize, comparison_work: usize, mutation: usize) -> Observed {\n    with_limit_usage_refusal(physical, || measure(|| {\n        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);\n        assert!(comparison_work <= MAX_REPLAY_WORK_UNITS);\n        budget.remaining = comparison_work; // initial test allowance, before any work/debit\n        assert!(crate::bounded_output::set_active_floor(floor));\n        frontiers::reset();\n        let result = (|| {\n            paid!(&mut budget, function, PRODUCE_CALL_CONTROLS, \"retained test producer call\")?;\n            let mut actual = produce(function, &mut budget)?;\n            match mutation {\n                1 => actual.paths.reverse(),\n                2 => { actual.paths[0].history.previous = Some(actual.arena.len()); },\n                3 => { if let Some(segment) = actual.arena.first_mut() { segment.depth = 0; } },\n                _ => {}\n            }\n            paid!(&mut budget, function, COMPARE_CALL_CONTROLS, \"retained test comparison call\")?;\n            if old { before_lexical_cursor::compare(function, &mut budget, actual, expected) }\n            else { compare(function, &mut budget, actual, expected) }\n        })();\n        let saved = result.as_ref().map(|_| ()).map_err(failure);\n        let retry = if result.is_err() && (budget.refusal_spent || crate::bounded_output::active_refused()) {\n            crate::bounded_output::clear_active_floor();\n            let before = crate::bounded_output::active_remaining();\n            let remaining = budget.remaining;\n            let allocation = crate::test_allocation_observer::current_metrics();\n            let retry = budget.reserve_bytes(function, 0, \"retained comparator sticky zero\").unwrap_err();\n            assert_eq!(crate::bounded_output::active_remaining(), before);\n            assert_eq!(budget.remaining, remaining);\n            assert_eq!(crate::test_allocation_observer::current_metrics(), allocation);\n            let empty = Diagnostic::io(\"SPX-H006\", String::new());\n            assert_eq!(failure(&retry), failure(&empty));\n            assert_eq!(result.as_ref().map(|_| ()).map_err(failure), saved);\n            Some(retry)\n        } else { None };\n        let outcome = Outcome { result: saved, retry: retry.as_ref().map(failure),\n            remaining: budget.remaining, skeleton_spent: budget.skeleton_spent };\n        crate::bounded_output::clear_active_floor();\n        drop(budget);\n        drop(result);\n        drop(retry);\n        outcome\n    }))\n}\n\n#[test]\nfn lexical_plan_cursor_preserves_complete_immediate_sort_work_cuts_and_six_field_failures() {\n    let program = super::super::tests::program();\n    for function in &program.functions {\n        let expected = expected(&program, function);\n        for mutation in 0..4 {\n            let ((a, ma), _, _, _) = observe_883(function, &expected, true, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, mutation);\n            let old_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);\n            let ((b, mb), _, _, _) = observe_883(function, &expected, false, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, mutation);\n            let new_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);\n            assert_eq!(a, b, \"complete output/work/status mutation{mutation}\");\n            assert_eq!(old_swaps, new_swaps);\n            eprintln!(\"OPT883 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}\", a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater);\n            balanced(ma); balanced(mb);\n            let spent = MAX_REPLAY_WORK_UNITS - a.remaining;\n            for cut in 0..=spent {\n                let ((a, ma), _, _, _) = observe_883(function, &expected, true, usize::MAX, 0, cut, mutation);\n                frontiers::finish();\n                let ((b, mb), _, _, _) = observe_883(function, &expected, false, usize::MAX, 0, cut, mutation);\n                frontiers::finish();\n                assert_eq!(a, b, \"exact original comparison work cut{cut} mutation{mutation}\");\n                balanced(ma); balanced(mb);\n            }\n        }\n        for mutation in 0..4 {\n            let mut changed = expected.clone();\n            match mutation {\n                0 => { changed.pop(); },\n                1 => { if let Some(path) = changed.last().cloned() { changed.push(path); } },\n                2 => { if let Some(path) = changed.last_mut() { path.terminal = SkeletonTerminal::Failure; } },\n                _ => { if let Some(path) = changed.last_mut() { path.observations = Vec::new().into(); } },\n            }\n            changed.sort();\n            let ((a, ma), _, _, _) = observe_883(function, &changed, true, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, 0);\n            frontiers::finish();\n            let ((b, mb), _, _, _) = observe_883(function, &changed, false, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, 0);\n            frontiers::finish();\n            assert_eq!(a, b, \"changed expected paths{mutation}\");\n            balanced(ma); balanced(mb);\n        }\n    }\n}\n\n#[test]\nfn lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_full_drop() {\n    let program = super::super::tests::program();\n    let function = &program.functions[0];\n    let expected = expected(&program, function);\n    let ((success, metrics), refused, paid, first) = observe_883(function, &expected, false, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, 0);\n    assert!(success.result.is_ok() && !refused && first.is_none());\n    balanced(metrics);\n    assert!(paid >= metrics.allocated);\n    let events = frontiers::finish();\n    let owner = events.iter().position(|e| e.phase == \"ordinary plan retained comparison owner\").unwrap();\n    assert!(events[owner].after.unwrap() > events[owner].before);\n    let mut selected = vec![owner];\n    for phase in [\"ordinary plan history left cursor prepare\", \"ordinary plan history right cursor prepare\", \"ordinary plan history cursor backing\", \"ordinary plan history paired cursor next\", \"ordinary plan history HIR cursor prepare\", \"ordinary plan history HIR cursor next\", \"ordinary plan retained final Zip next receivers\", \"ordinary plan retained drain swap receivers\", \"ordinary plan retained sift swap receivers\"] {\n        let hits = events.iter().enumerate().filter(|(_,e)| e.phase==phase && e.after.is_some_and(|after| after > e.before)).map(|(i,_)| i).collect::<Vec<_>>();\n        assert!(!hits.is_empty(), \"actual frontier{phase}\");\n        selected.push(hits[0]); selected.push(*hits.last().unwrap());\n    }\n    selected.sort_unstable(); selected.dedup();\n    for ordinal in selected {\n        let event = events[ordinal]; let end = event.after.unwrap();\n        for (limit, floor) in [(0,0),(event.before,0),(end-1,0),(end,0),(end+1,1),(end,1)] {\n            let a = observe_883(function, &expected, false, limit, floor, MAX_REPLAY_WORK_UNITS, 0);\n            let trace = frontiers::finish();\n            let b = observe_883(function, &expected, false, limit, floor, MAX_REPLAY_WORK_UNITS, 0);\n            frontiers::finish();\n            assert_eq!(a.0.0, b.0.0); assert_eq!(a.1,b.1); assert_eq!(a.2,b.2); assert_eq!(a.3,b.3);\n            balanced(a.0.1); balanced(b.0.1);\n            if limit == end && floor == 0 { assert_eq!(trace[ordinal].after, Some(end)); }\n            if (limit == end-1 && floor == 0) || (limit == end && floor == 1) || (limit == event.before && floor == 0) {\n                assert!(a.0.0.result.is_err() && a.1 && a.3.is_some());\n                let first = a.3.unwrap();\n                assert_eq!(first.requested, end - event.before);\n                assert_eq!(first.remaining, limit - event.before);\n                assert_eq!(first.floor, floor);\n                assert_eq!(a.0.0.result.as_ref().unwrap_err(), &primitive_failure(function, event, limit, floor));\n            }\n        }\n    }\n}\n\n\n#[test]\nfn lexical_plan_cursor_reports_complete_immediate_actual_paid_work_and_drop() {\n    let program = super::super::tests::program();\n    for function in &program.functions {\n        let expected = expected(&program, function);\n        for old in [true, false] {\n            let ((outcome, heap), refused, paid, receipt) = observe_883(\n                function, &expected, old, usize::MAX, 0, MAX_REPLAY_WORK_UNITS, 0);\n            frontiers::finish();\n            assert!(outcome.result.is_ok() && !refused && receipt.is_none());\n            assert!(paid >= heap.allocated);\n            balanced(heap);\n            eprintln!(\"OPT883 immediate880={old} function={} paid={paid} ordinary_work={} skeleton_spent={} allocated={} peak={} freed={} live={}\",\n                function.id, MAX_REPLAY_WORK_UNITS-outcome.remaining, outcome.skeleton_spent,\n                heap.allocated, heap.highwater, heap.freed, heap.live);\n        }\n    }\n}\n\n#[test]\nfn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_exact() {\n    let root = include_str!(\"../../ordinary_plan_history.rs\");\n    let old_root = include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt\"));\n    assert_eq!(root, old_root, \"original Cursor and every root caller/control unchanged\");\n    let old = include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt\"));\n    let cursor = root.split_once(\"struct Cursor {\").unwrap().1.split_once(\"\\n#[cfg(test)]\\nmod before_comparison;\").unwrap().0;\n    let before = include_str!(\"before_lexical_cursor.rs\");\n    let body = old.strip_prefix(\"//! One comparison invocation owns sort and pair state. No nested order/sift calls.\\nuse super::*;\\n\").unwrap().strip_suffix(\"\\n#[cfg(test)]\\nmod tests;\\n\").unwrap();\n    assert_eq!(before, format!(\"//! Complete immediate880 comparator and Cursor; namespace-only test module.\\nuse super::*;\\n\\nstruct Cursor {{{cursor}\\n{body}\"));\n    let current = include_str!(\"../comparison_owner.rs\");\n    assert_eq!(current.matches(\"lexical_plan_next!(owner,\").count(), 4);\n    assert!(!current.contains(\".cursors[0].next(\"));\n    assert!(!current.contains(\".cursors[1].next(\"));\n    let original_tests = include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt\"));\n    assert!(include_str!(\"tests.rs\").starts_with(original_tests), \"every prior test is retained verbatim\");\n}\n"
+        }
+      ]
+    }
+  ],
+  "immediate_compiled_control": {
+    "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
+    "construction": "complete Cursor struct/impl + complete immediate880 comparator without child test declaration; namespace-only leading imports",
+    "byte_equality_verified": true
+  }
+}

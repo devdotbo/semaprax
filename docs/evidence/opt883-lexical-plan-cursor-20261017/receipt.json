@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_CANDIDATE_UNCOMPILED_UNEXECUTED_INDEPENDENT_FUNDING_REVIEW_PENDING",
+  "base": "85edab80be892fc691e956cf8460ecc2ded7eb16",
+  "new_modules": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs"
+  ],
+  "sources": [
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "length": 15154,
+      "lines": 297,
+      "sha256": "fde9abcf6b1a5c7d5c9f23f7ea087a1e4c254acbb6b04d5967fe543bfe55a4a9"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "length": 5053,
+      "lines": 83,
+      "sha256": "5b1af446b91261ffc2b75016c21129716a89e182b73a890ace80906cc397bd78"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
+      "length": 17620,
+      "lines": 369,
+      "sha256": "1266243181a9f11084026912462f0c27e5f396761f57e2eab32ef2fe8b4cb548"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+      "length": 23065,
+      "lines": 383,
+      "sha256": "44b08fc5a31796cf0ec4448c36b5be8c233091c25c6eac17c6567e73e24536a3"
+    }
+  ],
+  "whole_inverse_sha256": "9dc3c5a6dbe92cc13180df9038e7ce5750594fd30022d3461fe19083597d1d23",
+  "typed_role_map_sha256": "3a667959a38715665975222fa838aaa2cbdd3d23d38d648b4c68eb27322b1759",
+  "pending_selectors_sha256": "c4726f93896056c3e78527526e52ae5be149c00ea8391355b18b6939cf92f561",
+  "root_caller_complete_before_sha256": "733505ad93eda40bcbfa03ed0d2978f5e1dd5f0aa93020daff78d833def3b464",
+  "invariants": "Original roots/Cursor/sharedHIR bodies and all old test assertions unchanged. Work/left-right/swap order and caps unchanged; every new dynamic payload paid. No baseline inflation or gain claimed.",
+  "open_review": "Whether exact original880 retained primitive-frame criterion permits eight new segment/tail payment slots; no once flag is used. Work frames dynamically priced.",
+  "binding_requirements": [
+    "Two new physical modules in actual raw3/current owner closure",
+    "Whole immediate actual\u219285ed comparator/source acquisition before old source guards; old tables immutable",
+    "Independent current binding and focused original/new owners before any promotion"
+  ],
+  "Cargo": false,
+  "tests": false,
+  "graph_refresh": false
+}

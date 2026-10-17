@@ -1,0 +1,22 @@
+{
+  "removed_actual_boundaries": [
+    "Four actual Cursor::next invocations (two paired, one flat, one shared)",
+    "All their cursor/history/arena/function/budget actual/formal forwarding references",
+    "Returned compound Result<Option<&Observation>,Diagnostic>",
+    "Tail map closure replaced with explicit Option match"
+  ],
+  "surviving_and_new": {
+    "owner": "Two named Cursor fields replace array (no new lifetime-bearing observation fields). Original complete owner tariff retained; same prepare/backing/history input fields.",
+    "ENTRY": "Dynamic each PLAN next: forward charge header+two Result receivers, local &mutCursor, &History, arena and links as_slice actual/formal/return/local. Before forward work and any local formation.",
+    "SEGMENT": "Dynamic every segment condition including sentinel: segment work header+Results; both slice len calls, index/subtract/link-copy, segment index/localitems, Vec deref/sliceget actual/formal/return, get Option/match, Rc as_ref, yielded Option/caller binding and cursor increments. Original segment work remains before lookups.",
+    "TAIL": "Dynamic each exhausted segment cursor: Vec deref/get refs/index, get Option return/local/consuming match, is_some refs/bool, itemincrement, Rcborrow/as_ref, yielded Option/caller binding.",
+    "retained_primitive_payment_frames": "8 PAYMENT_HEADER = 4 literal expansions \u00d72distinct SEGMENT/TAIL reserve sites. Narrow original880 lexical primitive criterion only (ZST success, one terminal owned Diagnostic, same fixed places/noescape/nooverlap/nonrecursion). Explicit open review prerequisite; not blanket repeated-call fee exemption.",
+    "unchanged": "PAIR_MATCH/FLAT_MATCH/SHARED_MATCH/PATH_INDEX/PATH_SWAP and originalowner fields/step events; allprepare and sharedHIR Cursor tariffs."
+  },
+  "limitations": [
+    "More sentinel/setup payments can regress tiny cases; no net gain/fit asserted.",
+    "Observation borrowing is lexical to each match; no reference escapes across path swaps.",
+    "All original work requests/phases/left-before-right and swap ordering remain exact.",
+    "Originalphase8/9 names also classify each new dynamic payment honestly; call counts may increase."
+  ]
+}
