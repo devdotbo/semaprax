@@ -1,3 +1,7 @@
+## Schema-less function rename capture refusal (2026-10-28)
+
+- Refuse schema-less single-file function renames that would retarget a call to or from a same-named local value as `SPX-G111`, and require such renames to start from a resolvable base, leaving source unchanged on refusal; renames without capture, project renames and v2/v3 patches are unaffected.
+
 ## Replay and loan scratch allocation (2026-10-27)
 
 - Reduce transient replay history, continuation, path-join, and loan-directory allocation while preserving complete checked HIR, canonical plans, diagnostics, work limits, and independent comparisons. Keep the original allocation and failure controls and add full prior-producer comparisons for the changed storage paths.
