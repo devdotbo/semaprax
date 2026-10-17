@@ -1170,3 +1170,5 @@ Audience: all documentation readers.
 - [Plan branch continuation capacity](evidence/plan-branch-capacity-v1/README.md)
 
 - [Replay work refusal capture](evidence/replay-work-refusal-v1/README.md)
+
+- [Held status identity insertion index evidence](evidence/status-identity-index-v1/README.md)

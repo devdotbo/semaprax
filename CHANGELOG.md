@@ -1,5 +1,7 @@
 # Changelog
 
+- Reduce ordinary retained status-directory comparison work with a funded private insertion index; retain complete-key AVL results, existing caps and refusal controls.
+
 - Capture a test-only replay work-refusal site in the unchanged production-core retry regression, retaining all limits, diagnostics, fixture selection and assertions.
 
 - Bound continuing-branch clone capacity through the next fork and final terminal suffix, retaining the complete clone census and old fallback; rename a reserved fixture local while preserving its values and assertions.
