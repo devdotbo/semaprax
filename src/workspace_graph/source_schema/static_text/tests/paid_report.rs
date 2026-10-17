@@ -206,7 +206,7 @@ fn actual_caller_authentication_and_session_refusals_transfer_one_paid_report() 
                     .site = function.body.id.clone()
             }
         }
-        let (answer, _, _, _) = replay_under(&build, MAX_CHANGE_BUILDER_BYTES);
+        let (answer, _, _, _) = replay_owned_under(&build, MAX_CHANGE_BUILDER_BYTES);
         let Err(mut refusal) = answer else {
             panic!("attack {attack} must refuse")
         };
@@ -329,4 +329,99 @@ fn reporting_views_publish_the_callers_prepaid_form_and_keep_success_unchanged()
             .reason(),
         SelectedReplayUnpaidReason::FormMismatch
     );
+}
+
+// Complete original report observer, selecting the whole original caller.
+fn replay_owned_under(
+    build: &WorkspaceGraphBuild,
+    limit: usize,
+) -> (Result<bool, SelectedReplayRefusal>, Metrics, bool, usize) {
+    let ((answer, metrics), overflowed, used) =
+        crate::bounded_output::with_limit_usage(limit, || {
+            measure(|| {
+                super::super::primitive::replay_owned_before(
+                    writer(build),
+                    &build.hir.modules,
+                    &build.hir.declarations,
+                    REPORT,
+                )
+            })
+        });
+    (answer, metrics, overflowed, used)
+}
+
+#[test]
+fn actual_typed_caller_retains_exact_child_atom_source_full_old_fields_and_first_sticky_drop() {
+    let mut build = build(LEXICAL_SOURCE);
+    let function = writer_mut(&mut build).functions.iter_mut().find(|f| f.id.as_str() == "static.lexical").unwrap();
+    function.cleanup_plan.lexical_control.as_mut().unwrap().exits[0].site = function.body.id.clone();
+    let subject = writer(&build).functions.iter().find(|f| f.id.as_str() == "static.lexical").unwrap();
+    let (old, _, _, _) = replay_owned_under(&build, MAX_CHANGE_BUILDER_BYTES);
+    let old = match old { Err(old) => old, Ok(_) => panic!("whole original caller refuses") };
+    let (current, _, _, _) = replay_under(&build, MAX_CHANGE_BUILDER_BYTES);
+    let mut current = match current { Err(current) => current, Ok(_) => panic!("typed actual caller refuses") };
+    assert_public(current.report().unwrap());
+    assert_eq!(current.report(), old.report(), "all six fixed outward report fields unchanged");
+    assert_eq!(current.refused().unwrap().cause(), SelectedReplayCause::Session);
+    let ((source, atom), observed) = measure(|| {
+        let receipt = current.structural_receipt().expect("actual first structural receipt");
+        let (source, atom) = receipt.borrowed_child_receipt().expect("exact selected-child variant");
+        assert_eq!(source, &subject.body.id);
+        assert_eq!(source.as_str().as_ptr(), subject.body.id.as_str().as_ptr());
+        (source.as_str().as_ptr(), atom)
+    });
+    assert_eq!(observed.allocations, 0, "borrowed typed observation allocates nothing");
+    let (legacy, whole_old) = current.structural_receipt().unwrap().child_legacy_pair(subject);
+    assert_eq!(legacy, whole_old, "all six fields from the complete independent original renderer");
+    assert_eq!(&legacy, old.receipt().expect("whole original caller genuinely retains Owned Diagnostic"));
+    let first = first_receipt(&mut current);
+    let saved = current.structural_receipt().unwrap().borrowed_child_receipt().unwrap();
+    assert_eq!((saved.0.as_str().as_ptr(), saved.1), (source, atom));
+    let mut preparation = current.into_preparation().expect("same failed owner");
+    assert!(preparation.try_charge(lexical_anchor(&build), 0, "typed sticky").is_err());
+    let saved = preparation.structural_receipt().unwrap().borrowed_child_receipt().unwrap();
+    assert_eq!((saved.0.as_str().as_ptr(), saved.1), (source, atom));
+    drop(preparation);
+    drop(old);
+    drop(legacy);
+    drop(whole_old);
+    // A separate whole physical interval includes construction, report, source
+    // observation, failed-owner recovery and complete Drop; no legacy rendering.
+    let (((), metrics), _) = crate::bounded_output::with_limit(MAX_CHANGE_BUILDER_BYTES, || measure(|| {
+        let mut refusal = match replay_lexical_paid(writer(&build), &build.hir.modules, &build.hir.declarations, REPORT) {
+            Err(refusal) => refusal, Ok(_) => panic!("same exact mutation refuses"),
+        };
+        assert_public(refusal.report().unwrap());
+        let saved = refusal.structural_receipt().unwrap().borrowed_child_receipt().unwrap();
+        assert_eq!((saved.0.as_str().as_ptr(), saved.1), (source, atom));
+        assert_eq!(first_receipt(&mut refusal), first);
+        let before = crate::test_allocation_observer::current_metrics().allocations;
+        let mut preparation = refusal.into_preparation().unwrap();
+        assert!(preparation.try_charge(lexical_anchor(&build), 0, "typed sticky Drop").is_err());
+        let saved = preparation.structural_receipt().unwrap().borrowed_child_receipt().unwrap();
+        assert_eq!((saved.0.as_str().as_ptr(), saved.1), (source, atom));
+        drop(preparation);
+        assert_eq!(crate::test_allocation_observer::current_metrics().allocations, before, "transfer/sticky/Drop adds no allocation");
+    }));
+    assert!(!metrics.invalid && metrics.live == 0);
+    assert_eq!(metrics.allocated, metrics.freed);
+}
+
+#[test]
+fn complete_original_owned_static_caller_and_report_assertions_keep_exact_source() {
+    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-typed-session-receipt-20261018/whole-before-typed-primitive.rs.txt"));
+    let start = before.find("pub(in crate::workspace_graph::source_schema) fn replay_paid(").unwrap();
+    let end = before[start..].find("\n/// Local authentication").unwrap() + start;
+    let expected = before[start..end].trim_end().replacen("pub(in crate::workspace_graph::source_schema) fn replay_paid(", "pub(in crate::workspace_graph) fn replay_owned_before(", 1);
+    let current = include_str!("../primitive.rs");
+    let start = current.find("pub(in crate::workspace_graph) fn replay_owned_before(").unwrap();
+    assert_eq!(current[start..].trim_end(), expected, "complete original caller, one name/visibility glue");
+    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-typed-session-receipt-20261018/before/src/workspace_graph/source_schema/static_text/tests/paid_report.rs"));
+    let marker = "#[test]\nfn actual_caller_authentication_and_session_refusals_transfer_one_paid_report()";
+    let old = before[before.find(marker).unwrap()..].split("\n#[test]").next().unwrap();
+    let current = include_str!("paid_report.rs");
+    let actual = current[current.find(marker).unwrap()..].split("\n#[test]").next().unwrap();
+    assert_eq!(actual, old.replace("= replay_under(&build, MAX_CHANGE_BUILDER_BYTES);", "= replay_owned_under(&build, MAX_CHANGE_BUILDER_BYTES);"), "every original Owned assertion retained on the whole old caller");
+    let genuine = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-typed-session-receipt-20261018/genuine-owned-pointer-test.rs.txt"));
+    assert_eq!(include_str!("../../../../cleanup_plan/replay/selected_entry/tests/paid.rs"), genuine, "genuine Owned pointer/move path is unchanged in full");
 }

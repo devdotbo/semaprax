@@ -1,0 +1,35 @@
+{
+  "status": "SOURCE_ONLY_AUTHORED_NOT_EXECUTED",
+  "selectors": [
+    "cleanup_plan::replay::factored::canonical_shared::lexical_child_scratch::tests::lexical_child_scratch_preserves_complete_deec_owner_work_backing_and_only_removes_outer_receipts",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_child_scratch::tests::lexical_child_scratch_preserves_complete_state_signature_and_every_original_work_failure",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_child_scratch::tests::current_tests::actual_current_selected_route_has_exact_later_arity_cost_without_repricing_876",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_child_scratch::matched::matched_876_complete_three_methods_are_the_immutable_immediate_producer",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even_without_credit",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::composed_current_lexical_successor_adds_the_exact_later_arity_places_to_the_original_equation",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::matched_884_keeps_the_whole_original_equation_and_observer_with_only_route_glue",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::whole_884_observer_keeps_the_old_type_id_and_only_routes_the_current_type_to_matched_frame",
+    "workspace_graph::source_schema::byte_helper::static_lexical_guard_retains_the_complete_old_helper_and_funded_callback_capture",
+    "workspace_graph::source_schema::static_text::tests::lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed",
+    "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::absent_private_lexical_inventory_cannot_inherit_static_or_helper_schema_authority",
+    "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::authenticated_lexical_and_nonlexical_static_positive_routes_keep_their_own_authority",
+    "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::uninstantiated_static_lexical_template_cannot_skip_the_actual_census_guard",
+    "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::whole_old_selector_and_original_regression_are_retained_with_exact_glue",
+    "workspace_graph::source_schema::static_text::tests::paid_report::actual_caller_authentication_and_session_refusals_transfer_one_paid_report",
+    "workspace_graph::source_schema::static_text::tests::paid_report::actual_typed_caller_retains_exact_child_atom_source_full_old_fields_and_first_sticky_drop",
+    "workspace_graph::source_schema::static_text::tests::paid_report::complete_original_owned_static_caller_and_report_assertions_keep_exact_source",
+    "cleanup_plan::replay::selected_entry::tests::paid::paid_report_session_refusal_transfers_carrier_and_retains_first_receipt_through_drop"
+  ],
+  "new_modules": [
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs",
+      "role": "cfg(test)"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+      "role": "cfg(test)"
+    }
+  ],
+  "no_additional_raw_children_after_fc37": true,
+  "pending_source_custody": "Main9 owns combined all3 raw inventories + immutable side projections + final metadata after reviewed freeze"
+}

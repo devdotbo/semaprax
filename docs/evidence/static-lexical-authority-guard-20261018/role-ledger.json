@@ -1,0 +1,28 @@
+{
+  "status": "SOURCE_ONLY",
+  "initial_existing_site": "byte_helper::schema_with_proofs original reserve_builder_structure(Walk) before census_stack/callback formation",
+  "primitive_frames": {
+    "count": 3,
+    "each": "2*size_of::<usize>() + 2*size_of::<Result<(),Vec<Diagnostic>>>()",
+    "owners": [
+      "function/instance payload payment",
+      "template gate payload payment",
+      "template payload payment"
+    ]
+  },
+  "actual_member_payload": "STATIC_LEXICAL_MEMBER before each fresh callback/bool/Option/ref; both real lexical sites counted, no future rows prepaid",
+  "template_gate": "STATIC_LEXICAL_TEMPLATE_GATE acquired before any||module.static_text.is_some",
+  "terminal_report": "STATIC_LEXICAL_TERMINAL_REPORT: full ReportForm actual/formal, Vec returned/received, Diagnostic::io args/results, String/Cow temporaries, one Diagnostic backing and exact literal bytes; return immediately forbids second report",
+  "common_old_source": "census_in entire source and source_schema.rs entire source unchanged",
+  "old_oracle": "before_static_guard_schema_with_proofs complete original function with original payment; whole before_select uses that function via identifier glue only",
+  "authority_domination": [
+    "select invokes schema_with_proofs first on all static schema routes",
+    "guard precedes !potential continue and any V19/proof shortcut for each concrete member",
+    "all static templates now actually traversed; current functions/instances plus template root order matches original census domains",
+    "only LexicalExit selects requires(scanfalse); census successful-depth bound is stricter",
+    "private inventory absence cannot be repaired by forged V19 or lexical metadata",
+    "native-law returns its separate preexisting native schema, not static schema"
+  ],
+  "new_files": [],
+  "final_metadata_run": false
+}
