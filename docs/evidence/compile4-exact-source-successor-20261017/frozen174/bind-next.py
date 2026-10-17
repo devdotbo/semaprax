@@ -66,9 +66,9 @@ def accepted_strict_raw_guards(descriptor,physical_current,git,require):
   raw=physical_current(path)
   require((len(raw),sha(raw))==pair,'strict guard dependency drift: '+path)
   held[path]=raw
- namespace={'__file__':str(D.parents[2]/STRICT_HELPER),'__name__':'accepted174_actual_strict_guard'}
+ namespace={'__file__':str(D.parents[3]/STRICT_HELPER),'__name__':'accepted174_actual_strict_guard'}
  exec(compile(held[STRICT_HELPER],namespace['__file__'],'exec'),namespace)
- actual=namespace['accepted_guard_extensions'](D.parents[2])
+ actual=namespace['accepted_guard_extensions'](D.parents[3])
  actual['verify_recipe']()
  for carrier in descriptor['raw3']:
   path=carrier['path'];original=git('show',descriptor['raw_original_head']+':'+path)
