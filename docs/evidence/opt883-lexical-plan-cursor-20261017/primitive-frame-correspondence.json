@@ -1,0 +1,71 @@
+{
+  "status": "SOURCE_REVIEWED_NARROW_PRIMITIVE_CONTRACT_NOT_RUNTIME_QUALIFICATION",
+  "predecessor": "fd66991f5",
+  "before": "Complete independently compiled immediate880 OWNER_CONTROLS already funds16 sequential primitive caller sites plus2 backing sites; successful Result<(),Diagnostic> payload isZST and only one terminal ownedDiagnostic escapes invocation. Compound Results are NOT covered by this criterion.",
+  "current": "All sixteen original roles retained unchanged. Only8 new reserve primitive headers added: SEGMENT andTAIL at each of4 literal expansions. No per-use flag/cache or suppressed payment exists.",
+  "sites": [
+    {
+      "expansion": "paired left",
+      "reserve_sites": [
+        "SEGMENT before each condition/payload",
+        "TAIL after allsegments exhausted"
+      ],
+      "fixed_places": "same compare function &ResolvedFunction and &mut ReplayBudget; phase literal fixed by expansion",
+      "lifetime": "one compare invocation, nonrecursive, sequential, nonescaping; at most one terminal owned Diagnostic",
+      "separate_dynamic_funding": [
+        "ENTRY: forward charge actual/formal/function/budget/phase/usize+returned/received Result eachnext",
+        "SEGMENT: segment charge actual/formal andboth Result slots everycondition, even exhausted sentinel",
+        "Every surviving get/Option/borrow/match/index/scalar publication payload is separately paid perexecution"
+      ]
+    },
+    {
+      "expansion": "paired right",
+      "reserve_sites": [
+        "SEGMENT before each condition/payload",
+        "TAIL after allsegments exhausted"
+      ],
+      "fixed_places": "same compare function &ResolvedFunction and &mut ReplayBudget; phase literal fixed by expansion",
+      "lifetime": "one compare invocation, nonrecursive, sequential, nonescaping; at most one terminal owned Diagnostic",
+      "separate_dynamic_funding": [
+        "ENTRY: forward charge actual/formal/function/budget/phase/usize+returned/received Result eachnext",
+        "SEGMENT: segment charge actual/formal andboth Result slots everycondition, even exhausted sentinel",
+        "Every surviving get/Option/borrow/match/index/scalar publication payload is separately paid perexecution"
+      ]
+    },
+    {
+      "expansion": "flatHIR PLAN side",
+      "reserve_sites": [
+        "SEGMENT before each condition/payload",
+        "TAIL after allsegments exhausted"
+      ],
+      "fixed_places": "same compare function &ResolvedFunction and &mut ReplayBudget; phase literal fixed by expansion",
+      "lifetime": "one compare invocation, nonrecursive, sequential, nonescaping; at most one terminal owned Diagnostic",
+      "separate_dynamic_funding": [
+        "ENTRY: forward charge actual/formal/function/budget/phase/usize+returned/received Result eachnext",
+        "SEGMENT: segment charge actual/formal andboth Result slots everycondition, even exhausted sentinel",
+        "Every surviving get/Option/borrow/match/index/scalar publication payload is separately paid perexecution"
+      ]
+    },
+    {
+      "expansion": "sharedHIR PLAN side",
+      "reserve_sites": [
+        "SEGMENT before each condition/payload",
+        "TAIL after allsegments exhausted"
+      ],
+      "fixed_places": "same compare function &ResolvedFunction and &mut ReplayBudget; phase literal fixed by expansion",
+      "lifetime": "one compare invocation, nonrecursive, sequential, nonescaping; at most one terminal owned Diagnostic",
+      "separate_dynamic_funding": [
+        "ENTRY: forward charge actual/formal/function/budget/phase/usize+returned/received Result eachnext",
+        "SEGMENT: segment charge actual/formal andboth Result slots everycondition, even exhausted sentinel",
+        "Every surviving get/Option/borrow/match/index/scalar publication payload is separately paid perexecution"
+      ]
+    }
+  ],
+  "not_credited": [
+    "Original prepare/backing/ HIRshared next fees",
+    "Any removed NEXT_CALL header orcompoundResult credit toward survivingpayloads",
+    "Future successful operations/fees",
+    "Source heldbank as authority"
+  ],
+  "independent_review_message": "main9 confirms no concrete blocker in this exact criterion; final complete candidate requires source review and actual focused qualification."
+}

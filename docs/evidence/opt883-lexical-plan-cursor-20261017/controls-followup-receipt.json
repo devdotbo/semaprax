@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_ONLY_UNCOMPILED_UNEXECUTED",
+  "predecessor": "fd66991f5",
+  "production_changes": false,
+  "changed_source": {
+    "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+    "sha256": "531d70b45203327ed0032b4ac2bfc5613cd782165d7db328e1756ec4d0c2ee8d",
+    "lines": 541
+  },
+  "whole_fd_inverse_sha256": "d345851d418f8cee32e858c76ab4d38ab61fc256cdabcb802f07091db4d60d73",
+  "primitive_map_sha256": "dcf9c4198e1beda03d983f86eba2686d273bcf2c97a84797aa443e992cb0dbc6",
+  "selectors_sha256": "74f076ea381541711308303c536fbefecca7494357132eaa09f63e862fcd8c0a",
+  "additional_cases": "flat and immutable HIR Seq,32emptysegments, singletonsegment/tail, malformedlink/depth, same-fixture typedOracle via real constructor/admission, missing/same-IDforeign/restoredsticky; fullstatus/work and comparison-onlythroughDrop",
+  "measurement_scope": "shaped immutable fixtures constructed outside comparison; original producer+comparison measured owners above remain mandatory and unchanged",
+  "new_module_count_unchanged": 2,
+  "source_binding_generation": false,
+  "Cargo": false
+}

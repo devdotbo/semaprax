@@ -1,0 +1,36 @@
+{
+  "status": "UNEXECUTED_SOURCE_ONLY",
+  "new_owners": [
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_preserves_complete_immediate_sort_work_cuts_and_six_field_failures",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_full_drop",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_reports_complete_immediate_actual_paid_work_and_drop",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_exact",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_immutable_hir_deep_empty_tail_and_malformed_composition_keeps_old_status",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::ordinary_plan_history::comparison_owner::tests::lexical_plan_cursor_typed_oracle_missing_foreign_and_restored_scope_keeps_ambient_unspent",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    }
+  ],
+  "unchanged_original_owners_required": true
+}

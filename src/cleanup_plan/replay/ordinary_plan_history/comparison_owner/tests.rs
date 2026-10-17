@@ -381,3 +381,161 @@ fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_ex
     let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"));
     assert!(include_str!("tests.rs").starts_with(original_tests), "every prior test is retained verbatim");
 }
+
+// These alternative immutable inputs are constructed outside the comparison
+// boundary, identically for both arms. Original producer+comparison measured
+// owners above still cover all setup and final Drop. This helper lends no proof.
+fn shaped_883(paths: &[SkeletonPath], empty: usize, tail: bool, malformed: usize) -> HistorySet {
+    let mut arena = Vec::new();
+    let mut actual = Vec::new();
+    let mut max_depth = 0;
+    for path in paths {
+        let mut previous = None;
+        let mut depth = 0;
+        for _ in 0..empty {
+            depth += 1;
+            let index = arena.len();
+            arena.push(Segment { previous, items: Vec::new(), depth });
+            previous = Some(index);
+        }
+        let split = if tail { path.observations.items.len().saturating_sub(1) }
+            else { path.observations.items.len() };
+        for observation in &path.observations.items[..split] {
+            depth += 1;
+            let index = arena.len();
+            arena.push(Segment { previous, items: vec![Rc::clone(observation)], depth });
+            previous = Some(index);
+        }
+        max_depth = max_depth.max(depth);
+        actual.push(PlanPath { history: History {
+            previous, tail: path.observations.items[split..].to_vec(),
+        }, terminal: path.terminal });
+    }
+    actual.reverse();
+    if malformed == 1 { actual[0].history.previous = Some(arena.len()); }
+    if malformed == 2 { arena[0].depth = 0; }
+    HistorySet { arena, paths: actual, max_depth }
+}
+fn observe_shaped_883(function: &ResolvedFunction, expected: &[SkeletonPath], actual: HistorySet,
+    old: bool, units: usize) -> (Outcome, Metrics, usize) {
+    let ((outcome, metrics), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || measure(|| {
+        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+        budget.remaining = units;
+        let result = (|| {
+            paid!(&mut budget, function, COMPARE_CALL_CONTROLS, "883 shaped comparison receiving")?;
+            if old { before_lexical_cursor::compare(function, &mut budget, actual, expected) }
+            else { compare(function, &mut budget, actual, expected) }
+        })();
+        let result = result.as_ref().map(|_| ()).map_err(failure);
+        let outcome = Outcome { result, retry: None,
+            remaining: budget.remaining, skeleton_spent: budget.skeleton_spent };
+        drop(budget);
+        outcome
+    }));
+    assert!(!refused && first.is_none(), "this comparison is byte-unlimited, including work errors");
+    balanced(metrics);
+    assert!(paid >= metrics.allocated);
+    (outcome, metrics, paid)
+}
+#[test]
+fn lexical_plan_cursor_immutable_hir_deep_empty_tail_and_malformed_composition_keeps_old_status() {
+    let program = super::super::tests::program();
+    let function = program.functions.iter().find(|f| f.id.as_str() == "f").unwrap();
+    let flat = expected(&program, function);
+    let mut shared = flat.clone();
+    for path in &mut shared {
+        path.observations.prefix = path.observations.freeze();
+        path.observations.items.clear();
+    }
+    assert!(shared.iter().any(|path| path.observations.prefix.is_some()));
+    for expected in [&flat, &shared] {
+        for depth in [0, 32] {
+            for tail in [false, true] {
+                for malformed in 0..3 {
+                    // Flat source values build PLAN; expected can be a distinct
+                    // immutable HIR sequence with equal contents and identities.
+                    let (old, _, old_paid) = observe_shaped_883(function, expected,
+                        shaped_883(&flat, depth, tail, malformed), true, MAX_REPLAY_WORK_UNITS);
+                    let (new, _, new_paid) = observe_shaped_883(function, expected,
+                        shaped_883(&flat, depth, tail, malformed), false, MAX_REPLAY_WORK_UNITS);
+                    assert_eq!(new, old, "deep/empty/tail/malformed complete six-field comparison");
+                    assert_eq!(new.result.is_ok(), malformed == 0);
+                    let spent = MAX_REPLAY_WORK_UNITS - old.remaining;
+                    for cut in [0, 1, spent.saturating_sub(1), spent] {
+                        let (old, _, _) = observe_shaped_883(function, expected,
+                            shaped_883(&flat, depth, tail, malformed), true, cut);
+                        let (new, _, _) = observe_shaped_883(function, expected,
+                            shaped_883(&flat, depth, tail, malformed), false, cut);
+                        assert_eq!(new, old, "actual original forward/segment and HIR work priority");
+                    }
+                    eprintln!("OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included", expected[0].observations.prefix.is_some());
+                }
+            }
+        }
+    }
+}
+#[test]
+fn lexical_plan_cursor_typed_oracle_missing_foreign_and_restored_scope_keeps_ambient_unspent() {
+    let program = super::super::tests::program();
+    let function = program.functions.iter().find(|f| f.id.as_str() == "f").unwrap();
+    let foreign = function.clone();
+    let expected = expected(&program, function);
+    for state in 0..3 {
+        let run = |old: bool| {
+            let actual = shaped_883(&expected, 4, true, 0);
+            let (status, refused, active_paid, first) = with_limit_usage_refusal(usize::MAX, || {
+                let scope = allocation::OracleScope::open_with_work(usize::MAX, usize::MAX).unwrap();
+                let invocation = match state {
+                    0 => Some(allocation::enter(&program, function, scope.lease()).unwrap()),
+                    1 => None,
+                    _ => Some(allocation::enter(&program, &foreign, scope.lease()).unwrap()),
+                };
+                let mut budget = ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, scope.lease());
+                let before = crate::bounded_output::active_remaining();
+                // The real caller authenticates typed Oracle authority before
+                // entering either private comparator. Neither comparator mints
+                // or rechecks a program/function lease by itself.
+                let result = match SkeletonWork::with_index(&program, function, &mut budget, None) {
+                    Err(error) => { drop(actual); Err(error) }
+                    Ok(work) => {
+                        drop(work);
+                        match budget.reserve_bytes(function, COMPARE_CALL_CONTROLS,
+                            "883 typed oracle comparison call") {
+                            Err(error) => { drop(actual); Err(error) }
+                            Ok(()) => {
+                                if old { before_lexical_cursor::compare(function, &mut budget, actual, &expected) }
+                                else { compare(function, &mut budget, actual, &expected) }
+                            }
+                        }
+                    }
+                };
+                let status = result.as_ref().map(|_| ()).map_err(failure);
+                let work = (budget.remaining, budget.skeleton_remaining, budget.skeleton_spent);
+                let receipt = scope.receipt();
+                if state == 0 { assert!(status.is_ok()); }
+                else {
+                    assert_eq!(result, Err(Diagnostic::io("SPX-H006", String::new())));
+                    assert_eq!((receipt.charged, receipt.work), (0, 0));
+                    assert!(receipt.physical_failure.is_some());
+                    let error = budget.reserve_bytes(function, 0, "883 foreign oracle sticky").unwrap_err();
+                    assert_eq!(error, Diagnostic::io("SPX-H006", String::new()));
+                    assert_eq!((scope.receipt().charged, scope.receipt().work), (0, 0));
+                    drop(invocation);
+                    let restored = allocation::enter(&program, function, scope.lease()).unwrap();
+                    let retry = budget.reserve_bytes(function, 0, "883 restored oracle sticky").unwrap_err();
+                    assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
+                    assert_eq!((scope.receipt().charged, scope.receipt().work), (0, 0));
+                    drop(restored);
+                }
+                assert_eq!(crate::bounded_output::active_remaining(), before);
+                drop(result);
+                drop(budget);
+                (status, work, receipt.work)
+            });
+            assert!(!refused && first.is_none());
+            assert_eq!(active_paid, 0, "explicit Oracle never falls back to ambient payer");
+            status
+        };
+        assert_eq!(run(false), run(true), "typed same fixture, all six fields and exact real work");
+    }
+}
