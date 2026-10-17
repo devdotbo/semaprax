@@ -26,3 +26,9 @@ controls on Rust 1.88 and 1.98. The actual growing presence helper and complete
 funded primitives pass the owning depth controls with a thin fixture HIR.
 These component checks do not qualify full HIR construction or applications.
 The complete real-HIR constructor regression is retained for hosted CI.
+
+The first hosted production compile exposed two census diagnostic constants
+still gated to tests and two imports needed only by tests. The constants are
+now available to the existing production census and the imports are test-only.
+`production-cfg.json` archives that entire immediate predecessor. The original
+source and helper inverses retain every prior step before the new prefix.

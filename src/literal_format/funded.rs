@@ -6,7 +6,8 @@
 //! caller's payer; a payer refusal is returned unchanged, never as a smaller
 //! set. Audit (source read, not measured): this route never calls `scan` or
 //! builds `Piece`/template text, so no literal-format text parsing is reachable.
-use super::*;
+#[cfg(test)]
+use super::checked_moving_string_operands;
 use crate::hir::funded::{self, FundedError, Reserve};
 use std::collections::BTreeSet;
 
