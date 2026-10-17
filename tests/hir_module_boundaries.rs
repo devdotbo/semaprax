@@ -563,6 +563,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs")),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"),

@@ -358,7 +358,7 @@ impl<'hir> Directory<&'hir StatusSourceId> {
         // Existing bindings plus the storage-index selector and empty header.
         budget.charge(function, 16, self.phase)?;
         let owner = Owner::new(function, self, budget)?;
-        Ok(HeldPrefix {
+        let mut held = HeldPrefix {
             directory: self,
             owner,
             prefix: 0,
@@ -369,7 +369,19 @@ impl<'hir> Directory<&'hir StatusSourceId> {
                 )
                 && function.cleanup_plan.status_sources.len() >= 256)
                 .then(StatusIndex::default),
-        })
+        };
+        // Payer selection, optional-index binding and cursor publication.
+        budget.charge(function, 3, held.directory.phase)?;
+        if matches!(budget.payer, AllocationPayer::ActiveBuilder) {
+            if let Some(index) = held.index.as_mut() {
+                index.cursor = Some(reused_cursor::allocate(
+                    function,
+                    budget,
+                    held.directory.phase,
+                )?);
+            }
+        }
+        Ok(held)
     }
 
     fn held_probe(
@@ -470,7 +482,12 @@ impl<'hir> HeldPrefix<'_, 'hir> {
             self.directory.authenticate(function, budget)?;
             budget.charge(function, 1, phase)?;
             budget.charge(function, 1, phase)?;
-            if self.index.is_some() {
+            if let Some(index) = self.index.as_ref() {
+                budget.reserve_bytes(function, size_of::<&StatusIndex>(), phase)?;
+                budget.charge(function, 2, phase)?;
+                if index.cursor.is_some() {
+                    return self.insert_reusing_cursor(function, key, budget);
+                }
                 return self.insert_indexed(function, key, budget);
             }
             if self.directory.nodes.is_empty() {
@@ -554,6 +571,7 @@ struct StatusIndex {
     nodes: Vec<IndexNode>,
     path: Vec<IndexStep>,
     root: Option<usize>,
+    cursor: Option<Box<IndexSearch>>,
 }
 struct IndexSearch {
     probe: Probe,
@@ -1019,3 +1037,5 @@ impl HeldPrefix<'_, '_> {
         Ok(())
     }
 }
+
+mod reused_cursor;

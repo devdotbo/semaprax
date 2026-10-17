@@ -152,6 +152,10 @@
       {
         "after": "n.rs\")\n                ),\n                \"\\n\",\n                concat!(include_str!(\"../../src/workspace_graph/source_schema.rs\"),include_str!(\"../../src/workspace_graph/source_schema/nominal_context.rs\"),include_str!(\"../../src/workspace_graph/source_schema/nominal_context/tests.rs\")),\n                include_str!(\"../../src/workspace_graph/sourc",
         "before": "n.rs\")\n                ),\n                \"\\n\",\n                include_str!(\"../../src/workspace_graph/source_schema.rs\"),\n                include_str!(\"../../src/workspace_graph/sourc"
+      },
+      {
+        "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f",
+        "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f"
       }
     ]
   }

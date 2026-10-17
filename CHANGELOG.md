@@ -1,5 +1,7 @@
 # Changelog
 
+- Hold paid status insertion search scratch across ordinary builder rows, preserving full-key comparisons, AVL links, validation work and the original independent search receivers.
+
 - Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
 
 - Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.

@@ -55,8 +55,12 @@
     "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
     "archive": "docs/evidence/borrowed-exit-region-match-v1/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
     "before_sha256": "3cc384e9243b4686748e517e2b1e02bc9ef0ea61dd032a6a026e841e82068f2b",
-    "after_sha256": "0e077ec3242fdeafaffb74be980d0dac03fb0e8bd27b5bd77484b3e82b21bf15",
+    "after_sha256": "0a07bac8b9c0a51619952ca365ec06204c8ec0731f76d6b698c565ff8bcd88aa",
     "inverse": [
+      {
+        "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp",
+        "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp"
+      },
       {
         "after": "tr!(\"../../../../../src/cleanup_plan/replay/skeleton_work.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay",
         "before": "tr!(\"../../../../../src/cleanup_plan/replay/skeleton_work.rs\"),\n            include_str!(\"../../../../../src/cleanup_plan/replay"
