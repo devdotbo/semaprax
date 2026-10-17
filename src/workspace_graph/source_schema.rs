@@ -270,6 +270,14 @@ pub(super) fn schema_receiving_paid<'a>(
     .map_err(ViewRefusal::Legacy)
 }
 
+// Complete new check/payment roles. The original lexical requirement result
+// replaces its existing later bool place; no old slot is credited or repriced.
+const STATIC_LEXICAL_GUARD_CONTROLS: usize =
+    2 * std::mem::size_of::<&Option<&'static str>>()
+        + 4 * std::mem::size_of::<bool>()
+        + 2 * std::mem::size_of::<usize>()
+        + 2 * std::mem::size_of::<Result<(), Vec<Diagnostic>>>();
+
 fn select<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
@@ -349,15 +357,24 @@ fn select<'a>(
             .iter()
             .map(|instance| &instance.function),
     ) {
-        if lexical_static && hir::lexical_exit::requires(function).map_err(|error| vec![error])? {
+        // One original lexical requirement result is retained at its existing
+        // per-member frontier, before any helper/schema shortcut can hide it.
+        let lexical = hir::lexical_exit::requires(function).map_err(|error| vec![error])?;
+        if lexical_static && lexical {
             continue;
+        }
+        // The predicate's borrowed Option receiver/result and branch values,
+        // plus this new payment's actual/formal and Result pair, are real.
+        // Pay only this actual member check, never future loop iterations.
+        reserve_builder_structure(STATIC_LEXICAL_GUARD_CONTROLS)?;
+        if lexical && static_schema.is_some() {
+            return Err(static_text::REPORT.legacy());
         }
         if helper_schema.is_some()
             && function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
         {
             continue;
         }
-        let lexical = hir::lexical_exit::requires(function).map_err(|error| vec![error])?;
         if (function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18) != lexical
         {
             return Err(vec![graph_error(
