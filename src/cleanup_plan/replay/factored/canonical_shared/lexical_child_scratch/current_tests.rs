@@ -107,15 +107,20 @@ fn actual_current_selected_route_has_exact_later_arity_cost_without_repricing_87
         assert_eq!(live_heap, matched_heap);
         assert!(!live_heap.invalid && live_heap.live == 0);
         assert_eq!(live_heap.allocated, live_heap.freed);
-        // Independent source/corpus counts. Each nonempty input is distinct;
-        // its one nonrecursive frame activation has 0 or >=24 outgoing labels.
-        // The terminal-only input takes cold_dead_id and never forms that frame.
-        let activations = roots
+        // Independent corpus counts name two distinct receiving events.
+        // Nonempty roots use the child-scratch Result receipt. The zero-move
+        // sink does not, but cold_dead_node explicitly excludes sink identity:
+        // it still enters the general frame loop and forms LOCAL_CONTROLS.
+        let nonempty_exits = roots
             .iter()
             .filter(|root| !graph.nodes[**root].moves().is_empty())
             .count();
+        let sink_roots = roots.iter().filter(|root| **root == sink).count();
+        assert_eq!(nonempty_exits + sink_roots, roots.len(),
+            "this corpus contains only wide roots and the distinguished sink");
+        let activations = nonempty_exits + sink_roots;
         assert!(graph.nodes.iter().all(|node| node.moves().len() != 1));
-        let receipts = activations * std::mem::size_of::<Result<(), Diagnostic>>();
+        let receipts = nonempty_exits * std::mem::size_of::<Result<(), Diagnostic>>();
         let later = activations * Canonicalizer::BORROWED_EXIT_LOCAL;
         assert_eq!(
             Canonicalizer::BORROWED_EXIT_LOCAL,
@@ -143,5 +148,42 @@ fn actual_current_selected_route_has_exact_later_arity_cost_without_repricing_87
             }
         }
         eprintln!("OPT876 composed selected shape={shape} old/matched/live={}/{}/{} receipts={receipts} later={later} heap={live_heap:?}", old.paid, matched.paid, live.paid);
+    }
+}
+
+
+#[test]
+fn distinguished_sink_and_true_cold_dead_leaf_have_independent_activation_counts() {
+    let function = fixture();
+    let mut setup = ReplayBudget::unobserved();
+    let mut graph = Automaton::default();
+    let sink = graph.node(&function, &mut setup).unwrap();
+    let dead = graph.node(&function, &mut setup).unwrap();
+    assert_ne!(sink, dead);
+    for root in [sink, dead] {
+        assert!(graph.nodes[root].moves().is_empty());
+        assert!(graph.nodes[root].epsilon().is_empty());
+    }
+    let owner = Canonicalizer::new(&graph, sink);
+    assert!(!owner.cold_dead_node(sink), "distinguished sink is outside cold-dead admission");
+    assert!(owner.cold_dead_node(dead), "fresh non-sink dead leaf takes the cold route");
+    drop(owner);
+    for root in [sink, dead] {
+        let (old, old_heap) = observe_live(&function, &graph, sink, &[root], true, 1 << 26);
+        let (live, live_heap) = observe_live(&function, &graph, sink, &[root], false, 1 << 26);
+        let (matched, matched_heap) = observe(&function, &graph, sink, &[root], false, 1 << 26);
+        let old = old.result.unwrap();
+        let live = live.result.unwrap();
+        let matched = matched.result.unwrap();
+        assert_eq!((live.work, live.checksum, live.counts), (old.work, old.checksum, old.counts));
+        assert_eq!((live.work, live.checksum, live.counts), (matched.work, matched.checksum, matched.counts));
+        assert_eq!(live_heap, old_heap);
+        assert_eq!(live_heap, matched_heap);
+        assert!(!live_heap.invalid && live_heap.live == 0);
+        assert_eq!(live_heap.allocated, live_heap.freed);
+        assert_eq!(old.paid, matched.paid, "neither empty input forms a nonempty child receipt");
+        let activations = usize::from(root == sink);
+        assert_eq!(live.paid, matched.paid + activations * Canonicalizer::BORROWED_EXIT_LOCAL,
+            "only the sink enters a general frame; the distinct cold dead leaf does not");
     }
 }

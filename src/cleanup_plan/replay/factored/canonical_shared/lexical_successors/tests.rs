@@ -805,10 +805,12 @@ fn composed_current_lexical_successor_adds_the_exact_later_arity_places_to_the_o
             let a = Canonicalizer::CONSTRUCTOR_CONTROLS
                 .checked_sub(before_lexical_successors::Canonicalizer::CONSTRUCTOR_CONTROLS)
                 .unwrap();
-            // This fixture has one root and only arity0/2 signatures. The
-            // length0 weight1 cold terminal forms no frame. Every other input
-            // (including the non-unit terminal) forms exactly one activation.
-            let activations = usize::from(length != 0 || weight != 1);
+            // This fixture has one root and only arity0/2 signatures.
+            // At length0 that root IS the distinguished sink, which the
+            // cold-dead guard excludes even at unit weight. Thus every
+            // fixture here enters one general frame-loop activation.
+            assert!(root == sink || !a.nodes[root].moves().is_empty());
+            let activations = usize::from(root == sink || !a.nodes[root].moves().is_empty());
             let later = activations * Canonicalizer::BORROWED_EXIT_LOCAL;
             assert_eq!(Canonicalizer::BORROWED_EXIT_LOCAL,
                 2 * size_of::<usize>() + 4 * size_of::<bool>());
