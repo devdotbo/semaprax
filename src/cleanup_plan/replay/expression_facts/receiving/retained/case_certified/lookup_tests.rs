@@ -207,6 +207,87 @@ fn complete_old_prefix_dispatch_and_ordinary_caller_remain_source_bound() {
     let old = old[old
         .find("pub(super) fn validate_structure_with_budget_storage<")
         .unwrap()..]
-        .replacen("pub(super) fn", "fn", 1);
+        .replacen("pub(super) fn", "fn", 1)
+        .replacen(
+            "crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20",
+            "super::CLEANUP_PLAN_SCHEMA_V20",
+            1,
+        );
     assert_eq!(replay[start..end].trim(), old.trim());
+}
+
+#[test]
+fn status_directory_outlives_independent_short_fact_payloads() {
+    let program = checked_program(64);
+    let function = program.functions.iter().find(|f| f.name == "main").unwrap();
+    // This owner is deliberately independent of the original function/proof.
+    // Its facts and their payload source are dropped before the returned
+    // StatusSources is read. No Facts-inner:'hir bound is available here.
+    let payload_function = function.clone();
+    let (count, refused, _) = crate::bounded_output::with_limit_usage(64 * 1024 * 1024, || {
+        let mut budget = ReplayBudget::new();
+        let proof = case_proof::StatusCases::validate(&program, function, &mut budget).unwrap();
+        assert!(function.cleanup_plan.status_sources.len() >= retained_lookup::MIN_ROWS);
+        let sources = {
+            let facts = crate::cleanup_plan::replay::expression_facts::with_budget(
+                &payload_function,
+                &mut budget,
+            )
+            .unwrap();
+            let sources =
+                validate_status_sources_certified(function, &facts, &mut budget, &proof).unwrap();
+            drop(facts);
+            sources
+        };
+        drop(payload_function);
+        let count = sources.ids.as_ref().unwrap().len();
+        assert_eq!(count, function.cleanup_plan.status_sources.len());
+        drop(sources);
+        drop(proof);
+        count
+    });
+    assert!(!refused && count > 0);
+}
+
+#[test]
+fn selector_site_ledger_uses_actual_borrowed_roles_and_preserves_old_inverse() {
+    let selector = include_str!("retained_lookup.rs");
+    let selector = selector.split("const A:").next().unwrap();
+    assert!(
+        !selector.contains("Option<usize>"),
+        "no unformed donor options"
+    );
+    for typed_role in [
+        "PAYER_TAG",
+        "&crate::cleanup_plan::replay::allocation::AllocationPayer",
+        "ROW_LENGTH",
+        "&Vec<crate::cleanup_plan::StatusSource>",
+        "ROW_BOUND",
+        "SHORT_CIRCUIT",
+        "FACTS_ARM",
+        "&Facts<'_>",
+        "NONEMPTY",
+        "Session::arena_len_bytes()",
+        "PAYMENT_AND_RETURN",
+        "PAYMENT_TRANSPORT",
+        "CONTINUATION",
+    ] {
+        assert!(
+            selector.contains(typed_role),
+            "missing typed site {typed_role}"
+        );
+    }
+    let caller = include_str!("../case_certified.rs");
+    let frontier = caller
+        .split("retained_lookup::SELECT_BYTES")
+        .nth(1)
+        .unwrap();
+    assert!(frontier.contains("matches!(\n                &budget.payer,"));
+    let old = include_str!("lookup_caller_before.rs");
+    assert_eq!(
+        old.matches("crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20")
+            .count(),
+        1
+    );
+    assert!(!old.contains("super::CLEANUP_PLAN_SCHEMA_V20"));
 }

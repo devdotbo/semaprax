@@ -82,9 +82,10 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_certified<'hir>(
                 retained_lookup::SELECT_BYTES,
                 "retained expression-fact selection controls",
             )?;
-            if budget.payer
-                == crate::cleanup_plan::replay::allocation::AllocationPayer::ActiveBuilder
-                && function.cleanup_plan.status_sources.len() >= retained_lookup::MIN_ROWS
+            if matches!(
+                &budget.payer,
+                &crate::cleanup_plan::replay::allocation::AllocationPayer::ActiveBuilder
+            ) && function.cleanup_plan.status_sources.len() >= retained_lookup::MIN_ROWS
             {
                 if let Facts::Arena(arena) = facts {
                     if arena.len() != 0 {

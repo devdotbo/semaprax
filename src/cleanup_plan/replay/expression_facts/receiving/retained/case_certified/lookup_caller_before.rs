@@ -35,7 +35,7 @@ pub(super) fn validate_structure_with_budget_storage<'hir>(
     let ordinary_schema =
         schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;
     let expected_schema = if allocation_paths::current(program, function).is_some() {
-        super::CLEANUP_PLAN_SCHEMA_V20
+        crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
     } else {
         ordinary_schema
     };

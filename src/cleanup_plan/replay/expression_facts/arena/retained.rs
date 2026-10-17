@@ -36,10 +36,17 @@ const RESULTS: usize =
 impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
     pub(in crate::cleanup_plan::replay::expression_facts) const OLD_SCRATCH: usize =
         prefix::RETAINABLE_BYTES;
+    // New selector's existing Arena::len call: outer Arena receiver pair and
+    // scalar return/receive, plus its inner Vec<Node>::len receiver pair and
+    // scalar return/receive. Node remains private to its actual owning module.
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn arena_len_bytes() -> usize {
+        2 * size_of::<&Arena<'_>>() + 2 * size_of::<&Vec<Node<'_>>>() + 4 * size_of::<usize>()
+    }
     pub(in crate::cleanup_plan::replay::expression_facts) const fn acquisition_bytes() -> usize {
         // Full initialized/receiving owner, nested field initializers,
-        // constructor args, acquisition payment/work Results and two scalar
-        // acquisition receivers. Drop has only trivial references/scalars.
+        // constructor args, acquisition payment/work actual/formal frames and
+        // Results, and two scalar acquisition receivers. Drop has only
+        // trivial references/scalars.
         // The ordinary caller separately pays its continuation and selection.
         2 * size_of::<Self>()
             + 2 * size_of::<Control>()
@@ -47,6 +54,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             + 2 * size_of::<Bytes<'_>>()
             + 2 * size_of::<(&Arena<'_>, &ResolvedFunction, &mut ReplayBudget)>()
             + 4 * size_of::<Result<(), Diagnostic>>()
+            + 4 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
             + 2 * size_of::<usize>()
     }
     /// Called only after the caller's old zero-byte/work authentication and

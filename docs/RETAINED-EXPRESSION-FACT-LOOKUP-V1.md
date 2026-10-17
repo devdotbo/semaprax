@@ -29,7 +29,9 @@ a real cold-path cost, not a saving.
 ## Custody
 
 The session holds immutable arena and function loans and an exclusive mutable
-ReplayBudget loan. Its query identity loan must last for that entire session:
+ReplayBudget loan. The arena's fact-payload lifetime is independent of the
+function/proof/status-directory lifetime. Only their common local session loan
+is shared; no `Facts`-inner-outlives-function bound is added to the validator. Its query identity loan must last for that entire session:
 production queries come from the held function's immutable status table. The
 actual slice-bearing comparison frame persists; it is neither a paid-once flag
 nor a recreated full local comparison. Every field is reset on each query.
@@ -70,6 +72,35 @@ There are no numeric host-layout assumptions in admission.
   duplicate status-row source receiver, and scalar predicates. It is paid on
   each actual query through the original full-lookup reservation frontier.
 
+The selector uses a borrowed payer-tag pattern. It creates no owned
+`AllocationPayer`, and no equality call or equality actual/formal references.
+The disjoint selector site ledger is:
+
+| Constant | Actual new roles paid before formation |
+| --- | --- |
+| `PAYER_TAG` | One `&AllocationPayer` borrowed scrutinee, two match-arm `bool` values, and one result receiver. |
+| `ROW_LENGTH` | Two `&Vec<StatusSource>` roles for `Vec::len` actual/formal receivers and two `usize` roles for returning/receiving its length. |
+| `ROW_BOUND` | One `usize` bound operand, primitive comparison `bool`, and its receiver. |
+| `SHORT_CIRCUIT` | The `&&` result and the `if` receiver, both `bool`. |
+| `FACTS_ARM` | A borrowed `&Facts` scrutinee receiver, the `&Arena` arm binding, and the variant-selection branch `bool`. |
+| `NONEMPTY` | Outer `Arena::len` and inner `Vec<Node>::len` actual/formal receiver pairs, their two returning/receiving `usize` pairs, zero operand, primitive comparison result and `if` receiver. |
+| `PAYMENT_AND_RETURN` | Eight complete `Result<(), Diagnostic>` roles: four for extra first zero-byte/work authentication, two for selector reservation, and two for helper return/receiving. |
+| `PAYMENT_TRANSPORT` | Six `(&mut ReplayBudget, &ResolvedFunction, usize, &str)` tuples: actual/formal transports for the two extra authentication calls and selector reservation. |
+| `CONTINUATION` | Both complete actual/formal six-reference transports for `complete_rows`. |
+
+`SELECT_BYTES` sums exactly those named groups; it contains no unformed
+`Option<usize>` donor entries. The private `Node` receiver layout is computed in
+the arena module, where that actual type is available. No previous held-prefix
+selector payment is reused.
+
+The remaining one-owner acquisition term pays two complete `Session` layouts,
+two each of its nested `Control`, `Compared` and `Bytes` initializers, both
+three-reference constructor transports, four complete acquisition/work
+`Result<(), Diagnostic>` roles, four corresponding payment transport tuples,
+and two scalar acquisition receivers. The first-frontier reservation includes
+this full term before `new_prepaid` forms any owner. These are distinct from
+the selector/helper transports and from `R`; they do not precharge a future row.
+
 The first activation also pays the entire original `S`, independently of `A`.
 Every query retains both complete old compound
 `Result<Option<&Option<CallFact>>, Diagnostic>` terms. There is no per-node
@@ -93,15 +124,22 @@ compiled in `arena/prefix/retained_before.rs`. The complete immediate-old
 certified status receiver and ordinary caller are independently compiled in
 `case_certified/lookup_before.rs` and `lookup_caller_before.rs`. The latter uses
 the unchanged live old Arena lookup; source assertions bind that lookup to the
-complete separately compiled predecessor. Full historical source overlays remain
-necessary for independently built whole-composition qualification.
+complete separately compiled predecessor. The relocated ordinary body has
+only two exact inverse adaptations: remove its `pub(super)` test visibility and
+map `crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20` back to the original
+`super::CLEANUP_PLAN_SCHEMA_V20`. The constant is fully qualified because the
+copied function's parent namespace is different. Full historical source
+overlays remain necessary for independently built whole-composition qualification.
 
 Authored controls cover complete borrowed hit/miss results, noncall/absent
 identities, distinct allocations, NUL/UTF-8/prefix endpoints, small/large AVL
 shapes, all old query work cuts and six diagnostic fields, exact/one-short
 first and later payments, sticky retry, source lifetime custody, nested/foreign
 existing-owner refusal, successful/refused/unwind Drop, and whole old/current
-ordinary composition at the unchanged cap. These controls have not run in this
+ordinary composition at the unchanged cap. A separate authored lifetime control
+drops independently sourced fact payloads and their function owner before
+reading the returned status directory; selector source controls bind the typed
+ledger and exact namespace inverse. These controls have not run in this
 source-only lane. General source binders and inventory metadata are owned by the
 combined integration batch.
 
