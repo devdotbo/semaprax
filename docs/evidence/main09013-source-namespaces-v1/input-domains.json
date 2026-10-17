@@ -1004,8 +1004,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone.rs",
-      "current_len": 16985,
-      "current_sha256": "59a609682f8a1ef9d6db0ad89301206b937e20dab3debac052ed85628db45816",
+      "current_len": 17063,
+      "current_sha256": "dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone.rs",
       "view_len": 5704,
       "view_sha256": "e0c30462e1576af2a9b48f9bdc55a64ce606510864752932fc8b280a3c77b1d4",
@@ -1076,8 +1076,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
-      "current_len": 37219,
-      "current_sha256": "b4e8e91622e62eb9795fb6b8495c6a54cce68cba5d1a56566438cc05592ceea0",
+      "current_len": 37266,
+      "current_sha256": "a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "view_len": 19472,
       "view_sha256": "9f9c495e16fe9af39e773c6ef5413bc8eff8363b21d5771620f7bd91eec746b1",
@@ -2563,8 +2563,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone.rs",
-      "current_len": 16985,
-      "current_sha256": "59a609682f8a1ef9d6db0ad89301206b937e20dab3debac052ed85628db45816",
+      "current_len": 17063,
+      "current_sha256": "dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone.rs",
       "view_len": 5704,
       "view_sha256": "e0c30462e1576af2a9b48f9bdc55a64ce606510864752932fc8b280a3c77b1d4",
@@ -2635,8 +2635,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
-      "current_len": 37219,
-      "current_sha256": "b4e8e91622e62eb9795fb6b8495c6a54cce68cba5d1a56566438cc05592ceea0",
+      "current_len": 37266,
+      "current_sha256": "a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "view_len": 19472,
       "view_sha256": "9f9c495e16fe9af39e773c6ef5413bc8eff8363b21d5771620f7bd91eec746b1",
@@ -4100,5 +4100,5 @@
   ],
   "unassembled": [],
   "cap": 9464242,
-  "bound_final_head": "d7bd1e87f521698b0a3d17350ffe207155acea5d"
+  "bound_final_head": "eeb12674422bbe31e7b8a106b7bcbd113978589e"
 }

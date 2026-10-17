@@ -91,7 +91,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
-    "sha256": "c0bc00e81dc323d72efd41e198050b2ac1a89675e9863cf24903892b79151c02",
+    "sha256": "6cb7f63a48bb023c7c366f16a7030f9c7855715898a85b31770062835482e314",
     "lines": 196
   },
   {
@@ -166,8 +166,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
-    "sha256": "d0e32e0a93ca47ccf399670e610ea5a7fa29af91fb98fdcdac470bf3e72ce258",
-    "lines": 1120
+    "sha256": "fc054c4c7c3089e8aa3fd136d92d7d895bfe79f41f1e75e9bd92f60396e585e0",
+    "lines": 1122
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels/lexical_finish.rs",
@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "069c644ddc9db06577d5d43cffbfa10ef5dfd0ba459850203743e47a225ff2a5",
+    "sha256": "9824d62a2453b4aea0daba0dd61327306b8a61afa2840b112850a9f4ace3c484",
     "lines": 1099
   },
   {
@@ -721,7 +721,7 @@
   },
   {
     "source": "src/source_reflows_merge/main67107_inputs.rs",
-    "sha256": "0f6a10dd9a8e52a29d5af2c31d10b27576eb0ae76cb0f31ac2e8c7177d36b202",
+    "sha256": "02cbeb5887a105dfdda929606503229a3949145660568e07a332d96a8fdca9be",
     "lines": 1120
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "d7c163213a8b29698f88ab5b62c5262b95852beb2da5b3dee157f0898a8edd5c",
+    "sha256": "35ad1a62ceaecbb6a37cf69770a52744263bec12b4033531b53fe907683d814f",
     "lines": 397
   },
   {
