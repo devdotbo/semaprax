@@ -1,0 +1,74 @@
+{
+  "status": "SOURCE_ONLY_CURRENT124_COMPILE_REPAIR",
+  "base": "3bf07f076e0c36b1d7fd124564cc7dfa567a12c7",
+  "source_head": "f86b3b3394703f9fc529f0d74f17dc586c632140",
+  "current_rows": 124,
+  "raw_modules": 76,
+  "Python_closed_channels": 94,
+  "helper_edits": [
+    {
+      "before": "assert_eq!(data.len(), 111187);",
+      "after": "assert_eq!(data.len(), 112949);"
+    },
+    {
+      "before": "assert_eq!(digest(data.as_bytes()), \"802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734\");",
+      "after": "assert_eq!(digest(data.as_bytes()), \"c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46\");"
+    },
+    {
+      "before": "assert_eq!(packet[\"rows\"].as_array().unwrap().len(), 123);",
+      "after": "assert_eq!(packet[\"rows\"].as_array().unwrap().len(), 124);"
+    },
+    {
+      "before": "    let _remote = packet_remote_d88();",
+      "after": "    {\n    let previous: serde_json::Value = serde_json::from_str(&read_view(&packet[\"whole_3bf_current123_before\"])).unwrap();\n    let mut restored=packet.clone();\n    let added=restored[\"rows\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(added[\"source\"], \"src/workspace_graph/tests.rs\");\n    let row=restored[\"rows\"].as_array_mut().unwrap().iter_mut().find(|r|r[\"source\"]==\"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\").unwrap();\n    let mut prior=row[\"views\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(prior[\"name\"], \"whole3bf-before-private-lookup-import\");\n    prior.as_object_mut().unwrap().remove(\"name\");row[\"current\"]=prior;\n    let anchor=restored[\"complete_old_table_anchors\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(anchor[\"sha256\"], packet[\"whole_3bf_current123_before\"][\"sha256\"]);\n    restored.as_object_mut().unwrap().remove(\"whole_3bf_current123_before\");\n    restored[\"current_stage\"]=previous[\"current_stage\"].clone();\n    assert_eq!(restored,previous,\"complete previous123 table retained without retargeting old inputs\");\n    }\n    let _remote = packet_remote_d88();"
+    },
+    {
+      "before": "        _ => None,\n    }\n}\nfn compiled(",
+      "after": "        \"docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt\" => Some(include_str!(\"../../docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt\")),\n        _ => None,\n    }\n}\nfn compiled("
+    },
+    {
+      "before": "        _ => None,\n    }\n}\nfn read_view(",
+      "after": "        \"src/workspace_graph/tests.rs\" => Some(include_str!(\"../../src/workspace_graph/tests.rs\")),\n        _ => None,\n    }\n}\nfn read_view("
+    }
+  ],
+  "whole_predecessor123": {
+    "length": 111187,
+    "sha256": "802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734",
+    "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt"
+  },
+  "old454_471_174_final6_packets_unchanged": true,
+  "no_binder_rerun": true,
+  "outputs": [
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json",
+      "before_sha256": "802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734",
+      "after_sha256": "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before_sha256": "85f66702fde4728090774c3fe042a8b2b76c0bda08051c821eb309dbfdfbcaba",
+      "after_sha256": "06026944189dfd21407f8a8f4270ea026dabe90955e1b934408c8502e3e1a412"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before_sha256": "1cde09a9bf8392130eca2cd5301108c0ab72d0c950f3623883006430713930ce",
+      "after_sha256": "60c8075bb6ca7d5d145982533def6356ebe7ef68a640ce3073ef7dd262f6dfef"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before_sha256": "f8b187d55a55e40da7f5c67eb6bac9d189e375e668f15c9e2b5247cdf6969924",
+      "after_sha256": "df3f5aa05ef8d2065e12f26611353dead3dbd74585bbcae643f83aaaacd907c4"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before_sha256": "f9d75cfc0f13bde7f508e663897d44363357fb742217114ab07d3b30e3e44548",
+      "after_sha256": "db1c325f3cbbf05fe4335491e6aaf93d95ebffdf128f3ed50dbd2cb85d09000f"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before_sha256": "9531a8180e104b43aa669a4f9cb715bfe59a71302ab8909e83269998a3f40da5",
+      "after_sha256": "38ab284a9db7b6a81f99e1705c7647757b790fac1f6a97c3690015ed401e51e8"
+    }
+  ],
+  "Cargo": false
+}

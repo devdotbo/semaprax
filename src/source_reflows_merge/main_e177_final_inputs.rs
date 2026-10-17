@@ -7,14 +7,14 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 111187);
-    assert_eq!(digest(data.as_bytes()), "802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734");
+    assert_eq!(data.len(), 112949);
+    assert_eq!(digest(data.as_bytes()), "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 123);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 124);
     {
     let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
     let before=read_view(&packet["immediate_before"]);
@@ -27,6 +27,21 @@ fn packet() -> serde_json::Value {
     previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
     restored.as_object_mut().unwrap().remove("immediate_before");
     assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
+    }
+    {
+    let previous: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
+    let mut restored=packet.clone();
+    let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(added["source"], "src/workspace_graph/tests.rs");
+    let row=restored["rows"].as_array_mut().unwrap().iter_mut().find(|r|r["source"]=="src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs").unwrap();
+    let mut prior=row["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(prior["name"], "whole3bf-before-private-lookup-import");
+    prior.as_object_mut().unwrap().remove("name");row["current"]=prior;
+    let anchor=restored["complete_old_table_anchors"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(anchor["sha256"], packet["whole_3bf_current123_before"]["sha256"]);
+    restored.as_object_mut().unwrap().remove("whole_3bf_current123_before");
+    restored["current_stage"]=previous["current_stage"].clone();
+    assert_eq!(restored,previous,"complete previous123 table retained without retargeting old inputs");
     }
     let _remote = packet_remote_d88();
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
@@ -132,6 +147,7 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         "docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt")),
         _ => None,
     }
 }
@@ -256,6 +272,7 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/workspace_graph/shape_identity/before_validation785.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/before_validation785.rs")),
         "src/workspace_graph/shape_identity/source_controls.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/source_controls.rs")),
         "src/workspace_graph/shape_identity/tests.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/tests.rs")),
+        "src/workspace_graph/tests.rs" => Some(include_str!("../../src/workspace_graph/tests.rs")),
         _ => None,
     }
 }
