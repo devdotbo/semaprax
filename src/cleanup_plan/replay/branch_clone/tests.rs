@@ -204,3 +204,159 @@ fn whole_original_enumerator_and_clone_push_helpers_remain_byte_exact() {
         assert_eq!(root.matches(&current).count(), 1);
     }
 }
+
+thread_local! { static TAKES: Cell<usize> = const { Cell::new(0) }; }
+pub(super) fn note_take() {
+    TAKES.with(|count| count.set(count.get() + 1));
+}
+
+#[test]
+fn final_prefix_transfer_keeps_full_checked_arithmetic_paths_and_work() {
+    let mut source = String::from("module final_prefix; @id(\"f\") fn f(x:i64)->i64 {");
+    for index in 0..48 {
+        let input = if index == 0 {
+            "x".to_owned()
+        } else {
+            format!("x{}", index - 1)
+        };
+        source.push_str(&format!("let x{index}={input}+1;"));
+    }
+    source.push_str("x47} @id(\"main\") fn main()->i64 {f(0)}");
+    let checked = crate::check(&source, "final-prefix.spx").unwrap();
+    let canonical = crate::format::canonical(&checked);
+    let checked = crate::check(&canonical, "final-prefix.spx").unwrap();
+    assert_eq!(crate::format::canonical(&checked), canonical);
+    let program = crate::hir::resolve(&checked).unwrap();
+    let before_takes = TAKES.with(Cell::get);
+    let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            for function in &program.functions {
+                let mut old = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let mut current = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let before = skeleton_materializations();
+                let expected =
+                    with_original(|| compact_stage::original_paths(function, &mut old)).unwrap();
+                let old_count = skeleton_materializations() - before;
+                let before = skeleton_materializations();
+                let actual = plan_skeleton_paths(function, &mut current).unwrap();
+                assert_eq!(skeleton_materializations() - before, old_count);
+                assert!(compact_stage::paths_match(&actual, &expected));
+                assert_eq!(current.remaining, old.remaining);
+                assert_eq!(current.skeleton_remaining, old.skeleton_remaining);
+                drop(actual);
+                drop(expected);
+                drop(current);
+                drop(old);
+            }
+        })
+    });
+    assert!(TAKES.with(Cell::get) > before_takes);
+    assert!(!refused && first.is_none());
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    assert!(allocation.allocated <= paid);
+}
+
+#[test]
+fn terminal_prefix_probe_rejects_growth_cycles_and_nonfinal_edges() {
+    let program = program();
+    let function = &program.functions[0];
+    let mut plan = function.cleanup_plan.clone();
+    let terminal = plan.blocks.iter().find(|block| {
+        matches!(block.terminator, CleanupTerminator::Exit(exit) if matches!(plan.exits[exit.0 as usize].continuation,
+            ExitContinuation::ReturnUnit | ExitContinuation::ReturnFailure { .. } | ExitContinuation::CommitResult { .. }))
+    }).unwrap().id;
+    let mut values = Vec::with_capacity(64);
+    for _ in 0..48 {
+        values.push(Rc::new(SkeletonObservation::Boolean {
+            expression: crate::hir::ExpressionId::from_owned("prefix.test".to_owned()),
+            value: true,
+        }));
+    }
+    let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            let probe =
+                |plan: &crate::cleanup_plan::CleanupPlan, target, remaining_edges, edge_count| {
+                    can_take(TakeCandidate {
+                        values: &values,
+                        remaining_edges,
+                        edge_count,
+                        budget: &budget,
+                        plan,
+                        target,
+                    })
+                };
+            assert!(probe(&plan, terminal, 0, 2));
+            assert!(!probe(&plan, terminal, 1, 2));
+            assert!(!probe(&plan, terminal, 0, 1));
+            assert!(!probe(&plan, BlockId(u32::MAX), 0, 2));
+            assert!(!with_original(|| probe(&plan, terminal, 0, 2)));
+            let index = terminal.0 as usize;
+            let original = plan.blocks[index].terminator.clone();
+            plan.blocks[index].terminator = CleanupTerminator::Branch(Vec::new());
+            assert!(!probe(&plan, terminal, 0, 2));
+            plan.blocks[index].terminator = CleanupTerminator::Goto(EdgeId(u32::MAX));
+            assert!(!probe(&plan, terminal, 0, 2));
+            plan.blocks[index].terminator =
+                CleanupTerminator::Exit(crate::cleanup_plan::ExitTargetId(u32::MAX));
+            assert!(!probe(&plan, terminal, 0, 2));
+            let old_target = plan.edges[0].to;
+            plan.edges[0].to = terminal;
+            plan.blocks[index].terminator = CleanupTerminator::Goto(EdgeId(0));
+            assert!(!probe(&plan, terminal, 0, 2));
+            plan.edges[0].to = old_target;
+            plan.blocks[index].terminator = original;
+            drop(budget);
+        })
+    });
+    assert!(!refused && first.is_none());
+    assert_eq!(paid, 0);
+    assert_eq!(allocation.allocated, 0);
+    assert!(!allocation.invalid && allocation.live == 0);
+}
+
+thread_local! { static GENERIC_TAKES: Cell<usize> = const { Cell::new(0) }; }
+pub(super) fn note_generic_take() {
+    GENERIC_TAKES.with(|count|count.set(count.get()+1));
+}
+
+#[test]
+fn joined_generic_three_edge_transfer_keeps_complete_paths_and_original_work() {
+    let mut source=String::from("module three_prefix; @id(\"f\") fn f(x:i64)->i64 {");
+    for index in 0..48 {
+        let value=if index==0 {"x".to_owned()}else{format!("x{}",index-1)};
+        source.push_str(&format!("let x{index}={value}+1;"));
+    }
+    source.push_str("x47} @id(\"main\") fn main()->i64 {f(0)}");
+    let checked=crate::check(&source,"three-prefix.spx").unwrap();
+    let mut program=crate::hir::resolve(&checked).unwrap();
+    let function=program.functions.iter_mut().find(|function|function.id.as_str()=="f").unwrap();
+    let block=function.cleanup_plan.blocks.iter().rposition(|block|
+        matches!(&block.terminator,CleanupTerminator::Branch(edges) if edges.len()==2)).unwrap();
+    let CleanupTerminator::Branch(edges)=&function.cleanup_plan.blocks[block].terminator else {unreachable!()};
+    let mut edge=function.cleanup_plan.edges[edges[edges.len()-1].0 as usize].clone();
+    let id=EdgeId(u32::try_from(function.cleanup_plan.edges.len()).unwrap());
+    edge.id=id;function.cleanup_plan.edges.push(edge);
+    let CleanupTerminator::Branch(edges)=&mut function.cleanup_plan.blocks[block].terminator else {unreachable!()};
+    edges.push(id);
+    let (((),allocation),refused,paid,first)=with_limit_usage_refusal(usize::MAX,||measure(||{
+        let mut old=ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+        let mut current=ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+        let before=skeleton_materializations();
+        let expected=with_original(||compact_stage::original_paths(function,&mut old)).unwrap();
+        let count=skeleton_materializations()-before;
+        let before=skeleton_materializations();
+        let takes=GENERIC_TAKES.with(Cell::get);
+        let actual=plan_skeleton_paths(function,&mut current).unwrap();
+        assert!(GENERIC_TAKES.with(Cell::get)>takes);
+        assert!(compact_stage::paths_match(&actual,&expected));
+        assert_eq!(skeleton_materializations()-before,count);
+        assert_eq!(current.remaining,old.remaining);
+        assert_eq!(current.skeleton_remaining,old.skeleton_remaining);
+        drop(actual);drop(expected);drop(current);drop(old);
+    }));
+    assert!(!refused && first.is_none());
+    assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
+    assert!(allocation.allocated<=paid);
+}
