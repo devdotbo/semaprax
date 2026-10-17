@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted 7d34f1269 captures, preserving every prior wire byte except the observed builder debit and self-digest, with all historical controls retained.
+
 - Stop executable signature and pattern checks after invalid storage declarations, keeping all declaration refusals, admitted text records, and existing native-import diagnostic priority.
 
 - Move complete factored target and label custody assertions into the test source-reader layer, keeping original entries, full assertion bodies, and historical inverses while preserving the HIR authority audit.
