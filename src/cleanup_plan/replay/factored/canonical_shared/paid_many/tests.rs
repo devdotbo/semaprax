@@ -461,17 +461,21 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
                             return Err(());
                         }
                     };
-                    let result = if old {
-                        before_paid_many::comparison::compare_with_index_storage(
-                            program,
-                            &function,
-                            &mut budget,
-                            None,
-                            None,
-                        )
-                    } else {
-                        compare_with_index_storage(program, &function, &mut budget, None, None)
-                    };
+                    // Both complete callers rebuild the same authenticated phase-site
+                    // inventory under their own measured physical/work budget. The
+                    // lease and its backing drop before inspecting the stopped budget.
+                    let result = (|| {
+                        let phase = crate::cleanup_plan::replay::selected_context::Context::new(
+                            program, &function, &mut budget,
+                        )?;
+                        if old {
+                            before_paid_many::comparison::compare_with_index_storage(
+                                &phase, &function, &mut budget, None, None,
+                            )
+                        } else {
+                            compare_with_index_storage(&phase, &function, &mut budget, None, None)
+                        }
+                    })();
                     let paid = budget.physical.as_ref().unwrap().charged();
                     assert!(
                         current_metrics().allocated <= paid,
