@@ -689,7 +689,7 @@ fn observe_matched(
                     )?;
                     let mut c = before_lexical_successors::Canonicalizer::new(a, sink);
                     b.reserve_array::<(usize, u64)>(f, 1, "884 root input")?;
-                    c.matched_884_id(f, vec![(root, weight)], &mut b)
+                    c.id(f, vec![(root, weight)], &mut b)
                 } else {
                     b.reserve_bytes(
                         f,
@@ -841,4 +841,18 @@ fn matched_884_keeps_the_whole_original_equation_and_observer_with_only_route_gl
     let frame = include_str!("frame_loop/before_borrowed_single.rs");
     let start = frame.find("    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(").unwrap();
     assert_eq!(frame[start..].trim_end().strip_suffix("\n}").unwrap(), expected);
+}
+
+#[test]
+fn whole_884_observer_keeps_the_old_type_id_and_only_routes_the_current_type_to_matched_frame() {
+    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lexical-successor-matched-884-20261018/before/src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"));
+    let start = before.find("fn observe(").unwrap();
+    let end = before[start..].find("\n#[test]").unwrap() + start;
+    let expected = before[start..end].replacen("fn observe(", "fn observe_matched(", 1);
+    let split = expected.find("                } else {").unwrap();
+    let expected = format!("{}{}", &expected[..split], expected[split..].replacen("c.id(f, vec![(root, weight)], &mut b)", "c.matched_884_id(f, vec![(root, weight)], &mut b)", 1));
+    let current = include_str!("tests.rs");
+    let start = current.find("fn observe_matched(").unwrap();
+    let end = current[start..].find("\n#[test]").unwrap() + start;
+    assert_eq!(&current[start..end], expected, "both complete original observer arms; old and current types remain independently compiled");
 }

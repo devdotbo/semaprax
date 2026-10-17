@@ -2,33 +2,48 @@
 
 SOURCE ONLY: no Cargo, build, tests or final custody generation.
 
-The unchanged original failing regression correctly exposes authority widening.
-STATIC-BORROWED-UTF8-LITERALS-V1 requires G410 without the private lexical source
-inventory. The old selector accepted the static schema when replay returned
-false for missing inventory, after checking only that v18 matched lexical syntax.
+STATIC-BORROWED-UTF8-LITERALS-V1 requires G410 without the private exact-source
+lexical inventory. The unchanged original regression exposes the old selector's
+acceptance of v77 when lexical replay returns false for missing inventory.
 
-The selector now requires successful lexical replay before a static module may
-carry any lexical function. The existing lexical requirement result is hoisted
-before helper skipping, preventing a helper-generation tag from hiding authored
-lexical obligations. The successful paid lexical route still bypasses the guard;
-nonlexical source-authenticated static modules keep their existing route. The
-existing fixed REPORT supplies all six refusal fields at the already explicit
-legacy owned-report boundary; no new source authority is inferred.
+The existing byte-helper census now rejects this missing authority before any
+potential=false or V19 shortcut. Its existing callback visits every function and
+instance requires/body/ensures root; the new callback only classifies LexicalExit,
+nonrecursively, during that same traversal. requires(scanfalse) selects exactly
+that expression kind; accepted census depth is stricter than requires' 513-frame
+bound, so no successful census can silently omit a selected lexical expression.
+Its algorithm, per-node work and formal ABI remain byte-exact original. No new
+requires scan, depth allowance or work reset is introduced.
 
-Each actual new member check reserves its real borrowed Option receiver pair,
-four predicate bool slots, and the new reservation's actual/formal usize plus
-full returned/received Result<(), Vec<Diagnostic>> pair. The original lexical
-result replaces its existing later bool place. No future iteration is prepaid,
-old role credited, limit raised, or allowance introduced. The per-check typed
-constant is STATIC_LEXICAL_GUARD_CONTROLS; the enclosing prebound remains intact.
+All static modules additionally execute the existing template census, including
+uninstantiated templates. The condition is now any-helper OR static inventory;
+its prior nonstatic helper case remains covered. Each actual template receives
+its own fresh payload payment before callback construction. Removing or forging
+cleanup lexical metadata/V19 cannot remove a LexicalExit from the immutable HIR
+walk. A static schema return always passes through select's first helper call;
+that call has no successful early return before these actual censuses/guards.
+The native-law route returns its separate existing native schema, not a static
+schema. Nonlexical static/generic modules and properly replayed lexical modules
+retain their original authority routes.
 
-Both original files are archived whole with exact inverses. The complete old
-selector is independently compiled in the existing test module with one name
-change and proves its prior accepted result. New tests retain authenticated
-lexical/nonlexical positives, complete fixed-report equality, missing inventory,
-forged helper cleanup generation, foreign namespace and altered HIR controls.
-All original assertions are unchanged. No new Rust files or inventory modules.
+The ORIGINAL first Walk reservation now also pays three complete new primitive
+payment frames and one terminal fixed-report control/backing bank. No new call
+funds itself. Each actual function/instance/template first acquires its fresh
+bool/callback/borrow/Option payload; a separate actual gate payment precedes the
+new template predicate. Nothing prepays future member compounds or assumes a
+fresh callback is retained. Typed constants enumerate exact roles; the callback
+capture ABI and fixed report literal have independent authored checks. The
+terminal report may occur only once, because the guard immediately returns.
+Cold setup now pays the new real primitive/report controls; positive members pay
+their actual classification payload. This is an admission correction, not a gain
+claim. Old fees, caps, allowances and refund behavior are unchanged.
 
-Pending selectors: existing lexical_byte_renewal_has_direct_proof_and_retained_composition_stays_closed;
-missing_lexical_authority::absent_private_lexical_inventory_cannot_inherit_static_or_helper_schema_authority;
-missing_lexical_authority::authenticated_lexical_and_nonlexical_static_positive_routes_keep_their_own_authority.
+The entire original source_schema.rs is restored byte-exact. The full old helper
+is independently compiled with its ORIGINAL Walk request, no-op callbacks and
+template condition. The whole old selector calls that old helper (name glue only)
+and proves the prior admitted result without inflating its baseline. Original
+static tests remain an exact whole prefix. New controls cover complete fixed
+report fields, authenticated lexical/nonlexical/generic positives, missing
+inventory, erased/forged cleanup metadata, foreign namespace/altered HIR, and an
+actual uninstantiated static lexical template. Whole before sources and exact
+inverses are retained. No new Rust files or raw inventory modules.

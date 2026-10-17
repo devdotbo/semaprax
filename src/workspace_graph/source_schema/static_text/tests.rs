@@ -332,7 +332,6 @@ fn retained_primitive_lexical_rejects_source_signature_schema_and_certificate_dr
 // It documents the genuine prior widening; it is never used for admission.
 mod missing_lexical_authority {
     use super::*;
-    use super::super::super::*;
 fn before_select<'a>(
     module: &'a WorkspaceResolvedModule,
     modules: &'a [WorkspaceResolvedModule],
@@ -341,7 +340,7 @@ fn before_select<'a>(
     static_schema: Option<&'static str>,
     lexical_static: bool,
 ) -> Result<&'static str, Vec<Diagnostic>> {
-    let helper_schema = byte_helper::schema_with_proofs(module, modules, facts, proofs)?;
+    let helper_schema = byte_helper::before_static_guard_schema_with_proofs(module, modules, facts, proofs)?;
     let mut string_slots = false;
     for function in module.functions.iter().chain(
         module
@@ -572,6 +571,7 @@ fn before_select<'a>(
         for function in writer_mut(&mut build).functions.iter_mut() {
             if hir::lexical_exit::requires(function).unwrap() {
                 function.cleanup_plan.schema = crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19;
+                function.cleanup_plan.lexical_control = None;
             }
         }
         assert!(build.source_graph_schemas().is_err());
@@ -594,5 +594,36 @@ fn before_select<'a>(
             }
             assert!(build.source_graph_schemas().unwrap_err().iter().any(|e| e.code == "SPX-G410"));
         }
+    }
+
+    #[test]
+    fn uninstantiated_static_lexical_template_cannot_skip_the_actual_census_guard() {
+        let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";let mut at=0;while at<2 {at=at+1;if at==1 {continue;};0};value} @id(\"app.main\") fn main()->i64 {0}";
+        let mut build = build(source);
+        assert!(!writer(&build).function_templates.is_empty());
+        assert!(writer(&build).function_instances.is_empty());
+        writer_mut(&mut build).static_text.as_mut().unwrap().lexical = None;
+        let module = writer(&build);
+        let facts = &build.hir.declarations;
+        let modules = &build.hir.modules;
+        let static_schema = schema(module, facts).unwrap();
+        assert_eq!(before_select(module, modules, facts, &mut byte_helper::Proofs::new(modules, facts), static_schema, false).unwrap(), "semaprax.graph.v77");
+        assert_eq!(build.source_graph_schemas().unwrap_err(), REPORT.legacy());
+    }
+
+    #[test]
+    fn whole_old_selector_and_original_regression_are_retained_with_exact_glue() {
+        let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-lexical-authority-guard-20261018/before/src/workspace_graph/source_schema.rs"));
+        let start = original.find("fn select<'a>(").unwrap();
+        let end = original[start..].find("\n// Hostile controls").unwrap() + start;
+        let expected = original[start..end].trim_end().replacen("fn select<", "fn before_select<", 1)
+            .replacen("byte_helper::schema_with_proofs(module, modules, facts, proofs)", "byte_helper::before_static_guard_schema_with_proofs(module, modules, facts, proofs)", 1);
+        let current = include_str!("tests.rs");
+        let start = current.find("fn before_select<'a>(").unwrap();
+        let end = current[start..].find("\n    #[test]").unwrap() + start;
+        assert_eq!(current[start..end].trim_end(), expected);
+        let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-lexical-authority-guard-20261018/before/src/workspace_graph/source_schema/static_text/tests.rs"));
+        assert!(current.starts_with(original_tests), "every original assertion and entire old test file remains byte-exact prefix");
+        assert_eq!(include_str!("../../source_schema.rs"), original, "select and its entire owning source are byte-exact original");
     }
 }
