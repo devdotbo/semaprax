@@ -205,7 +205,17 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
             // These are actual complete owners, never a universal gain assertion.
             eprintln!("OPT870 width={width} weight={weight} immediate-inline/composed={tuples:?}");
             if width <= 1 {
-                assert_eq!((tuples[0].1, tuples[0].2), (tuples[1].1, tuples[1].2));
+                // Count completed nonempty canonical states independently of
+                // either measured byte total. Each executed Exit removed one
+                // real forwarding reserve_vec Result; overflow publishes none.
+                let mut logical_budget = ReplayBudget::unobserved();
+                let mut logical = Canonicalizer::new(&graph, sink);
+                assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(), tuples[1].0);
+                let nonempty_exits = logical.states.iter().filter(|(_, id)| {
+                    logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
+                }).count();
+                assert_eq!(tuples[0].2, tuples[1].2);
+                assert_eq!(tuples[0].1, tuples[1].1 + nonempty_exits * size_of::<Result<(), Diagnostic>>());
                 assert_eq!(tuples[0].3.allocated, tuples[1].3.allocated);
             }
         }
