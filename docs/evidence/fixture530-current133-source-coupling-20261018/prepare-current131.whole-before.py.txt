@@ -1,0 +1,101 @@
+"""Finite complete current530 successor preparation only; no checkout writes or binders."""
+from pathlib import Path
+import argparse,ast,copy,hashlib,json,subprocess,re,os,stat
+P=argparse.ArgumentParser();P.add_argument('--repo',type=Path,required=True);P.add_argument('--expected-head',required=True);P.add_argument('--out',type=Path,required=True);a=P.parse_args();R=a.repo.resolve();HEAD=a.expected_head;O=a.out
+G=lambda *x:subprocess.check_output(['git',*x],cwd=R);H=lambda b:hashlib.sha256(b).hexdigest();E=lambda x:(json.dumps(x,indent=2)+'\n').encode();git=lambda p:G('show',HEAD+':'+p)
+assert R==Path('/Volumes/Semaprax/worktrees/fixture11-linked-context-530073-20261018') and re.fullmatch('[a-f0-9]{40}',HEAD)
+assert G('rev-parse','HEAD').decode().strip()==HEAD and not G('status','--porcelain').strip()and not O.exists()
+BASE='530073a528dcd226bb9260627da189a1fffcf8a8';S='docs/evidence/main-e177-final-source-binding-20261017/';M=S+'current-inputs.json';HELP='src/source_reflows_merge/main_e177_final_inputs.rs';GUARD=S+'guard_payload.py'
+old=git(M);v=json.loads(old);assert len(v['rows'])==124;oldrows={r['source']for r in v['rows']};qb=git(GUARD);cfg=ast.literal_eval(next(n.value for n in ast.parse(qb).body if isinstance(n,ast.Assign)and any(getattr(t,'id',None)=='CONFIG'for t in n.targets)));assert cfg['rows']==124 and len(cfg['modules'])==76
+NEW=set(G('diff','--name-only','--diff-filter=A',BASE,HEAD,'--','src','tests','crates').decode().splitlines());NEW={p for p in NEW if p.endswith('.rs')};prefix='src/cleanup_plan/replay/factored/canonical_shared/';assert NEW=={prefix+'matched_receiving_layers.rs',prefix+'matched_receiving_layers/memo.rs',prefix+'matched_receiving_layers/successor_targets.rs'}
+out={};before={}
+def save(p,b):before.setdefault(p,git(p));out[p]=b
+def current(p):return out[p]if p in out else git(p)
+def image(b):
+ p=S+'views/'+H(b)+'.txt'
+ if(R/p).exists():assert git(p)==b
+ else:out[p]=b
+ return dict(length=len(b),sha256=H(b),archive=p)
+# Same held original Expr parser and finite grammar transport as accepted predecessor.
+f=Path(__file__).with_name('ordered-inputs.py');fd=os.open(f,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+try:
+ st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size<=262144;b=os.read(fd,st.st_size+1);assert len(b)==st.st_size and H(b)=='68b017e36af9c66f241e811df2114bd26af5f82fcc74b1978f6a9d25c35b1029';identity=lambda x:(x.st_dev,x.st_ino,x.st_mode,x.st_size,x.st_mtime_ns,x.st_ctime_ns);assert identity(os.fstat(fd))==identity(st)==identity(os.lstat(f))
+finally:os.close(fd)
+ns={'__name__':'ordered_inputs'};exec(compile(b,str(f),'exec'),ns)
+table=cfg['table']['path'];oldtsv=git(table);oldlist=oldtsv.decode().splitlines();assert len(oldlist)==474
+rows,grammar=ns['ordered_inputs'](R,git('tests/workspace/semantic_graph/source_inventory.rs').decode(),HEAD);assert len(rows)==477 and len(set(rows))==477 and[p for p in rows if p not in NEW]==oldlist
+insertions=[dict(at=i,path=p)for i,p in enumerate(rows)if p in NEW];back=rows.copy()
+for x in reversed(insertions):assert back.pop(x['at'])==x['path']
+assert ('\n'.join(back)+'\n').encode()==oldtsv;save(table,('\n'.join(rows)+'\n').encode())
+for path,entry in cfg['carriers'].items():
+ b=git(path);prior=G('show',BASE+':'+path);literal=lambda x:re.findall(rb'include_str!\(\s*"([^"\n]+)"',x);it=iter(literal(b));assert all(any(s==q for s in it)for q in literal(prior));assert all(b.count(('include_str!("'+entry['base']+p+'")').encode())==1 for p in NEW);assert len(b.splitlines())<=1500
+# Four demonstrated missing stages; every incoming/current archive stays complete.
+req=json.loads(git('docs/evidence/source-required-closed-history-stages-20261018/required-stage-additions.json'))['rows'];route=json.loads(git('docs/evidence/source-required-closed-history-stages-20261018/required-route-stage.json'))
+required={r['source']:r for r in req};required[route['source']]=route;assert len(required)==4 and not(oldrows&required.keys())
+targets=oldrows|NEW|set(required);assert len(targets)==131 and HELP not in targets
+updates=[]
+for p in sorted(targets):
+ raw=current(p);match=[r for r in v['rows']if r['source']==p]
+ if match:
+  row=match[0];previous=copy.deepcopy(row['current']);prior=git(previous['archive']);assert(len(prior),H(prior))==(previous['length'],previous['sha256'])
+  if raw!=prior:
+   if not any(x['sha256']==previous['sha256']and x['length']==previous['length']for x in row['views']):row['views'].append(dict(name='whole530-before-fixture-repairs',**previous))
+   row['current']=image(raw);updates.append(p)
+ else:
+  row=dict(source=p,compiled=True,current=image(raw),views=[]);v['rows'].append(row)
+  if p in required:
+   item=required[p]
+   if p==route['source']:view=item['view'];prior=git(view['archive'])
+   else:
+    view=item['required_whole_prior'];prior=git(view['archive'])
+   assert(len(prior),H(prior))==(view['length'],view['sha256']);row['views'].append(dict(name='whole-required-closed-historical-stage',**image(prior)))
+whole=image(old);v['whole_current124_before_fixture_repairs']=whole;v['complete_old_table_anchors'].append(dict(path=whole['archive'],**whole));v['current_stage']=dict(kind='exact-committed-fixture-repair-source',git_head=HEAD,whole_previous124_sha256=H(old),all_immutable_tables_preserved=True)
+packet=E(v);assert len(packet)<=262144;save(M,packet)
+s=git(HELP).decode();edits=[]
+def edit(a,z):
+ global s
+ assert s.count(a)==1,(a,s.count(a));s=s.replace(a,z);edits.append(dict(before=a,after=z))
+edit('assert_eq!(data.len(), '+str(len(old))+');','assert_eq!(data.len(), '+str(len(packet))+');');edit('assert_eq!(digest(data.as_bytes()), "'+H(old)+'");','assert_eq!(digest(data.as_bytes()), "'+H(packet)+'");');edit('assert_eq!(packet["rows"].as_array().unwrap().len(), 124);','assert_eq!(packet["rows"].as_array().unwrap().len(), 131);')
+start=s.index('    {\n    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"]))');end=s.index('    for anchor in packet["complete_old_table_anchors"]',start);block=s[start:end];edit(block,'    {\n    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();\n'+block+'    }\n')
+marker='        _ => None,\n    }\n}\nfn compiled(';edit(marker,'        '+json.dumps(whole['archive'])+' => Some(include_str!("../../'+whole['archive']+'")),\n'+marker)
+marker='        _ => None,\n    }\n}\nfn read_view(';edit(marker,''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in sorted(targets-oldrows))+marker)
+# Entire unchanged old124 remains structured-equal after restoring only declared delta.
+check='''    {
+    let previous:serde_json::Value=serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let mut restored=packet.clone();
+    restored["rows"]=previous["rows"].clone();
+    restored["complete_old_table_anchors"]=previous["complete_old_table_anchors"].clone();
+    restored["current_stage"]=previous["current_stage"].clone();
+    restored.as_object_mut().unwrap().remove("whole_current124_before_fixture_repairs");
+    assert_eq!(restored,previous,"all original124 packet fields retained");
+    for oldrow in previous["rows"].as_array().unwrap() {
+        let row=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==oldrow["source"]).unwrap();
+        assert_eq!(row["compiled"],oldrow["compiled"]);
+        let oldviews=oldrow["views"].as_array().unwrap();
+        assert_eq!(&row["views"].as_array().unwrap()[..oldviews.len()],oldviews.as_slice());
+        assert!(row["current"]==oldrow["current"] || row["views"].as_array().unwrap().iter().any(|v|v["length"]==oldrow["current"]["length"]&&v["sha256"]==oldrow["current"]["sha256"]&&v["archive"]==oldrow["current"]["archive"]));
+    }
+    }
+'''
+edit('    }\n    for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {','    }\n'+check+'    for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {')
+back=s
+for e in reversed(edits):assert back.count(e['after'])==1;back=back.replace(e['after'],e['before'])
+assert back.encode()==git(HELP);save(HELP,s.encode())
+cfg['packet'].update(length=len(packet),sha256=H(packet));cfg['rows']=131
+for p in sorted(set(cfg['modules'])|NEW):cfg['modules'][p]=dict(path=p,length=len(current(p)),sha256=H(current(p)))
+for p in cfg['carriers']:cfg['carriers'][p].update(length=len(current(p)),sha256=H(current(p)))
+cfg['table'].update(length=len(current(table)),sha256=H(current(table)),rows=477);cfg['table']['insertions']+=insertions
+for p in sorted(targets-oldrows):
+ row=next(r for r in v['rows']if r['source']==p)
+ for x in [row['current']]+row['views']:b=current(x['archive']);assert len(b)==x['length']<=262144 and H(b)==x['sha256']
+ if p not in cfg['closed_prior_sources']:cfg['closed_prior_sources'].append(p)
+n=next(n for n in ast.parse(qb).body if isinstance(n,ast.Assign)and any(getattr(t,'id',None)=='CONFIG'for t in n.targets));lines=qb.decode().splitlines(True);oldcfg=''.join(lines[n.lineno-1:n.end_lineno]);ng=qb.decode().replace(oldcfg,'CONFIG='+repr(cfg)+'\n').encode();ast.parse(ng);save(GUARD,ng)
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ b=git(p);assert b.count(H(qb).encode())==1;b=b.replace(H(qb).encode(),H(ng).encode());prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';a0=(prefix+str(len(qb))).encode();assert b.count(a0)==1;b=b.replace(a0,(prefix+str(len(ng))).encode());ast.parse(b);save(p,b)
+assert G('rev-parse','HEAD').decode().strip()==HEAD and not G('status','--porcelain').strip();O.mkdir(parents=True);records=[]
+for p,b in sorted(out.items()):
+ q=O/'candidate'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+ if p in before:q=O/'whole-before'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(before[p])
+ records.append(dict(path=p,length=len(b),sha256=H(b),before_sha256=H(before[p])if p in before else None))
+(O/'report.json').write_bytes(E(dict(status='SOURCE_ONLY_PREPARED_UNAPPLIED',source_head=HEAD,current_rows=131,new_modules=sorted(NEW),raw_required_modules=len(cfg['modules']),ordered_rows=477,ordered_insertions=insertions,old124_whole_anchor=whole,changed_existing_current_rows=updates,closed_channels=len(cfg['closed_prior_sources']),helper_inverse=edits,grammar=grammar,files=records,small_cap_unchanged=262144,source_cap_unchanged=9753094,Cargo=False)))
+print(O/'report.json')

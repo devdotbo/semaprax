@@ -7,14 +7,16 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 112949);
-    assert_eq!(digest(data.as_bytes()), "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46");
+    assert_eq!(data.len(), 123158);
+    assert_eq!(digest(data.as_bytes()), "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 124);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 133);
+    {
+    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
     {
     let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
     let before=read_view(&packet["immediate_before"]);
@@ -44,6 +46,23 @@ fn packet() -> serde_json::Value {
     assert_eq!(restored,previous,"complete previous123 table retained without retargeting old inputs");
     }
     let _remote = packet_remote_d88();
+    }
+    {
+    let previous:serde_json::Value=serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let mut restored=packet.clone();
+    restored["rows"]=previous["rows"].clone();
+    restored["complete_old_table_anchors"]=previous["complete_old_table_anchors"].clone();
+    restored["current_stage"]=previous["current_stage"].clone();
+    restored.as_object_mut().unwrap().remove("whole_current124_before_fixture_repairs");
+    assert_eq!(restored,previous,"all original124 packet fields retained");
+    for oldrow in previous["rows"].as_array().unwrap() {
+        let row=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==oldrow["source"]).unwrap();
+        assert_eq!(row["compiled"],oldrow["compiled"]);
+        let oldviews=oldrow["views"].as_array().unwrap();
+        assert_eq!(&row["views"].as_array().unwrap()[..oldviews.len()],oldviews.as_slice());
+        assert!(row["current"]==oldrow["current"] || row["views"].as_array().unwrap().iter().any(|v|v["length"]==oldrow["current"]["length"]&&v["sha256"]==oldrow["current"]["sha256"]&&v["archive"]==oldrow["current"]["archive"]));
+    }
+    }
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -148,6 +167,7 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         "docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46.txt")),
         _ => None,
     }
 }
@@ -273,6 +293,15 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/workspace_graph/shape_identity/source_controls.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/source_controls.rs")),
         "src/workspace_graph/shape_identity/tests.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/tests.rs")),
         "src/workspace_graph/tests.rs" => Some(include_str!("../../src/workspace_graph/tests.rs")),
+        "src/bounded_output/stage_debits/route_debits.rs" => Some(include_str!("../../src/bounded_output/stage_debits/route_debits.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs")),
+        "src/cleanup_plan/replay/factored/compact_nodes/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/compact_nodes/tests.rs")),
+        "src/hir/ids/declaration_tag.rs" => Some(include_str!("../../src/hir/ids/declaration_tag.rs")),
+        "src/hir/ids/declaration_tag/before.rs" => Some(include_str!("../../src/hir/ids/declaration_tag/before.rs")),
         _ => None,
     }
 }
