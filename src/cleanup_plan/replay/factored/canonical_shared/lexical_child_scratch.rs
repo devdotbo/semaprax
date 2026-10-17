@@ -3,6 +3,8 @@
 mod before;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod matched;
 
 // Compile-time identifiers only: no runtime forwarding arguments or Result.
 // Keep the complete reserve_vec algorithm and all nested fallible receipts.

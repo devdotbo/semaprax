@@ -79,7 +79,7 @@ fn observe(function:&ResolvedFunction,graph:&Automaton,sink:usize,roots:&[usize]
             for root in roots {
                 budget.reserve_array::<(usize,u64)>(function,1,"arena corpus root")?;
                 let id=if old {owner.before_id(function,vec![(*root,1)],&mut budget)}
-                    else {owner.id(function,vec![(*root,1)],&mut budget)}?.unwrap();
+                    else {owner.matched_876_id(function,vec![(*root,1)],&mut budget)}?.unwrap();
                 checksum=checksum.wrapping_mul(31).wrapping_add(id as u64);
             }
             Ok::<_,Diagnostic>(Stats {paid:budget.physical.as_ref().unwrap().charged(),
@@ -147,3 +147,6 @@ fn lexical_child_scratch_preserves_complete_state_signature_and_every_original_w
         }
     }
 }
+
+#[path = "current_tests.rs"]
+mod current_tests;
