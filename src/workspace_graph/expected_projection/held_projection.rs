@@ -311,10 +311,11 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
         })
         .unwrap_or(usize::MAX);
     #[cfg(test)]
-    super::super::forecast_observation::record(
+    super::super::forecast_observation::record_components(
         &program.path,
         layout_mode,
         retention == cached_exact::Retention::Semantic,
+        include_imports,
         [
             raw.total,
             raw.string_bytes,
@@ -333,6 +334,8 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
             generic_instances.bytes,
             transient_import_clone,
             original_mode7_fixed_upper,
+            prelude_hir_upper,
+            hir_upper,
         ],
     );
     let result = SyntheticBuilderCosts {

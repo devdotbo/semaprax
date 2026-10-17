@@ -1,0 +1,36 @@
+Audience: compiler maintainers and independent reviewers.
+Status: test-only diagnostic observer addition; uncompiled and unexecuted.
+
+This is measurement maintenance, with no production formula, traversal, cap,
+authority, expected result or source admission change and no optimization claim.
+The same existing unit harness owns the original catalog test and observer API.
+
+The outer Report prepares the existing256-record ring before catalog fixtures
+and observed budgets. Its inner Capture surrounds solely the original builder
+expression and deactivates on return or unwind before the original failure-only
+rebuild. Report is declared before all fixtures, hence drops after their Result,
+graph, sources and census on normal return or original panic unwinding.
+Drop writes fallibly, ignores reporting IO errors, uses nonpanicking borrows,
+and performs no assertions or owner panic interception. Normal observe retains
+the stronger complete HIR/prelude and raw+HIR reconciliation assertions.
+
+Collection copies only scalars and fixed path buffers into preallocated storage.
+Rows distinguish actual include_imports full/retained mode6 terms, assign actual
+monotonic pass IDs and module indices, and record sorted steps only after both
+unchanged checked operations succeed. Winning attribution uses the first strict
+resolve-peak increase, or final retained sum only if strictly larger. Prefix-step
+winners are explicitly distinct from completed pass winners. Incomplete passes,
+lost prefix/oversized rows or invalid component reconciliation cannot emit a
+complete global peak/retained total or completed winning module attribution.
+
+Three new observer-only regression owners cover zero collection allocations,
+nonzero prelude reconciliation, mode6 labels and winner; lost/invalid records and
+closed reporting IO; and original unwind with inactive fixture Drop and failure
+rebuild exclusion. Existing catalog assertions, panic closure, Result, exact
+builder expression and64MiB cap remain unchanged. No optional function deltas.
+The original17-field API and independently compiled historical producer bodies
+remain intact, with their original reconciliation assertion. Added current
+fields are explicitly unknown on legacy rows, and legacy/mixed records cannot
+claim complete current attribution. The live producer uses a separate19-field
+component entry with full two-equation reconciliation.
+No Cargo/tests/builds/binders ran. Whole immediate before files are retained here.

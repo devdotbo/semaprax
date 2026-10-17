@@ -1,0 +1,58 @@
+{
+  "status": "SOURCE_ONLY_AUTHORED_UNEXECUTED",
+  "base": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "rows": [
+    {
+      "path": "src/workspace_graph/forecast_observation.rs",
+      "before": {
+        "length": 11529,
+        "sha256": "aaabade0d88b10174b8db748606b8edd539d4796b0b6772dc3d70c4b0787bd9d",
+        "archive": "docs/evidence/catalog-forecast-observer-20261017/0.whole-before.rs.txt"
+      },
+      "after": {
+        "length": 27754,
+        "sha256": "678c0ec588b54c52f841258850af1b4a11447cb7cbf031da2f3d62c437b341a2"
+      },
+      "inverse": "Require complete after SHA-256; restore entire independently archived before bytes."
+    },
+    {
+      "path": "src/workspace_graph/expected_projection/held_projection.rs",
+      "before": {
+        "length": 21539,
+        "sha256": "51c2e34bbc8906757ae0b781e3988b732177da0bba8c05b011c378792d54c356",
+        "archive": "docs/evidence/catalog-forecast-observer-20261017/1.whole-before.rs.txt"
+      },
+      "after": {
+        "length": 21629,
+        "sha256": "1530f578236abe624f92941698def06f8de44d9deba0003936fb60206afe74bd"
+      },
+      "inverse": "Require complete after SHA-256; restore entire independently archived before bytes."
+    },
+    {
+      "path": "src/workspace_graph/expected_projection/uncached_peak.rs",
+      "before": {
+        "length": 14181,
+        "sha256": "32427c03af500f5778ce103666cc43481069497993baba20646c0944165d8440",
+        "archive": "docs/evidence/catalog-forecast-observer-20261017/2.whole-before.rs.txt"
+      },
+      "after": {
+        "length": 14496,
+        "sha256": "66eb2a7990514bb67c66e4c44920d4b1f5985376aba9133564b4aea1eb7c4011"
+      },
+      "inverse": "Require complete after SHA-256; restore entire independently archived before bytes."
+    },
+    {
+      "path": "src/workspace_graph/tests/builder_limits.rs",
+      "before": {
+        "length": 37186,
+        "sha256": "940bf1ec02a53cf5628b5a8a5d2958709a81b76df1f94317bd8aff5692ee236e",
+        "archive": "docs/evidence/catalog-forecast-observer-20261017/3.whole-before.rs.txt"
+      },
+      "after": {
+        "length": 37365,
+        "sha256": "b44c51129fce8996732dffcb3c47ec31591a9fc5848b9e3e83ff9d0a588d9588"
+      },
+      "inverse": "Require complete after SHA-256; restore entire independently archived before bytes."
+    }
+  ]
+}

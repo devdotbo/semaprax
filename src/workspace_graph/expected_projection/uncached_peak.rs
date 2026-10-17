@@ -44,6 +44,8 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
     let mut retained_costs = [0usize; super::super::MAX_FILES];
     for (index, program) in programs.iter().enumerate() {
         order[index] = index;
+        #[cfg(test)]
+        observation.module(index);
         super::super::diagnostics::begin_precharge_module(&program.path);
         let maximum = Some(dependency_identity_max(program, authored, programs)?);
         full_costs[index] = synthetic_builder_bytes_scoped_with_registry(
@@ -66,6 +68,8 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
     let mut peak = 0usize;
     for (earlier, index) in order[..programs.len()].iter().enumerate() {
         let path = programs[*index].path.as_str();
+        #[cfg(test)]
+        let retained_before = retained;
         stage_sequential_refusal(path, earlier, retained, full_costs[*index], true);
         peak = peak.max(checked_usage(
             retained,
@@ -80,6 +84,12 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
             "builder_bytes",
             active_builder_limit(),
         )?;
+        #[cfg(test)]
+        observation.step(
+            path, *index, earlier,
+            (retained_before, full_costs[*index], retained_costs[*index]),
+            (peak, retained),
+        );
     }
     super::super::diagnostics::complete_sequential_precharge(peak.max(retained));
     #[cfg(test)]
