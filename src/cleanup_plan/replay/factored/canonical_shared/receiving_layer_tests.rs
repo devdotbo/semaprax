@@ -143,7 +143,7 @@ fn inline_targets_actual_old_current_reserved_allocated_peak_and_whole_drop_are_
         let (graph, sink, root) = graph(&function, width, 2);
         let mut tuples = Vec::new();
         for old in [true, false] {
-            let (paid, physical) = observe(&function, &graph, sink, root, 1 << 24, old);
+            let (paid, physical) = observe_matched_831(&function, &graph, sink, root, 1 << 24, old);
             let paid = paid.unwrap();
             assert!(!physical.invalid && physical.live == 0);
             assert_eq!(physical.allocated, physical.freed);
@@ -522,5 +522,79 @@ fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_ex
             "complete independently counted actual admission/retained-place equation, never measured subtraction");
         assert!(reports[1].0.0 < reports[0].0.0, "all three actual complete corpora remove unused singleton admissions");
         eprintln!("arity-dispatch shape={shape} complete886/current={reports:?} activations={activations} exits={exits}");
+    }
+}
+
+// The matched historical claim above is independent of this complete live receiver.
+fn observe_matched_831(
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    root: usize,
+    limit: usize,
+    old: bool,
+) -> (Result<usize, ()>, Metrics) {
+    measure(|| {
+        let mut budget = match ReplayBudget::with_physical(function, limit) {
+            Ok(budget) => budget,
+            Err(error) => {
+                assert_eq!(error.code, "SPX-H006");
+                drop(error);
+                return Err(());
+            }
+        };
+        let result = (|| {
+            budget.reserve_array::<(usize, u64)>(function, 1, "inline target root")?;
+            let id = if old {
+                let mut receiver = super::matched_receiving_layers::BeforeCanonicalizer::new(graph, sink);
+                receiver.id(function, vec![(root, 1)], &mut budget)?
+            } else {
+                let mut receiver = super::matched_receiving_layers::Canonicalizer::new(graph, sink);
+                receiver.id(function, vec![(root, 1)], &mut budget)?
+            };
+            assert!(id.is_some());
+            Ok::<_, Diagnostic>(budget.physical.as_ref().unwrap().charged())
+        })();
+        assert!(
+            current_metrics().allocated <= budget.physical.as_ref().unwrap().charged(),
+            "whole actual constructor backing remains funded, including refused frontiers"
+        );
+        let stopped = current_metrics().allocated;
+        let result = result.map_err(|error| {
+            assert_eq!(error.code, "SPX-H006");
+            drop(error);
+        });
+        drop(budget);
+        assert_eq!(
+            current_metrics().allocated,
+            stopped,
+            "post-result publication and final Drop acquire no backing"
+        );
+        result
+    })
+}
+
+#[test]
+fn matched_831_and_live_receiver_report_full_tuples_without_relabeling_the_generation_gap() {
+    let function = fixture();
+    for width in 0..=4 {
+        let (graph, sink, root) = graph(&function, width, 2);
+        let mut reports = Vec::new();
+        for generation in 0..3 {
+            let (result, heap) = if generation < 2 {
+                observe_matched_831(&function, &graph, sink, root, 1 << 24, generation == 0)
+            } else {
+                observe(&function, &graph, sink, root, 1 << 24, false)
+            };
+            let paid = result.unwrap();
+            assert!(!heap.invalid && heap.live == 0);
+            assert_eq!(heap.allocated, heap.freed);
+            assert!(heap.allocated <= paid && heap.highwater <= paid);
+            reports.push((paid, heap));
+        }
+        // No whole historical-to-current inequality is asserted: later generations
+        // acquire different real owners. The independent actual-before886/current
+        // admission equation remains in arity_dispatch_complete_886_corpus below.
+        eprintln!("matched831/live width={width} old831/after831/current={reports:?}");
     }
 }
