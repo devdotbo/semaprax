@@ -1160,3 +1160,4 @@ Audience: all documentation readers.
 - [Ordinary replay route correction](evidence/ordinary-replay-routes-v1/README.md)
 - [Borrowed exit region comparison](evidence/borrowed-exit-region-match-v1/README.md)
 - [Hosted graph accounting after replay route fixes](evidence/browser-graph-pins-7d34f1269/README.md)
+- [Hosted graph accounting after borrowed exit comparison](evidence/browser-graph-pins-21abcda9b/README.md)

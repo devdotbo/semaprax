@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser graph pins from complete hosted 21abcda9b captures after the 4,707-byte cumulative builder-debit reduction, retaining every prior wire and source control.
+
 - Compare paid non-latch exit region prefixes through fully funded borrowed ancestry state, retaining complete chain validation, original owning paths, limits and whole-source controls.
 
 - Refresh browser graph pins from complete hosted 7d34f1269 captures, preserving every prior wire byte except the observed builder debit and self-digest, with all historical controls retained.
