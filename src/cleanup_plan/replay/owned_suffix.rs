@@ -3,6 +3,8 @@ use super::*;
 mod sequence_vector;
 #[cfg(test)]
 mod tests;
+#[cfg(test)]
+mod before;
 
 struct Frame {
     // Field order is intentional on every preparation refusal.
@@ -27,7 +29,18 @@ pub(super) const QUERY: usize = std::mem::size_of::<Result<(), Diagnostic>>()
     + 2 * std::mem::size_of::<usize>()
     + 4 * std::mem::size_of::<bool>();
 
-pub(super) const CONTROLS: usize = std::mem::size_of::<Frame>()
+// Per original suffix: actual/formal clone helper arguments and returned,
+// received, then stored observation carriers. Acquired before moving inputs.
+pub(super) const ROW_CLONE_CONTROLS: usize =
+    2 * std::mem::size_of::<(&mut SkeletonWork<'static, 'static>, &Observations, &str)>()
+    + 2 * std::mem::size_of::<Result<Observations, Diagnostic>>()
+    + std::mem::size_of::<Observations>();
+
+pub(super) const CONTROLS: usize = 2 * std::mem::size_of::<Vec<Observations>>()
+    + 2 * std::mem::size_of::<std::vec::IntoIter<Observations>>()
+    + 2 * std::mem::size_of::<std::iter::Enumerate<std::vec::IntoIter<Observations>>>>()
+    + 2 * std::mem::size_of::<std::slice::Iter<'static, ExprSkeletonPath>>()
+    + std::mem::size_of::<Frame>()
     + 4 * std::mem::size_of::<Vec<ExprSkeletonPath>>()
     + 2 * std::mem::size_of::<Result<Vec<ExprSkeletonPath>, Diagnostic>>()
     + 2 * std::mem::size_of::<Result<Vec<(usize, Observations)>, Diagnostic>>()
@@ -69,7 +82,10 @@ macro_rules! dispatch {
         if $work.budget.merge_paths && $suffixes.len() > 1 {
             match $work.budget.reserve_bytes(
                 $work.function,
-                $crate::cleanup_plan::replay::owned_suffix::CONTROLS,
+                $crate::cleanup_plan::replay::owned_suffix::CONTROLS.saturating_add(
+                    $crate::cleanup_plan::replay::owned_suffix::ROW_CLONE_CONTROLS
+                        .saturating_mul($suffixes.len()),
+                ),
                 "owned suffix retention receiving controls",
             ) {
                 Ok(()) => {}
@@ -123,6 +139,18 @@ fn rows(
     originals: &[ExprSkeletonPath],
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<(usize, Observations)>, Diagnostic> {
+    // Match the old suffix preparation phase: every independent observation
+    // clone is attempted before the path-state merge work debit. Metadata and
+    // the full ExprSkeletonPath copy array are absent, not charged as credit.
+    work.budget.reserve_array::<Observations>(
+        work.function,
+        originals.len(),
+        "factored suffix path copies",
+    )?;
+    let mut copies = Vec::with_capacity(originals.len());
+    for path in originals {
+        copies.push(work.clone_payload(&path.observations, "factored suffix path backing")?);
+    }
     work.charge(originals.len(), "factored path-state merge")?;
     work.budget.reserve_bytes(
         work.function,
@@ -132,11 +160,8 @@ fn rows(
     )?;
     let mut order = Vec::<usize>::new();
     let mut groups = Vec::<(usize, Vec<Observations>)>::new();
-    for (index, path) in originals.iter().enumerate() {
-        // Only the independently owned union observation backing is copied.
-        // Original metadata and original observations remain in the caller frame.
-        let observations =
-            work.clone_payload(&path.observations, "factored suffix path backing")?;
+    for (index, observations) in copies.into_iter().enumerate() {
+        let path = &originals[index];
         if !work.lexical_merge_normal(path) {
             work.budget
                 .reserve_vec(work.function, &mut groups, 1, "isolated lexical path")?;
@@ -150,7 +175,7 @@ fn rows(
         }
         work.budget.reserve_bytes(
             work.function,
-            skeleton_work::merge_keys::SEARCH_CONTROLS,
+            skeleton_work::merge_keys::search_controls(order.len()),
             "factored borrowed merge lookup",
         )?;
         match order.binary_search_by(|group| {

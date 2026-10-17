@@ -1,28 +1,54 @@
 //! Content-ordered merge lookup with no cloned ownership or continuation keys.
 use super::*;
 
-// Search carries a borrowed candidate/group, the borrowed closure captures,
-// a slice search range, its result, and the returned directory position. No
-// borrowed key or group address survives a lookup or a vector mutation.
-pub(in crate::cleanup_plan::replay) const SEARCH_CONTROLS: usize = std::mem::size_of::<(
-    &ExprSkeletonPath,
-    &ExprSkeletonPath,
-    &Vec<usize>,
-    &Vec<(u32, CleanupPlace)>,
-    &ExprSkeletonPath,
-    usize,
-    usize,
-    Result<usize, usize>,
-    usize,
-    std::cmp::Ordering,
-)>();
+// Each search pays its actual call/callback transports, then a bounded number
+// of complete borrowed comparisons. No eliminated key clone funds these roles.
+const COMPARE_CONTROLS: usize = 4 * std::mem::size_of::<&ExprSkeletonPath>()
+    + 4 * std::mem::size_of::<&Option<CleanupPlace>>()
+    + 8 * std::mem::size_of::<&bool>()
+    + 4 * std::mem::size_of::<&lexical_skeleton::Continuation>()
+    + 10 * std::mem::size_of::<std::cmp::Ordering>()
+    + 2 * std::mem::size_of::<&usize>();
+
+pub(in crate::cleanup_plan::replay) fn search_controls(len: usize) -> usize {
+    // binary_search_by halves the remaining interval and performs a final
+    // comparison. bit length + one bounds every callback, including N=0/1.
+    let callbacks = (usize::BITS - len.leading_zeros()) as usize + 1;
+    4 * std::mem::size_of::<usize>()
+        + 2 * std::mem::size_of::<u32>()
+        + 2 * std::mem::size_of::<&[usize]>()
+        + 2 * std::mem::size_of::<&Vec<usize>>()
+        + 4 * std::mem::size_of::<&ExprSkeletonPath>()
+        + 2 * std::mem::size_of::<&Vec<(u32, CleanupPlace)>>()
+        + 2 * std::mem::size_of::<&Vec<(ExprSkeletonPath, Vec<Observations>)>>()
+        + 2 * std::mem::size_of::<&Vec<(CallSkeletonState, Vec<Observations>)>>()
+        + 2 * std::mem::size_of::<&Vec<(usize, Vec<Observations>)>>()
+        + 2 * std::mem::size_of::<&[ExprSkeletonPath]>()
+        + 2 * std::mem::size_of::<Result<usize, usize>>()
+        + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+        + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>()
+        + callbacks * (COMPARE_CONTROLS
+            + 4 * std::mem::size_of::<&Vec<(u32, CleanupPlace)>>()
+            + 2 * std::mem::size_of::<std::cmp::Ordering>())
+}
+
+pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize =
+    std::mem::size_of::<Vec<usize>>()
+    + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>();
 
 pub(in crate::cleanup_plan::replay) fn compare_paths(left: &ExprSkeletonPath, right: &ExprSkeletonPath) -> std::cmp::Ordering {
-    left.owned_source
-        .cmp(&right.owned_source)
-        .then_with(|| left.failed.cmp(&right.failed))
-        .then_with(|| left.residual.cmp(&right.residual))
-        .then_with(|| left.continuation.cmp(&right.continuation))
+    use std::cmp::Ordering::Equal;
+    match left.owned_source.cmp(&right.owned_source) {
+        Equal => match left.failed.cmp(&right.failed) {
+            Equal => match left.residual.cmp(&right.residual) {
+                Equal => left.continuation.cmp(&right.continuation),
+                other => other,
+            },
+            other => other,
+        },
+        other => other,
+    }
 }
 
 impl SkeletonWork<'_, '_> {
@@ -43,7 +69,7 @@ impl SkeletonWork<'_, '_> {
         // Its header is new storage and is acquired before construction.
         self.budget.reserve_bytes(
             self.function,
-            std::mem::size_of::<Vec<usize>>(),
+            DIRECTORY_CONTROLS,
             "factored borrowed merge directory",
         )?;
         let mut order = Vec::<usize>::new();
@@ -59,7 +85,7 @@ impl SkeletonWork<'_, '_> {
             // Original materialization work was charged before any new scratch.
             self.budget.reserve_bytes(
                 self.function,
-                SEARCH_CONTROLS,
+                search_controls(order.len()),
                 "factored borrowed merge lookup",
             )?;
             match order.binary_search_by(|index| compare_paths(&groups[*index].0, &path)) {
@@ -152,7 +178,7 @@ impl SkeletonWork<'_, '_> {
         // Its header is new storage and is acquired before construction.
         self.budget.reserve_bytes(
             self.function,
-            std::mem::size_of::<Vec<usize>>(),
+            DIRECTORY_CONTROLS,
             "factored borrowed merge directory",
         )?;
         let mut order = Vec::<usize>::new();
@@ -174,12 +200,14 @@ impl SkeletonWork<'_, '_> {
             // Original materialization work was charged before any new scratch.
             self.budget.reserve_bytes(
                 self.function,
-                SEARCH_CONTROLS,
+                search_controls(order.len()),
                 "factored borrowed merge lookup",
             )?;
             match order.binary_search_by(|index| {
-                compare_paths(&groups[*index].0 .0, &path)
-                    .then_with(|| groups[*index].0 .1.cmp(&commits))
+                match compare_paths(&groups[*index].0 .0, &path) {
+                    std::cmp::Ordering::Equal => groups[*index].0 .1.cmp(&commits),
+                    other => other,
+                }
             }) {
                 Ok(position) => {
                     let index = order[position];

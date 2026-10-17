@@ -41,7 +41,7 @@ fn before(
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     // Original owned caller keeps the whole suffix outside the unchanged
     // borrowed core. Prefixes move into that core and die before this owner.
-    super::super::sequence_skeleton_paths(prefixes, &suffixes, work)
+    super::before::sequence_skeleton_paths(prefixes, &suffixes, work)
 }
 
 fn current(
@@ -222,5 +222,44 @@ fn owned_suffix_reports_cumulative_backing_through_result_destruction() {
             "OPT878 owned suffix old={old}: held={held} allocated={} highwater={}",
             metrics.allocated, metrics.highwater
         );
+    }
+}
+
+#[test]
+fn owned_suffix_copy_refusal_precedes_exhausted_merge_work_in_both_whole_routes() {
+    let program = fixture();
+    let function = program.functions().get(0).unwrap();
+    for exhaust_bytes in [true, false] {
+        let mut errors = Vec::new();
+        for old in [true, false] {
+            let limit = 1 << 24;
+            let mut budget = ReplayBudget::with_physical(function, limit).unwrap();
+            budget.merge_paths = true;
+            budget.skeleton_remaining = 0;
+            if !old {
+                // Actual new row/control carriers are acquired under the valid
+                // owner before the deliberately exhausted physical frontier.
+                budget.reserve_bytes(function, CONTROLS + 7 * ROW_CLONE_CONTROLS, "mixed refusal row controls").unwrap();
+            }
+            if exhaust_bytes {
+                let charged = budget.physical.as_ref().unwrap().charged();
+                budget.physical.as_deref_mut().unwrap().reserve(limit - charged).unwrap();
+            }
+            let mut work = SkeletonWork::new(&program, function, &mut budget);
+            let suffixes = inputs(function, 7);
+            let error = if old {
+                work.before_merged_suffixes(&suffixes).unwrap_err()
+            } else {
+                rows(&suffixes, &mut work).unwrap_err()
+            };
+            assert_eq!(work.budget.skeleton_remaining, 0);
+            if exhaust_bytes {
+                assert!(error.message.contains("physical reservation exhausted during factored suffix path copies"));
+            } else {
+                assert!(error.message.contains("work budget exhausted during factored path-state merge"));
+            }
+            errors.push(error);
+        }
+        assert_eq!(errors[0], errors[1], "all six first-failure diagnostic fields");
     }
 }

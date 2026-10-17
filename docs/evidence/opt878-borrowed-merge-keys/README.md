@@ -93,3 +93,29 @@ No assertions or counters in those owners were changed here, and the new key
 and suffix paths add no logical work units. All application and regression
 qualification, independent fee/ownership review, and finite source binding
 integration remain pending. #878 is not claimed closed.
+
+The independent review followup retains a standalone whole base36 sequence in
+`owned_suffix/before.rs`. Its only transformations are function visibility,
+explicit before-merge method names, and the explicit original sequence-macro
+namespace. The owned test baseline calls this body, rather than the unchanged
+production wrapper whose merge methods now select borrowed keys.
+
+Owned suffix preparation first reserves its actual observation copy array and
+clones every observation payload in original order, then attempts the original
+merge-work debit. The cloned observation buffer is consumed in original order;
+original suffix owners remain in the outer retention frame. A new mixed-refusal
+owner checks all six diagnostic fields against the old suffix route when both
+byte and merge-work budgets are exhausted, and when only merge work is exhausted.
+New per-input clone argument/result carriers are paid at the dispatch boundary.
+The actual absent metadata copies are never charged as historical credit.
+
+Borrowed comparison now uses explicit ordered matches, preserving the old tuple
+field order without comparison-chain closures. The search price accounts for
+actual/formal path references, field comparison receivers, results, directory
+and closure captures, and the Vec-to-slice search boundary. Its per-comparison
+price is multiplied by bit-length plus one, a conservative bound on halving
+search callbacks. Directory creation separately pays its new header and payment
+argument/result transport. All these new prices can increase reservations;
+independent census review and real strict application measurements remain pending.
+The additional before module must join the same source-audit scopes as every
+other new physical module. No source audit refresh has run in this lane.
