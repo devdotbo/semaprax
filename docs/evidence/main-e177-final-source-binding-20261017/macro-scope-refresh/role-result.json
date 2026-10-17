@@ -1,0 +1,108 @@
+{
+  "status": "SOURCE_ONLY_TWO_EXISTING_TEST_SOURCES_ROLE241_REFRESH",
+  "source_head": "82d8ddd53ff236b075ef1abb27fc6c1346878042",
+  "whole_before_head": "22af828ba7ed0217f5f9ed2e3cdd487ca1758f79",
+  "owners": 241,
+  "changed_sources": [
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "new_modules": [],
+  "reclassified": [],
+  "all_classes_edges_chunks_unchanged": true,
+  "original_parser_sha256": "87a903ce0f9927d3d90063fdd686b50b5302e2ac10cfea324918f7c030b28599",
+  "original_generator_sha256": "0c4b31857cdb8a4f645d61c6f0d2453c33c6adddb8c6f26d9c37b56620841590",
+  "original_boundary_tools_sha256": "718beb6f09628fa0798fb267ba1b2978527d46ae64f8aa3acb85b6e48de499d3",
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "global_generic_purity_not_claimed": true,
+  "historical_authority_proof_preserved": true,
+  "whole_inverses": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2131842,
+        "sha256": "b73d07e464777be9ec0b975bad945c0542ea2e46e96810fa2f128d4b75f41319",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      },
+      "after": {
+        "length": 2131842,
+        "sha256": "456086f95b5f6f2b0d093c642c6a7dcb0b526796e8e024bdd9a85af47c92a93a"
+      },
+      "inverse": "restore complete before image"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2423839,
+        "sha256": "a09eee994dd21ab7f14ae31750ee066035e11600553c65f007cddd6b19e5bd36",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      },
+      "after": {
+        "length": 2423839,
+        "sha256": "6f2f7bc72b518a8cb827a459b802b57c5529aaa147994003cbba5ab1fcba42d5"
+      },
+      "inverse": "restore complete before image"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 44526,
+        "sha256": "cd34e7d89c2e04d6dc2c5088a8003f00a9dc3866807f01930fd0ef9c6726581e",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      },
+      "after": {
+        "length": 44526,
+        "sha256": "fc24b5b6ed99830d46f48525332ae8acebfbfaba4d22557262b8ada7f2b4b7b8"
+      },
+      "inverse": "restore complete before image"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 238684,
+        "sha256": "69cbb4c6ced3be2c01a23760cfd5b5c2eecfe6f07dd17c79431794aea9547771",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+      },
+      "after": {
+        "length": 238684,
+        "sha256": "de2d96698c1a577d77050b6759e60e5bf519c8569001281e5d7953cf49090733"
+      },
+      "inverse": "restore complete before image"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 2761,
+        "sha256": "d90fb813e1f62ec02b0242c9ff765dbc70c8ae5d78e415a2595ac716f69f900f",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2767,
+        "sha256": "e21bc4ae1b4b5426ef1285b5f36999f6fcd5849bfb0d835865be7ae77251f248"
+      },
+      "inverse": "restore complete before image"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/authority-source-proof.json",
+      "before": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/macro-scope-refresh/role-whole-before/docs__evidence__a3-e47-final-custody-20261016__authority-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c"
+      },
+      "inverse": "restore complete before image"
+    }
+  ],
+  "written": true,
+  "Cargo": false
+}

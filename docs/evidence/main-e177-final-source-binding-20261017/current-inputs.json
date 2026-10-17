@@ -57,6 +57,18 @@
       "length": 80681,
       "sha256": "de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7",
       "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7.txt"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd.txt",
+      "length": 81430,
+      "sha256": "3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd",
+      "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd.txt"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6.txt",
+      "length": 82192,
+      "sha256": "a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6",
+      "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6.txt"
     }
   ],
   "rows": [
@@ -1487,11 +1499,18 @@
       "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
       "compiled": true,
       "current": {
-        "length": 15553,
-        "sha256": "3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8.txt"
+        "length": 18228,
+        "sha256": "390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250.txt"
       },
-      "views": []
+      "views": [
+        {
+          "name": "whole-pre-macro-scope-current",
+          "length": 15553,
+          "sha256": "3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8.txt"
+        }
+      ]
     },
     {
       "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
@@ -1517,11 +1536,18 @@
       "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
       "compiled": true,
       "current": {
-        "length": 26134,
-        "sha256": "047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99.txt"
+        "length": 26190,
+        "sha256": "e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45.txt"
       },
-      "views": []
+      "views": [
+        {
+          "name": "whole-pre-ff303-import-current",
+          "length": 26134,
+          "sha256": "047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99.txt"
+        }
+      ]
     },
     {
       "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",

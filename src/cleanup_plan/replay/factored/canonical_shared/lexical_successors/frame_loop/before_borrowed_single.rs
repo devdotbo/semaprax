@@ -1,6 +1,69 @@
 //! The actual retained canonical frame-loop method, not a forwarding adapter.
 use super::super::super::*;
 
+// Preserve both complete immediate-predecessor macros in this independently
+// compiled historical control; lexical macro scope does not cross registration.
+macro_rules! activate_closure {
+    ($this:ident, $function:ident, $budget:ident, $error:ident, $failure:block) => {{
+        if let Err($error) =
+            $budget.reserve_bytes($function, 0, "factored closure memo authentication")
+        {
+            $this.closures.failed = true;
+            $failure
+        }
+        if $budget.pays_allocations() {
+            if let Err($error) = $budget.reserve_bytes(
+                $function,
+                std::mem::size_of::<empty_memo::Memo<Rc<ordered_weights::OrderedWeights>>>()
+                    + std::mem::size_of::<Option<empty_memo::Binding>>(),
+                "factored closure memo controls",
+            ) {
+                $this.closures.failed = true;
+                $failure
+            }
+        }
+        let binding = Some(empty_memo::Binding {
+            function: std::ptr::from_ref($function),
+            budget: std::ptr::from_ref($budget),
+            ledger: crate::bounded_output::classifier_string::ClassifierLedger::capture(),
+        });
+        $this.closures.binding = binding;
+    }};
+}
+
+// Lexical unit publication deliberately introduces no forwarding borrowed
+// receiver: preflight replaces the old RetainedMemo auth method boundary, and
+// the old zero-auth call borrows the already-live invocation refusal field here.
+macro_rules! authenticate_closure {
+    ($this:ident, $function:ident, $budget:ident, $receiving:ident) => {{
+        // The returned branch predicate replaces the former controls_paid /
+        // binding branch; no second Option<Binding> borrow or named local exists.
+        if $this.closures.preflight_owned($function, $budget) {
+            if $this.closures.failed() {
+                $receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
+            } else {
+                $budget.authenticate_zero_into(
+                    $function,
+                    "factored closure memo authentication",
+                    &mut $receiving.refusal,
+                );
+                if $receiving.refusal.is_some() {
+                    $this.closures.failed = true;
+                }
+            }
+        } else if $this.closures.failed() {
+            $receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
+        } else {
+            'activation: {
+                activate_closure!($this, $function, $budget, error, {
+                    $receiving.refusal = Some(error);
+                    break 'activation;
+                });
+            }
+        }
+    }};
+}
+
 impl Canonicalizer<'_> {
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn before_borrowed_single_id_inner_into(
         &mut self,

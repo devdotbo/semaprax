@@ -1,0 +1,46 @@
+{
+  "before_sha256": "f6449f89fc9d7f4727a9afcc795c695e29028b6711b6ded224be1fb963971678",
+  "after_sha256": "70a0af3b30139505307a2bdf0d005ec520d995e8b3accaaffcc478c56e81f4a9",
+  "edits": [
+    {
+      "before": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+      "after": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+      "count": 5
+    },
+    {
+      "before": "One exact ff303 test import acquisition step",
+      "after": "One exact historical macro-scope acquisition step",
+      "count": 1
+    },
+    {
+      "before": "assert len(old)==81430 and H(old)=='3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd'",
+      "after": "assert len(old)==82192 and H(old)=='a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6'",
+      "count": 1
+    },
+    {
+      "before": "prior['length']==26134",
+      "after": "prior['length']==15553",
+      "count": 1
+    },
+    {
+      "before": "assert len(current)==26190 and H(current)=='e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45'",
+      "after": "assert len(current)==18228 and H(current)=='390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250'",
+      "count": 1
+    },
+    {
+      "before": "import_line=b'use crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS;\\n';assert current.count(import_line)==1 and current.replace(import_line,b'',1)==prior_source",
+      "after": "fix=json.loads(held('docs/evidence/borrowed-single-macro-scope-fix-20261017/inverse.json'));insert=fix['insertion'].encode();assert current.count(insert)==1 and current.replace(insert,b'',1)==prior_source;assert H(prior_source)==fix['before_sha256']and H(current)==fix['after_sha256']",
+      "count": 1
+    },
+    {
+      "before": "name='whole-pre-ff303-import-current'",
+      "after": "name='whole-pre-macro-scope-current'",
+      "count": 1
+    },
+    {
+      "before": "b'assert_eq!(data.len(), 81430);'",
+      "after": "b'assert_eq!(data.len(), 82192);'",
+      "count": 1
+    }
+  ]
+}
