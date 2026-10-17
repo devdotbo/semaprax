@@ -1,0 +1,969 @@
+{
+  "status": "DECLARED_FOR_ONCE_ONLY_FINAL_COMBINED_COUPLING_NOT_APPLIED",
+  "requests": [
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+      "view": {
+        "name": "ROOT42-current",
+        "length": 9293,
+        "sha256": "59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc",
+        "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json",
+        "length": 34641,
+        "sha256": "27ec261cbc4f2b00a6ff0be7084f8c1a8c76e42523043b180f49701f8540abd2"
+      },
+      "present_in_final74": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/owned_suffix.rs",
+      "view": {
+        "name": "ROOT42-current",
+        "length": 17895,
+        "sha256": "4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0",
+        "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json",
+        "length": 34641,
+        "sha256": "27ec261cbc4f2b00a6ff0be7084f8c1a8c76e42523043b180f49701f8540abd2"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+      "view": {
+        "name": "ROOT42-current",
+        "length": 16740,
+        "sha256": "fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977",
+        "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json",
+        "length": 34641,
+        "sha256": "27ec261cbc4f2b00a6ff0be7084f8c1a8c76e42523043b180f49701f8540abd2"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "view": {
+        "name": "compile16-current",
+        "length": 38692,
+        "sha256": "7d72a2aadb93fc3a865cceb4a35b7ce9fa0ee01a23dab50491845184859b3f1e",
+        "archive": "docs/evidence/semantic162-compile-fixes-aaf-20261017/00.after.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json",
+        "length": 13993,
+        "sha256": "e3870d5c067c099197b21f5b749b3124eaa4174701fe3eb47ca73db88ac44f14"
+      },
+      "present_in_final74": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+      "view": {
+        "name": "compile16-current",
+        "length": 17184,
+        "sha256": "e31dcefcb253e8d9ba94da407cb87d3f11a2e18ea4f9a29e9ff5f7e0913ffa92",
+        "archive": "docs/evidence/semantic162-compile-fixes-aaf-20261017/01.after.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json",
+        "length": 13993,
+        "sha256": "e3870d5c067c099197b21f5b749b3124eaa4174701fe3eb47ca73db88ac44f14"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/owned_suffix.rs",
+      "view": {
+        "name": "compile16-current",
+        "length": 17898,
+        "sha256": "e9cd09455d33d55768e413902085d1b27870a972fe7a079497e976d5acbd2da4",
+        "archive": "docs/evidence/semantic162-compile-fixes-aaf-20261017/03.after.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json",
+        "length": 13993,
+        "sha256": "e3870d5c067c099197b21f5b749b3124eaa4174701fe3eb47ca73db88ac44f14"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+      "view": {
+        "name": "compile16-current",
+        "length": 16483,
+        "sha256": "3edb2464491fda85a208c95b4a2b62549a42fd1791b4bae1ef78087bd3430d3e",
+        "archive": "docs/evidence/semantic162-compile-fixes-aaf-20261017/06.after.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json",
+        "length": 13993,
+        "sha256": "e3870d5c067c099197b21f5b749b3124eaa4174701fe3eb47ca73db88ac44f14"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "view": {
+        "name": "semantic15-current",
+        "length": 68514,
+        "sha256": "48c1fe3778d050ffbb7fcde220f10ea47a209d1935135f46328b381d727aa2dd",
+        "archive": "docs/evidence/next-semantic-source-views-20261017/objects/48c1fe3778d050ffbb7fcde220f10ea47a209d1935135f46328b381d727aa2dd.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/next-semantic-source-views-20261017/inputs.json",
+        "length": 84888,
+        "sha256": "c876c6b5f15969fe55bee55b31be8b6174db300d6b4f9f18cd412044273b6305"
+      },
+      "present_in_final74": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "view": {
+        "name": "semantic15-current",
+        "length": 38641,
+        "sha256": "e83f7a28c14df7b622b696975ebf2231c4e40f0ee140162be2ff9e51c7acee0f",
+        "archive": "docs/evidence/next-semantic-source-views-20261017/objects/e83f7a28c14df7b622b696975ebf2231c4e40f0ee140162be2ff9e51c7acee0f.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/next-semantic-source-views-20261017/inputs.json",
+        "length": 84888,
+        "sha256": "c876c6b5f15969fe55bee55b31be8b6174db300d6b4f9f18cd412044273b6305"
+      },
+      "present_in_final74": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",
+      "view": {
+        "name": "semantic15-current",
+        "length": 22708,
+        "sha256": "d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7",
+        "archive": "docs/evidence/next-semantic-source-views-20261017/objects/d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/next-semantic-source-views-20261017/inputs.json",
+        "length": 84888,
+        "sha256": "c876c6b5f15969fe55bee55b31be8b6174db300d6b4f9f18cd412044273b6305"
+      },
+      "present_in_final74": false
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work.rs",
+      "view": {
+        "name": "semantic15-current",
+        "length": 47343,
+        "sha256": "73ae980d09e4324eb272f1379364cb6ace3cce71a1f8c57de9bfd1a47f482c41",
+        "archive": "docs/evidence/next-semantic-source-views-20261017/objects/73ae980d09e4324eb272f1379364cb6ace3cce71a1f8c57de9bfd1a47f482c41.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/next-semantic-source-views-20261017/inputs.json",
+        "length": 84888,
+        "sha256": "c876c6b5f15969fe55bee55b31be8b6174db300d6b4f9f18cd412044273b6305"
+      },
+      "present_in_final74": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+      "view": {
+        "name": "semantic15-current",
+        "length": 8963,
+        "sha256": "b77e9c8426386d86fc922421c1cab4c997643cb401294a537ea2afb9634ea3e9",
+        "archive": "docs/evidence/next-semantic-source-views-20261017/objects/b77e9c8426386d86fc922421c1cab4c997643cb401294a537ea2afb9634ea3e9.txt"
+      },
+      "immutable_table": {
+        "path": "docs/evidence/next-semantic-source-views-20261017/inputs.json",
+        "length": 84888,
+        "sha256": "c876c6b5f15969fe55bee55b31be8b6174db300d6b4f9f18cd412044273b6305"
+      },
+      "present_in_final74": false
+    }
+  ],
+  "all_table_current_rows": [
+    {
+      "domain": "ROOT42-current",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "expected": "369a29b5860f644b33b82e8e968ab66225faf70cfb930757aff04ba591824d4e",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/bounded_output/classifier_string.rs",
+      "expected": "c0c85cc51b32418114866b49b58efed018b1032ad6e5231dcad67de94c4171b6",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/bounded_output/stage_debits.rs",
+      "expected": "c071652700ff960bcd99b23937f69c8a1098ebca5536801fdc0a9de26d2c0e36",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/bounded_output/stage_debits/tests.rs",
+      "expected": "d81892e1cca7878eadfd74743e6b4610884312e08a446b53c2ffac1e67c05a06",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan.rs",
+      "expected": "13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay.rs",
+      "expected": "add44f92c19bb698ebec165c74554f4d606cd38885e6230e1e882556eb068848",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/branch_clone.rs",
+      "expected": "dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+      "expected": "cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts.rs",
+      "expected": "053698df5f2f88f5e6fde6c2d3a0c47f7eb683cc34dca0365f4be56682da4ae5",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "expected": "77eaa20915336fa5076884d3f87ba267c47dec665c57de0d3919765f8380a0d8",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+      "expected": "a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+      "expected": "4627d662ac47ed383ab9952d32d4158a49ff1e9a7a1d7006760d6290c470ee2b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "expected": "ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "expected": "3abb525e65e38f0312e1d30d31848ed1152e367adf3b106132ce8ab3ae54b576",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs",
+      "expected": "4dbb4d85e0660ef51235c630c09a6efa097c18d064a17634b02fe2e5d630b19c",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "expected": "aefc6b83feccaab7f919718135f285bba22243c4e726adccef37ca72cfd7a73b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "expected": "91f0f7c964ba8a94b91f8da9a6aaa73017b49e3adf49bde5828645128015dbca",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "expected": "96d849fd034040565db32a1ca30494c07a8faaafb0b80b8c9a9942c63f2e4ae4",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "expected": "fc054c4c7c3089e8aa3fd136d92d7d895bfe79f41f1e75e9bd92f60396e585e0",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+      "expected": "59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
+      "expected": "8f30eae09d94a3f5e530354feab4ce299951d0990164fff670514ad03f363ab8",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+      "expected": "6d70cfe62b35c0ab8617b86aada00de55c3bd8aade98578d4ac994e8a1a9b86a",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "expected": "c6256e04224731110b5e1906169ec5e55139147f18433700825e18c982007794",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "expected": "8cb40146286217b0816abb9f576b9d72805b3a38c0e48d5b71e51fedead76800",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/owned_suffix.rs",
+      "expected": "4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+      "expected": "fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/path_join.rs",
+      "expected": "4aa305f35a2f0f60954c979c010ed8209420a5b4389bbe03225ba7256a549b7c",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+      "expected": "fb5c395326c2343fb3983a8cc6129364479901dbc9b3d827cccf023e79701c99",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+      "expected": "f972a395e082188f2e05fb98624c80e04070aa0f106731230920c288120e65e3",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/source_reflows/semantic_receivers.rs",
+      "expected": "10d00d2724897708edf0bcb0164dcea49fe61743af6f18dfcb6a81eaec24383c",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/source_reflows_merge.rs",
+      "expected": "57c0fc50ab6d03eb94094b8f47e8946f5f4a011a1d9a387083eab6bdb41d8168",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/source_reflows_merge/opt858_sequence_input.rs",
+      "expected": "f183f359e52278f8a33da7a9e2eaf4be876588bcd67c76bfa3666d0d5e5b7d32",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/workspace_graph/tests/builder_limits.rs",
+      "expected": "f342819e37b0d60ba64bb502cb06ab120f00170be29ee8860294234db60121b4",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/hir_module_boundaries.rs",
+      "expected": "7dade8fc55a0ea5f4a16bc57d1ac8ce43ed200694a39ea6e3d33038228c8b8c1",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/native/string_settlement/codec_allocation/codec808_frontier.rs",
+      "expected": "39837794268d365be877d508bbec1210ab7469de5185758f22209088ef75cae2",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/project/standard_library/application_json/nested_response/string_vectors.rs",
+      "expected": "491a5513d425e3bcefd1fe6d8a731c820f90a68fd8f68005592e23562fd83cf6",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/support/production_source_inventory.rs",
+      "expected": "652adbdf49e32e5d2a6f10efcc4a7fec5b13f0c1000af7307305e76c491bc818",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/useful_data/byte_slice_for_runtime/nested.rs",
+      "expected": "d97d007f5b9a147230b43f2c698bd46fee5228a3564b60c0625be0544008fcbd",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/workspace/semantic_graph.rs",
+      "expected": "eba36d8815d2fd4f0e94995357e42c96085fdce1005519bca65feb4d693b5b79",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "expected": "4dbeb81d84db0f80bb51ccc8fc1a25d2d71e49759ddeeccdc84c4d1748b27e11",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+      "expected": "041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "ROOT42-current",
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "expected": "53dff12c17b2f8733dbe19b3404585b7f4d6d58ff5a17d55a27ff64ce76b8d4b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "expected": "1593db2b5b16f88c509952eddf075e1b574a8c6352382bff4ca19e2478ea7517",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/bounded_output/classifier_string.rs",
+      "expected": "c0c85cc51b32418114866b49b58efed018b1032ad6e5231dcad67de94c4171b6",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/bounded_output/stage_debits.rs",
+      "expected": "c071652700ff960bcd99b23937f69c8a1098ebca5536801fdc0a9de26d2c0e36",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/bounded_output/stage_debits/tests.rs",
+      "expected": "d81892e1cca7878eadfd74743e6b4610884312e08a446b53c2ffac1e67c05a06",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan.rs",
+      "expected": "13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay.rs",
+      "expected": "add44f92c19bb698ebec165c74554f4d606cd38885e6230e1e882556eb068848",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/branch_clone.rs",
+      "expected": "dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+      "expected": "cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts.rs",
+      "expected": "053698df5f2f88f5e6fde6c2d3a0c47f7eb683cc34dca0365f4be56682da4ae5",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "expected": "77eaa20915336fa5076884d3f87ba267c47dec665c57de0d3919765f8380a0d8",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+      "expected": "a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+      "expected": "4627d662ac47ed383ab9952d32d4158a49ff1e9a7a1d7006760d6290c470ee2b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "expected": "ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "expected": "3abb525e65e38f0312e1d30d31848ed1152e367adf3b106132ce8ab3ae54b576",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs",
+      "expected": "4dbb4d85e0660ef51235c630c09a6efa097c18d064a17634b02fe2e5d630b19c",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "expected": "aefc6b83feccaab7f919718135f285bba22243c4e726adccef37ca72cfd7a73b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "expected": "92728f9f1f6e4ce861de0ed8e5ad4ec095550a924338a9168cba8bb812bd2783",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "expected": "96d849fd034040565db32a1ca30494c07a8faaafb0b80b8c9a9942c63f2e4ae4",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "expected": "fc054c4c7c3089e8aa3fd136d92d7d895bfe79f41f1e75e9bd92f60396e585e0",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+      "expected": "59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
+      "expected": "8f30eae09d94a3f5e530354feab4ce299951d0990164fff670514ad03f363ab8",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+      "expected": "6d70cfe62b35c0ab8617b86aada00de55c3bd8aade98578d4ac994e8a1a9b86a",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "expected": "c6256e04224731110b5e1906169ec5e55139147f18433700825e18c982007794",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "expected": "8cb40146286217b0816abb9f576b9d72805b3a38c0e48d5b71e51fedead76800",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/owned_suffix.rs",
+      "expected": "4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+      "expected": "fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/path_join.rs",
+      "expected": "4aa305f35a2f0f60954c979c010ed8209420a5b4389bbe03225ba7256a549b7c",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+      "expected": "fb5c395326c2343fb3983a8cc6129364479901dbc9b3d827cccf023e79701c99",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+      "expected": "f972a395e082188f2e05fb98624c80e04070aa0f106731230920c288120e65e3",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/source_reflows/semantic_receivers.rs",
+      "expected": "58cd8a8d2dcb03fcb88f32537ebd5c5d9b6ac1dd1ed60a6fe75b1336bfaf14a4",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/source_reflows_merge.rs",
+      "expected": "57c0fc50ab6d03eb94094b8f47e8946f5f4a011a1d9a387083eab6bdb41d8168",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/source_reflows_merge/opt858_sequence_input.rs",
+      "expected": "f183f359e52278f8a33da7a9e2eaf4be876588bcd67c76bfa3666d0d5e5b7d32",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/workspace_graph/tests/builder_limits.rs",
+      "expected": "097f76d8ae610f8fa46a1ec1bcd47fae2d2d8b6da396caa0857ec517806c5967",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/hir_module_boundaries.rs",
+      "expected": "46e5fbd03a01ef804e351ffe5c4ee15d61336f7ca0ab1a612839baa723f85d15",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/native/string_settlement/codec_allocation/codec808_frontier.rs",
+      "expected": "39837794268d365be877d508bbec1210ab7469de5185758f22209088ef75cae2",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/project/standard_library/application_json/nested_response/string_vectors.rs",
+      "expected": "491a5513d425e3bcefd1fe6d8a731c820f90a68fd8f68005592e23562fd83cf6",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/support/production_source_inventory.rs",
+      "expected": "652adbdf49e32e5d2a6f10efcc4a7fec5b13f0c1000af7307305e76c491bc818",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/useful_data/byte_slice_for_runtime/nested.rs",
+      "expected": "d97d007f5b9a147230b43f2c698bd46fee5228a3564b60c0625be0544008fcbd",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/workspace/semantic_graph.rs",
+      "expected": "1849b6be08210ee81f6ca1518cd51b8ccd5ff137c04781d6498be159ed3f285f",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "expected": "f42216ee8017033d39f6f29648613ddb4056483041ac6ed302b3db09623c3359",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+      "expected": "041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+      "expected": "553179e57cccd27eae0d228ad54b4717ec743007d9ae354d31ed6174266732be",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs",
+      "expected": "d611a058bf45d4c5ff05135c9c76119b366877f0c5a7ca840a205547a8f3650e",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/selected_labels.rs",
+      "expected": "ea3b9f8e55a3f183ba7f6f07a01d6a1d71364a4ce6e246934de95e3603535edd",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs",
+      "expected": "50e4d6dc7bfd923acba894af0d8bb004c97ea56bb6c23164f80e33f2c78f8ea1",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work.rs",
+      "expected": "f86667440e07a2a01e0e8c043966c9df2ecbae3dd6d0a7cc1a991c6ade54e423",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/isolated_paths.rs",
+      "expected": "5cc0e767a4e5e61ae5135d4193b831d941b90b6f676f6620d64fb9ac016c0d72",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs",
+      "expected": "021a0dd84f3275b7cbd69936cb8def96e5172fb39ceaa1b4b385d3962f6792f2",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs",
+      "expected": "7e3eb4e7868f45d04e6f1abd69ee35a56f32c0c355154d2e44386e2be1bc96c4",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/source_reflows.rs",
+      "expected": "0bcb6e47e644e3c5b6ac552d1f231d4448c4fd7c3ab93beeca6ad67f5fcad016",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/workspace_graph/static_text/scalar_helpers.rs",
+      "expected": "045c8979f0daa4eaa7f7758aed94c47b0c039186c88515d83b0940509545a548",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+      "expected": "b912238b74ededd9143f1a2d039c8d3a41a9af9723f3aee877a85f4f5f8d2685",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/workspace/semantic_change/reporting.rs",
+      "expected": "e92ac9e412d628e6f6f385487b747a7088b5f1ec7d8d5b75bd897846d424ff34",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "tests/workspace/semantic_structural_change/reporting.rs",
+      "expected": "789fafed65a250974ab9036efececdfd33ffa11f40c231de20e970580776b118",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/compact_stage.rs",
+      "expected": "71578a27c76a5849ea663ff2c66b0587f96d1d9977607ecc94d152abb8fbff5e",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs",
+      "expected": "825671ce87b04e06fdf31464bb474120016b52ae02100c4fd14345831928cb21",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "future57-current",
+      "source": "src/source_reflows/main_f247_controllers.rs",
+      "expected": "df7852aac1d8938f364801cada6594344a75d37167e5f3512681f9ce14b3c96a",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "expected": "7d72a2aadb93fc3a865cceb4a35b7ce9fa0ee01a23dab50491845184859b3f1e",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+      "expected": "e31dcefcb253e8d9ba94da407cb87d3f11a2e18ea4f9a29e9ff5f7e0913ffa92",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/physical_storage/zero_tests.rs",
+      "expected": "a053304fc38a762c3f1f1f837b46a2e120496236aede8c1c236543819bc083b3",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/owned_suffix.rs",
+      "expected": "e9cd09455d33d55768e413902085d1b27870a972fe7a079497e976d5acbd2da4",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+      "expected": "08b5b67b03b2e80391e9a2ed4ccb936937481c88b38da9cc18fae79da2418d66",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/skeleton_work.rs",
+      "expected": "2532173c152df743989e4afd5fc84ae4b3dd32bf45b0a72fe09039a832887c4b",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+      "expected": "3edb2464491fda85a208c95b4a2b62549a42fd1791b4bae1ef78087bd3430d3e",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+      "expected": "b2004e6eb3450ca8bc02c7822a3f258280ae3b248f6054f761cdd6567b8e52c8",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/sequence_prefix.rs",
+      "expected": "65a4f05aaf7a0cabfdb583657de5afbffb7b2e8b605c91638b2c87a6a9d57258",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/owned_suffix/sequence_vector.rs",
+      "expected": "083d5de99eb0f24380d58b5ccd9ba4a27f978d5436d5149de9c6c012cc517b95",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/lexical_cert/paid/chains_tests.rs",
+      "expected": "eac62af2cbb2f0fc090b303db09ae0853a7a1efc38f6b0a48d9c8732b9e931c1",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs",
+      "expected": "a27633e7378a0af162f16900d932bafb8ae15a8819530cea7b8af6d6e26ed5ec",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs",
+      "expected": "a27633e7378a0af162f16900d932bafb8ae15a8819530cea7b8af6d6e26ed5ec",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/sequence_vector/main_a3/path_array_source.rs",
+      "expected": "36686f375c3e05d7f3bfd3305a2ebdc14bce3abf9fb7e8aa3204e5d01f9a3e61",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/workspace_graph/source_schema/nominal_context/tests.rs",
+      "expected": "6867c0c3615144a5b5e79343f2afbb560454dd58d6202e4847f89df649ccfa95",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "compile16-current",
+      "source": "src/cleanup_plan/replay/inventory_coverage/typed_tests.rs",
+      "expected": "dd7f441df60b498cddef2388c0b84565e5e699b32993901258a549f03cec2768",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay.rs",
+      "expected": "807735eb8713ff6e02abd9ea6d3d4aea4fdc53f95bc6b6d1a2a1e51dba605afa",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "expected": "cdbced119fdcd161c437ef9ac83d8066caadae0eabdf5bee83ce95db260fd472",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "expected": "48c1fe3778d050ffbb7fcde220f10ea47a209d1935135f46328b381d727aa2dd",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "expected": "e83f7a28c14df7b622b696975ebf2231c4e40f0ee140162be2ff9e51c7acee0f",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+      "expected": "d611a058bf45d4c5ff05135c9c76119b366877f0c5a7ca840a205547a8f3650e",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",
+      "expected": "d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
+      "expected": "649f67c2f34242d5a4999840af9b50e75d26a2f8101d6ee20d6eec53101d8f6f",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/physical_budget/setup.rs",
+      "expected": "ed16d01065e83d40e3b0cfe917b17099c150ef7649132d10ccd5998f777e2e34",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/physical_storage.rs",
+      "expected": "6d1342dc7f992a5000ef7412b1b971a360a750f67c6adc39d351246ebaa90c8d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/skeleton_work.rs",
+      "expected": "73ae980d09e4324eb272f1379364cb6ace3cce71a1f8c57de9bfd1a47f482c41",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+      "expected": "b77e9c8426386d86fc922421c1cab4c997643cb401294a537ea2afb9634ea3e9",
+      "already_complete_in_existing_chain": false
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs",
+      "expected": "f4eda72f5361e60c9db731b227acf205e2fe63ee9a19c4091cbce5bec381ef7d",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs",
+      "expected": "31e8205db8720309a4d7e6c35c0732671ce82a16956d760ac4c25d5441564c1f",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/source_verify/declaration.rs",
+      "expected": "54bca5bc3be89d2b788655f72cb8671c76b540edd99c126a0862a4f1f22a0a88",
+      "already_complete_in_existing_chain": true
+    },
+    {
+      "domain": "semantic15-current",
+      "source": "src/source_verify/declaration/record_shape.rs",
+      "expected": "f9dcecb71e66b45d12cebbbd1d4648018d20e26807467296f48999da326ea7a5",
+      "already_complete_in_existing_chain": true
+    }
+  ],
+  "old74_and54_unchanged": true,
+  "reason": "Only these complete old current stages were absent from the existing74\u219254 chain; current/source tuples and helper/guard pins must be refreshed once at the final combined semantic head, never retarget old tables."
+}

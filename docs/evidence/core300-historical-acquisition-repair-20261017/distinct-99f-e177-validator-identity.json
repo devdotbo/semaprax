@@ -1,0 +1,20 @@
+{
+  "scope": "Only this one complete incoming validator source is byte-identical; both controller namespaces still independently acquire their own whole current/compiled/incoming domains before the named pre-freeze view.",
+  "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+  "domains": [
+    {
+      "domain": "main99f-full-controller-acquisition-20261017",
+      "table_sha256": "7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9",
+      "incoming_length": 36226,
+      "incoming_sha256": "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2",
+      "archive": "docs/evidence/main99f-full-controller-acquisition-20261017/incoming/48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2.txt"
+    },
+    {
+      "domain": "main-e177-full-controller-acquisition-20261017",
+      "table_sha256": "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44",
+      "incoming_length": 36226,
+      "incoming_sha256": "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2",
+      "archive": "docs/evidence/main-e177-full-controller-acquisition-20261017/incoming/48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2.txt"
+    }
+  ]
+}

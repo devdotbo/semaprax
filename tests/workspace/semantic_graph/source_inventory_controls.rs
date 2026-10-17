@@ -236,7 +236,10 @@ mod tests {
 mod current_union {
     #[test]
     fn current_union_retains_every_frozen_legacy_input_and_all_owned_paths() {
-        let legacy = include_str!("../../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv");
+        let legacy = crate::source_reflows_merge::next_big_batch_inputs::value(
+            "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv",
+            "fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb",
+            include_str!("../../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv"));
         let current = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-projection-inputs.tsv");
         let owned = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-owned-inputs.tsv");
         let current: Vec<_> = current.lines().collect();

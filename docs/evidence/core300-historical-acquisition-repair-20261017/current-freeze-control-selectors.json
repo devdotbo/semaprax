@@ -1,0 +1,12 @@
+{
+  "status": "RETAINED_SOURCE_SELECTION_NOT_RUNTIME_RESULT",
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_keeps_full_byte_lane_equality_and_allocates_nothing",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_reuses_the_index_within_the_same_original_work_ceiling",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_exact_short_zero_floor_and_drop_remain_on_the_original_ledger",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_rejects_foreign_and_restored_owners_before_cached_keys_or_foreign_debits",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_is_sealed_and_incomplete_builders_cannot_publish_it",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_unobserved_payer_keeps_the_original_lookup_path",
+    "cleanup_plan::replay::expression_facts::receiving::directory::status_prefix::tests::frozen_membership_keeps_the_complete_old_comparison_fee_after_early_mismatch"
+  ]
+}

@@ -835,7 +835,8 @@ pub(crate) fn semantic_batch_previous(source: &str, current: &str, view: &str) -
     let read = |path: &str, length: &serde_json::Value, sha: &serde_json::Value| {
         compile_repair_file(&root.join(path), usize::try_from(length.as_u64().unwrap()).unwrap(), sha.as_str().unwrap()).unwrap()
     };
-    let actual = read(source, &row["current_length"], &row["current_sha256"]);
+    let actual = crate::source_reflows_merge::next_big_batch_inputs::file(&root.join(source), row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())
+        .unwrap_or_else(|| read(source, &row["current_length"], &row["current_sha256"]));
     assert_eq!(actual, read(row["current_archive"].as_str().unwrap(), &row["current_length"], &row["current_sha256"]));
     let compiled = match source {
         "src/cleanup_plan/replay.rs" => include_str!("../cleanup_plan/replay.rs"),
@@ -855,7 +856,8 @@ pub(crate) fn semantic_batch_previous(source: &str, current: &str, view: &str) -
         "src/source_verify/declaration/record_shape.rs" => include_str!("../source_verify/declaration/record_shape.rs"),
         _ => unreachable!("sealed finite semantic source"),
     };
-    let compiled = compile_repair_previous(source, compiled);
+    let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), compiled);
+    let compiled = compile_repair_previous(source, &compiled);
     assert_eq!(actual, compiled, "complete physical/compiled semantic source");
     let previous = read(prior["archive"].as_str().unwrap(), &prior["length"], &prior["sha256"]);
     let mut restored = actual.clone();
@@ -870,6 +872,7 @@ pub(crate) fn semantic_batch_previous(source: &str, current: &str, view: &str) -
         last = start;
     }
     assert_eq!(restored, previous, "whole independent semantic predecessor");
+    let current = crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), current);
     if current == actual || current == previous { previous } else { current.to_owned() }
 }
 pub(crate) fn semantic_batch_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, &'static str> {
@@ -945,7 +948,8 @@ fn compile_repair_previous(source: &str, current: &str) -> String {
     let read = |path: &str, length: &serde_json::Value, sha: &serde_json::Value| {
         factored_core_file(&root.join(path), usize::try_from(length.as_u64().unwrap()).unwrap(), sha.as_str().unwrap()).unwrap()
     };
-    let actual = read(source, &row["current_length"], &row["current_sha256"]);
+    let actual = crate::source_reflows_merge::next_big_batch_inputs::file(&root.join(source), row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())
+        .unwrap_or_else(|| read(source, &row["current_length"], &row["current_sha256"]));
     assert_eq!(actual, read(row["current_archive"].as_str().unwrap(), &row["current_length"], &row["current_sha256"]));
     let compiled = match source {
         "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs" => include_str!("../cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs"),
@@ -966,7 +970,8 @@ fn compile_repair_previous(source: &str, current: &str) -> String {
         "src/cleanup_plan/replay/inventory_coverage/typed_tests.rs" => include_str!("../cleanup_plan/replay/inventory_coverage/typed_tests.rs"),
         _ => unreachable!("sealed sixteen compilation subjects"),
     };
-    let compiled = accepted_base_previous(source, compiled);
+    let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), compiled);
+    let compiled = accepted_base_previous(source, &compiled);
     assert_eq!(actual, compiled, "whole physical/compiled compilation repair");
     let previous = read(row["previous_archive"].as_str().unwrap(), &row["previous_length"], &row["previous_sha256"]);
     let mut restored = actual.clone();
@@ -981,6 +986,7 @@ fn compile_repair_previous(source: &str, current: &str) -> String {
         last = start;
     }
     assert_eq!(restored, previous, "complete independently retained precompile source");
+    let current = crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), current);
     if current == actual || current == previous { previous } else { current.to_owned() }
 }
 fn compile_repair_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, &'static str> {

@@ -451,6 +451,10 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         .unwrap();
     let before = main99f_read(root.join(proof["archive"].as_str().unwrap())).unwrap();
     let current = main99f_read(root.join(proof["path"].as_str().unwrap())).unwrap();
+    for bad in [String::new(), format!("{current}\n"), format!("{current}{current}"), current[..current.len()-1].to_owned()] {
+        assert!(std::panic::catch_unwind(|| crate::source_reflows_merge::main99f_inputs::held_status_before_freeze(&bad)).is_err());
+    }
+    let current = crate::source_reflows_merge::main99f_inputs::held_status_before_freeze(&current);
     // Reconstruct the authenticated predecessor dispatch before applying the
     // original complete-validator assertions below.
     let receiving_guard = "if function.cleanup_plan.status_sources.len() >= 3 {";

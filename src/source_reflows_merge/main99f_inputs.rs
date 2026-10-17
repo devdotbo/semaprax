@@ -268,3 +268,18 @@ pub(crate) fn expected(path: &str,supplied: &str) -> String {
     let (actual,incoming)=acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
     assert!(supplied==actual || supplied==incoming,"foreign MAIN99F supplied source");incoming
 }
+
+// Named whole pre-c883 validator input only for the original historical
+// body assertion. Current freeze behavior stays in the unprojected audits.
+pub(crate) fn held_status_before_freeze(supplied: &str) -> String {
+    let source = "src/cleanup_plan/replay/expression_facts/receiving/retained.rs";
+    let incoming = expected(source, supplied);
+    assert_eq!(incoming.len(), 36226);
+    assert_eq!(digest(incoming.as_bytes()), "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2");
+    let previous = include_str!("../../docs/evidence/core300-historical-acquisition-repair-20261017/held-status-before-freeze.rs.txt");
+    assert_eq!(previous.len(), 36206);
+    assert_eq!(digest(previous.as_bytes()), "7739c1324f612967d28bb4eb6fb87cdaa5354d743b4435d396d6f148c1354b31");
+    assert_eq!(incoming.matches("    prefix_owner.freeze(function, budget)?;").count(), 1);
+    assert_eq!(incoming.replacen("    prefix_owner.freeze(function, budget)?;", "    drop(prefix_owner);", 1), previous);
+    previous.to_owned()
+}

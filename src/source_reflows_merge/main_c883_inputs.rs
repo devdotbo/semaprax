@@ -122,6 +122,15 @@ pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {
 pub(crate) fn read_1e(path: impl AsRef<Path>) -> std::io::Result<String> {
     read_packet(path, packet_1e())
 }
+// Exact current-side 1e epoch for the independent operation-guard inverse.
+// It is distinct from read_1e's incoming-main result and its complete archive.
+pub(crate) fn current_1e_value(source: &str, supplied: &str) -> String {
+    let packet = packet_1e();
+    let rows = packet["rows"].as_array().unwrap();
+    assert_eq!(rows.iter().filter(|row| row["path"] == source).count(), 1);
+    let row = rows.iter().find(|row| row["path"] == source).unwrap();
+    crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), supplied)
+}
 fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Result<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let path = path.as_ref();
@@ -131,7 +140,9 @@ fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Re
     let rows = packet["rows"].as_array().unwrap();
     assert_eq!(rows.iter().filter(|row| row["path"] == relative).count(), 1, "closed main-c883 source membership");
     let row = rows.iter().find(|row| row["path"] == relative).unwrap();
-    let current = held(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())?;
+    let current = if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap()) { previous } else {
+        held(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())?
+    };
     if let Some(compiled) = compiled(relative) {
         let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(relative, row["current_sha256"].as_str().unwrap(), compiled);
         let compiled = super::main67107_inputs::accepted_expected_value(relative, row["current_sha256"].as_str().unwrap(), &compiled);

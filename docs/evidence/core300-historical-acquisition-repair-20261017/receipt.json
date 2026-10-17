@@ -1,0 +1,103 @@
+{
+  "status": "SOURCE_HOOKS_AND_EXACT_HISTORICAL_VIEW_REQUESTS_READY_FINAL_COUPLING_PENDING",
+  "base": "ad1086026d5d64794cecbad470fddf782fe009da",
+  "owners": [
+    65,
+    66,
+    69,
+    71,
+    73,
+    75,
+    90,
+    92,
+    124,
+    173,
+    192,
+    249
+  ],
+  "source_hooks": [
+    "src/source_reflows_merge/main_c883_inputs.rs",
+    "src/source_reflows/semantic_receivers.rs",
+    "tests/workspace/semantic_graph/source_inventory_controls.rs",
+    "src/source_reflows_merge/main67107_inputs.rs",
+    "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows/main99f_controllers.rs",
+    "src/source_reflows/main_e177_controllers.rs"
+  ],
+  "new_rust_modules": [],
+  "production_bytes_changed": false,
+  "whole_before_inverses_sha256": "ef82c0d77ea466cf99d6efd34166bed7846d08a9b8691a16bdb5e11a7dd2055a",
+  "required_views_count": 12,
+  "required_views_by_source": {
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs": 1,
+    "src/cleanup_plan/replay/owned_suffix.rs": 2,
+    "src/cleanup_plan/replay/owned_suffix/tests.rs": 2,
+    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs": 2,
+    "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs": 1,
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs": 1,
+    "src/cleanup_plan/replay/ordinary_plan_history.rs": 1,
+    "src/cleanup_plan/replay/skeleton_work.rs": 1,
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs": 1
+  },
+  "pending_final_once_only_coupling": [
+    "Append12 exact immutable current-stage views from existing held full archives; add finite current rows/compiled arms only where absent, preserve old74 whole row order and old54 whole table",
+    "Authenticate the four request-table descriptors at actual use; retain complete existing anchors and add any missing exact compiled+physical table anchors for compile16/semantic15",
+    "Refresh current tuples only after parent integration semantic freeze, including these7 changedRustfiles; then current packet/helper pins/strict guard+dependencies, 454/471/6d current tuples only if actual current row subjects changed",
+    "174/F6/role metadata only after actual membership/subject intersections at finalHEAD; no blind reruns"
+  ],
+  "dataflow": {
+    "c883": "next54 file before oldheld current acquisition; existing compiled next54 route stays",
+    "guard90": "verify all5 physical raw compiled inputs FIRST, then named current-side1e views before old operation removal",
+    "legacy75": "whole exact90-line legacy stage via existing74/54 view, oldcount/allcontains controls unchanged",
+    "compile_semantic": "each named actual/compiled/supplied acquisition normalized to its own exact immutable tuple before old complete inverses; foreign bytes pass through unchanged",
+    "validator124_249": "each independently acquires whole incoming99f/E177; same complete validator bytes verified equal; exactGit702a prefreeze selected only for original finalbody assertion. Current shippingfreeze untouched and7 selectedfreezeowners retained"
+  },
+  "parser_only": [
+    {
+      "source": "src/source_reflows_merge/main_c883_inputs.rs",
+      "lines": 241,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "src/source_reflows/semantic_receivers.rs",
+      "lines": 878,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+      "lines": 291,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "src/source_reflows_merge/main67107_inputs.rs",
+      "lines": 1356,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "src/source_reflows_merge/main99f_inputs.rs",
+      "lines": 285,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "src/source_reflows/main99f_controllers.rs",
+      "lines": 1481,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    },
+    {
+      "source": "src/source_reflows/main_e177_controllers.rs",
+      "lines": 1490,
+      "parser_exit_code": 0,
+      "original_file_not_formatted": true
+    }
+  ],
+  "current_source_qualification": false,
+  "Cargo": false,
+  "tests": false,
+  "ROOT_writes": false
+}

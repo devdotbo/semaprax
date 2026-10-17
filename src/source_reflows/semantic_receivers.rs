@@ -841,6 +841,8 @@ fn current_replay_operation_guards_bind_the_actual_receivers_without_production_
     for (path, compiled) in sources {
         assert_eq!(std::fs::read_to_string(root.join(path)).unwrap(), compiled);
     }
+    let current_1e = sources.map(|(path, source)| (path, crate::source_reflows_merge::main_c883_inputs::current_1e_value(path, source)));
+    let sources = current_1e.each_ref().map(|(path, source)| (*path, source.as_str()));
     let mut stripped = sources.map(|(_, source)| source.to_owned());
     for (index, name, next, operation, indent) in guards {
         let source = sources[index].1;
