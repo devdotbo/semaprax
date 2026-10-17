@@ -63,6 +63,12 @@
       "length": 81430,
       "sha256": "3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd",
       "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd.txt"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6.txt",
+      "length": 82192,
+      "sha256": "a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6",
+      "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6.txt"
     }
   ],
   "rows": [
@@ -1493,11 +1499,18 @@
       "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
       "compiled": true,
       "current": {
-        "length": 15553,
-        "sha256": "3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8.txt"
+        "length": 18228,
+        "sha256": "390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250.txt"
       },
-      "views": []
+      "views": [
+        {
+          "name": "whole-pre-macro-scope-current",
+          "length": 15553,
+          "sha256": "3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8.txt"
+        }
+      ]
     },
     {
       "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",

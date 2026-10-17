@@ -1,0 +1,41 @@
+{
+  "before_sha256": "80006b907e219f16298fb0aa1003c0d1d956da3bca10f91d02334089911ffaf7",
+  "after_sha256": "c3832d160bb2fadae4cf1859cf9f1073a0d8c839cda7ca812ae4ffc73d13465d",
+  "edits": [
+    {
+      "before": "BASE='8c95f77750aaaba9eaa59da865eb65658900646c'",
+      "after": "BASE='22af828ba7ed0217f5f9ed2e3cdd487ca1758f79'",
+      "count": 1
+    },
+    {
+      "before": "ff303-refresh/",
+      "after": "macro-scope-refresh/",
+      "count": 1
+    },
+    {
+      "before": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+      "after": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+      "count": 1
+    },
+    {
+      "before": "e4a2739d40214b7d6ffcc089e2de5ed3d4c2abca",
+      "after": "d3d3dfcdb2895a0a8fbadda4205e83d019577120",
+      "count": 1
+    },
+    {
+      "before": "H(OLD[SUBJECT])=='4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164'and H(CURRENT[SUBJECT])=='c394f749295490b1c733192bb28dcb54b0eb8a2b7d07680ed4641defeeeaa94e'",
+      "after": "H(OLD[SUBJECT])=='c394f749295490b1c733192bb28dcb54b0eb8a2b7d07680ed4641defeeeaa94e'and H(CURRENT[SUBJECT])=='670f5428569e4cb158c667ec0afd72d204e2eb7e530f093b582a716e05865259'",
+      "count": 1
+    },
+    {
+      "before": "H(OLD[TESTS])=='047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99'and H(CURRENT[TESTS])=='e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45'",
+      "after": "H(OLD[TESTS])=='3bdd5984054e3c276aef564e22798d37d3f2c9bd592a0cd6eceff358a43828d8'and H(CURRENT[TESTS])=='390fc54eb4796cd77e09a7cf31c2134b1115c9006a0b222b4e555c2bcb4a6250'",
+      "count": 1
+    },
+    {
+      "before": "TWO_EXISTING_TEST_SOURCES_FF303_DEPENDENCY_ONLY",
+      "after": "TWO_EXISTING_TEST_SOURCES_MACRO_SCOPE_DEPENDENCY_ONLY",
+      "count": 1
+    }
+  ]
+}
