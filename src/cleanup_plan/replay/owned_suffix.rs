@@ -34,7 +34,10 @@ pub(super) const QUERY: usize = std::mem::size_of::<Result<(), Diagnostic>>()
 pub(super) const ROW_CLONE_CONTROLS: usize =
     2 * std::mem::size_of::<(&mut SkeletonWork<'static, 'static>, &Observations, &str)>()
     + 2 * std::mem::size_of::<Result<Observations, Diagnostic>>()
-    + std::mem::size_of::<Observations>();
+    + std::mem::size_of::<Observations>()
+    // Same pre-query computation owner as merge_keys: per original suffix,
+    // acquired by dispatch before the new receiving frame moves any input.
+    + std::mem::size_of::<skeleton_work::merge_keys::SearchComputation>();
 
 pub(super) const CONTROLS: usize = 2 * std::mem::size_of::<Vec<Observations>>()
     + 2 * std::mem::size_of::<std::vec::IntoIter<Observations>>()

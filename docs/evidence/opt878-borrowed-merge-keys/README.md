@@ -119,3 +119,14 @@ argument/result transport. All these new prices can increase reservations;
 independent census review and real strict application measurements remain pending.
 The additional before module must join the same source-audit scopes as every
 other new physical module. No source audit refresh has run in this lane.
+
+A later narrow timing correction acquires `SearchComputation` before calling
+`search_controls`: path/call mergers pay a per-input array after the directory
+acquisition and before constructing that directory; owned suffix dispatch pays
+one computation inventory per suffix before moving inputs. Eight usize roles,
+four u32 roles and both Vec-length receiver borrows cover the dynamic helper
+boundary and arithmetic. Constant base/callback arithmetic is declared as consts.
+The returned search price no longer claims to pay for its own earlier computation.
+The directory price also acquires the subsequent per-input reservation's argument,
+Result and count transport before that call. This remains a pending source census,
+with no execution, application-fit or fee-reduction claim.
