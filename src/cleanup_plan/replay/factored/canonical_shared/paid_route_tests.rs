@@ -39,8 +39,8 @@ fn observe(function: &ResolvedFunction, graph: &Automaton, sink: usize, root: us
             budget.reserve_array::<(usize, u64)>(function, 1, "selected route root")?;
             let input = vec![(root, weight)];
             if let Some(allowance) = floor {
-                crate::bounded_output::set_active_usage_floor_for_test(
-                    crate::bounded_output::active_remaining().unwrap().saturating_sub(allowance));
+                assert!(crate::bounded_output::set_active_floor(
+                    crate::bounded_output::active_remaining().unwrap().saturating_sub(allowance)));
             }
             match route {
                 0 => Canonicalizer::new(graph, sink).id(function, input, &mut budget),
@@ -54,7 +54,7 @@ fn observe(function: &ResolvedFunction, graph: &Automaton, sink: usize, root: us
         let work = initial - budget.remaining;
         assert!(current_metrics().allocated <= paid, "all actual backing remains paid");
         let stopped = current_metrics();
-        crate::bounded_output::clear_active_usage_floor_for_test();
+        crate::bounded_output::clear_active_floor();
         if result.is_err() {
             let error = budget.reserve_bytes(function, 0, "selected route sticky retry").unwrap_err();
             assert_eq!(error, Diagnostic::io("SPX-H006", String::new()));
