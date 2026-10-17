@@ -1,6 +1,8 @@
 //! Complete Main8a current functions; only dependency bindings are adapted.
 use super::*;
-use super as path_array;
+mod path_array {
+    pub(super) use super::super::*;
+}
 pub(super) use crate::cleanup_plan::replay::sequence_prefix_main8a::sequence_skeleton_paths;
 pub(super) fn append_expr_paths(
     target: &mut Vec<ExprSkeletonPath>,

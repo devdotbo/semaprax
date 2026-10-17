@@ -1,5 +1,7 @@
 //! Direct physical controls for the lexical publisher and its unchanged helper.
-use super as paid_many;
+mod paid_many {
+    pub(super) use super::super::*;
+}
 use super::super::{own_weighted, physical_clone, Rc, SharedWeighted, SmallWeighted};
 use super::*;
 use crate::test_allocation_observer::{current_metrics, measure};

@@ -1,5 +1,7 @@
 //! Whole old/current owners. Test scaffolding is outside production authority.
-use super::super::super as current;
+mod current {
+    pub(super) use super::super::super::super::*;
+}
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
@@ -134,9 +136,8 @@ fn complete_builder_and_comparison_receivers_keep_work_and_later_semantic_diagno
             for transition in &block.transitions {
                 let mut historical = ReplayBudget::unobserved();
                 let mut common = ReplayBudget::unobserved();
-                let expected = transition_observation_historical(
-                    &function, &mut historical, transition,
-                );
+                let expected =
+                    transition_observation_historical(&function, &mut historical, transition);
                 let actual = transition_observation(&function, &mut common, transition);
                 match (&actual, &expected) {
                     (Ok(None), Ok(None)) => {}

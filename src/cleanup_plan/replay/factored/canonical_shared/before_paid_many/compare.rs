@@ -1,6 +1,8 @@
 //! Complete immediate production comparison caller, selecting only the frozen receiver.
 use super::super::super::*;
-use super as canonical_shared;
+mod canonical_shared {
+    pub(super) use super::super::*;
+}
 pub(in crate::cleanup_plan::replay::factored) fn compare_with_index_storage<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,
@@ -49,19 +51,28 @@ pub(in crate::cleanup_plan::replay::factored) fn compare_with_index_storage<'hir
     }
 
     budget.reserve_bytes(
-        function, canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
+        function,
+        canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
         "canonical ordered dictionary owner receiving",
     )?;
     let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
     if budget.pays_allocations() {
-        budget.reserve_bytes(function, canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
-            "factored cold terminal node predicate")?;
+        budget.reserve_bytes(
+            function,
+            canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
+            "factored cold terminal node predicate",
+        )?;
     }
     if canonical.cold_dead_node(hir_root) {
         budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
-        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else { return Ok(None); };
+        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else {
+            return Ok(None);
+        };
         budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
-        let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)? else { return Ok(None); };
+        let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)?
+        else {
+            return Ok(None);
+        };
         return Ok(Some(hir == plan));
     }
     if budget.pays_allocations() {

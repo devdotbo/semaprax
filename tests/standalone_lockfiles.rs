@@ -86,11 +86,40 @@ fn standalone_manifests(root: &Path) -> Vec<String> {
         .map(str::trim)
         .filter(|line| !line.is_empty())
         // The root lock belongs to the workspace this test runs in.
-        .filter(|lock| lock.ends_with("/Cargo.lock"))
-        .map(|lock| lock.replace("Cargo.lock", "Cargo.toml"))
+        .filter_map(standalone_manifest)
         .collect();
     manifests.sort();
     manifests
+}
+
+// Evidence copies are immutable partial snapshots, not runnable projects. Named
+// lock fixtures (for example `ri09_generated_consumer.Cargo.lock`) are consumed
+// by their owning harness and do not have adjacent Cargo.toml manifests.
+fn standalone_manifest(lock: &str) -> Option<String> {
+    if lock.starts_with("docs/evidence/") {
+        return None;
+    }
+    lock.strip_suffix("/Cargo.lock")
+        .map(|directory| format!("{directory}/Cargo.toml"))
+}
+
+#[test]
+fn discovery_distinguishes_projects_from_archives_and_named_lock_fixtures() {
+    assert_eq!(
+        standalone_manifest("examples/owned-data-rust/Cargo.lock"),
+        Some("examples/owned-data-rust/Cargo.toml".to_owned())
+    );
+    assert_eq!(
+        standalone_manifest("crates/fixture/Cargo.lock"),
+        Some("crates/fixture/Cargo.toml".to_owned())
+    );
+    for lock in [
+        "Cargo.lock",
+        "tests/project/ri09_generated_consumer.Cargo.lock",
+        "docs/evidence/snapshot/before/Cargo.lock",
+    ] {
+        assert_eq!(standalone_manifest(lock), None, "{lock}");
+    }
 }
 
 fn resolves_locked_and_offline(root: &Path, manifest: &str) -> Result<(), String> {
