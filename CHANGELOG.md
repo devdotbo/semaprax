@@ -1,5 +1,7 @@
 # Changelog
 
+- Refuse legacy `build --target web` modules whose host imports the generated browser loader does not supply, such as the unversioned `env.spx_vec_*` Vec imports, with `SPX-W131` before creating output, and stop leaving an empty output directory when emission fails.
+
 - Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
 
 - Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.
