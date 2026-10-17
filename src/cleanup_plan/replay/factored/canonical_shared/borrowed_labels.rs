@@ -525,6 +525,8 @@ fn direct_singleton_zero_authentication_foreign_owner_and_sticky_refusal_are_fin
     let (function,graph,closed)=direct_fixture(1,1,3);
     let mut foreign=function.clone();foreign.id=crate::hir::DeclarationId::new("direct.foreign");
     let mut budget=ReplayBudget::with_physical(&function,1<<25).unwrap();
+    // Acquire both actual call boundaries under the held owner before refusal.
+    budget.reserve_bytes(&function, 2 * ordinary_receiving(), "selected direct two-call receiving controls").unwrap();
     let remaining=budget.remaining;
     let error=ordinary_successors(&foreign,&mut budget,&graph,&closed,5).unwrap_err();
     assert_eq!(error.code,"SPX-H006");assert_eq!(budget.remaining,remaining);
@@ -631,6 +633,9 @@ fn direct_selected_anchor_rejects_same_id_foreign_pointer_and_foreign_scope_befo
     for foreign_scope in [false, true] {
         let (_, parent_refused, _, _) = with_limit_usage_refusal(usize::MAX, || {
             let mut budget = ReplayBudget::with_physical(&function, 1 << 25).unwrap();
+            // Both calls are funded in the original scope before entering any
+            // foreign scope or setting sticky refusal; retry queries no payer.
+            budget.reserve_bytes(&function, 2 * ordinary_receiving(), "selected direct two-call receiving controls").unwrap();
             let remaining = budget.remaining;
             let charged = budget.physical.as_ref().unwrap().charged();
             let error = if foreign_scope {
