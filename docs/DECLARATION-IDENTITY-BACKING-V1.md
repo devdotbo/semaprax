@@ -350,3 +350,64 @@ String/Arc reconstruction only after the original receiving guards. Complete
 owned identity/wire and frozen producer controls remain independent; no new
 payer, refund, cap, dynamic identity route or admission authority is introduced.
 Focused compilation/execution and actual application measurements are pending.
+
+## Borrowed workspace top-level identity text (source-only #785)
+
+Status: authored source candidate; compilation, focused execution and actual
+physical observations remain pending. No quota defect, application gain or
+full #785 closure is established.
+
+The two existing workspace declaration-fact receivers use an immutable text
+view of the exact root selected by `shape_identity::top_level_declaration`.
+Its walk, missing-owner stop, every source/declaration comparison and both
+complete shipping caller bodies are unchanged. The index and candidate are
+borrowed together through the view; neither a reference cast, global owner,
+mutable registry nor pointer authority is introduced. The private view retains
+`as_str`, so receiving validation and its diagnostic order do not change.
+
+`bounded_output::borrowed_clone_view` uses the identical `active()` followed by
+private `reserve()` sequence as the complete original `budgeted_clone`. It
+retains the original text-length debit, optional-floor behavior and sticky
+selection, then returns the input or literal empty text. `reserve_active` is
+not an interchangeable implementation: its positive optional reservation may
+spend after sticky refusal. An empty view continues through the original
+lookup and selects the same G173 diagnostic at the same semantic frontier.
+No allocation is granted by the view and the original allocating constructor
+API remains unchanged. No debit, forecast, carrier tariff or cap is reduced.
+
+Actual and formal index/candidate/current/owner/parent roles are unchanged.
+The borrowed primitive's result and receiving text replace the original
+String slots; the root view's result and both receiving `top` slots replace
+the original DeclarationId slots. Compile-time size and alignment assertions
+cover each changed carrier and its `as_str` receiver. They allocate no bank,
+create no quota and grant no credit for unused bytes. All original String and
+DeclarationId slot prices remain, and the separate actual heap costs vanish
+only because those temporary owners are not formed. The complete typed role
+correspondence is retained in the owning source packet.
+
+The original String copy and Arc backing overlap was `L + B(L)`, with
+`B(L) = shared_backing_bytes(L)` (both counters, UTF-8 bytes and alignment).
+The candidate forms neither temporary. Authored narrow observers measure the
+complete helper result Drop, both complete caller receiver/result Drops and
+both old/current observation orders; common parsed sources and input HIR are
+held outside the paired caller scopes and disclosed. Measurements are not
+inferred from those formulas. The original source-length reservation stays
+`L` on both routes. Clone-only or legacy API contexts are not globally repriced.
+
+The enclosing compact builder prebound includes complete fixed structure,
+string-copy and identity-occurrence bounds. The identity-carrier count names
+ExpressionId carriers; the declaration identity factor also names validation
+sets and transient maps. There is no complete disjoint attribution of this
+old temporary Arc to those aggregate terms here, and no measured shortage is
+claimed. This optimization removes redundant physical work independently of
+that unresolved attribution audit. Legacy public/nonpayer construction and
+all other dynamic migration requirements remain separate and open.
+
+The packet `docs/evidence/borrowed-top-level-identity-785-20261017/` retains
+complete 886 predecessor sources, compiled original helper, whole compact
+receiver and whole ordinary receiver, exact import/include inverses, original
+historical callers on the old helper, and a complete raw-source child join.
+Authored controls include every declaration kind, NUL/Unicode/empty text, live
+owner roots and missing parents, zero/exact/short/floor/sticky/nested/restored
+budgets, all six diagnostic fields, original empty/G173 priority, physical
+backing overlap and complete Drop. Exact source custody is not a runtime PASS.

@@ -1,0 +1,74 @@
+[
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::source_controls::complete_immediate_sources_and_old_clone_and_both_callers_are_exactly_preserved",
+    "source": "src/workspace_graph/shape_identity/source_controls.rs",
+    "line": 32,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::source_controls::all_five_test_children_remain_joined_under_the_original_raw_source_owner",
+    "source": "src/workspace_graph/shape_identity/source_controls.rs",
+    "line": 105,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::every_kind_and_empty_nul_unicode_root_keeps_old_bytes_order_and_original_debit",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 22,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::immutable_index_walk_lends_the_exact_existing_root_without_identity_allocation",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 80,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::zero_short_exact_floor_sticky_nested_and_restored_accounts_match_original_clone_gate",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 93,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::actual_old_string_arc_overlap_and_full_drop_disappear_without_refunding_the_old_debit",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 163,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::both_complete_callers_keep_original_results_all_six_diagnostic_fields_and_budget_order",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 260,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::original_empty_identity_g173_priority_survives_the_complete_caller_frontier",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 282,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "workspace_graph::shape_identity::tests::whole_caller_physical_observers_include_results_receivers_and_complete_drop",
+    "source": "src/workspace_graph/shape_identity/tests.rs",
+    "line": 307,
+    "status": "SOURCE_ONLY_UNEXECUTED"
+  }
+]

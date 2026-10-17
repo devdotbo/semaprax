@@ -1,0 +1,60 @@
+{
+  "head": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "status": "SOURCE_ONLY_NOT_QUALIFIED",
+  "files": [
+    {
+      "path": "src/bounded_output.rs",
+      "bytes": 50190,
+      "sha256": "d01a82d602c286044cc1d5df8d05d02dfe5168d1139a82380aa01b06e47c7fd5",
+      "archive": "whole-before/src/bounded_output.rs.txt"
+    },
+    {
+      "path": "src/workspace_graph/shape_identity.rs",
+      "bytes": 1274,
+      "sha256": "196bd9de3b79cb1935e9843e07ec70b54b2f52ea2ffca09b5ad6df1f74c9d27c",
+      "archive": "whole-before/src/workspace_graph/shape_identity.rs.txt"
+    },
+    {
+      "path": "src/workspace_graph/validation.rs",
+      "bytes": 40252,
+      "sha256": "fdd173857f64d3dd870c5517e32c7eaff9ceb9a29fbf3b284f6ffda23fbb7899",
+      "archive": "whole-before/src/workspace_graph/validation.rs.txt"
+    },
+    {
+      "path": "src/workspace_graph.rs",
+      "bytes": 217060,
+      "sha256": "b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31",
+      "archive": "whole-before/src/workspace_graph.rs.txt"
+    },
+    {
+      "path": "src/workspace_graph/validation/before_roots.rs",
+      "bytes": 41259,
+      "sha256": "cb4b6ad5ec8728004c0e86c63447e3b656a6c9598d65773698039a5730fcd44f",
+      "archive": "whole-before/src/workspace_graph/validation/before_roots.rs.txt"
+    },
+    {
+      "path": "src/workspace_graph/before_private_roots.rs",
+      "bytes": 7636,
+      "sha256": "ca6d3c18e240732db63dd819e13310003630faaefc1fbc14860433cd32bde040",
+      "archive": "whole-before/src/workspace_graph/before_private_roots.rs.txt"
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "bytes": 102126,
+      "sha256": "a33bdf50c97ddec9ce29ca3dfa1abec37c13afcadf6b707c4539b9af6f9f13aa",
+      "archive": "whole-before/tests/workspace/semantic_graph/source_inventory.rs.txt"
+    },
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "bytes": 104193,
+      "sha256": "d3eb0f843f53b525b4a0dbd388b79a865721b02968fa2419af678bb7670ae249",
+      "archive": "whole-before/tests/hir_module_boundaries.rs.txt"
+    },
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "bytes": 163155,
+      "sha256": "ac45caecfb6e4d8484f304092c9d6a1d4db23e254480949f1619b7cc9c7a9f0d",
+      "archive": "whole-before/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs.txt"
+    }
+  ]
+}

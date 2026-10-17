@@ -1,0 +1,114 @@
+{
+  "status": "SOURCE_ONLY_TYPED_ROLE_CORRESPONDENCE_NO_REPRICING",
+  "baseline": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "unchanged_shipping_callers": [
+    "src/workspace_graph.rs::reconstruct_workspace_declaration_facts_with_authority",
+    "src/workspace_graph/validation.rs::WorkspaceValidationIndex::record_declarations"
+  ],
+  "unchanged_original_api": "src/bounded_output.rs::budgeted_clone",
+  "old_len_request": "value.len() on exact active()+reserve() sequence; retained without reduction, refund, advance bank or new allowance",
+  "replacements": [
+    {
+      "role": "clone primitive text input actual/formal",
+      "old": "&str",
+      "current": "&str",
+      "funding": "same exact existing argument role before entry"
+    },
+    {
+      "role": "clone primitive active account/local lease",
+      "old": "Option<Rc<Budget>> = active()",
+      "current": "Option<Rc<Budget>> = active()",
+      "funding": "same existing active owner role; no newly created ledger or heap"
+    },
+    {
+      "role": "clone primitive reserve arguments/receiver, len result, as_deref result and refused bool",
+      "old": "reserve(budget.as_deref(), value.len())",
+      "current": "reserve(budget.as_deref(), value.len())",
+      "funding": "identical source sequence and original role prices, including sticky gate and optional floor"
+    },
+    {
+      "role": "clone primitive outward result and root helper receiving temporary",
+      "old": "String (two separately priced roles)",
+      "current": "&str (two separately priced replacements)",
+      "funding": "typed size/alignment assertions <= each corresponding old String slot; retain complete old slot tariff, no credit"
+    },
+    {
+      "role": "top text wrapper constructor input actual/formal and text field",
+      "old": "DeclarationId::new String argument/local, DeclarationText payload",
+      "current": "borrowed &str tuple argument/field",
+      "funding": "each actual/formal String role is separately replaced by a checked <= String borrowed role; result separately maps to old DeclarationId result; no one-to-many credit"
+    },
+    {
+      "role": "top helper index/candidate actual and formal, current/owner/parent and original walk",
+      "old": "&DeclarationIndex, &Declaration, Option<&DeclarationId>, Option<&Declaration>",
+      "current": "same actual concrete types and traversal order",
+      "funding": "all pre-existing roles retained; shared lifetime only constrains borrows"
+    },
+    {
+      "role": "top helper outward result and both shipping top receivers",
+      "old": "DeclarationId (one result role plus each corresponding old caller receiver)",
+      "current": "TopLevelDeclaration<'a> containing &'a str",
+      "funding": "typed size/alignment assertions <= each corresponding old DeclarationId slot; unchanged old frame/prebound prices"
+    },
+    {
+      "role": "as_str receiver actual/formal and outward borrowed text",
+      "old": "&DeclarationId -> &str",
+      "current": "&TopLevelDeclaration -> &str",
+      "funding": "receiver reference size exactly equal; result unchanged &str role, no owned payload"
+    },
+    {
+      "role": "temporary owner allocation/overlap and destruction",
+      "old": "String L plus Arc backing B(L), through final Arc Drop",
+      "current": "neither owner formed; input root remains borrowed from immutable source owner",
+      "funding": "no fee reduction or transfer; old L request and all conservative source/slot prices stay"
+    }
+  ],
+  "aggregate_prebound_disclosure": "Mode6 pays sequential complete HIR peak before core, including structure24/string64/identity16 and ExpressionId carrier domains. The declaration factor names validation/transient maps, so missing Arc tag is not numeric underpayment proof. No complete disjoint attribution of this old temporary to those aggregate roles is established here; no quota defect claimed.",
+  "new_modules": [
+    {
+      "path": "src/workspace_graph/shape_identity/before785.rs",
+      "role": "cfg(test) only; independent old helper/whole callers or owning regression/source controls",
+      "bytes": 1294,
+      "lines": 39,
+      "sha256": "e49ef5b19c636d8291a73f805138d14030f1209407de499e9e5398efa4060116"
+    },
+    {
+      "path": "src/workspace_graph/shape_identity/before_caller785.rs",
+      "role": "cfg(test) only; independent old helper/whole callers or owning regression/source controls",
+      "bytes": 7487,
+      "lines": 174,
+      "sha256": "b642b576c0a4de29c21d0060915522e27278d1596b0e768f9616642dd8f417b5"
+    },
+    {
+      "path": "src/workspace_graph/shape_identity/before_validation785.rs",
+      "role": "cfg(test) only; independent old helper/whole callers or owning regression/source controls",
+      "bytes": 40317,
+      "lines": 1006,
+      "sha256": "4552c7fb810d007b3ddde01a0637db6a969ba98162c5c6878d2cc5529aa6b7f9"
+    },
+    {
+      "path": "src/workspace_graph/shape_identity/source_controls.rs",
+      "role": "cfg(test) only; independent old helper/whole callers or owning regression/source controls",
+      "bytes": 5654,
+      "lines": 132,
+      "sha256": "953650f63fc7c0aa2adc3f2d9791164857fef442f4948b63c814f9ad73718729"
+    },
+    {
+      "path": "src/workspace_graph/shape_identity/tests.rs",
+      "role": "cfg(test) only; independent old helper/whole callers or owning regression/source controls",
+      "bytes": 13451,
+      "lines": 339,
+      "sha256": "c08c27f79b91214b73353b8d1dfa46f64b5f43ea6071ee3102df0e8af347ee47"
+    }
+  ],
+  "final_custody_generation": "NOT_RUN_PENDING_PARENT_OWNERSHIP_AND_SOURCE_REVIEW",
+  "cargo_build_test_execution": "NOT_RUN",
+  "retained_helper_visibility_glue": "Only old top_level_declaration visibility broadens to pub(in crate::workspace_graph) so both preexisting historical callers retain the genuine old helper; exact inverse restores the complete886 helper.",
+  "raw_inventory_owners": [
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+  ],
+  "future885_composition": "785 must be projected through its complete exact inverse before applying885 fixed whole8c source predicates; preserve all old truth. No final combined union counts assumed.",
+  "verification_performed": "Standalone rustfmt parsing/formatting only, complete source/hash/inverse comparisons and git diff --check; no Cargo, Rust build, tests, Clippy, metadata binder or source-view generator executed."
+}
