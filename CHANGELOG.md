@@ -1,5 +1,7 @@
 # Changelog
 
+- Refuse schema-less single-file function renames that would retarget a call to or from a same-named local value as `SPX-G111`, and require such renames to start from a resolvable base, leaving source unchanged on refusal; renames without capture, project renames and v2/v3 patches are unaffected.
+
 - Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
 
 - Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.
