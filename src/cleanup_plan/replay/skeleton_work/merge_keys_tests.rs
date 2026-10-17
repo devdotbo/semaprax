@@ -297,3 +297,83 @@ fn borrowed_merge_directory_pays_storage_and_every_refusal_through_drop() {
         eprintln!("OPT878 borrowed keys calls={calls}: previous held={} allocated={} highwater={}; current held={held} allocated={} highwater={}", old.unwrap(), old_metrics.allocated, old_metrics.highwater, metrics.allocated, metrics.highwater);
     }
 }
+
+// This is the existing structural foreign-child contract: ordinary consumers
+// may pay a conservative immutable bound; selected DAG parents require the
+// same destruction reservation. It is not a function restriction on Work.
+pub(in crate::cleanup_plan::replay) fn boundary_foreign_root(
+    program: &ResolvedProgram, function: &ResolvedFunction,
+) -> Rc<ObservationDag> {
+    let mut budget = ReplayBudget::with_physical(function, 1 << 24).unwrap();
+    budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+    let mut work = SkeletonWork::new(program, function, &mut budget);
+    work.selected_dag_for_foreign_control(ObservationDagKind::Seq(None, Vec::new())).unwrap()
+}
+pub(in crate::cleanup_plan::replay) fn boundary_diagnostic(
+    function: &ResolvedFunction, reason: &str,
+) -> Diagnostic {
+    Diagnostic::io("SPX-H006", format!(
+        "cleanup plan for function `{}` failed independent replay: {reason}", function.id,
+    ))
+}
+
+#[test]
+fn borrowed_merge_floor_foreign_frontiers_keep_six_fields_sticky_and_complete_drop() {
+    use crate::bounded_output::{active_remaining, clear_active_floor, set_active_floor, with_limit_usage_refusal};
+    use crate::test_allocation_observer::measure;
+    let program = fixture(false);
+    let function = program.functions().get(0).unwrap();
+    for calls in [false, true] {
+        let (((), metrics), refused, _, _) = with_limit_usage_refusal(1 << 28, || measure(|| {
+            for selected in [false, true] {
+                let mut outcomes = Vec::new();
+                for old in [true, false] {
+                    let foreign = boundary_foreign_root(&program, function);
+                    let mut budget = if selected { ReplayBudget::with_physical(function, 1 << 24).unwrap() } else { ReplayBudget::new() };
+                    budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                    budget.merge_paths = true;
+                    let mut work = SkeletonWork::new(&program, function, &mut budget);
+                    let mut states = inputs(function, 14);
+                    for (path, _) in &mut states { path.observations.prefix = Some(foreign.clone()); }
+                    let result = if calls {
+                        if old { work.before_merged_call_states(states) } else { work.merged_call_states(states) }
+                    } else {
+                        let paths = states.into_iter().map(|(path, _)| path).collect();
+                        let result = if old { work.before_merged_paths(paths) } else { work.merged_paths(paths) };
+                        result.map(|paths| paths.into_iter().map(|path| (path, vec![])).collect())
+                    };
+                    if selected {
+                        assert_eq!(result.as_ref().err().unwrap(), &boundary_diagnostic(function, "factored DAG crosses its destruction reservation"));
+                    } else { assert!(result.is_ok(), "ordinary immutable foreign children remain admitted"); }
+                    outcomes.push(result.map(snapshot));
+                    drop(work); drop(budget); drop(foreign);
+                }
+                assert_eq!(outcomes[0], outcomes[1], "complete language or six-field foreign refusal; calls={calls} selected={selected}");
+                drop(outcomes);
+            }
+        }));
+        assert!(!refused && !metrics.invalid); assert_eq!(metrics.live, 0); assert_eq!(metrics.allocated, metrics.freed);
+        for selected in [false, true] {
+            let (((), metrics), refused, _, receipt) = with_limit_usage_refusal(1 << 28, || measure(|| {
+                let mut budget = if selected { ReplayBudget::with_physical(function, 1 << 24).unwrap() } else { ReplayBudget::new() };
+                budget.reserve_bytes(function, 1, "merge boundary fixture preflight").unwrap();
+                budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS; budget.merge_paths = true;
+                let mut work = SkeletonWork::new(&program, function, &mut budget);
+                let states = inputs(function, 14);
+                let paths = if calls { Vec::new() } else { states.iter().map(|(path, _)| path.clone()).collect() };
+                assert!(set_active_floor(active_remaining().unwrap()));
+                let error = if calls { work.merged_call_states(states).err().unwrap() } else { drop(states); work.merged_paths(paths).err().unwrap() };
+                let expected = boundary_diagnostic(function, "cleanup replay physical reservation exhausted during factored borrowed merge directory");
+                assert_eq!(error, expected, "all six first-floor diagnostic fields");
+                assert!(work.budget.refusal_spent); clear_active_floor();
+                let remaining = active_remaining(); let physical = work.budget.physical.as_ref().map(|p| p.charged());
+                let retry = work.budget.reserve_bytes(function, 0, "merge boundary sticky retry").unwrap_err();
+                assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
+                assert_eq!(active_remaining(), remaining); assert_eq!(work.budget.physical.as_ref().map(|p| p.charged()), physical);
+                assert_eq!(error, expected, "retry cannot replace first six-field receipt");
+                drop((retry, error, expected)); drop(work); drop(budget);
+            }));
+            assert!(refused && receipt.is_some()); assert!(!metrics.invalid); assert_eq!(metrics.live, 0); assert_eq!(metrics.allocated, metrics.freed);
+        }
+    }
+}

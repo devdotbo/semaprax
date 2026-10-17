@@ -263,3 +263,72 @@ fn owned_suffix_copy_refusal_precedes_exhausted_merge_work_in_both_whole_routes(
         assert_eq!(errors[0], errors[1], "all six first-failure diagnostic fields");
     }
 }
+
+#[test]
+fn owned_suffix_floor_foreign_frontiers_keep_six_fields_sticky_and_prefix_drop() {
+    use crate::bounded_output::{active_remaining, clear_active_floor, set_active_floor, with_limit_usage_refusal};
+    use crate::test_allocation_observer::{measure, watch_free_order};
+    use skeleton_work::merge_keys_tests::{boundary_diagnostic, boundary_foreign_root, snapshot};
+    let program = fixture();
+    let function = program.functions().get(0).unwrap();
+    let (((), metrics), refused, _, _) = with_limit_usage_refusal(1 << 28, || measure(|| {
+        for selected in [false, true] {
+            let mut outcomes = Vec::new();
+            for old in [true, false] {
+                let foreign = boundary_foreign_root(&program, function);
+                let mut budget = if selected { ReplayBudget::with_physical(function, 1 << 24).unwrap() } else { ReplayBudget::new() };
+                budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS; budget.merge_paths = true;
+                let mut work = SkeletonWork::new(&program, function, &mut budget);
+                let prefixes = inputs(function, 1); let mut suffixes = inputs(function, 7);
+                for path in &mut suffixes { path.observations.prefix = Some(foreign.clone()); }
+                let pointers = [prefixes.as_ptr() as usize, suffixes.as_ptr() as usize];
+                let (result, order) = watch_free_order(&pointers, || {
+                    if old { before(prefixes, suffixes, &mut work) } else { current(prefixes, suffixes, &mut work) }
+                });
+                assert!(!order.invalid);
+                if selected {
+                    assert_eq!(result.as_ref().err().unwrap(), &boundary_diagnostic(function, "factored DAG crosses its destruction reservation"));
+                    assert_eq!(&order.order[..order.count], &[0, 1], "foreign selected refusal drops prefix before original suffix");
+                } else { assert!(result.is_ok(), "ordinary immutable foreign children remain admitted"); }
+                outcomes.push(result.map(|paths| snapshot(paths.into_iter().map(|path| (path, vec![])).collect())));
+                drop(work); drop(budget); drop(foreign);
+            }
+            assert_eq!(outcomes[0], outcomes[1], "whole36 language or six-field foreign refusal; selected={selected}");
+            drop(outcomes);
+        }
+    }));
+    assert!(!refused && !metrics.invalid); assert_eq!(metrics.live, 0); assert_eq!(metrics.allocated, metrics.freed);
+    for selected in [false, true] {
+        for old in [true, false] {
+            let (((), metrics), refused, _, receipt) = with_limit_usage_refusal(1 << 28, || measure(|| {
+                let mut budget = if selected { ReplayBudget::with_physical(function, 1 << 24).unwrap() } else { ReplayBudget::new() };
+                budget.reserve_bytes(function, 1, "owned boundary fixture preflight").unwrap();
+                budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS; budget.merge_paths = true;
+                let mut work = SkeletonWork::new(&program, function, &mut budget);
+                let prefixes = inputs(function, 1); let suffixes = inputs(function, 7);
+                // Exactly the new dispatch's actual caller price is acquired
+                // before moving arguments and before selecting the floor.
+                if !old {
+                    work.budget.reserve_bytes(function, QUERY + CONTROLS + suffixes.len() * ROW_CLONE_CONTROLS,
+                        "owned boundary actual caller controls").unwrap();
+                }
+                let pointers = [prefixes.as_ptr() as usize, suffixes.as_ptr() as usize];
+                assert!(set_active_floor(active_remaining().unwrap()));
+                let (error, order) = watch_free_order(&pointers, || {
+                    if old { before(prefixes, suffixes, &mut work) } else { sequence(prefixes, suffixes, &mut work) }.err().unwrap()
+                });
+                assert!(!order.invalid); assert_eq!(&order.order[..order.count], &[0, 1]);
+                let expected = boundary_diagnostic(function, "cleanup replay physical reservation exhausted during factored suffix path copies");
+                assert_eq!(error, expected, "all six floor diagnostic fields against the same original copy frontier");
+                assert!(work.budget.refusal_spent); clear_active_floor();
+                let remaining = active_remaining(); let physical = work.budget.physical.as_ref().map(|p| p.charged());
+                let retry = work.budget.reserve_bytes(function, 0, "owned boundary sticky retry").unwrap_err();
+                assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
+                assert_eq!(active_remaining(), remaining); assert_eq!(work.budget.physical.as_ref().map(|p| p.charged()), physical);
+                assert_eq!(error, expected, "retry cannot replace the selected original failure");
+                drop((retry, error, expected)); drop(work); drop(budget);
+            }));
+            assert!(refused && receipt.is_some()); assert!(!metrics.invalid); assert_eq!(metrics.live, 0); assert_eq!(metrics.allocated, metrics.freed);
+        }
+    }
+}
