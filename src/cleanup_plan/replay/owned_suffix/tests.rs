@@ -248,9 +248,9 @@ fn owned_suffix_copy_refusal_precedes_exhausted_merge_work_in_both_whole_routes(
             let mut work = SkeletonWork::new(&program, function, &mut budget);
             let suffixes = inputs(function, 7);
             let error = if old {
-                work.before_merged_suffixes(&suffixes).unwrap_err()
+                work.before_merged_suffixes(&suffixes).err().unwrap()
             } else {
-                rows(&suffixes, &mut work).unwrap_err()
+                rows(&suffixes, &mut work).err().unwrap()
             };
             assert_eq!(work.budget.skeleton_remaining, 0);
             if exhaust_bytes {
