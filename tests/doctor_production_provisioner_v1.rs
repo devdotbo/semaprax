@@ -535,7 +535,7 @@ fn parse_aarch64_tracking_workflow(workflow: &str) -> Result<(), String> {
         .collect();
     let expected_step_headers = [
         "- uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7",
-        "- uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master",
+        "- uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master",
         "- name: Require a native Linux AArch64 runner",
         "- name: Acquire the locked dependency closure before offline execution",
         "- name: Provision the real AArch64 Clang, Node and Rust carriers",
@@ -569,7 +569,7 @@ fn parse_aarch64_tracking_workflow(workflow: &str) -> Result<(), String> {
             "10:lfs: false",
         ],
         vec![
-            "6:- uses: dtolnay/rust-toolchain@e2a55d2ffb04f378e9626c28d38b36d230d1e12f # master",
+            "6:- uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # master",
             "8:with:",
             "10:toolchain: 1.97.1",
         ],
