@@ -969,3 +969,72 @@ fn held_status_index_keeps_complete_predecessor_receivers_and_assertions() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
 }
+
+#[test]
+fn projection_audit_scope_preserves_complete_sources_and_all_historical_receivers() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/projection-audit-scope-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sources.len(), 5);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &sources {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+    let sealed = std::fs::read_to_string(
+        root.join("docs/evidence/projection-audit-scope-v1/touched-live-inverses.before.json"),
+    )
+    .unwrap();
+    assert_eq!(
+        digest(&sealed),
+        "c9e1e2dc687a910bc8527e31f15284774ed999104126aa1b0b52cd3f98495f37"
+    );
+    let sealed: serde_json::Value = serde_json::from_str(&sealed).unwrap();
+    for (packet, old_rows) in sealed.as_object().unwrap() {
+        let live: Vec<serde_json::Value> =
+            serde_json::from_str(&std::fs::read_to_string(root.join(packet)).unwrap()).unwrap();
+        for old in old_rows.as_array().unwrap() {
+            let path = old["path"].as_str().unwrap();
+            let row = live.iter().find(|row| row["path"] == path).unwrap();
+            assert_eq!(row["sha256"], old["sha256"]);
+            assert_eq!(row["archive"], old["archive"]);
+            let old_edits = old["edits"].as_array().unwrap();
+            let edits = row["edits"].as_array().unwrap();
+            assert_eq!(&edits[..old_edits.len()], old_edits.as_slice());
+            let (before, after) = if old_edits[0].get("after").is_some() {
+                ("before", "after")
+            } else {
+                ("old", "new")
+            };
+            let mut restored = std::fs::read_to_string(root.join(path)).unwrap();
+            for edit in edits.iter().rev() {
+                let receiving = edit[after].as_str().unwrap();
+                assert_eq!(restored.matches(receiving).count(), 1);
+                restored = restored.replacen(receiving, edit[before].as_str().unwrap(), 1);
+            }
+            let relative = old["archive"].as_str().unwrap();
+            let direct = root.join(relative);
+            let archive = if direct.is_file() {
+                direct
+            } else {
+                root.join(packet).parent().unwrap().join(relative)
+            };
+            let original = std::fs::read_to_string(archive).unwrap();
+            assert_eq!(digest(&original), old["sha256"]);
+            assert_eq!(restored, original);
+        }
+    }
+}

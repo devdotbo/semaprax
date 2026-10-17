@@ -1,4 +1,6 @@
 include!("semantic_graph/source_inventory.rs");
+#[path = "semantic_graph/source_inventory_controls.rs"]
+mod source_inventory_controls;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -378,7 +380,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let projection_import_stub = semantic_graph_projection_child_source_inventory!(import_stub);
     let projection_uncached_peak = semantic_graph_projection_child_source_inventory!(uncached_peak);
     let projection_type_rewrite = semantic_graph_projection_child_source_inventory!(type_rewrite);
-    let projection_private_layout = semantic_graph_private_layout_source_inventory!();
+    let projection_private_layout = semantic_graph_private_layout_module_source_inventory!();
     let projection = format!(
         "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
     );
@@ -1295,4 +1297,15 @@ fn public_workspace_analysis_cli_hostiles_and_mode_separation_are_exact() {
         assert_eq!(error[0].message, expected);
     }
     std::fs::remove_dir_all(&ordinary_root).unwrap();
+}
+
+#[test]
+fn private_layout_inventory_retains_every_full_input_and_every_current_owned_module() {
+    source_inventory_controls::verify(
+        Path::new(env!("CARGO_MANIFEST_DIR")),
+        SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT,
+        semantic_graph_private_layout_source_inventory!(),
+        semantic_graph_private_layout_module_source_inventory!(),
+        include_str!("../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv"),
+    );
 }

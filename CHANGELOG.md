@@ -1,5 +1,7 @@
 # Changelog
 
+- Audit the complete private-layout module for projection purity while preserving every broader source input and rejecting missing owned or external module files.
+
 - Reduce ordinary retained status-directory comparison work with a funded private insertion index; retain complete-key AVL results, existing caps and refusal controls.
 
 - Capture a test-only replay work-refusal site in the unchanged production-core retry regression, retaining all limits, diagnostics, fixture selection and assertions.

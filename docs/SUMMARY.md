@@ -1172,3 +1172,5 @@ Audience: all documentation readers.
 - [Replay work refusal capture](evidence/replay-work-refusal-v1/README.md)
 
 - [Held status identity insertion index evidence](evidence/status-identity-index-v1/README.md)
+
+- [Complete projection source-audit scopes](evidence/projection-audit-scope-v1/README.md)

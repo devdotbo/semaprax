@@ -423,6 +423,18 @@
       {
         "before": "sha256:6e5f004daf959bd2dbc61bee9079325e7c0112b91eb711077b8c7f95e33bf588",
         "after": "sha256:6d503a367d03d11fa4cb37e50f579bc16f0e22c3469f47dbbbd05647c93f1eca"
+      },
+      {
+        "after": "include!(\"semantic_graph/source_inventory.rs\");\n#[path = \"semantic_graph/source_inventory_controls.rs\"]\nmod source_inventory_controls;\nuse std::fs::{File, OpenOptions};\nuse std::path::{Path, PathBuf}",
+        "before": "include!(\"semantic_graph/source_inventory.rs\");\nuse std::fs::{File, OpenOptions};\nuse std::path::{Path, PathBuf}"
+      },
+      {
+        "after": "  let projection_private_layout = semantic_graph_private_layout_module_source_inventory!();\n    let projection = format!(\n        \"{pro",
+        "before": "  let projection_private_layout = semantic_graph_private_layout_source_inventory!();\n    let projection = format!(\n        \"{pro"
+      },
+      {
+        "after": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n\n#[test]\nfn private_layout_inventory_retains_every_full_input_and_every_current_owned_module() {\n    source_inventory_controls::verify(\n        Path::new(env!(\"CARGO_MANIFEST_DIR\")),\n        SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT,\n        semantic_graph_private_layout_source_inventory!(),\n        semantic_graph_private_layout_module_source_inventory!(),\n        include_str!(\"../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv\"),\n    );\n}\n",
+        "before": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n"
       }
     ]
   },

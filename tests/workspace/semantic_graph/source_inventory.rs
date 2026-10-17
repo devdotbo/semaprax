@@ -1,3 +1,48 @@
+// Exact owning-module view for purity checks. The broader source inventory
+// below retains all external implementation and historical inputs unchanged.
+const SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT: &str =
+    "src/workspace_graph/expected_projection/private_layout.rs";
+macro_rules! semantic_graph_private_layout_module_source_inventory {
+    () => { concat!(
+        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/sorting.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/ledger.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/registry/tests.rs"
+        ),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/roots.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/owner_index.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs"
+        ),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_view.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_oracle.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs"
+        ),
+        include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/function_tests.rs"
+        ),
+        include_str!(
+            "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
+        ),
+    ) };
+}
+
 // Complete private-layout source inventory; original includes and literal bytes retained.
 macro_rules! semantic_graph_private_layout_source_inventory {
     () => { concat!(
@@ -68,44 +113,7 @@ macro_rules! semantic_graph_private_layout_source_inventory {
         include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
         include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
         include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
-concat!(
-        include_str!("../../src/workspace_graph/expected_projection/private_layout.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/registry.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/sorting.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/ledger.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/registry/tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/names.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/shape.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/roots.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/owner_index.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation.rs"),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_tests.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_view.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_oracle.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs"
-        ),
-        include_str!("../../src/workspace_graph/expected_projection/private_layout/tests.rs"),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/function_tests.rs"
-        ),
-        include_str!(
-            "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
-        ),
-    ),
+semantic_graph_private_layout_module_source_inventory!(),
         include_str!("semantic_graph/source_inventory.rs")
     ) };
 }
