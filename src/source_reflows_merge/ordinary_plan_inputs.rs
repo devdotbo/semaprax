@@ -279,8 +279,8 @@ fn finite_integrated_expected_namespace_authenticates_every_complete_stage() {
 // Separate FINAL -> sealed787 edge. Existing integrated/legacy packets are
 // immutable; only an exact original expected namespace reaches this reader.
 const FINAL_INGRESS: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ordinary-plan-final-ingress-20261017/current-inputs.json"));
-const FINAL_INGRESS_LENGTH: usize = 129179;
-const FINAL_INGRESS_SHA256: &str = "15e65064085abbe2d1e278762859bba88b2b115a77b1e33a8d6ef79c40274a33";
+const FINAL_INGRESS_LENGTH: usize = 134044;
+const FINAL_INGRESS_SHA256: &str = "73d23e216bd44b8a0a615b1f36db02be98028360aa979461ea7195ec85382b70";
 const FINAL_INGRESS_CAP: usize = 2 * 1024 * 1024;
 fn final_ingress_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
     if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
