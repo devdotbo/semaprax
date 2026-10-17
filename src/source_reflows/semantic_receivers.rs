@@ -1354,3 +1354,49 @@ fn isolated_lexical_path_reuse_preserves_complete_merger_and_all_prior_controls(
         assert_eq!(authority.matches(&format!("\"../{path}\"")).count(), 1);
     }
 }
+
+#[test]
+fn core_attempt_receipts_preserve_all_original_retry_and_source_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let proofs: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/core-attempt-receipts-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(proofs.len(), 5);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &proofs {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+        match path {
+            "src/workspace_graph.rs" => {
+                let hook = "        #[cfg(test)]\n        tests::record_core_attempt(\n            fallback_mode,\n            resolve_builder_bytes,\n            consumed,\n            overflowed,\n            &refusal,\n            &site,\n            &core.as_ref().err(),\n        );\n";
+                assert_eq!(current.matches(hook).count(), 1);
+                assert!(hook.contains("#[cfg(test)]"));
+                assert_eq!(current.replacen(hook, "", 1), before);
+            }
+            "src/workspace_graph/tests.rs" => {
+                assert_eq!(current.strip_prefix("#[path = \"tests/core_attempt_trace.rs\"]\nmod core_attempt_trace;\npub(super) use core_attempt_trace::{\n    observe as observe_core_attempts, record as record_core_attempt,\n};\n").unwrap(), before);
+            }
+            "src/workspace_graph/tests/builder_limits.rs" => {
+                let hook = "    let built_result = observe_core_attempts(|| {\n        build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)\n    });";
+                assert_eq!(current.matches(hook).count(), 1);
+                assert_eq!(current.replacen(hook, "    let built_result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);", 1), before);
+                assert!(current.contains("assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 2);"));
+            }
+            "src/source_reflows/semantic_receivers.rs" => assert!(current.starts_with(&before)),
+            "src/workspace_graph/tests/core_attempt_trace.rs" => assert!(before.is_empty()),
+            _ => panic!("unexpected receipt source"),
+        }
+    }
+}

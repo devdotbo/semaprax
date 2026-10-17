@@ -1,17 +1,15 @@
-//! Whole-wire bridge from the hosted 21abcda9b capture to every older control.
+//! Whole-wire bridge from complete hosted 3e66 captures; later-head CI is required.
 use super::digest_without_checked_value_cursor_budget;
 use sha2::{Digest, Sha256};
-
-#[path = "before_21abc.rs"]
-mod before_21abc;
-
-const CURRENT: [&str; 2] = [
-    include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-baseline.json"),
-    include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-renamed.json"),
+#[path = "before_3e66.rs"]
+mod before_3e66;
+const CURRENT:[&str;2]=[
+ include_str!("../../../docs/evidence/browser-graph-pins-3e66c0116/current-hosted-calculator-baseline.json"),
+ include_str!("../../../docs/evidence/browser-graph-pins-3e66c0116/current-hosted-calculator-renamed.json"),
 ];
-const PREVIOUS: [&str; 2] = [
-    include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-baseline.json"),
-    include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-renamed.json"),
+const PREVIOUS:[&str;2]=[
+ include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-baseline.json"),
+ include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-renamed.json"),
 ];
 
 fn graph_digest(graph: &str) -> String {
@@ -32,7 +30,7 @@ fn graph_digest(graph: &str) -> String {
 pub(super) fn digest(graph: &str) -> String {
     let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
     assert_eq!(graph_digest(graph), parsed["graph_digest"]);
-    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_691_397);
+    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_697_151);
     let previous = PREVIOUS
         .iter()
         .map(|text| text.strip_suffix('\n').unwrap())
@@ -43,10 +41,10 @@ pub(super) fn digest(graph: &str) -> String {
         .expect("exact retained baseline or renamed fixture");
     let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
     assert_eq!(graph_digest(previous), prior["graph_digest"]);
-    assert_eq!(prior["budget"]["used_builder_bytes"], 2_696_104);
-    let field = "\"used_builder_bytes\":2691397";
+    assert_eq!(prior["budget"]["used_builder_bytes"], 2_691_397);
+    let field = "\"used_builder_bytes\":2697151";
     assert_eq!(graph.matches(field).count(), 1);
-    let restored = graph.replacen(field, "\"used_builder_bytes\":2696104", 1);
+    let restored = graph.replacen(field, "\"used_builder_bytes\":2691397", 1);
     let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
     assert_eq!(restored.matches(&field).count(), 1);
     let restored = restored.replacen(
@@ -55,7 +53,7 @@ pub(super) fn digest(graph: &str) -> String {
         1,
     );
     assert_eq!(restored, previous, "every prior hosted graph byte");
-    before_21abc::digest(&restored)
+    before_3e66::digest(&restored)
 }
 
 #[test]
@@ -90,21 +88,17 @@ fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
 }
 
 #[test]
-fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
-    let original = include_str!(
-        "../../../docs/evidence/browser-graph-pins-21abcda9b/historical_builder.before.rs.txt"
-    );
-    let runner = include_str!(
-        "../../../docs/evidence/browser-graph-pins-21abcda9b/test-fixtures.before.mjs"
-    );
+fn every_original_bridge_byte_is_retained_except_its_frozen_runner_include() {
+    let original=include_str!("../../../docs/evidence/browser-graph-pins-3e66c0116/tests__wasm__scalar_browser_ci_contract__historical_builder.rs.before.txt");
+    let runner=include_str!("../../../docs/evidence/browser-graph-pins-3e66c0116/platform-tests__wasm-scalar-browser-v1__test-fixtures.mjs.before.txt");
     for (source, expected) in [
         (
             original,
-            "d9e93e7afe98de8aa1d593ea5c8a80acbe08458929205a5f84f1608a8b86e704",
+            "bb1c19263bf1680e6f58f2711b9bf2bb5c03fbe2a62d34d05d457ca68eb2633c",
         ),
         (
             runner,
-            "b6339f8ce8c4641fb6ca65590f75deb9cb7cbed486c63a88b4be00e5b41c6283",
+            "9bb8345d9ce598c20f3dd8ee3879a1de46ae6dd2fc22c5b3bb9cb9e7801ececd",
         ),
     ] {
         assert_eq!(
@@ -115,13 +109,59 @@ fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
             expected
         );
     }
-    let current = include_str!("before_21abc.rs");
-    let new = concat!(
-        "include_str!(\n",
-        "        \"../../../docs/evidence/browser-graph-pins-21abcda9b/test-fixtures.before.mjs\"\n",
-        "    )"
-    );
+    let current = include_str!("before_3e66.rs");
+    let new="include_str!(\n        \"../../../docs/evidence/browser-graph-pins-3e66c0116/platform-tests__wasm-scalar-browser-v1__test-fixtures.mjs.before.txt\"\n    )";
     let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
     assert_eq!(current.matches(new).count(), 1);
     assert_eq!(current.replacen(new, old, 1), original);
+}
+
+fn restore_source(proof: &serde_json::Value, current: &str) -> String {
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        proof["after_sha256"]
+    );
+    let mut before = current.to_owned();
+    for edit in proof["inverse"].as_array().unwrap() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(before.matches(after).count(), 1);
+        before = before.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))
+        ),
+        proof["before_sha256"]
+    );
+    before
+}
+#[test]
+fn all_current_sources_and_three_complete_predecessors_are_authenticated() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let proofs: Vec<serde_json::Value> = serde_json::from_str(include_str!(
+        "../../../docs/evidence/browser-graph-pins-3e66c0116/sources.json"
+    ))
+    .unwrap();
+    assert_eq!(proofs.len(), 3);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &proofs {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = restore_source(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(
+            std::panic::catch_unwind(|| restore_source(proof, &(current.clone() + "\n"))).is_err()
+        );
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| restore_source(&forged, &current)).is_err());
+    }
 }

@@ -1175,3 +1175,5 @@ Audience: all documentation readers.
 
 - [Complete projection source-audit scopes](evidence/projection-audit-scope-v1/README.md)
 - [Isolated lexical skeleton paths](evidence/isolated-skeleton-paths-v1/README.md)
+- [Core retry attempt receipts](evidence/core-attempt-receipts-v1/README.md)
+- [Complete browser graph pins from 3e66c0116](evidence/browser-graph-pins-3e66c0116/README.md)

@@ -1,3 +1,8 @@
+#[path = "tests/core_attempt_trace.rs"]
+mod core_attempt_trace;
+pub(super) use core_attempt_trace::{
+    observe as observe_core_attempts, record as record_core_attempt,
+};
 #[path = "tests/cache_stage_debits.rs"]
 mod cache_stage_debits;
 use super::*;
