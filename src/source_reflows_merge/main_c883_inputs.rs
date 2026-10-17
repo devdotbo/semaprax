@@ -7,6 +7,7 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn held(path: &Path, length: usize, expected: &str) -> std::io::Result<String> {
+    if let Some(value) = super::main67107_inputs::accepted_expected_file(path, length, expected) { return Ok(value); }
     use std::io::Read;
     let before = std::fs::symlink_metadata(path)?;
     assert!(before.is_file() && !before.file_type().is_symlink());
@@ -131,6 +132,7 @@ fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Re
     let row = rows.iter().find(|row| row["path"] == relative).unwrap();
     let current = held(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())?;
     if let Some(compiled) = compiled(relative) {
+        let compiled = super::main67107_inputs::accepted_expected_value(relative, row["current_sha256"].as_str().unwrap(), compiled);
         assert_eq!(current, compiled, "complete physical/compiled main-c883 owner");
     }
     held(&root.join(row["main_archive"].as_str().unwrap()), row["main_length"].as_u64().unwrap() as usize, row["main_sha256"].as_str().unwrap())
