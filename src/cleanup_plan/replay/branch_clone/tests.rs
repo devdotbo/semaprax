@@ -296,7 +296,8 @@ fn terminal_prefix_probe_rejects_growth_cycles_and_nonfinal_edges() {
             assert!(!probe(&plan, terminal, 0, 2));
             plan.blocks[index].terminator = CleanupTerminator::Goto(EdgeId(u32::MAX));
             assert!(!probe(&plan, terminal, 0, 2));
-            plan.blocks[index].terminator = CleanupTerminator::Exit(ExitTargetId(u32::MAX));
+            plan.blocks[index].terminator =
+                CleanupTerminator::Exit(crate::cleanup_plan::ExitTargetId(u32::MAX));
             assert!(!probe(&plan, terminal, 0, 2));
             let old_target = plan.edges[0].to;
             plan.edges[0].to = terminal;
