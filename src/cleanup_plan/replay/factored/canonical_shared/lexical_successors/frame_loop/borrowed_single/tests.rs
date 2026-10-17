@@ -47,6 +47,8 @@ fn actual(function: &ResolvedFunction, graph: &Automaton, sink: usize, root: usi
         };
         let result = (|| {
             budget.reserve_array::<(usize, u64)>(function, 1, "borrowed singleton oracle root")?;
+            budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "borrowed singleton complete physical owner")?;
             Canonicalizer::new(graph, sink).id(function, vec![(root, 1)], &mut budget)
         })().map_err(|error| failure(&error));
         assert!(current_metrics().allocated <= budget.physical.as_ref().unwrap().charged());
