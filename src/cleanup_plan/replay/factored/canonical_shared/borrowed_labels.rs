@@ -220,6 +220,20 @@ const _: () = assert!(size_of::<&AllocationPayer>() + size_of::<bool>()
 // below are paid by the actual caller before this function is entered.
 pub(super) fn ordinary_receiving() -> usize {
     crate::bounded_output::classifier_string::ClassifierLedger::current_receiving_controls()
+        // The held-current mismatch may record the first terminal receipt.
+        // These complete existing inventories include its receipt/site/stage
+        // constructors; no old generic producer allowance funds this branch.
+        + crate::bounded_output::classifier_string::ClassifierLedger::insertion_terminal_controls()
+        + crate::bounded_output::classifier_string::ClassifierLedger::storage_terminal_receipt_controls()
+        // Two nested callback captures: caller and receiving function borrow.
+        + 4 * size_of::<&ResolvedFunction>()
+        // Mutable selected-ledger lookup, expect transport, and sticky reject.
+        + 2 * size_of::<&mut Option<Box<physical_storage::PhysicalReservation>>>()
+        + 2 * size_of::<Option<&mut physical_storage::PhysicalReservation>>()
+        + 2 * size_of::<&mut physical_storage::PhysicalReservation>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<Option<physical_storage::PhysicalRefusal>>()
+        + size_of::<physical_storage::PhysicalRefusal>()
         + 2 * size_of::<&Option<crate::cleanup_plan::replay::SelectedDirectAnchor>>()
         + 2 * size_of::<Option<&crate::cleanup_plan::replay::SelectedDirectAnchor>>()
         + 2 * size_of::<&Option<Box<physical_storage::PhysicalReservation>>>()
