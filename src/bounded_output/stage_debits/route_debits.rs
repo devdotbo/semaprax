@@ -44,7 +44,7 @@ impl Coordinate {
 }
 // Fixed aggregate census: reservation calls, never physical allocations. No
 // per-event buffer, no panic at4096/8769 events, no observer input to admission.
-const COMPARISON_PHASES: usize = 9;
+const COMPARISON_PHASES: usize = 10;
 #[derive(Clone, Copy)]
 struct ComparisonCell {
     attempts: usize,
@@ -63,9 +63,10 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         "ordinary plan history comparison receivers" => Some(3),
         "ordinary plan history sort receivers" => Some(4),
         "ordinary plan history left cursor prepare" => Some(5),
-        "ordinary plan history right cursor prepare" | "ordinary plan history HIR cursor prepare" => Some(6),
-        "ordinary plan history paired cursor next" => Some(7),
-        "ordinary plan history HIR cursor next" => Some(8),
+        "ordinary plan history right cursor prepare" => Some(6),
+        "ordinary plan history HIR cursor prepare" => Some(7),
+        "ordinary plan history paired cursor next" => Some(8),
+        "ordinary plan history HIR cursor next" => Some(9),
         _ => None,
     }
 }
