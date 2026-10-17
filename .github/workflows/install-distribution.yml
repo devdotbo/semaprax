@@ -324,7 +324,7 @@ jobs:
         env:
           ATTESTATION_BUNDLE: ${{ steps.attest.outputs.bundle-path }}
         run: cp -- "$ATTESTATION_BUNDLE" "dist/release-attestation-${{ matrix.target }}.json"
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: candidate-${{ matrix.target }}
           path: |
@@ -360,7 +360,7 @@ jobs:
           python3 scripts/release-notes.py --version "$version" --assets-dir dist > release-notes-preview.md
           head -c 4000 release-notes-preview.md
           mkdir meta && cp dist/SHA256SUMS dist/release-manifest.json meta/
-      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+      - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9 # v7.0.2
         with:
           name: candidate-meta
           path: meta
