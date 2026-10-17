@@ -30,6 +30,14 @@
       {
         "new": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"            if $frames.len() == $frames.capacity() {\\n                continuation_storage::reserve_push($frames, function, work.budget)?;\\n            }\",\n        \"before\": \"            if $frames.len() == $frames.capacity() {\\n                return Err(replay_error(\\n                    function,\\n                    \\\"typed-HIR skeleton traversal exceeds the admitted depth\\\",\\n                ));\\n            }\"\n      },\n      {\n        \"after\": \"            if frames.len() == frames.capacity() {\\n                continuation_storage::reserve_push(frames, function, work.budget)?;\\n            }\",\n        \"before\": \"            if frames.len() == frames.capacity() {\\n                return Err(replay_error(\\n                    function,\\n                    \\\"typed-HIR skeleton traversal exceeds the admitted depth\\\",\\n                ));\\n            }\"\n      },\n      {\n        \"after\": \"        return sequence_vector::single",
         "old": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"        return sequence_vector::single"
+      },
+      {
+        "new": "\n    \"path\": \"src/cleanup_plan/replay.rs\",\n    \"after_sha256\": \"f55a89e71e01d7254fd13ae57b9fbe104a08bddc1a3f080140b6d70213c1544d\",\n    \"before_sha256\": \"1ee09bd6f221d0eb3e272016f243a00c67815d5",
+        "old": "\n    \"path\": \"src/cleanup_plan/replay.rs\",\n    \"after_sha256\": \"a095e76b1c26a3fb49664a2169e9933fac76904b75c0a5c39046892442d24370\",\n    \"before_sha256\": \"1ee09bd6f221d0eb3e272016f243a00c67815d5"
+      },
+      {
+        "new": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"  (\\n            continuation_storage::Lease::Local,\\n            if work.budget.payer == AllocationPayer::ActiveBuilder {\\n                continuation_storage::fresh_receiving(function, work.budget)?\\n            } else {\\n                continuation_storage::fresh(function, work.budget)?\\n            },\\n        )\\n    };\\n    // No directory borrow spans the runner: \",\n        \"before\": \"  (\\n            continuation_storage::Lease::Local,\\n            continuation_storage::fresh(function, work.budget)?,\\n        )\\n    };\\n    // No directory borrow spans the runner: \"\n      },\n      {\n        \"after\": \"            if $frames.len() == $frame",
+        "old": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"            if $frames.len() == $frame"
       }
     ]
   },
@@ -49,6 +57,14 @@
       {
         "new": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"            if $frames.len() == $frames.capacity() {\\n                continuation_storage::reserve_push($frames, function, work.budget)?;\\n            }\",\n        \"before\": \"            if $frames.len() == $frames.capacity() {\\n                return Err(replay_error(\\n                    function,\\n                    \\\"typed-HIR skeleton traversal exceeds the admitted depth\\\",\\n                ));\\n            }\"\n      },\n      {\n        \"after\": \"            if frames.len() == frames.capacity() {\\n                continuation_storage::reserve_push(frames, function, work.budget)?;\\n            }\",\n        \"before\": \"            if frames.len() == frames.capacity() {\\n                return Err(replay_error(\\n                    function,\\n                    \\\"typed-HIR skeleton traversal exceeds the admitted depth\\\",\\n                ));\\n            }\"\n      },\n      {\n        \"after\": \"        return sequence_vector::single",
         "old": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"        return sequence_vector::single"
+      },
+      {
+        "new": "\n    \"path\": \"src/cleanup_plan/replay.rs\",\n    \"after_sha256\": \"f55a89e71e01d7254fd13ae57b9fbe104a08bddc1a3f080140b6d70213c1544d\",\n    \"before_sha256\": \"ee6582dfe9654e0d405cd103834e5ceb501c87c",
+        "old": "\n    \"path\": \"src/cleanup_plan/replay.rs\",\n    \"after_sha256\": \"a095e76b1c26a3fb49664a2169e9933fac76904b75c0a5c39046892442d24370\",\n    \"before_sha256\": \"ee6582dfe9654e0d405cd103834e5ceb501c87c"
+      },
+      {
+        "new": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"  (\\n            continuation_storage::Lease::Local,\\n            if work.budget.payer == AllocationPayer::ActiveBuilder {\\n                continuation_storage::fresh_receiving(function, work.budget)?\\n            } else {\\n                continuation_storage::fresh(function, work.budget)?\\n            },\\n        )\\n    };\\n    // No directory borrow spans the runner: \",\n        \"before\": \"  (\\n            continuation_storage::Lease::Local,\\n            continuation_storage::fresh(function, work.budget)?,\\n        )\\n    };\\n    // No directory borrow spans the runner: \"\n      },\n      {\n        \"after\": \"            if $frames.len() == $frame",
+        "old": "e\": \"src__cleanup_plan__replay.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"            if $frames.len() == $frame"
       }
     ]
   }

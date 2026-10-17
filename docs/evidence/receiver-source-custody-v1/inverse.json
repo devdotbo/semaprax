@@ -1,10 +1,14 @@
 [
   {
     "path": "src/cleanup_plan/replay.rs",
-    "after_sha256": "a095e76b1c26a3fb49664a2169e9933fac76904b75c0a5c39046892442d24370",
+    "after_sha256": "f55a89e71e01d7254fd13ae57b9fbe104a08bddc1a3f080140b6d70213c1544d",
     "before_sha256": "1ee09bd6f221d0eb3e272016f243a00c67815d56fcc246b794975c9ee00a5220",
     "archive": "src__cleanup_plan__replay.rs.before.txt",
     "inverse": [
+      {
+        "after": "  (\n            continuation_storage::Lease::Local,\n            if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?\n            },\n        )\n    };\n    // No directory borrow spans the runner: ",
+        "before": "  (\n            continuation_storage::Lease::Local,\n            continuation_storage::fresh(function, work.budget)?,\n        )\n    };\n    // No directory borrow spans the runner: "
+      },
       {
         "after": "            if $frames.len() == $frames.capacity() {\n                continuation_storage::reserve_push($frames, function, work.budget)?;\n            }",
         "before": "            if $frames.len() == $frames.capacity() {\n                return Err(replay_error(\n                    function,\n                    \"typed-HIR skeleton traversal exceeds the admitted depth\",\n                ));\n            }"

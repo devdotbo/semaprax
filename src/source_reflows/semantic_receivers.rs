@@ -433,6 +433,15 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         .unwrap();
     let before = std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap();
     let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+    // Reconstruct the authenticated predecessor dispatch before applying the
+    // original complete-validator assertions below.
+    let receiving_guard = "if function.cleanup_plan.status_sources.len() >= 3 {";
+    assert_eq!(current.matches(receiving_guard).count(), 1);
+    let current = current.replacen(
+        receiving_guard,
+        "if budget.pays_allocations() && function.cleanup_plan.status_sources.len() >= 3 {",
+        1,
+    );
     let guard="    if budget.pays_allocations() && function.cleanup_plan.status_sources.len() >= 3 {\n        return validate_status_sources_held_prefix(function, facts, budget);\n    }\n";
     assert_eq!(current.matches(guard).count(), 1);
     assert!(current.replacen(guard, "", 1).starts_with(&before));
@@ -529,6 +538,13 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     let machine_types = old_storage.find("pub(super) type OwnedStep").unwrap();
     assert!(current_storage.contains(&old_storage[machine_types..]));
     let mut machine = std::fs::read_to_string(root.join("src/cleanup_plan/replay.rs")).unwrap();
+    let standalone = "if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?\n            }";
+    assert_eq!(machine.matches(standalone).count(), 1);
+    machine = machine.replacen(
+        standalone,
+        "continuation_storage::fresh(function, work.budget)?",
+        1,
+    );
     let after = r###"            if $frames.len() == $frames.capacity() {
                 continuation_storage::reserve_push($frames, function, work.budget)?;
             }"###;
@@ -645,4 +661,33 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
         ),
         before_file(path)
     );
+}
+
+#[test]
+fn ordinary_replay_routes_keep_complete_predecessors_and_existing_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let records: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(records.len(), 6);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in records {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path.to_owned()));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(&proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        if path.ends_with("/tests.rs") {
+            assert!(current.starts_with(&before));
+        }
+        assert!(std::panic::catch_unwind(|| invert(&proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
 }

@@ -1,5 +1,7 @@
 # Changelog
 
+- Use paid small continuation backing for standalone validation and the authenticated held status prefix for unobserved wide validation, retaining limits, complete original paths, and historical controls.
+
 - Reuse one fully funded comparison state during ordinary expression-fact lookup, retaining complete byte ordering, original work events, legacy/selected/oracle routes and historical controls.
 
 - Grow authenticated invocation-held continuation buffers as reached, funding complete replacements and retaining the original depth bound, fixed legacy constructor, work events and historical controls.

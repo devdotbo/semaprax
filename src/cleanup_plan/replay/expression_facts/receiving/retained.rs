@@ -29,7 +29,7 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
             ids: None,
         });
     }
-    if budget.pays_allocations() && function.cleanup_plan.status_sources.len() >= 3 {
+    if function.cleanup_plan.status_sources.len() >= 3 {
         return validate_status_sources_held_prefix(function, facts, budget);
     }
     let expressions: &dyn Lookup = facts;
