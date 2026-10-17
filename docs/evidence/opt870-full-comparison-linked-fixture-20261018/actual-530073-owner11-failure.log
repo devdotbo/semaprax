@@ -1,0 +1,21 @@
+
+running 1 test
+test cleanup_plan::replay::factored::canonical_shared::paid_many::tests::composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order ... OPT870 actual comparison immediate=true paid=808839 physical=Metrics { allocations: 504, reallocations: 107, allocated: 152053, freed: 152053, live: 0, highwater: 76437, invalid: false }
+OPT870 preserved original comparison failure report_complete=true stage=physical-setup immediate=true limit=0 diagnostic=Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `probe` failed independent replay: cleanup replay physical reservation exceeds the bound", path: None, span: None, help: None }
+OPT870 preserved original comparison failure report_complete=true stage=full-comparison immediate=true limit=808838 paid=808541 remaining=0 skeleton_remaining=0 skeleton_spent=11442 lent_skeleton=false refusal_spent=true diagnostic=Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `probe` failed independent replay: cleanup replay physical reservation exhausted during canonical arena node receiving", path: None, span: None, help: None }
+OPT870 actual comparison immediate=false paid=803699 physical=Metrics { allocations: 503, reallocations: 110, allocated: 151501, freed: 151501, live: 0, highwater: 76437, invalid: false }
+OPT870 preserved original comparison failure report_complete=true stage=physical-setup immediate=false limit=0 diagnostic=Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `probe` failed independent replay: cleanup replay physical reservation exceeds the bound", path: None, span: None, help: None }
+OPT870 preserved original comparison failure report_complete=true stage=full-comparison immediate=false limit=803698 paid=803401 remaining=0 skeleton_remaining=0 skeleton_spent=11442 lent_skeleton=false refusal_spent=true diagnostic=Diagnostic { code: "SPX-H006", severity: Error, message: "cleanup plan for function `probe` failed independent replay: cleanup replay physical reservation exhausted during canonical arena node receiving", path: None, span: None, help: None }
+
+thread 'cleanup_plan::replay::factored::canonical_shared::paid_many::tests::composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order' (31129316) panicked at src/workspace_graph/test_replay_context.rs:81:10:
+called `Result::unwrap()` on an `Err` value: [Diagnostic { code: "SPX-G410", severity: Error, message: "retained static UTF-8 source-site authority disagrees", path: None, span: None, help: None }]
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::factored::canonical_shared::paid_many::tests::composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10063 filtered out; finished in 1.03s
+
