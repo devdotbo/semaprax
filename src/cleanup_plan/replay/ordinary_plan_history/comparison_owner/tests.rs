@@ -566,3 +566,6 @@ fn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_o
     assert_eq!(heap.allocated, old_heap.allocated, "the retained slice view adds no heap backing");
     eprintln!("OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim");
 }
+
+#[path = "pair_scope_tests.rs"]
+mod pair_scope_tests;

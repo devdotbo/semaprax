@@ -1,0 +1,33 @@
+{
+  "new_modules": {
+    "production": [],
+    "test": [
+      "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs",
+      "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs",
+      "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+      "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+    ]
+  },
+  "registrations": {
+    "comparison_owner.rs": [
+      "#[cfg(test)] mod before_pair_scope;",
+      "#[cfg(test)] mod pair_scope_census;"
+    ],
+    "comparison_owner/tests.rs": [
+      "#[path = \"pair_scope_tests.rs\"] mod pair_scope_tests;"
+    ],
+    "before_pair_scope/mod.rs": [
+      "#[macro_use] mod lexical_cursor;"
+    ]
+  },
+  "inventory_owner": "Main9, all three raw source inventory joins and final role/source coupling pending; this lane does not edit integration/rawjoin sources",
+  "qualification_owners": [
+    "existing complete comparison_owner/tests unchanged",
+    "whole producer comparison ordinary_plan_history tests/owned_tests/frontier_tests",
+    "external native codec owners23/24",
+    "full1024 callable owner",
+    "original codec/catalog/ShiftSim/LogLens applications64MiB",
+    "strict arena and allwidth0..4 strict210"
+  ],
+  "all_runtime_and_shipping_results": "PENDING_UNEXECUTED"
+}

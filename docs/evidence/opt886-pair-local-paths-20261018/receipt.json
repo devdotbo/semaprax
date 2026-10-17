@@ -1,0 +1,51 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "base": "4624d6b6a6855d9230da3be673355ec497a626d5",
+  "production_modules_added": [],
+  "test_modules_added": [
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs",
+      "sha256": "b5047bfb49ce1264ce57a0b6194a2cfce8bd79e24d8f1da852223912509947b6"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs",
+      "sha256": "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+      "sha256": "c314eb9134745db727bca19fffed00c0cf83b064d517cad20c7f5570c200fed9"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+      "sha256": "42a3d777b79d9660aaaf5dbebafa119023a36de47ba610343511b75ebe17a3ac"
+    }
+  ],
+  "modified_rust": [
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "sha256": "a81bfa31ca41284175a748dae535efac31244dc2e7e5007c8dd18a69ced05ab2"
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+      "sha256": "b025d55c3208e7460d37efa45e6e1c57af9337a620e4cfccd57a32defcea094a"
+    }
+  ],
+  "inverse_sha256": "82dc188ee07e8a9d5621776a74f822974adae31f8c5eb5bd8fb3e50b438a6b8a",
+  "role_audit_sha256": "d77078df3a7a01a78a0033d3ee9e3537e9a43219116579c07dee9cd99788243b",
+  "source_checks": [
+    "six Rust files parse-only PASS",
+    "two exact complete byte inverses PASS",
+    "whole old883 comparator/cursor reconstruction PASS",
+    "all prior owner tests byte-exact prefix PASS",
+    "all changed/new Rust below1500 lines PASS",
+    "generation/serial identity, unfinished/unwind snapshot source review fixes authored",
+    "complete independent original Cursor prepare/next reconstruction PASS"
+  ],
+  "runtime": "not built/tested/executed",
+  "pending": [
+    "independent source review",
+    "Main9 complete raw joins/role union/source coupling",
+    "owning runtime/Clippy and same-fixture shipping application/callable comparisons"
+  ],
+  "new_selectors": 13
+}

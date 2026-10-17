@@ -4,6 +4,10 @@ use super::*;
 mod lexical_cursor;
 #[cfg(test)]
 mod before_lexical_cursor;
+#[cfg(test)]
+mod before_pair_scope;
+#[cfg(test)]
+mod pair_scope_census;
 
 #[derive(Clone, Copy)]
 enum Step { Build, Drain, Sift, PairPrepare, PairNext, Siblings, Root }
@@ -38,6 +42,10 @@ const PAYMENT_HEADER: usize = 2 * size_of::<&ResolvedFunction>()
     + 2 * size_of::<usize>() + 2 * size_of::<Result<(), Diagnostic>>();
 const PATH_INDEX: usize = 2 * size_of::<&Vec<PlanPath>>()
     + 2 * size_of::<usize>() + size_of::<&PlanPath>();
+// Two original index call/return tariffs plus two distinct local receiving refs.
+const PAIR_SCOPE: usize = 2 * PATH_INDEX + 2 * size_of::<&PlanPath>();
+// Scope-reserve and additional inner-loop work sites: complete primitive frames.
+const PAIR_PRIMITIVE: usize = 2 * PAYMENT_HEADER;
 const PATH_SWAP: usize = 2 * size_of::<&mut Vec<PlanPath>>()
     + 3 * size_of::<&mut [PlanPath]>() + 4 * size_of::<usize>();
 const PAIR_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
@@ -94,7 +102,7 @@ const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,
 // The first acquisition replaces the identical old compare-entry call and is
 // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
-    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS
+    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
     + size_of::<HistorySet>() // retained original owning input header
     + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
     + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
@@ -121,6 +129,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
     if skeleton_work::enumerated_prefix::original_selected() {
         return before_hir_compare::compare(function, budget, actual, expected);
     }
+    #[cfg(test)]
+    let census = pair_scope_census::begin(function, budget, false);
     paid!(budget, function, OWNER_CONTROLS, "ordinary plan retained comparison owner")?;
     let mut owner = ComparisonOwner {
         arena: actual.arena.as_slice(),
@@ -184,22 +194,41 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(budget, function, PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET, "ordinary plan history right cursor prepare")?;
                 owner.right_cursor.prepare(&actual.paths[owner.right].history, &actual.arena, function, budget)?;
                 owner.right_items = &[]; owner.right_loaded = false;
+                #[cfg(test)]
+                census.pair();
                 owner.step = Step::PairNext;
             }
             Step::PairNext => {
+                // Preserve the first original work refusal before acquiring
+                // references. The subsequent work site is separately prepaid.
                 budget.charge(function, 1, "ordinary plan history observation comparison")?;
-                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH, "ordinary plan history paired cursor next")?;
-                let left = lexical_plan_next!(owner, left_cursor, left_items, left_loaded, actual.paths[owner.left].history, function, budget, "ordinary plan history paired cursor next");
-                let right = lexical_plan_next!(owner, right_cursor, right_items, right_loaded, actual.paths[owner.right].history, function, budget, "ordinary plan history paired cursor next");
-                match (left, right) {
-                    (Some(left), Some(right)) => {
-                        owner.ordering = left.cmp(right);
-                        if owner.ordering == Ordering::Equal { continue; }
+                #[cfg(test)]
+                census.round();
+                paid!(budget, function, PAIR_SCOPE, "ordinary plan history pair-local paths")?;
+                {
+                    let left_path = &actual.paths[owner.left];
+                    let right_path = &actual.paths[owner.right];
+                    loop {
+                        paid!(budget, function, PAIR_MATCH, "ordinary plan history paired cursor next")?;
+                        let left = lexical_plan_next!(owner, left_cursor, left_items, left_loaded, left_path.history, function, budget, "ordinary plan history paired cursor next");
+                        let right = lexical_plan_next!(owner, right_cursor, right_items, right_loaded, right_path.history, function, budget, "ordinary plan history paired cursor next");
+                        match (left, right) {
+                            (Some(left), Some(right)) => {
+                                owner.ordering = left.cmp(right);
+                                if owner.ordering == Ordering::Equal {
+                                    budget.charge(function, 1, "ordinary plan history observation comparison")?;
+                                    #[cfg(test)]
+                                    census.round();
+                                    continue;
+                                }
+                            }
+                            (None, None) => owner.ordering = left_path.terminal.cmp(&right_path.terminal),
+                            (None, Some(_)) => owner.ordering = Ordering::Less,
+                            (Some(_), None) => owner.ordering = Ordering::Greater,
+                        }
+                        break;
                     }
-                    (None, None) => owner.ordering = actual.paths[owner.left].terminal.cmp(&actual.paths[owner.right].terminal),
-                    (None, Some(_)) => owner.ordering = Ordering::Less,
-                    (Some(_), None) => owner.ordering = Ordering::Greater,
-                }
+                } // Both PlanPath loans end BEFORE any scheduling or swap.
                 owner.step = owner.after_pair;
             }
             Step::Siblings => {
@@ -300,6 +329,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
             return Err(replay_error(function, "cleanup CFG decision or ownership-event sequence disagrees with typed HIR"));
         }
     }
+    #[cfg(test)]
+    census.success();
     Ok(())
 }
 
