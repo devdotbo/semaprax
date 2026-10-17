@@ -32,8 +32,8 @@ new=" payload=_definition_payload(R,row,read)"
 source=original.decode();assert source.count(old)==1
 current=source.replace(old,new,1)
 assert current.replace(new,old,1).encode()==original
-guard_helper=R/'docs/evidence/compile3-second-borrow-source-acquisition-20261017/guard_payload.py';guard_raw=held(guard_helper,3084)
-assert sha(guard_raw)=='d639966e45394029dffa61d03136c5fc3648b278b9a61643303d6d48675874e5'
+guard_helper=R/'docs/evidence/earned-managed-pin42-source-coupling-20261017/guard_payload.py';guard_raw=held(guard_helper,2978)
+assert sha(guard_raw)=='71b1cf1c20c2aa0d534dccfc9701a1ebe465f4e56b1f5d0eb7a344d6e1b1560f'
 g=types.ModuleType('accepted_main043_strict_guard');g.__file__=str(guard_helper)
 exec(compile(guard_raw,str(guard_helper),'exec'),g.__dict__)
 guard_old="runpy.run_path(str(R/D/'guard-extensions.py'))"

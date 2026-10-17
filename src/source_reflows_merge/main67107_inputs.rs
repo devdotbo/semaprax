@@ -1000,6 +1000,24 @@ fn compile_repair_file(path: &::std::path::Path, length: usize, expected: &str) 
 
 // Whole-source finite admission in front of the independently frozen prior chains.
 fn accepted_records() -> serde_json::Value {
+    let previous = accepted_records_before_earned_pins();
+    let data = include_str!("../../docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json");
+    assert_eq!(data.len(), 34641);
+    assert_eq!(digest(data), "27ec261cbc4f2b00a6ff0be7084f8c1a8c76e42523043b180f49701f8540abd2");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 42);
+    let mut inverse = packet.clone();
+    let added = inverse["rows"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(added["source"], "src/workspace_graph/type_proof_tests.rs");
+    let row = inverse["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "tests/workspace/semantic_graph.rs").unwrap();
+    let mut prior = row["priors"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(prior["name"], "earned_pin_producer");
+    prior.as_object_mut().unwrap().remove("name");
+    row["current"] = prior;
+    assert_eq!(inverse, previous, "complete original41 source table changed");
+    packet
+}
+fn accepted_records_before_earned_pins() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/compile3-second-borrow-bindings-20261017/inputs.json");
     assert_eq!(data.len(), 33632);
     assert_eq!(digest(data), "9a4c35c3f31965ee34408cc88584f2e81c61d1a6c1e77d21248e1baad66cb270");
@@ -1010,6 +1028,7 @@ fn accepted_records() -> serde_json::Value {
 }
 fn accepted_compiled(source: &str) -> &'static str {
     match source {
+        "src/workspace_graph/type_proof_tests.rs" => include_str!("../../src/workspace_graph/type_proof_tests.rs"),
         "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"),
         "src/bounded_output/classifier_string.rs" => include_str!("../../src/bounded_output/classifier_string.rs"),
         "src/bounded_output/stage_debits.rs" => include_str!("../../src/bounded_output/stage_debits.rs"),
