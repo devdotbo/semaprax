@@ -404,3 +404,123 @@ fn borrowed_single_real_two_label_general_route_keeps_full_old_maps_and_reports_
     assert!(reports[1].0.0 > reports[0].0.0, "the complete general path exposes the new conservative Exit overhead");
     eprintln!("borrowed-single actual two-label general immediate/current={reports:?}");
 }
+
+
+// Complete identical original arena corpus, including duplicate128 labels,
+// unique24 labels and empty-only shape. The original strict arena/210 owners
+// remain byte-exact; this is additional immediate886 composition coverage.
+fn arity_dispatch_corpus(function: &ResolvedFunction, shape: usize) -> (Automaton, usize, Vec<usize>) {
+    let mut budget = ReplayBudget::unobserved();
+    let mut graph = Automaton::default();
+    let sink = graph.node(function, &mut budget).unwrap();
+    if shape == 2 {
+        return (graph, sink, vec![sink]);
+    }
+    let mut roots = Vec::new();
+    for row in 0..32 {
+        let root = graph.node(function, &mut budget).unwrap();
+        for column in 0..if shape == 0 { 128 } else { 24 } {
+            // Duplicate corpus repeats the same full labels; unique-wide uses
+            // distinct labels on each row. Both retain distinct state keys.
+            let identity_row = if shape == 0 { 0 } else { row };
+            let label = Label::Observation(super::Rc::new(
+                super::super::super::SkeletonObservation::Boolean {
+                    expression: crate::hir::ExpressionId::from_owned(format!(
+                        "arena.row.{identity_row}.column.{column}"
+                    )),
+                    value: column % 2 == 0,
+                },
+            ));
+            graph
+                .movement(function, &mut budget, root, label, sink)
+                .unwrap();
+        }
+        roots.push(root);
+    }
+    (graph, sink, roots)
+}
+
+fn arity_dispatch_observe(
+    function: &ResolvedFunction, graph: &Automaton, sink: usize, roots: &[usize],
+    old: bool, limit: usize,
+) -> (Result<(usize, usize, usize, usize, usize, u64), ()>, Metrics) {
+    measure(|| {
+        let mut budget = match ReplayBudget::with_physical(function, limit) {
+            Ok(budget) => budget,
+            Err(error) => { assert_eq!(error.code, "SPX-H006"); return Err(()); }
+        };
+        let outcome = (|| {
+            budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "single signature complete owner")?;
+            let mut owner = Canonicalizer::new(graph, sink);
+            budget.reserve_bytes(function, super::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "single signature held receiver")?;
+            let mut receiving = super::closure_receiving::ClosureReceiving::from_prepaid(function, &budget);
+            let initial = budget.remaining;
+            let mut checksum = 0_u64;
+            for root in roots {
+                budget.reserve_array::<(usize, u64)>(function, 1, "single signature root")?;
+                let id = if old {
+                    owner.before_arity_dispatch_id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
+                } else {
+                    owner.id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
+                }?.expect("acyclic exact one-label graph");
+                checksum = checksum.wrapping_mul(31).wrapping_add(id as u64);
+            }
+            Ok::<_, Diagnostic>((budget.physical.as_ref().unwrap().charged(), initial-budget.remaining,
+                owner.states.len(), owner.ids.len(), owner.child_ids.capacity(), checksum))
+        })();
+        assert!(current_metrics().allocated <= budget.physical.as_ref().unwrap().charged());
+        let stopped = current_metrics().allocated;
+        let outcome = outcome.map_err(|error| { assert_eq!(error.code, "SPX-H006"); });
+        drop(budget);
+        assert_eq!(current_metrics().allocated, stopped, "complete singleton signature Drop allocates nothing");
+        outcome
+    })
+}
+
+#[test]
+fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_exact_general_role_delta() {
+    let function = fixture();
+    for shape in 0..3 {
+        let (graph, sink, roots) = arity_dispatch_corpus(&function, shape);
+        let mut reports = Vec::new();
+        for old in [true, false] {
+            let (result, heap) = arity_dispatch_observe(&function, &graph, sink, &roots, old, 1 << 26);
+            let full = result.unwrap();
+            assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
+            for limit in [0, full.0 - 1, full.0] {
+                let (cut, physical) = arity_dispatch_observe(&function, &graph, sink, &roots, old, limit);
+                assert_eq!(cut.is_ok(), limit == full.0);
+                if let Ok(actual) = cut { assert_eq!(actual, full); }
+                assert!(!physical.invalid && physical.live == 0 && physical.allocated == physical.freed);
+            }
+            reports.push((full, heap));
+        }
+        assert_eq!((reports[0].0.1, reports[0].0.2, reports[0].0.3, reports[0].0.4, reports[0].0.5),
+            (reports[1].0.1, reports[1].0.2, reports[1].0.3, reports[1].0.4, reports[1].0.5));
+        assert_eq!(reports[0].1, reports[1].1, "dispatch removes no actual backing; full allocation/peak/Drop tuple is exact");
+        // Independent graph/source counts: every root is distinct, no one-edge
+        // signature exists, and each state publishes exactly one completed Exit.
+        let mut logical = Canonicalizer::new(&graph, sink);
+        let mut budget = ReplayBudget::unobserved();
+        let mut held = super::closure_receiving::ClosureReceiving::from_prepaid(&function, &budget);
+        for root in &roots {
+            logical.id_with_receiving(&function, vec![(*root, 1)], &mut budget, &mut held).unwrap();
+        }
+        assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() != 1));
+        let activations = roots.len();
+        let exits = logical.states.len();
+        assert!(exits >= activations);
+        let old_calls = activations * (Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_PRIMITIVE
+                + Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_WARM)
+            + (exits - activations) * Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_WARM
+            + activations * Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_LOCAL;
+        let current_calls = activations * Canonicalizer::BORROWED_EXIT_LOCAL
+            + exits * super::empty_signature::BRANCH_CONTROLS;
+        assert_eq!(reports[0].0.0 + current_calls, reports[1].0.0 + old_calls,
+            "complete independently counted actual admission/retained-place equation, never measured subtraction");
+        assert!(reports[1].0.0 < reports[0].0.0, "all three actual complete corpora remove unused singleton admissions");
+        eprintln!("arity-dispatch shape={shape} complete886/current={reports:?} activations={activations} exits={exits}");
+    }
+}

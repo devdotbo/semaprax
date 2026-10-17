@@ -81,7 +81,7 @@ fn one_atomic_exit_site_pays_full_cold_and_warm_primitive_and_preserves_six_fiel
     let result = actual(&function, &graph, sink, root, 1 << 26);
     let (_, events, count) = EVENTS.with(|slot| slot.replace((false, [None; 16], 0)));
     assert!(result.is_ok());
-    assert_eq!(count, 3, "complete width-one fixture has three Exits");
+    assert_eq!(count, 2, "exact two one-label Exits; empty uses its complete original route");
     assert_eq!(PRIMITIVE, 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
         + 2 * size_of::<Result<(), Diagnostic>>());
     for (index, event) in events[..count].iter().enumerate() {
@@ -95,5 +95,27 @@ fn one_atomic_exit_site_pays_full_cold_and_warm_primitive_and_preserves_six_fiel
             assert_eq!(actual, expected, "all six fields use the actual new primitive request");
         }
         assert!(primitive(&function, event, event.paid + event.requested).is_ok());
+    }
+}
+
+
+#[test]
+fn empty_and_real_two_label_routes_never_acquire_singleton_compound_or_primitive_bank() {
+    let function = crate::cleanup_plan::replay::factored::lexical_plan_tests::fixture(
+        crate::cleanup_plan::replay::factored::lexical_plan_tests::WHILE).1;
+    let mut setup = ReplayBudget::unobserved();
+    let mut graph = Automaton::default();
+    let sink = graph.node(&function, &mut setup).unwrap();
+    let root = graph.node(&function, &mut setup).unwrap();
+    for terminal in [crate::cleanup_plan::replay::SkeletonTerminal::Success,
+        crate::cleanup_plan::replay::SkeletonTerminal::Failure] {
+        graph.movement(&function, &mut setup, root, Label::End(terminal), sink).unwrap();
+    }
+    for selected in [sink, root] {
+        EVENTS.with(|slot| slot.set((true, [None; 16], 0)));
+        let result = actual(&function, &graph, sink, selected, 1 << 26);
+        let (_, _, count) = EVENTS.with(|slot| slot.replace((false, [None; 16], 0)));
+        assert!(result.is_ok());
+        assert_eq!(count, 0, "empty/general use only complete original branch/query/miss frontiers");
     }
 }

@@ -24,7 +24,10 @@ impl intern_arena::Query<intern_arena::Signature> for OneQuery<'_> {
         1_usize.cmp(&stored.1.len())
     }
 }
-pub(super) const LOCAL_CONTROLS: usize = 2 * size_of::<bool>();
+// One uninitialized retained usize receiving place; one conservative
+// constant-pattern usize place and two overwritten branch predicate slots;
+// both original warm-flag bool slots. No Vec/Self/Option/query is retained.
+pub(super) const LOCAL_CONTROLS: usize = 2 * size_of::<usize>() + 4 * size_of::<bool>();
 // Exactly the full conservative primitive ABI: actual/formal arguments and
 // returned/received unit-success Result slots. Only this nonrecursive lexical
 // primitive place is retained; no compound query/Option/key/iterator is reused.
@@ -44,13 +47,11 @@ const MOVE: usize = 2 * size_of::<(Label, SharedWeighted)>()
     + 2 * size_of::<&mut Vec<(Label, SharedWeighted)>>()
     + 4 * size_of::<usize>() + 2 * size_of::<bool>()
     + 2 * size_of::<usize>();
-const GUARD: usize = 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
-    + 2 * size_of::<usize>() + 4 * size_of::<bool>();
 const SELECT: usize = 4 * size_of::<bool>() + 2 * size_of::<usize>();
-// This conservative whole-Exit bound is acquired on every Exit, including
-// empty/general branches. The complete general path pays all its additional
-// original requests; there is no subtraction or old-baseline tariff change.
-pub(super) const FRESH: usize = QUERY + ITERATOR + MOVE + GUARD;
+// Only the one-edge route constructs these fresh receivers. Its duplicate
+// match-len call is gone: the work frontier already received the same length
+// into the prepaid scalar place. Empty/general keep all old tariffs.
+pub(super) const FRESH: usize = QUERY + ITERATOR + MOVE;
 pub(super) const WARM: usize = FRESH + SELECT;
 pub(super) const COLD: usize = FRESH + SELECT + PRIMITIVE;
 #[cfg(test)]

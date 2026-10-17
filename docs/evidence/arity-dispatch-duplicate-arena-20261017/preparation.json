@@ -1,0 +1,14 @@
+{
+  "status": "SOURCE_ONLY_WIP_TYPED_ARITY_DISPATCH",
+  "base": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "new_test_module": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
+  "strict_original_8_and_210_sources_unchanged": true,
+  "runtime": "NOT_RUN",
+  "old_control_glue": [
+    "canonical root import one level deeper",
+    "local original borrowed_single module inline; only child tests registration removed",
+    "historical test-only associated role aliases renamed to avoid duplicate current impl consts",
+    "method/wrapper names adapted only; complete body and old role formulas unchanged",
+    "complete original activation/authentication macros copied verbatim"
+  ]
+}
