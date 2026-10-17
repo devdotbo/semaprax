@@ -13,7 +13,9 @@ macro_rules! paid {
         #[cfg(test)]
         {
             frontiers::before($phase);
+            let comparison_ticket = crate::bounded_output::stage_debits::route_debits::comparison_before($phase, $bytes);
             let result = $budget.reserve_bytes($function, $bytes, $phase);
+            crate::bounded_output::stage_debits::route_debits::comparison_after(comparison_ticket, result.is_ok());
             if result.is_ok() {
                 frontiers::after();
             }

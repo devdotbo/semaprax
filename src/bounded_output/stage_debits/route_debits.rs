@@ -42,6 +42,72 @@ impl Coordinate {
         phase: Phase::OtherReplay,
     };
 }
+// Fixed aggregate census: reservation calls, never physical allocations. No
+// per-event buffer, no panic at4096/8769 events, no observer input to admission.
+const COMPARISON_PHASES: usize = 9;
+#[derive(Clone, Copy)]
+struct ComparisonCell {
+    attempts: usize,
+    requested: usize,
+    acquired: usize,
+    refused: usize,
+}
+impl ComparisonCell {
+    const EMPTY: Self = Self { attempts: 0, requested: 0, acquired: 0, refused: 0 };
+}
+fn comparison_phase(phase: &str) -> Option<usize> {
+    match phase {
+        "ordinary plan history comparator controls" | "ordinary plan retained comparison owner" => Some(0),
+        "ordinary plan history order call" => Some(1),
+        "ordinary plan history sift call" => Some(2),
+        "ordinary plan history comparison receivers" => Some(3),
+        "ordinary plan history sort receivers" => Some(4),
+        "ordinary plan history left cursor prepare" => Some(5),
+        "ordinary plan history right cursor prepare" | "ordinary plan history HIR cursor prepare" => Some(6),
+        "ordinary plan history paired cursor next" => Some(7),
+        "ordinary plan history HIR cursor next" => Some(8),
+        _ => None,
+    }
+}
+#[derive(Clone, Copy)]
+pub(crate) struct ComparisonTicket {
+    owner: usize,
+    row: usize,
+    route: usize,
+    phase: usize,
+    remaining: usize,
+}
+// Ticket coordinates only bind observation to the already-active diagnostic
+// packet. They are never accepted by a compiler/ledger operation.
+pub(crate) fn comparison_before(phase: &'static str, requested: usize) -> Option<ComparisonTicket> {
+    let phase = comparison_phase(phase)?;
+    let mut ticket = None;
+    update(|state| {
+        let packet = &mut state.current;
+        let Some(row) = packet.coordinate.row.filter(|row| *row < packet.used) else { return; };
+        if packet.owner == 0 { return; }
+        let Some(remaining) = crate::bounded_output::active_remaining() else { packet.comparison_complete = false; return; };
+        let route = packet.coordinate.route as usize;
+        let cell = &mut packet.rows[row].comparison[route][phase];
+        add(&mut cell.attempts, 1, &mut packet.comparison_complete);
+        add(&mut cell.requested, requested, &mut packet.comparison_complete);
+        ticket = Some(ComparisonTicket { owner: packet.owner, row, route, phase, remaining });
+    });
+    ticket
+}
+pub(crate) fn comparison_after(ticket: Option<ComparisonTicket>, success: bool) {
+    let Some(ticket) = ticket else { return; };
+    update(|state| {
+        let packet = &mut state.current;
+        if packet.owner != ticket.owner || ticket.row >= packet.used { packet.comparison_complete = false; return; }
+        let cell = &mut packet.rows[ticket.row].comparison[ticket.route][ticket.phase];
+        match crate::bounded_output::active_remaining().and_then(|after| ticket.remaining.checked_sub(after)) {
+            Some(acquired) => add(&mut cell.acquired, acquired, &mut packet.comparison_complete),
+            None => packet.comparison_complete = false,
+        }
+        if !success { add(&mut cell.refused, 1, &mut packet.comparison_complete); }
+    });
+}
 #[derive(Clone, Copy)]
 struct Row {
     ordinal: usize,
@@ -51,6 +117,7 @@ struct Row {
     truncated: bool,
     bytes: [[usize; PHASES]; ROUTES],
     calls: [[usize; PHASES]; ROUTES],
+    comparison: [[ComparisonCell; COMPARISON_PHASES]; ROUTES],
 }
 impl Row {
     const EMPTY: Self = Self {
@@ -61,6 +128,7 @@ impl Row {
         truncated: false,
         bytes: [[0; PHASES]; ROUTES],
         calls: [[0; PHASES]; ROUTES],
+        comparison: [[ComparisonCell::EMPTY; COMPARISON_PHASES]; ROUTES],
     };
 }
 struct Packet {
@@ -74,6 +142,7 @@ struct Packet {
     unknown_cleanup: usize,
     overflow_cleanup: usize,
     complete: bool,
+    comparison_complete: bool,
     used: usize,
     coordinate: Coordinate,
     first: Option<Coordinate>,
@@ -92,6 +161,7 @@ impl Packet {
         unknown_cleanup: 0,
         overflow_cleanup: 0,
         complete: true,
+        comparison_complete: true,
         used: 0,
         coordinate: Coordinate::EMPTY,
         first: None,
@@ -112,6 +182,7 @@ impl Packet {
         self.unknown_cleanup = 0;
         self.overflow_cleanup = 0;
         self.complete = true;
+        self.comparison_complete = true;
         self.used = 0;
         self.coordinate = Coordinate::EMPTY;
         self.first = None;
@@ -130,6 +201,7 @@ impl Packet {
         self.unknown_cleanup = source.unknown_cleanup;
         self.overflow_cleanup = source.overflow_cleanup;
         self.complete = source.complete;
+        self.comparison_complete = source.comparison_complete;
         self.used = source.used;
         self.coordinate = source.coordinate;
         self.first = source.first;
@@ -346,7 +418,13 @@ pub(crate) fn print_settled() {
                 if std::str::from_utf8(&row.id[..row.len]).is_err() {
                     eprintln!("OPT808 routes {name} row={index} bounded identity bytes={:?}", &row.id[..row.len]);
                 }
+                eprintln!("OPT880 comparison {name} row={index}: complete={}", packet.comparison_complete && !LOST.with(Cell::get));
                 for (route_index, route) in [Route::Production, Route::UnoptedCrosscheck, Route::OptedOracle].into_iter().enumerate() {
+                    for (comparison_index, cell) in row.comparison[route_index].iter().enumerate() {
+                        if cell.attempts != 0 {
+                            eprintln!("OPT880 comparison {name} row={index} route={route:?} phase={comparison_index} attempts={} requested={} acquired={} refused={}", cell.attempts, cell.requested, cell.acquired, cell.refused);
+                        }
+                    }
                     for (phase_index, phase) in [Phase::OtherReplay, Phase::StructuralAndState, Phase::EnumeratedHIR, Phase::FlatPLAN,
                         Phase::HistoryPLAN, Phase::PathComparison, Phase::FactoredHIR, Phase::HIRAutomaton, Phase::PLANAutomaton,
                         Phase::CanonicalHIR, Phase::CanonicalPLAN].into_iter().enumerate() {
@@ -405,4 +483,23 @@ fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled()
         assert_eq!(packet.rows[0].calls[Route::Production as usize][Phase::EnumeratedHIR as usize], 9);
         assert_eq!(packet.first.unwrap().row, Some(0));
     });
+}
+
+#[test]
+fn comparison_aggregate_census_keeps_8769_calls_and_marks_arithmetic_overflow_without_event_buffer() {
+    let mut cell = ComparisonCell::EMPTY;
+    let mut complete = true;
+    for _ in 0..8_769 {
+        add(&mut cell.attempts, 1, &mut complete);
+        add(&mut cell.requested, 1_121, &mut complete);
+        add(&mut cell.acquired, 1_121, &mut complete);
+    }
+    assert!(complete);
+    assert_eq!(cell.attempts, 8_769);
+    assert_eq!(cell.requested, 8_769 * 1_121);
+    assert_eq!(cell.acquired, cell.requested);
+    assert_eq!(cell.refused, 0);
+    add(&mut cell.attempts, usize::MAX, &mut complete);
+    assert!(!complete);
+    assert_eq!(cell.attempts, usize::MAX);
 }
