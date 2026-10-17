@@ -2,6 +2,8 @@
 use super::super::*;
 #[cfg(test)]
 mod before_borrowed_single;
+#[cfg(test)]
+mod before_arity_dispatch;
 mod borrowed_single;
 
 impl Canonicalizer<'_> {
@@ -58,6 +60,9 @@ impl Canonicalizer<'_> {
         // The original direct-root admission above prepaid both bool values.
         // This one primitive frame belongs to this nonrecursive activation.
         let mut exit_admission_paid = false;
+        // No initializer value is formed. This stable receiving place retains
+        // the ORIGINAL Vec::len result used by the signature-work call.
+        let mut exit_arity: usize;
         while let Some(frame) = self.frames.pop() {
             attempt!(budget.charge(function, 1, "factored canonical frame"));
             match frame {
@@ -119,73 +124,24 @@ impl Canonicalizer<'_> {
                 }
                 CanonicalFrame::Exit(state, accepted, mut successors) => {
                     self.open.retain(|entry| entry != &state);
+                    exit_arity = successors.len();
                     attempt!(budget.charge(
                         function,
-                        successors.len(),
+                        exit_arity,
                         "factored canonical signature construction",
                     ));
-                    // One real primitive admission replaces the old separate
-                    // branch/query/miss positive calls on the singleton route.
-                    // Every compound query/iterator/move role remains fresh.
-                    #[cfg(test)]
-                    borrowed_single::note(budget, exit_admission_paid);
-                    attempt!(budget.reserve_bytes(
-                        function,
-                        if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },
-                        "canonical lexical exit receiving",
-                    ));
-                    exit_admission_paid = true;
-                    match successors.len() {
-                    0 => {
-                        if budget.pays_allocations() {
-                            attempt!(budget.reserve_bytes(
-                                function,
-                                empty_signature::EMPTY_CONTROLS,
-                                "canonical empty signature receiving",
-                            ));
-                        }
-                        self.child_ids.clear();
-                        // Retain the original key-vector zero authentication;
-                        // no child directory, borrowed query or Zip exists here.
-                        attempt!(budget.reserve_array::<(Label, usize)>(
-                            function,
-                            0,
-                            "factored canonical signature vector",
-                        ));
-                        let key = (accepted, Vec::new());
-                        let id = match self.ids.get(&key) {
-                            Some(id) => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(true);
-                                *id
-                            }
-                            None => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(false);
-                                intern_arena::prepare_insert!(
-                                    self.ids,
-                                    intern_arena::Signature,
-                                    function,
-                                    budget
-                                );
-                                let id = self.ids.len();
-                                self.ids.insert_prepaid(key, id);
-                                id
-                            }
-                        };
-                        self.child_ids.clear();
-                        if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(
-                                self.states,
-                                SharedWeighted,
-                                function,
-                                budget
-                            );
-                        }
-                        self.states.insert_prepaid(state, id);
-                        continue;
-                    }
+                    // The pattern reads the retained place: no extra len(),
+                    // moved scrutinee local, query or helper return exists.
+                    match exit_arity {
                     1 => {
+                        #[cfg(test)]
+                        borrowed_single::note(budget, exit_admission_paid);
+                        attempt!(budget.reserve_bytes(
+                            function,
+                            if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },
+                            "canonical lexical exit receiving",
+                        ));
+                        exit_admission_paid = true;
                         // One original iterator.next, without an Index or slice
                         // helper. Its temporary iterator ends before remove(0).
                         let Some((label, child)) = successors.iter().next() else {
@@ -233,6 +189,64 @@ impl Canonicalizer<'_> {
                         continue;
                     }
                     _ => {}
+                    }
+                    // Empty/general routes retain their complete original
+                    // admission, predicate, query/scratch/miss and Drop order.
+                    if budget.pays_allocations() {
+                        attempt!(budget.reserve_bytes(
+                            function,
+                            empty_signature::BRANCH_CONTROLS,
+                            "canonical empty signature branch receiving",
+                        ));
+                    }
+                    if successors.is_empty() {
+                        if budget.pays_allocations() {
+                            attempt!(budget.reserve_bytes(
+                                function,
+                                empty_signature::EMPTY_CONTROLS,
+                                "canonical empty signature receiving",
+                            ));
+                        }
+                        self.child_ids.clear();
+                        // Retain the original key-vector zero authentication;
+                        // no child directory, borrowed query or Zip exists here.
+                        attempt!(budget.reserve_array::<(Label, usize)>(
+                            function,
+                            0,
+                            "factored canonical signature vector",
+                        ));
+                        let key = (accepted, Vec::new());
+                        let id = match self.ids.get(&key) {
+                            Some(id) => {
+                                #[cfg(test)]
+                                arena_tests::signature_lookup(true);
+                                *id
+                            }
+                            None => {
+                                #[cfg(test)]
+                                arena_tests::signature_lookup(false);
+                                intern_arena::prepare_insert!(
+                                    self.ids,
+                                    intern_arena::Signature,
+                                    function,
+                                    budget
+                                );
+                                let id = self.ids.len();
+                                self.ids.insert_prepaid(key, id);
+                                id
+                            }
+                        };
+                        self.child_ids.clear();
+                        if !self.states.contains_key(&state) {
+                            intern_arena::prepare_insert!(
+                                self.states,
+                                SharedWeighted,
+                                function,
+                                budget
+                            );
+                        }
+                        self.states.insert_prepaid(state, id);
+                        continue;
                     }
                     attempt!(budget.reserve_bytes(
                         function,

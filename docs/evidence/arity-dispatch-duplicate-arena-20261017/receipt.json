@@ -1,0 +1,54 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "base": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "changed_rust": [
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+      "sha256": "e2a8d9a3ed2b61cdacdadc98c4442e59f97bf8fd576fec53c511038dc677a8e1"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
+      "sha256": "4bf97b191baf87a3ea84bfdd661f60e8b8f2eadedd7c62401c85b8ea0579dc14"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs",
+      "sha256": "11958f71d884a7000b9f7afea73d607843e639882631a8de4b0f5022c8f4faaf"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+      "sha256": "fd5921cd3c549fcdb3f09152b7089cee63eab94cfb2f0026416788d077df6ef9"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+      "sha256": "4a3acbc44493bedc9f7c97a4fbfbedefa434976a5dafa4922bba01f0bac030b0"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+      "sha256": "95d45a14e412d803c8f84baed597b5f9c9d20b6fd8e3b79075174079fe47a4d9"
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
+      "sha256": "20eb13e7d879aa7c5dac96ea5e07b4aeef5ffe425496956d42d9d003272fb242"
+    }
+  ],
+  "new_module_roles": {
+    "production": [],
+    "test": [
+      "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs"
+    ]
+  },
+  "inverse_sha256": "0d7ba72121bb025a63483796c00cd8736917d40787df1a006d5448ee49694408",
+  "role_audit_sha256": "4d92e494296dff1531ac613da38d96dcd830c370e525edee11806ace89d61228",
+  "checks": [
+    "git diff --check PASS",
+    "rustfmt parse only, seven inputs PASS",
+    "six exact full-source byte inverses PASS",
+    "original arena source exact; original strict210 source prefix exact"
+  ],
+  "pending": [
+    "source review",
+    "source inventory/role coupling",
+    "actual build and tests",
+    "qualification; no runtime claim"
+  ]
+}

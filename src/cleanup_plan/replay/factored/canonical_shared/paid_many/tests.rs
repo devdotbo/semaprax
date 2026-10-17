@@ -213,7 +213,6 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
                 assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(), tuples[1].0);
                 // Cold-dead publication fills both maps without entering the
                 // frame loop. This fresh one-root owner has no preexisting cache.
-                let exits = if logical.scratch_paid { logical.states.len() } else { 0 };
                 let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {
                     logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
                 }).count() } else { 0 };
@@ -222,13 +221,13 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
                 } else { 0 };
                 assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
                 let removed_backing = if nonempty_exits > 0 { size_of::<usize>() } else { 0 };
-                let old_removed = exits * super::super::empty_signature::BRANCH_CONTROLS
+                let old_removed = nonempty_exits * super::super::empty_signature::BRANCH_CONTROLS
                     + nonempty_exits * (super::super::intern_arena::SignatureQuery::EXIT_CONTROLS + size_of::<[usize; 2]>())
                     + misses * (super::super::intern_arena::SignatureQuery::MISS_CONTROLS + size_of::<[&usize; 2]>())
                     + removed_backing;
                 let new_added = if logical.scratch_paid { Canonicalizer::BORROWED_EXIT_LOCAL } else { 0 }
-                    + if exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
-                    + exits * Canonicalizer::BORROWED_EXIT_WARM;
+                    + if nonempty_exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
+                    + nonempty_exits * Canonicalizer::BORROWED_EXIT_WARM;
                 assert_eq!(tuples[0].2, tuples[1].2);
                 assert_eq!(tuples[0].1 + new_added, tuples[1].1 + old_removed,
                     "exact source-role equation; no constructor delta because both observers pay the same current envelope");

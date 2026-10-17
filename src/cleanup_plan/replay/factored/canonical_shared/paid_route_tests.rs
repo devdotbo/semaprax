@@ -86,7 +86,6 @@ fn selected_tree_fallback_has_exact_immediate_small_bills_work_and_whole_drop() 
                 *current.result.as_ref().unwrap());
             // Cold-dead publication fills both maps without entering the
             // frame loop. This fresh one-root owner has no preexisting cache.
-            let exits = if logical.scratch_paid { logical.states.len() } else { 0 };
             let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {
                 logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
             }).count() } else { 0 };
@@ -95,13 +94,13 @@ fn selected_tree_fallback_has_exact_immediate_small_bills_work_and_whole_drop() 
             } else { 0 };
             assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
             let removed_backing = if nonempty_exits > 0 { std::mem::size_of::<usize>() } else { 0 };
-            let old_removed = exits * empty_signature::BRANCH_CONTROLS
+            let old_removed = nonempty_exits * empty_signature::BRANCH_CONTROLS
                 + nonempty_exits * (intern_arena::SignatureQuery::EXIT_CONTROLS + std::mem::size_of::<[usize; 2]>())
                 + misses * (intern_arena::SignatureQuery::MISS_CONTROLS + std::mem::size_of::<[&usize; 2]>())
                 + removed_backing;
             let new_added = if logical.scratch_paid { Canonicalizer::BORROWED_EXIT_LOCAL } else { 0 }
-                + if exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
-                + exits * Canonicalizer::BORROWED_EXIT_WARM;
+                + if nonempty_exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
+                + nonempty_exits * Canonicalizer::BORROWED_EXIT_WARM;
             assert_eq!(current.result, old.result, "same real small producer and all six error fields");
             assert_eq!(current.work, old.work);
             assert_eq!(old.paid + new_added, current.paid + old_removed,
