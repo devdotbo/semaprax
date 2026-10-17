@@ -516,6 +516,10 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
 // Full physical/runtime domains stay separate from immutable source proof JSON.
 fn region_entry_original_input(source: &str, current: &str) -> String {
     use sha2::{Digest, Sha256};
+    // Acquire the complete exact pre-885 source before the unchanged older
+    // runtime-view/hash/registration authorities below. No assertion is waived.
+    let before_885 = crate::cleanup_plan::replay::expression_facts::arena::retained::tests::before_885_source(source, current);
+    let current = before_885.as_str();
     let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"

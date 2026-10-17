@@ -22,8 +22,14 @@ fn complete_original_arena_and_every_added_source_join_have_exact_full_inverses(
             fixed
         );
         assert_eq!(record["original_sha256"].as_str().unwrap(), fixed);
-        let current_main =
-            crate::source_reflows_merge::maina3_input(record["source"].as_str().unwrap(), current);
+        let before_885 = super::super::retained::tests::before_885_source(
+            record["source"].as_str().unwrap(),
+            current,
+        );
+        let current_main = crate::source_reflows_merge::maina3_input(
+            record["source"].as_str().unwrap(),
+            &before_885,
+        );
         let mut restored = current_main;
         for edit in record["edits"].as_array().unwrap().iter().rev() {
             let after = edit["after"].as_str().unwrap();

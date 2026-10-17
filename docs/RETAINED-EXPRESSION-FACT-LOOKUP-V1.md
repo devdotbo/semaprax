@@ -140,8 +140,29 @@ ordinary composition at the unchanged cap. A separate authored lifetime control
 drops independently sourced fact payloads and their function owner before
 reading the returned status directory; selector source controls bind the typed
 ledger and exact namespace inverse. These controls have not run in this
-source-only lane. General source binders and inventory metadata are owned by the
-combined integration batch.
+source-only lane. The existing HIR, semantic-graph and native source-inventory
+functions now include all seven complete new modules beside their owning roots.
+The two live modules keep production registrations; five independent controls
+retain their exact `cfg(test)` edges. A source control binds every edge and one
+literal per module per raw inventory. The native file's two finite inline joins
+keep its existing 1500-line budget without removing an original include.
+
+The existing prefix, Main8a, Maina3 and region-entry controls acquire named exact
+pre-885 inputs before their unchanged historical authorities. The shared
+`before_885_source` test helper reverses only the unique complete arena module
+registration, directory reexport and new raw-source join expressions. Complete
+restored arena/directory/HIR/graph/native source bytes must equal fixed SHA-256
+priors from `8c95f77750aaaba9eaa59da865eb65658900646c`. It rejects drift,
+truncation and already-historical input; an unlisted input is passed to its
+original authority without granting acceptance. The prefix CI transport keeps
+the original caller/path and feeds that acquired prior into the existing
+CI/semantic-reflow helper. Original snapshots, fixed digests, edit cardinalities,
+old producer bodies and final full-source equality assertions remain intact.
+
+Final 241/98/174/F6 metadata, ordered raw-domain tables, complete production/test
+class authority and physical pin qualification remain owned by the combined
+integration batch. These source joins do not authorize stale metadata or a new
+price/budget claim.
 
 Before promotion, run that combined focused batch with one build job: exact old
 and current full callers, mandatory original-ledger crosschecks, codec/catalog/

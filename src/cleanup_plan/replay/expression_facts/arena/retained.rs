@@ -239,4 +239,4 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
 }
 
 #[cfg(test)]
-mod tests;
+pub(in crate::cleanup_plan::replay::expression_facts) mod tests;

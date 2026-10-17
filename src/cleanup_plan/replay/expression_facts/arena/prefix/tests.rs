@@ -290,9 +290,9 @@ fn complete_original_arena_and_every_added_source_join_have_exact_full_inverses(
     )))
     .unwrap();
     let sources = [
-        (ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/arena.rs")), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/arena.rs.before.txt")), "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17"),
-        (ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/hir_module_boundaries.rs")), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/hir_module_boundaries.rs.before.txt")), "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc"),
-        (ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/b.rs")), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/source_custody_b.rs.before.txt")), "ead6bb549f1bd85d904eecbf182f14103639489320ec8ad09f0d29232f2fe90b"),
+        (super::super::retained::tests::before_885_ci(file!(), concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/arena.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/arena.rs"))), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/arena.rs.before.txt")), "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17"),
+        (super::super::retained::tests::before_885_ci(file!(), concat!(env!("CARGO_MANIFEST_DIR"), "/tests/hir_module_boundaries.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/hir_module_boundaries.rs"))), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/hir_module_boundaries.rs.before.txt")), "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc"),
+        (super::super::retained::tests::before_885_ci(file!(), concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/b.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/b.rs"))), ci_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/source_custody_b.rs.before.txt")), "ead6bb549f1bd85d904eecbf182f14103639489320ec8ad09f0d29232f2fe90b"),
     ];
     assert_eq!(sources.len(), records.as_array().unwrap().len());
     for ((current, original, fixed), record) in sources.into_iter().zip(records.as_array().unwrap())

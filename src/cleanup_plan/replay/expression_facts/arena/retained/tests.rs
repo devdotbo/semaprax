@@ -220,3 +220,233 @@ fn zero_budget_and_reserved_floor_refuse_without_later_retry_authority() {
             .is_err());
     });
 }
+
+// Fixed, finite OPT885 source composition BEFORE each unchanged historical
+// authority. Every inverse is unique and the complete restored predecessor is
+// authenticated. There is no substring-only acceptance or historical fallback.
+pub(in crate::cleanup_plan::replay::expression_facts) fn before_885_source(
+    source: &str,
+    current: &str,
+) -> String {
+    use sha2::{Digest, Sha256};
+    fn undo(current: &mut String, new: &str, old: &str) {
+        assert!(!new.is_empty());
+        assert_eq!(
+            current.matches(new).count(),
+            1,
+            "unique complete OPT885 preimage"
+        );
+        *current = current.replacen(new, old, 1);
+    }
+    let mut restored = current.to_owned();
+    let expected = match source {
+        "src/cleanup_plan/replay/expression_facts/arena.rs" => {
+            undo(
+                &mut restored,
+                r######"mod prefix;
+pub(super) mod retained;"######,
+                r######"mod prefix;"######,
+            );
+            "2eae0ecc943b9114099a7e87c7b2acf565c0f6454cb02f396ee30e981a109488"
+        }
+        "src/cleanup_plan/replay/expression_facts/receiving/directory.rs" => {
+            undo(
+                &mut restored,
+                r######"pub(super) use status_prefix::{HeldPrefix, Owner as StatusInsertionOwner};"######,
+                r######"pub(super) use status_prefix::Owner as StatusInsertionOwner;"######,
+            );
+            "71bddf2e91cd7b6768523035ce49c111e41686dc5104adbcdb8dd7165675e464"
+        }
+        "tests/hir_module_boundaries.rs" => {
+            undo(
+                &mut restored,
+                r######"            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/retained.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs")),"######,
+                r######"            include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),"######,
+            );
+            undo(
+                &mut restored,
+                r######"        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"),"######,
+                r######"        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),"######,
+            );
+            "d3eb0f843f53b525b4a0dbd388b79a865721b02968fa2419af678bb7670ae249"
+        }
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => {
+            undo(&mut restored, r######"audit_source_join!(include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/retained.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs"))"######, r######"include_str!("../../../../../src/cleanup_plan/replay/expression_facts/arena.rs")"######);
+            undo(&mut restored, r######"audit_source_join!(include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"), include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"))"######, r######"include_str!("../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs")"######);
+            "ac45caecfb6e4d8484f304092c9d6a1d4db23e254480949f1619b7cc9c7a9f0d"
+        }
+        "tests/workspace/semantic_graph/source_inventory.rs" => {
+            undo(&mut restored, r######"include_str!("../../src/cleanup_plan/replay/expression_facts/arena.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs"),"######, r######"include_str!("../../src/cleanup_plan/replay/expression_facts/arena.rs"),"######);
+            undo(&mut restored, r######"include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"),
+include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"),"######, r######"include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),"######);
+            "a33bdf50c97ddec9ce29ca3dfa1abec37c13afcadf6b707c4539b9af6f9f13aa"
+        }
+        _ => return restored,
+    };
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
+        expected,
+        "complete fixed pre-885 input for {source}"
+    );
+    restored
+}
+
+// Preserve the exact caller/path and existing CI/semantic-reflow authority.
+// The only leaked bytes are bounded, fixed test fixtures, never production.
+pub(in crate::cleanup_plan::replay::expression_facts) fn before_885_ci(
+    caller: &'static str,
+    included: &'static str,
+    current: &'static str,
+) -> &'static str {
+    let source = included
+        .strip_prefix(env!("CARGO_MANIFEST_DIR"))
+        .and_then(|path| path.strip_prefix('/'))
+        .expect("fixed absolute repository source");
+    let restored = before_885_source(source, current);
+    let input = if restored == current {
+        current
+    } else {
+        Box::leak(restored.into_boxed_str())
+    };
+    crate::source_reflows::source(caller, included, input)
+}
+
+#[test]
+fn source_composition_restores_full_fixed_prior_and_refuses_drift_or_already_old_input() {
+    let sources = [
+        (
+            "src/cleanup_plan/replay/expression_facts/arena.rs",
+            include_str!("../../arena.rs"),
+        ),
+        (
+            "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+            include_str!("../../receiving/directory.rs"),
+        ),
+        (
+            "tests/hir_module_boundaries.rs",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/tests/hir_module_boundaries.rs"
+            )),
+        ),
+        ("tests/workspace/semantic_graph/source_inventory.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/workspace/semantic_graph/source_inventory.rs"))),
+        ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"))),
+    ];
+    for (source, current) in sources {
+        let old = before_885_source(source, current);
+        assert_ne!(old, current);
+        for wrong in [
+            format!("{current} "),
+            current[..current.len() - 1].to_owned(),
+            old,
+        ] {
+            assert!(
+                std::panic::catch_unwind(|| before_885_source(source, &wrong)).is_err(),
+                "complete named preimage must reject drift and prior bytes: {source}"
+            );
+        }
+    }
+    assert_eq!(
+        before_885_source("unlisted", "exact passthrough"),
+        "exact passthrough"
+    );
+}
+
+#[test]
+fn all_seven_retained_lookup_modules_have_exact_role_edges_and_complete_raw_joins() {
+    let arena = include_str!("../../arena.rs");
+    let prefix = include_str!("../prefix.rs");
+    let session = include_str!("../retained.rs");
+    let certified = include_str!("../../receiving/retained/case_certified.rs");
+    let edges = [
+        ("src/cleanup_plan/replay/expression_facts/arena/retained.rs", "production", arena,
+            "pub(super) mod retained;\n"),
+        ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs", "production", certified,
+            "mod retained_lookup;\n"),
+        ("src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs", "test-only", prefix,
+            "#[cfg(test)]\n#[path = \"prefix/retained_before.rs\"]\n#[allow(dead_code, reason = \"complete independently compiled immediate-old lookup\")]\npub(super) mod retained_before;\n"),
+        ("src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs", "test-only", session,
+            "#[cfg(test)]\npub(in crate::cleanup_plan::replay::expression_facts) mod tests;\n"),
+        ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs", "test-only", certified,
+            "#[cfg(test)]\npub(in crate::cleanup_plan::replay) mod lookup_before;\n"),
+        ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs", "test-only", certified,
+            "#[cfg(test)]\nmod lookup_caller_before;\n"),
+        ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs", "test-only", certified,
+            "#[cfg(test)]\nmod lookup_tests;\n"),
+    ];
+    assert_eq!(
+        edges
+            .iter()
+            .filter(|(_, role, _, _)| *role == "production")
+            .count(),
+        2
+    );
+    assert_eq!(
+        edges
+            .iter()
+            .filter(|(_, role, _, _)| *role == "test-only")
+            .count(),
+        5
+    );
+    let hir = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/hir_module_boundaries.rs"
+    ));
+    let graph = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/tests/workspace/semantic_graph/source_inventory.rs"
+    ));
+    let native = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"));
+    assert_eq!(
+        native.lines().count(),
+        1500,
+        "finite joins preserve the standing native file budget"
+    );
+    for (path, role, parent, registration) in edges {
+        assert_eq!(
+            parent.matches(registration).count(),
+            1,
+            "exact owning module registration: {path}"
+        );
+        assert_eq!(registration.contains("#[cfg(test)]"), role == "test-only");
+        if role == "production" {
+            let at = parent.find(registration).unwrap();
+            assert_ne!(parent[..at].trim_end().lines().last(), Some("#[cfg(test)]"));
+        }
+        assert_eq!(
+            hir.matches(&format!("include_str!(\"../{path}\")")).count(),
+            1,
+            "one complete new source in the existing HIR raw owner: {path}"
+        );
+        assert_eq!(
+            graph
+                .matches(&format!("include_str!(\"../../{path}\")"))
+                .count(),
+            1,
+            "one complete new source in the existing graph raw owner: {path}"
+        );
+        assert_eq!(
+            native
+                .matches(&format!("include_str!(\"../../../../../{path}\")"))
+                .count(),
+            1,
+            "one complete new source in the existing native raw owner: {path}"
+        );
+    }
+}
