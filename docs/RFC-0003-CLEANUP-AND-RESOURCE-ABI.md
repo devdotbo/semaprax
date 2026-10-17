@@ -375,11 +375,43 @@ The plan side is read from the plan alone and the HIR side from typed HIR
 alone; neither trusts the builder. All work, including the merged walk, is
 charged to the same program-wide work budget. If the factored comparison
 exhausts it above the path ceiling, the diagnostic is the path-budget
-`SPX-H006`; at or below the ceiling, enumeration decides instead. Emitted
-plans, graphs, and backend code are unchanged; only which plans replay can
+`SPX-H006`; at or below the ceiling, ordinary nonlexical enumeration decides
+instead. The authenticated lexical extension retains fitting enumeration
+admission ceilings and its original upper reservation, then reuses the exact
+held weighted comparison rather than constructing both languages again; its
+complete prior enumerator remains an independent test oracle. That proof spends
+ordinary free work without refunding or borrowing the held enumeration pool.
+[Lexical structured exits v1](LEXICAL-STRUCTURED-EXITS-V1.md) owns this bounded
+extension and its pending qualification. Emitted plans, graphs, and backend
+code are unchanged; only which plans replay can
 authenticate within budget changes. Test builds additionally run the
 factored comparison beside enumeration on every function small enough to
 enumerate and require the same verdict.
+
+The source-only [OPT839 retained canonical scratch draft](evidence/canonical-scratch-839/README.md)
+keeps one comparison's cursor/frame/open backing and authenticated receiving
+storage. Its complete old receiver, ordinary Memo, work/arithmetic/diagnostic
+contract and independent HIR/plan roots remain controls. Focused executable
+qualification is pending; it grants no application-budget or support claim.
+
+The source-only [OPT838 ordered numeric storage draft](evidence/weighted-storage-838/README.md)
+changes closure and weighted closed-accumulator storage to a dense paid AVL
+arena. A unit-singleton state borrows an authenticated immutable closure while
+retaining each original weighted-addition debit and checked operation. General
+multi-input states keep numeric ascending traversal, duplicate multiplicities,
+first overflow and original work-refusal frontiers. The independent full BTree
+receiver and prior controls remain executable test sources. Reservation,
+allocation, application recovery and behavior qualification remain pending.
+
+The source-only [OPT839 held authentication successor](evidence/held-auth-839/README.md)
+uses the already paid diagnostic slot only after successful retained Memo
+activation. Its warm gateway returns unit and preserves exact function, budget
+and held-ledger identity before any payer query. Zero authentication keeps the
+ordinary payer matrix, sticky first failure, reserved floor and test-oracle
+attempts. Cold activation and every still-constructed Result retain their
+original fees. Complete immediate-old receivers, all six diagnostic fields and
+terminal empty-sentinel publication remain controls. Focused execution and
+application attribution are pending; no measured gain or cap-fit claim follows.
 
 ## Conformance trace
 
@@ -699,3 +731,34 @@ ownership, owned payload, or public generic ABI.
 - Claiming platform interoperability from generated wrappers that have not executed conformance fixtures.
 
 These shortcuts weaken exactly the safety and cross-target equivalence that SEMAPRAX is intended to make verifiable.
+
+### Factored zero/single edge storage (OPT844, qualification pending)
+
+The private automaton node has one combined Empty/Movement/Epsilon slot. On the
+ordinary 64-bit layout it is 32 bytes; the independent preceding two-Vec node
+is 48 bytes. A second edge, including a duplicate or a mixed edge kind, acquires
+a boxed pair of owning Vecs and preserves insertion order within each edge kind.
+Actual usize targets and the original two Label variants remain unchanged.
+Node backing uses its actual layout. First-edge admission acquires the new enum
+initializer; promotion and subsequent Many insertion acquire their new control,
+receiver and allocation costs before construction. Removed backing grants no
+refund, quota, semantic work discount, source admission, or baseline charge.
+
+The complete old Node, Automaton, builder and canonical algorithm compile
+independently over their old two-Vec representation. New controls compare all
+216 small forward graphs, duplicate/parallel/epsilon weights and overflow,
+complete builder verdicts and every work frontier, later malformed edges,
+exact/short/zero physical frontiers, promotion refusal, nested floors, and whole
+constructor-to-Drop observations. Whole comparison costs and synthetic chain
+costs are separate; branching promotions can be unfavorable. All bodies are
+pending execution. No application cap fit, speedup, or OPT808 closure is claimed.
+
+The source-only [OPT847 retained imported-function view draft](evidence/retained-function-alias-847/README.md)
+lends an exact provider Function only when the unchanged retained-wrapper classifier
+accepts it and the caller alias equals its source name. Uncached transient inputs
+keep an ordered paid directory; other aliases, cache retention and invariant
+transforms keep the complete owning fallback. This changes compiler construction,
+not language qualification, call permissions, source/graph/cache bytes or limits.
+The ordinary synthetic-AST peak census remains conservative and unchanged. Physical
+constructor/core comparisons and unchanged application gates remain pending; no
+19,422-byte reduction, application fit or issue closure follows from source review.

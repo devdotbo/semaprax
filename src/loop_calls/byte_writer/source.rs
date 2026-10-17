@@ -7,14 +7,16 @@ enum Frame<'a> {
 }
 
 pub(crate) fn nonallocating(program: &dyn ProgramSource, target: &Function) -> bool {
+    if !program.function_refs().contains_unaliased_payload(target) {
+        return false;
+    }
     nonallocating_with(
         program,
         target,
         |owner, name| {
             owner
-                .functions()
-                .iter()
-                .find(|f| f.name == name)
+                .function_refs()
+                .unaliased_payload_by_name(name)
                 .map(|f| (owner, f))
         },
         ast_param,
@@ -207,7 +209,14 @@ pub(super) fn prove_with_cursor<'a>(
                                     return None;
                                 }
                             } else if let Some(op) = crate::vec_ops::by_name(name) {
-                                if !vec_operation(op) {
+                                if op == crate::vec_ops::VecOp::StrAt {
+                                    if !type_arguments.is_empty()
+                                        || !matches!(args.as_slice(), [source, _]
+                                            if matches!(&source.kind, ExprKind::Var(_)))
+                                    {
+                                        return None;
+                                    }
+                                } else if !vec_operation(op) {
                                     return None;
                                 }
                             } else {

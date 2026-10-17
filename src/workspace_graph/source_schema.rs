@@ -452,7 +452,12 @@ fn select<'a>(
             schema
         });
     }
-    let types = nominal_context::Types::new(module, modules, facts)?;
+    reserve_builder_structure(nominal_context::RECEIVING_CONTROLS)?;
+    let types = nominal_context::Types {
+        module,
+        modules,
+        facts,
+    };
     if !module
         .functions
         .iter()

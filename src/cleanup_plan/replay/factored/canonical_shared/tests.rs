@@ -1,5 +1,10 @@
 //! Independent full-old algebra and actual allocation/drop controls.
-use super::*;
+use super::Canonicalizer;
+use super::before_inline_weighted::{own_weighted, share_weighted, weighted_successor};
+use super::super::{
+    Automaton, BTreeMap, Diagnostic, Label, MAX_REPLAY_WORK_UNITS, Rc, ReplayBudget,
+    ResolvedFunction, SkeletonTerminal, Weighted, canonical_before, physical_clone,
+};
 
 fn fixture() -> ResolvedFunction {
     super::super::lexical_plan_tests::fixture(super::super::lexical_plan_tests::WHILE).1
@@ -72,8 +77,9 @@ fn full_old_receiver_preserves_ids_signatures_work_duplicates_overflow_and_cycle
         assert_eq!(budget.skeleton_remaining, old_budget.skeleton_remaining);
         assert_eq!(&current.ids, old.signatures());
         assert_eq!(current.states.len(), old.states().len());
-        for (state, id) in old.states() {
-            assert_eq!(current.states.get(&Rc::new(state.clone())), Some(id));
+        for ((actual, actual_id), (state, id)) in current.states.iter().zip(old.states()) {
+            assert_eq!(actual.as_slice(), state.as_slice());
+            assert_eq!(actual_id, id);
         }
         ids.push(actual);
     }
@@ -417,5 +423,334 @@ fn exact_small_successor_producer_keeps_complete_old_weighted_algebra_and_work()
             assert_eq!(budget.skeleton_remaining, old_budget.skeleton_remaining);
             assert_eq!(&current.ids, old.signatures());
         }
+    }
+}
+
+mod targets {
+    use super::super::targets::Targets;
+    use super::*;
+
+    fn function() -> ResolvedFunction {
+        super::super::super::lexical_plan_tests::fixture(
+            super::super::super::lexical_plan_tests::WHILE,
+        )
+        .1
+    }
+
+    #[test]
+    fn sorted_targets_preserve_zero_duplicate_maximum_and_overflow_weights() {
+        let function = function();
+        for entries in [
+            vec![],
+            vec![(7, 0), (2, 3), (7, 4), (0, 1), (2, 5)],
+            vec![(usize::MAX, u64::MAX), (0, 0)],
+            vec![(1, u64::MAX), (1, 1)],
+        ] {
+            let run = |paid| {
+                let mut budget = ReplayBudget::new();
+                let mut targets = Targets::new(paid);
+                let mut verdicts = Vec::new();
+                for &(node, weight) in &entries {
+                    let admitted = targets.add(&function, &mut budget, node, weight).unwrap();
+                    verdicts.push(admitted);
+                    if !admitted {
+                        break;
+                    }
+                }
+                let weights = targets.share(&function, &mut budget).unwrap();
+                (verdicts, weights)
+            };
+            assert_eq!(run(true), run(false));
+        }
+    }
+
+    #[test]
+    fn paid_targets_move_backing_and_keep_exact_short_zero_and_sticky_limits() {
+        let function = function();
+        let observe = |paid, limit, floor| {
+            crate::bounded_output::with_limit_usage_refusal(limit + floor, || {
+                assert!(crate::bounded_output::set_active_floor(floor));
+                crate::test_allocation_observer::measure(|| {
+                    let mut budget = ReplayBudget::new();
+                    let result = (|| {
+                        let mut targets = Targets::new(paid);
+                        for node in (0..64).rev() {
+                            assert!(targets.add(&function, &mut budget, node, 2)?);
+                            assert!(targets.add(&function, &mut budget, node, 3)?);
+                        }
+                        let pointer = match &targets {
+                            Targets::Paid(weights) => Some(weights.as_ptr()),
+                            Targets::Legacy(_) => None,
+                        };
+                        let shared = targets.share(&function, &mut budget)?;
+                        if let Some(pointer) = pointer {
+                            assert_eq!(pointer, shared.as_ptr(), "backing moves without copying");
+                        }
+                        assert_eq!(shared.len(), 64);
+                        for (expected, &(node, weight)) in shared.iter().enumerate() {
+                            assert_eq!((node, weight), (expected, 5));
+                        }
+                        drop(shared);
+                        Ok::<_, Diagnostic>(())
+                    })();
+                    let success = result.is_ok();
+                    if !success {
+                        assert!(budget
+                            .reserve_bytes(&function, 0, "sticky targets")
+                            .is_err());
+                    }
+                    drop(result);
+                    drop(budget);
+                    success
+                })
+            })
+        };
+        let ((ok, old), refused, before, first) = observe(false, usize::MAX, 0);
+        assert!(ok && !refused && first.is_none());
+        let ((ok, new), refused, exact, first) = observe(true, usize::MAX, 0);
+        assert!(ok && !refused && first.is_none());
+        assert!(exact < before && new.allocated < old.allocated);
+        for allocation in [old, new] {
+            assert!(!allocation.invalid && allocation.live == 0);
+            assert_eq!(allocation.allocated, allocation.freed);
+        }
+        assert!(new.allocated <= exact && old.allocated <= before);
+        for (limit, floor) in [0, 37]
+            .into_iter()
+            .flat_map(|floor| [0, exact - 1, exact].map(|limit| (limit, floor)))
+        {
+            let ((ok, allocation), refused, spent, first) = observe(true, limit, floor);
+            assert_eq!(ok, limit == exact);
+            assert_eq!(refused, limit != exact);
+            assert_eq!(first.is_some(), limit != exact);
+            if let Some(receipt) = first {
+                assert_eq!(receipt.floor, floor);
+            }
+            assert!(spent <= limit);
+            assert!(!allocation.invalid && allocation.live == 0);
+            assert_eq!(allocation.allocated, allocation.freed);
+            if ok {
+                assert_eq!(spent, exact);
+            }
+        }
+    }
+
+    #[test]
+    fn target_work_refusal_precedes_growth_and_preserves_existing_weights() {
+        let function = function();
+        let mut budget = ReplayBudget::new();
+        let mut targets = Targets::new(true);
+        assert!(targets.add(&function, &mut budget, 3, 7).unwrap());
+        budget.remaining = 0;
+        assert!(targets.add(&function, &mut budget, 1, 2).is_err());
+        let Targets::Paid(weights) = targets else {
+            unreachable!()
+        };
+        assert_eq!(weights, vec![(3, 7)]);
+    }
+
+    // Whole predecessors remain byte-bound before every historical inverse.
+    #[test]
+    fn complete_predecessors_and_new_target_sources_are_bound() {
+        crate::source_reflows::complete_predecessors_and_new_target_sources_are_bound (super::super::targets::incoming_input);
+    }
+}
+
+mod successor_labels {
+    use super::super::{targets, borrowed_labels as labels};
+    use crate::cleanup_plan::replay::SkeletonObservation;
+    use crate::hir::ExpressionId;
+    use super::super::super::compact_nodes::{Node, Many};
+    use super::*;
+
+    fn function() -> ResolvedFunction {
+        fixture()
+    }
+
+    fn subject(width: usize, overflow: bool) -> (Automaton, BTreeMap<usize, u64>) {
+        let mut keys = (0..width)
+            .map(|index| {
+                Label::Observation(Rc::new(SkeletonObservation::Boolean {
+                    expression: ExpressionId::from_owned(format!("labels.é.{index}")),
+                    value: index % 2 == 0,
+                }))
+            })
+            .collect::<Vec<_>>();
+        if width != 0 {
+            for terminal in [
+                SkeletonTerminal::Success,
+                SkeletonTerminal::Failure,
+                SkeletonTerminal::LoopLatch,
+            ] {
+                keys.push(Label::End(terminal));
+            }
+        }
+        let nodes = (0..4)
+            .map(|node| Node::Many(Box::new(Many {
+                moves: keys
+                    .iter()
+                    .rev()
+                    .enumerate()
+                    .map(|(index, key)| {
+                        (key.clone(), if overflow { 0 } else { (index + node) % 5 })
+                    })
+                    .collect(),
+                epsilon: Vec::new(),
+            })))
+            .collect();
+        let weights = [
+            (0, if overflow { u64::MAX } else { 0 }),
+            (1, 2),
+            (2, 3),
+            (3, 5),
+        ]
+        .into_iter()
+        .collect();
+        (Automaton { nodes }, weights)
+    }
+
+    // Complete prior outer producer, with only self.automaton made a parameter.
+    #[allow(clippy::type_complexity)]
+    fn before_labels(
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        automaton: &Automaton,
+        closed: &BTreeMap<usize, u64>,
+        accepted: u64,
+    ) -> Result<Option<(u64, Vec<(Label, Rc<Weighted>)>)>, Diagnostic> {
+        let mut successors = BTreeMap::<Label, targets::Targets>::new();
+        for (node, weight) in closed {
+            let moves = automaton.nodes[*node].moves();
+            budget.charge(
+                function,
+                moves.len().saturating_add(1),
+                "factored skeleton subset construction",
+            )?;
+            for (label, child) in moves {
+                if !successors.contains_key(label) {
+                    budget.reserve_btree_node::<Label, targets::Targets>(
+                        function,
+                        "factored successor label node",
+                    )?;
+                }
+                let targets = successors
+                    .entry(label.clone())
+                    .or_insert_with(|| targets::Targets::new(budget.pays_allocations()));
+                if !targets.add(function, budget, *child, *weight)? {
+                    return Ok(None);
+                }
+            }
+        }
+        budget.reserve_array::<(Label, Rc<Weighted>)>(
+            function,
+            successors.len(),
+            "factored successor vector",
+        )?;
+        let mut result = Vec::with_capacity(successors.len());
+        for (label, targets) in successors {
+            result.push((label, targets.share(function, budget)?));
+        }
+        Ok(Some((accepted, result)))
+    }
+
+    #[test]
+    fn complete_outer_labels_preserve_order_weights_zero_empty_and_overflow() {
+        let function = function();
+        for width in [0, 1, 2, 8, 64] {
+            for overflow in [false, true] {
+                let (automaton, closed) = subject(width, overflow);
+                let mut old = ReplayBudget::new();
+                let mut new = ReplayBudget::new();
+                let expected = before_labels(&function, &mut old, &automaton, &closed, 57);
+                let actual = labels::successors(&function, &mut new, &automaton, &closed, 57);
+                super::super::inline_weighted::assert_successors(&actual, &expected);
+                if let Some((accepted, labels)) = actual.unwrap() {
+                    assert_eq!(accepted, 57);
+                    assert_eq!(labels.len(), if width == 0 { 0 } else { width + 3 });
+                    assert!(labels.windows(2).all(|pair| pair[0].0 < pair[1].0));
+                } else {
+                    assert!(overflow && width != 0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn complete_paid_outer_storage_keeps_last_drop_and_physical_boundaries() {
+        let function = function();
+        let (automaton, closed) = subject(64, false);
+        fn inspect<T: std::ops::Deref<Target = [(usize, u64)]>>(
+            result: Result<Option<(u64, Vec<(Label, Rc<T>)>)>, Diagnostic>,
+        ) -> bool {
+            let success = result.is_ok();
+            if let Ok(Some((accepted, labels))) = &result {
+                assert_eq!(*accepted, 57);
+                assert_eq!(labels.len(), 67);
+                for (_, weights) in labels {
+                    assert_eq!(weights.iter().map(|(_, weight)| weight).sum::<u64>(), 10);
+                }
+            }
+            drop(result);
+            success
+        }
+        let observe = |old, available, floor| {
+            crate::bounded_output::with_limit_usage_refusal(available + floor, || {
+                assert!(crate::bounded_output::set_active_floor(floor));
+                crate::test_allocation_observer::measure(|| {
+                    let mut budget = ReplayBudget::new();
+                    let success = if old {
+                        inspect(before_labels(&function, &mut budget, &automaton, &closed, 57))
+                    } else {
+                        inspect(labels::successors(&function, &mut budget, &automaton, &closed, 57))
+                    };
+                    if !success {
+                        assert!(budget.reserve_bytes(&function, 0, "sticky labels").is_err());
+                    }
+                    drop(budget);
+                    success
+                })
+            })
+        };
+        let ((old_ok, old), refused, before, receipt) = observe(true, usize::MAX, 0);
+        assert!(old_ok && !refused && receipt.is_none());
+        let ((new_ok, new), refused, exact, receipt) = observe(false, usize::MAX, 0);
+        assert!(new_ok && !refused && receipt.is_none());
+        assert!(exact < before && new.allocated < old.allocated);
+        for allocation in [old, new] {
+            assert!(!allocation.invalid && allocation.live == 0);
+            assert_eq!(allocation.allocated, allocation.freed);
+        }
+        assert!(new.allocated <= exact && old.allocated <= before);
+        for floor in [0, 37] {
+            for available in [0, exact - 1, exact] {
+                let ((ok, allocation), refused, spent, receipt) = observe(false, available, floor);
+                assert_eq!(ok, available == exact);
+                assert_eq!(refused, !ok);
+                assert_eq!(receipt.is_some(), !ok);
+                if let Some(receipt) = receipt {
+                    assert_eq!(receipt.floor, floor);
+                }
+                assert!(spent <= available && allocation.allocated <= spent);
+                assert!(!allocation.invalid && allocation.live == 0);
+                assert_eq!(allocation.allocated, allocation.freed);
+                if available == 0 {
+                    assert_eq!(allocation.allocated, 0);
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn outer_label_work_refusal_precedes_publication() {
+        let function = function();
+        let (automaton, closed) = subject(8, false);
+        let mut budget = ReplayBudget::new();
+        budget.remaining = 0;
+        assert!(labels::successors(&function, &mut budget, &automaton, &closed, 57).is_err());
+    }
+
+    #[test]
+    fn complete_outer_label_sources_and_original_producer_remain_exact() {
+        crate::source_reflows::complete_outer_label_sources_and_original_producer_remain_exact();
     }
 }

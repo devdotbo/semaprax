@@ -81,6 +81,7 @@ Additional required references:
 | Process-resident incremental semantic workspace service core | [Persistent Incremental Semantic Workspace Service v1](PERSISTENT-INCREMENTAL-SEMANTIC-SERVICE-V1.md), [Canonical Semantic Workspace Revision v1](CANONICAL-SEMANTIC-WORKSPACE-REVISION-V1.md), [Universal Semantic Transaction v1](UNIVERSAL-SEMANTIC-TRANSACTION-V1.md), [Frontend Cache v1](PROJECT-FRONTEND-CACHE-V1.md) |
 | Persistent semantic service JSON-lines/MCP transport or `service` CLI | [Persistent Semantic Workspace Service Transport v1](PERSISTENT-SEMANTIC-SERVICE-TRANSPORT-V1.md), [Persistent Semantic Workspace Service MCP v1](PERSISTENT-SEMANTIC-SERVICE-MCP-V1.md), [Persistent Incremental Semantic Workspace Service v1](PERSISTENT-INCREMENTAL-SEMANTIC-SERVICE-V1.md), [Universal Semantic Query v1](UNIVERSAL-SEMANTIC-QUERY-V1.md), [Universal Semantic Transaction v1](UNIVERSAL-SEMANTIC-TRANSACTION-V1.md) |
 | One-shot universal semantic query or change-preview CLI | [Universal Semantic Workflow CLI v1](UNIVERSAL-SEMANTIC-WORKFLOW-CLI-V1.md), [Universal Semantic Query v1](UNIVERSAL-SEMANTIC-QUERY-V1.md), [Universal Semantic Transaction v1](UNIVERSAL-SEMANTIC-TRANSACTION-V1.md), [Universal Semantic Transaction v2](UNIVERSAL-SEMANTIC-TRANSACTION-V2.md), [Persistent Incremental Semantic Workspace Service v1](PERSISTENT-INCREMENTAL-SEMANTIC-SERVICE-V1.md), [CLI Help v4](CLI-HELP-V4.md), [CLI Help v5](CLI-HELP-V5.md) |
+| Fresh codec/command application assembly and declared typed native tests | [Application Starter v1](APPLICATION-STARTER-V1.md), [Codec Plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md), [Pure collection-record native tests v1](PROJECT-NATIVE-TEST-COLLECTION-RECORD-PURE-V1.md), [Scaffold v8](PROJECT-SCAFFOLD-V8.md), [Native Tests v1](PROJECT-NATIVE-TEST-V1.md) |
 | Read-only checked-type codec suitability explanation | [JSON Codec Suitability Discovery v1](JSON-CODEC-SUITABILITY-V1.md), [Checked-source Application JSON Codecs v1](APPLICATION-JSON-CODECS-V1.md), [CLI Help v5](CLI-HELP-V5.md) |
 | Installed agent guidance, skill selector, or query capability catalogue | [Installed Agent Guidance v1](INSTALLED-AGENT-GUIDANCE-V1.md), [Universal Semantic Query v1](UNIVERSAL-SEMANTIC-QUERY-V1.md), [Standard Library v1](STANDARD-LIBRARY-V1.md), [Guided CLI Help v4](CLI-HELP-V4.md), [CLI Help v5](CLI-HELP-V5.md) |
 | Installed diagnostic catalogue, explanation, source-token scanner, or `explain` CLI | [Installed Diagnostics v1](INSTALLED-DIAGNOSTICS-V1.md), [Human Diagnostic Locations v1](HUMAN-DIAGNOSTICS-V1.md), [Guided CLI Help v4](CLI-HELP-V4.md), [CLI Help v5](CLI-HELP-V5.md) |
@@ -205,6 +206,17 @@ private toolchain package, whose path dependencies retain exact version pins.
 The package gate must verify the actual archive; disabling verification is not
 a packaging fix.
 
+Use `semaprax::digest_hex::LowerHex` around SHA-256 digests in integration
+tests, or `crate::digest_hex::LowerHex` within the compiler. The digest array
+does not implement Rust's `LowerHex` formatter directly. Source-audit helpers
+compile in their owning integration harness, separately from the unit binary.
+
+Positive authenticated-source fixtures must contain canonical source. Keep raw
+noncanonical input as a separate negative case, then use the compiler formatter
+for the success fixture. CLI `--json` diagnostics are JSON lines on stdout;
+human diagnostics use stderr. Check the selected diagnostic code in the correct
+channel instead of accepting any unsuccessful exit.
+
 The quickstart, frame-payload product, and root owned-data/UTF-8 SDK tests
 share `tests/support/full_toolchain.rs` to build the unpublished CLI locked
 and offline. The helper selects the unique `semaprax-full` binary from
@@ -239,6 +251,18 @@ protection and no ruleset, so a local run is the only thing standing between a
 change and `main`. [Required CI checks](CI-REQUIRED-CHECKS-V1.md) records that
 configuration, the fail-closed `Release gate` aggregate, and the unapplied
 proposal that would require it.
+
+Before each future build, test, or Clippy controller, select the existing
+`CARGO_HOME` and `RUSTUP_HOME` values (or their usual `$HOME/.cargo` and
+`$HOME/.rustup` defaults), resolve both to physical absolute paths, and export
+both from the launching shell. Keep those same resolved spellings across all
+controllers using this checkout's private target. This preserves the selected
+homes; it does not create or relocate them. Alternating a symlink spelling and
+its physical path can invalidate dependency freshness even when both identify
+the same files; see [the cache follow-up](https://github.com/wavect/semaprax/issues/871).
+Apply this policy only to future launches. Do not migrate homes, change an
+active job's environment, restart a running build, or share another checkout's
+target to adopt it. Record the resolved homes with the controller's environment.
 
 When several worktrees build on one machine, give each its own target
 directory and keep debug data out of it:

@@ -1,6 +1,7 @@
 //! Whole old/current producers, actual held aliases, and independent budgets.
+use super::super::super::{Automaton, Label, SkeletonTerminal, MAX_REPLAY_WORK_UNITS};
 use super::super::{before_alias, Canonicalizer};
-use super::*;
+use super::{BTreeMap, Diagnostic, Rc, ReplayBudget, ResolvedFunction};
 use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 
@@ -75,7 +76,7 @@ fn epsilon_chain_diamond_duplicate_and_mixed_maps_keep_every_old_entry_and_actua
                 for root in &roots {
                     let expected = old.closure_for_alias_test(&function, *root, &mut old_budget);
                     let actual = current.closure(&function, *root, &mut budget);
-                    assert_eq!(actual, expected);
+                    super::super::ordered_weights::assert_closure_result(&actual, &expected);
                     assert_eq!(budget.remaining, old_budget.remaining);
                     assert_eq!(budget.skeleton_remaining, old_budget.skeleton_remaining);
                     drop(actual);
@@ -86,9 +87,14 @@ fn epsilon_chain_diamond_duplicate_and_mixed_maps_keep_every_old_entry_and_actua
                 for (node, state) in a.nodes.iter().enumerate() {
                     let old_value = old.alias_view(&node);
                     let value = current.closures.get(&node);
-                    assert_eq!(old_value, value);
-                    if node != sink && state.moves.is_empty() && state.epsilon.len() == 1 {
-                        let child = state.epsilon[0];
+                    if current.closures.state(&node) == 1 {
+                        assert!(value.is_none());
+                        assert_eq!(old_value.expect("computed old empty map").len(), 0);
+                    } else {
+                        super::super::ordered_weights::assert_closure_view(value, old_value);
+                    }
+                    if node != sink && state.moves().is_empty() && state.epsilon().len() == 1 {
+                        let child = state.epsilon()[0];
                         if let (Some(value), Some(inner)) = (value, current.closures.get(&child)) {
                             assert!(Rc::ptr_eq(value, inner));
                             assert!(!Rc::ptr_eq(
@@ -161,26 +167,35 @@ fn observe(
             budget.remaining = work;
             let mut new = Canonicalizer::new(a, sink);
             let mut old = before_alias::Canonicalizer::new(a, sink);
-            let result = if current {
-                new.closure(function, root, &mut budget)
+            let ok = if current {
+                let result = new.closure(function, root, &mut budget);
+                if let Some(expected) = expected {
+                    super::super::ordered_weights::assert_closure_result(&result, expected);
+                }
+                let ok = result.is_ok();
+                drop(result);
+                ok
             } else {
-                old.closure_for_alias_test(function, root, &mut budget)
+                let result = old.closure_for_alias_test(function, root, &mut budget);
+                if let Some(expected) = expected {
+                    assert_eq!(&result, expected);
+                }
+                let ok = result.is_ok();
+                drop(result);
+                ok
             };
-            if let Some(expected) = expected {
-                assert_eq!(&result, expected);
-            }
-            let ok = result.is_ok();
-            drop(result);
             let used = work - budget.remaining;
             if !ok {
                 let at = current_metrics().allocated;
-                let retry = if current {
-                    new.closure(function, root, &mut budget)
+                if current {
+                    let retry = new.closure(function, root, &mut budget);
+                    assert_eq!(retry, Err(Diagnostic::io("SPX-H006", String::new())));
+                    drop(retry);
                 } else {
-                    old.closure_for_alias_test(function, root, &mut budget)
-                };
-                assert_eq!(retry, Err(Diagnostic::io("SPX-H006", String::new())));
-                drop(retry);
+                    let retry = old.closure_for_alias_test(function, root, &mut budget);
+                    assert_eq!(retry, Err(Diagnostic::io("SPX-H006", String::new())));
+                    drop(retry);
+                }
                 assert_eq!(current_metrics().allocated, at);
                 assert_eq!(budget.remaining, work - used);
             }
@@ -296,7 +311,7 @@ fn epsilon_full_canonical_ids_signatures_checked_weights_and_repeated_roots_matc
                     old.id(&function, vec![(*root, 1)], &mut old_budget),
                     current.id(&function, vec![(*root, 1)], &mut budget)
                 );
-                assert!(old.same_snapshot(&current));
+                assert!(old.same_closure_state(&current));
                 assert_eq!(old_budget.remaining, budget.remaining);
                 assert_eq!(old_budget.skeleton_remaining, budget.skeleton_remaining);
             }
@@ -458,7 +473,7 @@ fn epsilon_sink_with_one_child_keeps_own_entry_and_general_backing() {
             let mut budget = ReplayBudget::new();
             let expected = old.closure_for_alias_test(&function, sink, &mut old_budget);
             let actual = current.closure(&function, sink, &mut budget);
-            assert_eq!(actual, expected);
+            super::super::ordered_weights::assert_closure_result(&actual, &expected);
             assert_eq!(
                 actual.as_ref().unwrap().as_ref().unwrap().get(&sink),
                 Some(&1)

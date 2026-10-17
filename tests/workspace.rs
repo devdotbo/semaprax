@@ -18,6 +18,9 @@
 //! `mod` in a test crate root resolves against `tests/`, so each module names
 //! its file explicitly.
 
+// Shared exact source adapter also compiles in this integration crate.
+use semaprax::digest_hex;
+
 #[path = "workspace/agent_definitions_association.rs"]
 mod agent_definitions_association;
 #[path = "workspace/agent_execution.rs"]
@@ -96,3 +99,15 @@ mod universal_semantic_query;
 mod universal_semantic_transaction_v2_cli;
 #[path = "workspace/universal_semantic_workflow_cli.rs"]
 mod universal_semantic_workflow_cli;
+
+#[path = "workspace/pin_capture.rs"]
+mod pin_capture;
+
+// Preserve the same complete source acquisition in this independent harness.
+#[path = "../src/source_reflows_merge/main_e177_final_inputs.rs"]
+pub(crate) mod main_e177_final_inputs;
+#[path = "../src/source_reflows_merge/next_big_batch_inputs.rs"]
+pub(crate) mod next_big_batch_inputs;
+mod source_reflows_merge {
+    pub(crate) use crate::{main_e177_final_inputs, next_big_batch_inputs};
+}

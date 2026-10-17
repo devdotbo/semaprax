@@ -57,14 +57,14 @@ pub(in crate::cleanup_plan::replay) enum SkeletonObservation {
 
 #[derive(Clone, Debug, Eq, Ord, PartialEq, PartialOrd)]
 pub(in crate::cleanup_plan::replay) struct SkeletonPath {
-    pub(super) observations: Observations,
-    pub(super) terminal: SkeletonTerminal,
+    pub(in crate::cleanup_plan::replay) observations: Observations,
+    pub(in crate::cleanup_plan::replay) terminal: SkeletonTerminal,
 }
 
 #[derive(Clone, Default)]
 pub(in crate::cleanup_plan::replay) struct Observations {
-    pub(super) prefix: Option<std::rc::Rc<ObservationDag>>,
-    pub(super) items: Vec<Observation>,
+    pub(in crate::cleanup_plan::replay) prefix: Option<std::rc::Rc<ObservationDag>>,
+    pub(in crate::cleanup_plan::replay) items: Vec<Observation>,
 }
 
 impl Observations {
@@ -547,7 +547,7 @@ pub(super) fn plan_skeleton_paths(
 }
 
 #[path = "lexical_before.rs"]
-mod lexical_skeleton;
+pub(in crate::cleanup_plan::replay) mod lexical_skeleton;
 
 impl crate::cleanup_plan::replay::physical_clone::IntoReplay<std::rc::Rc<SkeletonObservation>>
     for SkeletonObservation

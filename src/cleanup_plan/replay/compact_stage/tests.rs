@@ -1,5 +1,6 @@
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
+use crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS;
 use crate::test_allocation_observer::measure;
 // These direct receivers start after skeleton preflight. Supply its explicit
 // work allowance; new() intentionally leaves that allowance unset. Allocation
@@ -61,6 +62,29 @@ fn all_canonical_fields_order_and_debug_survive_compaction() {
             budget
                 .reserve_vec(function, &mut compact, 1, "compact test sources")
                 .unwrap();
+            budget
+                .reserve_bytes(
+                    function,
+                    CopySource::QUERY_CONTROLS,
+                    "compact staged-source caller query controls",
+                )
+                .unwrap();
+            match &owned {
+                StagedCopyResultSource::Body { .. } => budget
+                    .reserve_bytes(
+                        function,
+                        CopySource::BODY_CONTROLS,
+                        "compact staged-source body receiving controls",
+                    )
+                    .unwrap(),
+                _ => budget
+                    .reserve_bytes(
+                        function,
+                        CopySource::RESIDUAL_CONTROLS,
+                        "compact staged-source residual receiving controls",
+                    )
+                    .unwrap(),
+            }
             compact.push(CopySource::new(function, &mut budget, owned).unwrap());
         }
         compact
@@ -90,6 +114,7 @@ fn constructor_and_rc_pay_all_backing_with_zero_exact_short_and_drop() {
                         // Retain the entire original owned-source clone and census.
                         let owned =
                             skeleton_clone(&mut budget, function, source, "test source clone")?;
+                        prepare!(function, &mut budget, &owned);
                         let value = CopySource::new(function, &mut budget, owned)?;
                         assert!(value.matches_canonical(source));
                         let mut items: Vec<std::rc::Rc<SkeletonObservation>> = Vec::new();

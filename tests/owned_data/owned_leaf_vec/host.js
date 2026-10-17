@@ -36,12 +36,16 @@ const payloads = new Map(), vectors = new Map(), iterators = new Map();
 const AUTHORITY_ENCODING = 'semaprax.test.owned-leaf-authority.v2';
 const EMPTY_BYTES = new Uint8Array(0);
 let sorting = false, fieldReading = false, fieldReads = 0;
+let fieldUpdating = false, fieldUpdates = 0;
+let updateMetadata = null;
+const updateBefore = new BigInt64Array(8); // fixture scratch, outside the observed store
+
 // Borrowed field uniqueness: requested ordinal scratch is counted separately
 // from owner inventory. JS typed-array storage is fixture memory, not paid
 // native backing; it only proves no row/payload/authority work occurs.
 let uniqueChecking = false, uniqueChecks = 0, uniqueScratchRequests = 0, uniqueScratchBytes = 0;
 const allocationOutsideSort = name => {
-  if(sorting||fieldReading||uniqueChecking)throw Error(`infallible read/sort reached allocating/settling helper: ${name}`);
+  if(sorting||fieldReading||uniqueChecking||fieldUpdating)throw Error(`infallible read/sort reached allocating/settling helper: ${name}`);
 };
 // Test-only guards make a future slice/sort/map or authority re-mint fail the
 // same executable corpus, rather than quietly reintroducing a failure lane.
@@ -547,6 +551,53 @@ const env = {
       throw error;
     }
   },
+  spx_vec_update_field_v1:(handle,identity,shape,index,position,word)=>{
+    if(refusal==='field-update-bit-matrix'&&updateMetadata===null)updateMetadata=[identity,shape];
+    // Authenticate existing constructor-bound metadata; an update never binds
+    // a new descriptor or mints a replacement authority/backing.
+    if(refusal==='field-update-hostile'){
+      let rejected=0;
+      for(const attempt of [
+        ()=>bindSort(BigInt.asIntN(64,BigInt.asUintN(64,handle)^(1n<<32n)),identity,shape),
+        ()=>bindSort(handle,identity^1n,shape),
+        ()=>bindSort(handle,identity,shape^16n),
+      ]){try{attempt()}catch(error){rejected++}}
+      if(rejected!==3)throw Error('stale/nominal/shape update guard did not fail closed');
+    }
+    const value=bindSort(handle,identity,shape);
+    if(value.identity!==identity||value.shape!==shape)throw Error('unbound update descriptor');
+    const scalarAt=ordinal=>{
+      if(ordinal<0n||ordinal>=8n)throw Error('update field ordinal');
+      const byte=Number((BigInt.asUintN(64,shape)>>(ordinal*8n))&255n),code=byte>>4;
+      if(!byte||code<1||code>8)throw Error('update selected non-Copy field');
+      return byte;
+    };
+    if(refusal==='field-update-hostile'){
+      let owned=-1n;
+      for(let k=0n;k<8n;k++)if(Number((BigInt.asUintN(64,shape)>>(k*8n))&255n)>>4>=9){owned=k;break}
+      let rejected=false;try{scalarAt(owned)}catch(error){rejected=true}
+      if(!rejected)throw Error('owned leaf selected for scalar update');
+    }
+    const byte=scalarAt(position),code=byte>>4,slot=byte&15;
+    checkWord(word,code);
+    if(index<0n||index>=BigInt(value.values.length))return 0n;
+    if(fieldUpdating||sorting||fieldReading||uniqueChecking)throw Error('reentrant field update');
+    const row=value.values[Number(index)],backing=value.values,capacity=value.capacity;
+    const copied=copies,dropped=drops,payloadId=nextPayload,vecId=nextVec,authorities=vectors.size;
+    for(let k=0;k<row.length;k++)updateBefore[k]=row[k];
+    fieldUpdating=true;
+    try{
+      row[slot]=word;
+      value.generation++;
+      fieldUpdates++;
+      for(let k=0;k<row.length;k++)if(k!==slot&&row[k]!==updateBefore[k])throw Error('update changed unrelated field bits/owner');
+      if(value.values!==backing||value.values[Number(index)]!==row||value.capacity!==capacity
+        ||copies!==copied||drops!==dropped||nextPayload!==payloadId||nextVec!==vecId||vectors.size!==authorities)
+        throw Error('update allocated/cloned/dropped/reminted storage');
+      if(vectorValue(handle)!==undefined)throw Error('updated generation remained live');
+      return BigInt.asIntN(64,(value.generation<<32n)|value.authority_slot);
+    }finally{fieldUpdating=false}
+  },
   spx_vec_leaf_replace_v1:(handle,identity,shape,index,...words)=>{
     const value=bind(handle,identity,shape);
     if(index<0n||index>=BigInt(value.values.length))return 0n;
@@ -907,7 +958,7 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
   if(shared)shared.bind(instance);
   fieldOutput=new DataView(memory().buffer);
   for(let run=0;run<(copyRecordCodec?16:3);run++){
-    codecPushAttempts=0;fieldReads=0;
+    codecPushAttempts=0;fieldReads=0;fieldUpdates=0;
     const beforeSlotCopies=copies;
     const receipt=shared?shared.facade.beginInvocation():null;
     let selected=0,returned;
@@ -926,6 +977,10 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
     if(vectors.size||iterators.size||payloads.size||(!shared&&copies!==drops))
       throw Error(`leaks vec=${vectors.size} iter=${iterators.size} payload=${payloads.size} copies=${copies} drops=${drops}`);
     if(shared){shared.facade.audit();shared.facade.endInvocation(receipt)}
+    if((refusal==='field-update-observe'||refusal==='field-update-hostile')&&fieldUpdates!==4)throw Error('update store count did not match exact commits');
+    if(refusal==='field-update-bit-matrix'&&fieldUpdates!==1)throw Error('bit matrix source setup did not exercise one actual call');
+    if(refusal==='field-update-one'&&fieldUpdates!==1)throw Error('operand staging did not commit exactly once');
+    if(refusal==='field-update-before-store'&&fieldUpdates!==0)throw Error('RHS/index failure committed a store');
     if(refusal==='field-index-failure'&&fieldReads!==0)throw Error('index failure accessed row storage');
     if(vecView&&fieldReads!==1)throw Error('traversal index failure did not preserve exactly the successful current-row read');
     if((refusal==='field-no-allocation'||refusal==='slot-no-copy')&&fieldReads<64)throw Error('repeated read guard was not exercised');
@@ -934,6 +989,34 @@ if(copyRecordCodec)require('./copy_scalar_imports.js')(env,vectorValue);
       throw Error('partial codec allocation failure did not reach its exact owning commit');
     if(refusal==='unique-scratch'&&uniqueScratchBytes!==0)throw Error('refused uniqueness scratch was observed as allocated');
     if(refusal==='unique-scratch'&&uniqueScratchRequests===0)throw Error('uniqueness scratch refusal was not exercised');
+  }
+  if(refusal==='field-update-bit-matrix'){
+    if(updateMetadata===null)throw Error('missing checked source descriptor witness');
+    const [identity,shape]=updateMetadata,spec=fields(shape);
+    if(spec.length!==6||spec[1].code!==6&&spec[1].code!==7||spec[4].code!==6||spec[5].code!==7)
+      throw Error('matrix requires selected float and independent f32/f64 guard words');
+    const p32=[0n,0x80000000n,0x7f800000n,0xff800000n,0x7fc00001n,0x7fc12345n,0xffc54321n,1n,0x007fffffn,0x00800000n,0x7f7fffffn,0xff7fffffn];
+    const p64=[0n,0x8000000000000000n,0x7ff0000000000000n,0xfff0000000000000n,0x7ff8000000000001n,0x7ff8123456789abcn,0xfff8fedcba987654n,1n,0x000fffffffffffffn,0x0010000000000000n,0x7fefffffffffffffn,0xffefffffffffffffn];
+    for(let repeat=0;repeat<3;repeat++){
+      let handle=env.spx_vec_leaf_new_v1(identity,shape,1n);
+      const title=ownBytes(new Uint8Array([104,0,195,169])),payload=ownBytes(new Uint8Array([1,0,255]));
+      const words=[title,0n,payload,-1n,0n,0n,0n,0n];
+      handle=env.spx_vec_leaf_push_v1(handle,identity,shape,...words);
+      for(let k=0;k<12;k++){
+        const value=vectorValue(handle),row=value.values[0],next=value.generation+1n;
+        row[spec[3].slot]=BigInt.asIntN(64,0x8000000000000000n+BigInt(k));
+        row[spec[4].slot]=p32[(k+5)%12];row[spec[5].slot]=BigInt.asIntN(64,p64[(k+3)%12]);
+        const before=row.slice(),backing=value.values,authority=value.authority_slot;
+        const word=spec[1].code===6?p32[k]:BigInt.asIntN(64,p64[k]),old=handle;
+        handle=env.spx_vec_update_field_v1(handle,identity,shape,0n,1n,word);
+        const after=vectorValue(handle);
+        if(!after||after.generation!==next||after.authority_slot!==authority||after.values!==backing||after.values[0]!==row
+          ||row[spec[1].slot]!==word||vectorValue(old)!==undefined)throw Error('exact float payload/one generation commit mismatch');
+        for(let j=0;j<row.length;j++)if(j!==spec[1].slot&&row[j]!==before[j])throw Error('matrix changed unrelated Copy bits/leaf identities');
+      }
+      env.spx_vec_drop_v2(handle);
+      if(vectors.size||iterators.size||payloads.size||copies!==drops)throw Error('matrix construction-through-Drop leaked');
+    }
   }
   if(copyRecordCodec&&requiredImports.some(entry=>entry.name==='spx_vec_unique_by_v1')){
     // Copy-carrier controls through the same strict legacy scalar boundary:

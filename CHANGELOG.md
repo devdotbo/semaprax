@@ -1,4 +1,203 @@
+- Source-only #837 gives standalone starter options an explicit full-host recovery command and routes incomplete full-host starter requests to their exact grammar before file acquisition; owning regressions are authored, execution remains pending.
+- Source-only #881 replaces borrowed path/call and owned-row binary-search callback/compound-result transports with a real local scalar owner, retaining complete old producers and dynamic payload payments. Fixed diagnostic census and matched frontier/Drop controls are authored; compilation and measured outcomes remain pending.
+- Source-only #879 funds the direct generic branch-copy ABI at its caller and bounds lexical continuation edges before choosing backing; complete prior producers and unchanged arithmetic/frontier assertions remain compiled. Runtime and cost qualification are pending.
+- Source-only #875 separates the unchanged unadmitted owned-Option residual fixture into an exact T218 control so the admitted owned/Result/scalar history corpus can reach both original comparison algorithms. Qualification is pending.
+- Source-only #859 restores independent body diagnostics after authenticated concrete-record shape refusals; other rejected-storage routes retain their prior early return. Focused qualification is pending.
+<!-- OPT874 source candidate: bind direct selected singleton setup identity and preflight test adapters before payment; preserve complete old producers and failure controls, qualification pending. -->
+- Authored the OPT877 ordinary enumerated HIR immutable-prefix source candidate,
+  with dedicated free-work sequence construction, full-content comparison on
+  both PLAN routes and independent old/source/physical owners. Compilation,
+  runtime qualification and application gains remain pending.
+- Add a private ordinary PLAN history candidate with immutable numeric-link
+  segments and prepaid forward comparison against the unchanged HIR multiset.
+  Complete flat predecessors and refusal/teardown controls remain compiled;
+  focused runtime and application qualification are pending (OPT875).
+- Revise selected successor routing to the existing paid tree walk while
+  retaining arena interning, ordinary singleton production and the Oracle
+  directory. Preserve the original exact-work gate and complete prior methods;
+  focused qualification is pending (OPT876).
+- Source-only ordinary singleton successor production bypasses the temporary label directory for zero/one movements, with explicit receiving/work charges and complete old, fallback, refusal and whole-Drop controls; focused compilation and application cost qualification remain pending.
+- Source-only #785 removes owned identity reconstruction from closed Vec, Box and stdin inspection producers, retaining exact old receiver algorithms and hostile/whole-Drop controls; focused qualification remains pending.
+- Source-only #785 reuses the current declaration-index identity at generic inference and call-signature target sites; original payer, full old construction controls and application measurement obligations remain. Focused qualification is pending.
+- Compose paid flat multi-target successors with the retained inline singleton
+  path in both canonical receiving families (OPT870). Acquire real promotion,
+  search, shift, growth and sharing receivers; retain complete legacy and
+  immediate production controls. Source-only; focused qualification and actual
+  application cost comparisons remain pending, including unfavorable cases.
+- Author a source-only ordinary first-sibling prefix/suffix fusion candidate.
+  Replaced split/iterator receiving roles fund one eligibility probe under the
+  unchanged charge; eligible paths allocate the final backing once after the
+  original extension work. Complete frozen/current owner and refusal controls
+  await the parent batch. No application-fit or measured-gain claim is made.
+- Split oversized joined custody metadata only at whole ordered rows, keeping
+  the original sealed-reader cap and assertions. Fixed source dispatch opens one
+  authenticated part; source controls preserve the complete logical table.
+- Preserve complete raw Main043 guards when several additive include runs share
+  a physical line. Tokenized insertion checks retain all original bytes, limits,
+  and old controls; hostile edits and whole-source restoration are source-tested.
+- Repair the complete first production Clippy cohort for private #847. Keep
+  compatibility receivers test-compiled, narrow source-verifier visibility, and
+  fund the diagnostic-prefix/body-owner context before formation. Focused
+  compiled and runtime qualification remain pending.
+- Private #847 propagates byte-only source stops with their exact diagnostic
+  prefix through the actual owner route. A prepaid fixed abort slot retains
+  refusal ownership without allocating after refusal; specialization views are
+  acquired before formation. Invariant-bearing inputs preselect the complete
+  owning producer, with an explicit bypass backstop. Ordinary checked reuse
+  retains raw pointer-width scans. Focused execution and renamed producer
+  qualification remain pending; no measured-gain claim is made.
+- Private #847 lends frozen cells into declaration-index construction and gives
+  invariant-pass cell acquisition the real invocation allocation/refusal owner.
+  Structural effective-name queries avoid wide temporary views; raw byte-proof
+  entry, assignment and transitive lookup exclude borrowed aliases, retaining
+  the complete Bytes-alias owning fallback. New controls await focused parent
+  execution; remaining receiving/materialization boundaries keep rename
+  admission closed, with no measured-gain or completion claim.
+- Continue private #847 with borrowed body-template/origin/contract receivers
+  and a class-declaration pointer in the frozen capacity tuple, preserving its
+  exact class name and method suffix. Add old/current target-layout and class
+  identity controls. Runtime/layout results and the remaining physical owners
+  are pending; renamed producer admission remains closed.
+- Private #847 HIR receivers now lend current and target presentations from
+  the verifier inventory on the paid ordinary-source route, with independent
+  inventory/AST lifetimes and preserved global/class-method order. Genuine
+  invariant materialization copies the effective name once. Compatibility owned
+  inventories, invariant physical owners, remaining proof copies and focused
+  qualification are still pending; renamed admission stays closed.
+- Continue private #847 by borrowing the verifier current cell independently
+  from AST recovery, lending frozen call targets/signatures through frames, and
+  borrowing generic-inference and Vec/Box classifier receivers. Renamed admission
+  and measured-gain claims remain closed pending the remaining HIR and ownership
+  boundaries and focused qualification.
+- Private #847 source checkpoint migrates effective function names and lends
+  immutable capacity cells through unchanged declaration maps on the real byte
+  owner. Renamed producer admission remains closed pending current/target/frame
+  and HIR borrowing, exact receiving owners and focused qualification. No gain
+  or feature-completion claim is made.
+- Source-only #831 cold terminal singleton receiving and deferred empty-memo payload promotion; complete old receivers and strict width0..4 gates retained, actual qualification pending.
+- Admit only the exact owned-clone setup work in compact residual floor controls,
+  retaining the complete zero-funded refusal and all target checks; qualification pending.
+<!-- OPT831 source checkpoint: closure-specific duplicate refusal owner and inner id Result removed; unchanged strict qualification pending, no measured gain claimed. -->
+
+- Source-only #781 followup gives paid Session reference coverage closed semantic
+  receipts and per-actual-call reference-coverage receiving on its existing
+  ledger. Complete old producers remain; runtime qualification and the remaining
+  dynamic validator families are pending.
+<!-- Source-only #833: invocation-owned identifier census scratch reuse across
+     distinct cold callers; full old receiver retained; qualification pending. -->
+- Add a source-only JSON codec retained-input receipt candidate: exact held originals, resolved source inventory and two same-process retained-revision derivations; binary binding, host adoption and executable qualification remain pending.
 # Changelog
+
+- Reuse a paid status diagnostic receiving cell on wide ordinary builder validation, retaining every original producer, identity, invocation and failure check; restore complete ordered source-audit coverage.
+
+- Keep warm canonical Memo rejection ahead of the poisoned payer, and remove
+  query slice coercions and miss indexing through borrowed Vec/Zip receiving.
+  Complete old controls and strict paid-reduction gate remain; NEXT qualification
+  and actual application effects are pending.
+
+
+- Preserve Main043 as an independent complete 75-input live source-audit domain and 14-control historical helper, alongside the unchanged nine a82e tables and five-proof helper. Keep incoming CI diagnostics and all original snapshots; joined Rust qualification remains pending.
+- Add bounded exact-profile JSON task guidance from the paired ShiftSim specimen, including existing full-host assembly, native pure tests, complete input/dependency inventories and exact signatures. Existing task pages remain; ordinary admission and execution qualification are pending, with no measured agent-cost claim.
+- Track completeness for every formatted checked instance-key fragment, including zero-argument nominals and final rematerialization; calibrate floor refusals at the actual write frontier while retaining exact/short/zero, sticky retry, key-producer and Drop controls. Qualification remains pending.
+- Fund ordinary skeleton constructor inventories before traversal scratch, clone payloads and tree insertion on the held ReplayBudget; preserve independent original collectors, all prefix-transfer controls and stable first-refusal propagation. Source-only qualification remains pending.
+
+- Correct all 19 observed 67b production Clippy findings without weakening checks: retain test-only macro access, lazy terminal error formation, ordered funded branches and the exact eight-usize receiving layout. Runtime qualification remains pending.
+- Port Main44 sequencing capacity to the lexical first active output work frontier with prepaid complete query controls, while retaining its complete independent implementation and original source domains. Report paid no-saving probes without refunds; combined execution qualification remains pending.
+
+- Reconcile Main8a finished-path capacity, arbitrary final-suffix transfer and borrowed nominal context with lexical paid receiving; preserve original work-before-optional-payment priority and complete Main controls. Qualification and net application cost remain pending.
+
+- Reconcile Main24 as an independent historical prefix probe/transfer receiver with all six current and five prior-wrapper controls; retain the shipping lexical single-successor transfer and exact path-array preflight.
+- Emit bounded test-only public wire receipts in hosted CI so exact report digest failures carry complete bytes, while retaining all original hashes, fixtures, assertions and verdicts.
+
+- Hold paid status insertion search scratch across ordinary builder rows, preserving full-key comparisons, AVL links, validation work and the original independent search receivers.
+
+- Give the saved tail-move merger its own method name so it and the complete isolated-path reference compile together, preserving every original body and assertion.
+
+- Refresh browser graph pins from complete hosted 3e66c0116 captures, restoring every previous wire byte and retaining all earlier source and rejection controls.
+
+- Record opt-in test-only core retry mode, debit and refusal receipts while preserving the original attempt-count, quota, source and diagnostic controls.
+
+- Reuse ordinary isolated lexical path backing after the original work charge, preserving every path and observation while paying new receiving frames and retaining all original fallback routes.
+
+- Keep the original Copy-record reporting fixture as a successful complete-artifact parity control, and test exact legacy refusals using an explicitly unsupported proposal schema.
+
+- Decline incomplete optional helper digests only on shared capture-work exhaustion, preserving complete receiver authentication, unsupported-body refusals, successful debits and existing limits.
+
+- Distinguish borrowed-view failure checks from owned zero-byte cleanup in the byte traversal host, retaining strict report and ownership assertions.
+
+- Attribute committed test-only builder debits to exclusive replay phases, retaining the ordinary ledger behavior, quota frontiers, and complete source controls.
+
+- Retain the paid status insertion index for authenticated ordinary membership queries, requiring full-key equality and preserving original caps, fallback receivers, and complete source controls.
+
+- Audit the complete private-layout module for projection purity while preserving every broader source input and rejecting missing owned or external module files.
+
+- Reduce ordinary retained status-directory comparison work with a funded private insertion index; retain complete-key AVL results, existing caps and refusal controls.
+
+- Capture a test-only replay work-refusal site in the unchanged production-core retry regression, retaining all limits, diagnostics, fixture selection and assertions.
+
+- Bound continuing-branch clone capacity through the next fork and final terminal suffix, retaining the complete clone census and old fallback; rename a reserved fixture local while preserving its values and assertions.
+
+- Bind primitive String-vector fixture byte arrays to named owners before borrowing, preserving every original value, output limit, backend and rejection assertion.
+
+- Transfer already funded final-branch observation backing when a bounded terminal-chain probe proves it can hold every remaining observation, preserving original clone work, fallback receivers and source controls.
+
+- Admit strictly checked primitive String-slot reads in nonallocating byte-helper proofs, avoid temporary type owners during slot inspection, and retain generic declaration-bound receipts at the rejected-storage frontier.
+
+- Refresh browser graph pins from complete hosted 21abcda9b captures after the 4,707-byte cumulative builder-debit reduction, retaining every prior wire and source control.
+
+- Compare paid non-latch exit region prefixes through fully funded borrowed ancestry state, retaining complete chain validation, original owning paths, limits and whole-source controls.
+
+- Refresh browser graph pins from complete hosted 7d34f1269 captures, preserving every prior wire byte except the observed builder debit and self-digest, with all historical controls retained.
+
+- Stop executable signature and pattern checks after invalid storage declarations, keeping all declaration refusals, admitted text records, and existing native-import diagnostic priority.
+
+- Move complete factored target and label custody assertions into the test source-reader layer, keeping original entries, full assertion bodies, and historical inverses while preserving the HIR authority audit.
+
+- Keep the complete nested traversal custody assertions in the test source-reader layer, preserving their original body and fail-closed inverses while keeping filesystem operations outside core HIR.
+
+- Pass the installed macOS SDK explicitly when compiling native authority test executables with a scrubbed environment, so real system headers remain available.
+
+- Use paid small continuation backing for standalone validation and the authenticated held status prefix for unobserved wide validation, retaining limits, complete original paths, and historical controls.
+
+- Reuse one fully funded comparison state during ordinary expression-fact lookup, retaining complete byte ordering, original work events, legacy/selected/oracle routes and historical controls.
+
+- Grow authenticated invocation-held continuation buffers as reached, funding complete replacements and retaining the original depth bound, fixed legacy constructor, work events and historical controls.
+
+- Hold an authenticated exclusive status-directory prefix during paid construction, retaining original validation loops, work ceilings, physical controls and complete historical source proofs.
+
+- Refresh browser pins from complete hosted 67107c7c5 graphs, preserving every prior byte except the exact builder bill and self-digest, with all historical controls retained.
+
+- Resolve the outer-label comparison test through the production target module and reproduce its nested module layout in focused validation.
+
+- Build paid canonical successor labels from borrowed keys and an exact target table, preserving weighted language comparison, legacy work and complete historical source proofs.
+
+- Make the funded production census diagnostic constants available outside tests and scope its test imports precisely.
+
+- Fund complete ordinary replay setup through its existing byte account, preserving legacy work, all finite physical controls and complete historical source proofs.
+
+- Acquire test observer backing before activation instead of embedding large arrays in TLS, retaining all capacities, callbacks and physical allocation controls; report ELF TLS layouts in the unchanged low-stack diagnostic.
+
+- Build paid factored successor weights directly in sorted vectors and move their backing into shared states, retaining checked multiplicity, the original unobserved work path and all historical source proofs.
+
+- Capture bounded stopped-frame layouts and function prologues for the unchanged 128 KiB diagnostic case after constructor phase isolation still crashed.
+
+- Select the complete factored verifier earlier for scalar path products, retaining original resource-bearing selection, every enumeration cross-check, all limits, and sticky comparison failures.
+
+- Restore the fixed supplemental cursor for unobserved legacy replay so geometric relocation does not change its original work counters; retain every funded growth frontier and full before/current inventory assertion.
+
+- Refresh browser graph pins from complete hosted 524a80bc9 captures after a 36,720-byte builder-bill reduction, preserving all earlier whole-wire, source, and tamper controls.
+
+- Separate loan-plan presence, lexical validation and candidate construction into non-inlined stack phases, retaining the complete original planner and low-stack regression.
+
+- Restore later allocation-test and provider inventory inputs through explicit whole-source custody, retaining original formatting hashes, all fourteen receiver proofs and complete historical source assertions.
+
+- Fall back to complete fresh resolution before selecting an unaffordable checked-cache candidate, retaining original validation, residual charges and failed-attempt receipts.
+
+- Avoid constructing the recursive type census for ordinary scalar clones while retaining the original fee controls, full compound fallback and sticky allocation authentication.
+
+- Compact borrowed child traversal state without changing enumeration, work refusals or depth bounds, retaining the complete original cursor and low-stack constructor regression.
+
+- Select existing inline String storage for private metered Core-Wasm stage builds, retaining unmetered public profile refusals and the original lexical fuel/cleanup parity fixture.
 
 - Provision GDB explicitly for hosted low-stack diagnostics when the runner image does not include it.
 
@@ -28,6 +227,7 @@
 
 - Refresh browser graph pins from complete hosted 75b314f70 records after an observed 4,756-byte builder-bill decrease, preserving every prior whole-wire bridge and source control.
 
+
 - Compare every private expression-path field explicitly in vector-reuse controls, retaining the production carrier's existing traits and all parity assertions.
 
 - Clone ownership-classifier leaf types without acquiring a recursive census cursor, preserving sticky authentication and the full paid recursive fallback.
@@ -36,9 +236,10 @@
 
 - Reuse an already-owned same-capacity path vector for a single successor, funding the complete receiving frame and preserving original fallback, canonical fields, logical work, materializations and future growth under unchanged limits.
 
+
 - Preserve the first HIR diagnostic before selecting lexical Copy-discard graph profiles, retaining current native-import and finite-composition guards after HIR authentication.
 
-- Refresh browser graph pins from complete hosted f82cec490 records after an observed 8,834-byte net builder-bill decrease, retaining every older compiled bridge and exact whole-wire/source control.
+- Retain Mainf82 complete hosted browser records and prior bridges independently; keep current55e runner pins until the reconciled source receives fresh actual captures.
 
 - Give direct compact-stage and branch-clone receiver fixtures their explicit post-preflight skeleton allowance while retaining zero/exact/short allocation accounts; preserve failed macOS CI unit executables with exact Cargo/commit/byte provenance for bounded replay on the external SSD.
 
@@ -58,7 +259,30 @@
 
 - Keep fallible prefix transfer in its existing cleanup receiver and fund a pure borrowed probe, retaining the complete shipped wrapper and its original tests.
 
-- Transfer an already funded cleanup observation prefix to its sole successor, preserving full replay checks, work, ordering, and complete previous receivers under unchanged limits.
+- Source-only #781 adds complete paid status and selected scalar record/body receivers with closed semantic data, actual per-call same-ledger banks and independent prior drivers. Error-only dynamic controls are acquired only on that path. New frontiers and remaining inventory/certificate/schema/path diagnostics are explicit; executable qualification and end-to-end closure remain pending.
+
+- Source-only #781 extends closed selected receipts to slot/region/leaf and flat-leaf/storage-index construction, with per-actual-call clone/vector/node receiving on the same ledger and complete independent old drivers. Earlier receiving frontiers and remaining inventory/status/certificate/path diagnostics are explicit; focused execution and transitive closure remain pending.
+
+- Move 36 additional immutable test-only source-view JSON documents (2,612,409 unique bytes) behind a separate fixed authenticated runtime inventory; preserve live Rust snapshots, the original90 inventory and every predecessor assertion. Static transport reduction is not a measured memory claim.
+
+- Prepare the source-only #848 bulk90 embedded/runtime comparison: fixed common transport modules, one active module selector, unchanged file-loader/hostile controls, exact arm source custody, and per-arm truthful authority metadata. No matched build or memory benefit is claimed.
+
+- Source-only #781 followup routes the duplicated paid lexical/scalar driver
+  profile and member guards through their existing prepaid receipt twins.
+  Complete old drivers and report/ledger/Drop controls remain; transitive dynamic
+  Session diagnostics remain open and qualification is pending.
+
+- Source-only #853 compares retained generic instance identities against the exact canonical stream at five validation predicates, removing the encoded-tail and final temporary-ID buffers while retaining the complete argument-key traversal, duplicate/error order and allocating encoder. A one-use checked writer refuses silently truncated compound keys without changing ordinary sinks. New control frontiers remain required and sticky; qualification and application-fit claims are pending.
+
+- Select the existing paid borrowed-alias producer on the first ordinary uncached core attempt, preserving cache/invariant fallbacks and the complete old/current Project source, graph and Image parity gate. The previous compact-only gate left successful small Projects on the owning fallback; qualification is pending.
+
+- Source-only #851 admits exact capacity-witness control layouts before eligibility/length receivers and reserves optional String backing separately; preserve the complete Main receiver and all three original controls independently, with truthful paid-control spend on later backing refusal. Output, primary fields, sticky/floor behavior and limits remain; focused qualification is pending.
+
+- Add bounded V6 checked task/profile pages with repeated complete prerequisites, exact imported declaration rows and deterministic continuation; preserve V5 cards and scaffold capsules, explicitly refuse unverified stdin JSON composition, and leave executable qualification and agent-cost improvement unclaimed.
+- Reuse the already-built exact HIR/plan comparison for fitting ordinary lexical proof after unchanged enumeration admission/reservation; retain complete forced old enumeration and all weighted receiver payments, with no allowance refund or measured application/agent improvement claim.
+
+- Move the validated singleton ownership state and its conditional variants through unchanged normalization, removing absent clones while preserving join validation, work, scheduling and the complete old receiver; focused numerical qualification remains pending.
+- Reconcile Main prefix transfer with the existing broader lexical single-successor transfer; retain complete independent Main and clone controls while preserving shipping code and exact work preflight.
 
 - Retain the original mixed String/Bytes programs as source, HIR and canonical graph acceptance regressions; keep unsupported-array declaration and pattern refusals under the existing exact diagnostics.
 
@@ -78,6 +302,10 @@
 
 - Report the first native-provider builder reservation and caller in outward C++ package diagnostic help, preserving primary diagnostics, all limits, and complete verification.
 
+- Fund known-minimum ownership-path controls before staging and select backing at the original first-output work boundary; retain complete Main696 controls and remove real closure-scratch forwarding Results without changing nested reservation fees. Source-only qualification and actual pin regeneration remain pending.
+
+- Execute the paid cleanup branch clone/push producer inline in its existing enumerator, removing actual Vec Result and forwarding receivers while retaining every nested charge and complete old controls; focused execution and application savings remain pending.
+
 - Acquire known minimum ownership-path array capacity once, retaining complete path traversal, work charges, future growth, and independently compiled old receivers under the unchanged builder limit.
 
 - Reuse a sole incoming ownership-state tree as its identity control partition, retaining complete key construction, work charges, all join/replay checks and the original grouped producer while prepaying new receiving layouts.
@@ -88,6 +316,10 @@
 
 - Refresh browser graph pins from complete hosted 2600e49eb records after measured builder-bill reductions; retain the entire previous compiled bridge and every historical graph and cursor control.
 
+- Publish the scoped #844/#845/#846 acceptance: original 8bb round 56 PASS/20 FAIL and a separate nine-owner supplement 9 PASS, retaining every failure and both scoped Clippy exits 101 for the unrelated #849 arithmetic spelling. Close only those three owning scopes; no whole-batch, application-fit, token or Clippy-PASS claim.
+
+- Author NEXT empty-closure bitmap storage and a singleton incoming-state path that avoids actual ControlKey/group-map/set/insertion constructors, preserving validators, work and order. Retain complete independent old receivers; the six bitmap and three singleton owners remain pending runtime qualification, with no application-fit claim.
+
 - Add a macOS CI tool-link reference that exposes native compiler stderr under an empty child environment while preserving the held SDK builder's diagnostic and publication contracts.
 
 - Complete hosted full-profile coverage with benchmark-target execution and explicit checks and formatting of the remaining named examples, including the nested calculator callback.
@@ -96,6 +328,9 @@
 
 - Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
 
+- Author fixed authenticated runtime transport for the test-only source-view helper (#848): preserve all 89 original JSON files (93,590,460 bytes), projection logic, stage order, and source guards, with a separate custody fixture. Join every new loader child into the three audits. Repository fixtures are required at test runtime; executable qualification and measured RAM benefit remain pending.
+
+- Author the sealed initial builder-report policy and actual typed CLI propagation (#845), provider-bound borrowed function aliases on the closed uncached route (#847), and a separate cached-prelude report acquisition observer (#796). Preserve original compatibility receivers, source assertions and unfunded output boundaries. The #845 owning acceptance is published at 8bb; alias and observer qualification remain separate.
 - Share the exact explicit-record presence census within one immutable renewal-directory phase, authenticating its declaration index on reuse and preserving full consuming checks under the unchanged work limit.
 
 - Box ownership path-state tree keys with separate prepaid backing, preserving complete value ordering, full join/replay checks, the original receiver, and exact-budget/allocation controls under the unchanged builder limit.
@@ -129,7 +364,30 @@
 - Bind browser graph pins to the hosted paid-cursor result: both complete graphs retain every prior byte after only the declared 458,408-byte bill reduction and self-digest restoration. Preserve all historical cursor controls.
 
 - Grow the paid expression-fact Arena cursor at actual traversal depth, reserving complete replacement backing and copy work while retaining the original factory, type cursor, depth ceiling, producer controls and preclone payload charges.
+- Author shared borrowed diagnostic rendering for the actual CLI and existing typed human report consumer (#846), preserving the full bounded compatibility route, selected status and independent old renderer. Its eleven owning acceptance controls passed at 8bb; output funding and allocating compatibility remain separate residuals.
+- Correct #836 while-body admission to count the literal field selector only in source, preserving three runtime operands and all existing shape/ownership limits. Restore the backend oracles through authenticated whole-input views; executable qualification remains pending.
 
+- Remove real held-slot and initial weighted-root Result carriers from the direct factored replay path (#831), retaining the complete original constructor fees and strict old receiver independently. Source review and inverse proofs passed; executable qualification and measured gains remain pending.
+
+- Resolve explicitly selected starter plan and command-source paths once from
+  the full host's working directory, retaining all held no-follow reads and
+  prepublication rechecks. Add relative/absolute exact-byte and symlink-refusal
+  controls; source-only until focused qualification.
+- Complete the #841 raw/gzip fixture experiment and restore the exact tested raw-arm default after gzip showed higher observed group RSS (5,930,647,552 versus 5,249,531,904 bytes). Preserve both actual arms, all decoder/source controls and the small artifact-size benefit; order/cache limitations prevent a causal speed claim, and no RAM or token saving is claimed. The integrated raw-default successor remains source-only until focused qualification.
+
+- Bind fresh application plan/activation reads (#837) to the existing no-follow bounded held regular-file owner, closing inspection/open symlink and FIFO replacement races. Add deterministic pre-open swap controls and small independent typed native-test selector owners. Source-only correction; execution remains pending.
+
+- Author fresh application assembly (#837) from existing replayed codec plans and explicit command profiles through the original held-parent scaffold publisher. Bind canonical source/generation receipts and exact native routes; add an explicit pure typed v31 native-test successor while preserving old profile refusals. Full ShiftSim15/selected-file CLI49 and hostile-publication scenarios are authored; all executable qualification and the source-capacity dependency remain pending.
+
+- Author the ordinary lexical return-operand inventory (#832) on fallible paid AVL backing with borrowed identities, exact caller/facts/budget/ledger binding and certificate-boundary authentication. Preserve complete old callers and original verification charges; new directory work is additional. Rust qualification remains pending.
+
+- Author selected call-local refusal custody (#781): nineteen fixed reasons and the exact unknown-callee handle reach the paid engine through selected block replay; retain complete old receivers and prepaid success/failure controls. Source-only checkpoint; Rust qualification and whole-issue closure remain pending.
+- Author allocation-free final canonical-comment comparison for cold workspace
+  admission (#835), retaining the complete old String formatter and preflight
+  receiver. Placement scratch and reservations remain unchanged; focused
+  executable qualification and physical measurements are pending.
+
+- Qualify the closed named String-transfer v1 scope with all 15 exact a417 owning controls and the five 27ae regenerated-pin/source controls; retain unrelated application-budget failures and frozen public profiles.
 - Refresh both browser graph pins from authenticated hosted compiler records, retaining full current/prior graph wires, exact historical bill reconstruction, and the unchanged original cursor-control helper and hashes. Use the direct error assertion for the unit-valued hidden-law check result to satisfy the pinned Clippy gate.
 
 - Refuse a native-law carrier in ordinary Project file facts unless the manifest selected its law path before workspace preflight; preserve raw Graph retention and add owned, cold, and cached Project regressions.
@@ -1407,6 +1665,27 @@ format: `Unreleased` then release buckets, grouped by impact.
 > [docs/CHANGELOG-ARCHIVE.md](docs/CHANGELOG-ARCHIVE.md).
 
 ## Unreleased
+
+- Add a smaller paid no-growth sequencing header while preserving the first work frontier and complete predecessor controls (#858). Private source-only candidate; paid/heap gains and unfavorable cases await scoped qualification.
+
+- Share complete cleanup inventory validation with the ordinary schema summary receiver, avoiding discarded inventory storage while retaining the original materializer as an executable control. Source-only candidate; scoped runtime qualification remains pending.
+- Bind dependent invalid owned-record pattern recovery to the original declaration diagnostic, preserving independent body/mode/declaration errors. Source-only #859 candidate; focused qualification pending.
+
+- Source-only #808 moves an owned prefix into the sole HIR suffix or final
+  two-edge plan sibling when its existing buffer has spare capacity. Original
+  logical work, multiplicities and failure selection remain; complete old
+  receivers and the earlier inline-fusion footprint claim stay independent.
+  New whole-owner/capacity/removed-buffer and refusal/Drop controls are pending
+  execution. Full-capacity plan growth remains unchanged; no application-fit,
+  allocation-total or peak-memory improvement is claimed.
+
+- Source-only #836 adds consuming `vec_update_field<Row>(rows,index,value,"field")`
+  for exact Copy scalar slots of invariant-free flat owned-leaf records, with
+  independent source/HIR/graph/cache checks, ordinary sticky preflight cleanup,
+  interpreter/native/Wasm paths, typed ShiftSim Worker adoption and an unrelated
+  inventory example. Owning gates remain pending; no efficiency result is claimed.
+
+- Source correction for #780: ordinary and retained loan candidate discovery use the paid contextual byte slot before plan selection; preserve complete strict v1 candidate controls, typed child-ledger refusal, external setup observations and unreachable-fixture diagnostics. Executable qualification remains pending.
 
 - Source-only nested record-pattern validation now streams exact binding paths
   from its existing depth-first continuation indices, removing owned root/field/
@@ -7334,3 +7613,81 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
 - Source-only #827 Legacy successor: preserve complete old nominal validation,
   then share explicitly unfunded immutable payloads with isolated iterative COW;
   keep paid provenance and funded mutation guards separate. Qualification pending.
+
+- Source-only #816 successor: reuse complete independent status-source case
+  proof in ordinary arithmetic receiving, preserving full direct receivers,
+  exact held invocation membership and pending whole-Drop/refusal controls.
+
+- Source-only #827 Legacy final-link successor retains exact checked case-field
+  coordinates without promoting unfunded storage; complete immediate prior
+  finalizer, mutation, Owned baseline and iterative Drop controls await the
+  next combined qualification.
+
+- Source-only #831 keeps singleton weighted successor targets inline, promoting
+  only on a distinct second child after full payment. Complete prior receiver
+  and new algebra/physical/work/authority controls await combined execution;
+  no cap changes or application recovery claim.
+
+- Reuse the complete immutable closure for one unit-weight canonical input, preserving every work debit and full successor check while paying receiving metadata and retaining the entire previous producer.
+
+- Source-only #854 adds prepaid canonical state/signature arenas and borrowed signature hits, with complete independent immediate-parent receivers and explicit unfavorable tiny/unique-wide cases. Runtime qualification and application effects remain pending.
+
+- The private #854 receiving successor explicitly admits both inner arena Vec header constructions and query/traversal borrow receiver pairs; generic search/mutation roles carry no numeric removed-layout credit. Earlier source checkpoints and all original physical assertions remain preserved.
+
+- Source-only #781 certificate receiving: preserve complete original receivers,
+  add closed static refusals and real same-ledger primitive banks, and remove
+  dead Deferred slots from seven read-only scalar entry scopes. Actual runtime
+  gates remain pending; transitive owned-Diagnostic residuals remain open.
+
+- Source-only #781 boundary admission and selected chain receiving: preserve
+  complete prior algorithms, lexical callback/order semantics, and explicit
+  unmigrated Diagnostic children. Four runtime owners remain unexecuted.
+
+- Correct the compact HIR residual receiving frontier (#855): replace owned
+  `try_new(Type)` forwarding with admission before lexical Box construction,
+  preserve original Type producer/error order and parser-independent fixtures,
+  and retain complete Main models/cache controls. Source-only; no new executable
+  qualification or measured saving is claimed.
+
+- Source-only #781 selected type/drop closure: remove nested query/formatter
+  forwarding through lexical receiving in the existing certificate permit,
+  retain full prior algorithms and ordinary dynamic fallback, and add four
+  unexecuted whole-query/certificate controls. Remaining #781 families stay open.
+
+- Join source-only selected receiving, canonical arenas, fixed JSON transport and Main residual construction with independent complete historical views. Original fixtures and guards remain; memory, cost and application outcomes await the next qualification.
+
+- OPT850 next source component removes actual optional-presence transport from
+  the production ordinary directory factory, retaining its full preceding
+  receiver, get/auth/work behavior and original callable/phase gates. Actual
+  focused qualification and graph-pin phases remain pending; no admission or
+  measured saving is claimed.
+
+
+- OPT798 next source transport keeps complete live Rust audit inputs compiled
+  as separate pieces and joins only inside existing unmeasured integration
+  source/layout audits. No production behavior, gate or memory benefit claim.
+
+- Source-only #781 path boundary/finalizer and borrowed-chain tranche: direct per-error-policy implementations retain complete prior algorithms and diagnostic order; closed semantic atoms use actual same-ledger child/node receiving. Earlier receiving refusal frontiers are explicit. Three focused owners remain unexecuted; raw inventory/schema/dynamic descendants keep #781 open.
+
+- Source-only #854 acceptance controls now retain independently built equivalent automata, real signature hit/miss and node counts, sticky/foreign/restored-owner checks and complete Drop; all focused outcomes remain unexecuted.
+
+- Reconcile Maina3 vector reuse through a paid lexical first-work frontier;
+  preserve independent Main vector controls, ownership-leaf cloning and
+  artifact-free CI. Source-only qualification and actual cost remain pending.
+- Acquire imported owned-function backing once at the first real owned payload,
+  preserving the original checked bound and paying both actual method borrows.
+- Add typed raw-inventory refusals at genuine primitive failure sites and transfer
+  only sealed budget failures through the same paid ledger. Preserve the complete
+  original callback/builder; schema and supplemental families remain open.
+
+- Source-authored #765 invocation-paid private-authority roots backing leases
+  rebuild logical roots/work on every complete caller, retain exclusive cleanup
+  guards through consumer use, and preserve independent full old receivers.
+  Zero/exact/short/floor/sticky/foreign/Drop/parity controls await qualification;
+  no measured savings or application admission is claimed.
+
+- Source-only OPT831 follow-up: empty canonical signatures omit actual borrowed
+  child-query and Zip receivers, retaining the full immediate d962 receiver,
+  unchanged strict paid gate and all wider-case controls. Qualification pending.
+
+- Private OPT847 retained-wrapper rename source tranche: lend provider payloads through paid stable presentation cells, verifier/HIR receivers and typed specialization refusal; invariant and unsupported shapes retain owning production. Focused compile/runtime qualification and independent frozen-engine execution remain pending.

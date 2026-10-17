@@ -112,6 +112,12 @@ fn assert_complete_report_equality(
     }
 }
 
+fn admitted_caller(source: &str, value: i64) -> String {
+    let constructor = format!("Point {{ value: {value} }}");
+    assert_eq!(source.matches(&constructor).count(), 1);
+    source.replacen(&constructor, &value.to_string(), 1)
+}
+
 fn admitted_fixture(label: &str) -> Fixture {
     let serial = SERIAL.fetch_add(1, Ordering::Relaxed);
     let root = std::env::temp_dir().join(format!(
@@ -120,20 +126,24 @@ fn admitted_fixture(label: &str) -> Fixture {
     ));
     std::fs::create_dir(&root).unwrap();
     // The same record/field identities, effects and return value are retained.
-    // Irrefutable Copy extraction stays in the existing v13 evidence family.
+    // The record stays local; scalar cross-module arguments avoid the missing
+    // imported-type lookup which conservatively selects v74.
     let old = provider();
     let body = "{ value.value }";
     assert_eq!(old.matches(body).count(), 1);
-    let provider = old.replacen(
+    assert_eq!(old.matches("value: Point").count(), 1);
+    let provider = old.replacen("value: Point", "value: i64", 1).replacen(
         body,
-        "{ match value { Point { value: field } => field, } }",
+        "{ let point = Point { value: value }; match point { Point { value: field } => field, } }",
         1,
     );
+    let consumer = admitted_caller(consumer(), 3);
+    let entry = admitted_caller(entry(), 1);
     for (path, source) in [
         ("a/provider.spx", provider.as_str()),
-        ("m/consumer.spx", consumer()),
+        ("m/consumer.spx", consumer.as_str()),
         ("n/island.spx", island()),
-        ("z/entry.spx", entry()),
+        ("z/entry.spx", entry.as_str()),
     ] {
         write_source(&root, path, source);
     }
@@ -156,11 +166,138 @@ fn admitted_fixture(label: &str) -> Fixture {
         );
     }
     let proposal = root.join("structural-change.json");
-    std::fs::write(&proposal, proposal_source(&root)).unwrap();
+    let old_proposal = proposal_source(&root);
+    let old_entry = json(&canonical(entry_replacement(), "z/entry.spx"));
+    let replacement = admitted_caller(entry_replacement(), 2);
+    let new_entry = json(&canonical(&replacement, "z/entry.spx"));
+    assert_eq!(old_proposal.matches(&old_entry).count(), 1);
+    std::fs::write(&proposal, old_proposal.replacen(&old_entry, &new_entry, 1)).unwrap();
     Fixture { root, proposal }
 }
 
 #[test]
+fn unsupported_base_schema_keeps_canonical_refusal_and_full_legacy_report() {
+    let fixture = Fixture::new("typed-original-unsupported");
+    set_unsupported_base_schema(&fixture);
+    let before = inventory(&fixture.root);
+    let old = semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal)
+        .err()
+        .expect("explicit unsupported base schema must refuse");
+    let current =
+        semantic_workspace_structural_change::reporting::generate(&fixture.root, &fixture.proposal)
+            .err()
+            .expect("explicit unsupported base schema must refuse");
+    assert_eq!(old[0].code, "SPX-G188");
+    assert_eq!(
+        old[0].message,
+        "Semantic Workspace Structural Change proposal is not canonical"
+    );
+    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());
+    assert_eq!(inventory(&fixture.root), before);
+}
+
+/// Keep every original source and proposal byte except one explicit schema
+/// value. This exercises the actual v1 protocol boundary, not a field-read
+/// shape that the ordinary fixture already admits.
+fn set_unsupported_base_schema(fixture: &Fixture) {
+    let proposal = std::fs::read_to_string(&fixture.proposal).unwrap();
+    let marker = "\"base_source_graph_schema\":\"";
+    let start = proposal.find(marker).unwrap() + marker.len();
+    let end = start + proposal[start..].find('"').unwrap();
+    let old = &proposal[start..end];
+    assert!(matches!(
+        old,
+        "semaprax.graph.v10"
+            | "semaprax.graph.v11"
+            | "semaprax.graph.v12"
+            | "semaprax.graph.v13"
+            | "semaprax.graph.v14"
+    ));
+    let unsupported = "semaprax.graph.v15";
+    let mut changed = proposal.clone();
+    changed.replace_range(start..end, unsupported);
+    serde_json::from_str::<serde_json::Value>(&changed).unwrap();
+    let mut restored = changed.clone();
+    restored.replace_range(start..start + unsupported.len(), old);
+    assert_eq!(restored, proposal);
+    std::fs::write(&fixture.proposal, changed).unwrap();
+}
+
+#[test]
+fn full_original_copy_record_fixture_keeps_all_legacy_artifacts_and_read_only_behavior() {
+    let fixture = Fixture::new("typed-original-admitted");
+    let before = inventory(&fixture.root);
+    let graph = workspace_graph::snapshot(&fixture.root, "structural.entry").unwrap();
+    for module in graph.modules() {
+        assert!(
+            matches!(
+                module.source_graph_schema(),
+                "semaprax.graph.v10"
+                    | "semaprax.graph.v11"
+                    | "semaprax.graph.v12"
+                    | "semaprax.graph.v13"
+                    | "semaprax.graph.v14"
+            ),
+            "actual original fixture schema {}",
+            module.source_graph_schema()
+        );
+    }
+    let old =
+        semantic_workspace_structural_change::generate(&fixture.root, &fixture.proposal).unwrap();
+    let current =
+        semantic_workspace_structural_change::reporting::generate(&fixture.root, &fixture.proposal)
+            .unwrap();
+    for (label, old, current) in [
+        (
+            "proposal_digest",
+            old.proposal_digest(),
+            current.proposal_digest(),
+        ),
+        (
+            "candidate_manifest_digest",
+            old.candidate_manifest_digest(),
+            current.candidate_manifest_digest(),
+        ),
+        ("preview", old.preview(), current.preview()),
+        (
+            "preview_digest",
+            old.preview_digest(),
+            current.preview_digest(),
+        ),
+        ("context", old.context(), current.context()),
+        (
+            "context_digest",
+            old.context_digest(),
+            current.context_digest(),
+        ),
+        ("impact", old.impact(), current.impact()),
+        (
+            "impact_digest",
+            old.impact_digest(),
+            current.impact_digest(),
+        ),
+        ("review", old.review(), current.review()),
+        (
+            "review_digest",
+            old.review_digest(),
+            current.review_digest(),
+        ),
+        ("evidence", old.evidence(), current.evidence()),
+        (
+            "evidence_digest",
+            old.evidence_digest(),
+            current.evidence_digest(),
+        ),
+    ] {
+        assert_eq!(old, current, "{label}");
+    }
+    assert_eq!(inventory(&fixture.root), before);
+}
+
+// Complete historical incorrect-refusal assertion retained for independent
+// test compilation. The admitted Copy positive and explicit schema negative
+// above are the current executable expectations; no catch-any-panic waiver.
+#[allow(dead_code)]
 fn full_original_projected_record_proposal_keeps_canonical_refusal_and_legacy_report() {
     let fixture = Fixture::new("typed-original-unsupported");
     let before = inventory(&fixture.root);

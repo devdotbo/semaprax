@@ -22,6 +22,7 @@ use super::type_reachability::record_args_ok;
 use super::{Binding, Place, PlaceProjection, Resolver, Scope};
 use path_arena::{PathArena, PathId, Seg, Step};
 
+pub(super) mod byte_ancestry;
 mod byte_view;
 #[cfg(test)]
 mod capacity;
@@ -35,7 +36,7 @@ mod variable;
 pub(super) mod vec_constructor;
 mod vec_field;
 
-impl Resolver<'_> {
+impl Resolver<'_, '_> {
     pub(super) fn resolve_expr_iterative(
         &self,
         function: &FunctionExecutionId,
@@ -44,6 +45,7 @@ impl Resolver<'_> {
         path: &str,
     ) -> Result<ResolvedExpr, Diagnostic> {
         const { assert!(std::mem::size_of::<Frame<'static>>() <= 592) };
+        let mut byte_ancestry = byte_ancestry::Ancestry::acquire()?;
         let mut paths = PathArena::new(path);
         let mut frames = vec![Frame::Enter {
             expr,
@@ -60,6 +62,10 @@ impl Resolver<'_> {
             #[cfg(test)]
             capacity::note(&frames, &results, &frame, &loop_targets, &paths);
             match frame {
+                Frame::EnterByteLoop(target, scope) => {
+                    lexical_exit::enter_loop(&mut loop_targets, &mut loop_depth, target)?;
+                    byte_ancestry.enter(scope, loop_depth);
+                }
                 Frame::FinishVecConstructor { element, count } => {
                     vec_constructor::finish(&mut results, element, count)?
                 }
@@ -69,6 +75,7 @@ impl Resolver<'_> {
                 Frame::LeaveLoop => {
                     loop_depth -= 1;
                     loop_targets[loop_depth] = None;
+                    byte_ancestry.leave(loop_depth);
                 }
                 Frame::FinishLexicalExit {
                     span,
@@ -288,7 +295,9 @@ impl Resolver<'_> {
                                 path,
                                 segment: Seg::NativeRustArg,
                             });
-                        } else if crate::vec_ops::field_unique::literal_call(name) {
+                        } else if crate::vec_ops::field_unique::literal_call(name)
+                            || name == crate::vec_ops::field_update::NAME
+                        {
                             frames.extend(self.sort_by_frames(
                                 function,
                                 expr,
@@ -474,10 +483,8 @@ impl Resolver<'_> {
                                     )
                                 })?;
                             let target = self
-                                .program
-                                .functions()
-                                .iter()
-                                .find(|function| function.stable_id == template.as_str())
+                                .source_functions()
+                                .find(|function| function.payload().stable_id == template.as_str())
                                 .ok_or_else(|| {
                                     self.error(
                                         "SPX-H003",
@@ -488,7 +495,7 @@ impl Resolver<'_> {
                                     )
                                 })?;
                             let (resolved_arguments, instance, return_source_type) = self
-                                .ordinary_call_signature(
+                                .ordinary_call_signature_ref(
                                     function,
                                     target,
                                     type_arguments,
@@ -503,7 +510,7 @@ impl Resolver<'_> {
                                 type_arguments: resolved_arguments,
                                 instance,
                                 return_source_type,
-                                target_span: target.span,
+                                target_span: target.payload().span,
                                 argument_count: args.len(),
                             });
                             frames.push(Frame::ChildNext {
@@ -613,13 +620,13 @@ impl Resolver<'_> {
                                 )
                             })?;
                         let template_record = matches!(function, FunctionExecutionId::Monomorphic(owner)
-                        if self.program.functions().iter().any(|candidate|
-                            candidate.stable_id == owner.as_str() && !candidate.type_parameters.is_empty())
+                        if self.source_functions().any(|candidate|
+                            candidate.payload().stable_id == owner.as_str() && !candidate.payload().type_parameters.is_empty())
                         && super::type_reachability::is_nested_owned_byte_record_template(
                             &self.declarations,
                             &ResolvedType::Nominal { declaration: record.clone(), arguments: arguments.clone() },
                             owner,
-                            self.program.functions().iter().find(|candidate| candidate.stable_id == owner.as_str()).map_or(0, |candidate| candidate.type_parameters.len()),
+                            self.source_functions().find(|candidate| candidate.payload().stable_id == owner.as_str()).map_or(0, |candidate| candidate.payload().type_parameters.len()),
                         ));
                         if arguments.len() != parameters.len()
                             || (!template_record
@@ -1448,11 +1455,15 @@ impl Resolver<'_> {
                             Statement::While {
                                 condition, body, ..
                             } => {
-                                self.reject_while_disallowed_scoped(condition, Some(function))?;
+                                self.reject_while_disallowed_in_scope(
+                                    condition,
+                                    Some(function),
+                                    byte_ancestry.entry(),
+                                )?;
                                 self.reject_while_disallowed_in_scope(
                                     body,
                                     Some(function),
-                                    Some(&scope),
+                                    byte_ancestry.entry(),
                                 )?;
                                 frames.push(Frame::BlockWhileCondition {
                                     span,
@@ -1499,6 +1510,7 @@ impl Resolver<'_> {
                                 item,
                                 values,
                                 body,
+                                byte_ancestry.entry(),
                             )?,
                             Statement::ForBorrow { .. } => super::resolve_for::record::schedule(
                                 self,

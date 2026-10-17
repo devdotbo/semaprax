@@ -64,6 +64,24 @@ impl DeclarationIndex {
         vector: Option<&super::super::prelude_bundle::VectorExtension>,
         mut reserve: impl FnMut(usize) -> Result<(), E>,
     ) -> Result<Self, IdentityIndexError<E>> {
+        reserve(
+            std::mem::size_of::<Option<&[crate::ast::program_source::FunctionCell<'_>]>>()
+                + std::mem::size_of::<Option<&[crate::ast::program_source::FunctionCell<'_>]>>(),
+        )
+        .map_err(IdentityIndexError::Identity)?;
+        Self::from_verified_with_nominal_cells(program, prelude, base, vector, None, reserve)
+    }
+
+    /// The source invocation may lend its already acquired immutable inventory.
+    /// No second presentation directory or wider map values are constructed.
+    pub(in crate::hir) fn from_verified_with_nominal_cells<E>(
+        program: &dyn ProgramSource,
+        prelude: &[crate::ast::TypeDeclaration],
+        base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
+        vector: Option<&super::super::prelude_bundle::VectorExtension>,
+        cells: Option<&[crate::ast::program_source::FunctionCell<'_>]>,
+        mut reserve: impl FnMut(usize) -> Result<(), E>,
+    ) -> Result<Self, IdentityIndexError<E>> {
         if let Some(base) = base {
             Self::reserve_base_receivers(base, &mut reserve)
                 .map_err(IdentityIndexError::Identity)?;
@@ -73,7 +91,9 @@ impl DeclarationIndex {
         reserve(
             2 * std::mem::size_of::<Payer<'_, E>>()
                 + 2 * std::mem::size_of::<Self>()
-                + std::mem::size_of::<Result<Self, IdentityIndexError<E>>>(),
+                + std::mem::size_of::<Result<Self, IdentityIndexError<E>>>()
+                + std::mem::size_of::<Option<&[crate::ast::program_source::FunctionCell<'_>]>>()
+                + std::mem::size_of::<Option<&[crate::ast::program_source::FunctionCell<'_>]>>(),
         )
         .map_err(IdentityIndexError::Identity)?;
         let mut index = Self::build_nominal_index(
@@ -84,6 +104,7 @@ impl DeclarationIndex {
             workspace,
             base,
             vector,
+            cells,
         )?;
         index
             .share_nominal_payloads(&mut reserve)
@@ -108,6 +129,7 @@ impl DeclarationIndex {
             super::nominal_rollback::Workspace::default(),
             None,
             None,
+            None,
         )?;
         index.share_legacy_nominal_payloads_unfunded();
         Ok(index)
@@ -121,6 +143,7 @@ impl DeclarationIndex {
         workspace: super::nominal_rollback::Workspace,
         base: Option<&super::super::prelude_bundle::BasePreludeBundle>,
         vector: Option<&super::super::prelude_bundle::VectorExtension>,
+        cells: Option<&[crate::ast::program_source::FunctionCell<'_>]>,
     ) -> Result<Self, IdentityIndexError<E>> {
         let mut index = Self::default();
         index.nominal_drop_workspace = workspace;
@@ -279,48 +302,28 @@ impl DeclarationIndex {
                 );
             }
         }
-        for function in program.functions() {
-            let owner = payer
-                .identity(&function.stable_id)
-                .map_err(IdentityIndexError::Identity)?;
-            payer
-                .top(&function.name, DeclarationKind::Function)
-                .map_err(IdentityIndexError::Identity)?;
-            index.insert_top_level(
+        if let Some(cells) = cells {
+            for (_, function) in cells.iter().take(program.functions().len()) {
                 payer
-                    .text(&function.name)
-                    .map_err(IdentityIndexError::Identity)?,
-                owner.clone(),
-                DeclarationKind::Function,
-                if super::record_invariants::is_synthesized(&function.name) {
-                    IdentityOrigin::CompilerOwned
-                } else if function.explicit_id {
-                    IdentityOrigin::Explicit
-                } else {
-                    IdentityOrigin::Automatic
-                },
-            );
-            let mut parameters = payer
-                .vec::<ResolvedTypeParameterDeclaration>(function.type_parameters.len())
-                .map_err(IdentityIndexError::Identity)?;
-            for (ordinal, parameter) in function.type_parameters.iter().enumerate() {
-                parameters.push(ResolvedTypeParameterDeclaration {
-                    name: payer
-                        .text(&parameter.name)
-                        .map_err(IdentityIndexError::Identity)?,
-                    index: u32::try_from(ordinal).map_err(|_| {
-                        payer.semantic(
-                            "SPX-H006",
-                            format_args!("function `{}` has too many parameters", function.name),
-                            function.span,
-                            program.path(),
-                            true,
-                        )
-                    })?,
-                    span: parameter.span,
-                });
+                    .bytes(
+                        std::mem::size_of::<&crate::ast::program_source::FunctionRef<'_>>()
+                            + std::mem::size_of::<Result<(), IdentityIndexError<E>>>(),
+                    )
+                    .map_err(IdentityIndexError::Identity)?;
+                index.insert_source_function(program, function, payer)?;
             }
-            index.type_parameters.insert(owner, parameters);
+        } else {
+            // Complete ordinary/legacy compatibility receiver. The actual
+            // borrowed-source invocation supplies frozen cells above.
+            for function in program.function_refs() {
+                payer
+                    .bytes(
+                        std::mem::size_of::<&crate::ast::program_source::FunctionRef<'_>>()
+                            + std::mem::size_of::<Result<(), IdentityIndexError<E>>>(),
+                    )
+                    .map_err(IdentityIndexError::Identity)?;
+                index.insert_source_function(program, &function, payer)?;
+            }
         }
         if program
             .interfaces()
@@ -738,5 +741,75 @@ impl DeclarationIndex {
             ));
         }
         Ok(index)
+    }
+    fn insert_source_function<E>(
+        &mut self,
+        program: &dyn ProgramSource,
+        function: &crate::ast::program_source::FunctionRef<'_>,
+        payer: &mut Payer<'_, E>,
+    ) -> Result<(), IdentityIndexError<E>> {
+        let owner = payer
+            .identity(&function.payload().stable_id)
+            .map_err(IdentityIndexError::Identity)?;
+        payer
+            .top(function.name(), DeclarationKind::Function)
+            .map_err(IdentityIndexError::Identity)?;
+        // The lookup key is the local binding; declaration metadata retains
+        // the exact provider spelling used by authenticated intrinsic templates.
+        // top above prepays the actual local key String and both map nodes;
+        // text below separately prepays the canonical name, including its own
+        // length. No canonical key is inserted into the local namespace.
+        payer.bytes(
+            std::mem::size_of::<[&str; 6]>()
+                + std::mem::size_of::<[&DeclarationId; 3]>()
+                + std::mem::size_of::<[IdentityOrigin; 2]>()
+                + std::mem::size_of::<[bool; 2]>()
+                + std::mem::size_of::<[usize; 2]>()
+                + std::mem::size_of::<[&Vec<crate::ast::TypeParameterDeclaration>; 2]>()
+                // New payload result/receiver, plus actual/formal self borrows
+                // for payload selection and the separate local-key name call.
+                + std::mem::size_of::<[&crate::ast::Function; 2]>()
+                + std::mem::size_of::<[&crate::ast::program_source::FunctionRef<'_>; 4]>(),
+        ).map_err(IdentityIndexError::Identity)?;
+        let name = payer.text(if function.payload().type_parameters.is_empty() {
+            function.name()
+        } else {
+            function.declaration_name()
+        })
+            .map_err(IdentityIndexError::Identity)?;
+        let identity_origin = if super::record_invariants::is_synthesized(function.name()) {
+            IdentityOrigin::CompilerOwned
+        } else if function.payload().explicit_id {
+            IdentityOrigin::Explicit
+        } else {
+            IdentityOrigin::Automatic
+        };
+        self.functions_by_name.insert(function.name().to_owned(), owner.clone());
+        self.declarations.insert(owner.clone(), Declaration {
+            id: owner.clone(), name, kind: DeclarationKind::Function,
+            identity_origin, owner: None,
+        });
+        let mut parameters = payer
+            .vec::<ResolvedTypeParameterDeclaration>(function.payload().type_parameters.len())
+            .map_err(IdentityIndexError::Identity)?;
+        for (ordinal, parameter) in function.payload().type_parameters.iter().enumerate() {
+            parameters.push(ResolvedTypeParameterDeclaration {
+                name: payer
+                    .text(&parameter.name)
+                    .map_err(IdentityIndexError::Identity)?,
+                index: u32::try_from(ordinal).map_err(|_| {
+                    payer.semantic(
+                        "SPX-H006",
+                        format_args!("function `{}` has too many parameters", function.name()),
+                        function.payload().span,
+                        program.path(),
+                        true,
+                    )
+                })?,
+                span: parameter.span,
+            });
+        }
+        self.type_parameters.insert(owner, parameters);
+        Ok(())
     }
 }

@@ -14,6 +14,7 @@ use crate::cleanup_plan::{CleanupPlan, ExitTargetId};
 use crate::hir::{ControlTarget, FunctionExecutionId, LoopLatchKind};
 
 /// Facts the flow replay needs after the certificates are authenticated.
+#[cfg_attr(test, derive(Eq, PartialEq))]
 pub(super) struct LexicalAuth {
     /// Loop certificate index by the condition expression its target names.
     pub(super) loops: BTreeMap<ExpressionId, usize>,
@@ -931,3 +932,11 @@ fn validate_normal_ends(
     }
     Ok(())
 }
+
+pub(in crate::cleanup_plan::replay) mod paid;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_boundary;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_type_drop;

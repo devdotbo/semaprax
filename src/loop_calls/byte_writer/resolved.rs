@@ -1,12 +1,16 @@
 use super::*;
-#[cfg(test)]
 mod funded;
-mod selected;
-pub(super) mod validation;
 #[cfg(test)]
-pub(crate) use funded::{checked_bindings_funded, checked_bindings_funded_with_work};
+mod selected;
+mod selected_inline;
+pub(crate) use selected_inline::checked_bindings_with_reservation_and_work_inline;
+pub(super) mod validation;
+pub(crate) use funded::checked_bindings_funded_with_work;
+#[cfg(test)]
+pub(crate) use funded::checked_bindings_funded;
 #[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
+#[cfg(test)]
 pub(crate) use selected::checked_bindings_with_reservation_and_work;
 #[derive(Clone, Copy)]
 enum Frame<'a> {
@@ -326,7 +330,9 @@ fn prove_with_frames<'a>(
                                     return None;
                                 }
                             } else if let Some(op) = crate::vec_ops::by_id(callee.as_str()) {
-                                if !vec_operation(op) {
+                                if op == crate::vec_ops::VecOp::StrAt {
+                                    crate::vec_ops::string_slot::inspect(expression)?;
+                                } else if !vec_operation(op) {
                                     return None;
                                 }
                             } else {
@@ -404,9 +410,7 @@ pub(crate) fn checked_bindings<'a>(
     })
 }
 const CENSUS_DEPTH: usize = 514;
-#[cfg(test)]
 const CENSUS_CODE: &str = "SPX-H006";
-#[cfg(test)]
 const CENSUS_MESSAGE: &str = "byte helper renewal census exceeds admitted scratch, work or depth";
 pub(super) fn census_error() -> crate::diagnostic::Diagnostic {
     crate::diagnostic::Diagnostic::io(

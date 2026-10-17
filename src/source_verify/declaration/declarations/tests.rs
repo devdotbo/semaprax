@@ -233,3 +233,73 @@ fn main() -> i64 { 0 }
         Ok(value) => panic!("class sibling must not be admitted, got {value}"),
     }
 }
+
+#[test]
+fn rejected_storage_declarations_collect_all_shapes_before_executable_checks() {
+    let source = r#"
+module test.rejected_storage_frontier;
+record Packet { payload: Bytes, text: string, unsupported: [u8; 1], }
+record Other { payload: Bytes, unsupported: [u8; 1], }
+fn invalid(packet: own Packet) -> i64 {
+    match own packet { Packet { payload, text } => 0, }
+}
+fn main() -> i64 { 0 }
+"#;
+    let program = crate::parse(source, Path::new("storage-frontier.spx")).unwrap();
+    let errors = crate::verify::verify(&program)
+        .into_iter()
+        .filter(|diagnostic| diagnostic.severity.is_error())
+        .collect::<Vec<_>>();
+    assert_eq!(errors.len(), 2, "{errors:?}");
+    for (diagnostic, name) in errors.iter().zip(["Packet", "Other"]) {
+        assert_eq!(diagnostic.code, "SPX-T268");
+        assert_eq!(diagnostic.message, format!("owned-Bytes record `{name}` must be a monomorphic acyclic record tree with only `Bytes` or direct Copy scalar leaves"));
+    }
+}
+
+#[test]
+fn storage_frontier_keeps_admitted_text_records_and_nonbyte_signature_refusals() {
+    let admitted = r#"
+module test.storage_frontier_text;
+record Packet { payload: Bytes, text: string, }
+fn invalid(packet: own Packet) -> i64 {
+    match own packet { Packet { payload, text } => 0, }
+}
+fn main() -> i64 { 0 }
+"#;
+    assert!(codes(admitted).is_empty());
+    let unsupported = r#"
+module test.storage_frontier_signature;
+record Text { text: string, unsupported: [u8; 1], }
+fn inspect(value: own Text) -> i64 { 0 }
+fn main() -> i64 { 0 }
+"#;
+    let errors = codes(unsupported);
+    assert!(errors.contains(&"SPX-T309"), "{errors:?}");
+    assert!(!errors.contains(&"SPX-T268"), "{errors:?}");
+}
+
+#[test]
+fn rejected_storage_preserves_generic_leaf_bound_receipts_without_executable_cascades() {
+    let fields = (0..257)
+        .map(|index| format!("leaf_{index}: Bytes,"))
+        .collect::<Vec<_>>()
+        .join("\n");
+    let source = format!(
+        "module test.storage_generic_bounds; record Bag {{{fields}}} record Box<T> {{value:T,}} record Pair<T,U> {{left:T,right:U,}} fn relay<T>(value:own Box<Pair<Bag,T>>)->Box<Pair<Bag,T>>{{value}} fn main()->i64{{let unused=missing_executable();0}}"
+    );
+    let errors = codes(&source);
+    assert!(errors.contains(&"SPX-T268"), "{errors:?}");
+    assert!(
+        errors
+            .iter()
+            .any(|code| matches!(*code, "SPX-T223" | "SPX-T224")),
+        "{errors:?}"
+    );
+    assert!(
+        errors
+            .iter()
+            .all(|code| matches!(*code, "SPX-T268" | "SPX-T223" | "SPX-T224")),
+        "{errors:?}"
+    );
+}

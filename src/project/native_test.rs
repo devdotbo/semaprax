@@ -8,6 +8,13 @@ use crate::diagnostic::Diagnostic;
 
 use super::{execution, native_publication, ProjectProfile, ProjectSnapshot};
 
+/// Explicit test admission. Existing v1 methods retain their original profile.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+pub enum ProjectNativeTestProfile {
+    SourceCommandV1,
+    CollectionRecordPureV1,
+}
+
 /// One authenticated, zero-argument `i64` root of the manifest-declared test
 /// module. `main` is first; named cases follow in linked stable-identity order.
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -44,8 +51,18 @@ impl ProjectSnapshot {
     /// authority. Every effect remains bounded by the manifest and the same
     /// native source-command admission used for an ordinary Project build.
     pub fn native_test_roots(&self) -> Result<Vec<ProjectNativeTestRoot>, Vec<Diagnostic>> {
-        require_native_test_profile(self)?;
+        self.native_test_roots_with_profile(ProjectNativeTestProfile::SourceCommandV1)
+    }
+
+    pub fn native_test_roots_with_profile(
+        &self,
+        profile: ProjectNativeTestProfile,
+    ) -> Result<Vec<ProjectNativeTestRoot>, Vec<Diagnostic>> {
+        require_native_test_profile(self, profile)?;
         let program = self.test_program();
+        if profile == ProjectNativeTestProfile::CollectionRecordPureV1 {
+            validate_collection_record_pure_test(program)?;
+        }
         let result_is_exit_status = !program.permits.is_empty();
         if program.module != self.manifest().test_module() {
             return Err(vec![Diagnostic::io(
@@ -103,7 +120,20 @@ impl ProjectSnapshot {
         stable_id: &str,
         output: &Path,
     ) -> Result<(), Vec<Diagnostic>> {
-        let roots = self.native_test_roots()?;
+        self.build_native_test_with_profile(
+            stable_id,
+            output,
+            ProjectNativeTestProfile::SourceCommandV1,
+        )
+    }
+
+    pub fn build_native_test_with_profile(
+        &mut self,
+        stable_id: &str,
+        output: &Path,
+        profile: ProjectNativeTestProfile,
+    ) -> Result<(), Vec<Diagnostic>> {
+        let roots = self.native_test_roots_with_profile(profile)?;
         if !roots.iter().any(|root| root.stable_id == stable_id) {
             return Err(vec![Diagnostic::io(
                 "SPX-G172",
@@ -162,13 +192,87 @@ impl ProjectSnapshot {
     }
 }
 
-fn require_native_test_profile(snapshot: &ProjectSnapshot) -> Result<(), Vec<Diagnostic>> {
-    if snapshot.manifest().project_profile().is_source_command() {
+fn require_native_test_profile(
+    snapshot: &ProjectSnapshot,
+    profile: ProjectNativeTestProfile,
+) -> Result<(), Vec<Diagnostic>> {
+    let admitted = match profile {
+        ProjectNativeTestProfile::SourceCommandV1 => {
+            snapshot.manifest().project_profile().is_source_command()
+        }
+        ProjectNativeTestProfile::CollectionRecordPureV1 => {
+            snapshot.manifest().project_profile()
+                == ProjectProfile::StdinStreamCollectionRecordCommandIoV1
+        }
+    };
+    if admitted {
         Ok(())
     } else {
         Err(vec![Diagnostic::io(
             "SPX-B104",
-            "native test compilation is admitted only for source-command Project profiles",
+            match profile {
+                ProjectNativeTestProfile::SourceCommandV1 => {
+                    "native test compilation is admitted only for source-command Project profiles"
+                }
+                ProjectNativeTestProfile::CollectionRecordPureV1 => {
+                    "collection-record-pure.v1 native tests require exact Project v31"
+                }
+            },
         )])
+    }
+}
+
+fn validate_collection_record_pure_test(
+    program: &crate::hir::ResolvedProgram,
+) -> Result<(), Vec<Diagnostic>> {
+    crate::hir::validate_stream_collection_record_program(program, None).map_err(|e| vec![e])?;
+    if !program.permits.is_empty() {
+        return Err(vec![Diagnostic::io(
+            "SPX-J131",
+            "collection-record-pure.v1 requires a pure declared test closure",
+        )]);
+    }
+    Ok(())
+}
+
+#[cfg(test)]
+mod collection_record_pure_tests {
+    use super::*;
+    fn typed_program() -> crate::hir::ResolvedProgram {
+        let source = include_str!("../../tests/fixtures/nested-collection-string-record.spx");
+        crate::hir::resolve(&crate::check(source, "pure-native-test.spx").unwrap()).unwrap()
+    }
+    #[test]
+    fn pure_typed_selector_owner_admits_complete_small_record_closure() {
+        let program = typed_program();
+        validate_collection_record_pure_test(&program).unwrap();
+        assert!(program
+            .functions
+            .iter()
+            .any(|f| f.id.as_str() == "collection.inspect_borrow"));
+    }
+    #[test]
+    fn pure_typed_selector_owner_refuses_module_permits_and_function_effects() {
+        // An actually checked effectful source is refused by the selected
+        // pure boundary; the mutations below independently cover hostile HIR.
+        let source = include_str!("../../tests/fixtures/nested-collection-string-record.spx")
+            .replace("module test.nested_collection_string_record;", "module test.nested_collection_string_record;\npermit { process.stderr.write }")
+            .replace("@id(\"app.main\") fn main()->i64 {", "@id(\"app.main\") fn main()->i64 uses { process.stderr.write } { let message=\"blocked\"; let ignored=stderr_write(str_as_bytes(string_as_str(message))); ");
+        let checked =
+            crate::hir::resolve(&crate::check(&source, "effectful-native-test.spx").unwrap())
+                .unwrap();
+        assert!(validate_collection_record_pure_test(&checked).is_err());
+        let mut permitted = typed_program();
+        permitted.permits.push("process.stderr.write".to_owned());
+        assert!(validate_collection_record_pure_test(&permitted).is_err());
+        let mut effectful = typed_program();
+        effectful
+            .functions
+            .iter_mut()
+            .find(|f| f.id.as_str() == "collection.inspect_borrow")
+            .unwrap()
+            .effects
+            .push("process.stderr.write".to_owned());
+        assert!(validate_collection_record_pure_test(&effectful).is_err());
     }
 }

@@ -3,7 +3,7 @@ use super::resolve_expr::path_arena::Seg;
 use super::*;
 use crate::ast::{Expr, ExprKind, Span};
 
-impl Resolver<'_> {
+impl Resolver<'_, '_> {
     pub(super) fn resolve_stdin_inspection<'p>(
         &self,
         execution: &FunctionExecutionId,
@@ -64,14 +64,18 @@ impl Resolver<'_> {
         let (kind, ownership) = match op {
             crate::stdin_stream_ops::PureOp::Chunk => (
                 ResolvedExprKind::BorrowPlace {
-                    operation: DeclarationId::new(op.id()),
+                    operation: DeclarationId::compiler(
+                        crate::hir::CompilerDeclaration::StdinInspection(op),
+                    ),
                     place,
                 },
                 OwnershipMode::Borrow,
             ),
             crate::stdin_stream_ops::PureOp::Eof => (
                 ResolvedExprKind::Call {
-                    callee: DeclarationId::new(op.id()),
+                    callee: DeclarationId::compiler(
+                        crate::hir::CompilerDeclaration::StdinInspection(op),
+                    ),
                     type_arguments: Vec::new(),
                     instance: None,
                     args: vec![ResolvedExpr {

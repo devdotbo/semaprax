@@ -354,3 +354,6 @@ fn reservation_site_layout_binds_both_complete_original_controls_and_the_full_cu
         );
     }
 }
+
+#[path = "reservation_site_e47.rs"]
+mod reservation_site_e47;

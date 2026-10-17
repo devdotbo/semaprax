@@ -21,6 +21,8 @@ mod canonical_sources;
 mod canonical_workspace_revision;
 mod contracts_and_tests_facts;
 mod create;
+mod application_starter;
+pub use application_starter::{derive_application_starter, ApplicationCommandSource, ApplicationStarter};
 mod cxx_owned_data;
 mod environment;
 mod exact_program_context;
@@ -30,10 +32,12 @@ mod filesystem;
 mod flat_owned_record;
 mod json_codec;
 pub use json_codec::{
-    derive_json_codec_plan, derive_json_codec_source, derive_json_codec_source_with_profile,
-    explain_json_codec_suitability, verify_json_codec_plan, verify_json_codec_source,
-    verify_json_codec_source_with_profile, JsonCodecBundle, JsonCodecBundleSource,
-    JsonCodecEntryReceipt, JsonCodecPlanEntry, JsonCodecProfile, JsonCodecSuitabilityOptions,
+    decode_json_codec_plan, parse_json_codec_bound, parse_json_codec_profile, derive_json_codec_plan, derive_json_codec_source, derive_json_codec_source_with_profile,
+    explain_json_codec_suitability, verify_authenticated_json_codec_receipt,
+    verify_json_codec_plan, verify_json_codec_source, verify_json_codec_source_with_profile,
+    with_authenticated_json_codec_receipt, JsonCodecBundle, JsonCodecBundleSource,
+    JsonCodecEntryReceipt, JsonCodecPlanEntry, JsonCodecProfile, JsonCodecRepeat,
+    JsonCodecRetainedInput, JsonCodecRetainedReceipt, JsonCodecSuitabilityOptions,
 };
 pub(crate) mod host_policy;
 mod hot_reload;
@@ -67,7 +71,7 @@ mod interface_artifact_facts;
 mod manifest;
 mod native_publication;
 mod native_test;
-pub use native_test::ProjectNativeTestRoot;
+pub use native_test::{ProjectNativeTestRoot, ProjectNativeTestProfile};
 mod native_sdk;
 mod nested_owned_record;
 mod next_construct_query;

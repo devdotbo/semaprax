@@ -103,6 +103,8 @@ fn invert(record: &serde_json::Value, current: &str) -> String {
     restored
 }
 pub(in crate::cleanup_plan::replay) fn before_root(current: &str) -> String {
+    let joined = crate::source_reflows_merge::main_b80_input("src/cleanup_plan/replay.rs", current);
+    let current = joined.as_str();
     let records: serde_json::Value = serde_json::from_str(PACKET).unwrap();
     let record = records
         .as_array()
@@ -123,6 +125,8 @@ fn all_seven_live_receivers_reconstruct_every_predecessor_byte() {
         let (path, current, archive_path, archive) = FILES[index];
         assert_eq!(record["path"], path);
         assert_eq!(record["archive"], archive_path);
+        let current = crate::source_reflows_merge::main_b80_input(path, current);
+        let current = current.as_str();
         let restored = invert(record, current);
         assert_eq!(restored, archive);
         let mut changed = current.to_owned();
@@ -146,13 +150,16 @@ fn original_enumerator_enum_header_traits_and_lexical_helper_stay_complete() {
         assert_eq!(piece["before_sha256"], ORIGINAL_PIECES[index]);
         let old = piece["body"].as_str().unwrap();
         assert_eq!(digest(old), piece["before_sha256"]);
-        let current = match piece["compiled_path"].as_str().unwrap() {
+        let path = piece["compiled_path"].as_str().unwrap();
+        let current = match path {
             "src/cleanup_plan/replay/compact_stage/before.rs" => include_str!("before.rs"),
             "src/cleanup_plan/replay/compact_stage/lexical_before.rs" => {
                 include_str!("lexical_before.rs")
             }
             _ => panic!("unregistered original producer input"),
         };
+        let current = crate::source_reflows_merge::main_b80_input(path, current);
+        let current = current.as_str();
         let compiled = piece["compiled_body"].as_str().unwrap();
         assert_eq!(current.matches(compiled).count(), 1, "{}", piece["name"]);
         let mut restored = compiled.to_owned();

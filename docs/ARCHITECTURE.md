@@ -65,6 +65,37 @@ reads task trees, executes an oracle, accepts approval or emits model results.
 The original 81 cells and nine later additions remain distinct. Nonzero blocked
 status and missing independent-review/custody records cannot confer authority.
 
+`cleanup_plan/replay/skeleton_work.rs` ordinary construction uses the explicit-payer renewal, moving-string, condition and lexical-owner collectors. It prepares the held ReplayBudget refusal/census backing before any collector allocation; original collectors and the complete previous constructor remain independent test controls. No allocation-funding claim is inferred from a transfer optimization.
+
+`cleanup_plan/replay/skeleton_work/merge_search.rs` owns the source-only retained
+merge search candidate shared by borrowed path/call grouping and owned suffix
+rows. It stores only local search scalars, eliminates callback/compound-result
+transport and pays every surviving dynamic index/comparison payload. Complete
+immediate and earlier producers remain independently compiled; no runtime gain
+is established by this module map. See [the contract](RETAINED-MERGE-SEARCH-OWNER-V1.md).
+
+`cleanup_plan/replay/ordinary_plan_history.rs` and its children own the private
+ordinary ActiveBuilder PLAN history candidate. Immutable segments use backward
+arena indices; child paths retain a segment index and a short owned tail.
+`producer.rs` builds the complete plan set, and prepaid forward cursors compare
+its observations and terminals with the unchanged flat HIR multiset. Its
+fallible heapsort orders comparison-owned paths only. Canonical runtime cleanup
+vectors retain their original order. `before.rs` independently compiles the
+complete flat predecessor. Selected, Oracle, renewal and lexical/factored
+replay remain outside this route. `source_reflows_merge/ordinary_plan_inputs.rs`
+owns its bounded, sealed historical source acquisition. This ownership map does
+not establish runtime qualification or application savings; see the
+[candidate evidence](evidence/ordinary-plan-history-c8740045-v1/README.md).
+
+`cleanup_plan/replay/skeleton_work/enumerated_prefix` owns the private ordinary
+nonmerging HIR sequence-storage candidate and full-content cursor comparison.
+Its dedicated Seq/Cat constructor uses ordinary free work and the existing
+prepaid iterative destruction frontier. Both flat and immutable PLAN comparison
+routes consume full HIR observation content; marker/pointer identity carries no
+semantic authority. Existing path state and runtime cleanup order stay intact.
+[The source contract](ORDINARY-ENUMERATED-HIR-PREFIX-V1.md) records pending
+executable/physical/application qualification and the unchanged resource limits.
+
 ## System shape
 
 ```text
@@ -89,6 +120,13 @@ canonical .spx source or held Project inputs
  evidence + transactions      Clang       JS/Node host
 ```
 
+`cleanup_plan/replay/path_array/sequence_minimum/optimized` owns the shipping
+paid no-growth header at the original lexical first-output work frontier. It
+pays before every new selected/iterator/arithmetic receiver, then declines a
+proved unchanged capacity or pays the complete old query envelope. The useful
+capacity predicate covers both paid frames. The complete immediate receiver,
+old minimum helper, original tests and Main44 controls remain independent.
+
 Every backend passes source verification and validated HIR. Cleanup-plan vectors
 are canonical runtime order; projections and backends must never sort or repair them.
 
@@ -96,8 +134,22 @@ are canonical runtime order; projections and backends must never sort or repair 
 caller's streaming inventory validation and retained summary. Its lifecycle,
 shape and expression children preserve complete validation before publication;
 `schema/paid_summary` selects it only with the existing builder-like ReplayBudget.
-Complete original inventory/schema receivers remain independent compatibility
-and parity controls. Other schema probes retain their existing owners.
+`cleanup/schema_summary` owns the ordinary compatibility receiver: the complete
+ordinary validation walk retains summary flags and one last slot instead of
+discarded inventory directories, without a replay budget or physical payer. Its
+first profile failure is selected after the complete traversal, as before.
+Complete original inventory and test-only schema materializer remain independent
+executable parity controls. Other schema probes retain their existing owners.
+`cleanup_plan/replay/expression_facts/receiving/directory/status_prefix` owns
+ordinary status insertion and optional immutable membership lookup storage.
+Its active builder holds paid mutable search scratch only during insertion;
+each subsequent row resets it and performs the complete original comparison and updates.
+After every current row and producer passes validation, an active-builder
+receiver retains its paid bit index alongside the complete AVL keys. Each query
+authenticates the exact function, replay budget, invocation and immutable key
+backing before reading the index, then decides membership by full-key ordering.
+Publication seals mutation; rejected owners stay rejected. Other payers retain
+the original lookup. The index grants no verification or source authority.
 `hir/canonical_loan_storage/caller/shared` owns immutable lookup publication
 inside the existing captured preparation owner. Active compatibility validators
 and nested closures share exact-program storage; unobserved compatibility owns
@@ -124,12 +176,28 @@ own transfer mappings and exact atomic call commits; staging never debits the
 reserved history. This tracking retains no declaration index and changes no
 serialized proof authority or physical cleanup operation.
 
+`cleanup_plan/replay/lexical_replay/ordinary.rs` owns the paid ordinary lexical
+caller. Its fallible return-operand index in
+`expression_facts/receiving/return_operands.rs` borrows exact HIR identities and
+uses the existing paid AVL directory. The index binds the held function, lexical
+facts, ReplayBudget and current ledger, authenticating before exit membership
+and certificate replay. It carries no certificate or source admission authority.
+Selected/no-owner callers retain their preceding route; the full old ordinary
+caller is retained as a complete independent test module in `lexical_replay/before_operands.rs`.
+This is a source-only checkpoint with owning execution pending.
+
 `cleanup_plan/replay/factored/strategy.rs` owns deferred lexical resource selection
 and post-authentication Enumerated/LexicalFactored dispatch. Exact certificate and
 ownership replay precede observation-automaton construction; terminal census alone
 has no authority. Expression-scoped Copy discovery closes before caller-prefix
 sequencing. The held automata, weighted proof and selected physical backing share
 one cumulative ledger; the selected provider/type profile remains separate.
+Fitting ordinary lexical replay retains the complete Enumerated admission
+preflight and held upper, then consumes that same Candidate's weighted proof
+without a second HIR/plan enumeration. Canonical work uses ordinary free work;
+held enumeration units are not refunded or lent. The complete immediate-old
+entry stays independently compiled in `strategy/before_fitting.rs`, and explicit
+test forcing retains the old enumerator and its real over-limit refusals.
 
 `hir/expr_nodes.rs` keeps complete Result/Option residual types in the funded
 `ResolvedResidualType` box, reducing the common expression layout. Resolution
@@ -154,11 +222,49 @@ actual layouts before construction. Sharing keeps the original len-plus-one
 copy work and zero-byte sticky payer authentication. The complete original
 receiver remains in test-only `factored/canonical_before.rs`; source-custody
 inverses join its full interior and the HIR authority scan includes both owners
-and their receiving controls. `canonical_shared/epsilon_alias.rs` owns the exact
+and their receiving controls. `canonical_shared/ordered_alias.rs` owns the exact
 non-sink/no-moves/single-epsilon immutable closure receiver; it retains every
 original route/skeleton work request and authenticates the same held memo owner.
-The complete a33 receiver remains in test-only `canonical_shared/before_alias.rs`.
+The complete a33 receiver and BTree alias helper remain test-only controls in
+`canonical_shared/before_alias.rs` and `canonical_shared/epsilon_alias.rs`.
 Qualification and application fit remain pending.
+
+`canonical_shared/ordered_weights.rs` owns the numeric closure/closed-accumulator
+AVL arena, with paid dense node backing and parent-linked ascending iteration.
+Numeric keys never index directory capacity. Published closures are immutable;
+a unit-singleton closed state borrows its authenticated closure, while general
+weighted states retain a separate paid arena. The original weighted traversal,
+checked arithmetic and exposed work requests remain unchanged. State/signature
+dictionaries keep their preceding trees. Persistent singleton successor states
+use `canonical_shared/inline_weighted.rs`: One and Many keys compare their exact
+ordered contents. One keeps its paid tuple inline in the shared allocation;
+moved roots and general successors retain their fully paid Vec backing. Enum
+receivers and the actual shared layout are acquired before construction. The
+complete immediate receiver is `before_inline_weighted.rs`; qualification and
+any physical benefit remain pending.
+The complete immediate BTree receiver is retained in `before_ordered.rs`; full
+source inverses and allocation-free comparison adapters preserve older controls.
+This source-only draft's focused qualification is pending.
+
+`canonical_shared/paid_many.rs` owns the composed ephemeral label targets:
+first/repeated One stays inline; a paid distinct-child promotion uses the
+existing fallible flat-vector physical owner, bounded search and sorted shifts.
+The unobserved route retains tree Many. Both actual successor families acquire
+new helper/return/iterator layouts before formation; sorted output retains the
+same immutable sharing, arenas, compact nodes and cold Memo. No budget ceiling
+changes. Selected replay uses the owned outer label tree with inline One targets. The
+Groups label transport is retained only as an independently compiled immediate
+control: its additional receiving banks exceeded the removed tree cost in the
+observed singleton case. Distinct children still use the paid flat producer;
+empty and repeated-single-child routes retain the exact preceding tree producer.
+`before_selected_route.rs` retains the whole immediate canonical receiver and
+all its original Groups banks. This repair is source-only; renewed qualification
+and physical comparisons remain pending.
+`successor_targets.rs` remains the complete old One/tree-Many type for
+independent controls. `before_paid_many.rs` and its terminal/comparison children
+retain the complete immediate receiver and actual production comparison caller;
+all old helpers/tests remain source-bound and all children join the three raw
+inventories. Focused executable and application qualification remain pending.
 
 `hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
 instantiated loan-plan attachment. Active construction captures one existing
@@ -394,6 +500,13 @@ collection declarations with no runtime carrier authority. Both reject every
 transitive executable use, including uncalled functions; [Declared Text
 Collections v1](DECLARED-TEXT-COLLECTIONS-V1.md) owns that explicit boundary.
 
+`source_verify/declaration/record_shape` owns the ordinary owned-Bytes record
+shape diagnostic and exact six-field diagnostic dependency used by error-only
+recovery. Real parameter bindings retain their original type and ownership;
+only a dependent match shape is unavailable after the same declaration refusal.
+Independent body expressions, parameter modes, lexical pattern checks and valid
+record patterns continue through their existing owners.
+
 `ast/type_properties.rs` owns primitive type formatting and classification.
 The reserved mutable callable type has independent source and retained-HIR
 admission guards in `source_verify/declared_type.rs`, `source_verify/closure.rs`
@@ -468,7 +581,9 @@ The registry compiler and unpublished toolchain share one compiler library and
 bounded source, Project, and prepared Rust API context routes;
 `options.rs` parses bounded command options, `report_options.rs` parses report/analysis options, and
 `source_execution.rs` owns single-file build, run, and diagnostics.
+`diagnostic/writer.rs` borrows caller output for shared JSON/human rendering; the CLI report path owns its stream lock. Active bounded JSON retains the complete legacy renderer and its logical quote order. Neither writer nor stream lock certifies prepaid report/output storage.
 `help_dispatch.rs` prints the global and scoped `cli::help` surfaces.
+`cli/help/authoring/tasks.rs` owns V6 fixed task/profile pages over an embedded scaffold-derived descriptor and the existing library catalog. Its test child rederives complete manifest/source/import bindings; help itself performs no host I/O or source compilation. The old V5 cards and v2-v8 scaffold capsules retain their owners and bytes.
 The `source_execution.rs` module’s `fused_profile` child dispatches the explicit source-only profile before
 ordinary checking. Public `fused_source` parses once and lends a private full
 selected owner to each target; it accepts no caller HIR or grant.
@@ -993,13 +1108,41 @@ unpriced compatibility boundary. Drop never refuses destruction or grants a
 budget. `ast/drop_original.rs` compiles the complete prior destructor and its
 original deep-root owner independently; whole-source and actual free-order
 controls accompany the unchanged custody receiving observer.
-`ast/program_source` owns a sealed two-slice compiler input and a concrete
-presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
+`ast/program_source` owns sealed ordinary and projected declaration views and a
+concrete presentation identity. `workspace_graph/expected_projection/borrowed_leaf`
 lends authored AST collections for admitted import-free synthetic inputs and
-owns only their optional scalar main. Imported views own generated aliases and
-checking bodies while lending immutable authored slices. The source verifier,
+owns only their optional scalar main. The ordinary imported route owns generated
+aliases and checking bodies while lending immutable authored slices. The source verifier,
 prelude/declaration index and resolver consume that exact input; invariant
 transformations and semantic cache publication keep genuine owning boundaries.
+`ast/program_source/function_alias.rs` owns provider-bound borrowed function
+views and the projected `DeclSlices` directory. A view requires the exact
+provider member; its local alias remains the binding used by name lookup.
+Under the existing linked-source authority, the intrinsic classifier checks
+the complete declaration payload, including its reserved name, identity,
+signature and forwarding body; it reads the declaration name instead of the
+local binding name. Exact provider membership remains the checked producer's
+boundary, rather than a new classifier callback. Intrinsic HIR templates retain
+that declaration name. The source declaration index separately stores the
+canonical provider declaration name for every generic function and the local
+function lookup key; monomorphic metadata retains its effective local name.
+Each actual String is prepaid at its own complete UTF-8 length before formation.
+Template-name selection first reserves its receiving
+carriers, then the complete selected name's UTF-8 bytes before cloning. All generic templates use canonical declaration metadata while their source
+calls continue to resolve through the independent local binding index. A pointer, alias or
+origin label alone grants no authority. Its `FunctionDirectory` retains one `GeneratedRoots` owner
+for all generated types and fallback functions, including partial-construction
+teardown. `expected_projection/borrowed_imports/typed/alias.rs` owns the ordered
+import walk. The original full wrapper classifier still admits the shape;
+unsupported declarations retain the owning fallback and ordinary diagnostics. The actual core selects this
+transient route only for retained-output uncached construction without a
+frontend; it cannot publish a checked cache key. A shared, prepaid allocation-free
+identity-family prefilter selects the original producer in both frontend modes
+when no imported identity can denote a retained Vec/Box wrapper. Positive family
+matches still run the full unchanged classifier and provider checks. This avoids
+an all-owned transient directory; it does not establish cache parity for actual
+retained wrappers or grant authority from a name. Existing semantic replay and
+final owning products retain their original boundaries.
 `expected_projection/borrowed_imports/receiving.rs` owns the actual core import
 walk, retaining the full standalone producer as an independent receiver. Its
 `bounded_output/key_directory.rs` affine owner allocates and pays real spare
@@ -1090,6 +1233,19 @@ Project/workspace revisions while keeping candidate and backend admission
 unperformed. `cli/json_codec/suitability.rs` accepts strict optional policy and
 uses the ordinary authenticated held-input route; it has no output/publication
 boundary. Existing codec derivation remains the only source candidate consumer.
+
+`project/application_starter` composes the existing checked codec plan/replay
+with an explicit same-profile command activation, canonical authored inventory
+and exact original/generated source receipts. It performs full ordinary Project
+construction without filesystem or native execution authority. The full host's
+`new_project/application` invokes the original scaffold `publish_files` held-parent
+sequence; `project_publication/application` supplies a bounded owned-name source
+inventory to that same authority. Static template inventories and frozen capsules
+remain separate. The explicit collection-record pure native-test selector reuses
+the existing native test runner after complete typed HIR validation; the old
+native test selector retains its old admission and schema. No managed apply or
+raw-path atomicity is added. [Application Starter v1](APPLICATION-STARTER-V1.md)
+and [typed native tests](PROJECT-NATIVE-TEST-COLLECTION-RECORD-PURE-V1.md) own limits.
 
 `src/project/json_codec` owns checked-source application codec derivation and
 exact regeneration replay. Its `plan` child derives a bounded set against one
@@ -1218,6 +1374,16 @@ replay. `cleanup_plan/build/helper_index.rs` owns immutable module construction
 helper-site authority and reserved all-function plan staging. Construction drops
 its borrowed index before attaching plans; validation and replay independently
 reconstruct current HIR authority.
+The source-only OPT878 candidate keeps factored merge grouping in
+`cleanup_plan/replay/skeleton_work/merge_keys.rs`, with paid indices into
+retained groups instead of cloned ownership/commit lookup keys. The complete
+prior merge bodies remain independently compiled test controls.
+`cleanup_plan/replay/owned_suffix.rs` retains the caller-owned original suffix
+vector while thin merged rows lend observation unions and representative
+metadata to sequencing. Its original borrowed sequence route and payment
+bodies remain compiled; exact owner-free-order and cumulative storage
+qualification are pending. This changes no cleanup schema or public support.
+
 `loop_calls/byte_writer/validation_frontier.rs` owns the separate ordered
 cleanup-validation demand phase. Sealed current-member receivers lend stable
 lazy helper/family cells to `cleanup_plan/build/helper_index/validation.rs`;
@@ -1455,8 +1621,10 @@ response selectors. They write literals, decimal integers and escaped UTF-8 into
 one exactly sized bounded Bytes owner, then perform the ordinary final UTF-8
 String copy. The compiler admits helper renewal from a bounded transitive
 source/HIR closure proof in `src/loop_calls/byte_writer`, independently of codec
-names. Its immutable phase-owned ModuleIndex retains original census and proof
-order, with separately precharged borrowed numeric directories for functions,
+names. Primitive String-slot reads use the complete canonical fixed-call
+inspector in the typed proof and exact named-root/arity checks in the source
+proof, including the compiler-only fused byte form. Its immutable phase-owned
+ModuleIndex retains original census and proof order, with separately precharged borrowed numeric directories for functions,
 positive targets and exact expression-ID fields. Numeric keys only discover a
 candidate; receiving checks still require current pointer identity and original
 binding equality. Unseen/negative targets retain independent proof fallback.
@@ -2160,13 +2328,22 @@ passes renewal authority explicitly through the Graph classifiers for that
 invocation. It retains no additional declaration index. Cleanup selector
 equivalences are checked before higher Graph selectors can mask a mismatch;
 frozen from-parts routes without declaration provenance retain their refusal.
-`workspace_report.rs` retains one affine selected-replay failure, its exact
-ledger and any paid diagnostic backing; explicit legacy materialization stays
-an allocating boundary. `semantic_workspace/reporting.rs` owns the additive
-source-only checked preflight and its independent receiving replay. Its checked
-manifest/revision view grants no filesystem lock or publication authority.
-Filesystem preparers and dynamic directory/TLS attribution remain legacy;
-this source-only route does not qualify those reports as funded. See
+`workspace_report.rs` retains the affine selected-replay failure and its exact
+ledger/backing, an opaque initial report, or a complete unreceived primary and
+failed owner. `workspace_graph/initial_report.rs` and `initial_report/build.rs`
+own the sealed builder error policy: the legacy Vec strategy invokes the
+original lexical renderer once, while the typed strategy records complete
+message/help/evidence/combined-help acceptance on the real active parent before
+invocation restoration. `diagnostics/initial` then moves the existing attribution
+Strings and renders later without consulting TLS or spending that original
+payer again. Initial inline controls and ordinary caller output are explicitly
+unfunded; explicit legacy materialization remains an allocating boundary.
+`semantic_workspace/reporting.rs` owns checked preflight and its independent
+receiving replay; its manifest/revision view grants no filesystem lock or
+publication authority. The actual typed change, structural-change and operations
+callers retain their existing read/commit authorities. Snapshot/base-operations
+compatibility routes and unmatched legacy reports remain explicit boundaries;
+this policy does not certify complete report funding. See
 [Workspace Report Owner v1](WORKSPACE-REPORT-OWNER-V1.md).
 `workspace_graph/paid_view.rs` owns the typed change, operation and schema
 view refusal (`ViewRefusal`). The actual selected lexical replay caller in
@@ -2180,6 +2357,10 @@ before constructing a static `semantic_refusal::Receipt`.
 `selected_owner/paid.rs` and `selected_profile/paid.rs` retain the original
 member and profile checks; the retained first receipt selects the outward
 stage. Arbitrary child Diagnostics retain their explicit Owned boundary.
+`structural_maps/paid_reference.rs` owns the finite selected reference-coverage
+receiver: actual vector/node wrappers prepay their own same-ledger receiving
+before arguments, while complete old validators remain independent. It carries
+closed refusal data and does not grant report, source or payer authority.
 Every later refusal transfers that carrier, together with
 the exact failed ledger owner. The authenticators and selected declaration
 constructors on that route refuse with the Copy `SelectedReplayRefused`. A
@@ -2202,6 +2383,16 @@ Semantic Graph: `semaprax.workspace-semantic-graph.v2`, selected only for a
 workspace with at least one declaring module, with one fact per declaration
 bound to its owning module, path, `@id`, span, and checked `via` functions
 (see `docs/SESSION-PROTOCOL-TYPES-V1.md`).
+The sibling `structural_maps/paid` owns selected slot/region/leaf traversal with
+closed structural receipts. `flat_records/paid_leaves` and `leaf_index/receiving`
+own the attached-leaf and storage-index constructors; each real clone, node or
+vector wrapper acquires its exact same-ledger receiving bank before arguments.
+The shared lexical bank expansion lives in `selected_context/child/receiving`;
+only genuine ReplayBudget primitives can create its sealed budget-failure arm.
+Complete old constructors and paid drivers remain independent test receivers.
+Inventory construction and other unconverted Session families still return
+owned Diagnostics; these finite routes do not certify transitive #781 funding.
+
 
 Only the live workspace invocation may publish. Evidence capsules never carry
 reusable authority.
@@ -4233,7 +4424,7 @@ is unchanged. This index supplies no new type, source, or cache authority.
 | --- | --- |
 | Source projection | `src/ast.rs`, `src/lexer.rs`, `src/parser.rs`, `src/format.rs` |
 | Verification | `src/verify.rs`, `src/source_verify.rs`, `src/source_verify/` — `declaration/` owns the per-pass declaration checks, `iterative/` the frame machine, `oracle/` the test-only recursive cross-check, `function_value_inventory.rs` the lexical function-value reference/candidate inventory, `hints.rs` the shared fix hints both verifiers attach to unknown-function, generic-argument, literal-suffix, and borrowed-view diagnostics, and `loans.rs`/`place.rs` the loan lifecycle |
-| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `resolve_*.rs` own AST lowering; `resolver_scope.rs` owns call-local borrowed-root Cow binding scopes and their complete-map mutation boundary; `borrowed_root_oracle/` retains the fixed test-only nonrecursive prior receiver and helper/frame bodies; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation; `validation/canonical_loans.rs` independently rebuilds loan proof and retains each exact origin once behind private endpoint ordinals |
+| HIR | `src/hir.rs`, `src/hir/` — `ids.rs`, `nodes.rs`, and `expr_nodes.rs` own the data model; `ids/instance_match.rs` owns prepaid exact streaming comparison at retained-instance validation predicates; `nodes/instance_key.rs` retains the original key traversal with a root completeness destination and `bounded_output/checked_string.rs` observes its actual omitted writes, while public key construction, ordinary sinks and the complete allocating identity oracle remain unchanged; `resolve_*.rs` own AST lowering; `resolver_scope.rs` owns call-local borrowed-root Cow binding scopes and their complete-map mutation boundary; `borrowed_root_oracle/` retains the fixed test-only nonrecursive prior receiver and helper/frame bodies; `function_value.rs` owns independent callable target/signature validation; `validation.rs` owns core validation; `validation/canonical_loans.rs` independently rebuilds loan proof and retains each exact origin once behind private endpoint ordinals |
 | Primitive String Vec slot views | `src/vec_ops/string_slot.rs`, `src/source_verify/string_slot.rs`, `src/loan_plan/call_arguments.rs`, `src/graph/string_slots.rs` and `src/workspace_graph/expected_projection/string_slots.rs`; [Primitive String Vec Views v1](PRIMITIVE-STRING-VEC-VIEWS-V1.md) owns exact whole-root views, fixed builtin identity and Prelude v17 / Graph v80 replay. Backend execution qualification remains pending. |
 | Scoped record row loans | `src/hir/row_loan.rs` (descriptor, resolution seam, lent-parameter derivation) and `src/hir/row_loan/validate.rs` (independent call-slot, traversal and helper-body proof); `src/source_verify/record_traversal/row_loan.rs`; `src/hir/validation/row_loan.rs`; `src/interpreter/row_loan.rs`; `src/codegen/native_emit/expression/row_loan.rs`; `src/wasm/aggregate/row_loan.rs`; `src/cleanup_plan/row_loan.rs`; `src/graph/row_loan.rs`; `src/workspace_graph/record_traversal/row_loan.rs`; [Scoped Record Row Loan v1](SCOPED-RECORD-ROW-LOAN-V1.md) owns the call-only contract; executable qualification is pending |
 | Scoped Vec field reads | `src/vec_field.rs`, `src/hir/vec_field.rs`, `src/hir/byte_slice_provenance/vec_field.rs`, `src/codegen/native_emit/expression/vec_ops/field_read.rs`, `src/graph/scoped_vec_field.rs`, `src/patch/source_index.rs`, and `src/repair/scoped_vec_field.rs`; [Scoped Vec Field Reads v1](SCOPED-VEC-FIELD-READS-V1.md) owns the bounded contract; executable qualification is pending |
@@ -4385,6 +4576,43 @@ the complete predecessor before the existing historical assertions run.
 Input drift, nonunique edits and predecessor drift fail closed. The source-lock
 coverage gate recognizes this reader exactly as it recognizes `include_str!`;
 ordinary authority and implementation audits continue to read current source.
+The nested byte-traversal custody assertion delegates its test-only file reads
+to `source_reflows/nested_scope.rs`; its complete original assertion body is
+byte-locked and executable there. The factored target and label custody
+assertions likewise live in `source_reflows/factored_sources.rs`; their original
+entries delegate to complete byte-locked bodies. Audited HIR and replay modules
+retain every algorithm, physical control and test entry while filesystem
+operations belong to the test source-reader layer.
+
+The `cfg(test)` source-view helper `source_reflows_merge` delegates fixture transport
+to its private `runtime_json` loader, fixed inventory, and hostile-I/O tests. The
+inventory preserves 89 original repository JSON files (93,590,460 bytes), each
+bound to its compiled path, exact length, and SHA-256; one additional custody
+fixture restores the complete prior helper, three audit roots, and both changed
+documents before the existing historical views. Each load checks one opened
+regular-file handle, exact bounds, EOF, digest, and UTF-8 before parsing. It grants
+no production filesystem authority and uses no discovery or global cache. All
+original projection logic, stage order, JSON bytes, and source assertions remain
+intact; the three source audits include every new child. Test binaries require
+the repository fixtures at runtime. This source-only transport change has no
+measured RAM benefit yet.
+The bulk-fixture matched experiment keeps both fixed transport modules as common
+source, with one `#[path]` selector choosing runtime files or embedded bytes.
+Only the selected module is compiled. Both return an authenticated owned string
+through the same bounded byte reader before the unchanged projection. The
+original all-fixture runtime-loader and hostile-I/O owner remains compiled in
+both arms and additionally compares the selected transport for every fixture.
+An exact complete-source arm adapter restores the common selector before older
+source views; actual authority manifests are regenerated per arm, without
+relaxing their current-file checks. This preparation adds no measured memory
+claim and does not make embedded-arm file availability optional for that owner.
+A separate fixed metadata inventory moves the remaining 36 immutable source-view
+JSON documents behind the same bounded file reader and exact compiled
+source-key membership. Both bulk90 experiment arms use this same runtime
+context. Its all-file owner authenticates every complete file and key
+multiplicity; it does not embed a second copy of those JSON payloads. Live Rust
+source snapshots remain compile-time inputs. No measured RAM benefit follows
+from the static byte inventory alone.
 
 
 The bounded generic inference helpers in `source_verify/generic_inference` and
@@ -4854,6 +5082,53 @@ compiled for exact plan, work, priority and backing comparisons in
 qualification restrictions and exact pending owners are recorded under
 `docs/evidence/paid-loan-cursors/`.
 
+`cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs` owns the
+ActiveBuilder non-latch exit region comparison. Its fully funded borrowed state
+validates complete source and target ancestry before comparing the exact ordered
+prefix. Both ordinary receivers use it; loop latches and other payers retain the
+complete owning region receiver. The unchanged replay work account bounds all
+walks. Whole-source predecessors and pending full-fixture qualification live in
+[the comparison packet](evidence/borrowed-exit-region-match-v1/README.md).
+
+`cleanup_plan/replay/branch_clone.rs` also owns the ordinary final-branch
+prefix transfer probe. It permits moving an existing observation buffer only
+when a bounded terminal-chain walk proves all remaining observations fit and
+the avoided clone backing covers the full new control state. The original work,
+materialization count, ordering and clone fallback remain; selected replay is
+unchanged. Full predecessor custody and pending owning qualification are in
+[the transfer packet](evidence/last-branch-prefix-v1/README.md).
+The same owner can reserve less unused capacity for a continuing branch copy.
+Its bounded shape proof covers the full linear continuation and the next fork's
+final terminal suffix, preserving both flat observations and the existing final
+transfer. The complete old clone census remains, and avoided backing must cover
+the new probe state before selection. Unknown shapes keep the old capacity.
+[The capacity packet](evidence/plan-branch-capacity-v1/README.md) records custody
+and the distinction between focused checks and full fixture qualification.
+
+
+`workspace_graph/tests/core_attempt_trace.rs` owns the opt-in current-thread
+retry receipt used by the original identity retry test. The cfg(test) root hook
+borrows the complete attempt result after the bounded attempt ends. Default
+execution is silent; nested and unwinding scopes restore the prior flag. It
+changes no production allocation, counter, quota or retry decision. Complete
+source custody and focused evidence are in
+[the retry receipt packet](evidence/core-attempt-receipts-v1/README.md).
+
+`cleanup_plan/replay/skeleton_work/isolated_paths.rs` owns the ordinary
+ActiveBuilder transfer eligibility for lexical paths outside Copy regions. The
+original merger keeps each such path separate. The receiver pays its new frame
+census after the unchanged work charge and retains the incoming bounded-capacity
+vector; every other route keeps the full original merger. Complete predecessor
+custody and focused versus hosted qualification are recorded in
+[the isolated-path packet](evidence/isolated-skeleton-paths-v1/README.md).
+
+This future integration retains that incoming route under `cfg(test)` only.
+Production still uses the complete current `skeleton_work/merge_keys.rs`
+receiver. Activation awaits a complete query census paid before formation and
+qualification of the unchanged strict small-input controls; the incoming late
+payment is not a production admission. No current-head saving is established.
+
+
 Ordinary cleanup replay DAG constructors in
 `cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs` retain an immutable
 checked pending bound per node and prepay a reusable Work-owned destruction
@@ -4883,43 +5158,192 @@ and commit authorities; `workspace_report` retains the selected primary owner
 when the original unlock diagnostic overrides its outward report. The original
 Vec APIs remain independent compatibility receivers.
 
+The ordinary replay status receiver owns the affine [complete status-source
+case proof](STATUS-CASE-SOURCE-PROOF-V1.md). Independent complete HIR discovery
+precedes its exact held-row reuse; it grants no payer or semantic admission.
 
-`cleanup_plan/replay.rs` transfers the complete already funded observation
-prefix into its final successor; `sequence_prefix.rs` owns its borrowed probe. It retains observation identities,
-DAG ownership, order, path fields, one logical clone debit and materialization.
-An allocation-free header check requires enough avoided clone backing to fund
-the complete receiving layout, and no larger immediate flat-tail growth than the original clone.
-Earlier successors, small prefixes, legacy, selected and oracle routes retain
-the original clone. The independently compiled complete previous sequencing receiver
-and both source inventories remain bound to their exact predecessor bytes.
+The test-only `canonical_shared::main_unit_weight` namespace retains the complete
+Main unit-weight closure receiver and its five original controls independently
+of the modern retained canonicalizer. Its eleven source owners participate in
+all three raw source inventories; their measurements describe that historical
+receiver rather than the production route. The function-alias graph/Image
+control compares real Project outputs against the complete immediate-old core.
+The same paid retained-wrapper alias producer is selected on the first ordinary
+uncached attempt as well as compact output attempts. Its provider AST borrow
+ends at resolution; both routes retain owned resolved HIR. Cache-enabled calls
+and invariant-rewriting programs retain the original constructor. This does
+not change the conservative forecast, dynamic payments or failure limits.
 
-The final-successor probe uses `sequence_prefix::Candidate`, two fully funded
-borrowed headers and two boolean slots. Fallible work/reservation and field
-transfer stay in the original sequencing receiver, eliminating the additional
-fallible observation wrapper. The entire shipped wrapper and all five original
-tests remain independently compiled in `sequence_prefix/before_wrapper.rs` and
-`before_wrapper_tests.rs`; fixed source hashes permit only their module wiring
-adaptations. Exact-minimum-prefix controls exercise the full live receiver.
+Canonical empty-closure bookkeeping is invocation-owned by `empty_memo`.
+Its cold admission retains the original receipt/binding boundary; warm auth and
+unit id/publication use the one paid invocation `ClosureReceiving` destination,
+without a second retained Diagnostic owner or an inner id Result. The ordinary
+Memo/Retained receivers remain independent. Complete immediate2d4b controls are
+compiled under `before_unit`; all new gates are pending execution. A bounded bitmap records only empty results; the
+ordinary Memo and general weighted closure remain separate owners. Complete
+prechange receivers remain compiled under the test-only `before_empty` tree.
+The singleton incoming-state route stays in `path_join`: it runs the complete
+validators and original scheduling tail while avoiding constructors used only
+to group multiple states. Its full old route remains an independent test owner.
+The test-only `path_join::main_single_groups` namespace preserves the complete
+Main531 grouping producer, key constructors, prior boxed receiver and original
+controls independently. Production keeps its direct singleton route; historical
+Main measurements grant no production-cost or application-fit claim.
+The `path_array` module owns known-minimum capacity selection at the first
+actual output; its complete Main696 helper and four receivers remain independent
+test-only controls.
+The branch clone/push producer is owned inline by the existing cleanup plan
+enumerator in `replay.rs`; its nested work/census/backing Results remain paid,
+while the prior standalone helper and complete enumerator stay test-only controls.
+The `final_output` module owns fixed receiving-layout payments for the exact
+one-suffix HIR and two-edge/spare-capacity plan routes. The final output receives
+its already-owned flat prefix; the original work, observation identity, suffix
+extension and queue order remain. Full-capacity and other arities retain their
+complete old loops. Independent immediate-old functions and the historical
+inline-fusion footprint contract remain test-only; direct shipping observers
+report retained capacities, removed buffers and complete Drop. No shared-history
+representation or universal cost improvement follows from this transfer.
+These NEXT changes are source-ready and await their focused executable gates;
+no application-cap or universal physical-cost improvement is certified here.
 
-`sequence_vector.rs` owns same-capacity vector reuse for one successor per
-prefix. A header-only probe admits only ordinary paid inputs whose removed
-backing covers the complete receiving layout. The caller reserves that layout
-before moving the vector. Safe slot replacement preserves every clone/transfer,
-continuation, logical debit and materialization, and keeps the original push's
-zero-byte sticky reservation. The previous whole receiver remains compiled;
-legacy, selected, oracle and other-capacity inputs retain its fallback.
+Selected status reconstruction has an independent `status_construction/paid`
+owner for complete requires/body/ensures traversal. Static refusals remain closed
+labels; unknown-callee receipts retain their shared identity and acquire their
+actual Atom controls only on that error path. `scalar_replay/records/paid` owns
+borrowed-record shape checks, and `scalar_replay/paid_nodes` owns the complete
+selected scalar cursor. Original record, status and scalar-body algorithms stay
+available to ordinary replay and independent test drivers. Pure type-key math
+is lexical in the paid record receiver, with no extra forwarding Result or
+serialized-key authority. These owners do not cover inventory construction,
+lexical certificates, schema adapters or path/factored child diagnostics.
+The independent Maina3 `sequence_vector/main_a3` scope retains the complete
+incoming vector helper, producer, predecessor and five original controls. Its
+original borrowed Candidate and completed-minimum APIs are historical controls;
+shipping sequence selection is lexical and preserves the first original work
+frontier. `path_array_main8a` remains the independent historical finished-path
+receiver; shipping completed capacity remains at its first output frontier.
 
-Finished HIR skeleton conversion uses `path_array::completed_minimum` after
-all postconditions, when the output length is known. It funds the complete
-`SkeletonPath` receiving layout and acquires the old final capacity once; the
-original terminal/push loop and future growth remain unchanged. Small cases
-whose removed backing cannot cover metadata retain the original route.
-`path_array/final_before.rs` compiles the complete previous receiver, bound to
-its exact source body under `docs/evidence/completed-skeleton-array-v1/`.
+The private #854 canonical interning component keeps same-comparison weighted states and signatures in prepaid ordered AVL arenas. Its borrowed query resolves every child identity before lookup, and only a missing signature receives an owning label/ID vector. Separate immediate-parent BTree receivers and complete source views remain test-only; scratch capacity, new owner controls and growth overlap are admitted on the original budget before acquisition. Qualification and application effects remain pending.
 
-The sequencing receiver uses its original borrowed iterator state explicitly.
-Earlier successors clone the prefix; the final successor may transfer its
-complete storage. Flat tails qualify when spare capacity suffices or the full
-vector has the same next growth target as the original clone. The borrowed
-candidate headers and boolean result slots remain fully funded; logical clone
-and materialization charges and canonical observation order remain unchanged.
+The selected lexical certificate receiving twin in
+`cleanup_plan/replay/lexical_cert/paid.rs` and its `paid/storage.rs` child owns
+closed certificate refusals and same-ledger primitive receiving. The original
+certificate stays independent; borrowed chain/type/drop/boundary Diagnostics
+remain explicit residual boundaries. Read-only scalar children use the
+existing acquire bank where no Deferred exists in that call's own scope.
+
+`cleanup_plan/replay/lexical_boundary/paid.rs` owns selected boundary admission
+with lexical callback expansion. Selected certificate storage owns the paid region-chain array; its borrowed
+chain query stays original. Original path-state boundary checking,
+a deliberately error-swallowing boolean chain query, and type/schema children
+remain separate original Diagnostic boundaries.
+
+The compact HIR residual constructor uses the sanctioned lexical
+`hir::resolved_residual_type!` macro. Fixed receiving admission precedes its
+actual Box/Option/Self construction; old fallible Type producers retain their
+original order. Its public raw model field grants no checked authority:
+independent HIR validation/source/cleanup admission remains mandatory. Complete
+Main7c opaque models and constructor/cache controls stay test-only independent.
+[HIR residual construction v1](HIR-RESIDUAL-CONSTRUCTION-V1.md) owns that boundary.
+
+`cleanup_plan/replay/selected_type_drop.rs` owns lexical selected type/drop
+classification in the existing paid certificate caller. It preserves the
+complete primitive/Option/Vec/current-flat query closure without new forwarding
+Results or budget parameters. Original classifiers, oracle authentication and
+ordinary dynamic diagnostics remain independently owned boundaries.
+
+The joined test-source custody front uses fixed authenticated runtime tables for independent common, arena and Main12 inputs. A sealed final sibling owns only fixed paths, lengths and digests; both bulk90 selector arms normalize by their complete source identities before these views, while each arm retains truthful physical-source authority metadata. The original five-row, Main nine-row and Main twelve-row receiver controls remain separate, and the complete compiled earlier expression model is linked to its whole-source inverse. These test-only reads grant no compiler admission or production filesystem authority.
+
+Main-f1's complete single-successor prefix helper, current sequencing receiver,
+previous clone receiver and five original controls remain independently compiled
+under cfg(test) in `cleanup_plan/replay/sequence_prefix.rs`. Shipping sequencing
+keeps its earlier lexical single-successor transfer byte-for-byte: it already
+moves the complete funded prefix and skips the clone for every sole suffix.
+No optional helper argument/result boundary or fallback eligibility probe is
+added to production. A complete corpus compares the real Main receiver with
+this shipping path. Original path-array work preflight remains unchanged.
+
+`lexical_boundary::Policy` directly owns the complete ordinary Diagnostic or paid Engine boundary-check algorithm. Its paid finalizer uses the same-ledger child bank and existing node primitive. `lexical_cert/paid/chains` expands the exact bounded selected borrowed walk; its intentionally or-false query adds no budget failure to swallow. Immediate-old whole path replay and ordinary checking remain independently compiled in tests.
+
+
+The test-only `replay/sequence_prefix/main24` namespace retains Main24’s complete borrowed-probe/current receiver and the preceding complete fallible wrapper, each with its original controls. The shipping replay keeps its lexical single-successor transfer and does not acquire the later-admitted Main24 probe carrier. Main24 source tables are separate aliases; historical allocation comparisons remain bound to their named representations.
+Shipping `cleanup_plan/replay.rs` retains its original lexical sole-suffix
+transfer. Active multi-suffix prefixes use one paid remaining-iterator frame,
+clone earlier siblings in canonical order, and may move the final complete
+prefix without an empty replacement. The first and last original clone work
+debits precede their optional metadata payments. Every surviving clone,
+extension, owned-source and publication keeps its work and materialization.
+Eligibility includes all optional receiving controls and the same next growth
+target or available spare backing. Per-prefix metadata can cost more than the
+avoided clone; no universal reservation or capacity improvement is claimed.
+
+`skeleton_work/prefix_fusion` removes the tuple/slice split and extra
+previously constructed earlier-sibling iterator. A compile-time layout inequality
+uses those removed receiving roles to fund one first-sibling eligibility probe
+under the unchanged split charge. Only an ordinary live builder with sufficient
+existing extension work and a sufficiently large flat prefix/nonempty flat
+suffix can acquire new fusion controls. Its sole final backing has the old
+clone-then-growth capacity and is acquired after the old extension-work frontier;
+there is no intermediate clone backing. Declined and subsequent siblings keep
+the complete old clone/extension receiver. The independently compiled frozen
+whole sequence, full preimages, physical owner/Drop and byte/work controls live
+beside the source packet in `docs/evidence/ordinary-prefix-fusion-20261017`.
+All executable qualification and application receipts remain pending.
+
+Finished HIR conversion performs the original first output construction,
+work debit and materialization before lexical count/capacity payments.
+The known-empty destination needs no capacity probe. The final power-of-two
+backing is acquired only when the count covers all optional controls;
+subsequent pushes and growth retain their existing receivers.
+
+Main8a's complete helper, current/previous sequencing receivers, completed
+capacity constructor and every original control remain independently compiled
+in test-only `sequence_prefix/main8a` and `path_array/main8a` scopes. Shipping
+nominal context pays its literal receiving layout in `source_schema::select`
+before forming its three borrowed fields; Main8a's complete `Types::new`
+constructor and original controls remain independently compiled. Authenticated
+lookup keeps the local emitted view and conservative profile fallback.
+
+The reconciled Maina3 vector route uses a lexical first-item view in the owning
+sequence function. Original first work precedes optional selection; a false
+selection consumes that work once and continues the original output growth.
+One persistent empty observations scratch transfers each active slot through the
+unchanged owned extension, including general DAG suffixes. Counted swap argument
+receiving is prepaid cumulatively; no whole-path or per-slot default replacement
+is constructed. The complete
+Main vector helper and its original tests are independent historical controls.
+Eligibility and new receiving costs are explicit; executable qualification and
+unfavorable/common-case cost observations remain pending.
+
+
+The reconciled Main44 sequencing minimum lives in
+`cleanup_plan/replay/path_array/sequence_minimum.rs`. Its lexical macro owns
+only the first active multi-suffix output's extra query: the original owned
+path, work debit, materialization, existing capacity fee and checked old
+capacity precede the additional receiving payment. The original held suffix
+iterator proves S - 1 without another header traversal. Checked P + S - 1 can
+select a larger capacity only when removed vector backing covers the complete
+additional conservative typed control charge. Failed/no-saving probes retain
+their charge; stopped-first, single-successor, empty, small and subsequent
+outputs keep their existing push receivers. The complete immediate shipping
+predecessor remains compiled beside field/work/growth/Drop and finite-budget
+controls. Main44's complete independent implementation and original assertions
+live in `path_array/main44`; neither source domain changes cleanup semantics,
+the builder cap, or the shipping general-DAG vector/final-suffix transfers.
+Execution qualification and net application receipts remain pending.
+
+The #765 private-authority roots scratch receiver lives in
+`workspace_graph/expected_projection/private_layout/authority_invocation/scratch`.
+Its invocation-paid Vec retains backing across sequential complete consumers;
+exclusive RefMut guards clear logical roots/DFS frames at Drop and retain no
+current-HIR verdict. Exact source/map/caller and active-ledger binding precede
+reuse. The original owning Invocation, PrivateTypes and complete prior consumers
+remain independently compiled. New controls and ordinary fallback widening can
+increase tiny-case debit; execution and application impact remain pending.
+
+`canonical_shared/empty_signature.rs` owns the finite actual carrier census for
+empty canonical signatures. The lexical Exit branch authenticates the same
+held receiver and zero-length signature vector, then inserts the real empty
+key without a borrowed child query/Zip. The full immediate receiver remains
+compiled in `before_empty_signature.rs`; wider paths and all original work,
+preflight and sticky failure rules remain intact. Qualification is pending.

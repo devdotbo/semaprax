@@ -191,6 +191,11 @@ impl ClassifierString {
 /// cached admission or source authority. Its caller pays its containing control.
 pub(crate) struct ClassifierLedger(Option<Rc<Budget>>);
 impl ClassifierLedger {
+    /// Empty field initializer for an already prepaid receiving owner. The
+    /// caller must pay capture_into_controls before filling the real binding.
+    pub(crate) fn empty_receiving() -> Self {
+        Self(None)
+    }
     /// A test-account caller authenticates its own invocation separately. This
     /// detached marker contains no ACTIVE handle and grants no ordinary payer.
     #[cfg(test)]
@@ -200,6 +205,121 @@ impl ClassifierLedger {
 
     pub(crate) fn capture() -> Self {
         Self(active())
+    }
+    /// Immutable diagnostic data from this held invocation. It grants neither
+    /// permission to spend nor authority to publish under another ACTIVE owner.
+    pub(crate) fn first_refusal(&self) -> Option<super::ReservationRefusal> {
+        self.0
+            .as_ref()
+            .and_then(|budget| budget.first_refusal.get())
+    }
+    /// One-time fill of an already prepaid receiving slot after its acquiring
+    /// child restores. No returned ledger/Result is constructed by this gateway.
+    pub(crate) fn capture_into_controls() -> usize {
+        std::mem::size_of::<&mut Self>()
+            + std::mem::size_of::<std::cell::Ref<'_, Option<Rc<Budget>>>>()
+            + 2 * std::mem::size_of::<&Option<Rc<Budget>>>()
+            + std::mem::size_of::<&mut Option<Rc<Budget>>>()
+            + std::mem::size_of::<&std::cell::RefCell<Option<Rc<Budget>>>>()
+            + std::mem::size_of::<Option<Rc<Budget>>>()
+    }
+    pub(crate) fn capture_current_into(&mut self) {
+        super::ACTIVE.with(|active| self.0.clone_from(&*active.borrow()));
+    }
+    pub(crate) fn storage_terminal_receipt_controls() -> usize {
+        // Exactly two possible terminal owning sites: parent association and
+        // acquisition rejection. Each unchanged record_refusal may return the
+        // first Option, initialize the record, initialize Some, receive it in
+        // Cell::set, and return the stage Option. No old allowance is spent.
+        2 * (3 * std::mem::size_of::<Option<super::ReservationRefusal>>()
+            + std::mem::size_of::<super::ReservationRefusal>()
+            + std::mem::size_of::<Option<super::ReservationStage>>())
+    }
+    pub(crate) fn reject_storage(&self) {
+        if let Some(budget) = &self.0 {
+            super::record_refusal(budget, 0);
+            budget.overflowed.set(true);
+        }
+    }
+    pub(crate) fn storage_authentication_controls() -> usize {
+        // Parent identity by borrow, then immutable acquisition evidence.
+        2 * std::mem::size_of::<&Self>()
+            + std::mem::size_of::<&std::cell::RefCell<Option<Rc<Budget>>>>()
+            + std::mem::size_of::<std::cell::Ref<'_, Option<Rc<Budget>>>>()
+            + 2 * std::mem::size_of::<&Option<Rc<Budget>>>()
+            + 5 * std::mem::size_of::<&Rc<Budget>>()
+            + std::mem::size_of::<Option<&Rc<Budget>>>()
+            + 2 * std::mem::size_of::<bool>()
+    }
+    /// Retained storage evidence only: this never grants access to remaining
+    /// allowance and deliberately does not require the acquiring child current.
+    pub(crate) fn successful_storage_acquisition(&self) -> bool {
+        self.0
+            .as_ref()
+            .is_some_and(|budget| !budget.overflowed.get())
+    }
+    /// Identity and sticky state by borrow, without cloning a receiving Rc.
+    /// The containing paid storage owner supplies this fixed control context.
+    pub(crate) fn storage_parent_current(&self) -> bool {
+        super::ACTIVE.with(|active| match (&self.0, &*active.borrow()) {
+            (None, None) => true,
+            (Some(held), Some(current)) if Rc::ptr_eq(held, current) => !held.overflowed.get(),
+            _ => {
+                if let Some(held) = &self.0 {
+                    super::record_refusal(held, 0);
+                    held.overflowed.set(true);
+                }
+                false
+            }
+        })
+    }
+    /// Actual new callers of current() prepay its cloned ACTIVE return/local,
+    /// match tuple and arm receiver, TLS borrow, borrowed predicates and bools.
+    /// Original current() below is unchanged; this inventory grants no authority.
+    pub(crate) fn current_receiving_controls() -> usize {
+        use std::cell::{Ref, RefCell};
+        use std::mem::size_of;
+        size_of::<&Self>()
+            + 2 * size_of::<Option<Rc<Budget>>>()
+            + size_of::<(&Option<Rc<Budget>>, Option<Rc<Budget>>)>()
+            + size_of::<Rc<Budget>>()
+            + size_of::<Ref<'_, Option<Rc<Budget>>>>()
+            + size_of::<&RefCell<Option<Rc<Budget>>>>()
+            + size_of::<&Option<Rc<Budget>>>()
+            + 4 * size_of::<&Rc<Budget>>()
+            + 2 * size_of::<bool>()
+    }
+    /// The insertion owner has two terminal call sites on the SAME held
+    /// budget: current mismatch and reject_storage. Each may read first_refusal;
+    /// only one can initialize its first receipt/site. No live payer is queried.
+    pub(crate) fn insertion_terminal_controls() -> usize {
+        use std::cell::Cell;
+        use std::mem::size_of;
+        type Receipt = Option<super::ReservationRefusal>;
+        type Site = Option<&'static std::panic::Location<'static>>;
+        size_of::<&Self>()
+            + 2 * (size_of::<&Option<Rc<Budget>>>() + size_of::<&Rc<Budget>>()
+                + size_of::<&Budget>() + size_of::<&Cell<bool>>())
+            + 4 * size_of::<Receipt>() // two gets, one Some, one Cell::set receiver
+            + size_of::<super::ReservationRefusal>()
+            + size_of::<Option<super::ReservationStage>>()
+            + size_of::<&'static std::panic::Location<'static>>()
+            + 2 * size_of::<Site>()
+            + 3 * size_of::<&Cell<Receipt>>()
+            + size_of::<&Cell<Site>>()
+            + 2 * size_of::<&Cell<usize>>()
+            + size_of::<&Cell<Option<super::ReservationStage>>>()
+    }
+    /// Identity probe only: mismatch grants nothing and mutates neither ledger.
+    /// A strict subset of the same-site current() receiving shapes; no new role.
+    /// Real acquisition still authenticates its payer after this probe succeeds.
+    pub(crate) fn current_identity(&self) -> bool {
+        let current = active();
+        match (&self.0, current) {
+            (None, None) => true,
+            (Some(held), Some(current)) => Rc::ptr_eq(held, &current),
+            _ => false,
+        }
     }
     pub(crate) fn current(&self) -> bool {
         let current = active();

@@ -1302,6 +1302,7 @@ Use `u8_from_i64(value)` then `char_from_u8(byte)` for byte conversion; use
 | Some(1), None|`SPX-T203`, `SPX-T202`|Option<i64>::Some { value: 1 }, Option<i64>::None {}|
 | s.len() on string|SPX-T203|string_len(s); only classes have methods|
 | str_as_bytes/nested string_as_str|`SPX-T263`, `SPX-T266`|Named String: str_as_bytes(string_as_str(text)); bind loop-carried slices beforehand|
+| Bytes allocation capacity: loop/cycle, per-value or full-path bound|SPX-T267|Follow the diagnostic's named limit; reduce complete allocation/input-read demand or per-value capacity. Keep Bytes allocation/copy and allocating calls out of ordinary while/cycles; nonallocating updates may fill a live owner where equivalent. Drops do not refund cumulative limits. Separate finite scratch/fused routes need their own proof/profile and qualification; help grants no admission. [Bytes](OWNED-BOUNDED-BYTE-BUFFER-V1.md)|
 | direct output repeats per path / is loop-reachable|SPX-T269|Build bounded output; publish once outside loops/cycles; default stdout+stderr ≤65536 bytes; v28 direct appends ≤1 MiB|
 | string_as_str("literal")|SPX-T266|let s = "literal"; string_as_str(s)|
 | payload/generic ==|SPX-T207|Match; == only payload-free/nongeneric variants|
@@ -1502,6 +1503,12 @@ V31 adds private records/admitted Vecs and scoped field reads. See
 one admitted explicit flat monomorphic record (SPX-T311). Consumes Vec; stable
 ties/payload owners; end loans first. Descending reverses operands (signed MIN safe).
 vec_sort_owned retains declaration order. [Sort](EXPLICIT-RECORD-SORT-KEYS-V1.md).
+
+`vec_update_field<Row>(rows,index,value,"count")` consumes/renews the Vec and
+writes one exact Copy scalar. Literal field name is last; invariant-free flat
+owned-leaf records only (SPX-T320), usize index, exact RHS type. End all field
+loans first. No leaf clones or capacity change. Qualification pending:
+[contract](OWNED-RECORD-SCALAR-FIELD-UPDATE-V1.md), `help language author:update-field`.
 
 `vec_unique_by<Row>(rows,"id")` -> bool: duplicate check on one literal String or
 i64/i32/u8/usize/bool/char field of a named own/borrow record Vec (SPX-T319).

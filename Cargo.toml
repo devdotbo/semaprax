@@ -46,16 +46,17 @@ hmac = "=0.13.0"
 same-file = "=1.0.6"
 serde = { version = "=1.0.229", features = ["derive"] }
 serde_json = "=1.0.154"
-sha2 = "=0.11.0"
+sha2 = "=0.11.1"
 ed25519-dalek = { version = "=2.2.0", default-features = false, features = ["std"] }
 rustls = { version = "=0.23.46", default-features = false, features = ["ring", "std", "tls12"] }
-sigstore-verify = { version = "=0.14.0", default-features = false }
+sigstore-verify = { version = "=0.15.0", default-features = false }
 x509-cert = { version = "=0.3.0", default-features = false }
 webpki-roots = "=1.0.9"
-wasmparser = { version = "=0.259.0", default-features = false, features = ["component-model", "features", "validate"] }
+wasmparser = { version = "=0.261.0", default-features = false, features = ["component-model", "features", "validate"] }
 wasm-encoder = { version = "=0.261.0", default-features = false, features = ["std", "component-model"] }
 
 [dev-dependencies]
+flate2 = { version = "=1.1.10", default-features = false, features = ["rust_backend"] }
 criterion = { version = "0.8", features = ["html_reports"] }
 regex_alias = { package = "regex", version = "=1.13.1" }
 socket2 = "=0.6.5"

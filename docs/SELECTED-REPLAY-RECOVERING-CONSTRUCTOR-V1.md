@@ -512,3 +512,298 @@ Session refusal. Execution qualification is pending.
 Arbitrary renewal and child-helper Diagnostics remain their explicit Owned
 boundary. This successor neither funds those producers nor completes whole
 transitive OPT781 or application admission; allowances and caps are unchanged.
+
+
+## Finite selected child refusal cut (source-only successor)
+
+The actual paid Context entry now uses the exact bounded lexical scan and the
+selected renewal/helper census/proof twins with closed inline failure data.
+Lexical-depth, renewal/helper census and collection-probe failures keep their
+original raw H006 rendering; renewal-work and lost-reservation failures keep
+the original complete function prefix. No already-allocated Diagnostic is
+translated into a paid receipt. Complete old receivers remain compiled, including
+the full previous paid Context method, and all diagnostic fields/order remain
+owning controls.
+
+Before child entry, the same budget acquires an affine subject-borrowed permit
+covering its complete receipt, error, optional and receiving/result controls,
+on successful entry too. The typed census/proof receiving and scratch controls
+are charged in addition to original backing/node requests; no old-header credit
+is taken. Added initializer work is charged explicitly, with all original walk,
+lookup and proof units unchanged. The permit owns only the one refusal slot
+permission; it lends no lookup, source, member or provider authority. No report
+or physical allowance is added. A work failure still zeros remaining before
+return; a physical failure keeps the original first ledger receipt. Returning
+the exact finite semantic receipt after either failure spends the permit paid
+before entry, not a later debit or retroactive diagnostic allocation.
+
+The permit carries the original borrowed subject and consumes itself to retain
+the existing shared body identity. It accepts neither a replacement subject nor
+a new payer at refusal. Raw detailed rendering remains explicit compatibility;
+publication still transfers the original fixed outward report and ledger.
+The previous complete sum/Option/Result layout controls remain mandatory: no
+portable layout equality, runtime success, byte savings or application recovery
+is claimed by this source-only successor. Actual added control bytes/work may
+increase cumulative reservations.
+
+Remaining explicit inner boundaries include selected_vector_element's old
+ignored classification errors, the selected profile's collection/append and
+other dynamic child Diagnostic producers, and arbitrary owned helper/renewal
+routes outside this finite cut. They are not certified paid by the new receipt
+or the outward report. This batch does not claim whole transitive OPT781 closure.
+
+### Finite paid Context child refusal successor (#781, pending qualification)
+
+The selected paid Context uses closed Copy data for the exact forty-two finite
+child labels in its collection, direct-record, row-loan, string-transfer,
+literal, latch and owner checks. Their original raw/function-prefixed six-field
+diagnostics and first-error order remain the compatibility contract. A borrowed
+subject permit acquires complete receiving/error/result/optional controls on the
+existing invocation budget before child entry, including successful calls.
+The additional Deferred/result controls and their four initializer units are
+paid separately from the full eleven permit controls and any nested producer
+controls. No old carrier is credited against a new acquisition.
+
+Only real ReplayBudget methods construct the sealed budget-diagnostic arm.
+Arbitrary owned child diagnostics cannot be classified as paid through this
+seam. Nonselected or absent-owner compatibility wrappers remain explicitly
+allocating legacy receivers. Renewal eligibility still ignores failed Vec
+classification exactly where the original query did; replacing the discarded
+Diagnostic with Copy data grants no new source or payer authority.
+
+The complete former paid Context, profile and owner receivers remain executable
+controls, with explicit namespace adapters and immutable whole-source inverses.
+This finite adoption does not complete arbitrary later Session/replay/renewal
+owned diagnostic propagation. Those residuals, unsupported admission profiles,
+and outward legacy rendering remain explicit; issue #781 is not closed by the
+source-only successor or by observing its tests before qualification.
+
+## Duplicated driver-local receiving cut (#781, source-only)
+
+The actual paid lexical and scalar driver bodies call the existing paid profile
+and member-owner twins at their original positions. Their complete generic
+Diagnostic-policy bodies remain independent legacy references. Specializing the
+paid bodies removes the previous fact-builder callback/forwarding arguments; no
+new helper Result, aggregate allowance, cap change or old-header credit is added.
+The paid twins retain their actual receiving permits and initializer work, so
+this repeated validation can reserve more cumulative controls than the former
+legacy calls. No savings or admission claim follows.
+
+The direct receiving owner compares both complete old driver entries with
+profile and identity-by-address failures, checks all six legacy diagnostic fields
+through the explicit renderer, and transfers the actual prepaid semantic receipt
+into the same report/ledger owner through sticky rejection and complete Drop.
+These are internal hostile receiving controls, not a bypass of public source
+authentication. Source-only qualification is pending. Initial report acquisition,
+inline zero/short setup, fixed outward publication and named unfunded legacy
+boundaries are unchanged.
+
+This is not transitive Session funding. Lexical-exit validation, structure bounds,
+inventory/status construction, region/entry/exit/certificate/CFG validation, path
+replay, factored comparison, and the scalar signature/body/schema/trace families
+still include Diagnostic-returning children converted to EngineError::Owned.
+Budget failures also retain their genuinely prepaid original Diagnostic. An
+already-owned semantic Diagnostic is not retroactively paid by report transfer;
+#781 remains open.
+
+## Reference-coverage receiving cut (#781, source-only)
+
+Paid lexical and scalar Session drivers use the complete reference-coverage
+algorithm with closed edge-owner, exit-owner and status-declaration refusals.
+The original Diagnostic producer remains independent. The two actual vector
+wrapper calls each acquire a nine-slot receiving bank and nine initializer work
+units on the same ledger before their arguments. Each genuinely new status-set
+node separately acquires its eight-slot bank and eight units before its wrapper;
+duplicates acquire neither. There is no guessed per-function loop allowance.
+The existing profile permit covers entry/refusal composition. BudgetDiagnostic
+remains sealed: only genuine ReplayBudget producers construct that arm.
+
+The original status membership and traversal order, then edge/exit/status error
+priority, stay exact. New receiving reservations and initializer work may refuse
+before the former backing or semantic frontier; no old allowance is credited.
+The node helper forwarding Result is eliminated lexically; the two real budget
+wrapper Results and their Diagnostic/Deferred receivers remain explicitly paid.
+Initial report acquisition, report carrier, inline refusal and all legacy
+wrappers stay unchanged. This finite family and the prior profile/owner tranche
+do not complete the remaining dynamic Session validator families: #781 stays
+open. Focused semantic, exact/short/zero, duplicate, ledger and Drop controls are
+authored; no execution or savings claim follows from this source checkpoint.
+
+## Structural leaf-family receiving cut (#781, source-only)
+
+Paid lexical and scalar drivers use complete slot, region and leaf algorithms
+with closed static labels and the existing shared-identity dynamic atoms. The
+attached flat-record leaf collector and storage-index constructor preserve all
+membership, insertion, field, flag and error ordering. Every actual clone and
+vector forwarding call acquires its nine/ten-slot receiving layout on the SAME
+budget before arguments; conditional nodes retain their eight-slot bank only
+when the original membership test admits insertion. The lexical expansion adds
+no extra forwarding function or Result. Original nested budget Results remain.
+Each helper acquires its existing profile permit for its actual return type;
+slot dynamic Atom initialization/receiving has a separate two-Atom bank.
+
+These payments and initializer work are genuine earlier refusal frontiers, not
+old-fee credit or a refund. Genuine budget errors alone use sealed
+BudgetDiagnostic; static and shared-identity semantic failures remain closed
+receipts for the already-funded report. Compatibility Diagnostic renderers and
+full immediate-old drivers remain independent. The initial receiving boundary
+retains the existing report/ledger contract; no arbitrary child Diagnostic is
+certified after construction. The inventory builder still returns an owned
+Diagnostic through its raw physical callback; status, certificate, path and
+other unmigrated families remain residual, so #781 stays OPEN. No runtime,
+allocation reduction, application-fit or end-to-end funding claim follows.
+
+## Status and scalar-local receiving cut (#781, source-only)
+
+Paid lexical/scalar drivers use complete status reconstruction with seven closed
+labels and one shared-identity unknown-callee atom. Requires, body, ensures,
+ordinal conversion, case normalization and all vector/clone ordering remain.
+Each actual twelve-site array/Vec/clone call acquires the existing exact
+same-ledger receiving layout before arguments. The dynamic Atom initializer and
+receiving pair is paid only when the unchanged callee lookup actually fails,
+before its identity clone or receipt construction. Successful collectors do
+not acquire that error-only bank. The original complete producer is unchanged.
+
+Selected scalar record/body checks retain the full signature, rooted parameter,
+projected field, mode/type and cursor algorithms. The original pure type-key
+math is lexical, removing extra helper Results rather than introducing nested
+mutable-budget forwarding. Error Option conversions are lexical returning
+branches so the affine permit survives successful iterations. Each actual
+new helper Result/receipt bank is acquired for its return type before entry.
+The generic borrowed-scalar helper remains unchanged and has only its original
+real ReplayBudget charge callback; its new outer Error mapping is prepaid and
+cannot convert an arbitrary semantic Diagnostic. Existing typed inline record
+classification and its exact original refusal labels remain source-bound.
+
+Complete immediate-prior paid drivers, original scalar traversal and record
+helpers remain independently executable. Four owning controls cover complete
+status/static/dynamic diagnostics, actual exact/short/work/Drop, full record
+shape answers, and source-authenticated whole old/current drivers. They are
+unexecuted source gates. New entry/control payments may refuse before an old
+semantic or backing frontier; old fees, forecasts and caps are unchanged.
+
+This cut does not establish transitive #781 funding. Inventory-builder raw
+callbacks, lexical certificates, scalar schema/borrowed-test adapters, CFG,
+path and factored descendants still include original owned Diagnostics.
+Those genuine boundaries require separate typed cuts; no late relabeling or
+whole-Session closure is claimed. Ordinary and legacy paths remain allocating.
+
+## Certificate receiving and dead Deferred slots (#781, source-only)
+
+The selected lexical certificate entry and its dictionary/DFS children acquire
+the existing per-call same-ledger receiving banks before real array, clone,
+Vec or conditional node arguments. Fifty-two static semantic failures carry
+closed certificate data. Original traversal, branch order, normal-end checks,
+work and error text remain; original certificate and complete immediate-prior
+paid drivers remain independently executable. Borrowed chain, type/drop and
+lexical-boundary children still forward their original owned Diagnostics and
+are explicit residuals. No arbitrary Diagnostic is certified after creation.
+
+Five scalar-record helpers, the scalar driver entry and the borrowed-scalar
+bool receiver use the existing acquire bank: their own scopes never construct
+or resolve Deferred, including genuine old budget-error forwarding. Real
+child Deferred producers retain their own profile banks. This removes exactly
+the dead four-slot profile tuple and its initializer work, without a refund or
+new protocol. Initial receiving payments remain genuine earlier refusal
+frontiers. Four unexecuted owners cover full certificate fields/hostile order,
+actual bill/work/exact-short-zero/Drop, complete old/current drivers and exact
+read-only slot removal. #781 remains OPEN for unmigrated descendants; there is
+no measured saving, application-fit or closure claim.
+
+## Boundary admission and selected region chains (#781, source-only)
+
+The selected certificate calls a complete boundary-admission twin. Its original
+FnMut admission callback is expanded lexically at the same ordered call sites,
+so no new forwarding Result or closure captures a successful affine permit.
+Ten boundary/chain failures carry exact closed text; real dictionary nodes and
+region-chain arrays use the existing per-call same-ledger primitive receiving.
+The original borrowed chain query stays an explicit owned-error residual;
+its boolean parameter is not replaced by a new mutable-budget forwarding ABI. Admission payments precede new
+receivers and may refuse earlier than old semantic/backing failures.
+
+One original chain query is intentionally consumed by a boolean any predicate
+with unwrap_or(false). It remains on the complete original query; routing a new
+paid refusal into that swallow would be unsound. Type/drop, scalar schema, raw
+inventory, path-state boundary checking and other unmigrated children remain
+owned-Diagnostic residuals. No complete #781 funding/closure is claimed. Four
+unexecuted owners compare complete Auth fields and hostile order, physical
+exact/short/work/Drop, full prior/current paid drivers, and chain order/cycle/
+unknown diagnostics. Immediate-prior certificate/storage/driver receivers are
+independent, with complete source custody. No savings or fit is measured.
+
+## Lexical selected type/drop receiving (#781, source-only)
+
+The certificate's existing live affine permit now encloses the complete selected
+type/drop query: Never, Option<u8> authentication, exact current Vec declaration,
+bounded element and flat-record declaration/field scans, and primitive fallback.
+The original public/inline classifiers stay independent. Their exact parameter
+receiving references become lexical locals, and returned bool/borrowed Option
+values become block values; nested query Result/formatter forwarding disappears.
+No new caller mutable-budget argument, receiving bank, allowance or fee credit
+is introduced. Every semantic failure consumes the already-paid permit only on
+a returning error branch; success retains it for the remaining certificate.
+
+Two raw cleanup labels use closed TypeDrop data; existing Profile labels retain
+their exact raw/prefixed renderer classification. Original cfg(test) oracle
+authentication and its old account budget/error paths execute first, unchanged.
+The full ordinary type-fact query and dynamic identity diagnostic remain the
+original owning fallback. No serialized type key is reinterpreted or trusted.
+
+Four unexecuted owners retain complete prior certificate/storage algorithms,
+compare full Auth fields and hostile metadata, compare 34 actual/forged type
+forms and all six diagnostic fields, and observe whole paid Context/query/Drop
+with actual bills/work and exact/short/zero controls. They make no universal
+allocation, saving or application-fit assertion. Schema/inventory callbacks,
+path-state boundaries, borrowed chain diagnostics and other descendants remain
+explicit owned-Diagnostic residuals, so #781 remains OPEN.
+
+Macro receiving preserves the original explicit trait-object and type-reference
+parameter shapes. The flat-field block returns a borrowed slice via as_slice,
+corresponding to the old implicit Vec-to-slice return coercion; it does not
+introduce a thin &Vec view or new iterator forwarding.
+
+## Direct path boundary and borrowed chain receiving (#781, source-only)
+
+The existing eight path-boundary inputs enter one direct error-policy body. Diagnostic keeps the complete original algorithm. Engine retains its ordinary unobserved fallback; on a paying invocation it acquires the existing actual `Permit::acquire<()>` bank before boundary lookup/failure formation, and the complete finalizer body acquires its own bank. Each new unique finalized flag uses the existing per-actual-call profile/node primitive on the same ReplayBudget. No Diagnostic is relabelled as paid provenance. Full storage/leaf/return/contour/error order survives, including the original selected conditional-profile refusal.
+
+These new per-call bank payments can legitimately refuse before old semantic lookup or scratch insertion and consume work before later refusal. They grant no retry, refund, donor authority, new cap or old mixed-resource first-winner guarantee. Ordinary Diagnostic policy and complete immediate-old path replay remain executable independently. Borrowed rejecting chain macros consume the existing caller permit, preserve checked-sub-before-region-get and all lazy surrounding predicates. The separate or-false macro keeps the original intentional error suppression with no added debit; ordinary query fallback stays unchanged.
+
+The initial bank failure remains the existing unreceived ABI boundary. All new static paths preserve complete six-field diagnostic rendering through the existing funded report. Raw inventory callbacks, schema/checked-binding children, ordinary dynamic type facts and other unmigrated descendants remain owning boundaries. #781 remains open and this source checkpoint makes no executable or cost claim.
+
+
+### Synchronous typed raw-inventory boundary
+
+The selected flat-record inventory twin accepts the existing physical reservation and remaining-work fields borrowed synchronously from the caller's actual ReplayBudget. It creates no allowance, retained payer, callback authority, or source verdict. InventoryFailure is opaque: work originates only at actual checked subtraction, physical/receiving failures only at actual reservations, and finite classifier failures only at their closed primitive branches. Arbitrary Diagnostics cannot be converted into it. Original public-private Diagnostic builder/callback entrypoints and their complete checker remain independently executable.
+
+Before the new Builder, Ledger, RefCell, Vec headers and inventory outputs are formed, an actual-layout initial bank is debited; each method admits its actual compact result/failure and added ledger-borrow controls before subsequent producers. Initial metadata acquisition itself is an explicit unreceived ABI on failure, including the bank's own primitive borrow/result path; no failed debit retroactively funds it. Successful metadata and initializer work remain spent. Original traversal/probe/clone work and parameter/requires/body/result/ensures order remain unchanged and are separately observed. No donor, retry, refund, cap change, or reservation estimate grants authority. The raw API retains no owner between calls, so its explicit borrowed ledger is not represented as a retained foreign-owner capability.
+
+The paid coverage caller uses the existing affine selected-child permit for actual raw failures. Its remaining inventory comparisons and supplemental/schema checker are still ordinary owning diagnostics, explicitly outside this tranche. Same-format publication uses the existing receipt/Diagnostic bridges; this boundary does not reinterpret a returned Diagnostic. New metadata frontiers can select an earlier refusal and increase common costs. Exact mixed-resource first-winner equality and application-fit gains are not claimed from source; focused owners must report the real tradeoff.
+
+## Raw inventory initial receiving (#781, source-only)
+
+The selected lexical/scalar coverage caller now admits the complete raw
+`Result<CleanupInventory, InventoryFailure>` boundary before forming its four
+arguments. A dedicated lexical expansion calls the existing authenticated
+`ReplayBudget::reserve_bytes` on the same retained physical reservation, then
+calls the existing checked/zeroing typed debit on that budget's remaining field.
+The debit is irreversible, not a temporary grant: no scope exit refunds it.
+There is no additional preflight function, callback or forwarding Result.
+The physical acquiring primitive retains its existing paid Diagnostic/inline
+initial-refusal contract; no failed raw self-payment is credited retroactively.
+
+After admission, the shipping constructor starts at the original builder body.
+Its former initial reserve and work self-payment are absent. The exact raw
+receiving inventory has44 fields: the prior42 minus the removed primitive
+physical Result pair and byte-argument pair, plus the program/function argument
+and parameter pairs and the debit remaining reborrow/parameter pair. Complete
+Kind/InventoryFailure layouts pay their actual maximum alternative; no arbitrary
+Diagnostic can enter those sealed constructors. Existing per-method acquisition
+boundaries, schema/supplemental diagnostics and other #781 residuals remain open.
+
+The complete60ad typed entry and initial layout remain independent cfg(test)
+controls, as do the original Diagnostic builder/callback and full coverage
+checker. New owners assert whole inventory/six-field mismatch parity, actual raw
+entry and retained ledger/remaining pointers, irreversible charge across result
+conversion/Drop, exact/one-short/zero physical frontiers, work zero/short/exact,
+floors and first refusal. They are authored only; no Rust execution, numerical
+benefit, application admission or #781 closure is claimed.

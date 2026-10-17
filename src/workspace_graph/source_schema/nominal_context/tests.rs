@@ -1,4 +1,6 @@
+use super::main8a::Types;
 use super::*;
+use crate::workspace_graph::source_schema::*;
 
 fn fixture_source(name: &str) -> &'static str {
     let source = include_str!(concat!(
@@ -138,5 +140,114 @@ fn missing_foreign_and_duplicate_nominal_context_preserve_conservative_refusal()
             .unwrap(),
             "semaprax.graph.v74"
         );
+    }
+}
+
+#[test]
+fn lexical_nominal_context_receiving_keeps_exact_short_floor_and_local_view() {
+    use crate::bounded_output::{active_remaining, set_active_floor, with_limit_usage_refusal};
+    use crate::test_allocation_observer::measure;
+    let build = build();
+    let caller = build
+        .hir
+        .modules
+        .iter()
+        .find(|m| m.path == "src/app.spx")
+        .unwrap();
+    fn fixed(value: Option<&str>) -> Option<([u8; 1024], usize)> {
+        value.map(|value| {
+            let mut bytes = [0; 1024];
+            assert!(value.len() <= bytes.len());
+            bytes[..value.len()].copy_from_slice(value.as_bytes());
+            (bytes, value.len())
+        })
+    }
+    let observe = |construct: bool, limit, floor| {
+        with_limit_usage_refusal(limit, || {
+            measure(|| {
+                if floor {
+                    assert!(set_active_floor(active_remaining().unwrap()));
+                }
+                let result = (|| {
+                    reserve_builder_structure(super::RECEIVING_CONTROLS)?;
+                    if !construct {
+                        return Ok((0, 0));
+                    }
+                    let types = super::Types {
+                        module: caller,
+                        modules: &build.hir.modules,
+                        facts: &build.hir.declarations,
+                    };
+                    assert_eq!(types.len(), caller.types.len());
+                    assert!(types
+                        .iter()
+                        .zip(caller.types.iter())
+                        .all(|(a, b)| std::ptr::eq(a, b)));
+                    assert!(!types.iter().any(|item| item.id.as_str() == "fixture.line"));
+                    let imported = types
+                        .find_in_context(&mut |item| item.id.as_str() == "fixture.line")
+                        .unwrap();
+                    assert_eq!(imported.name, "Line");
+                    Ok::<_, Vec<Diagnostic>>((types.len(), imported.id.as_str().len()))
+                })();
+                let admitted = result.is_ok();
+                let error = match result {
+                    Ok(_) => None,
+                    Err(mut errors) => {
+                        assert_eq!(errors.len(), 1);
+                        let error = errors.pop().unwrap();
+                        let fields = (
+                            error.code,
+                            error.severity,
+                            fixed(Some(&error.message)),
+                            fixed(error.path.as_deref()),
+                            error.span,
+                            fixed(error.help.as_deref()),
+                        );
+                        drop((error, errors));
+                        Some(fields)
+                    }
+                };
+                (admitted, error)
+            })
+        })
+    };
+    let (((admitted, error), allocation), refused, exact, first) = observe(true, usize::MAX, false);
+    assert!(admitted && error.is_none() && !refused && first.is_none());
+    assert_eq!(exact, super::RECEIVING_CONTROLS);
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+    for (limit, floor) in [
+        (0, false),
+        (exact - 1, false),
+        (exact, false),
+        (exact * 2, true),
+    ] {
+        let ((expected, primitive_allocation), primitive_refused, primitive_paid, primitive_first) =
+            observe(false, limit, floor);
+        let ((actual, allocation), refused, paid, first) = observe(true, limit, floor);
+        assert_eq!(
+            actual, expected,
+            "genuine same-limit/floor primitive: all six Diagnostic fields"
+        );
+        assert_eq!(
+            (refused, paid, first),
+            (primitive_refused, primitive_paid, primitive_first)
+        );
+        assert_eq!(actual.0, limit == exact && !floor);
+        if floor {
+            assert!(
+                !refused && first.is_none(),
+                "optional reserve retains its nonsticky floor API"
+            );
+        } else {
+            assert_eq!(refused, limit != exact);
+            assert_eq!(first.is_some(), limit != exact);
+        }
+        for allocation in [allocation, primitive_allocation] {
+            assert!(!allocation.invalid && allocation.live == 0);
+            assert_eq!(allocation.allocated, allocation.freed);
+        }
+        eprintln!("nominal literal limit={limit} floor={floor} used={paid} heap={allocation:?}");
     }
 }

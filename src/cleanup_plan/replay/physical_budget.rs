@@ -1,6 +1,7 @@
 //! Selected physical allocation requests; ordinary replay keeps its exact route.
 use super::*;
 mod setup;
+pub(in crate::cleanup_plan::replay) mod authentication;
 pub(crate) use setup::{SetupFailure, SetupReason};
 
 impl ReplayBudget {
@@ -24,8 +25,104 @@ impl ReplayBudget {
         })
     }
 
+    #[cfg(not(test))]
     #[track_caller]
     pub(super) fn reserve_bytes(
+        &mut self,
+        function: &ResolvedFunction,
+        bytes: usize,
+        phase: &str,
+    ) -> Result<(), Diagnostic> {
+        if bytes == 0 {
+            // A zero request constructs nothing, so it must not bootstrap the
+            // refusal String. It consults the same payer, sticky refusal,
+            // reserved floor and refusal_spent state that a positive request
+            // would, then authenticates only. Positive requests below keep
+            // their original bootstrap and charges byte-for-byte.
+            let admitted = match self.payer {
+                AllocationPayer::LegacyUnobserved => true,
+                AllocationPayer::ActiveBuilder => {
+                    if self.refusal_spent || crate::bounded_output::active_refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    crate::bounded_output::reserve_active_required(0)
+                }
+                #[cfg(test)]
+                AllocationPayer::Oracle(lease) => {
+                    if self.refusal_spent || lease.refused() {
+                        return Err(self.budget_refusal(
+                            function,
+                            "ordinary builder already failed",
+                            "",
+                        ));
+                    }
+                    lease.charge(0).is_ok()
+                }
+                AllocationPayer::SelectedReservation => self
+                    .physical
+                    .as_deref_mut()
+                    .expect("selected reservation payer")
+                    .reserve(0)
+                    .is_ok(),
+            };
+            return if admitted {
+                Ok(())
+            } else {
+                Err(self.budget_refusal(
+                    function,
+                    "cleanup replay physical reservation exhausted during ",
+                    phase,
+                ))
+            };
+        }
+        self.prepare_builder(function)?;
+        let accepted = match self.payer {
+            AllocationPayer::LegacyUnobserved => true,
+            AllocationPayer::ActiveBuilder => {
+                !self.refusal_spent
+                    && !crate::bounded_output::active_refused()
+                    && crate::bounded_output::reserve_active_required(bytes)
+            }
+            #[cfg(test)]
+            AllocationPayer::Oracle(lease) => {
+                !self.refusal_spent && !lease.refused() && lease.charge(bytes).is_ok()
+            }
+            AllocationPayer::SelectedReservation => self
+                .physical
+                .as_deref_mut()
+                .expect("selected reservation payer")
+                .reserve(bytes)
+                .is_ok(),
+        };
+        if accepted {
+            Ok(())
+        } else {
+            Err(self.budget_refusal(
+                function,
+                "cleanup replay physical reservation exhausted during ",
+                phase,
+            ))
+        }
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(super) fn reserve_bytes(
+        &mut self, function: &ResolvedFunction, bytes: usize, phase: &str,
+    ) -> Result<(), Diagnostic> {
+        let ticket = super::merge_census::before(self, function, bytes, phase);
+        let result = self.reserve_bytes_without_merge_census(function, bytes, phase);
+        super::merge_census::after(ticket, self, function, result.is_ok());
+        result
+    }
+
+    #[cfg(test)]
+    #[track_caller]
+    pub(super) fn reserve_bytes_without_merge_census(
         &mut self,
         function: &ResolvedFunction,
         bytes: usize,
@@ -117,8 +214,10 @@ impl ReplayBudget {
         if !self.pays_allocations() {
             return Ok(());
         }
-        if self.payer == AllocationPayer::ActiveBuilder && !self.selected() && !T::NEEDS_TYPE_CURSOR
-        {
+        let without_type_cursor = self.payer == AllocationPayer::ActiveBuilder
+            && !self.selected()
+            && !value.clone_needs_type_cursor();
+        if without_type_cursor {
             // These preflights construct no recursive type cursor. Authenticate
             // and fund refusal text first, but leave the cursor unpaid so a
             // later recursive clone must still acquire its complete backing.
@@ -127,14 +226,21 @@ impl ReplayBudget {
             self.prepare_clone_cursor(function)?;
         }
         #[cfg(test)]
-        let payload = match self.oracle_lease() {
-            Some(lease) => {
-                value.clone_payload_bytes_with_work(&mut |units| lease.charge_work(units).is_ok())
+        let payload = if without_type_cursor {
+            value.clone_payload_bytes_without_type_cursor()
+        } else {
+            match self.oracle_lease() {
+                Some(lease) => value
+                    .clone_payload_bytes_with_work(&mut |units| lease.charge_work(units).is_ok()),
+                None => value.clone_payload_bytes(),
             }
-            None => value.clone_payload_bytes(),
         };
         #[cfg(not(test))]
-        let payload = value.clone_payload_bytes();
+        let payload = if without_type_cursor {
+            value.clone_payload_bytes_without_type_cursor()
+        } else {
+            value.clone_payload_bytes()
+        };
         let bytes = payload.ok_or_else(|| {
             self.budget_refusal(
                 function,

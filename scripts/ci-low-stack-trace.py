@@ -8,6 +8,7 @@ from pathlib import Path
 import re
 import runpy
 import shutil
+import struct
 import subprocess
 import sys
 
@@ -16,6 +17,67 @@ CASE = (
     "hir::validation::iterative_while_admission_tests::"
     "exact_512_nested_indexed_matches_validate_on_a_low_stack"
 )
+
+
+# Read only six stopped frames and 24 entry instructions per frame. No target
+# expression is evaluated and no instruction is executed after the first fault.
+FRAME_LAYOUT_CODE = r"""import gdb
+import re
+try:
+    frame = gdb.newest_frame()
+    for level in range(6):
+        if frame is None:
+            break
+        frame.select()
+        pc = int(frame.pc())
+        name = (frame.name() or "unknown")[:512]
+        try:
+            sp = hex(int(frame.read_register("sp")))
+        except Exception:
+            sp = "unavailable"
+        print(f"SEMAPRAX_STACK_FRAME_LAYOUT_V1 frame={level} pc={pc:#x} sp={sp} name={name!r}")
+        try:
+            print(gdb.execute("info frame", to_string=True))
+        except Exception as error:
+            print(f"frame info unavailable: {error}")
+        try:
+            symbol = gdb.execute(f"info symbol {pc:#x}", to_string=True)
+            offset = re.search(r"\+ (0x[0-9a-fA-F]+|[0-9]+) in section", symbol)
+            entry = pc - int(offset.group(1), 0) if offset else pc
+            gdb.execute(f"x/24i {entry:#x}")
+        except Exception as error:
+            print(f"bounded prologue unavailable: {error}")
+        frame = frame.older()
+except Exception as error:
+    print(f"stopped frame layout unavailable: {error}")
+"""
+
+
+def elf_tls_layout(path):
+    """Read bounded ELF64 program headers; never execute or map the artifact."""
+    size = path.stat().st_size
+    with path.open("rb") as stream:
+        header = stream.read(64)
+        if len(header) != 64 or header[:7] != b"\x7fELF\x02\x01\x01":
+            raise ValueError("stack artifact is not a complete little-endian ELF64 file")
+        offset = struct.unpack_from("<Q", header, 32)[0]
+        width, count = struct.unpack_from("<HH", header, 54)
+        if width != 56 or not 1 <= count <= 4096 or offset + width * count > size:
+            raise ValueError("stack artifact has an invalid or excessive program-header table")
+        result = None
+        stream.seek(offset)
+        for _ in range(count):
+            entry = stream.read(width)
+            if struct.unpack_from("<I", entry)[0] != 7:  # PT_TLS
+                continue
+            file_offset = struct.unpack_from("<Q", entry, 8)[0]
+            initialized, total, alignment = struct.unpack_from("<QQQ", entry, 32)
+            if (result is not None or initialized > total or file_offset + initialized > size
+                    or (alignment > 1 and alignment & (alignment - 1))):
+                raise ValueError("stack artifact has an invalid or duplicate TLS segment")
+            result = {"initialized_bytes": initialized, "total_bytes": total,
+                      "alignment": alignment}
+        return result
 
 
 def select_executable(messages, root, target):
@@ -90,13 +152,17 @@ def main():
         "executable_sha256": digest.hexdigest(),
         "qualification": "owning shard failure remains authoritative",
     }, sort_keys=True), flush=True)
+    print(json.dumps({
+        "diagnostic_only": True, "schema": "semaprax.elf-tls.v1", "head": current,
+        "tls": elf_tls_layout(executable),
+    }, sort_keys=True), flush=True)
     commands = [
         "set pagination off", "set print thread-events off",
         "set print frame-arguments none", "set auto-load off",
         "set debuginfod enabled off", "set disable-randomization off",
         "handle SIGPIPE nostop noprint pass", "handle SIGSEGV stop print nopass",
         "handle SIGBUS stop print nopass", "handle SIGABRT stop print nopass",
-        "run", "thread apply all bt 48",
+        "run", "python exec(" + repr(FRAME_LAYOUT_CODE) + ")", "thread apply all bt 48",
     ]
     command = [debugger, "--batch", "--nx"]
     for instruction in commands:

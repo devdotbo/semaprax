@@ -96,6 +96,8 @@ pub(super) fn build_resolved_core(
                     cache.checked_module(&program.path, input),
                 expected_projection::borrowed_leaf::Input::Borrowed(input) =>
                     cache.checked_module_source(&program.path, input),
+                expected_projection::borrowed_leaf::Input::Transient(_) =>
+                    unreachable!("complete old constructor cannot produce transient function view"),
             })
         );
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
@@ -529,3 +531,6 @@ impl<'a> CheckedValueNode<'a> {
         }
     }
 }
+
+use crate::workspace_graph::validation::before_roots::{WorkspaceValidationIndex, validate_stub_signatures_authored};
+use crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;

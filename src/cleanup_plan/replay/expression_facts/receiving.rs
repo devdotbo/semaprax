@@ -6,10 +6,13 @@ mod retained;
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) use retained::before_status_retention;
 pub(in crate::cleanup_plan::replay) use retained::{
-    validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_retained,
+    validate_blocks_and_edges_retained, validate_exits_retained,
+    validate_status_sources_certified, StatusCases,
 };
 mod regions_entry;
 mod remaining;
+mod return_operands;
+pub(in crate::cleanup_plan::replay) use return_operands::ReturnOperands;
 use directory::Directory;
 pub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};
 pub(in crate::cleanup_plan::replay) use remaining::validate_exits;

@@ -1,0 +1,57 @@
+{
+  "status": "SOURCE_ONLY_PYTHON_ACQUISITION",
+  "rows": [
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "current_len": 2033,
+      "current_sha256": "26155a29849779ab5ed77d23d19276e4681eaf7157e0136a965c2c5b9cee0acd",
+      "before_len": 9347,
+      "before_sha256": "87ef9e1bc7a14120e85ca5a2145e0322899d4ed39a4f72bfcfa657ee66d787d3",
+      "before_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/verify-or-refresh.py",
+      "inverse": [
+        {
+          "at": 0,
+          "remove_len": 2033,
+          "remove_sha256": "26155a29849779ab5ed77d23d19276e4681eaf7157e0136a965c2c5b9cee0acd",
+          "insert_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/verify-or-refresh.py"
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/guard-extension-recipe-edits.json",
+      "current_len": 24646,
+      "current_sha256": "bff38a8e67bd2b9a1f993bb48bfeae43b0f5630ed7eeeadd58e2299db4460847",
+      "before_len": 4507,
+      "before_sha256": "54cdd9f6b3bce3564b0e7ca25e0194b41f486bc5c8d82019238b7b22387c0352",
+      "before_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/guard-extension-recipe-edits.json",
+      "inverse": [
+        {
+          "at": 0,
+          "remove_len": 24646,
+          "remove_sha256": "bff38a8e67bd2b9a1f993bb48bfeae43b0f5630ed7eeeadd58e2299db4460847",
+          "insert_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/guard-extension-recipe-edits.json"
+        }
+      ]
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/semantic-receiver-main34d-view.py",
+      "before_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/semantic-receiver-main34d-view.initial.py.txt",
+      "before_sha256": "4f0a6a04134c7a64e8f613ef870247a47e6d447ef6c838a5c7be56fd4641d913",
+      "before_len": 3719,
+      "current_sha256": "f1c6e5db4d0bdba759834c0b80ee76ef4cdf97d7743afa77395979d96589f9aa",
+      "current_len": 4232,
+      "inverse": [
+        {
+          "at": 0,
+          "remove_len": 4232,
+          "remove_sha256": "f1c6e5db4d0bdba759834c0b80ee76ef4cdf97d7743afa77395979d96589f9aa",
+          "insert_archive": "docs/evidence/main043-newmain-acquisition-20261017/before/semantic-receiver-main34d-view.initial.py.txt"
+        }
+      ]
+    }
+  ],
+  "original_view_and_outer_bytes_unchanged": {
+    "semantic-receiver-view.py": "79b1f3f8fd8ed42ad8baa5552f468ad7b884be1e51272dcf8e5a94fc5e373823",
+    "semantic-receiver-outer.py": "5ee9c8fc3272a4110bf2516b263d37697f98ea301190989645b02f0333983db4"
+  }
+}

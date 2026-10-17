@@ -225,8 +225,9 @@ fn named(name: &str, arguments: Vec<Type>) -> Type {
     }
 }
 
-fn index_resolver(program: &Program) -> Resolver<'_> {
+fn index_resolver(program: &Program) -> Resolver<'_, '_> {
     Resolver {
+        function_cells: std::borrow::Cow::Owned(crate::source_verify::function_cells(program)),
         program,
         byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
         declarations: DeclarationIndex::from_verified(program).expect("declarations index"),
@@ -750,7 +751,7 @@ fn repeated_generic_owner_queries_share_one_carrier_and_remove_exact_reconstruct
         result: Box::new(parameter.clone()),
     };
     let query =
-        |resolver: &Resolver<'_>, template: &crate::ast::Function, ty: &Type, rounds: usize| {
+        |resolver: &Resolver<'_, '_>, template: &crate::ast::Function, ty: &Type, rounds: usize| {
             for _ in 0..rounds {
                 drop(resolver.resolve_function_type(template, ty, span));
             }
@@ -996,5 +997,152 @@ fn checked_function_reuse_keeps_prior_carriers_and_saved_costs_with_old_new_pari
             assert_eq!(observed.live, 0);
             assert_eq!(observed.allocated, observed.freed);
         }
+    }
+}
+
+
+/// The inference target is selected from the same source/index by the ordinary
+/// call resolver. Reusing its exact held identity removes reconstruction only;
+/// the full argument inference and instance constructor remain the same.
+#[test]
+fn inference_and_call_signature_keep_complete_old_results_and_index_backing_through_drop() {
+    let program = crate::check(GENERIC, "resolver-held-generic.spx").unwrap();
+    let resolver = index_resolver(&program);
+    let target = program
+        .functions
+        .iter()
+        .find(|function| function.stable_id == "identity")
+        .unwrap();
+    let caller = FunctionExecutionId::Monomorphic(resolver.declarations.held_identity("app.main"));
+    let arguments = [crate::ast::Expr {
+        kind: crate::ast::ExprKind::Int(7),
+        span: Span::default(),
+    }];
+    let bindings = std::collections::BTreeMap::new();
+    let run = || {
+        let inferred = resolver.infer_call_arguments(&caller, target, &arguments, &bindings);
+        let signature = resolver.ordinary_call_signature(
+            &caller,
+            target,
+            &[Type::I64],
+            &arguments,
+            &bindings,
+            Span::default(),
+        );
+        (inferred, signature)
+    };
+    let (old, current) = pair(run);
+    assert_eq!(old, current);
+    assert_eq!(current.0, Some(vec![Type::I64]));
+    assert!(current.1.is_ok());
+    drop((old, current));
+    let (_, recorded) = saved(true, || drop(run()));
+    assert!(
+        recorded
+            .iter()
+            .filter(|text| text.as_str() == "identity")
+            .count()
+            >= 2
+    );
+    let (_, old) = measure(|| saved(false, || drop(run())));
+    assert_eq!(requests(), recorded.len());
+    let (_, current) = measure(|| drop(run()));
+    assert_eq!(old.allocations, current.allocations + 2 * recorded.len());
+    assert_eq!(old.reallocations, current.reallocations);
+    assert_eq!(old.allocated, current.allocated + removed_bytes(&recorded));
+    for observed in [old, current] {
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+    // No new identity allowance is requested after this index was constructed.
+    // Exhausting an unrelated ambient output budget does not invalidate it.
+    let ((inferred, before, after), refused, spent) =
+        crate::bounded_output::with_limit_usage(0, || {
+            let before = crate::bounded_output::active_remaining();
+            let inferred = resolver.infer_call_arguments(&caller, target, &arguments, &bindings);
+            (inferred, before, crate::bounded_output::active_remaining())
+        });
+    assert_eq!(inferred, Some(vec![Type::I64]));
+    assert!(!refused);
+    assert_eq!(spent, 0);
+    assert_eq!(before, after);
+
+    // Exercise the actual ordinary-call dispatcher and its recursive evidence
+    // path, not only the direct test wrappers above. Both calls omit their type
+    // arguments; the inner result supplies the outer generic argument.
+    assert_eq!(GENERIC.matches("identity<i64>(alpha())").count(), 1);
+    let nested_source = GENERIC.replace("identity<i64>(alpha())", "identity(identity(alpha()))");
+    let nested_program = crate::check(&nested_source, "resolver-held-nested-inference.spx").unwrap();
+    let (nested_old, nested_current) = pair(|| paid_owned(&nested_program));
+    // Includes the complete ResolvedProgram, all work fields, and the ordered
+    // original identity-payer requests, under the saved allocation policy.
+    assert_eq!(nested_old, nested_current);
+    assert_eq!(wire(&nested_old.0), wire(&nested_current.0));
+    assert_resolved_identities_are_index_carriers(&nested_current.0);
+    assert!(nested_current.0.function_instances.iter().any(|instance| {
+        instance.template.as_str() == "identity"
+            && instance.type_arguments == vec![ResolvedType::I64]
+    }));
+    drop((nested_old, nested_current));
+    // The whole real paid resolver and all returned roots live inside each
+    // observation. This is the complete saved construction-policy comparison,
+    // not a claim that only the two new sites account for its total saving.
+    let (_, nested_old_cost) = measure(|| drop(saved(false, || paid_owned(&nested_program))));
+    let (_, nested_current_cost) = measure(|| drop(paid_owned(&nested_program)));
+    assert!(nested_old_cost.allocations > nested_current_cost.allocations);
+    assert!(nested_old_cost.allocated > nested_current_cost.allocated);
+    for observed in [nested_old_cost, nested_current_cost] {
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
+    }
+}
+
+#[test]
+fn inference_index_payment_refuses_exact_short_and_preserves_original_payer_before_lowering() {
+    let program = crate::check(GENERIC, "resolver-held-generic.spx").unwrap();
+    let reference = paid_owned(&program);
+    let bill = reference.2.iter().sum::<usize>();
+    assert!(bill > 0);
+    for limit in [0, bill - 1, bill] {
+        let mut remaining = limit;
+        // The request recorder is fixture storage, acquired before observation.
+        let mut requested = Vec::with_capacity(reference.2.len());
+        let ((accepted, identity_refusal), observed) = measure(|| {
+            let result = crate::hir::identity_resolution::resolve(&program, None, |bytes| {
+                requested.push(bytes);
+                if bytes > remaining {
+                    return Err(bytes);
+                }
+                remaining -= bytes;
+                Ok(())
+            });
+            match result {
+                Ok((resolved, work)) => {
+                    assert_eq!(resolved, reference.0);
+                    assert_eq!(paid_work(work), reference.1);
+                    drop(resolved);
+                    (true, None)
+                }
+                Err(crate::hir::identity_resolution::Failure::Identity(bytes)) => {
+                    (false, Some(bytes))
+                }
+                Err(other) => panic!("unexpected semantic refusal: {other:?}"),
+            }
+        });
+        assert_eq!(accepted, limit == bill);
+        if limit == bill {
+            assert_eq!(remaining, 0);
+            assert_eq!(requested, reference.2);
+            assert!(identity_refusal.is_none());
+        } else {
+            assert_eq!(identity_refusal, requested.last().copied());
+            assert!(identity_refusal.unwrap() > remaining);
+            assert!(reference.2.starts_with(&requested));
+        }
+        assert!(!observed.invalid);
+        assert_eq!(observed.live, 0);
+        assert_eq!(observed.allocated, observed.freed);
     }
 }

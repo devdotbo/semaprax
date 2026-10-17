@@ -9,6 +9,9 @@ mod bindings;
 pub(crate) use bindings::HelperBindings;
 mod module_index;
 mod resolved;
+#[cfg(test)]
+pub(crate) use resolved::checked_bindings_with_reservation_and_work;
+pub(crate) use resolved::checked_bindings_with_reservation_and_work_inline;
 pub(crate) mod validation_frontier;
 pub(crate) use module_index::ModuleIndex;
 mod source;
@@ -21,13 +24,14 @@ mod source_index;
 pub(crate) mod source_index_original;
 #[cfg(test)]
 pub(crate) use resolved::checked_absent_with_work_reservation;
+#[cfg(test)]
+pub(crate) use resolved::checked_bindings_funded;
+pub(crate) use resolved::checked_bindings_funded_with_work;
 pub(crate) use resolved::{
-    bindings, checked_bindings, checked_bindings_with_reservation_and_work,
+    bindings, checked_bindings,
     nonallocating as resolved_nonallocating,
     nonallocating_with_cursor as resolved_nonallocating_with_cursor, ProofCursor,
 };
-#[cfg(test)]
-pub(crate) use resolved::{checked_bindings_funded, checked_bindings_funded_with_work};
 pub(crate) use source::nonallocating as source_nonallocating;
 pub(crate) use source_index::{SourceBacking, SourceHelpers, SourceIndex, SourceProofs};
 const DEPTH: usize = crate::cache_codec::MAX_DEPTH;

@@ -1,4 +1,8 @@
+const SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT: &str =
+    "src/workspace_graph/expected_projection/private_layout.rs";
 include!("semantic_graph/source_inventory.rs");
+#[path = "semantic_graph/source_inventory_controls.rs"]
+mod source_inventory_controls;
 use std::fs::{File, OpenOptions};
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -166,6 +170,7 @@ fn inventory(root: &Path) -> Vec<(String, &'static str, Vec<u8>)> {
 /// Optional evidence sink for the actual owning producers. Existing assertions
 /// still execute, and an existing evidence file is never replaced.
 fn capture_pin_candidate(name: &str, bytes: &[u8]) {
+    super::pin_capture::record(name, bytes);
     let Some(directory) = std::env::var_os("SEMAPRAX_PRELUDE_PIN_CAPTURE_DIR") else {
         return;
     };
@@ -360,6 +365,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     // shared helpers", so the read has to follow the module, not just its root
     // file: a helper relocated into a sibling submodule must still count as
     // present in the root and absent from the projection.
+    assert_eq!(audit_source_join!("", "α", "\0", "\r\n", "β"), "α\0\r\nβ");
     let root = semantic_graph_root_source_inventory!();
     let root = root.as_str();
     let projection_root = semantic_graph_projection_root_source_inventory!();
@@ -378,12 +384,16 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let projection_import_stub = semantic_graph_projection_child_source_inventory!(import_stub);
     let projection_uncached_peak = semantic_graph_projection_child_source_inventory!(uncached_peak);
     let projection_type_rewrite = semantic_graph_projection_child_source_inventory!(type_rewrite);
-    let projection_private_layout = semantic_graph_private_layout_source_inventory!();
+    let projection_private_layout = semantic_graph_private_layout_owned_source_inventory!();
     let projection = format!(
         "{projection_private_layout}\n{projection_type_rewrite}\n{projection_import_stub}\n{projection_uncached_peak}\n{projection_root}\n{projection_local_identity}\n{projection_call_identity}\n{projection_call_sites}\n{projection_cost}\n{projection_declaration_cost}\n{projection_identity_slots}\n{projection_statement_segment}\n{projection_defaults}"
     );
+    let production_projection = production_source_inventory::production(
+        &projection,
+        include_str!("../../docs/evidence/a3-e47-final-custody-20261016/projection.json"),
+    );
     assert!(root.contains("mod expected_projection;"));
-    assert!(!projection.contains("use super::*;"));
+    assert!(!production_projection.contains("use super::*;"));
     assert!(projection_root.contains("pub(super) use uncached_peak::{\n    initial_core_prebound, next_retention_prebound_with_uncached_peak,\n    uncached_output_peak_prebound,\n};"));
     let exact_facade = [
         // These helpers are deliberately visible only inside workspace_graph;
@@ -440,6 +450,18 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn verify(",
         "pub(super) fn verify(",
     ];
+    // The complete actual projection above remains the purity input. This
+    // independent historical view retains the original facade assertion too.
+    let current_projection_root = projection_root;
+    current344_input::refuses_drift(
+        "expected_projection::root_join",
+        current_projection_root.as_str(),
+    );
+    let facade_input = current344_input::project(
+        "expected_projection::root_join",
+        current_projection_root.as_str(),
+    );
+    let projection_root = historical_projection_root_facade(&facade_input);
     assert_eq!(
         projection_root
             .lines()
@@ -449,6 +471,32 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
             })
             .collect::<Vec<_>>(),
         exact_facade,
+    );
+    let mut current_facade = exact_facade.to_vec();
+    let child = current_facade
+        .iter()
+        .position(|line| *line == "pub(super) fn materialize_receiving(")
+        .unwrap()
+        + 1;
+    current_facade.splice(child..child, [
+        "pub(super) fn pay_type(declaration: &TypeDeclaration, owner: &mut Receiver) -> Result<(), Setup> {",
+        "pub(super) fn pay_signature(function: &Function, owner: &mut Receiver) -> Result<(), Setup> {",
+        "pub(super) fn teardown_type(",
+        "pub(super) fn teardown_function(",
+        "pub(super) fn pay_default_teardown(",
+        "pub(super) fn pay_teardown_minimum(owner: &mut Receiver) -> Result<(), Setup> {",
+    ]);
+    current_facade.push("pub(super) fn verify(");
+    let current_facade_input = current_projection_facade_input(&facade_input);
+    assert_eq!(
+        current_facade_input
+            .lines()
+            .filter_map(|line| {
+                let trimmed = line.trim();
+                trimmed.contains("pub(super)").then_some(trimmed)
+            })
+            .collect::<Vec<_>>(),
+        current_facade
     );
 
     assert_eq!(
@@ -500,6 +548,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     let runtime_fixture = include_str!(
         "../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs"
     );
+    assert_eq!(projection.matches(runtime_fixture).count(), 1);
     // Scoped builder-limit mutation belongs only to this exact test child;
     // its complete bytes still participate in every structural audit above.
     let cost_root = include_str!("../../src/workspace_graph/expected_projection/cost.rs");
@@ -507,12 +556,15 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "#[cfg(test)]\n#[path = \"uncached_absence_tests.rs\"]\nmod uncached_absence_tests;"
     ));
     assert_eq!(cost_root.matches("mod uncached_absence_tests;").count(), 1);
+    let constructor_cost =
+        include_str!("../../src/workspace_graph/expected_projection/cost/constructor.rs");
+    assert_eq!(projection.matches(constructor_cost).count(), 1);
     let absence_fixture =
         include_str!("../../src/workspace_graph/expected_projection/uncached_absence_tests.rs");
     assert_eq!(projection.matches(absence_fixture).count(), 1);
-    // Keep every byte of the new forecast fixture under the authority audit.
-    // Only these six exact test-budget TLS references receive an inert name
-    // for the forbidden-word scan; filesystem/process/other ACTIVE text stays.
+    // Keep every byte and all six original test-budget TLS references in the
+    // raw audit. Its exact cfg(test) registration closes the test authority;
+    // production source remains unmodified for every forbidden-word scan.
     let prelude_cost_root =
         include_str!("../../src/workspace_graph/expected_projection/prelude_forecast.rs");
     assert!(prelude_cost_root
@@ -527,11 +579,10 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
     for (offset, _) in prelude_fixture.match_indices(budget_tls) {
         assert!(prelude_fixture[offset + budget_tls.len()..].starts_with(".with("));
     }
-    let prelude_authority_fixture = prelude_fixture.replace(budget_tls, "test_only_builder_limit");
-    let authority_projection = projection
-        .replacen(prelude_fixture, &prelude_authority_fixture, 1)
-        .replace(runtime_fixture, "")
-        .replace(absence_fixture, "");
+    // The raw custody union above stays complete, including these exact test
+    // children. Authority checks consume the independently closed production
+    // partition; no source text is stripped or rewritten for this scan.
+    let authority_projection = production_projection.as_str();
     for forbidden in [
         "workspace::",
         "std::fs",
@@ -616,12 +667,14 @@ fn public_api_cli_bytes_getters_and_read_only_locking_are_exact() {
             "type_reference",
         ])
     );
-    // Restoring the prior 336449-byte debit and authenticated digest chain
-    // independently reproduces all nine original whole-document KATs.
-    assert_eq!(graph.budget().used_builder_bytes(), 1_428_092);
+    // Imported Point metadata now selects graph.v10; the manifest revision and
+    // analysis digest chain follow. The separate, explicitly derived history
+    // proof restores this semantic transition before unchanged budget checks.
+    // See docs/evidence/managed67b-semantic-history-20261016/README.md.
+    assert_eq!(graph.budget().used_builder_bytes(), 1_015_985);
     assert_eq!(
         document_digest(graph.to_json().as_bytes()),
-        "sha256:ac4f8cf345ec9b214109e8932a10a6d733408bc7f5d6dd2b68df24d42d811fd6"
+        "sha256:f9e254ca5de88fbc1af31fc025bbbe3bc5f2e35c251c4ce1428943a7c9790600"
     );
 
     let output = Command::new(env!("CARGO_BIN_EXE_semaprax"))
@@ -1050,14 +1103,14 @@ fn public_workspace_analysis_api_cli_kats_and_locking_are_exact() {
             document_digest(capability_review.as_bytes()),
         ],
         [
-            "sha256:71855c0574be5fd10adb3b71de33afb4cbae905cc7110a8da68fbe5d09b808f9",
-            "sha256:4b0d89b424ac9058c44093ccbe4a60a0eb3ec584ce5c85bc1378d31dfd0d9080",
-            "sha256:52b7f0a8f754cacfffe82f7cdbdb851641fdc1ef86f9ee188590436a5bf77896",
-            "sha256:387c789cb5f6a014ab377ea97138ed9e9869ece09068db7c3889f6acc058bc5a",
-            "sha256:ffb6cb3247de03e4409c67f267bc4a77e20949171e79d5a80b40cad9a861ead1",
-            "sha256:c1d4b519315729c71b590be9926de416136cb0e4bca007c3fb2a90d2996213dc",
-            "sha256:b14145b8e6975212415b282b2f67e5e38d1e43bea2c8a5f689c003a9883a21ac",
-            "sha256:6d503a367d03d11fa4cb37e50f579bc16f0e22c3469f47dbbbd05647c93f1eca",
+            "sha256:be378c0f130cb5d3de37eab4cb840988aa635e2877ff63a9316e4bbb65da59c9",
+            "sha256:ea1c6914bab96e5cc4706e5b09836139196495956c148a5e909a9f7c26ac662f",
+            "sha256:ef32b73b86f2342419526e920f9ed1498c62df3e3ab4d060d0531b939077bd13",
+            "sha256:398769425e1601469066ce42f18fe832fde030672faf52c890b2764ab12c6779",
+            "sha256:d9087de07c4170c6cb104922e2c8fcd2d3ef7d84053e24fb7f8929e5d8d7ef5f",
+            "sha256:f9406a2cd0565f5eb476ecf91b9676621d4a32a117c6ce27e4a46896195c5c61",
+            "sha256:fcf6b4149c6ac2926f5d4e9ed79c0b0fa6ebc9574cdac5d2619c06f5a511496d",
+            "sha256:fde9c1b0d2934b90e0e131b84368a5700121a36e23ebd5d13bb5f841e8584a6d",
         ]
     );
 
@@ -1295,4 +1348,148 @@ fn public_workspace_analysis_cli_hostiles_and_mode_separation_are_exact() {
         assert_eq!(error[0].message, expected);
     }
     std::fs::remove_dir_all(&ordinary_root).unwrap();
+}
+
+// The historical equality remains complete and rejects any raw join drift.
+fn historical_projection_root_facade(current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let row: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/projection-facade-frontier-8bb-20261016/root-input.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        row["current_sha256"]
+    );
+    let mut previous = current.to_owned();
+    for edit in row["edits"].as_array().unwrap() {
+        let new = edit["new"].as_str().unwrap();
+        assert_eq!(
+            previous.matches(new).count(),
+            1,
+            "complete unique facade input inverse"
+        );
+        previous = previous.replacen(new, edit["old"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(previous.as_bytes()))
+        ),
+        row["original_sha256"]
+    );
+    historical_projection_root_facade_before(&previous)
+}
+
+fn historical_projection_root_facade_before(current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let row: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/ae91-source-consumer-corrections-20261015/facade.json"
+    ))
+    .unwrap();
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        row["current_sha256"]
+    );
+    assert_eq!(current, row["edits"][0]["new"].as_str().unwrap());
+    let original = row["edits"][0]["old"].as_str().unwrap();
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
+        row["original_sha256"]
+    );
+    original.to_owned()
+}
+
+#[cfg(test)]
+#[path = "../support/production_source_inventory.rs"]
+mod production_source_inventory;
+
+// Full pre847 declaration-source view for the unchanged historical facade list.
+// Current production purity above and the entire current projected method stay audited.
+fn current_projection_facade_input(current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let row: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/actual50-fixture-and-facade-corrections-20261016/current-facade-input.json"
+    )).unwrap();
+    let actual = include_str!("../../src/ast/program_source/decl_slices.rs");
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(actual.as_bytes()))
+        ),
+        row["current_decl_sha256"]
+    );
+    assert_eq!(
+        current.matches(actual).count(),
+        1,
+        "complete actual declaration owner in raw facade union"
+    );
+    assert!(actual.contains("impl<'a, T> DeclSlices<'a, T> {"));
+    let method = row["actual_projected_method"].as_str().unwrap();
+    assert!(method.starts_with("    pub(super) fn projected("));
+    assert_eq!(
+        actual.matches(method).count(),
+        1,
+        "complete current parent-private projected method"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        row["current_sha256"]
+    );
+    let mut previous = current.to_owned();
+    for edit in row["edits"].as_array().unwrap() {
+        let new = edit["new"].as_str().unwrap();
+        assert_eq!(new, actual, "complete current declaration source input");
+        assert_eq!(previous.matches(new).count(), 1);
+        previous = previous.replacen(new, edit["old"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(previous.as_bytes()))
+        ),
+        row["original_sha256"]
+    );
+    previous
+}
+
+// The purity gate above still consumes the complete actual join. Only its
+// independent historical facade equality receives this authenticated bridge.
+#[path = "../../src/source_reflows_merge/opt858_sequence_input.rs"]
+mod opt858_sequence_input;
+// Keep the shared source reader and its authenticated outer adapter together.
+#[path = "../../src/source_reflows_merge/main67107_inputs.rs"]
+mod main67107_inputs;
+#[path = "../../src/source_reflows_merge/ordinary_plan_inputs.rs"]
+mod ordinary_plan_inputs;
+#[path = "../../src/source_reflows_merge/final_ready_inputs.rs"]
+mod final_ready_inputs;
+mod current344_input {
+    include!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/source_reflows_merge/current344.rs"
+    ));
+}
+
+#[test]
+fn private_layout_inventory_retains_every_full_input_and_every_current_owned_module() {
+    source_inventory_controls::verify(
+        Path::new(env!("CARGO_MANIFEST_DIR")),
+        SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT,
+        &semantic_graph_private_layout_source_inventory!(),
+        &source_inventory_controls::current_owned_source_inventory(),
+        include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv"),
+    );
 }

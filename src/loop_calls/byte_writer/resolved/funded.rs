@@ -1,4 +1,4 @@
-//! Test-only funded twin of `checked_bindings`. The census walk, admission
+//! Explicit-payer funded twin of `checked_bindings`. The census walk, admission
 //! verdict and ordering are the ordinary ones (same private seam); the census
 //! cursor, proof cursor and every entry-vector growth are debited on the
 //! caller's payer first. The payer's refusal is returned unchanged and nothing
@@ -13,7 +13,9 @@
 //! A refusal from either callback is returned as `Refused` and is never read
 //! as a census verdict.
 use super::*;
-use crate::hir::funded::{self, FundedError, Reserve};
+#[cfg(test)]
+use crate::hir::funded;
+use crate::hir::funded::{FundedError, Reserve};
 
 struct Funding<'r, 'w, E> {
     reserve: Reserve<'r, E>,
@@ -55,6 +57,7 @@ fn census_static() -> crate::diagnostic::Diagnostic {
     crate::diagnostic::Diagnostic::io_static(CENSUS_CODE, CENSUS_MESSAGE)
 }
 
+#[cfg(test)]
 pub(crate) fn checked_bindings_funded<'a, E>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,

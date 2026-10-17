@@ -17,6 +17,16 @@ const SOURCE: &str = r#"module replay.flat_records;
 }
 @id("app.main") fn main()->i64 {probe(false)}
 "#;
+// The prepared static-text route authenticates a real retained lexical inventory.
+// Keep the selected main genuinely scalar; the uncalled companion supplies the
+// static source site and lexical body needed by that route, without changing main.
+const PREPARED_SCALAR_SOURCE: &str = r#"module family.scalar;
+@id("family.scalar.main") fn main()->i64 {0}
+@id("family.scalar.authority") fn authority()->i64 {
+ let key=str"x";let mut next=0;
+ while next<1 {next=next+1;if next==1 {return 1;} else {0} 0} 0
+}
+"#;
 fn program() -> ResolvedProgram {
     crate::hir::resolve(&crate::check(SOURCE, "selected-flat-records.spx").unwrap()).unwrap()
 }
@@ -328,3 +338,21 @@ fn whole_record_shape_backing_is_cumulative_across_work_reset_and_refusal_sticky
     );
     assert!(short.physical.as_mut().unwrap().reserve(0).is_err());
 }
+
+#[path = "tests/receiving_families.rs"]
+mod receiving_families;
+
+#[path = "tests/receiving_status_scalar.rs"]
+mod receiving_status_scalar;
+
+#[path = "tests/receiving_certificate.rs"]
+mod receiving_certificate;
+
+#[path="tests/receiving_boundary.rs"]
+mod receiving_boundary;
+
+#[path="tests/receiving_type_drop.rs"]
+mod receiving_type_drop;
+
+#[path="tests/receiving_path_boundary.rs"]
+mod receiving_path_boundary;

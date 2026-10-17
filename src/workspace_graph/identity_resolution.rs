@@ -24,6 +24,8 @@ pub(super) type Parts = (
 
 #[derive(Debug)]
 pub(super) enum ModuleFailure {
+    /// Changed presentation acquisition stopped after an exact owned prefix.
+    SourceStop(crate::source_verify::funding::SourceAbort),
     /// Fixed report acquisition refused; no report backing exists.
     Setup(Refused),
     /// Owned source/semantic diagnostics (legacy) or the published identity
@@ -38,6 +40,25 @@ impl ModuleFailure {
     pub(super) fn into_legacy(self) -> Vec<Diagnostic> {
         match self {
             Self::Report(report) => report,
+            Self::SourceStop(abort) => {
+                // This existing compatibility boundary is outside funded
+                // resolution. Preserve every prefix field before rendering the
+                // sticky outer budget refusal; no source pass resumes here.
+                let (mut prefix, stop) = abort.into_parts();
+                let diagnostic = match stop {
+                    crate::source_verify::funding::SourceStop::Reservation(_) => {
+                        super::limit_error("builder_bytes", super::active_builder_limit())
+                    }
+                    crate::source_verify::funding::SourceStop::InvariantRoute => {
+                        super::graph_error(
+                            "SPX-G173",
+                            "invariant source requires its complete owning projection",
+                        )
+                    }
+                };
+                prefix.push(diagnostic);
+                prefix
+            }
             Self::Setup(_) => vec![super::limit_error(
                 "builder_bytes",
                 super::active_builder_limit(),
@@ -120,6 +141,9 @@ thread_local! {
     /// the callback never allocates; it carries no authority.
     static ACQUIRED: std::cell::Cell<(usize, Option<(usize, usize)>)> =
         const { std::cell::Cell::new((0, None)) };
+    // Classification only: these real report owners also remain in ACQUIRED.
+    static CACHED_PRELUDE_ACQUIRED: std::cell::Cell<usize> =
+        const { std::cell::Cell::new(0) };
 }
 
 #[cfg(test)]
@@ -137,13 +161,26 @@ pub(super) fn acquisitions() -> usize {
 }
 
 #[cfg(test)]
+fn observe_cached_prelude_acquired() {
+    CACHED_PRELUDE_ACQUIRED.with(|acquired| acquired.set(acquired.get() + 1));
+}
+
+#[cfg(test)]
+pub(super) fn cached_prelude_acquisitions() -> usize {
+    CACHED_PRELUDE_ACQUIRED.with(std::cell::Cell::get)
+}
+
+#[cfg(test)]
 mod tests;
 
 mod base;
 pub(super) use base::resolve_module_with_core;
 
+pub(super) use base::cache_billing::{local_resolution_bytes, replay_cached_prelude};
+
+// Independent incoming Main source readers retain their original contracts.
 #[cfg(test)]
 pub(super) use base::cache_billing::source_reference::{
-    historical_inline_inventory, historical_inline_root, historical_root,
+    historical_provider_inventory, historical_root, main7f8_provider_checkpoint,
+    main7f8_provider_inventory_input, main7f8_provider_manifest,
 };
-pub(super) use base::cache_billing::{local_resolution_bytes, replay_cached_prelude};

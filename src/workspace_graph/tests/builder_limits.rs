@@ -392,7 +392,7 @@ fn core_retry_fixture() -> Vec<WorkspaceSource> {
 #[test]
 fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal() {
     // Preserve the complete earlier fixture before changing only admissibility.
-    let current = include_str!("builder_limits.rs");
+    let current = crate::source_reflows_merge::main83_retry_fixture_input("src/workspace_graph/tests/builder_limits.rs", include_str!("builder_limits.rs"));
     let start = current
         .find("/// Tune only the fixture size, never the production bound.")
         .unwrap();
@@ -481,7 +481,18 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
         "failed phase debit remains required: legacy={original:?}, actual_initial={actual_initial:?}, registry={registry_receipt}, debit={nested_debit}, first={first_refusal:?}, trace={trace:?}");
 
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
-    let built = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES).unwrap();
+    crate::cleanup_plan::take_replay_work_refusal();
+    let built_result = observe_core_attempts(|| {
+        build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
+    });
+    if let Some(refusal) = crate::cleanup_plan::take_replay_work_refusal() {
+        eprintln!("identity-retry-work-refusal caller={} requested={} remaining={} statuses={} first_status_bytes={} payer={}",
+            refusal.caller, refusal.requested, refusal.remaining, refusal.status_sources,
+            refusal.first_status_bytes, refusal.payer);
+    } else {
+        eprintln!("identity-retry-work-refusal none");
+    }
+    let built = built_result.unwrap();
     assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 2);
     assert!(
         built.usage.builder_bytes >= original.0,
@@ -580,6 +591,8 @@ fn retained_output_reuses_only_complete_exact_carriers_and_charges_all_sidecars(
 
 #[test]
 fn catalog_normalizer_compact_core_fits_production_builder_cap() {
+    let _route_observation = crate::bounded_output::stage_debits::route_debits::observe();
+    let _epsilon_app_census = crate::cleanup_plan::EpsilonAppCensus::normalizer();
     let manifest = crate::project::ProjectManifest::parse(include_str!(
         "../../../examples/catalog-normalizer-project/semaprax.toml"
     ))
@@ -646,6 +659,7 @@ fn catalog_normalizer_compact_core_fits_production_builder_cap() {
     crate::bounded_output::stage_debits::take_completed();
     let result = build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES);
     print_operation_receipt("catalog-normalizer-compact-original");
+    crate::bounded_output::stage_debits::route_debits::print_settled();
     let built = result.unwrap_or_else(|errors| {
             let programs = parsed_sources(&sources);
             let authored = index_authored(&programs).unwrap();

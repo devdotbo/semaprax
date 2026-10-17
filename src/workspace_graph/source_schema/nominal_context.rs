@@ -1,25 +1,11 @@
 //! Borrowed nominal lookup for metadata; the emitted declaration view stays local.
-use super::*;
+use super::{hir, BTreeMap, Diagnostic, WorkspaceDeclarationFact, WorkspaceResolvedModule};
 use crate::hir::items::{ItemSource, View};
 
 pub(super) struct Types<'a> {
-    module: &'a WorkspaceResolvedModule,
-    modules: &'a [WorkspaceResolvedModule],
-    facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
-}
-impl<'a> Types<'a> {
-    pub(super) fn new(
-        module: &'a WorkspaceResolvedModule,
-        modules: &'a [WorkspaceResolvedModule],
-        facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
-    ) -> Result<Self, Vec<Diagnostic>> {
-        reserve_builder_structure(std::mem::size_of::<Self>())?;
-        Ok(Self {
-            module,
-            modules,
-            facts,
-        })
-    }
+    pub(super) module: &'a WorkspaceResolvedModule,
+    pub(super) modules: &'a [WorkspaceResolvedModule],
+    pub(super) facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
 }
 impl ItemSource<hir::ResolvedTypeDeclaration> for Types<'_> {
     fn view(&self) -> View<'_, hir::ResolvedTypeDeclaration> {
@@ -63,3 +49,13 @@ impl ItemSource<hir::ResolvedTypeDeclaration> for Types<'_> {
 }
 #[cfg(test)]
 mod tests;
+
+// Actual literal initializer and its named caller receiving owner; the
+// primitive payment result/length remain explicit. No Types::new argument
+// receivers or Result<Types,..> survive on the shipping route.
+pub(super) const RECEIVING_CONTROLS: usize = 2 * std::mem::size_of::<Types<'static>>()
+    + std::mem::size_of::<Result<(), Vec<Diagnostic>>>()
+    + 2 * std::mem::size_of::<usize>();
+
+#[cfg(test)]
+mod main8a;
