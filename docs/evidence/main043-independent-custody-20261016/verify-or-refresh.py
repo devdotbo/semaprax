@@ -32,8 +32,8 @@ new=" payload=_definition_payload(R,row,read)"
 source=original.decode();assert source.count(old)==1
 current=source.replace(old,new,1)
 assert current.replace(new,old,1).encode()==original
-guard_helper=R/'docs/evidence/accepted-strict-guard-generation-20261017/guard_payload.py';guard_raw=held(guard_helper,2332)
-assert sha(guard_raw)=='f060fb61cb0116f7996f7576686f50e9ae1d2918a60a1cfb87ac7ac60257b1e4'
+guard_helper=R/'docs/evidence/accepted-strict-guard-generation-20261017/guard_payload.py';guard_raw=held(guard_helper,3965)
+assert sha(guard_raw)=='17d849f39380f26dcd0d12c9c3754f7480d8d3153a44a20a31d849901066e147'
 g=types.ModuleType('accepted_main043_strict_guard');g.__file__=str(guard_helper)
 exec(compile(guard_raw,str(guard_helper),'exec'),g.__dict__)
 guard_old="runpy.run_path(str(R/D/'guard-extensions.py'))"

@@ -1,9 +1,26 @@
 """Only finite strict controls; no common/verifier/Rust execution."""
 from pathlib import Path
-import runpy,json,subprocess,hashlib
+import runpy,json,subprocess,hashlib,os,stat
 R=Path(__file__).resolve().parents[3];D=Path(__file__).resolve().parent
-m=runpy.run_path(str(D/'guard_payload.py'));new=m['accepted_guard_extensions'](R)
-old=runpy.run_path(str(R/'docs/evidence/main043-independent-custody-20261016/guard-extensions.py'))
+def bounded(path,length,digest):
+ assert 0<=length<=262144 and hasattr(os,'O_NOFOLLOW')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+ identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+ try:
+  first=os.fstat(fd);assert stat.S_ISREG(first.st_mode) and first.st_size==length
+  with os.fdopen(fd,'rb',closefd=False)as stream:
+   raw=stream.read(length);assert len(raw)==length and not stream.read(1)
+  after=os.fstat(fd);physical=os.lstat(path)
+  assert stat.S_ISREG(physical.st_mode) and identity(first)==identity(after)==identity(physical)
+  assert hashlib.sha256(raw).hexdigest()==digest
+  raw.decode('utf8');return raw
+ finally:os.close(fd)
+helper=D/'guard_payload.py';helper_raw=bounded(helper,3965,'17d849f39380f26dcd0d12c9c3754f7480d8d3153a44a20a31d849901066e147')
+m={'__file__':str(helper)};exec(compile(helper_raw,str(helper),'exec'),m)
+new=m['accepted_guard_extensions'](R)
+original_path=R/'docs/evidence/main043-independent-custody-20261016/guard-extensions.py'
+original_raw=bounded(original_path,5113,'ccfb62c8b30e5564446ddc6eb2a31f5a7502e5ed43d3d5077a8c0105c42ef95a')
+old={'__file__':str(original_path)};exec(compile(original_raw,str(original_path),'exec'),old)
 allowed=json.loads((D/'current-allowed.json').read_text());count=0
 old['verify_recipe']()
 def refuses(f):
