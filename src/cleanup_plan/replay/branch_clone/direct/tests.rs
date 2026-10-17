@@ -364,12 +364,28 @@ fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
     source.push_str(
         "if a { return 1; };let v=if a {1}else{2};if b {v+1}else{v+2}} @id(\"main\") fn main()->i64 {f(true,false)}",
     );
+    // A loop-free return deliberately remains on the acyclic compatibility
+    // route. Keep the complete prior authored fixture as a live negative.
+    let compatibility = crate::check(&source, "direct879.spx").unwrap();
+    let compatibility_canonical = crate::format::canonical(&compatibility);
+    let compatibility_checked = crate::check(&compatibility_canonical, "direct879.spx").unwrap();
+    assert_eq!(crate::format::canonical(&compatibility_checked), compatibility_canonical);
+    let compatibility = crate::hir::resolve(&compatibility_checked).unwrap();
+    assert!(!crate::hir::lexical_exit::requires(&compatibility.functions[0]).unwrap());
+    assert!(compatibility.functions[0].cleanup_plan.exits.iter().all(|exit|
+        !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
+    drop(compatibility);
+    // The actual source loop selects explicit lexical exits. It runs once;
+    // the same 96 statements, return and both original branches remain.
+    source = source.replacen("if a { return 1; };",
+        "let mut lexical_once=0;while lexical_once<1 {lexical_once=lexical_once+1;0}if a { return 1; };", 1);
     let parsed = crate::check(&source, "direct879.spx").unwrap();
     let canonical = crate::format::canonical(&parsed);
     let checked = crate::check(&canonical, "direct879.spx").unwrap();
     assert_eq!(crate::format::canonical(&checked), canonical);
     let program = crate::hir::resolve(&checked).unwrap();
     let original = &program.functions[0];
+    assert!(crate::hir::lexical_exit::requires(original).unwrap());
     let terminal=original.cleanup_plan.blocks.iter().find(|block| matches!(block.terminator,
         CleanupTerminator::Exit(exit) if matches!(original.cleanup_plan.exits[exit.0 as usize].continuation,
             ExitContinuation::CommitResult {..}|ExitContinuation::ReturnUnit|ExitContinuation::ReturnFailure {..}))).unwrap().id;
