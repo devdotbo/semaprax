@@ -1,0 +1,11 @@
+{
+  "status": "SOURCE_ONLY_INTEGRATION_DEPENDENCY_MAP",
+  "current98_intersection": [
+    "CHANGELOG.md"
+  ],
+  "current174_intersection": [],
+  "currentFINAL6_intersection": [],
+  "current241_owner_intersection": [],
+  "later_integration_note": "CHANGELOG requires its named complete prior/current acquisition refresh when merged, preferably within the already-planned885 packet refresh; no physical174/FINAL6 subject changed by this benchmark-only patch itself.",
+  "no_custody_refresh_executed": true
+}

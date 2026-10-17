@@ -1669,6 +1669,7 @@ format: `Unreleased` then release buckets, grouped by impact.
 > [docs/CHANGELOG-ARCHIVE.md](docs/CHANGELOG-ARCHIVE.md).
 
 ## Unreleased
+- Add an explicit hash-bound current reference-qualification input to the matched webapp v2 campaign, preserving historical qualification and all 912 obligations; live execution remains pending.
 
 - Add a smaller paid no-growth sequencing header while preserving the first work frontier and complete predecessor controls (#858). Private source-only candidate; paid/heap gains and unfavorable cases await scoped qualification.
 

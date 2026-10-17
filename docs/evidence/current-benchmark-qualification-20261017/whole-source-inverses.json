@@ -1,0 +1,128 @@
+{
+  "status": "SOURCE_ONLY_CURRENT_QUALIFICATION_OPTION_UNEXECUTED",
+  "base_head": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "implementation": "Explicit current receipt plus reviewedSHA, unchanged historical fallback, complete912 report validation via existing rescore, whole evidence snapshots and predispatch held reauthentication",
+  "whole_inverses": [
+    {
+      "path": "benchmarks/webapp-tokens-v2/codex_campaign.py",
+      "before": {
+        "length": 66842,
+        "sha256": "873ed3126a98cb7c8572c49679f09f0df7bf0119ef1149e243d76d1228833a14",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/codex_campaign.py"
+      },
+      "after": {
+        "length": 73646,
+        "sha256": "4634c00c857c8f3bb8d2d178ec264b3b8d20fcb895455c0dc0ebda5c03f34c63",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/after/benchmarks/webapp-tokens-v2/codex_campaign.py"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "4634c00c857c8f3bb8d2d178ec264b3b8d20fcb895455c0dc0ebda5c03f34c63",
+        "restore_complete_before": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/codex_campaign.py"
+      }
+    },
+    {
+      "path": "benchmarks/webapp-tokens-v2/codex_rescore.py",
+      "before": {
+        "length": 44595,
+        "sha256": "5a6b35e46be1128a26301c0464db2e26fb2d45d1681458673f134d6d6e788814",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/codex_rescore.py"
+      },
+      "after": {
+        "length": 44903,
+        "sha256": "403507c707dfe3242b521d5416c74e65c0932f097233384a929fd2cdc753f530",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/after/benchmarks/webapp-tokens-v2/codex_rescore.py"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "403507c707dfe3242b521d5416c74e65c0932f097233384a929fd2cdc753f530",
+        "restore_complete_before": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/codex_rescore.py"
+      }
+    },
+    {
+      "path": "benchmarks/webapp-tokens-v2/test_codex_campaign.py",
+      "before": {
+        "length": 74456,
+        "sha256": "264405c207f3402f4a82695b96ed21b0e73434bd579b6524efae860f303cc796",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/test_codex_campaign.py"
+      },
+      "after": {
+        "length": 80933,
+        "sha256": "f5851caeabe3db886b85680d8f7132d0113918f8664070560244644b7a14ecf0",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/after/benchmarks/webapp-tokens-v2/test_codex_campaign.py"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "f5851caeabe3db886b85680d8f7132d0113918f8664070560244644b7a14ecf0",
+        "restore_complete_before": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/test_codex_campaign.py"
+      }
+    },
+    {
+      "path": "benchmarks/webapp-tokens-v2/README.md",
+      "before": {
+        "length": 12607,
+        "sha256": "ff7fa7fc64b07ff6e010d9cc2803be6404b0e532631a116eade6276abb279aa1",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/README.md"
+      },
+      "after": {
+        "length": 13959,
+        "sha256": "9eab3101598a2ac169446aee65b5d639b5b69ac25a7c0400c8a67466918fbdf4",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/after/benchmarks/webapp-tokens-v2/README.md"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "9eab3101598a2ac169446aee65b5d639b5b69ac25a7c0400c8a67466918fbdf4",
+        "restore_complete_before": "docs/evidence/current-benchmark-qualification-20261017/before/benchmarks/webapp-tokens-v2/README.md"
+      }
+    },
+    {
+      "path": "CHANGELOG.md",
+      "before": {
+        "length": 575213,
+        "sha256": "10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/before/CHANGELOG.md"
+      },
+      "after": {
+        "length": 575408,
+        "sha256": "7ab90fc2ecd0d07bce5ed2af9f07b63429eb0ff6a95ceedd65ae82cb247e4ea4",
+        "archive": "docs/evidence/current-benchmark-qualification-20261017/after/CHANGELOG.md"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "7ab90fc2ecd0d07bce5ed2af9f07b63429eb0ff6a95ceedd65ae82cb247e4ea4",
+        "restore_complete_before": "docs/evidence/current-benchmark-qualification-20261017/before/CHANGELOG.md"
+      }
+    }
+  ],
+  "historical_config": {
+    "path": "benchmarks/webapp-tokens-v2/acceptance/evidence/reference-r8-summary.json",
+    "length": 21005,
+    "sha256": "4cf4b4dc025eb16de40dd41079fc32b68a86be56fe025c764c7ca209f26dd766",
+    "unchanged": true
+  },
+  "unchanged_functions": [
+    "validate_qualification_receipt",
+    "codex_command",
+    "prompt_for",
+    "check_candidate"
+  ],
+  "unchanged_model_prompt_gate_constants": [
+    "MODEL",
+    "EFFORT",
+    "MIN_TRIALS_PER_ARM",
+    "TIMEOUT_SECONDS",
+    "ARMS",
+    "FROZEN_SPEC",
+    "QUALIFICATION_RECEIPT",
+    "ACCEPTANCE_SOURCE_FILES"
+  ],
+  "all_original_test_methods_preserved": 55,
+  "new_regressions_authored_not_executed": 6,
+  "mechanical_AST_parse": true,
+  "unit_tests_run": false,
+  "benchmark_or_provider_calls": 0,
+  "Cargo": false,
+  "build": false,
+  "no_current_compiler_or_qualification_bound": true,
+  "source_specific_historical_mode_preserved": true,
+  "accounting_gaps": {
+    "cumulative_authored_edit_tokens": null,
+    "actual_provider_billing": null,
+    "fixed_harness_context": null
+  }
+}

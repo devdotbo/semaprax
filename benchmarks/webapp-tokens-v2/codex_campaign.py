@@ -10,11 +10,13 @@ with the final ``turn.completed`` total before a trial can be accepted.
 from __future__ import annotations
 
 import argparse
+from datetime import datetime
 import hashlib
 import importlib.util
 import json
 import math
 import os
+import stat
 import re
 import signal
 import shutil
@@ -78,8 +80,12 @@ ACCEPTANCE_SOURCE_FILES = (
     "benchmarks/webapp-tokens-v2/acceptance/process.mjs",
     "benchmarks/webapp-tokens-v2/acceptance/qualification.mjs",
 )
+CANONICAL_INVENTORY = "benchmarks/webapp-tokens-v2/canonical-r8-inventory.json"
+CANONICAL_INVENTORY_SHA256 = "53e074183ef714e17d88418e14b9520ab0c175744ff1814953ee1c8944e6ab63"
 HARNESS_SOURCE_FILES = (
+    CANONICAL_INVENTORY,
     "benchmarks/webapp-tokens-v2/codex_campaign.py",
+    "benchmarks/webapp-tokens-v2/codex_rescore.py",
     "benchmarks/authored_source_recount.py",
     "benchmarks/compiler_output_provenance.py",
     "benchmarks/compiler_input_capture.py",
@@ -301,6 +307,191 @@ def validate_qualification_receipt(repo: Path, receipt: dict[str, Any],
     return gate_commit
 
 
+def held_qualification(path: Path, expected_sha256: str, cap: int = 8 * 1024 * 1024) -> bytes:
+    """Acquire one explicit, hash-bound qualification input without reopening it."""
+    if not isinstance(expected_sha256, str) or not re.fullmatch(r"[0-9a-f]{64}", expected_sha256):
+        raise ValueError("current qualification requires an exact SHA-256")
+    absolute = path.expanduser().absolute()
+    if absolute != absolute.resolve(strict=True):
+        raise ValueError("current qualification paths must not traverse symlinks")
+    identity = lambda m: (m.st_dev, m.st_ino, m.st_mode, m.st_size, m.st_mtime_ns, m.st_ctime_ns)
+    before = absolute.lstat()
+    if not stat.S_ISREG(before.st_mode) or before.st_size > cap:
+        raise ValueError("current qualification input is nonregular or exceeds its bound")
+    fd = os.open(absolute, os.O_RDONLY | os.O_NOFOLLOW | os.O_NONBLOCK | os.O_CLOEXEC)
+    try:
+        opened = os.fstat(fd)
+        if identity(before) != identity(opened):
+            raise ValueError("current qualification identity changed before acquisition")
+        with os.fdopen(fd, "rb", closefd=False) as source:
+            raw = source.read(opened.st_size)
+            if len(raw) != opened.st_size or source.read(1):
+                raise ValueError("current qualification length changed")
+        if (identity(opened) != identity(os.fstat(fd)) or identity(opened) != identity(absolute.lstat())
+                or hashlib.sha256(raw).hexdigest() != expected_sha256):
+            raise ValueError("current qualification bytes or identity drifted")
+        return raw
+    finally:
+        os.close(fd)
+
+
+def qualification_json(raw: bytes) -> dict[str, Any]:
+    def unique(pairs):
+        result = {}
+        for key, value in pairs:
+            if key in result:
+                raise ValueError("duplicate current qualification JSON member")
+            result[key] = value
+        return result
+    value = json.loads(raw, object_pairs_hook=unique)
+    if not isinstance(value, dict):
+        raise ValueError("current qualification must be a JSON object")
+    return value
+
+
+def current_execution_binding(execution: dict[str, Any], report: dict[str, Any],
+                              item: dict[str, Any], arm: str, settings: dict[str, Any]) -> dict[str, str]:
+    """Validate the observed reference runner schema; do not invent settlement fields."""
+    fields = {"candidate_inventory", "candidate_inventory_sha256", "command", "exit_code",
+              "node_binary", "node_version", "npm_binary", "npm_version", "playwright_lock_sha256",
+              "playwright_package_json_sha256", "playwright_package_version", "playwright_root", "wall_seconds"}
+    wall = execution.get("wall_seconds")
+    if (set(execution) != fields or type(execution.get("exit_code")) is not int
+            or execution["exit_code"] != 0 or type(wall) not in (int, float)
+            or not math.isfinite(wall) or wall <= 0):
+        raise ValueError("current reference execution did not complete successfully in the admitted schema")
+    command = execution["command"]
+    flags = ["--arm", "--candidate", "--output", "--playwright-root"]
+    if arm == "semaprax":
+        flags += ["--compiler", "--compiler-source-sha"]
+    if (not isinstance(command, list) or len(command) != 2 + 2 * len(flags)
+            or not all(isinstance(x, str) and x for x in command)
+            or command[0] != execution["node_binary"] or Path(command[1]).name != "run.mjs"
+            or command[2::2] != flags):
+        raise ValueError("current reference execution command differs from the admitted gate invocation")
+    options = dict(zip(command[2::2], command[3::2]))
+    if (options["--arm"] != arm or options["--playwright-root"] != execution["playwright_root"]
+            or report.get("authority", {}).get("files") != [options["--candidate"], options["--output"]]
+            or Path(item["report_file"]).name != "report.json"
+            or Path(item["report_file"]).parent != Path(options["--output"])):
+        raise ValueError("current reference execution arm/candidate/output links differ")
+    compiler = report.get("compiler", {})
+    if arm == "semaprax" and (options["--compiler"] != compiler.get("path")
+            or options["--compiler-source-sha"] != settings["compiler_source_commit"]):
+        raise ValueError("current reference execution compiler links differ")
+    files = settings["harness_source_snapshot"]["files_sha256"]
+    prefix = "benchmarks/webapp-tokens-v2/acceptance/"
+    if (execution["node_version"] != report.get("node") or not str(execution["node_version"]).startswith("v24.")
+            or execution["playwright_package_version"] != "1.62.0"
+            or execution["playwright_lock_sha256"] != files.get(prefix + "package-lock.json")
+            or execution["playwright_package_json_sha256"] != files.get(prefix + "package.json")):
+        raise ValueError("current reference execution runtime/dependency links differ")
+    inventory = execution["candidate_inventory"]
+    if (not isinstance(inventory, dict) or not inventory
+            or any(not isinstance(k, str) or not k or not isinstance(v, str)
+                   or not re.fullmatch(r"[0-9a-f]{64}", v) for k, v in inventory.items())):
+        raise ValueError("current reference execution candidate inventory is malformed")
+    digest = hashlib.sha256(json.dumps(inventory, sort_keys=True, separators=(",", ":")).encode()).hexdigest()
+    before, after = report.get("candidate_before"), report.get("candidate_after")
+    for rows, expected in ((before, inventory), (after, item.get("candidate_after_inventory"))):
+        if (not isinstance(rows, list) or not all(isinstance(x, dict) and set(x) == {"name", "sha256"} for x in rows)
+                or len(rows) != len({x["name"] for x in rows}) or {x["name"]: x["sha256"] for x in rows} != expected):
+            raise ValueError("current reference execution/report candidate inventory links differ")
+    if (digest != execution["candidate_inventory_sha256"] or inventory != item.get("candidate_inventory")
+            or digest != item.get("candidate_inventory_sha256")):
+        raise ValueError("current reference execution/summary candidate inventory links differ")
+    try:
+        started = datetime.fromisoformat(report["started_at"].replace("Z", "+00:00"))
+        finished = datetime.fromisoformat(report["finished_at"].replace("Z", "+00:00"))
+        if started.tzinfo is None or finished.tzinfo is None or finished < started:
+            raise ValueError("invalid completion times")
+    except (KeyError, TypeError, ValueError) as error:
+        raise ValueError("current reference report lacks gate-finally completion evidence") from error
+    gate_files = {str(Path(command[1]).parent / row["name"]): row["sha256"] for row in report["gate"]}
+    for name, digest in gate_files.items():
+        held_qualification(Path(name), digest)
+    # Pinned run.mjs writes finished_at/report only after awaiting server finish and log teardown.
+    # Original receipts have no independent host/process settlement observation: do not claim one.
+    return gate_files
+
+
+def current_qualification_binding(path: Path, raw: bytes, receipt: dict[str, Any],
+                                  settings: dict[str, Any]) -> dict[str, Any]:
+    """Join both arms to the exact full historical same-SPEC/gate 912-case inventory."""
+    import codex_rescore
+    root = path.expanduser().resolve(strict=True).parent
+    canonical_path = Path(settings["repository_root"]) / CANONICAL_INVENTORY
+    canonical_raw = held_qualification(canonical_path, CANONICAL_INVENTORY_SHA256)
+    canonical = qualification_json(canonical_raw)
+    prefix = "benchmarks/webapp-tokens-v2/acceptance/"
+    gate = {name.removeprefix(prefix): digest for name, digest in
+            settings["harness_source_snapshot"]["files_sha256"].items() if name in ACCEPTANCE_SOURCE_FILES and name.startswith(prefix)}
+    gate_settings = {**settings, "harness_source_snapshot": {"files_sha256": {
+        name: digest for name, digest in settings["harness_source_snapshot"]["files_sha256"].items()
+        if name in ACCEPTANCE_SOURCE_FILES}}}
+    if (canonical["spec_sha256"] != settings["qualification"]["spec_sha256"] or canonical["gate"] != gate):
+        raise ValueError("current qualification differs from the canonical same-SPEC/gate inventory")
+    pins = [{"path": str(path.expanduser().resolve(strict=True)), "sha256": hashlib.sha256(raw).hexdigest(),
+             "length": len(raw), "snapshot": "reference-summary.json"},
+            {"path": str(canonical_path), "sha256": CANONICAL_INVENTORY_SHA256,
+             "length": len(canonical_raw), "snapshot": "canonical-r8-inventory.json"}]
+    execution_gate_files = {}
+    inventories = []
+    for arm in ARMS:
+        item = receipt["arms"][arm]
+        documents = {}
+        locations = {}
+        for kind in ("report", "execution"):
+            source = Path(str(item.get(kind + "_file", "")))
+            source = source if source.is_absolute() else root / source
+            if not source.absolute().is_relative_to(root) or ".." in source.parts:
+                raise ValueError("current qualification dependencies must stay inside the receipt directory")
+            data = held_qualification(source, item.get(kind + "_sha256"))
+            documents[kind] = qualification_json(data)
+            locations[kind] = str(source.absolute())
+            pins.append({"path": str(source.absolute()), "sha256": hashlib.sha256(data).hexdigest(),
+                         "length": len(data), "snapshot": arm + "-" + kind + ".json"})
+            if kind == "report":
+                cases = codex_rescore.reference_case_groups(receipt, arm, gate_settings,
+                    settings["source_binary_sha256"], report_bytes=data)
+                if cases != canonical["cases"]:
+                    raise ValueError("current reference case/group map differs from the canonical 912-case inventory")
+                inventories.append(cases)
+        execution_gate_files.update(current_execution_binding(
+            documents["execution"], documents["report"], {**item, "report_file": locations["report"]}, arm, settings))
+    if inventories[0] != inventories[1]:
+        raise ValueError("current reference arm case/group inventories differ")
+    return {"mode": "explicit-current-complete-reference", "pins": pins,
+            "execution_settlement_evidence": "gate-finally completion and successful process exit; independent host settlement unknown",
+            "gate_files": {**execution_gate_files, **{str((Path(settings["repository_root"]) / name).resolve()): digest
+                           for name, digest in settings["harness_source_snapshot"]["files_sha256"].items()
+                           if name in ACCEPTANCE_SOURCE_FILES}}}
+
+
+def require_current_qualification(settings: dict[str, Any]) -> None:
+    binding = settings.get("current_qualification_receipt")
+    if binding is None:  # Historical plans keep their original source-specific route.
+        return
+    for pin in binding["pins"]:
+        raw = held_qualification(Path(pin["path"]), pin["sha256"])
+        if len(raw) != pin["length"]:
+            raise ValueError("current qualification length differs from the plan")
+    for path, digest in binding["gate_files"].items():
+        held_qualification(Path(path), digest)
+
+
+def snapshot_current_qualification(settings: dict[str, Any], artifacts: Path) -> None:
+    binding = settings.get("current_qualification_receipt")
+    if binding is None:
+        return
+    require_current_qualification(settings)
+    target = artifacts / "current-qualification"
+    target.mkdir()
+    for pin in binding["pins"]:
+        (target / pin["snapshot"]).write_bytes(held_qualification(Path(pin["path"]), pin["sha256"]))
+    (target / "manifest.json").write_text(json.dumps(binding, indent=2, sort_keys=True) + "\n")
+
+
 def parse_exec_jsonl(path: Path) -> dict[str, Any]:
     """Read the final outer-turn total without treating tool items as turns."""
     completed: list[dict[str, int | None]] = []
@@ -490,7 +681,18 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
     hashes = pinned_seed_hashes(repo, commit)
     frozen_spec_hash = hashes[FROZEN_SPEC]
     compiler_binary_sha256 = common.digest(Path(args.semaprax_bin).resolve(strict=True))
-    receipt = json.loads((repo / QUALIFICATION_RECEIPT).read_text())
+    explicit_receipt = getattr(args, "qualification_receipt", None)
+    explicit_sha256 = getattr(args, "qualification_receipt_sha256", None)
+    if bool(explicit_receipt) != bool(explicit_sha256):
+        raise ValueError("--qualification-receipt and --qualification-receipt-sha256 are required together")
+    if explicit_receipt:
+        receipt_path = Path(explicit_receipt).expanduser().absolute()
+        receipt_raw = held_qualification(receipt_path, explicit_sha256, 1024 * 1024)
+        receipt = qualification_json(receipt_raw)
+        receipt_name, receipt_sha256 = str(receipt_path), hashlib.sha256(receipt_raw).hexdigest()
+    else:
+        receipt = json.loads((repo / QUALIFICATION_RECEIPT).read_text())
+        receipt_name, receipt_sha256 = QUALIFICATION_RECEIPT, common.digest(repo / QUALIFICATION_RECEIPT)
     gate_commit = validate_qualification_receipt(
         repo, receipt, frozen_spec_hash, compiler_source_commit=compiler_source_commit,
         compiler_binary_sha256=compiler_binary_sha256)
@@ -513,7 +715,7 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
     if bootstrap_path:
         bootstrap_path = Path(bootstrap_path).resolve(strict=True)
         supplied = bootstrap.validate(bootstrap_path, args.node_binary, spec_sha256=frozen_spec_hash,
-                                      summary_sha256=common.digest(repo / QUALIFICATION_RECEIPT))
+                                      summary_sha256=receipt_sha256)
         note = bootstrap.prompt_note(supplied)
         tooling = {"receipt_path": str(bootstrap_path), "receipt_sha256": common.digest(bootstrap_path),
                    "inventory_sha256": supplied["inventory_sha256"], "packages": supplied["packages"],
@@ -522,7 +724,7 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                    "fixed_prompt_note_sha256": hashlib.sha256(note.encode()).hexdigest(),
                    "fixed_prompt_note_utf8_bytes": len(note.encode()), "hidden_context_tokens": None,
                    "application_source_supplied": False, "package_manifest_supplied": False}
-    return {
+    settings = {
         "adapter": "codex-matched-teamdesk-webapp-v1", "round": round_number, "repository_commit": commit,
         "repository_root": str(repo),
         "compiler_source_commit": compiler_source_commit,
@@ -538,8 +740,8 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                 "source": "seed_files_sha256",
             },
         },
-        "qualification": {"receipt": QUALIFICATION_RECEIPT,
-                          "receipt_sha256": common.digest(repo / QUALIFICATION_RECEIPT),
+        "qualification": {"receipt": receipt_name,
+                          "receipt_sha256": receipt_sha256,
                           "compiler_source_commit": receipt["compiler_source_commit"],
                           "compiler_binary_sha256": receipt["compiler_binary_sha256"],
                           "gate_source_commit": gate_commit, "spec_sha256": frozen_spec_hash,
@@ -562,6 +764,11 @@ def plan(args: argparse.Namespace) -> dict[str, Any]:
                        "playwright": "1.62.0", "required_cases": 912, "fresh_evidence": True,
                        "capabilities": acceptance_capabilities(args.node_binary, Path(args.playwright_root))},
     }
+
+    if explicit_receipt:
+        settings["current_qualification_receipt"] = current_qualification_binding(
+            receipt_path, receipt_raw, receipt, settings)
+    return settings
 
 
 def copy_task_rollout(thread_ids: list[str], workspace: Path, destination: Path,
@@ -595,6 +802,7 @@ def copy_task_rollout(thread_ids: list[str], workspace: Path, destination: Path,
 
 
 def _command(settings: dict[str, Any], prompt: str) -> list[str]:
+    require_current_qualification(settings)
     command = codex_command(prompt)
     command[0] = settings["codex_binary"]
     return command
@@ -1046,6 +1254,12 @@ def _summarize(rows: list[dict[str, Any]], arms: tuple[str, ...] = ARMS) -> dict
         "agent_wall_seconds_per_accepted_task": agent_wall / accepted if agent_wall is not None and accepted else None,
         "acceptance_wall_seconds_all_attempts": acceptance_wall,
         "acceptance_wall_seconds_per_accepted_task": acceptance_wall / accepted if acceptance_wall is not None and accepted else None,
+        "provider_output_tokens_all_attempts": output,
+        "cumulative_authored_edit_tokens": None,
+        "cumulative_authored_edit_tokens_note": "not collected; provider output and final-source tokens are not cumulative authored edits",
+        "accepted_final_source_token_proxy": authored_total,
+        "reasoning_output_tokens_all_attempts": complete_sum([
+            row.get("observed", {}).get("request_usage_sum", {}).get("reasoning_output_tokens") for row in rows], integer=True),
         "provider_receipt_actual_usd": None,
         "cost_claim": "conditional standard short-context API-equivalent estimate; no provider billing receipt",
         "calibration_separate": True,
@@ -1069,6 +1283,8 @@ def main() -> int:
         current.add_argument("--artifacts", required=True); current.add_argument("--semaprax-bin", required=True)
         current.add_argument("--compiler-source-ref", required=True,
                              help="commit that produced --semaprax-bin; distinct from the docs-only seed ref")
+        current.add_argument("--qualification-receipt", help="explicit fresh complete current-compiler reference summary; historical default is unchanged")
+        current.add_argument("--qualification-receipt-sha256", help="reviewed SHA-256 of that exact summary; required with --qualification-receipt")
         current.add_argument("--tokenizer-dir", required=True)
         current.add_argument("--codex-binary", default="codex"); current.add_argument("--model", default=MODEL)
         current.add_argument("--node-binary", default="node")
@@ -1090,6 +1306,7 @@ def main() -> int:
             if result["acceptance"]["capabilities"]["status"] != "ready":
                 raise ValueError("Node 24, Playwright 1.62.0, and its Chromium are required before paid attempts")
             artifacts = Path(result["artifacts"]); artifacts.mkdir(parents=True)
+            snapshot_current_qualification(result, artifacts)
             snapshot = snapshot_harness_sources(
                 Path(args.repo).resolve(), artifacts,
                 result["harness_source_snapshot"]["files_sha256"],

@@ -40,6 +40,36 @@ New Codex plans require the reference receipt's compiler source and binary
 SHA-256 to match `--compiler-source-ref` and `--semaprax-bin`. A matching gate
 and SPEC alone do not admit a receipt from an earlier compiler: run fresh
 reference qualification and derive the TypeScript bootstrap from that summary.
+For a newly qualified compiler, keep that historical receipt unchanged and pass
+`--qualification-receipt /absolute/fresh/reference-summary.json` together with
+`--qualification-receipt-sha256 <reviewed-sha256>` to `codex_campaign.py plan`
+and the identical future `run` arguments. The opt-in summary uses the existing
+reference-qualification schema and must bind the selected compiler source and
+executable SHA-256 plus both complete 912-case reports and their execution
+receipts. Its report/execution files must stay under the summary directory;
+symlinks, duplicate JSON members, drift and incomplete reports fail closed.
+Both arms must match the exact canonical 912-case/group inventory derived
+from both complete original r8 reports at the same SPEC and gate. Renaming
+cases or groups, even in both arms together, is refused. The campaign retains
+the five whole current inputs and the authenticated canonical inventory under
+`current-qualification/`, and reauthenticates them and both the repository and
+actually invoked gate sources before calibration and each trial. Execution
+receipts use the original closed schema: successful integer exit status, exact
+arm/candidate/output/compiler command links, runtime/dependency hashes and
+complete candidate inventories must agree with the reports and summary.
+Timeout/unsettled extensions are not admitted as successful execution evidence.
+The pinned gate writes its finished report after server/log teardown; the
+original receipt schema provides no independent host-settlement observation,
+which remains explicitly unknown. Omitting both options retains the original source-specific
+historical route; supplying only one option is refused. Preparing the option
+creates no current compiler, qualification, or paid-run evidence.
+
+Provider output tokens, separately reported reasoning-output tokens,
+unknown cumulative authored-edit tokens, and the final-source tokenizer proxy
+are distinct report fields. The final-source proxy is not a measure of all
+edits, provider output, or exact GPT tokens. Actual billing and fixed harness
+context remain unavailable without their own observations.
+
 The historical self-tests, partial permission scenario, and live token aggregates
 below are separate evidence. A clean matched Codex campaign with bound qualification
 reports and retained events is still required before a new comparative headline.

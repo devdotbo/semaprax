@@ -1,0 +1,91 @@
+{
+  "added_paths": [
+    "benchmarks/webapp-tokens-v2/canonical-r8-inventory.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.c3d.whole-before",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.whole-after",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.c3d.whole-before",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.whole-after",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/derivation.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/reference-r8-summary.whole.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/semaprax-execution.whole.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/semaprax-report.whole.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.c3d.whole-before",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.whole-after",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/typescript-execution.whole.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/typescript-report.whole.json",
+    "docs/evidence/current-benchmark-qualification-strengthening-20261017/whole-c3d-inverse.json"
+  ],
+  "all_original_method_bodies_exact": true,
+  "base_candidate": "c3d0e3302f9d4278a6859b3c9f57b33bf0fd2df6",
+  "canonical_912_sha256": "53e074183ef714e17d88418e14b9520ab0c175744ff1814953ee1c8944e6ab63",
+  "canonical_both_arms_exact_case_and_group_map": true,
+  "checks_performed": [
+    "AST parse only",
+    "byte-exact original method bodies",
+    "full original report/receipt SHA and canonical912 same-map derivation",
+    "git diff --check"
+  ],
+  "compiler_or_qualification_bound": false,
+  "execution_observed_schema": "13 exact fields; integer exit_code0; finite positive wall; exact flag ordering/arm/candidate/output/compiler; node24/Playwright1.62 and frozen dependency hashes; candidate before/after joins; completed timestamps; actual runner sibling source hashes held and reauthenticated",
+  "new_negatives": [
+    "coordinated case renaming",
+    "coordinated group renaming",
+    "one-arm group mismatch",
+    "exit1/signal-9",
+    "timeout/unsettled extra schema",
+    "command arm/source mismatch",
+    "candidate digest mismatch"
+  ],
+  "original_direct_methods": 46,
+  "original_test_methods": 44,
+  "settlement_limits": "No independent host settlement field exists in original receipts. Pinned gate finally awaits server finish and log end before report; this evidence is reported separately from unknown host settlement. Unknown timeout/settled fields refused in closed execution schema.",
+  "source_changes": [
+    {
+      "after": {
+        "length": 80824,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.whole-after",
+        "sha256": "266256448cdd509e4a0aa726badf5deacfef160240e779179ac048d73db81ea3"
+      },
+      "before": {
+        "length": 73646,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.c3d.whole-before",
+        "sha256": "4634c00c857c8f3bb8d2d178ec264b3b8d20fcb895455c0dc0ebda5c03f34c63"
+      },
+      "path": "benchmarks/webapp-tokens-v2/codex_campaign.py"
+    },
+    {
+      "after": {
+        "length": 83937,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.whole-after",
+        "sha256": "b92193523e3262a972b692d023e7838ccb6ee8ead523a94bf1da74d9b40d1849"
+      },
+      "before": {
+        "length": 80933,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.c3d.whole-before",
+        "sha256": "f5851caeabe3db886b85680d8f7132d0113918f8664070560244644b7a14ecf0"
+      },
+      "path": "benchmarks/webapp-tokens-v2/test_codex_campaign.py"
+    },
+    {
+      "after": {
+        "length": 14742,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.whole-after",
+        "sha256": "577067f39afc2eb5e33775aa5df36c6b93e58b21e732e52a1ba1ffd50d2bc58a"
+      },
+      "before": {
+        "length": 13959,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.c3d.whole-before",
+        "sha256": "9eab3101598a2ac169446aee65b5d639b5b69ac25a7c0400c8a67466918fbdf4"
+      },
+      "path": "benchmarks/webapp-tokens-v2/README.md"
+    }
+  ],
+  "status": "SOURCE_ONLY_NOT_EXECUTED",
+  "tests_builds_provider_calls_executed": false,
+  "unchanged_default_bodies": [
+    "validate_qualification_receipt",
+    "codex_command",
+    "prompt_for",
+    "check_candidate"
+  ]
+}

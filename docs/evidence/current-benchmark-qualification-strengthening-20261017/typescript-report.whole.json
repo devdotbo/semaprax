@@ -1,0 +1,4824 @@
+{
+  "schema": "semaprax.teamdesk.acceptance.v1",
+  "arm": "typescript",
+  "spec_sha256": "7658414ed2bbb53477a93e4a00f36269954c5bc45f3148fe72ddd02f203a50dc",
+  "node": "v24.3.0",
+  "started_at": "2026-10-09T02:09:49.452Z",
+  "candidate_before": [
+    {
+      "name": ".gitignore",
+      "sha256": "0ba297cf012790a68b04efd9f50f4994fd581c361c35ec84535a6f60467bab2e"
+    },
+    {
+      "name": "build.sh",
+      "sha256": "519f7f2910219b61208efcf9f90c0c1731a16ffdafe6fbcb1037c4e905071477"
+    },
+    {
+      "name": "index.html",
+      "sha256": "566b4f0645fe7175c07b162b2fbeb0bd9fc21eabe0382c06061e77cfadc2975a"
+    },
+    {
+      "name": "package-lock.json",
+      "sha256": "36cbe83f76147a35acd2a73394144e6969a6b6a8f07d5a5eadc164b215baa711"
+    },
+    {
+      "name": "package.json",
+      "sha256": "a8b89aa65fe1b7cdedcb31fa541cb8ace934f15477f7cbc014d2383b527a4935"
+    },
+    {
+      "name": "README.md",
+      "sha256": "0f5ead9f51bb39a4c8475516cb9a04e33a3da57cd423d8175a98c4d86dd5d6f8"
+    },
+    {
+      "name": "reference-server.mjs",
+      "sha256": "8f74ea66fc72815275afaf28f1114d03f0aaba44ef885bf326d05cd3c8a98926"
+    },
+    {
+      "name": "run.sh",
+      "sha256": "7d93c75558a00128beab5b4e381102dce7ed46736ed7b28afd4c0e571df5cf6a"
+    },
+    {
+      "name": "server/index.ts",
+      "sha256": "5f5090240fbe44deaf88547e7965f8441a1f91608da3798edb3af844cc7039e7"
+    },
+    {
+      "name": "shared/json.ts",
+      "sha256": "a2426cdbcd203693581bc19182bd6cd9fdda2125e60979e881d74e203f92cfc6"
+    },
+    {
+      "name": "shared/schema.ts",
+      "sha256": "7b9af4c3454f42f832d008ce99eb16e3745a7fd83bceffb83e781a4e16617af5"
+    },
+    {
+      "name": "src/api.ts",
+      "sha256": "79f66c7afe424281c4243390895c8a86a87517cc3e9ca39b75e8c25a70eaddb5"
+    },
+    {
+      "name": "src/main.tsx",
+      "sha256": "2f4b7f45a82df5f2a56e8a350a91bbb1f2705cde2f69727bf39632630b6f8a5e"
+    },
+    {
+      "name": "src/views.tsx",
+      "sha256": "0a663e0846a644003af60365ba41fea72339795d0d380092c8632482ad554e5f"
+    },
+    {
+      "name": "test.sh",
+      "sha256": "6addeae4979950ff369c0ef07e8d9ece9c4a8d32b00b796d6a163f5bf0969d41"
+    },
+    {
+      "name": "tests/int64.test.ts",
+      "sha256": "5207652185af5e7a5a9fda2042be7155c600493158284151ae4fae2e46670f7c"
+    },
+    {
+      "name": "tests/server-int64.test.ts",
+      "sha256": "d8c8af6e33eb3835a9b53382bcf0491813608f8a86be8a2b64390baab4752b8c"
+    },
+    {
+      "name": "tests/ui-permissions.test.ts",
+      "sha256": "47f80847edcd07fd3ac6466ea0322388dc735e2aca11a3e611b1c4bfb416b2c7"
+    },
+    {
+      "name": "tsconfig.json",
+      "sha256": "d642f5424183a995f2475e74ac59aa0f2503ca53bad83fa905d45743ffb9e417"
+    },
+    {
+      "name": "vite.config.ts",
+      "sha256": "04504a1101152fa181213e15926b8a77d886251badc02e81e68b2c63e994039b"
+    }
+  ],
+  "gate": [
+    {
+      "name": "api.mjs",
+      "sha256": "b6a8dac8bb82c415a1eac2ce7c30eee2aba00fa71158f854dcb2761c55610a55"
+    },
+    {
+      "name": "browser-support.mjs",
+      "sha256": "20528f41ee147396f05b15be1046561dc3540d350d64b1c2d6fa46a516764e24"
+    },
+    {
+      "name": "browser.mjs",
+      "sha256": "2bbb6273892c31fc74e429a65a5419b7126c149b0e281bfbc88c3e86883ebbc0"
+    },
+    {
+      "name": "client.mjs",
+      "sha256": "62ed73c9a7fdc58f784ad13f42e9564ddba17204c0345c567b11c65f0901e667"
+    },
+    {
+      "name": "contract.mjs",
+      "sha256": "3d2dc6708d257119c5e9907354ca56af1bf606de36d190e270004ea069b3c0bd"
+    },
+    {
+      "name": "kdf-observer.mjs",
+      "sha256": "71491c33895ff14a0f3ff49e28c012c96ee257a21ec838597ba2340761f3eb70"
+    },
+    {
+      "name": "ordering.mjs",
+      "sha256": "0bd129909a436f2e3875f880391558c51303729721cf91850d5a2cc59f1f58fa"
+    },
+    {
+      "name": "package-lock.json",
+      "sha256": "d4543c177776d98affde51bff8770d03d23ea8920d715d7bb2e7ec216c968cf3"
+    },
+    {
+      "name": "package.json",
+      "sha256": "a534c7fe5d2afbad01316b49ef108b54b29e50eb9e5e08379a288e86ea6fa0ad"
+    },
+    {
+      "name": "process.mjs",
+      "sha256": "aaa529e5c15dad99eae70b4349e8ec1723fcfb7747134bf6cc572d635aa299ba"
+    },
+    {
+      "name": "qualification.mjs",
+      "sha256": "934c09570a9b7aaa14079bdb2ddba2f224dca01f1a570a9acba1cb0ba4e3322c"
+    },
+    {
+      "name": "run.mjs",
+      "sha256": "7c33afdda373505267c661a7806d378ccedfdc43e939f097a032cf4791dba21d"
+    }
+  ],
+  "checks": [
+    {
+      "id": "bootstrap",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Team.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Document.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.shape",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Team.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Document.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.crud-roundtrip",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-0",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-1",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-2",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-3",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-4",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-5",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-6",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-7",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-8",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-9",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-10",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-11",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-12",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-13",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-14",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-15",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-16",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-17",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "numeric-valid-18",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Team.description.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.team_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.team_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.email.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.role.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.active.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.contact.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.email.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.phone.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.tier.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.seats.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.customer_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.customer_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.email.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.phone.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.team_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.team_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Project.customer_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.customer_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.status.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.budget.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.start_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.due_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.due_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.done.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.start_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.end_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Task.milestone_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.milestone_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Task.sprint_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.sprint_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Task.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.details.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.priority.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.status.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.estimate.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.spent.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.task_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.task_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.task_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.task_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.hours.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.billable.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.rate.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.customer_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.customer_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.body.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.severity.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.state.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.sla_hours.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.age_hours.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.ticket_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.ticket_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.internal.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.customer_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.customer_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.number.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.amount.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.paid.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.invoice_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.invoice_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.amount.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.email.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.vendor_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.vendor_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.amount.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.state.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.team_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.team_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.kind.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.cost.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.member_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.member_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.kind.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.state.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.start_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.end_day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Document.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Document.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Document.url.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.project_id.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.project_id.reference",
+      "group": "references",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.day.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Release.state.type",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Member.email",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.email",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.seats",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.email",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Project.budget",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.start",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.due",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.due",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.end-before",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.length",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Task.estimate-low",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.estimate-high",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.spent-low",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.spent-over",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.hours-low",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.hours-high",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.rate",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.sla",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.age",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.number",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.amount",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.amount",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.day",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.email",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.amount",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.day",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.cost",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.end-before",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.length",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Document.url",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.short",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.long",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.utf8",
+      "group": "validation.utf8",
+      "status": "passed"
+    },
+    {
+      "id": "Release.day",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.all-errors",
+      "group": "validation.all-errors",
+      "status": "passed"
+    },
+    {
+      "id": "Project.all-errors",
+      "group": "validation.all-errors",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.all-errors",
+      "group": "validation.all-errors",
+      "status": "passed"
+    },
+    {
+      "id": "Task.all-errors",
+      "group": "validation.all-errors",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Team.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.company.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Project.code.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.title.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Task.title.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.body.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.subject.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.body.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.description.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.name.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.serial.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Document.title.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.short.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Release.version.long.valid-endpoint",
+      "group": "validation.every-rule",
+      "status": "passed"
+    },
+    {
+      "id": "Member.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Project.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Release.keys",
+      "group": "keys",
+      "status": "passed"
+    },
+    {
+      "id": "Task.create.Doing",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.create.Review",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.create.Done",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Todo.Todo",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Todo.Doing",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Todo.Review",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Todo.Done",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Doing.Todo",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Doing.Doing",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Doing.Review",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Doing.Done",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Review.Todo",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Review.Doing",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Review.Review",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Review.Done",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Done.Todo",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Done.Doing",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Done.Review",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Task.Done.Done",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.create.Pending",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.create.Resolved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.create.Closed",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Open.Open",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Open.Pending",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Open.Resolved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Open.Closed",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Pending.Open",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Pending.Pending",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Pending.Resolved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Pending.Closed",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Resolved.Open",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Resolved.Pending",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Resolved.Resolved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Resolved.Closed",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Closed.Open",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Closed.Pending",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Closed.Resolved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.Closed.Closed",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.create.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.create.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.create.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.create.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Draft.Draft",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Draft.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Draft.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Draft.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Draft.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Submitted.Draft",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Submitted.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Submitted.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Submitted.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Submitted.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Approved.Draft",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Approved.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Approved.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Approved.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Approved.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Rejected.Draft",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Rejected.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Rejected.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Rejected.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Rejected.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Paid.Draft",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Paid.Submitted",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Paid.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Paid.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.Paid.Paid",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.create.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.create.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Requested.Requested",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Requested.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Requested.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Approved.Requested",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Approved.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Approved.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Rejected.Requested",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Rejected.Approved",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.Rejected.Rejected",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Release.create.Released",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Release.Planned.Planned",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Release.Planned.Released",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Release.Released.Planned",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Release.Released.Released",
+      "group": "workflows",
+      "status": "passed"
+    },
+    {
+      "id": "Member.role.Admin.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.role.Manager.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.role.Agent.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Member.role.Viewer.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.tier.Free.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.tier.Pro.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.tier.Enterprise.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.status.Planned.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.status.Active.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.status.OnHold.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.status.Done.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.priority.Low.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.priority.Medium.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.priority.High.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Task.priority.Urgent.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.severity.Minor.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.severity.Major.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.severity.Critical.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.kind.Laptop.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.kind.Phone.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.kind.Monitor.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.kind.Other.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.kind.Vacation.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.kind.Sick.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.kind.Other.enum",
+      "group": "entities.fields.types",
+      "status": "passed"
+    },
+    {
+      "id": "Project.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Task.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Team.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "Member.computed-readonly",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "all-computed-and-rollups",
+      "group": "computed",
+      "status": "passed"
+    },
+    {
+      "id": "rollup-mutation-refresh",
+      "group": "rollups",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.signed64",
+      "group": "i64.exact",
+      "status": "passed"
+    },
+    {
+      "id": "Project.signed64",
+      "group": "i64.exact",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.signed64",
+      "group": "i64.exact",
+      "status": "passed"
+    },
+    {
+      "id": "account.Manager",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "account.Agent",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "account.Viewer",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Team.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Member.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Customer.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Contact.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Project.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Milestone.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Sprint.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Task.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Comment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.TimeEntry.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Ticket.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.TicketReply.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Invoice.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Payment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Vendor.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Expense.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Asset.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Leave.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Document.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Admin.Release.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Team.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Member.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Customer.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Contact.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Project.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Milestone.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Sprint.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Task.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Comment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.TimeEntry.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Ticket.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.TicketReply.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Invoice.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Payment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Vendor.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Expense.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Asset.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Leave.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Document.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Manager.Release.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Team.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Member.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Customer.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Contact.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Project.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Milestone.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Sprint.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Task.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Comment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.TimeEntry.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Ticket.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.TicketReply.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Invoice.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Payment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Vendor.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Expense.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Asset.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Leave.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Document.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Agent.Release.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Team.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Member.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Customer.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Contact.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Project.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Milestone.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Sprint.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Task.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Comment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.TimeEntry.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Ticket.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.TicketReply.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Invoice.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Payment.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Vendor.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Expense.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Asset.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Leave.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Document.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Viewer.Release.matrix",
+      "group": "roles",
+      "status": "passed"
+    },
+    {
+      "id": "Task.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.own-other",
+      "group": "own-other-rows",
+      "status": "passed"
+    },
+    {
+      "id": "password-edit",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Team.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Member.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Project.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Task.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Document.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "Release.anonymous-all-routes",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "sign-in-out-inactive",
+      "group": "auth",
+      "status": "passed"
+    },
+    {
+      "id": "audit-create-update-delete",
+      "group": "audit",
+      "status": "passed"
+    },
+    {
+      "id": "Team.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Member.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Customer.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Contact.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Project.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Milestone.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Sprint.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Task.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Comment.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "TimeEntry.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Ticket.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "TicketReply.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Invoice.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Payment.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Vendor.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Expense.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Asset.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Leave.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Document.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "Release.csv",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "csv-quotation-and-row-hiding",
+      "group": "csv",
+      "status": "passed"
+    },
+    {
+      "id": "deleted-ids-never-reused",
+      "group": "nonreused-id",
+      "status": "passed"
+    },
+    {
+      "id": "restart-accounts-rows-audit",
+      "group": "durability",
+      "status": "passed"
+    },
+    {
+      "id": "browser.dashboard.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.unauthenticated-page",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.auth.pages-header-signout",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.navigation-detail-fields",
+      "group": "browser.navigation",
+      "status": "passed"
+    },
+    {
+      "id": "browser.dashboard.entity-and-enum-counts",
+      "group": "browser.dashboard",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.typed-form",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.successful-create-edit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.signed64",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.signed64",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.signed64",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.email.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.company.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.company.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.company.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.email.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.seats.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.email.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.code.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.code.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.code.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.budget.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.start.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.due.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.title.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.title.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.title.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.due.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.end-before.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.length.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.title.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.title.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.title.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.estimate-low.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.estimate-high.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.spent-low.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.spent-over.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.body.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.body.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.body.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.hours-low.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.hours-high.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.rate.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.subject.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.subject.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.subject.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.sla.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.age.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.body.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.body.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.body.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.number.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.amount.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.amount.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.day.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.email.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.description.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.description.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.description.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.amount.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.day.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.name.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.name.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.name.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.serial.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.serial.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.serial.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.cost.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.end-before.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.length.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.title.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.title.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.title.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.url.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.version.short.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.version.long.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.version.utf8.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.day.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.all-errors.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.all-errors.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.all-errors.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.all-errors.pre-submit",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.unique-key",
+      "group": "browser.forms",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Team.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Customer.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Vendor.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.list-search-sort-pagination-filter-csv",
+      "group": "browser.list",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Member.team_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Contact.customer_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.team_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Project.customer_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Milestone.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Sprint.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.milestone_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.sprint_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.task_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Comment.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.task_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TimeEntry.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.customer_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.ticket_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.TicketReply.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Invoice.customer_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Payment.invoice_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.vendor_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Asset.team_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.member_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Document.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.project_id.links-backrefs",
+      "group": "browser.references",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.Todo.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.Doing.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.Review.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Task.Done.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.Open.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.Pending.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.Resolved.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Ticket.Closed.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.Draft.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.Submitted.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.Approved.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.Rejected.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Expense.Paid.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.Requested.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.Approved.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Leave.Rejected.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.Planned.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Release.Released.workflow-options",
+      "group": "browser.workflow",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Team.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Member.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Customer.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Contact.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Project.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Milestone.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Sprint.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Task.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Comment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.TimeEntry.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Ticket.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.TicketReply.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Invoice.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Payment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Vendor.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Expense.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Asset.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Leave.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Document.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Admin.Release.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Team.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Member.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Customer.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Contact.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Project.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Milestone.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Sprint.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Task.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Comment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.TimeEntry.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Ticket.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.TicketReply.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Invoice.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Payment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Vendor.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Expense.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Asset.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Leave.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Document.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Manager.Release.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Team.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Member.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Customer.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Contact.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Project.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Milestone.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Sprint.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Task.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Comment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.TimeEntry.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Ticket.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.TicketReply.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Invoice.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Payment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Vendor.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Expense.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Asset.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Leave.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Document.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Release.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Team.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Member.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Customer.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Contact.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Project.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Milestone.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Sprint.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Task.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Comment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.TimeEntry.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Ticket.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.TicketReply.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Invoice.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Payment.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Vendor.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Expense.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Asset.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Leave.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Document.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Viewer.Release.hidden-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Task.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Comment.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.TimeEntry.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Ticket.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.TicketReply.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Leave.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.Agent.Expense.own-actions",
+      "group": "browser.permission",
+      "status": "passed"
+    },
+    {
+      "id": "browser.history-old-new",
+      "group": "browser.audit",
+      "status": "passed"
+    },
+    {
+      "id": "browser.delete-confirm-and-reference-409",
+      "group": "browser.delete",
+      "status": "passed"
+    },
+    {
+      "id": "browser.csv-all-twenty-entities",
+      "group": "browser.csv",
+      "status": "passed"
+    },
+    {
+      "id": "password-kdf-storage",
+      "group": "password.slow-salted-hash",
+      "status": "passed"
+    }
+  ],
+  "qualification": {
+    "passed": true,
+    "missingCases": [],
+    "missingGroups": [],
+    "failures": [],
+    "cases": 912
+  },
+  "authority": {
+    "network": "explicit loopback candidate URLs",
+    "files": [
+      "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/candidates/typescript",
+      "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/evidence/typescript"
+    ],
+    "processes": "build.sh test.sh run.sh and browser"
+  },
+  "launch": {
+    "api": "http://127.0.0.1:51300/",
+    "ui": "http://127.0.0.1:51301/"
+  },
+  "password_evidence": {
+    "verified": true,
+    "algorithm": [
+      "scrypt"
+    ],
+    "distinctStoredSalts": 26,
+    "dataFiles": [
+      {
+        "name": "teamdesk.json",
+        "sha256": "e3a89fc778be685ed7091f32ac82812940b84e03dd81c564c1318a7bd6e99745"
+      }
+    ]
+  },
+  "candidate_after": [
+    {
+      "name": ".gitignore",
+      "sha256": "0ba297cf012790a68b04efd9f50f4994fd581c361c35ec84535a6f60467bab2e"
+    },
+    {
+      "name": "build.sh",
+      "sha256": "519f7f2910219b61208efcf9f90c0c1731a16ffdafe6fbcb1037c4e905071477"
+    },
+    {
+      "name": "dist/assets/index-DZEsRVNB.js",
+      "sha256": "0b895b48abe66c8531819a1310fe75dfa25471a70c7d7ee0a8b61c598827b4e4"
+    },
+    {
+      "name": "dist/index.html",
+      "sha256": "df2e2db0fb05ac3f928891a16dd6bc2cfb4c6ac78e831b53e36f7282bbf388b8"
+    },
+    {
+      "name": "index.html",
+      "sha256": "566b4f0645fe7175c07b162b2fbeb0bd9fc21eabe0382c06061e77cfadc2975a"
+    },
+    {
+      "name": "package-lock.json",
+      "sha256": "36cbe83f76147a35acd2a73394144e6969a6b6a8f07d5a5eadc164b215baa711"
+    },
+    {
+      "name": "package.json",
+      "sha256": "a8b89aa65fe1b7cdedcb31fa541cb8ace934f15477f7cbc014d2383b527a4935"
+    },
+    {
+      "name": "README.md",
+      "sha256": "0f5ead9f51bb39a4c8475516cb9a04e33a3da57cd423d8175a98c4d86dd5d6f8"
+    },
+    {
+      "name": "reference-server.mjs",
+      "sha256": "8f74ea66fc72815275afaf28f1114d03f0aaba44ef885bf326d05cd3c8a98926"
+    },
+    {
+      "name": "run.sh",
+      "sha256": "7d93c75558a00128beab5b4e381102dce7ed46736ed7b28afd4c0e571df5cf6a"
+    },
+    {
+      "name": "server/index.ts",
+      "sha256": "5f5090240fbe44deaf88547e7965f8441a1f91608da3798edb3af844cc7039e7"
+    },
+    {
+      "name": "shared/json.ts",
+      "sha256": "a2426cdbcd203693581bc19182bd6cd9fdda2125e60979e881d74e203f92cfc6"
+    },
+    {
+      "name": "shared/schema.ts",
+      "sha256": "7b9af4c3454f42f832d008ce99eb16e3745a7fd83bceffb83e781a4e16617af5"
+    },
+    {
+      "name": "src/api.ts",
+      "sha256": "79f66c7afe424281c4243390895c8a86a87517cc3e9ca39b75e8c25a70eaddb5"
+    },
+    {
+      "name": "src/main.tsx",
+      "sha256": "2f4b7f45a82df5f2a56e8a350a91bbb1f2705cde2f69727bf39632630b6f8a5e"
+    },
+    {
+      "name": "src/views.tsx",
+      "sha256": "0a663e0846a644003af60365ba41fea72339795d0d380092c8632482ad554e5f"
+    },
+    {
+      "name": "test.sh",
+      "sha256": "6addeae4979950ff369c0ef07e8d9ece9c4a8d32b00b796d6a163f5bf0969d41"
+    },
+    {
+      "name": "tests/int64.test.ts",
+      "sha256": "5207652185af5e7a5a9fda2042be7155c600493158284151ae4fae2e46670f7c"
+    },
+    {
+      "name": "tests/server-int64.test.ts",
+      "sha256": "d8c8af6e33eb3835a9b53382bcf0491813608f8a86be8a2b64390baab4752b8c"
+    },
+    {
+      "name": "tests/ui-permissions.test.ts",
+      "sha256": "47f80847edcd07fd3ac6466ea0322388dc735e2aca11a3e611b1c4bfb416b2c7"
+    },
+    {
+      "name": "tsconfig.json",
+      "sha256": "d642f5424183a995f2475e74ac59aa0f2503ca53bad83fa905d45743ffb9e417"
+    },
+    {
+      "name": "vite.config.ts",
+      "sha256": "04504a1101152fa181213e15926b8a77d886251badc02e81e68b2c63e994039b"
+    }
+  ],
+  "finished_at": "2026-10-09T02:14:40.438Z"
+}
