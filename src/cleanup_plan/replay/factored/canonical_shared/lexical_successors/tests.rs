@@ -1,6 +1,7 @@
 //! Authored owning controls; no execution or application saving is implied.
 use super::*;
 use crate::bounded_output::{with_limit_usage_refusal, with_limit_usage_refusal_site};
+use crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS;
 use crate::test_allocation_observer::{measure, Metrics};
 // These are genuine new TEST caller transports, paid equally for both real
 // old/current method calls; they confer no authority and do not pad old tariffs.
