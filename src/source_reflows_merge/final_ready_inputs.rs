@@ -161,6 +161,31 @@ pub(crate) fn source_owner(domain: &str, source: &str, current: &str) -> String 
         current.to_owned()
     }
 }
+// This named bridge is only for the original historical facade assertion.
+// The owning test audits the complete current projection before calling it.
+fn projection344_stage(supplied: &str) -> String {
+    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let data=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json");
+    assert_eq!(data.len(),9752);
+    assert_eq!(digest(data),"ab922dd2f58ea4dc32b7e5ddfbae934a8353b7fe9eefbb2927414cbbdf7e4b3b");
+    let read=|path: &str,length: usize,sha: &str| reader::read(&root.join(path),length,sha,2_097_152).unwrap();
+    assert_eq!(read("docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json",data.len(),&digest(data)),data);
+    let row: serde_json::Value=serde_json::from_str(data).unwrap();
+    assert_eq!(row["schema"],"semaprax.current339.projection344-whole-stage.v1");
+    let carrier=&row["carrier"];
+    read(carrier["source"].as_str().unwrap(),carrier["length"].as_u64().unwrap()as usize,carrier["sha256"].as_str().unwrap());
+    let mut actual=String::new();
+    for part in row["parts"].as_array().unwrap() {
+        if let Some(literal)=part["literal"].as_str() { actual.push_str(literal); }
+        else { actual.push_str(&read(part["source"].as_str().unwrap(),part["length"].as_u64().unwrap()as usize,part["sha256"].as_str().unwrap())); }
+    }
+    let image=|name: &str| {let view=&row[name];read(view["archive"].as_str().unwrap(),view["length"].as_u64().unwrap()as usize,view["sha256"].as_str().unwrap())};
+    let current=image("current");let previous=image("prior");
+    assert_eq!(actual,current,"every current projection source and literal in owning macro order");
+    assert!(supplied==current || supplied==previous,"foreign historical projection input");
+    previous
+}
+
 pub(crate) fn current344_input(source: &str, current: &str) -> String {
     let domain = match source {
         "src/cleanup_plan/replay/factored/canonical_shared.rs" => Domain::Canonical344,
@@ -170,6 +195,9 @@ pub(crate) fn current344_input(source: &str, current: &str) -> String {
     let stage;
     let current = if matches!(domain, Domain::Canonical344) {
         stage = canonical870_stage(current);
+        stage.as_str()
+    } else if matches!(domain, Domain::Projection344) {
+        stage = projection344_stage(current);
         stage.as_str()
     } else {
         current
@@ -245,5 +273,19 @@ fn canonical870_raw_endpoint_preserves_full51_stage_and_rejects_other_domains() 
     assert_eq!(current344_input(Domain::Canonical344.source(), raw), project(&rows, Domain::Canonical344, old));
     for wrong in [String::new(), format!("{raw} "), format!("{raw}{raw}"), old.to_owned()] {
         assert!(std::panic::catch_unwind(|| current344_input(Domain::Canonical344.source(), &wrong)).is_err());
+    }
+}
+
+#[test]
+fn observer_projection_stage_keeps_whole_current_and_prior_and_refuses_foreign_joins() {
+    let current=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-current.whole.txt");
+    let previous=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-prior.whole.txt");
+    assert_ne!(current,previous);
+    assert_eq!(projection344_stage(current),previous);
+    assert_eq!(projection344_stage(previous),previous);
+    let rows=records();
+    assert_eq!(current344_input("expected_projection::root_join",current),project(&rows,Domain::Projection344,previous));
+    for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
+        assert!(std::panic::catch_unwind(||projection344_stage(&foreign)).is_err());
     }
 }

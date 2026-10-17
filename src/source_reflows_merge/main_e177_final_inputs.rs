@@ -7,14 +7,24 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 82953);
-    assert_eq!(digest(data.as_bytes()), "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52");
+    assert_eq!(data.len(), 84171);
+    assert_eq!(digest(data.as_bytes()), "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 98);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 99);
+    let before=read_view(&packet["immediate_before"]);
+    let mut restored=packet.clone();
+    let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(added["source"],"tests/native/string_settlement/codec_allocation/codec808_frontier.rs");
+    let route=restored["rows"].as_array_mut().unwrap().iter_mut().find(|row|row["source"]=="src/source_reflows_merge/next_big_batch_inputs.rs").unwrap();
+    let mut previous=route["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(previous["name"],"whole886-next-big");
+    previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
+    restored.as_object_mut().unwrap().remove("immediate_before");
+    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -73,6 +83,7 @@ fn table_compiled(source: &str) -> Option<&'static str> {
 }
 fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "tests/native/string_settlement/codec_allocation/codec808_frontier.rs" => Some(include_str!("../../tests/native/string_settlement/codec_allocation/codec808_frontier.rs")),
         "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => Some(include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),
         "src/cleanup_plan/replay.rs" => Some(include_str!("../../src/cleanup_plan/replay.rs")),
         "src/cleanup_plan/replay/branch_clone/direct.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/direct.rs")),
