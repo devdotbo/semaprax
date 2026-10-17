@@ -79,7 +79,9 @@ fn main6d_read(path: &::std::path::Path) -> ::std::io::Result<String> {
     if found.len()!=1 {return Err(main6d_error("unknown or duplicate Main6d source"));}
     let row=found[0];let current=&row["current"];
     let actual=main6d_held(path,current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())?;
-    assert_eq!(Some(actual.as_str()),main6d_compiled(source),"whole actual and compiled Main6d source");
+    let compiled=main6d_compiled(source).unwrap();
+    let compiled=crate::source_reflows_merge::main_e177_final_inputs::value_direct(source,current["sha256"].as_str().unwrap(),compiled);
+    assert_eq!(actual,compiled,"whole actual and compiled Main6d source");
     assert_eq!(actual,main6d_held(&root.join(current["path"].as_str().unwrap()),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())?,"whole current source archive");
     let incoming=&row["incoming"];
     main6d_held(&root.join(incoming["path"].as_str().unwrap()),incoming["length"].as_u64().unwrap()as usize,incoming["sha256"].as_str().unwrap())

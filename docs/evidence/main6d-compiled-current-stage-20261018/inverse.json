@@ -1,0 +1,12 @@
+{
+  "path": "src/source_reflows/semantic_receivers/status_inline.rs",
+  "before_sha256": "52a0f83335e2769e14dbddf1dc0eee027c641342b260364ed60215df05d5dbf2",
+  "after_sha256": "169b14b92bdde07d5eb689f4fc6e7880a0ec9e20461d450551de3ee5dc956d62",
+  "edits": [
+    {
+      "before": "    assert_eq!(Some(actual.as_str()),main6d_compiled(source),\"whole actual and compiled Main6d source\");",
+      "after": "    let compiled=main6d_compiled(source).unwrap();\n    let compiled=crate::source_reflows_merge::main_e177_final_inputs::value_direct(source,current[\"sha256\"].as_str().unwrap(),compiled);\n    assert_eq!(actual,compiled,\"whole actual and compiled Main6d source\");"
+    }
+  ],
+  "status": "SOURCE_ONLY_ACTUAL_COMPILED_SAME_HISTORICAL_STAGE_NO_GUARD_CHANGE"
+}
