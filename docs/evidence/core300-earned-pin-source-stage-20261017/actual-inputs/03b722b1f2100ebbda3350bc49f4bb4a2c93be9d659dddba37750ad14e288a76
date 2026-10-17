@@ -1,0 +1,5 @@
+{
+  "exit_code": 0,
+  "tool_sha256": "d7cd196c8f2c3eb38858a30a20d0b0200cdd420ae8fe955cbd57d736a88ea0bb",
+  "classification": "READ_ONLY_ACTUAL_EF_SOURCE_BASELINE_NO_SOURCE_WRITES"
+}

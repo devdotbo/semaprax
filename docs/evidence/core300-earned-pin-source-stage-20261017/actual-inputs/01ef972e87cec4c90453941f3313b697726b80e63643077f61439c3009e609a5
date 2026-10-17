@@ -1,0 +1,118 @@
+#!/usr/bin/env python3
+"""Read-only browser capture admission and exact two-pin plan; never captures/applies."""
+from pathlib import Path
+import argparse,hashlib,json,os,re,stat,subprocess,sys
+ROOT=Path('/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang')
+FLOW=Path('/Volumes/Semaprax/provenance/currentef788-pin-workflow-20261017')
+HEAD='ef788f8237beeb16dcc1cfa9346fc1dbb6f69a4d'
+RECORD_SHA='9c545fd7998a2e01d3bcaade2a582a6659105008710fe1792e8b9b5ddb3d1d65'
+RUNNER='platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs'
+sha=lambda b:hashlib.sha256(b).hexdigest()
+def held(p,expected=None):
+ p=Path(p);fd=os.open(p,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+ identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+ try:
+  st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and 0<=st.st_size<=4194304
+  with os.fdopen(fd,'rb',closefd=False)as f:b=f.read(st.st_size);assert not f.read(1)
+  assert len(b)==st.st_size and identity(st)==identity(os.fstat(fd))==identity(os.lstat(p))
+ finally:os.close(fd)
+ if expected is not None:assert sha(b)==expected,(str(p),'SHA mismatch')
+ return b
+def pairs(rows):
+ d={}
+ for k,v in rows:assert k not in d;d[k]=v
+ return d
+def load(b):return json.loads(b,object_pairs_hook=pairs)
+def encode(o):return(json.dumps(o,indent=2)+'\n').encode()
+def git(p):return subprocess.check_output(['git','show',HEAD+':'+p],cwd=ROOT)
+def digest(w):
+ d=load(w);field=(',"graph_digest":'+json.dumps(d['graph_digest'],separators=(',',':'))).encode();assert w.count(field)==1
+ p=w.replace(field,b'',1);return 'sha256:'+sha(b'semaprax.project-semantic-graph.artifact-digest.v1\0'+len(p).to_bytes(8,'little')+p)
+def restore(current,prior):
+ assert current.endswith(b'\n')and prior.endswith(b'\n');w=current[:-1];old=prior[:-1];a=load(w);b=load(old)
+ assert digest(w)==a['graph_digest']and digest(old)==b['graph_digest']
+ bill=a['budget']['used_builder_bytes'];assert type(bill)is int and 0<bill<=67108864
+ oldbill=b['budget']['used_builder_bytes'];field=('"used_builder_bytes":'+str(bill)).encode();assert w.count(field)==1
+ restored=w.replace(field,('"used_builder_bytes":'+str(oldbill)).encode(),1)
+ field=('"graph_digest":'+json.dumps(a['graph_digest'])).encode();assert restored.count(field)==1
+ restored=restored.replace(field,('"graph_digest":'+json.dumps(b['graph_digest'])).encode(),1)
+ assert restored==old,'unclassified complete browser wire difference'
+ return {'future_sha256':sha(current),'prior_sha256':sha(prior),'complete_prior_restored':True}
+def main():
+ p=argparse.ArgumentParser();p.add_argument('--capture',type=Path,required=True);p.add_argument('--expected-binding-sha256',required=True);p.add_argument('--expected-results-sha256',required=True);p.add_argument('--expected-build-receipt-sha256',required=True);p.add_argument('--expected-readiness-sha256',required=True);p.add_argument('--out',type=Path,required=True);a=p.parse_args()
+ for k,v in vars(a).items():
+  if k.startswith('expected_'):assert re.fullmatch('[0-9a-f]{64}',v)
+ out=a.out.resolve();assert not out.exists()and out.is_relative_to('/Volumes/Semaprax/provenance')
+ record=load(held(FLOW/'skeleton-record.json',RECORD_SHA));assert record['frozen_source_head']==HEAD
+ assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=ROOT,text=True).strip()==HEAD
+ assert not subprocess.check_output(['git','status','--porcelain','--untracked-files=all'],cwd=ROOT).strip()
+ # Existing five-command/artifact admission runs unchanged. It admits source
+ # artifacts only, not either capture or any owner test.
+ check=held(FLOW/'check-ready.py',record['trusted_tool_sha256']['check-ready.py'])
+ cmd=[str(FLOW/'check-ready.py'),'--round',record['required_round'],'--expected-build-receipt-sha256',a.expected_build_receipt_sha256,'--out',str(out.with_name(out.name+'.readiness.json'))]
+ bootstrap="import sys;sys.path.insert(0,"+repr(str(FLOW))+");sys.argv="+repr(cmd)+";exec(compile("+repr(check)+","+repr(cmd[0])+",'exec'),{'__name__':'__main__','__file__':"+repr(cmd[0])+"})"
+ result=subprocess.run([sys.executable,'-c',bootstrap],capture_output=True);assert result.returncode==0,result.stderr.decode()[-2000:]
+ readiness=held(FLOW/'actual-completed-build-artifact-readiness.json',a.expected_readiness_sha256);ready=load(readiness)
+ assert load(held(out.with_name(out.name+'.readiness.json')))==ready
+ binding_raw=held(a.capture/'binding.json',a.expected_binding_sha256);results_raw=held(a.capture/'results.json',a.expected_results_sha256);binding=load(binding_raw);results=load(results_raw)
+ assert binding['source_subject']==results['source_subject']==HEAD and binding['source_tree']==record['frozen_source_tree']
+ assert binding['build_receipt']==str(Path(record['required_round'])/'owning-build-result.json')and binding['build_receipt_sha256']==a.expected_build_receipt_sha256
+ addon=load(held(Path('/Volumes/Semaprax/provenance/browser-ef788-deduplicated-artifact-addon-20261017/addon.json'),'c2da0b55cfe22a8ccdd5c7a9222631b401f07032df458ffb5f8acf9a4f0f4121'))
+ assert addon['workflow_sha256']==RECORD_SHA and addon['producer_head']==HEAD and addon['build_receipt_sha256']==a.expected_build_receipt_sha256
+ assert addon['original_controller_sha256']==record['trusted_tool_sha256']['capture-browser.py']
+ assert binding['controller_sha256']==addon['controller_sha256']and binding['controller_addon_sha256']=='c2da0b55cfe22a8ccdd5c7a9222631b401f07032df458ffb5f8acf9a4f0f4121'
+ assert binding['producer_contract_sha256']==sha(git('.github/workflows/ci.yml'))
+ assert binding['no_test_execution']is True and binding['capture_is_not_owner_test_pass']is True
+ cli=ready['production_CLI_artifacts_from_same_completed_build']['semaprax'];assert(binding['executable'],binding['executable_sha256'])==(cli['executable'],cli['executable_sha256'])
+ assert binding['artifact_record']['executable']==binding['executable']and binding['artifact_record']['profile']['test']is False
+ assert binding['build_metadata_sha256']==ready['raw_Cargo_log_sha256']
+ metadata=held(Path(record['required_round'])/'owning-build.jsonl',binding['build_metadata_sha256'])
+ artifacts=[]
+ for line in metadata.splitlines():
+  try:entry=load(line)
+  except (ValueError,AssertionError):continue
+  if entry.get('reason')=='compiler-artifact'and entry.get('target',{}).get('name')=='semaprax'and entry.get('executable')and not entry.get('profile',{}).get('test'):artifacts.append(entry)
+ assert len(artifacts)==addon['expected_matching_cli_records']==2
+ assert artifacts==binding['all_actual_cli_artifact_records']
+ assert all(r==artifacts[0]for r in artifacts)
+ assert binding['artifact_record']==artifacts[0]
+ assert binding['artifact_equivalence']=='whole_record_equal'
+ build=load(held(Path(record['required_round'])/'owning-build-result.json',a.expected_build_receipt_sha256));assert binding['build_log_sha256']==build['log_sha256']
+ assert results['complete']is True and [r['fixture']for r in results['results']]==['baseline','renamed']
+ expected_inputs=[]
+ for role in ('baseline','renamed'):
+  for rel in ('semaprax.toml','src/app.spx','src/core.spx','src/tests.spx'):
+   source='examples/calculator-project/'+rel;original=git(source);actual=original
+   if role=='renamed'and rel=='src/core.spx':assert actual.count(b'\nfn add(')==1;actual=actual.replace(b'\nfn add(',b'\nfn sum(',1)
+   assert held(a.capture/role/rel)==actual
+   expected_inputs.append(dict(fixture=role,path=rel,source_path=source,git_original_sha256=sha(original),actual_sha256=sha(actual),bytes=len(actual),rename_only=actual!=original))
+ assert binding['inputs']==expected_inputs
+ prior36=Path('/Volumes/Semaprax/provenance/pins36-browser-actual-20261017');history=record['historical_actual36_not_current_qualification']['browser'];held(prior36/'binding.json',history['binding_sha256'])
+ runner=git(RUNNER);assert held(ROOT/RUNNER)==runner;after=runner;edits=[];proof=[]
+ # All old independently retained whole-wire scopes remain exact. Repository
+ # archives come from immutable producer Git; external priors are descriptor-pinned.
+ roots=['docs/evidence/browser-graph-pins-2600e49eb/current-hosted-calculator-{role}.json','docs/evidence/browser-graph-pins-35cc-20261016/actual-capture/calculator-{role}.json','docs/evidence/browser-graph-pins-17104e20c/current-hosted-calculator-{role}.json','docs/evidence/browser-graph-pins-841efe3e2/historical-calculator-{role}.json','docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-{role}.json','docs/evidence/browser-next-actual-218a9-20261016/actual-browser/calculator-{role}.json','docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-{role}.json']
+ for role,r in zip(('baseline','renamed'),results['results']):
+  filename='calculator-'+role+'.json';wire=held(a.capture/filename);old=held(prior36/filename,history['wire_sha256'][filename]);d=load(wire);o=load(old)
+  assert r['source_subject']==HEAD and r['executed']is True and r['exit_code']==0 and not r['resource_refusal']and not r['observation_errors']and not r.get('timed_out')
+  assert r['group_settlement']['confirmed_empty']is True and r['rss_limit_bytes']==7*1024**3
+  assert r['command']==[binding['executable'],'graph',str(a.capture.resolve()/role/'semaprax.toml')]
+  assert r['executable_sha256_after']==binding['executable_sha256']and r['wire_sha256']==sha(wire)and r['stderr_sha256']==sha(held(a.capture/(role+'.stderr.log')))
+  scopes=[dict(name='actual36',**restore(wire,old))]
+  for path in roots:scopes.append(dict(name=path.format(role=role),**restore(wire,git(path.format(role=role)))))
+  for name,row in record['browser_required_prior'].items():
+   if name.endswith('-'+role):scopes.append(dict(name=name,**restore(wire,held(Path(row['path']),row['sha256']))))
+  # Whole-wire classification proves revisions are unchanged. Only the role's
+  # current graph digest literal in the shipping JS runner may change.
+  assert(d['project_revision'],d['workspace_revision'])==(o['project_revision'],o['workspace_revision'])
+  marker=('name: "project-'+role+'",').encode();assert runner.count(marker)==1
+  block=runner.split(marker,1)[1].split(b'\n  },',1)[0]
+  for key,field in [('project_revision','project_revision'),('workspace_revision','workspace_revision'),('project_graph_digest','graph_digest')]:assert block.count((key+': "'+o[field]+'"').encode())==1
+  before=('project_graph_digest: "'+o['graph_digest']+'"').encode();new=('project_graph_digest: "'+d['graph_digest']+'"').encode();assert after.count(before)==1
+  after=after.replace(before,new,1);edits.append(dict(path=RUNNER,role=role,before=before.decode(),after=new.decode()));proof.append(dict(role=role,wire_sha256=sha(wire),scopes=scopes))
+ inverse=after
+ for e in reversed(edits):assert inverse.count(e['after'].encode())==1;inverse=inverse.replace(e['after'].encode(),e['before'].encode(),1)
+ assert inverse==runner
+ plan=dict(schema='semaprax.earned-browser-two-wire-plan.v1',producer_head=HEAD,workflow_sha256=RECORD_SHA,capture=str(a.capture.resolve()),binding_sha256=a.expected_binding_sha256,results_sha256=a.expected_results_sha256,build_receipt_sha256=a.expected_build_receipt_sha256,readiness_sha256=a.expected_readiness_sha256,source_sha256={RUNNER:sha(runner)},after_sha256={RUNNER:sha(after)},edits=edits,complete_wire_reviews=proof,current_rust_owner_unchanged=True,capture_is_not_owner_test_pass=True)
+ out.write_bytes(encode(plan));print(str(out))
+if __name__=='__main__':main()

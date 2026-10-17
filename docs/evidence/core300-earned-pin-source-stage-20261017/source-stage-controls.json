@@ -1,0 +1,22 @@
+{
+  "status": "SOURCE_ONLY_CURRENT3_PRIOR3_WRONG_SHA3_FOREIGN_OWNER1_PASS",
+  "rows": [
+    {
+      "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+      "current_and_whole6ef": true,
+      "wrong_sha_rejected": true
+    },
+    {
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "current_and_whole6ef": true,
+      "wrong_sha_rejected": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph.rs",
+      "current_and_whole6ef": true,
+      "wrong_sha_rejected": true
+    }
+  ],
+  "ROOT_writes": false,
+  "Rust_execution": false
+}

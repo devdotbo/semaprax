@@ -7,14 +7,14 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 54780);
-    assert_eq!(digest(data.as_bytes()), "7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986");
+    assert_eq!(data.len(), 56884);
+    assert_eq!(digest(data.as_bytes()), "bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 74);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 76);
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -60,6 +60,7 @@ fn table_compiled(source: &str) -> Option<&'static str> {
     match source {
         "docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json" => Some(include_str!("../../docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json")),
         "docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json" => Some(include_str!("../../docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt")),
         _ => None,
     }
 }
@@ -135,6 +136,8 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/source_reflows/semantic_receivers.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers.rs")),
         "src/source_reflows/semantic_receivers/status_inline.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers/status_inline.rs")),
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs")),
+        "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs" => Some(include_str!("../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs")),
+        "src/workspace_graph/type_proof_tests.rs" => Some(include_str!("../../src/workspace_graph/type_proof_tests.rs")),
         _ => None,
     }
 }

@@ -21,6 +21,12 @@
       "length": 228105,
       "sha256": "7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9",
       "archive": "docs/evidence/main-e177-final-source-binding-20261017/tables/7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9.txt"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt",
+      "length": 54780,
+      "sha256": "7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986",
+      "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt"
     }
   ],
   "rows": [
@@ -792,8 +798,8 @@
       "compiled": true,
       "current": {
         "length": 57469,
-        "sha256": "e0e7f1bfff449baf1a3b40166de9b1334f4b639339c3f59a48940505b0e991c2",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/e0e7f1bfff449baf1a3b40166de9b1334f4b639339c3f59a48940505b0e991c2.txt"
+        "sha256": "ed07547ac0de64c2687e4aefd55049283f521bb6e4a0b7f1d9720d9969fbab89",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/ed07547ac0de64c2687e4aefd55049283f521bb6e4a0b7f1d9720d9969fbab89.txt"
       },
       "views": [
         {
@@ -801,6 +807,12 @@
           "length": 57423,
           "sha256": "b4d8c484c115ff71427e873d8b97470048b85106f7d54043299cb00b0e987f6d",
           "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/b4d8c484c115ff71427e873d8b97470048b85106f7d54043299cb00b0e987f6d.txt"
+        },
+        {
+          "name": "whole6ef-pre-earned-pins",
+          "length": 57469,
+          "sha256": "e0e7f1bfff449baf1a3b40166de9b1334f4b639339c3f59a48940505b0e991c2",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/e0e7f1bfff449baf1a3b40166de9b1334f4b639339c3f59a48940505b0e991c2.txt"
         }
       ]
     },
@@ -1201,18 +1213,50 @@
           "archive": "docs/evidence/next-big-batch-source-binding-20261017/current/1d5f944822d4b1c425fb818015530b06230e1d1e38d1a298bcfd607d2ae3c36d.txt"
         }
       ]
+    },
+    {
+      "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+      "compiled": true,
+      "current": {
+        "length": 10291,
+        "sha256": "263bf4cb67d3979ef0eba86912682ce1b792728f451e9da36a0a4d86c773c9ba",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/263bf4cb67d3979ef0eba86912682ce1b792728f451e9da36a0a4d86c773c9ba.txt"
+      },
+      "views": [
+        {
+          "name": "whole6ef-pre-earned-pins",
+          "length": 10291,
+          "sha256": "8a1f1a40b4ca31f0f345e6e1f46b79bd84480e9aa2362470dfdd41cbae1a3127",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/8a1f1a40b4ca31f0f345e6e1f46b79bd84480e9aa2362470dfdd41cbae1a3127.txt"
+        }
+      ]
+    },
+    {
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "compiled": true,
+      "current": {
+        "length": 52672,
+        "sha256": "b8594959cb38cd0c7f684ad4872210af742d8e95cc5f8b53cb02eefdfa80fc8f",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/b8594959cb38cd0c7f684ad4872210af742d8e95cc5f8b53cb02eefdfa80fc8f.txt"
+      },
+      "views": [
+        {
+          "name": "whole6ef-pre-earned-pins",
+          "length": 52672,
+          "sha256": "53dff12c17b2f8733dbe19b3404585b7f4d6d58ff5a17d55a27ff64ce76b8d4b",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/53dff12c17b2f8733dbe19b3404585b7f4d6d58ff5a17d55a27ff64ce76b8d4b.txt"
+        }
+      ]
     }
   ],
   "current_stage": {
-    "kind": "reviewed-working-stage",
-    "git_head": "675247f9bef668e0c41378409e17c2a126c68475",
+    "kind": "actual-earned6ef-source-stage-not-consumer-qualified",
+    "producer_head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+    "source_stage": "docs/evidence/core300-earned-pin-source-stage-20261017/earned-source-stage.json",
     "changed_sources": [
-      "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
-      "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
-      "src/source_reflows_merge/main_e177_inputs.rs",
-      "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
-      "src/source_reflows/semantic_receivers/status_inline.rs",
-      "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs"
+      "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+      "src/workspace_graph/type_proof_tests.rs",
+      "tests/workspace/semantic_graph.rs"
     ]
   }
 }

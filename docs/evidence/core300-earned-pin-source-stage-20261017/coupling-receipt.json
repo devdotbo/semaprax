@@ -1,0 +1,39 @@
+{
+  "status": "SOURCE_ONLY_NOT_APPLIED_TO_ROOT_OR_CONSUMER_QUALIFIED",
+  "producer_head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "consumer_source_head": "pending coherent commit",
+  "source_owners": [
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "src/workspace_graph/type_proof_tests.rs",
+    "tests/workspace/semantic_graph.rs"
+  ],
+  "packet_rows": 76,
+  "packet_length": 56884,
+  "packet_sha256": "bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41",
+  "guard_length": 25113,
+  "guard_sha256": "b1abc996caca62a3868678b4eca8dcf9e6bcbc7264db7a425751ffa2e95630a3",
+  "required_current_modules": 46,
+  "compiled_source_channels_added": [
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "src/workspace_graph/type_proof_tests.rs"
+  ],
+  "whole_old74_anchor": "docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt",
+  "immutable454_471_readers_and54_unchanged": [
+    "docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json",
+    "docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json",
+    "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows_merge/main_e177_inputs.rs",
+    "src/source_reflows_merge/next_big_batch_inputs.rs"
+  ],
+  "physical174_members_byteexact": true,
+  "FINAL6_six_byteexact": true,
+  "raw3_and_ordered451_unchanged": true,
+  "new_Rust_modules": 0,
+  "production_algorithms_prices_caps_unchanged": true,
+  "strict_small_cap": 262144,
+  "strict_controls": "ACTUAL_SOURCE_ONLY_STRICT58_AND_BOOTSTRAP_PASS",
+  "actual_sourcepin_provenance": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "feature953_outputs_not_claimed": true,
+  "additional_current_prior_hostiles": "ACTUAL_SOURCE_ONLY_3current_3whole6ef_3wrongSHA_1foreignowner_PASS",
+  "execution_scope": "no Rust/compiler/binder; no consumer qualification"
+}
