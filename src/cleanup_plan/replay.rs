@@ -6730,11 +6730,13 @@ fn plan_skeleton_paths(
                         branch_clone::note_take();
                         std::mem::take(&mut observations)
                     } else {
-                        branch_clone::for_push(
+                        branch_clone::for_plan_push(
                             budget,
                             function,
                             &observations,
                             "cleanup-plan skeleton branch clone",
+                            plan,
+                            edge.to,
                         )?
                     };
                     skeleton_push(

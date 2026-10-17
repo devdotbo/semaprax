@@ -1166,3 +1166,5 @@ Audience: all documentation readers.
 - [Final branch prefix transfer](evidence/last-branch-prefix-v1/README.md)
 
 - [Named byte owners in String-vector fixtures](evidence/string-fixture-owners-v1/README.md)
+
+- [Plan branch continuation capacity](evidence/plan-branch-capacity-v1/README.md)

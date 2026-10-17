@@ -882,3 +882,38 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
         before.split("#[cfg(test)]\nmod tests;").next().unwrap()
     );
 }
+
+#[test]
+fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/plan-branch-capacity-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sources.len(), 5);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &sources {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+        if path.ends_with("branch_clone/tests.rs") {
+            assert!(current.starts_with(&before));
+        }
+        if path.ends_with("branch_clone.rs") {
+            assert_eq!(
+                current.split("/// A pure probe").next().unwrap(),
+                before.split("/// A pure probe").next().unwrap()
+            );
+        }
+    }
+}

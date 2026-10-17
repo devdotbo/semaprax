@@ -1,5 +1,7 @@
 # Changelog
 
+- Bound continuing-branch clone capacity through the next fork and final terminal suffix, retaining the complete clone census and old fallback; rename a reserved fixture local while preserving its values and assertions.
+
 - Bind primitive String-vector fixture byte arrays to named owners before borrowing, preserving every original value, output limit, backend and rejection assertion.
 
 - Transfer already funded final-branch observation backing when a bounded terminal-chain probe proves it can hold every remaining observation, preserving original clone work, fallback receivers and source controls.

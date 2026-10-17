@@ -4878,6 +4878,14 @@ the avoided clone backing covers the full new control state. The original work,
 materialization count, ordering and clone fallback remain; selected replay is
 unchanged. Full predecessor custody and pending owning qualification are in
 [the transfer packet](evidence/last-branch-prefix-v1/README.md).
+The same owner can reserve less unused capacity for a continuing branch copy.
+Its bounded shape proof covers the full linear continuation and the next fork's
+final terminal suffix, preserving both flat observations and the existing final
+transfer. The complete old clone census remains, and avoided backing must cover
+the new probe state before selection. Unknown shapes keep the old capacity.
+[The capacity packet](evidence/plan-branch-capacity-v1/README.md) records custody
+and the distinction between focused checks and full fixture qualification.
+
 
 Ordinary cleanup replay DAG constructors in
 `cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs` retain an immutable
