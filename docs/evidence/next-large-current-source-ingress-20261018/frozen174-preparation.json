@@ -1,0 +1,37 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      165305,
+      "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df"
+    ],
+    "src/cleanup_plan/replay/expression_facts/arena.rs": [
+      13588,
+      "c075f4e758cd36ab40328df263bbd8b4836c8012abdcc6c4fd23fd95efb13a59"
+    ],
+    "src/cleanup_plan/replay/expression_facts/arena/prefix.rs": [
+      11757,
+      "e39302d1391d4cf096d6600220cfd4a0df108a918649ed94227532f06f0bca39"
+    ],
+    "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs": [
+      22683,
+      "4ffcb44224a5b00256919b26e96c7b721a152b240b08c28aea49f091a7d0cdd9"
+    ],
+    "tests/hir_module_boundaries.rs": [
+      106143,
+      "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf"
+    ],
+    "tests/workspace/semantic_graph/source_inventory.rs": [
+      104065,
+      "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18"
+    ]
+  },
+  "strict_dependencies": 464,
+  "strict_cap": 262144,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "5c2a0f3cd8d7df26fa976c4dfe60c6f33728de0bba721fbae236cdd21d3ad999",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
