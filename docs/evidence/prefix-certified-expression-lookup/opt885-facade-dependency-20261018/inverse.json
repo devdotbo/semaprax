@@ -1,0 +1,47 @@
+{
+  "status": "SOURCE_ONLY_FACADE_DEPENDENCY_REPAIR_EXECUTABLE_QUALIFICATION_PENDING",
+  "source_head_before": "a110ea82e2f3eec797b4fd44b98836927f7218e1",
+  "source": "tests/wasm.rs",
+  "before": {
+    "length": 1816,
+    "sha256": "3ae546b6266a5cf2e2f921076ccbca2d0feefea4f7a81bf3b4169396af8ae861",
+    "archive": "tests__wasm.rs.before.txt"
+  },
+  "after": {
+    "length": 1944,
+    "sha256": "d0890ba95c25637efd3a0ad04258a145c822d571065bc3cb1ee05f397f833952"
+  },
+  "edits": [
+    {
+      "before": "pub(crate) mod main_e177_final_inputs;\nmod source_reflows_merge {\n    pub(crate) use crate::main_e177_final_inputs;\n}",
+      "after": "pub(crate) mod main_e177_final_inputs;\n#[path = \"../src/source_reflows_merge/next_big_batch_inputs.rs\"]\npub(crate) mod next_big_batch_inputs;\nmod source_reflows_merge {\n    pub(crate) use crate::{main_e177_final_inputs, next_big_batch_inputs};\n}"
+    }
+  ],
+  "complete_inverse_verified": true,
+  "exhaustive_compiled_registration_audit": [
+    {
+      "source": "src/source_reflows_merge.rs",
+      "status": "Both existing owning modules registered; no edit"
+    },
+    {
+      "source": "tests/workspace.rs",
+      "status": "Both existing owning modules registered and exposed; no edit"
+    },
+    {
+      "source": "tests/wasm.rs",
+      "status": "Add genuine existing next_big_batch_inputs module and expose both existing modules"
+    }
+  ],
+  "search_scope": [
+    "src/**/*.rs",
+    "tests/**/*.rs",
+    "crates/**/*.rs"
+  ],
+  "search_literal": "main_e177_final_inputs",
+  "raw_inventory_literals_unchanged": true,
+  "new_Rust_files": 0,
+  "physical174_intersection": [],
+  "FINAL6_intersection": [],
+  "helper_algorithms_unchanged": true,
+  "Cargo": false
+}

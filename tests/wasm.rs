@@ -41,6 +41,8 @@ mod web_package;
 use semaprax::digest_hex;
 #[path = "../src/source_reflows_merge/main_e177_final_inputs.rs"]
 pub(crate) mod main_e177_final_inputs;
+#[path = "../src/source_reflows_merge/next_big_batch_inputs.rs"]
+pub(crate) mod next_big_batch_inputs;
 mod source_reflows_merge {
-    pub(crate) use crate::main_e177_final_inputs;
+    pub(crate) use crate::{main_e177_final_inputs, next_big_batch_inputs};
 }
