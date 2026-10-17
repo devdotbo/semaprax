@@ -26,6 +26,13 @@ mod semantic_receivers;
 
 #[path = "source_reflows/nested_scope.rs"]
 mod nested_scope;
+
+#[path = "source_reflows/factored_sources.rs"]
+mod factored_sources;
+pub(crate) use factored_sources::{
+    complete_outer_label_sources_and_original_producer_remain_exact,
+    complete_predecessors_and_new_target_sources_are_bound,
+};
 pub(crate) use nested_scope::nested_scope_correction_retains_complete_original_hostile_and_loan_controls;
 
 fn records() -> &'static [serde_json::Value] {

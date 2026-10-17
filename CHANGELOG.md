@@ -1,5 +1,7 @@
 # Changelog
 
+- Move complete factored target and label custody assertions into the test source-reader layer, keeping original entries, full assertion bodies, and historical inverses while preserving the HIR authority audit.
+
 - Keep the complete nested traversal custody assertions in the test source-reader layer, preserving their original body and fail-closed inverses while keeping filesystem operations outside core HIR.
 
 - Pass the installed macOS SDK explicitly when compiling native authority test executables with a scrubbed environment, so real system headers remain available.
