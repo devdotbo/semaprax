@@ -84,11 +84,15 @@ fn selected_tree_fallback_has_exact_immediate_small_bills_work_and_whole_drop() 
             let mut logical = Canonicalizer::new(&graph, sink);
             assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(),
                 *current.result.as_ref().unwrap());
-            let nonempty_exits = logical.states.iter().filter(|(_, id)| {
+            // Cold-dead publication fills both maps without entering the
+            // frame loop. This fresh one-root owner has no preexisting cache.
+            let exits = if logical.scratch_paid { logical.states.len() } else { 0 };
+            let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {
                 logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
-            }).count();
-            let exits = logical.states.len();
-            let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();
+            }).count() } else { 0 };
+            let misses = if logical.scratch_paid {
+                logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count()
+            } else { 0 };
             assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
             let removed_backing = if nonempty_exits > 0 { std::mem::size_of::<usize>() } else { 0 };
             let old_removed = exits * empty_signature::BRANCH_CONTROLS

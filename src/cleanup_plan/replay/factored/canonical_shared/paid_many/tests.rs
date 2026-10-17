@@ -211,11 +211,15 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
                 let mut logical_budget = ReplayBudget::unobserved();
                 let mut logical = Canonicalizer::new(&graph, sink);
                 assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(), tuples[1].0);
-                let nonempty_exits = logical.states.iter().filter(|(_, id)| {
+                // Cold-dead publication fills both maps without entering the
+                // frame loop. This fresh one-root owner has no preexisting cache.
+                let exits = if logical.scratch_paid { logical.states.len() } else { 0 };
+                let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {
                     logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
-                }).count();
-                let exits = logical.states.len();
-                let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();
+                }).count() } else { 0 };
+                let misses = if logical.scratch_paid {
+                    logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count()
+                } else { 0 };
                 assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
                 let removed_backing = if nonempty_exits > 0 { size_of::<usize>() } else { 0 };
                 let old_removed = exits * super::super::empty_signature::BRANCH_CONTROLS

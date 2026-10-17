@@ -1,0 +1,20 @@
+[
+  {
+    "file": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "archive": "paid_many__tests.rs.whole-before.rs.txt",
+    "before_sha256": "0e141e9d5ce86d66a831ce7318f0846e9fc6e1fa2d01b3f178f7d654b3a06449",
+    "after_sha256": "d1daf62847dca23b86e6b0e0a259f303d9025d9d0d2577b6bca73f50a589acb4",
+    "old": "let nonempty_exits = logical.states.iter().filter(|(_, id)| {\n                    logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())\n                }).count();\n                let exits = logical.states.len();\n                let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();",
+    "new": "// Cold-dead publication fills both maps without entering the\n                // frame loop. This fresh one-root owner has no preexisting cache.\n                let exits = if logical.scratch_paid { logical.states.len() } else { 0 };\n                let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {\n                    logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())\n                }).count() } else { 0 };\n                let misses = if logical.scratch_paid {\n                    logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count()\n                } else { 0 };",
+    "exact_inverse": true
+  },
+  {
+    "file": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "archive": "canonical_shared__paid_route_tests.rs.whole-before.rs.txt",
+    "before_sha256": "7e20dc9ba8712efc041dbc502a35a0d3fe7f42dc7804b2886bec843d06b0914c",
+    "after_sha256": "6af9ee722636010d8e952db1730e82da2aaf4fbbd48fb78406446181b3a4d3a2",
+    "old": "let nonempty_exits = logical.states.iter().filter(|(_, id)| {\n                logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())\n            }).count();\n            let exits = logical.states.len();\n            let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();",
+    "new": "// Cold-dead publication fills both maps without entering the\n            // frame loop. This fresh one-root owner has no preexisting cache.\n            let exits = if logical.scratch_paid { logical.states.len() } else { 0 };\n            let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {\n                logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())\n            }).count() } else { 0 };\n            let misses = if logical.scratch_paid {\n                logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count()\n            } else { 0 };",
+    "exact_inverse": true
+  }
+]
