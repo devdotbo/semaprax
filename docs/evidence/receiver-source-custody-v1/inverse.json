@@ -1,10 +1,18 @@
 [
   {
     "path": "src/cleanup_plan/replay.rs",
-    "after_sha256": "b9aa407e36845dd9dcec27af9457bf3f321854add8d7b7243673abe20b66c3ad",
+    "after_sha256": "a095e76b1c26a3fb49664a2169e9933fac76904b75c0a5c39046892442d24370",
     "before_sha256": "1ee09bd6f221d0eb3e272016f243a00c67815d56fcc246b794975c9ee00a5220",
     "archive": "src__cleanup_plan__replay.rs.before.txt",
     "inverse": [
+      {
+        "after": "            if $frames.len() == $frames.capacity() {\n                continuation_storage::reserve_push($frames, function, work.budget)?;\n            }",
+        "before": "            if $frames.len() == $frames.capacity() {\n                return Err(replay_error(\n                    function,\n                    \"typed-HIR skeleton traversal exceeds the admitted depth\",\n                ));\n            }"
+      },
+      {
+        "after": "            if frames.len() == frames.capacity() {\n                continuation_storage::reserve_push(frames, function, work.budget)?;\n            }",
+        "before": "            if frames.len() == frames.capacity() {\n                return Err(replay_error(\n                    function,\n                    \"typed-HIR skeleton traversal exceeds the admitted depth\",\n                ));\n            }"
+      },
       {
         "after": "        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);\n    }\n    let mut combined = Vec::new();\n    if !suffixes.is_empty() {\n        path_array::sequence::minimum(\n            &mut combined,\n            &prefixes,\n            &suffixes,\n            work,\n            \"sequenced path capacity\",\n        )?;\n    }\n",
         "before": "        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);\n    }\n    let mut combined = Vec::new();\n    if !suffixes.is_empty() {\n        path_array::minimum(\n            &mut combined,\n            prefixes.len(),\n            work,\n            \"sequenced path capacity\",\n        )?;\n    }\n"

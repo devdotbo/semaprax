@@ -69,6 +69,21 @@ fn held_status() -> &'static [serde_json::Value] {
     })
 }
 
+// Separate semantic inputs for invocation-held continuation backing.
+fn held_continuations() -> &'static [serde_json::Value] {
+    static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
+    RECORDS.get_or_init(|| {
+        serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/held-continuation-growth-v1/views.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    })
+}
+
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
         let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
@@ -113,6 +128,12 @@ fn invert(proof: &serde_json::Value, current: &str) -> String {
 }
 
 pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
+    if let Some(proof) = held_continuations()
+        .iter()
+        .find(|proof| proof["path"] == path)
+    {
+        return Some(invert(proof, current));
+    }
     if let Some(proof) = held_status().iter().find(|proof| proof["path"] == path) {
         return Some(invert(proof, current));
     }
@@ -137,6 +158,7 @@ pub(super) fn contains(path: &str) -> bool {
         .chain(ordinary_setup())
         .chain(ordinary_helpers())
         .chain(held_status())
+        .chain(held_continuations())
         .any(|proof| proof["path"] == path)
 }
 
@@ -411,4 +433,101 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         .find("fn validate_status_sources_held_prefix")
         .unwrap();
     assert_eq!(current[start..].trim_end(), expected.trim_end());
+}
+
+#[test]
+fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held_continuations().len(), 2);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in held_continuations() {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        assert!(!proofs()
+            .iter()
+            .chain(followups())
+            .chain(ordinary_setup())
+            .chain(ordinary_helpers())
+            .chain(held_status())
+            .any(|old| old["path"] == path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(contains(path));
+        assert_eq!(predecessor(path, &current), Some(before));
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+    let whole: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(
+            root.join("docs/evidence/held-continuation-growth-v1/sources.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(whole.len(), 10);
+    for proof in &whole {
+        let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+    }
+    let before_file = |path: &str| {
+        let proof = whole.iter().find(|p| p["path"] == path).unwrap();
+        std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+    };
+    let old_tests = before_file("src/cleanup_plan/replay/continuation_storage/tests.rs");
+    let current_tests =
+        std::fs::read_to_string(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs"))
+            .unwrap();
+    assert!(current_tests.starts_with(&old_tests));
+    let old_storage = before_file("src/cleanup_plan/replay/continuation_storage.rs");
+    let current_storage =
+        std::fs::read_to_string(root.join("src/cleanup_plan/replay/continuation_storage.rs"))
+            .unwrap();
+    let fixed = old_storage.find("pub(super) fn fresh").unwrap();
+    let fixed_end = fixed
+        + old_storage[fixed..]
+            .find("/// An owning traversal")
+            .unwrap();
+    assert_eq!(
+        current_storage
+            .matches(&old_storage[fixed..fixed_end])
+            .count(),
+        1
+    );
+    let machine_types = old_storage.find("pub(super) type OwnedStep").unwrap();
+    assert!(current_storage.contains(&old_storage[machine_types..]));
+    let mut machine = std::fs::read_to_string(root.join("src/cleanup_plan/replay.rs")).unwrap();
+    let after = r###"            if $frames.len() == $frames.capacity() {
+                continuation_storage::reserve_push($frames, function, work.budget)?;
+            }"###;
+    let before = r###"            if $frames.len() == $frames.capacity() {
+                return Err(replay_error(
+                    function,
+                    "typed-HIR skeleton traversal exceeds the admitted depth",
+                ));
+            }"###;
+    assert_eq!(machine.matches(after).count(), 1);
+    machine = machine.replacen(after, before, 1);
+    let after = r###"            if frames.len() == frames.capacity() {
+                continuation_storage::reserve_push(frames, function, work.budget)?;
+            }"###;
+    let before = r###"            if frames.len() == frames.capacity() {
+                return Err(replay_error(
+                    function,
+                    "typed-HIR skeleton traversal exceeds the admitted depth",
+                ));
+            }"###;
+    assert_eq!(machine.matches(after).count(), 1);
+    machine = machine.replacen(after, before, 1);
+    assert_eq!(machine, before_file("src/cleanup_plan/replay.rs"));
 }

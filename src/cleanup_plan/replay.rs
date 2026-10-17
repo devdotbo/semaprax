@@ -3064,10 +3064,7 @@ fn expression_skeleton_run<'hir>(
     macro_rules! push_frame {
         ($frames:expr, $frame:expr) => {{
             if $frames.len() == $frames.capacity() {
-                return Err(replay_error(
-                    function,
-                    "typed-HIR skeleton traversal exceeds the admitted depth",
-                ));
+                continuation_storage::reserve_push($frames, function, work.budget)?;
             }
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();
@@ -3109,10 +3106,7 @@ fn expression_skeleton_run<'hir>(
     ) -> Result<Option<Vec<ExprSkeletonPath>>, Diagnostic> {
         let mut push = |frames: &mut Vec<Frame<'e>>, frame: Frame<'e>| -> Result<(), Diagnostic> {
             if frames.len() == frames.capacity() {
-                return Err(replay_error(
-                    function,
-                    "typed-HIR skeleton traversal exceeds the admitted depth",
-                ));
+                continuation_storage::reserve_push(frames, function, work.budget)?;
             }
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();

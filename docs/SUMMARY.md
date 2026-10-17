@@ -1155,3 +1155,4 @@ Audience: all documentation readers.
 - [Direct successor label storage](evidence/factored-flat-labels-v1/README.md)
 - [Hosted graph bill after paid replay setup](evidence/browser-graph-pins-67107c7c5/README.md)
 - [Hold the status-directory prefix during paid construction](evidence/held-status-prefix-v1/README.md)
+- [Grow invocation-held continuation backing as reached](evidence/held-continuation-growth-v1/README.md)

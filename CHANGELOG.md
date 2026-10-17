@@ -1,5 +1,7 @@
 # Changelog
 
+- Grow authenticated invocation-held continuation buffers as reached, funding complete replacements and retaining the original depth bound, fixed legacy constructor, work events and historical controls.
+
 - Hold an authenticated exclusive status-directory prefix during paid construction, retaining original validation loops, work ceilings, physical controls and complete historical source proofs.
 
 - Refresh browser pins from complete hosted 67107c7c5 graphs, preserving every prior byte except the exact builder bill and self-digest, with all historical controls retained.
