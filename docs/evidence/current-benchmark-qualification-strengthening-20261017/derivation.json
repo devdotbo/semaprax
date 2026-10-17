@@ -1,0 +1,38 @@
+{
+  "artifacts": {
+    "semaprax-execution": {
+      "length": 2890,
+      "original_path": "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/semaprax-execution.json",
+      "resolved_path": "/Volumes/Semaprax/internal-disk-relief-20261015/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/semaprax-execution.json",
+      "sha256": "e98eb3443d3c0fabc81183040a83ad63a6702c2a11bca206545379b81147c5ee"
+    },
+    "semaprax-report": {
+      "length": 110943,
+      "original_path": "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/evidence/semaprax/report.json",
+      "resolved_path": "/Volumes/Semaprax/internal-disk-relief-20261015/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/evidence/semaprax/report.json",
+      "sha256": "93f5ce3060b7c4bb42511fd459914eecfbb0fc2161b01e6114e76fb81916bafc"
+    },
+    "typescript-execution": {
+      "length": 3340,
+      "original_path": "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/typescript-execution.json",
+      "resolved_path": "/Volumes/Semaprax/internal-disk-relief-20261015/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/typescript-execution.json",
+      "sha256": "9fd045fd927f974528ac7bd9a2134d5d56b22d3233981cf09e04218c94bd02bd"
+    },
+    "typescript-report": {
+      "length": 112332,
+      "original_path": "/Users/kevin/.codex/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/evidence/typescript/report.json",
+      "resolved_path": "/Volumes/Semaprax/internal-disk-relief-20261015/benchmark-runs/opt687-689-verification-20261008/teamdesk-reference-corrected-810afdd90-source398-20261009-retry3/evidence/typescript/report.json",
+      "sha256": "422d093ff97941348850c419915949d1b8bac90c1fd9d45b808780e27258fc5f"
+    }
+  },
+  "both_full_reference_case_group_maps_identical": true,
+  "canonical_inventory": {
+    "length": 50072,
+    "path": "benchmarks/webapp-tokens-v2/canonical-r8-inventory.json",
+    "sha256": "53e074183ef714e17d88418e14b9520ab0c175744ff1814953ee1c8944e6ab63"
+  },
+  "execution_schema_has_no_timeout_or_settlement_field": true,
+  "no_execution_or_test_performed": true,
+  "original_summary_sha256": "4cf4b4dc025eb16de40dd41079fc32b68a86be56fe025c764c7ca209f26dd766",
+  "settlement_source": "acceptance/run.mjs finally awaits finish(server) before writing report; exit_code=0 only after passed qualification"
+}

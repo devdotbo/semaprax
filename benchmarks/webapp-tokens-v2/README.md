@@ -48,9 +48,19 @@ reference-qualification schema and must bind the selected compiler source and
 executable SHA-256 plus both complete 912-case reports and their execution
 receipts. Its report/execution files must stay under the summary directory;
 symlinks, duplicate JSON members, drift and incomplete reports fail closed.
-The campaign retains all five whole inputs under `current-qualification/` and
-reauthenticates them and the exact acceptance sources before calibration and
-each trial. Omitting both options retains the original source-specific
+Both arms must match the exact canonical 912-case/group inventory derived
+from both complete original r8 reports at the same SPEC and gate. Renaming
+cases or groups, even in both arms together, is refused. The campaign retains
+the five whole current inputs and the authenticated canonical inventory under
+`current-qualification/`, and reauthenticates them and both the repository and
+actually invoked gate sources before calibration and each trial. Execution
+receipts use the original closed schema: successful integer exit status, exact
+arm/candidate/output/compiler command links, runtime/dependency hashes and
+complete candidate inventories must agree with the reports and summary.
+Timeout/unsettled extensions are not admitted as successful execution evidence.
+The pinned gate writes its finished report after server/log teardown; the
+original receipt schema provides no independent host-settlement observation,
+which remains explicitly unknown. Omitting both options retains the original source-specific
 historical route; supplying only one option is refused. Preparing the option
 creates no current compiler, qualification, or paid-run evidence.
 

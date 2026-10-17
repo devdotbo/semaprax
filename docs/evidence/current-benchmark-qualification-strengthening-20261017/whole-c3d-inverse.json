@@ -1,0 +1,49 @@
+{
+  "AST_only": true,
+  "before_head": "c3d0e3302f9d4278a6859b3c9f57b33bf0fd2df6",
+  "edits": [
+    {
+      "after": {
+        "length": 80824,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.whole-after",
+        "sha256": "266256448cdd509e4a0aa726badf5deacfef160240e779179ac048d73db81ea3"
+      },
+      "before": {
+        "length": 73646,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/codex_campaign.py.c3d.whole-before",
+        "sha256": "4634c00c857c8f3bb8d2d178ec264b3b8d20fcb895455c0dc0ebda5c03f34c63"
+      },
+      "path": "benchmarks/webapp-tokens-v2/codex_campaign.py"
+    },
+    {
+      "after": {
+        "length": 83937,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.whole-after",
+        "sha256": "b92193523e3262a972b692d023e7838ccb6ee8ead523a94bf1da74d9b40d1849"
+      },
+      "before": {
+        "length": 80933,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/test_codex_campaign.py.c3d.whole-before",
+        "sha256": "f5851caeabe3db886b85680d8f7132d0113918f8664070560244644b7a14ecf0"
+      },
+      "path": "benchmarks/webapp-tokens-v2/test_codex_campaign.py"
+    },
+    {
+      "after": {
+        "length": 14742,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.whole-after",
+        "sha256": "577067f39afc2eb5e33775aa5df36c6b93e58b21e732e52a1ba1ffd50d2bc58a"
+      },
+      "before": {
+        "length": 13959,
+        "path": "docs/evidence/current-benchmark-qualification-strengthening-20261017/README.md.c3d.whole-before",
+        "sha256": "9eab3101598a2ac169446aee65b5d639b5b69ac25a7c0400c8a67466918fbdf4"
+      },
+      "path": "benchmarks/webapp-tokens-v2/README.md"
+    }
+  ],
+  "new_tests_authored_not_executed": 9,
+  "old_default_validator_and_command_prompt_check_bodies_byte_exact": true,
+  "original_46_direct_methods_including_44_tests_byte_exact": true,
+  "reconstruction": "replace each complete after image with the exact complete before image; delete added artifact list from source-review.json"
+}
