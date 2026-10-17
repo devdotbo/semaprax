@@ -6,6 +6,7 @@
 //! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
 mod dag_storage;
+mod isolated_paths;
 #[cfg(test)]
 mod oracle_entry;
 mod ordinary_dag;
@@ -870,6 +871,14 @@ impl SkeletonWork<'_, '_> {
             return Ok(paths);
         }
         self.charge(paths.len(), "factored path-state merge")?;
+        if isolated_paths::can_reuse(self, &paths) {
+            self.budget.reserve_array::<u8>(
+                self.function,
+                isolated_paths::RECEIVING_BYTES,
+                "isolated path receiving owners",
+            )?;
+            return Ok(paths);
+        }
         type Key = (
             Option<CleanupPlace>,
             bool,

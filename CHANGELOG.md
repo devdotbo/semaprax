@@ -1,5 +1,7 @@
 # Changelog
 
+- Reuse ordinary isolated lexical path backing after the original work charge, preserving every path and observation while paying new receiving frames and retaining all original fallback routes.
+
 - Keep the original Copy-record reporting fixture as a successful complete-artifact parity control, and test exact legacy refusals using an explicitly unsupported proposal schema.
 
 - Decline incomplete optional helper digests only on shared capture-work exhaustion, preserving complete receiver authentication, unsupported-body refusals, successful debits and existing limits.

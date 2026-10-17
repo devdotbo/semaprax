@@ -416,6 +416,9 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"),
         concat!(
             include_str!("../src/cleanup_plan/replay/skeleton_work.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs"),
+            include_str!("../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/dag_storage.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/dag_storage/tests.rs"),
             include_str!(

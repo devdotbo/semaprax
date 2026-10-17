@@ -221,10 +221,14 @@
   },
   {
     "path": "tests/hir_module_boundaries.rs",
-    "after_sha256": "d6e8ad51661a3f8727e9f654bd7e7f2687ffa6fa13fd9c66900217def541c1cc",
+    "after_sha256": "2a8c92d82704c56d18e15da4912e839be52e96114dbd9d2562fdb67cce303577",
     "before_sha256": "0fe29b4e9a4c1aea7e6ff38c608e4bc3f8b82c4c3c3a4484f35cf7f2490842bb",
     "archive": "tests__hir_module_boundaries.rs.before.txt",
     "inverse": [
+      {
+        "after": "   include_str!(\"../src/cleanup_plan/replay/skeleton_work.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/skeleton_wo",
+        "before": "   include_str!(\"../src/cleanup_plan/replay/skeleton_work.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/skeleton_wo"
+      },
       {
         "after": "up_plan/replay/expression_facts/receiving/helpers/regions.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_",
         "before": "up_plan/replay/expression_facts/receiving/helpers/regions.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_"
