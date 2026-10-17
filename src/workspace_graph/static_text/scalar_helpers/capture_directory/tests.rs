@@ -513,7 +513,9 @@ fn real_utf8_provider_matches_original_capture_without_literal_inventory() {
 
 #[test]
 fn optional_source_work_selection_preserves_the_complete_prior_capture_body() {
-    let current = include_str!("../../scalar_helpers.rs");
+    let current = crate::source_reflows::helper_digest_capture_predecessor(include_str!(
+        "../../scalar_helpers.rs"
+    ));
     let original = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/optional-helper-source-work-v1/scalar_helpers.before.rs.txt"
@@ -531,4 +533,89 @@ fn optional_source_work_selection_preserves_the_complete_prior_capture_body() {
     assert_eq!(restored.matches(anchor).count(), 1);
     restored = restored.replacen(anchor, &format!("{debit}{anchor}"), 1);
     assert_eq!(restored, original);
+}
+
+#[test]
+fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_hashes() {
+    let programs = programs(&source(1));
+    let resolved = crate::hir::resolve(&programs[0]).unwrap();
+    let function = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "helpers.f0000")
+        .unwrap();
+    let revision = [19; 32];
+    let mut units = 0usize;
+    let expected = super::super::body_digest::typed_attempt_metered(
+        function,
+        &revision,
+        Some(&mut |n| {
+            units += n;
+            Some(())
+        }),
+    )
+    .0
+    .unwrap();
+    assert!(units > 1);
+    for available in [0, 1, units - 1, units, units + 17] {
+        let ((digest, remaining, observed), refused, paid) =
+            crate::bounded_output::with_limit_usage(super::super::DIGEST_RECEIVER_BYTES, || {
+                let mut work = available;
+                let (digest, observed) = crate::test_allocation_observer::measure(|| {
+                    super::super::capture_digest(function, &revision, &mut work).unwrap()
+                });
+                (digest, work, observed)
+            });
+        assert!(!refused);
+        assert_eq!(paid, super::super::DIGEST_RECEIVER_BYTES);
+        assert_eq!(
+            observed,
+            crate::test_allocation_observer::Metrics::default()
+        );
+        if available >= units {
+            assert_eq!(digest, Some(expected));
+            assert_eq!(remaining, available - units);
+        } else {
+            assert_eq!(digest, None);
+            assert!(remaining <= available);
+        }
+    }
+    // Acquisition precedes the hash callback and keeps the sticky byte refusal.
+    let mut work = units;
+    let (result, refused, _, first) = crate::bounded_output::with_limit_usage_refusal(
+        super::super::DIGEST_RECEIVER_BYTES - 1,
+        || super::super::capture_digest(function, &revision, &mut work),
+    );
+    assert!(result.is_err() && refused);
+    assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
+    assert_eq!(work, units);
+    assert_eq!(
+        first.unwrap().requested,
+        super::super::DIGEST_RECEIVER_BYTES
+    );
+}
+
+#[test]
+fn optional_digest_keeps_unsupported_body_and_internal_ceiling_g410_refusals() {
+    let programs = programs(&source(1));
+    let resolved = crate::hir::resolve(&programs[0]).unwrap();
+    let function = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "helpers.f0000")
+        .unwrap();
+    let mut unsupported = function.clone();
+    unsupported.body.kind = crate::hir::ResolvedExprKind::Upcast {
+        source: Box::new(function.body.clone()),
+    };
+    let mut internal = function.clone();
+    internal.name = "x".repeat(1_048_576);
+    for candidate in [&unsupported, &internal] {
+        let mut work = usize::MAX;
+        let result = super::super::capture_digest(candidate, &[19; 32], &mut work);
+        let errors = result.unwrap_err();
+        assert_eq!(errors, super::super::fail());
+        assert_eq!(errors[0].code, "SPX-G410");
+        assert!(work < usize::MAX);
+    }
 }

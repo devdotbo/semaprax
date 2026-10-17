@@ -255,6 +255,51 @@ fn pure_profile_checked<E>(
     }
     Ok(true)
 }
+// Complete new caller/callee results, hash outcome, callback references and
+// local refusal state. No removed owner is credited against these frames.
+const DIGEST_RECEIVER_BYTES: usize = 2 * std::mem::size_of::<
+    Result<Option<[u8; 32]>, Vec<Diagnostic>>,
+>() + std::mem::size_of::<Option<[u8; 32]>>()
+    + std::mem::size_of::<(Option<[u8; 32]>, usize)>()
+    + 2 * std::mem::size_of::<&ResolvedFunction>()
+    + 2 * std::mem::size_of::<&[u8; 32]>()
+    + 2 * std::mem::size_of::<&mut usize>()
+    + std::mem::size_of::<(&mut usize, &mut bool)>()
+    + std::mem::size_of::<Option<usize>>()
+    + std::mem::size_of::<Option<()>>()
+    + std::mem::size_of::<usize>()
+    + std::mem::size_of::<bool>();
+
+/// Only shared capture-work exhaustion declines this optional inventory.
+/// A body the encoder cannot authenticate still keeps the original refusal.
+fn capture_digest(
+    function: &ResolvedFunction,
+    revision: &[u8; 32],
+    work: &mut usize,
+) -> Result<Option<[u8; 32]>, Vec<Diagnostic>> {
+    reserve_builder_structure(DIGEST_RECEIVER_BYTES)?;
+    let mut refused = false;
+    let digest = body_digest::typed_attempt_metered(
+        function,
+        revision,
+        Some(&mut |units| {
+            let Some(remaining) = work.checked_sub(units) else {
+                refused = true;
+                return None;
+            };
+            *work = remaining;
+            Some(())
+        }),
+    )
+    .0;
+    if refused {
+        // All successful work and backing debits stay consumed. The caller
+        // drops every partial fact; no selected receiver gains authority.
+        return Ok(None);
+    }
+    digest.map(Some).ok_or_else(fail)
+}
+
 pub(in crate::workspace_graph) fn capture(
     program: &Program,
     resolved: &hir::ResolvedProgram,
@@ -459,13 +504,9 @@ pub(in crate::workspace_graph) fn capture(
                 ownership: param.ownership,
             });
         }
-        let digest = body_digest::typed_attempt_metered(
-            function,
-            &revision,
-            Some(&mut |units| debit(&mut work, units).ok()),
-        )
-        .0
-        .ok_or_else(fail)?;
+        let Some(digest) = capture_digest(function, &revision, &mut work)? else {
+            return Ok(None);
+        };
         functions.push(Function {
             id: function.id.clone(),
             explicit: source.explicit_id,

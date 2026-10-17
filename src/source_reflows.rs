@@ -150,3 +150,5 @@ fn a_changed_current_byte_is_refused_before_an_inverse_can_hide_it() {
     forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
     assert!(std::panic::catch_unwind(|| restore(&forged, &current)).is_err());
 }
+
+pub(crate) use semantic_receivers::helper_digest_capture_predecessor;

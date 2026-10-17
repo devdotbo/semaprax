@@ -1,5 +1,9 @@
 # Changelog
 
+- Keep the original Copy-record reporting fixture as a successful complete-artifact parity control, and test exact legacy refusals using an explicitly unsupported proposal schema.
+
+- Decline incomplete optional helper digests only on shared capture-work exhaustion, preserving complete receiver authentication, unsupported-body refusals, successful debits and existing limits.
+
 - Distinguish borrowed-view failure checks from owned zero-byte cleanup in the byte traversal host, retaining strict report and ownership assertions.
 
 - Attribute committed test-only builder debits to exclusive replay phases, retaining the ordinary ledger behavior, quota frontiers, and complete source controls.
