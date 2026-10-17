@@ -7,8 +7,8 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 109477);
-    assert_eq!(digest(data.as_bytes()), "3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09");
+    assert_eq!(data.len(), 111187);
+    assert_eq!(digest(data.as_bytes()), "802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
@@ -28,6 +28,51 @@ fn packet() -> serde_json::Value {
     restored.as_object_mut().unwrap().remove("immediate_before");
     assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
     }
+    let _remote = packet_remote_d88();
+    for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
+        let path=anchor["path"].as_str().unwrap();
+        let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
+        assert_eq!(Some(raw.as_str()),table_compiled(path),"whole predecessor table physical and compiled bytes");
+        assert_eq!(raw,read_view(anchor),"whole predecessor table archive");
+    }
+    packet
+}
+fn packet_remote_d88() -> serde_json::Value {
+    let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt");
+    assert_eq!(data.len(), 68224);
+    assert_eq!(digest(data.as_bytes()), "f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let mut restored = packet.clone();
+    let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs").unwrap();
+    let mut previous = row["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(previous["name"], "whole-f47-msrv-parent-import");
+    previous.as_object_mut().unwrap().remove("name");
+    row["current"] = previous;
+    assert_eq!(restored, packet_previous_remote_d88(), "complete predecessor table and all original controls retained");
+    packet
+}
+fn packet_previous_remote_d88() -> serde_json::Value {
+    let data = include_str!("../../docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt");
+    assert_eq!(data.len(), 84171);
+    assert_eq!(digest(data.as_bytes()), "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71");
+    let root=Path::new(env!("CARGO_MANIFEST_DIR"));
+    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&digest(data.as_bytes())).unwrap();
+    assert_eq!(physical,data,"complete physical and compiled current manifest");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 99);
+    let before=read_view(&packet["immediate_before"]);
+    let mut restored=packet.clone();
+    let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(added["source"],"tests/native/string_settlement/codec_allocation/codec808_frontier.rs");
+    let route=restored["rows"].as_array_mut().unwrap().iter_mut().find(|row|row["source"]=="src/source_reflows_merge/next_big_batch_inputs.rs").unwrap();
+    let mut previous=route["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(previous["name"],"whole886-next-big");
+    previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
+    restored.as_object_mut().unwrap().remove("immediate_before");
+    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -85,6 +130,8 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         "docs/evidence/main-e177-final-source-binding-20261017/views/2e4b3b5441418b7e21a1424445e19bb4473d15f196ab3a897ca920417dce730f.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/2e4b3b5441418b7e21a1424445e19bb4473d15f196ab3a897ca920417dce730f.txt")),
         "docs/evidence/next-large-side-source-composition-20261017/side-inputs.json" => Some(include_str!("../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt")),
         _ => None,
     }
 }

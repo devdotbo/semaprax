@@ -1,0 +1,43 @@
+{
+  "base": "35184390f60daceefea25877b453f3acb75e5784",
+  "source": "src/bounded_output/stage_debits/route_debits.rs",
+  "before": {
+    "length": 24972,
+    "sha256": "27b655cac5b48a48efc2b58a276759c33d15e83fac6af5a0575c6d911ec6ba22"
+  },
+  "after": {
+    "length": 29422,
+    "sha256": "4949cec4e9d4740093b5c9f6bd209e49570f12dc965445a7c7fbcde6ef165721"
+  },
+  "roles": [
+    {
+      "domain": "hir",
+      "source": "src/bounded_output/stage_debits/route_debits.rs",
+      "role": "test-only",
+      "only_one_existing_source_pin_updated": true,
+      "all_original_classes_edges_and_chunks_retained": true
+    },
+    {
+      "domain": "projection",
+      "source": "src/bounded_output/stage_debits/route_debits.rs",
+      "role": "test-only",
+      "only_one_existing_source_pin_updated": true,
+      "all_original_classes_edges_and_chunks_retained": true
+    }
+  ],
+  "historical_owner_rows_retained": 241,
+  "only_existing_route_owner_pin_updated": true,
+  "static_TLS_payload_removed_bytes": 6340608,
+  "ROWS_unchanged": 1024,
+  "ID_BYTES_unchanged": 256,
+  "ROUTES_unchanged": 3,
+  "PHASES_unchanged": 11,
+  "COMPARISON_PHASES_unchanged": 13,
+  "preparation": "Three fixed-length Vec<Row> banks acquired before observation activation; every callback uses existing indexed backing; reuse preserves capacity and pointers. Inactive threads retain only empty carriers. Nested observation retains original loss/refusal behavior.",
+  "original_full_route_tests_passed": 3,
+  "new_regression_tests_passed": 1,
+  "compile_peak_KiB": 204016,
+  "run_peak_KiB": 8784,
+  "local_process_tree_limit_KiB": 204800,
+  "scope": "Actual original route observer tests, real bounded-output ledger core and real allocation observer; unrelated bounded-output modules/test modules omitted from the tiny harness. No production semantic changes, full CI pass, Linux TLS measurement or public runtime evidence claimed."
+}

@@ -1,0 +1,9 @@
+
+running 4 tests
+test bounded_output::stage_debits::route_debits::child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled ... ok
+test bounded_output::stage_debits::route_debits::comparison_aggregate_census_keeps_8769_calls_and_marks_arithmetic_overflow_without_event_buffer ... ok
+test bounded_output::stage_debits::route_debits::comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_overflow ... ok
+test bounded_output::stage_debits::route_debits::fixed_route_banks_are_lazy_and_reused_without_allocating_in_callbacks ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 13 filtered out; finished in 0.08s
+

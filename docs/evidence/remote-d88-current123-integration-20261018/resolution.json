@@ -1,0 +1,54 @@
+{
+  "status": "SOURCE_ONLY_MERGE_CUSTODY_PREPARED",
+  "parents": [
+    "d4afa19ebaf11a182e1f8ebbe80fb3d03d305127",
+    "d88e8b83b01d5b2e8ba1cbd93dd462b6dc30d781"
+  ],
+  "rows": 123,
+  "modules": 76,
+  "helper_edits": [
+    {
+      "before": "assert_eq!(data.len(), 109477);",
+      "after": "assert_eq!(data.len(), 111187);"
+    },
+    {
+      "before": "3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09",
+      "after": "802a9e325c6d4e9da033593b365119441fb2c1431cb981793fe4026e29ff6734"
+    },
+    {
+      "before": "    for anchor in packet[\"complete_old_table_anchors\"].as_array().unwrap() {",
+      "after": "    let _remote = packet_remote_d88();\n    for anchor in packet[\"complete_old_table_anchors\"].as_array().unwrap() {"
+    },
+    {
+      "before": "fn same_file(",
+      "after": "fn packet_remote_d88() -> serde_json::Value {\n    let data = include_str!(\"../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt\");\n    assert_eq!(data.len(), 68224);\n    assert_eq!(digest(data.as_bytes()), \"f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469\");\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    assert_eq!(held(&root.join(\"docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt\"), data.len(), &digest(data.as_bytes())).unwrap(), data, \"complete physical and compiled current manifest\");\n    let packet: serde_json::Value = serde_json::from_str(data).unwrap();\n    let mut restored = packet.clone();\n    let row = restored[\"rows\"].as_array_mut().unwrap().iter_mut().find(|row| row[\"source\"] == \"src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs\").unwrap();\n    let mut previous = row[\"views\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(previous[\"name\"], \"whole-f47-msrv-parent-import\");\n    previous.as_object_mut().unwrap().remove(\"name\");\n    row[\"current\"] = previous;\n    assert_eq!(restored, packet_previous_remote_d88(), \"complete predecessor table and all original controls retained\");\n    packet\n}\nfn packet_previous_remote_d88() -> serde_json::Value {\n    let data = include_str!(\"../../docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt\");\n    assert_eq!(data.len(), 84171);\n    assert_eq!(digest(data.as_bytes()), \"3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71\");\n    let root=Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let physical=held(&root.join(\"docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt\"),data.len(),&digest(data.as_bytes())).unwrap();\n    assert_eq!(physical,data,\"complete physical and compiled current manifest\");\n    let packet: serde_json::Value = serde_json::from_str(data).unwrap();\n    assert_eq!(packet[\"schema\"], \"semaprax.main-e177-final-whole-inputs.v1\");\n    assert_eq!(packet[\"rows\"].as_array().unwrap().len(), 99);\n    let before=read_view(&packet[\"immediate_before\"]);\n    let mut restored=packet.clone();\n    let added=restored[\"rows\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(added[\"source\"],\"tests/native/string_settlement/codec_allocation/codec808_frontier.rs\");\n    let route=restored[\"rows\"].as_array_mut().unwrap().iter_mut().find(|row|row[\"source\"]==\"src/source_reflows_merge/next_big_batch_inputs.rs\").unwrap();\n    let mut previous=route[\"views\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(previous[\"name\"],\"whole886-next-big\");\n    previous.as_object_mut().unwrap().remove(\"name\");route[\"current\"]=previous;\n    restored.as_object_mut().unwrap().remove(\"immediate_before\");\n    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),\"complete original98 source table retained\");\n    for anchor in packet[\"complete_old_table_anchors\"].as_array().unwrap() {\n        let path=anchor[\"path\"].as_str().unwrap();\n        let raw=held(&root.join(path),anchor[\"length\"].as_u64().unwrap()as usize,anchor[\"sha256\"].as_str().unwrap()).unwrap();\n        assert_eq!(Some(raw.as_str()),table_compiled(path),\"whole predecessor table physical and compiled bytes\");\n        assert_eq!(raw,read_view(anchor),\"whole predecessor table archive\");\n    }\n    packet\n}\nfn same_file("
+    },
+    {
+      "before": "        _ => None,\n    }\n}\nfn compiled(",
+      "after": "        \"docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt\" => Some(include_str!(\"../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt\")),\n        \"docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt\" => Some(include_str!(\"../../docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt\")),\n        _ => None,\n    }\n}\nfn compiled("
+    }
+  ],
+  "incoming_packet_function_edits": [
+    {
+      "before": "fn packet()",
+      "after": "fn packet_remote_d88()"
+    },
+    {
+      "before": "packet_previous()",
+      "after": "packet_previous_remote_d88()",
+      "count": 2
+    },
+    {
+      "before": "../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json",
+      "after": "../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"
+    },
+    {
+      "before": "root.join(\"docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json\")",
+      "after": "root.join(\"docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt\")"
+    }
+  ],
+  "remote_whole99_archive": "docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt",
+  "whole_d4_123_archive": "docs/evidence/main-e177-final-source-binding-20261017/views/3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09.txt",
+  "physical174_and_final6_inputs_unchanged": true,
+  "Cargo": false
+}
