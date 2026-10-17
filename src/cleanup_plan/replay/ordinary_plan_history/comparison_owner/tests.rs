@@ -169,7 +169,7 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
     let owner = events.iter().position(|e| e.phase == "ordinary plan retained comparison owner").unwrap();
     assert!(events[owner].after.unwrap() > events[owner].before);
     let mut selected = vec![owner];
-    for phase in ["ordinary plan history cursor backing", "ordinary plan history paired cursor next", "ordinary plan history HIR cursor prepare", "ordinary plan history HIR cursor next", "ordinary plan retained final Zip next receivers", "ordinary plan retained drain swap receivers", "ordinary plan retained sift swap receivers"] {
+    for phase in ["ordinary plan history left cursor prepare", "ordinary plan history right cursor prepare", "ordinary plan history cursor backing", "ordinary plan history paired cursor next", "ordinary plan history HIR cursor prepare", "ordinary plan history HIR cursor next", "ordinary plan retained final Zip next receivers", "ordinary plan retained drain swap receivers", "ordinary plan retained sift swap receivers"] {
         let hits = events.iter().enumerate().filter(|(_,e)| e.phase==phase && e.after.is_some_and(|after| after > e.before)).map(|(i,_)| i).collect::<Vec<_>>();
         assert!(!hits.is_empty(), "actual frontier{phase}");
         selected.push(hits[0]); selected.push(*hits.last().unwrap());
