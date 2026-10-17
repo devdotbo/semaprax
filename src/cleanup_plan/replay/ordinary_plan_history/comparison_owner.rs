@@ -36,27 +36,25 @@ const PAIR_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Skele
     + 2 * size_of::<Ordering>(); // two lexical cmp returns, received in owner
 type FinalZip = std::iter::Zip<std::slice::Iter<'static, PlanPath>, std::slice::Iter<'static, SkeletonPath>>;
 const FINAL_ITERATORS: usize = 2 * size_of::<std::slice::Iter<'static, PlanPath>>()
-    + 2 * size_of::<std::slice::Iter<'static, SkeletonPath>>() // zip actual/formal concrete iterators
-    + 2 * size_of::<FinalZip>() // returned/owned loop iterator
-    + 2 * size_of::<&[PlanPath]>() + 2 * size_of::<&[SkeletonPath]>()
-    + 2 * size_of::<&mut FinalZip>() // one loop-next actual/formal site
+    + 2 * size_of::<std::slice::Iter<'static, SkeletonPath>>()
+    + 2 * size_of::<FinalZip>()
+    + 2 * size_of::<&Vec<PlanPath>>() + size_of::<&[PlanPath]>() // Vec deref actual/formal/return
+    + 2 * size_of::<&[PlanPath]>() + 2 * size_of::<&[SkeletonPath]>();
+const FINAL_NEXT: usize = 2 * size_of::<&mut FinalZip>()
     + 2 * size_of::<Option<(&PlanPath, &SkeletonPath)>>()
-    + 2 * size_of::<(&PlanPath, &SkeletonPath)>(); // next return/receiving + pair bindings
-const CURSOR_INITIALIZERS: usize = 2 * size_of::<std::slice::IterMut<'static, Cursor>>()
-    + 2 * size_of::<&mut [Cursor; 2]>() // IntoIterator actual/formal place receivers
-    + 2 * size_of::<&mut std::slice::IterMut<'static, Cursor>>()
-    + 2 * size_of::<Option<&mut Cursor>>() + size_of::<&mut Cursor>();
-const FINAL_MATCHES: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<SkeletonObservation>>)>()
-    + size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
-    + 3 * size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>() // match bindings
-    + 8 * size_of::<&SkeletonObservation>() // actual/formal equality operands at two guards
-    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref actual/formal/return
+    + 2 * size_of::<(&PlanPath, &SkeletonPath)>()
+    + size_of::<usize>() // flat index local, per path (also prepaid for sentinel)
+    + 4 * size_of::<&SkeletonTerminal>() + size_of::<bool>();
+const FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<SkeletonObservation>>)>()
+    + size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>()
+    + 4 * size_of::<&SkeletonObservation>() // equality actual/formal pair
+    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
     + 2 * size_of::<&Observations>() + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-    + 2 * size_of::<usize>()
-    + size_of::<Option<&Rc<SkeletonObservation>>>() // flat get actual/formal/return
-    + 4 * size_of::<&SkeletonTerminal>() // final terminal inequality operands
-    + size_of::<usize>() // flat comparison index
-    + 4 * size_of::<bool>(); // len, both observation guards, terminal comparison
+    + 2 * size_of::<usize>() + size_of::<Option<&Rc<SkeletonObservation>>>()
+    + size_of::<bool>();
+const SHARED_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+    + 2 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonObservation>() + size_of::<bool>();
 // Prefix is_none and shared-HIR Cursor new/prepare/next retain their ORIGINAL
 // HIR_QUERY_CONTROLS/CURSOR_STORAGE/CURSOR_CALL debits below, not this bank.
 const LEN_QUERIES: usize = 2 * size_of::<&Vec<PlanPath>>() + size_of::<usize>()
@@ -72,18 +70,23 @@ const SCALAR_TRANSPORT: usize = size_of::<usize>() // initial build quotient
 const MISMATCH_CALL: usize = 2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&str>()
     + size_of::<Diagnostic>(); // direct helper actual/formal + Diagnostic return, no closure
 const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,Eq,sibling,root
-// Four charge sites (sift, pair, flat HIR, shared HIR), eight later byte
-// acquisition sites (left/right/paired, HIR prepare/query/flat-next/shared
-// prepare/shared-next) and the shared-HIR-next acquisition =13. Their Results,
-// phase/function/budget/usize actual+formal roles exist before their calls.
+// Retained primitive caller slots, not dynamic compound payload credit:
+// four charge sites + six original paid sites + three direct HIR reserve sites
+// + two swap payment sites + one Zip-next payment site = sixteen. Each is a
+// nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
+// no owned payload, failure leaves the invocation immediately with one owned
+// Diagnostic. Function/budget places never change and no Result escapes or
+// overlaps another activation of its lexical site. Distinct compound Option,
+// tuple, comparison/index/swap payloads below are paid on EVERY execution.
+// Two explicit backing sites have distinct prepaid primitive frames; no
+// iterator, IterMut::next or Option<&mut Cursor> initializer remains.
 // The first acquisition replaces the identical old compare-entry call and is
 // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner>()
     + size_of::<HistorySet>() // retained original owning input header
-    + 13 * PAYMENT_HEADER
-    + PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>() // one cursor-backing call site
-    + 6 * PATH_INDEX + 2 * PATH_SWAP
-    + PAIR_MATCH + CURSOR_INITIALIZERS + FINAL_ITERATORS + FINAL_MATCHES + 4 * MISMATCH_CALL
+    + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
+    + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
+    + FINAL_ITERATORS + size_of::<bool>() + 4 * MISMATCH_CALL
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 3 * size_of::<Step>(); // copied state transports at return/schedule sites
 
@@ -119,9 +122,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
     };
     owner.build = owner.len / 2;
     owner.drain = owner.len;
-    for cursor in &mut owner.cursors {
-        backing!(budget, function, &mut cursor.links, actual.max_depth, "ordinary plan history cursor backing")?;
-    }
+    backing!(budget, function, &mut owner.cursors[0].links, actual.max_depth, "ordinary plan history cursor backing")?;
+    backing!(budget, function, &mut owner.cursors[1].links, actual.max_depth, "ordinary plan history cursor backing")?;
     // These states replace the old two sift call sites and their two order
     // call sites. Each transition is the corresponding old call/return/loop
     // branch; no graph traversal or work request is added/removed.
@@ -138,6 +140,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
             Step::Drain => {
                 if owner.drain <= 1 { break; }
                 owner.drain -= 1;
+                paid!(budget, function, PATH_SWAP, "ordinary plan retained drain swap receivers")?;
                 actual.paths.swap(0, owner.drain);
                 #[cfg(test)] frontiers::swapped();
                 owner.root = 0;
@@ -164,15 +167,15 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 owner.step = Step::PairPrepare;
             }
             Step::PairPrepare => {
-                paid!(budget, function, PREPARE_CALL, "ordinary plan history left cursor prepare")?;
+                paid!(budget, function, PREPARE_CALL + PATH_INDEX, "ordinary plan history left cursor prepare")?;
                 owner.cursors[0].prepare(&actual.paths[owner.left].history, &actual.arena, function, budget)?;
-                paid!(budget, function, PREPARE_CALL, "ordinary plan history right cursor prepare")?;
+                paid!(budget, function, PREPARE_CALL + PATH_INDEX, "ordinary plan history right cursor prepare")?;
                 owner.cursors[1].prepare(&actual.paths[owner.right].history, &actual.arena, function, budget)?;
                 owner.step = Step::PairNext;
             }
             Step::PairNext => {
                 budget.charge(function, 1, "ordinary plan history observation comparison")?;
-                paid!(budget, function, 2 * NEXT_CALL, "ordinary plan history paired cursor next")?;
+                paid!(budget, function, 2 * NEXT_CALL + 4 * PATH_INDEX + PAIR_MATCH, "ordinary plan history paired cursor next")?;
                 let left = owner.cursors[0].next(&actual.paths[owner.left].history, &actual.arena, function, budget)?;
                 let right = owner.cursors[1].next(&actual.paths[owner.right].history, &actual.arena, function, budget)?;
                 match (left, right) {
@@ -198,6 +201,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     owner.step = owner.return_to;
                     continue;
                 }
+                paid!(budget, function, PATH_SWAP, "ordinary plan retained sift swap receivers")?;
                 actual.paths.swap(owner.root, owner.child);
                 #[cfg(test)] frontiers::swapped();
                 owner.root = owner.child;
@@ -209,7 +213,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
     if len != expected.len() {
         return Err(replay_error(function, "cleanup CFG decision or ownership-event sequence disagrees with typed HIR"));
     }
-    for (path, flat) in actual.paths.iter().zip(expected) {
+    let mut pairs = actual.paths.iter().zip(expected);
+    loop {
+        paid!(budget, function, FINAL_NEXT, "ordinary plan retained final Zip next receivers")?;
+        let Some((path, flat)) = pairs.next() else { break; };
         paid!(
             budget,
             function,
@@ -229,7 +236,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    NEXT_CALL,
+                    NEXT_CALL + FLAT_MATCH,
                     "ordinary plan history HIR cursor next"
                 )?;
                 match (
@@ -257,7 +264,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    NEXT_CALL,
+                    NEXT_CALL + SHARED_MATCH,
                     "ordinary plan history HIR cursor next"
                 )?;
                 budget.reserve_bytes(

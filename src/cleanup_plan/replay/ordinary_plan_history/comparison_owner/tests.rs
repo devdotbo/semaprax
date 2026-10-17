@@ -55,9 +55,11 @@ fn observe(function: &ResolvedFunction, expected: &[SkeletonPath], old: bool,
             crate::bounded_output::clear_active_floor();
             let before = crate::bounded_output::active_remaining();
             let remaining = budget.remaining;
+            let allocation = crate::test_allocation_observer::current_metrics();
             let retry = budget.reserve_bytes(function, 0, "retained comparator sticky zero").unwrap_err();
             assert_eq!(crate::bounded_output::active_remaining(), before);
             assert_eq!(budget.remaining, remaining);
+            assert_eq!(crate::test_allocation_observer::current_metrics(), allocation);
             let empty = Diagnostic::io("SPX-H006", String::new());
             assert_eq!(failure(&retry), failure(&empty));
             assert_eq!(result.as_ref().map(|_| ()).map_err(failure), saved);
@@ -71,6 +73,34 @@ fn observe(function: &ResolvedFunction, expected: &[SkeletonPath], old: bool,
         drop(retry);
         outcome
     }))
+}
+// Independent primitive oracle: reproduce the ACTUALLY OBSERVED ledger prefix,
+// then ask the unchanged real reserve primitive for its first full Diagnostic.
+// This test state replication is never production credit or a guessed bill.
+fn primitive_failure(function: &ResolvedFunction, event: frontiers::Event,
+    limit: usize, floor: usize) -> Failure {
+    let ((saved, metrics), refused, _, receipt) = with_limit_usage_refusal(limit, || measure(|| {
+        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+        budget.prepare_builder(function).unwrap();
+        let used = limit - crate::bounded_output::active_remaining().unwrap();
+        let prefix = event.before.checked_sub(used).expect("observed prefix includes builder bootstrap");
+        budget.reserve_bytes(function, prefix, "independent observed prefix").unwrap();
+        assert_eq!(limit - crate::bounded_output::active_remaining().unwrap(), event.before);
+        assert!(crate::bounded_output::set_active_floor(floor));
+        let error = budget.reserve_bytes(function, event.after.unwrap() - event.before, event.phase).unwrap_err();
+        let saved = failure(&error);
+        crate::bounded_output::clear_active_floor();
+        drop(budget);
+        drop(error);
+        saved
+    }));
+    assert!(refused);
+    let receipt = receipt.unwrap();
+    assert_eq!(receipt.requested, event.after.unwrap() - event.before);
+    assert_eq!(receipt.remaining, limit - event.before);
+    assert_eq!(receipt.floor, floor);
+    balanced(metrics);
+    saved
 }
 fn balanced(metrics: Metrics) {
     assert!(!metrics.invalid);
@@ -139,7 +169,7 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
     let owner = events.iter().position(|e| e.phase == "ordinary plan retained comparison owner").unwrap();
     assert!(events[owner].after.unwrap() > events[owner].before);
     let mut selected = vec![owner];
-    for phase in ["ordinary plan history cursor backing", "ordinary plan history paired cursor next", "ordinary plan history HIR cursor prepare", "ordinary plan history HIR cursor next"] {
+    for phase in ["ordinary plan history cursor backing", "ordinary plan history paired cursor next", "ordinary plan history HIR cursor prepare", "ordinary plan history HIR cursor next", "ordinary plan retained final Zip next receivers", "ordinary plan retained drain swap receivers", "ordinary plan retained sift swap receivers"] {
         let hits = events.iter().enumerate().filter(|(_,e)| e.phase==phase && e.after.is_some_and(|after| after > e.before)).map(|(i,_)| i).collect::<Vec<_>>();
         assert!(!hits.is_empty(), "actual frontier{phase}");
         selected.push(hits[0]); selected.push(*hits.last().unwrap());
@@ -161,6 +191,7 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
                 assert_eq!(first.requested, end - event.before);
                 assert_eq!(first.remaining, limit - event.before);
                 assert_eq!(first.floor, floor);
+                assert_eq!(a.0.0.result.as_ref().unwrap_err(), &primitive_failure(function, event, limit, floor));
             }
         }
     }

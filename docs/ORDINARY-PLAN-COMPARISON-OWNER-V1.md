@@ -66,3 +66,24 @@ consolidated batch. Then run the authentic codec/native/catalog owners at
 unchanged limits, report actual paid/allocated/peak/live/work and refusal
 positions, and earn moved pins through their existing admission. No agent
 turn/token/cost or general application-fit claim follows from source review.
+
+Review followup: the entry bank does not exempt recreated payloads. Paired
+observation tuples, match/cmp receivers and path-index calls are paid at every
+paired NEXT execution; flat/shared match payloads are paid at their actual
+NEXT sites. Each swap pays its full actual receiver bank. Final Zip construction
+is paid once, including Vec auto-deref; every Zip.next pays its Option/tuple,
+path bindings and terminal receivers, including the final sentinel request.
+Two explicit cursor backing calls remove the initializer iterator entirely.
+This adds real physical frontiers and may reduce or reverse savings on long
+observation prefixes. Original work, PREPARE_CALL and NEXT_CALL prices remain
+unchanged; no gain is claimed.
+
+Only the nonrecursive primitive caller frames are retained by lexical site:
+successful Result<(), Diagnostic> carries no owned payload; the sole owned
+failure exits immediately, and no frame escapes or overlaps a later use at
+its site. The fixed function/budget places do not change. This narrow rule
+does not cover recreated Option/tuple/cmp payloads. The current frontier owner
+now compares the full first Diagnostic with the unchanged real reserve
+primitive at the independently observed prefix, and verifies retry allocation
+counters are unchanged as well as work and ledger balance. That oracle is
+test-only state replication, never a production allowance or fee credit.
