@@ -122,6 +122,7 @@ pub(crate) fn binding_with_index_funded<'a, E>(
     crate::hir::iterator_loop::renewal_binding_funded(program, function, at, reserve)
 }
 
+#[cfg(test)]
 pub(crate) fn bindings_funded<'a, E>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,

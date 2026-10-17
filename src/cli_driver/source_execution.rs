@@ -706,12 +706,20 @@ pub(super) fn report(errors: &[Diagnostic], json: bool) -> u8 {
 }
 
 pub(super) fn report_all(errors: &[Diagnostic], json: bool) {
-    for error in errors {
-        if json {
-            println!("{}", error.json());
-        } else {
-            eprintln!("{error}");
-        }
+    use semaprax::diagnostic::writer::{write_lines, IoWriter};
+    if errors.is_empty() {
+        return;
+    }
+    if json {
+        let stdout = std::io::stdout();
+        let mut stream = stdout.lock();
+        let mut output = IoWriter::new(&mut stream);
+        let _ = write_lines(&mut output, errors, true);
+    } else {
+        let stderr = std::io::stderr();
+        let mut stream = stderr.lock();
+        let mut output = IoWriter::new(&mut stream);
+        let _ = write_lines(&mut output, errors, false);
     }
 }
 
@@ -875,4 +883,23 @@ pub(super) fn run_fused_source(
     options: &cli::execution::ExecutionOptions,
 ) -> Result<(), u8> {
     fused_profile::run(path, options)
+}
+
+/// Opaque initial fields borrow their captured invocation; output remains
+/// ordinary stdout/stderr IO. No implicit compatibility Vec is requested.
+pub(super) fn report_workspace(
+    failure: &semaprax::workspace_report::WorkspaceReportFailure,
+    json: bool,
+) -> u8 {
+    use semaprax::diagnostic::writer::IoWriter;
+    if json {
+        let stdout = std::io::stdout();
+        let mut stream = stdout.lock();
+        let _ = failure.write_lines(&mut IoWriter::new(&mut stream), true);
+    } else {
+        let stderr = std::io::stderr();
+        let mut stream = stderr.lock();
+        let _ = failure.write_lines(&mut IoWriter::new(&mut stream), false);
+    }
+    1
 }

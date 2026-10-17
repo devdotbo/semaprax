@@ -81,6 +81,7 @@ pub(crate) fn renewal_binding<'a>(
         .or_else(|| record_bindings(program, &function.body).remove(at))
 }
 
+#[cfg(test)]
 pub(crate) fn renewal_bindings<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
@@ -93,9 +94,9 @@ pub(crate) fn renewal_bindings<'a>(
 }
 
 mod funded;
+pub(crate) use funded::renewal_bindings_funded;
 #[cfg(test)]
 pub(crate) use funded::renewal_binding_funded;
-pub(crate) use funded::renewal_bindings_funded;
 
 fn has_record_renewal_candidate(body: &ResolvedExpr) -> bool {
     let mut pending = vec![body];

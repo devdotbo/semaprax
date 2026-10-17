@@ -151,6 +151,111 @@ fn paid_fact_cursor_and_growth_exact_short_keep_first_receipt_and_drop_one_owner
     }
 }
 
+// Execute both real constructors with freshly acquired equal budgets. Their
+// difference is independent of the driver's error policy and is never credited.
+fn context_usage(
+    source: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    lexical: bool,
+    current: bool,
+) -> (usize, usize) {
+    let mut owner = session(source, function, usize::MAX);
+    let before = owner.usage();
+    if current {
+        let context = selected_context::Context::new_paid(
+            &owner.indexed,
+            function,
+            &mut owner.budget,
+            lexical,
+        )
+        .unwrap();
+        drop(context);
+    } else {
+        let context =
+            selected_context::Context::new(&owner.indexed, function, &mut owner.budget).unwrap();
+        drop(context);
+    }
+    let after = owner.usage();
+    (before.0 - after.0, after.1 - before.1)
+}
+// Isolate the complete preceding block receiver and the current paid policy
+// under the same original Context/facts/storage/renewal owner. Setup is outside
+// each measured seam; neither debit is a guessed whole-driver adjustment.
+fn block_usage(
+    source: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    paid: bool,
+) -> (usize, usize) {
+    let mut owner = session(source, function, usize::MAX);
+    assert!(owner.budget.selected());
+    let context =
+        selected_context::Context::new(&owner.indexed, function, &mut owner.budget).unwrap();
+    let facts = expression_facts::with_budget(function, &mut owner.budget).unwrap();
+    let storage = structural_maps::validate_slots(function, &mut owner.budget).unwrap();
+    let leaves = structural_maps::collect_leaves(function, &mut owner.budget).unwrap();
+    let renewals = context.primitive_renewals(function).unwrap();
+    let before = owner.usage();
+    if paid {
+        structural_control::validate_blocks_and_edges_paid::<expression_facts::errors::EngineError>(
+            &context, function, &facts, &storage, &leaves, renewals, &mut owner.budget,
+        ).unwrap();
+    } else {
+        structural_control::validate_blocks_and_edges(
+            &context,
+            function,
+            &facts,
+            &storage,
+            &leaves,
+            renewals,
+            &mut owner.budget,
+        )
+        .unwrap();
+    }
+    let after = owner.usage();
+    (before.0 - after.0, after.1 - before.1)
+}
+fn compare_driver_usage(
+    old: (usize, usize),
+    current: (usize, usize),
+    source: &dyn ReplayContext,
+    function: &ResolvedFunction,
+    lexical: bool,
+    current_context: bool,
+) -> (usize, usize) {
+    let context_old = context_usage(source, function, lexical, false);
+    let context_new = context_usage(source, function, lexical, current_context);
+    let blocks_old = block_usage(source, function, false);
+    let blocks_new = block_usage(source, function, true);
+    let before = (context_old.0 + blocks_old.0, context_old.1 + blocks_old.1);
+    let after = (context_new.0 + blocks_new.0, context_new.1 + blocks_new.1);
+    eprintln!(
+        "selected driver lexical={lexical} old={old:?} current={current:?} context_old={context_old:?} context_current={context_new:?} blocks_old={blocks_old:?} blocks_current={blocks_new:?} ordinary_832_directory=not_entered_by_selected_budget",
+    );
+    // Cross-add independently observed producer debits. Added genuine controls
+    // remain fully charged and are never credited to the old whole driver.
+    assert_eq!(old.0 + before.0, current.0 + after.0);
+    assert_eq!(old.1 + after.1, current.1 + before.1);
+    (before.0, after.0)
+}
+fn empty_call_controls() -> usize {
+    use structural_control::call_receiving::{Kind, Permit};
+    type Engine = expression_facts::errors::EngineError;
+    // Independent full eleven-field layout at the actual block entry seam.
+    size_of::<(
+        Permit<'static, Engine>,
+        Kind,
+        crate::hir::DeclarationId,
+        semantic_refusal::Atom,
+        semantic_refusal::Receipt,
+        Engine,
+        Option<Engine>,
+        Result<(), Engine>,
+        Result<(), Engine>,
+        Result<Permit<'static, Engine>, Engine>,
+        &'static Permit<'static, Engine>,
+    )>()
+}
+
 #[test]
 fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
     let program = tiny();
@@ -197,12 +302,36 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
         assert_eq!(observed.allocated, observed.freed);
         assert_eq!(observed.live, 0);
         assert!(!observed.invalid);
-        // Actual complete scalar and lexical driver success/work/backing parity.
+        // Error policies share the complete original Context constructor.
+        // Current Context adds genuinely prepaid controls; compare those
+        // constructor costs separately instead of asserting equal totals.
         let mut old = session(&context, &program.functions[0], usize::MAX);
         let mut paid = session(&context, &program.functions[0], usize::MAX);
         old.validate_scalar(&program.functions[0]).unwrap();
-        paid.validate_scalar_paid(&program.functions[0]).unwrap();
-        assert_eq!(old.usage(), paid.usage());
+        paid.validate_scalar_paid_original(&program.functions[0])
+            .unwrap();
+        let old_blocks = block_usage(&context, &program.functions[0], false);
+        let new_blocks = block_usage(&context, &program.functions[0], true);
+        assert_eq!(new_blocks.0, old_blocks.0 + 11);
+        assert_eq!(new_blocks.1, old_blocks.1 + empty_call_controls());
+        compare_driver_usage(
+            old.usage(),
+            paid.usage(),
+            &context,
+            &program.functions[0],
+            false,
+            false,
+        );
+        let mut current = session(&context, &program.functions[0], usize::MAX);
+        current.validate_scalar_paid(&program.functions[0]).unwrap();
+        compare_driver_usage(
+            old.usage(),
+            current.usage(),
+            &context,
+            &program.functions[0],
+            false,
+            true,
+        );
         let lexical = super::program();
         let lexical_context = primitive_fixture::Context::new(&lexical);
         let function = super::members(&lexical)[0];
@@ -221,8 +350,25 @@ fn paid_fact_semantic_receipt_keeps_exact_shared_ids_and_driver_verdicts() {
         let mut old = acquire();
         let mut paid = acquire();
         old.validate(function).unwrap();
-        paid.validate_paid(function).unwrap();
-        assert_eq!(old.usage(), paid.usage());
+        paid.validate_paid_original(function).unwrap();
+        compare_driver_usage(
+            old.usage(),
+            paid.usage(),
+            &lexical_context,
+            function,
+            true,
+            false,
+        );
+        let mut current = acquire();
+        current.validate_paid(function).unwrap();
+        compare_driver_usage(
+            old.usage(),
+            current.usage(),
+            &lexical_context,
+            function,
+            true,
+            true,
+        );
     });
     assert!(!overflowed);
 }

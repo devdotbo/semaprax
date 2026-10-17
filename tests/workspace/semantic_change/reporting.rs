@@ -97,6 +97,9 @@ fn assert_complete_report_equality(
     }
 }
 
+// Keep the record local: imported nominal expression types are conservatively
+// classified as v74 when the per-module type directory cannot authenticate them.
+// Scalar call arguments preserve values; local Copy extraction selects v13.
 // Exercise the existing Graph v13 Copy-pattern family alongside the original
 // Copy-field fixture, whose admitted schema is checked separately below.
 fn admitted_provider(source: &str, record: &str, increment: bool) -> String {
@@ -107,11 +110,19 @@ fn admitted_provider(source: &str, record: &str, increment: bool) -> String {
     };
     assert_eq!(source.matches(body).count(), 1);
     let result = if increment { "field + 1" } else { "field" };
-    source.replacen(
+    let signature = format!("value: {record}");
+    assert_eq!(source.matches(&signature).count(), 1);
+    source.replacen(&signature, "value: i64", 1).replacen(
         body,
-        &format!("{{ match value {{ {record} {{ value: field }} => {result}, }} }}"),
+        &format!("{{ let point = {record} {{ value: value }}; match point {{ {record} {{ value: field }} => {result}, }} }}"),
         1,
     )
+}
+
+fn admitted_caller(source: &str, record: &str, value: i64) -> String {
+    let constructor = format!("{record} {{ value: {value} }}");
+    assert_eq!(source.matches(&constructor).count(), 1);
+    source.replacen(&constructor, &value.to_string(), 1)
 }
 
 fn admitted_fixture(label: &str) -> Fixture {
@@ -122,10 +133,12 @@ fn admitted_fixture(label: &str) -> Fixture {
     ));
     std::fs::create_dir(&root).unwrap();
     let provider = admitted_provider(provider_base(), "Point", false);
+    let consumer = admitted_caller(consumer_source(), "Point", 3);
+    let entry = admitted_caller(entry_base(), "Point", 1);
     for (path, source) in [
         ("a/provider.spx", provider.as_str()),
-        ("m/consumer.spx", consumer_source()),
-        ("z/entry.spx", entry_base()),
+        ("m/consumer.spx", consumer.as_str()),
+        ("z/entry.spx", entry.as_str()),
     ] {
         write_source(&root, path, source);
     }
@@ -151,6 +164,11 @@ fn admitted_fixture(label: &str) -> Fixture {
     let candidate = admitted_provider(provider_candidate(), "Metric", true);
     let new_candidate = json(&canonical(&candidate, "a/provider.spx"));
     let old_proposal = proposal_source(&root);
+    let old_entry = json(&canonical(entry_candidate(), "z/entry.spx"));
+    let entry_candidate = admitted_caller(entry_candidate(), "Metric", 2);
+    let new_entry = json(&canonical(&entry_candidate, "z/entry.spx"));
+    assert_eq!(old_proposal.matches(&old_entry).count(), 1);
+    let old_proposal = old_proposal.replacen(&old_entry, &new_entry, 1);
     assert_eq!(old_proposal.matches(&old_candidate).count(), 1);
     let proposal = root.join("change.json");
     std::fs::write(
@@ -274,5 +292,27 @@ fn full_original_copy_record_fixture_keeps_all_legacy_artifacts_and_read_only_be
     ] {
         assert_eq!(old, current, "{label}");
     }
+    assert_eq!(inventory(&fixture.root), before);
+}
+
+// Complete historical incorrect-refusal assertion retained for independent
+// test compilation. The admitted Copy positive and explicit schema negative
+// above are the current executable expectations; no catch-any-panic waiver.
+#[allow(dead_code)]
+fn full_original_projected_record_fixture_keeps_unsupported_graph_refusal_and_legacy_report() {
+    let fixture = Fixture::new("typed-original-unsupported");
+    let before = inventory(&fixture.root);
+    let old = semantic_workspace_change::generate(&fixture.root, &fixture.proposal)
+        .err()
+        .expect("full original unsupported proposal must refuse");
+    let current = semantic_workspace_change::reporting::generate(&fixture.root, &fixture.proposal)
+        .err()
+        .expect("full original unsupported proposal must refuse");
+    assert_eq!(old[0].code, "SPX-G181");
+    assert_eq!(
+        old[0].message,
+        "Semantic Workspace change base source Graph schema is unsupported"
+    );
+    assert_complete_report_equality(current.reported().unwrap(), old.as_slice());
     assert_eq!(inventory(&fixture.root), before);
 }

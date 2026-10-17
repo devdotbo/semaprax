@@ -37,13 +37,13 @@ mod row_loan;
 pub(crate) use replay::validate_retained_lexical_with_reservation;
 pub(crate) use replay::{
     replay_btree_node_upper, replay_reserve_vec, ClonePayload as ReplayClonePayload,
-    PhysicalReservation as ReplayPhysicalReservation, SelectedReplayPreparation,
+    PhysicalReservation as ReplayPhysicalReservation, ReplayPhysicalRefusal, SelectedReplayPreparation,
     SelectedReplayRefusal, SelectedReplayRefused, SelectedReplayReport, SelectedReplayReportForm,
     SelectedReplayUnpaid,
 };
 #[cfg(test)]
 pub(crate) use replay::{
-    ReplayBorrowedIdentity, ReplayBorrowedLease, ReplayPhysicalRefusal, SelectedReplayCause,
+    ReplayBorrowedIdentity, ReplayBorrowedLease, SelectedReplayCause,
     SelectedReplaySession, SelectedReplayUnpaidReason,
 };
 mod validate;
@@ -905,3 +905,6 @@ pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;
 
 #[cfg(test)]
 pub(crate) use replay::with_financed_test_oracles;
+
+#[cfg(test)]
+pub(crate) use replay::EpsilonAppCensus;

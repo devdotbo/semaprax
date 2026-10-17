@@ -1,16 +1,25 @@
 //! Renewal site identity is derived from HIR, independently of attached transitions.
+pub(crate) mod child_refusal;
 mod funded;
 pub(crate) mod ordinary;
+pub(crate) mod profile_refusal;
 mod selected;
+mod selected_inline;
 #[cfg(test)]
 use crate::hir::ResolvedProgram;
 use crate::hir::{ExpressionId, ResolvedBinding, ResolvedFunction};
+#[cfg(test)]
 pub(crate) use funded::bindings_funded;
 #[cfg(test)]
 pub(crate) use funded::{binding_with_index_funded, bindings_with_index_funded_with_work};
 #[cfg(test)]
 pub(crate) use selected::bindings_with_reservation;
-pub(crate) use selected::{bindings_with_reservation_and_work, selected_string_append};
+#[cfg(test)]
+pub(crate) use selected::bindings_with_reservation_and_work;
+pub(crate) use selected::selected_string_append;
+pub(crate) use selected_inline::{
+    bindings_with_reservation_and_work_inline, selected_string_append_inline,
+};
 use std::collections::BTreeMap;
 
 /// A held phase index authenticates exact program and function membership.
@@ -106,6 +115,7 @@ pub(crate) fn bindings<'a>(
 ) -> RenewalBindings<'a> {
     bindings_with_index(program, function, None)
 }
+#[cfg(test)]
 pub(crate) fn bindings_with_index<'a>(
     program: &'a dyn crate::cleanup::ReplayContext,
     function: &'a ResolvedFunction,
@@ -294,3 +304,19 @@ mod tests {
         }
     }
 }
+
+pub(crate) mod structural_refusal;
+
+pub(crate) mod status_refusal;
+
+pub(crate) mod scalar_refusal;
+
+pub(crate) mod certificate_refusal;
+
+pub(crate) mod boundary_refusal;
+
+pub(crate) mod type_drop_refusal;
+
+pub(crate) mod path_boundary_refusal;
+
+pub(crate) use funded::bindings_with_index_funded;

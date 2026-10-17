@@ -148,6 +148,13 @@ pub(super) fn find<'a, 'hir>(
 #[cfg(test)]
 mod tests;
 
+#[cfg(test)]
+#[path = "prefix/source_main8a.rs"]
+mod source_main8a;
+
+#[cfg(test)]
+#[path = "prefix/source_maina3.rs"]
+mod source_maina3;
 // One paid state for the complete immutable search, never a memo or identity.
 struct ReceivingComparison<'a> {
     bytes: Comparison<'a>,

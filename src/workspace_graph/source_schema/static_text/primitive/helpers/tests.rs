@@ -1062,12 +1062,50 @@ fn original_static_text_provider_numeric_mismatch_keeps_checked_refusal() {
 
 #[test]
 fn a_large_comment_keeps_ordinary_imports_admitted_without_authorizing_a_selected_helper() {
-    let leaf = format!("{LEAF}\n//{}\n", "x".repeat(1_048_576));
+    // The full comment-bearing source needs the comment-aware formatter;
+    // formatting only its declaration does not canonicalize comment placement.
+    let leaf = format!(
+        "{}\n//{}\n",
+        crate::format::canonical(&crate::parse(LEAF, "leaf.spx").unwrap()),
+        "x".repeat(1_048_576)
+    );
+    let (program, comments) =
+        crate::parse_with_comments(&leaf, std::path::Path::new("leaf.spx")).unwrap();
+    assert_eq!(comments.items.len(), 1);
+    assert_eq!(comments.items[0].text.len(), 1_048_576);
+    let leaf = crate::format::comments::canonical_with_comments(&program, &comments);
+    assert!(leaf.len() > 1_048_576);
+    let (canonical_program, canonical_comments) =
+        crate::parse_with_comments(&leaf, std::path::Path::new("leaf.spx")).unwrap();
+    assert_eq!(canonical_comments.items[0].text, comments.items[0].text);
+    assert_eq!(
+        leaf,
+        crate::format::comments::canonical_with_comments(&canonical_program, &canonical_comments)
+    );
+    let build_with_comment = |caller: &str| {
+        let sources = [
+            ("caller.spx", caller),
+            ("provider.spx", PROVIDER),
+            ("leaf.spx", &leaf),
+        ]
+        .into_iter()
+        .map(|(path, source)| WorkspaceSource {
+            path: path.into(),
+            source: if path == "leaf.spx" {
+                source.to_owned()
+            } else {
+                crate::format::canonical(&crate::parse(source, path).unwrap())
+            },
+        })
+        .collect();
+        build_owned_retaining_sources_for_change(sources, MAX_CHANGE_BUILDER_BYTES)
+            .map(|(build, _)| build)
+    };
     let ordinary_caller = r#"module scalar.app;
 use function @id("helper.step") from scalar.helper as step;
 @id("app.main") fn main()->i64 {step(41)}
 "#;
-    let ordinary = build(ordinary_caller, PROVIDER, &leaf).unwrap();
+    let ordinary = build_with_comment(ordinary_caller).unwrap();
     let provider = ordinary
         .hir
         .modules
@@ -1083,7 +1121,7 @@ use function @id("helper.step") from scalar.helper as step;
 
     // The same source cannot supply a partial or unhashed proof to the static
     // receiver. Its existing full-inventory guard remains the refusal gate.
-    let selected = build(CALLER, PROVIDER, &leaf).unwrap();
+    let selected = build_with_comment(CALLER).unwrap();
     let provider = selected
         .hir
         .modules

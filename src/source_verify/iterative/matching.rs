@@ -19,7 +19,7 @@ use std::collections::HashSet;
 #[cfg(test)]
 mod matching_before_799;
 
-impl<'a, 'p> IterativeVerifier<'a, 'p> {
+impl<'a, 'v, 'p> IterativeVerifier<'a, 'v, 'p> {
     pub(super) fn frame_resume_match_scrutinee(
         &mut self,
         checkpoint: crate::source_verify::recovery::Checkpoint,
@@ -38,6 +38,20 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
             _ => unreachable!("match continuation has a non-match expression"),
         };
         let mut scrutinee_value = self.values.pop().unwrap_or(None);
+        // A real value/ownership check still ran. Only its rejected declaration
+        // shape is unavailable to dependent pattern resolution.
+        if scrutinee_value.as_ref().is_some_and(|value| {
+            self.recovery.view(scrutinee).is_some_and(|view| {
+                crate::source_verify::declaration::record_shape::origin(
+                    self.program,
+                    self.types,
+                    &value.ty,
+                    self.diagnostics,
+                ) == Some(view.origin)
+            })
+        }) {
+            scrutinee_value = None;
+        }
         let scrutinee_diagnostics = self.diagnostics.len();
         if let Some(value) = &scrutinee_value {
             reject_native_unit_value(self.program, scrutinee, value, self.diagnostics);
@@ -49,7 +63,10 @@ impl<'a, 'p> IterativeVerifier<'a, 'p> {
                     if self.owned_iterator_items.last().is_some_and(|item| item == name));
             if self.loop_depth != 0
                 && !exact_owned_record_item
-                && !crate::finite_owned_record_loop::source_permits(self.current, expression)
+                && !crate::finite_owned_record_loop::source_permits(
+                    self.current.payload(),
+                    expression,
+                )
             {
                 reject_loop_match_scrutinee(
                     self.program,

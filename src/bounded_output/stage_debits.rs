@@ -1,6 +1,6 @@
 //! Test-only, allocation-free debit attribution for one exact resolved-core
 //! ledger. Counters describe reservations, never physical allocation or refunds.
-use super::{active, Budget, ReservationStage};
+use super::{active, Budget, ReservationStage}; pub(crate) mod route_debits;
 use std::cell::Cell;
 use std::rc::Rc;
 
@@ -28,6 +28,20 @@ pub(crate) enum Operation {
     ReplayFactored,
     ReplayFactoredConstruction,
     ReplayFactoredCanonical,
+}
+// This family is inclusive only for the separate route observer. The operation
+// totals below still attribute each committed debit to one exclusive child.
+fn cleanup_family(operation: Option<Operation>) -> bool {
+    match operation {
+        Some(Operation::CleanupReplay | Operation::ReplayStructure | Operation::ReplayExpressionFacts
+            | Operation::ReplayPathStates | Operation::ReplayHirSkeleton | Operation::ReplayPlanSkeleton
+            | Operation::ReplayFactored | Operation::ReplayFactoredConstruction
+            | Operation::ReplayFactoredCanonical) => true,
+        None | Some(Operation::FunctionDirectory | Operation::CanonicalLoanStorage | Operation::CoreValidation
+            | Operation::ValidatorConstructor | Operation::FunctionValues | Operation::AttachedIdentities
+            | Operation::CleanupInventory | Operation::TextRuntime | Operation::TextContains
+            | Operation::TextSubstitution | Operation::ScopeCheckpoint | Operation::Lifecycle) => false,
+    }
 }
 // Exhaustive matching makes a new operation require its own distinct counter.
 // These are exclusive scopes: child operations do not also increment parents.
@@ -104,6 +118,7 @@ pub(crate) struct Trace {
     owner: usize,
     operation: Option<Operation>,
     pub(crate) first_operation_refusal: Option<OperationRefusal>,
+    pub(crate) first_site: Option<super::ReservationSite>,
     pub(crate) initial: usize,
     pub(crate) consumed: usize,
     pub(crate) prebound: usize,
@@ -117,6 +132,7 @@ impl Trace {
         owner: 0,
         operation: None,
         first_operation_refusal: None,
+        first_site: None,
         initial: 0,
         consumed: 0,
         prebound: 0,
@@ -139,7 +155,7 @@ thread_local! {
 pub(super) fn debit(budget: &Budget, bytes: usize) {
     CURRENT.with(|current| {
         let mut trace = current.get();
-        if trace.owner == budget as *const Budget as usize {
+        if trace.owner == budget as *const Budget as usize { route_debits::debit(trace.owner, bytes, budget.stage.get() == Some(ReservationStage::HirValidation), cleanup_family(trace.operation));
             let ordinal = budget.stage.get().map_or(0, |stage| stage as usize + 1);
             trace.debits[ordinal] = trace.debits[ordinal]
                 .checked_add(bytes)
@@ -190,7 +206,7 @@ pub(super) fn refusal(budget: &Budget, requested: usize) {
         let mut trace = current.get();
         if trace.owner == budget as *const Budget as usize
             && trace.first_operation_refusal.is_none()
-        {
+        { route_debits::refusal(trace.owner, budget.stage.get() == Some(ReservationStage::HirValidation) && cleanup_family(trace.operation));
             trace.first_operation_refusal = Some(OperationRefusal {
                 operation: trace.operation,
                 requested,
@@ -214,7 +230,7 @@ pub(crate) fn start(prebound: usize, layouts: usize, mode: u8) -> Guard {
         layouts,
         mode,
         ..Trace::EMPTY
-    };
+    }; route_debits::start(trace.owner, prebound, mode);
     let previous = CURRENT.with(|current| current.replace(trace));
     Guard { previous }
 }
@@ -223,6 +239,8 @@ impl Drop for Guard {
         let mut trace = CURRENT.with(|current| current.replace(self.previous));
         let budget = active().expect("core trace settles before its ledger");
         assert_eq!(trace.owner, Rc::as_ptr(&budget) as usize);
+        // Static first-site evidence only, after the existing exact owner check.
+        trace.first_site = budget.first_site.get();
         trace.consumed = trace.initial - budget.remaining.get();
         assert_eq!(
             trace.sum(),
@@ -234,6 +252,7 @@ impl Drop for Guard {
             trace.consumed,
             "every committed operation debit exactly once"
         );
+        route_debits::finish(trace.owner, trace.consumed, trace.debits[ReservationStage::HirValidation as usize + 1]);
         LAST_COMPLETED.with(|completed| completed.set(Some(trace)));
         COMPLETED.with(|completed| {
             if completed

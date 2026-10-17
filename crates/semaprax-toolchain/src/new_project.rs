@@ -1,3 +1,5 @@
+#[path = "new_project/application.rs"]
+mod application;
 #[path = "new_project/templates.rs"]
 mod templates;
 
@@ -78,6 +80,16 @@ impl WriteHook for NoopWriteHook {
 }
 
 pub(crate) fn run(arguments: &[String]) -> Result<(PathBuf, &'static str), NewProjectFailure> {
+    // Any explicit starter option selects its closed grammar. An incomplete
+    // request must report that grammar before acquiring an input or destination.
+    if arguments.iter().any(|arg| {
+        matches!(
+            arg.as_str(),
+            "--from" | "--codec-plan" | "--command-profile" | "--command-path" | "--command-source"
+        )
+    }) {
+        return application::run(arguments).map(|path| (path, "application"));
+    }
     let options = parse(arguments)?;
     // `parse` already refused anything outside `PROJECT_SCAFFOLD_TEMPLATES`;
     // resolve the owned, validated string back to the matching `'static`
@@ -173,6 +185,24 @@ fn create_with_serial_template(
         .map_err(NewProjectFailure::creation)?;
     let expected = expected_files(template, project::ScaffoldLayout::Current, files)?;
 
+    publish_files(
+        destination,
+        &requested_destination,
+        &expected,
+        Some(template),
+        hook,
+        serial,
+    )
+}
+
+fn publish_files(
+    destination: &Path,
+    requested_destination: &Path,
+    files: &[(&str, &[u8])],
+    template: Option<&str>,
+    hook: &dyn WriteHook,
+    serial: &mut dyn FnMut() -> u64,
+) -> Result<PathBuf, NewProjectFailure> {
     let file_name = requested_destination.file_name().ok_or_else(|| {
         NewProjectFailure::creation("new project destination must name one directory")
     })?;
@@ -205,7 +235,10 @@ fn create_with_serial_template(
             "new project parent identity changed during canonicalization",
         ));
     }
-    let (mut authority, staging) = create_staging_authority(&parent, file_name, template, serial)?;
+    let (mut authority, staging) = match template {
+        Some(template) => create_staging_authority(&parent, file_name, template, serial)?,
+        None => application::create_authority(&parent, file_name, files, serial)?,
+    };
     hook.after_stage_created().map_err(|error| {
         NewProjectFailure::creation(format!(
             "injected failure after staged project creation: {error}"
@@ -213,23 +246,23 @@ fn create_with_serial_template(
     })?;
     require_original_parent_identity(requested_parent, &parent_identity)?;
     require_ambient_binding(&authority, &parent, &staging)?;
-    for (index, file) in files.iter().enumerate() {
-        hook.before_write(index, file.path()).map_err(|error| {
+    for (index, (path, bytes)) in files.iter().enumerate() {
+        hook.before_write(index, path).map_err(|error| {
             NewProjectFailure::creation(format!(
                 "injected write failure before `{}`: {error}",
-                file.path()
+                path
             ))
         })?;
         authority
-            .write(file.path(), file.bytes())
+            .write(path, bytes)
             .map_err(|error| authority_failure("write staged project", error))?;
     }
     authority
-        .authenticate(&expected)
+        .authenticate(files)
         .map_err(|error| authority_failure("authenticate staged project", error))?;
     require_ambient_binding(&authority, &parent, &staging)?;
     authority
-        .publish_and_verify(&expected)
+        .publish_and_verify(files)
         .map_err(|error| authority_failure("publish and verify new project", error))?;
     #[cfg(test)]
     hook.after_publish().map_err(|error| {

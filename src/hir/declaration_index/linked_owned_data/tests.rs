@@ -112,7 +112,7 @@ fn linked_nominal_views_preserve_complete_old_maps_wire_and_owned_decoded_facts(
                             for case in cases {
                                 let held = current.case_fields(&case.id).unwrap();
                                 assert_eq!(held, case.fields.as_slice());
-                                if cases.is_shared() {
+                                if cases.has_shared_owner() {
                                     assert_eq!(held.as_ptr(), case.fields.as_ptr());
                                 } else if !case.fields.is_empty() {
                                     assert_ne!(held.as_ptr(), case.fields.as_ptr());
@@ -305,3 +305,6 @@ fn linked_shared_case_views_last_owner_drop_uses_prepaid_iterative_frontier() {
     }
     eprintln!("linked-last-owner-process-prelude-first-touch-deltas={global_owner_deltas:?}");
 }
+
+#[path = "tests/legacy.rs"]
+mod legacy;

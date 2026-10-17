@@ -2,7 +2,7 @@
 use super::digest_without_checked_value_cursor_budget;
 use sha2::{Digest, Sha256};
 
-#[path = "before_2600.rs"]
+#[path = "main_c451_before_2600.rs"]
 mod before_2600;
 
 const CURRENT: [&str; 2] = [
@@ -117,7 +117,8 @@ fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
             expected
         );
     }
-    let current = include_str!("before_2600.rs");
+    let current = include_str!("main_c451_before_2600.rs");
+    let current = super::super::custody::main_c451_before_2600(current);
     let new = concat!(
         "include_str!(\n",
         "        \"../../../docs/evidence/browser-graph-pins-2600e49eb/test-fixtures.before.mjs\"\n",

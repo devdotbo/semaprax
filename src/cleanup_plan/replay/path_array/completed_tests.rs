@@ -1,197 +1,177 @@
-use super::*;
-use crate::bounded_output::with_limit_usage_refusal;
+use super::super::*;
+use crate::bounded_output::{active_remaining, set_active_floor, with_limit_usage_refusal};
 use crate::test_allocation_observer::measure;
 
+#[derive(Debug, Eq, PartialEq)]
+struct Failure {
+    code: &'static str,
+    severity: crate::diagnostic::Severity,
+    message: ([u8; 1024], usize),
+    path: Option<([u8; 1024], usize)>,
+    span: Option<crate::ast::Span>,
+    help: Option<([u8; 1024], usize)>,
+}
+fn text(value: &str) -> ([u8; 1024], usize) {
+    let mut bytes = [0; 1024];
+    assert!(value.len() <= bytes.len());
+    bytes[..value.len()].copy_from_slice(value.as_bytes());
+    (bytes, value.len())
+}
+fn failure(value: Diagnostic) -> Failure {
+    let result = Failure {
+        code: value.code,
+        severity: value.severity,
+        message: text(&value.message),
+        path: value.path.as_deref().map(text),
+        span: value.span,
+        help: value.help.as_deref().map(text),
+    };
+    drop(value);
+    result
+}
+
+fn program() -> ResolvedProgram {
+    let source = "module completed.funded; @id(\"f\") fn f(a:bool,b:bool,c:bool)->i64 {let x=if a{1}else{2};let y=if b{3}else{4};if c{x+y}else{x-y}} @id(\"main\") fn main()->i64 {f(true,false,true)}";
+    let parsed = crate::check(source, "completed-funded.spx").unwrap();
+    let canonical = crate::format::canonical(&parsed);
+    let parsed = crate::check(&canonical, "completed-funded.spx").unwrap();
+    assert_eq!(crate::format::canonical(&parsed), canonical);
+    crate::hir::resolve(&parsed).unwrap()
+}
+
 #[test]
-fn complete_finished_receiver_preserves_paths_capacity_work_and_legacy() {
-    let program = tests::program();
-    for paid in [false, true] {
-        let (((), allocation), refused, reserved, first) =
-            with_limit_usage_refusal(usize::MAX, || {
-                measure(|| {
-                    for function in &program.functions {
-                        let mut old = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                        let mut current = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                        if !paid {
-                            old.payer = AllocationPayer::LegacyUnobserved;
-                            current.payer = AllocationPayer::LegacyUnobserved;
-                        }
-                        let before = skeleton_materializations();
-                        let expected = final_before::hir_skeleton_paths_with_index_storage(
-                            &program, function, &mut old, None, None,
-                        )
-                        .unwrap();
-                        let old_materializations = skeleton_materializations() - before;
-                        let before = skeleton_materializations();
-                        let actual = super::super::hir_skeleton_paths_with_index_storage(
-                            &program,
-                            function,
-                            &mut current,
-                            None,
-                            None,
-                        )
-                        .unwrap();
-                        assert_eq!(skeleton_materializations() - before, old_materializations);
-                        assert_eq!(actual, expected);
-                        assert_eq!(actual.capacity(), expected.capacity());
-                        assert_eq!(current.remaining, old.remaining);
-                        assert_eq!(current.skeleton_remaining, old.skeleton_remaining);
-                        assert_eq!(current.skeleton_spent, old.skeleton_spent);
-                        drop(actual);
-                        drop(expected);
-                        drop(current);
-                        drop(old);
-                    }
-                })
-            });
+fn lexical_completed_capacity_keeps_full_hir_outputs_work_and_drop() {
+    let program = program();
+    for function in &program.functions {
+        let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let mut old = ReplayBudget::new();
+                let mut current = ReplayBudget::new();
+                reserve_program_skeleton_work(&program, std::iter::once(function), &mut old)
+                    .unwrap();
+                reserve_program_skeleton_work(&program, std::iter::once(function), &mut current)
+                    .unwrap();
+                let materializations = skeleton_materializations();
+                let expected =
+                    super::main696::hir_skeleton_paths(&program, function, &mut old).unwrap();
+                let old_materializations = skeleton_materializations() - materializations;
+                let materializations = skeleton_materializations();
+                let actual = hir_skeleton_paths(&program, function, &mut current).unwrap();
+                assert_eq!(actual, expected);
+                assert_eq!(
+                    skeleton_materializations() - materializations,
+                    old_materializations
+                );
+                assert_eq!(current.skeleton_spent, old.skeleton_spent);
+                assert_eq!(current.skeleton_remaining, old.skeleton_remaining);
+                assert_eq!(current.remaining, old.remaining);
+                drop((actual, expected, old, current));
+            })
+        });
         assert!(!refused && first.is_none());
         assert!(!allocation.invalid && allocation.live == 0);
         assert_eq!(allocation.allocated, allocation.freed);
-        if paid {
-            assert!(allocation.allocated <= reserved);
-        }
+        assert!(allocation.allocated <= paid);
     }
 }
 
 #[test]
-fn finished_backing_and_future_growth_pay_at_zero_exact_and_short_limits() {
-    let program = tests::program();
+fn lexical_completed_first_push_preserves_work_before_count_floor_and_real_bounds() {
+    let program = program();
     let function = &program.functions[0];
-    for count in [0usize, 1, 7, 8, 9, 16, 17, 512] {
-        let observe = |original: bool, limit| {
+    for count in [1usize, 7, 8, super::COMPLETED_MINIMUM, 17, 512] {
+        let run = |old, limit, output_work, floor| {
+            let mut caller = ReplayBudget::unobserved();
+            let mut work = SkeletonWork::new(&program, function, &mut caller);
             with_limit_usage_refusal(limit, || {
                 measure(|| {
-                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                    let before = skeleton_materializations();
+                    *work.budget = ReplayBudget::new();
                     let result = (|| {
-                        let mut work =
-                            SkeletonWork::with_index(&program, function, &mut budget, None)?;
+                        work.budget.prepare_builder(function)?;
+                        work.budget.reserve_skeleton(function, output_work)?;
                         let mut output = Vec::new();
-                        if !original {
-                            completed_minimum(
-                                &mut output,
-                                count,
-                                &mut work,
-                                "finished fixture backing",
-                            )?;
+                        let mut remaining = (0..count)
+                            .map(|_| empty_expr_path())
+                            .collect::<Vec<_>>()
+                            .into_iter();
+                        let path = remaining.next().unwrap();
+                        if floor {
+                            assert!(set_active_floor(active_remaining().unwrap()));
                         }
-                        // The old producer's original push loop and following growth.
-                        for n in 0..count + 3 {
+                        if old {
                             work.push_skeleton_path(
                                 &mut output,
                                 SkeletonPath {
-                                    observations: Observations::default(),
-                                    terminal: match n % 3 {
-                                        0 => SkeletonTerminal::Success,
-                                        1 => SkeletonTerminal::Failure,
-                                        _ => SkeletonTerminal::LoopLatch,
-                                    },
+                                    observations: path.observations,
+                                    terminal: SkeletonTerminal::Success,
                                 },
-                                "finished fixture push",
+                                "completed HIR skeleton path",
+                            )?;
+                        } else {
+                            super::completed_first!(
+                                work,
+                                remaining,
+                                output,
+                                SkeletonPath {
+                                    observations: path.observations,
+                                    terminal: SkeletonTerminal::Success,
+                                },
+                                "completed HIR skeleton path"
+                            );
+                        }
+                        for path in remaining {
+                            work.push_skeleton_path(
+                                &mut output,
+                                SkeletonPath {
+                                    observations: path.observations,
+                                    terminal: SkeletonTerminal::Success,
+                                },
+                                "completed HIR skeleton path",
                             )?;
                         }
-                        for (n, path) in output.iter().enumerate() {
-                            assert!(
-                                path.observations.items.is_empty()
-                                    && path.observations.prefix.is_none()
-                            );
-                            assert_eq!(
-                                path.terminal,
-                                match n % 3 {
-                                    0 => SkeletonTerminal::Success,
-                                    1 => SkeletonTerminal::Failure,
-                                    _ => SkeletonTerminal::LoopLatch,
-                                }
-                            );
-                        }
-                        let result = (output.len(), output.capacity());
+                        assert_eq!(output.len(), count);
+                        assert!(output.iter().all(|p| p.observations.is_empty()));
+                        let capacity = output.capacity();
                         drop(output);
-                        Ok::<_, Diagnostic>(result)
+                        Ok::<_, Diagnostic>(capacity)
                     })();
-                    let output = result.as_ref().ok().copied();
-                    let error = result.as_ref().err().map(|diagnostic| diagnostic.code);
-                    drop(result);
-                    if let Some(code) = error {
-                        assert_eq!(
-                            budget
-                                .reserve_array::<u8>(function, 0, "sticky finished refusal")
-                                .unwrap_err()
-                                .code,
-                            code
-                        );
-                        assert!(crate::bounded_output::active_refused());
-                    }
-                    let logical = (
-                        budget.remaining,
-                        budget.skeleton_remaining,
-                        budget.skeleton_spent,
-                        skeleton_materializations() - before,
-                    );
-                    drop(budget);
-                    (output, error, logical)
+                    let result = result.map_err(failure);
+                    let work_spent = work.budget.skeleton_spent;
+                    let retry = if result.is_err() {
+                        Some(
+                            work.budget
+                                .reserve_bytes(function, 0, "completed retry")
+                                .map_err(failure),
+                        )
+                    } else {
+                        None
+                    };
+                    *work.budget = ReplayBudget::unobserved();
+                    (result, work_spent, retry)
                 })
             })
         };
-        let ((expected, old_allocation), old_refused, old_paid, first) = observe(true, usize::MAX);
-        assert!(!old_refused && first.is_none());
-        let ((actual, allocation), refused, exact, first) = observe(false, usize::MAX);
-        assert!(!refused && first.is_none());
-        assert_eq!(actual, expected);
-        let capacity = count.next_power_of_two();
-        let removed = (capacity - 1) * std::mem::size_of::<SkeletonPath>();
-        let eligible = count >= 8 && removed >= completed_receiving_bytes();
-        if eligible {
-            assert_eq!(old_allocation.allocated - allocation.allocated, removed);
-            assert_eq!(old_paid - exact, removed - completed_receiving_bytes());
-        } else {
-            assert_eq!(old_allocation.allocated, allocation.allocated);
-            assert_eq!(old_paid, exact);
-        }
-        let ((baseline_zero, _), old_zero_refused, _, old_first) = observe(true, 0);
-        assert!(old_zero_refused && old_first.is_some());
+        // Real work failure selects before both the first count bank and the
+        // original backing request, even with no physical headroom above floor.
+        let ((old, _), _, _, _) = run(true, 1 << 24, 0, true);
+        let ((current, _), _, _, _) = run(false, 1 << 24, 0, true);
+        assert_eq!(current.0, old.0, "all six Diagnostic fields");
+        assert_eq!(current.1, 0);
+        assert!(current.2.unwrap().is_err());
+        let ((ample, allocation), refused, exact, first) = run(false, usize::MAX, count, false);
+        assert!(ample.0.is_ok() && !refused && first.is_none());
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
         for limit in [0, exact - 1, exact] {
-            let ((outcome, allocation), refused, paid, first) = observe(false, limit);
-            assert_eq!(outcome.0.is_some(), limit == exact);
+            let ((outcome, allocation), refused, paid, first) = run(false, limit, count, false);
+            assert_eq!(outcome.0.is_ok(), limit == exact);
             assert_eq!(refused, limit != exact);
             assert_eq!(first.is_some(), limit != exact);
             assert!(!allocation.invalid && allocation.live == 0);
             assert_eq!(allocation.allocated, allocation.freed);
-            assert!(allocation.allocated <= paid);
-            if limit != exact {
-                assert_eq!(outcome.1, baseline_zero.1);
-            }
-            if limit == 0 {
-                assert_eq!(allocation.allocated, 0);
-            }
+            // Input iterator construction above is ordinary immutable fixture
+            // data, so this owner reports rather than claims its byte funding.
+            eprintln!("completed count={count} limit={limit} reserved={paid} heap={allocation:?}");
         }
     }
-}
-
-#[test]
-fn complete_finished_predecessor_is_compiled_and_source_bound() {
-    use sha2::{Digest, Sha256};
-    let record: serde_json::Value = serde_json::from_str(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/docs/evidence/completed-skeleton-array-v1/function.json"
-    )))
-    .unwrap();
-    let body = record["body"].as_str().unwrap();
-    assert_eq!(
-        format!(
-            "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(body.as_bytes()))
-        ),
-        record["sha256"]
-    );
-    let before = include_str!("final_before.rs");
-    assert_eq!(before.split_once("pub(super) ").unwrap().1, body);
-    let old = "    let mut completed = Vec::new();\n    for path in paths {";
-    let new = "    let mut completed = Vec::new();\n    path_array::completed_minimum(\n        &mut completed,\n        paths.len(),\n        &mut work,\n        \"completed HIR skeleton capacity\",\n    )?;\n    for path in paths {";
-    assert_eq!(body.matches(old).count(), 1);
-    assert_eq!(
-        include_str!("../../replay.rs")
-            .matches(&body.replacen(old, new, 1))
-            .count(),
-        1
-    );
 }

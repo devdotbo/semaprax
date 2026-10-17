@@ -25,6 +25,14 @@ record ScheduleResult {
     report: Report,
 }
 
+@id("shiftsim.worker")
+record Worker {
+    @id("shiftsim.worker.id")
+    id: string,
+    @id("shiftsim.worker.free_at")
+    free_at: i64,
+}
+
 @id("shiftsim.model.anchor")
 fn model_anchor() -> i64
 {

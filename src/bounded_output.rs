@@ -1,3 +1,4 @@
+pub(crate) mod format_acceptance;
 pub(crate) mod cfg_reservation;
 pub(crate) mod identity_reservation;
 pub(crate) mod key_directory;
@@ -1327,13 +1328,16 @@ mod resolution_stage_tests;
     )
 ))]
 mod source_owner_scope;
-#[cfg(all(
-    unix,
-    any(
-        target_os = "linux",
-        target_os = "android",
-        target_vendor = "apple",
-        target_os = "redox"
+#[cfg(any(
+    test,
+    all(
+        unix,
+        any(
+            target_os = "linux",
+            target_os = "android",
+            target_vendor = "apple",
+            target_os = "redox"
+        )
     )
 ))]
 pub(crate) use source_owner_scope::source_owner_scope;
@@ -1344,6 +1348,10 @@ mod canonical_stage_tests;
 #[cfg(test)]
 mod loan_inner_stage_tests;
 
+mod checked_string;
+pub(crate) use checked_string::CheckedCappedString;
+
+pub(crate) mod invocation_binding;
 #[cfg(test)]
 mod cache_eligibility_tests {
     use super::*;

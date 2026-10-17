@@ -206,6 +206,7 @@ fn compile_c(root: &Path, name: &str, source: &str) -> PathBuf {
         let sdk = Command::new(resolved_tool(OsStr::new("xcrun")))
             .args(["--sdk", "macosx", "--show-sdk-path"])
             .env_clear()
+            .env("TMPDIR", root)
             .output()
             .expect("installed macOS SDK query");
         assert!(

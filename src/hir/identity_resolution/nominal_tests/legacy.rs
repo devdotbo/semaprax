@@ -6,6 +6,7 @@ fn current_after_validation(
     // Full frozen receiver with the independently saved complete index. No
     // shared constructor, payload oracle, schema substitute, or partial view.
     (Resolver {
+        function_cells: std::borrow::Cow::Owned(crate::source_verify::function_cells(program)),
         program,
         byte_helpers: crate::loop_calls::byte_writer::SourceIndex::new(program),
         declarations: DeclarationIndex::from_verified_with_prelude(
@@ -149,10 +150,28 @@ fn public_legacy_nominal_postpass_keeps_full_hir_graph_cache_and_isolated_mutati
 }
 #[test]
 fn legacy_postpass_keeps_full_original_diagnostics_before_any_canonicalization() {
+    let record_only = "module legacy.recursive; @id(\"r\") record R {@id(\"r.x\") x:R,}";
+    // Preserve the original rejected input as a complete parse-negative receipt.
+    let parse_error = crate::parse(record_only, "legacy-invalid.spx").unwrap_err();
+    assert_eq!(
+        parse_error,
+        Diagnostic::error(
+            "SPX-P101",
+            "a module must declare at least one function",
+            crate::ast::Span {
+                start: record_only.len(),
+                end: record_only.len(),
+                line: 1,
+                column: record_only.len() + 1,
+            },
+        )
+        .at_path("legacy-invalid.spx"),
+    );
     for source in [
         SOURCE.replace("Child : Base", "Child : Missing"),
         SOURCE.replace("class Base {", "class Base : Child {"),
         SOURCE.replace("@id(\"child.read\")", "@id(\"base.read\")"),
+        format!("{record_only}\n@id(\"legacy.main\") fn main()->i64 {{0}}"),
         "module legacy.recursive; @id(\"r\") record R {@id(\"r.x\") x:R,} @id(\"app.main\") fn main()->i64 {0}".to_owned(),
     ] {
         let program = crate::parse(&source, "legacy-invalid.spx").unwrap();

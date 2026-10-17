@@ -287,3 +287,66 @@ generic callback owner keys reuse the same resolution pass's held function ID.
 Infallible public model constructors and other dynamic producer domains retain
 legacy behavior. These source-authored controls await focused execution; they
 do not close OPT785 or establish whole-pipeline funding or application fit.
+
+## Retained generic-instance comparison
+
+`hir/ids/instance_match.rs` compares exact canonical bytes at the five retained
+instance predicates in `validation.rs` and `validation/generic_template.rs`.
+It emits the original namespace, UTF-8 template byte length, exact template,
+original argument count, and each decimal key-byte length followed by a colon
+and the complete key. Retained bytes are neither parsed nor normalized.
+
+The independent allocating `FunctionInstanceId::derive`, public
+`ResolvedType::identity_key`, and ordinary `CappedString` remain unchanged.
+Construction and the separate reachable-instance authentication before seen-set
+suppression still use them. The checked producer in `hir/nodes/instance_key.rs`
+retains the complete original iterative traversal, argument order and owned
+key Strings. It adds one root completeness destination, rather than per-child
+status storage or a second traversal. Its nominal writer explicitly observes
+actual sink refusal through `bounded_output/checked_string.rs`; even a silent
+reserved-floor omission cannot authenticate a forged truncated key. The first
+omitted write selects its real request/site as required refusal once; an
+already selected absolute refusal remains first. All later key producers and
+formatters still execute. No global sink policy or ledger layout changes.
+
+A required admission pays actual comparison-carrier/header and one-use failure
+controls before forming the writer. Per-argument completion references and each
+tracked nominal writer are admitted before formation; refused admission uses
+the complete original producer for the remaining work with completeness false.
+Each actual comparison formatting write separately pays its predicate/slice
+controls; no formatter chunk count is assumed. These are legitimate earlier
+metadata refusal frontiers. Final acceptance requires exact bytes, no mismatch,
+and complete key production. No redundant final ledger capture is necessary.
+
+Removing the encoded-tail and final-ID buffers does not claim remaining key
+scratch, identifier cloning or diagnostic routes fully funded, nor that any
+application fits its unchanged ceiling. No debit is refunded, reused as credit
+or converted into a fresh allowance. Duplicate insertion and surrounding
+optional/template predicates retain their original short-circuit positions.
+
+The existing lib harness holds grammar/all-type/forgery, exact/short/zero,
+sticky/floor (including a forged silently truncated nominal key), real
+key-visitation and full-Drop observations. A test-only selection executes the
+complete original allocating equality at all five sites for whole-validator
+Diagnostic and graph comparison. It supplies no production dispatch or cache.
+All new execution and actual application benefit remain pending.
+
+### Remaining inference target reconstruction (source-only #785)
+
+The same-pass generic argument inference and ordinary call-signature target
+owners now clone the exact identity already held by their DeclarationIndex.
+The original initial-index payer and full generic argument/instance producers
+remain; no new backing, payer, credit or identity authority is created here.
+The public infallible constructor and remaining dynamic migrations stay open.
+Complete old construction-policy parity, original-payer zero/short/exact refusal
+and through-Drop allocation controls are authored in the existing held-resolver
+owner; execution and application/live-agent comparisons remain pending.
+
+### Closed Vec, Box and stdin inspection identities (source-only #785)
+
+The existing closed compiler-identity policy now also carries the original
+VecOp, BoxOp and stdin PureOp enums. Their exact op.id() spellings replace
+String/Arc reconstruction only after the original receiving guards. Complete
+owned identity/wire and frozen producer controls remain independent; no new
+payer, refund, cap, dynamic identity route or admission authority is introduced.
+Focused compilation/execution and actual application measurements are pending.

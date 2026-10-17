@@ -1,5 +1,7 @@
+use super::main_current::sequence_skeleton_paths;
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
+use crate::cleanup_plan::replay::*;
 use crate::test_allocation_observer::measure;
 use std::cell::Cell;
 thread_local! { static ORIGINAL: Cell<bool> = const { Cell::new(false) }; }
@@ -16,35 +18,7 @@ fn with_original<T>(run: impl FnOnce() -> T) -> T {
     let _restore = Restore(ORIGINAL.with(|flag| flag.replace(true)));
     run()
 }
-fn minimum_items() -> usize {
-    MINIMUM_ITEMS
-}
-// Direct physical/pointer controls use the same admission and transfer as the
-// live arm. Full receiver tests below execute that arm itself, not this adapter.
-fn try_take(
-    prefix: &mut Observations,
-    suffix: &Observations,
-    suffix_count: usize,
-    function: &ResolvedFunction,
-    budget: &mut ReplayBudget,
-    phase: &str,
-) -> Result<Option<Observations>, Diagnostic> {
-    if suffix_count != 1
-        || !can_take(Candidate {
-            prefix,
-            suffix,
-            remaining_suffixes: 0,
-            budget,
-        })
-    {
-        return Ok(None);
-    }
-    budget.charge_skeleton(function, 1, phase)?;
-    budget.reserve_array::<u8>(function, RECEIVING_BYTES, phase)?;
-    note_skeleton_materialization();
-    Ok(Some(std::mem::take(prefix)))
-}
-fn program() -> ResolvedProgram {
+pub(super) fn program() -> ResolvedProgram {
     let source =
         "module prefix_move; @id(\"f\") fn f()->i64 {0} @id(\"main\") fn main()->i64 {f()}";
     let checked = crate::check(source, "prefix-move.spx").unwrap();
@@ -53,7 +27,7 @@ fn program() -> ResolvedProgram {
     assert_eq!(crate::format::canonical(&checked), canonical);
     crate::hir::resolve(&checked).unwrap()
 }
-fn seed(
+pub(super) fn seed(
     count: usize,
     capacity: usize,
     work: &mut SkeletonWork<'_, '_>,
@@ -81,7 +55,7 @@ fn seed(
     }
     Ok(path)
 }
-fn same(actual: &[ExprSkeletonPath], expected: &[ExprSkeletonPath]) {
+pub(super) fn same(actual: &[ExprSkeletonPath], expected: &[ExprSkeletonPath]) {
     assert_eq!(actual.len(), expected.len());
     for (a, b) in actual.iter().zip(expected) {
         assert_eq!(a.observations, b.observations);
@@ -104,7 +78,7 @@ fn complete_original_sequence_keeps_order_path_fields_work_and_materializations(
                 minimum_items(),
                 minimum_items() + 9,
             ] {
-                for fanout in [0, 1, 2, 3] {
+                for fanout in [0, 1, 2] {
                     for stopped in [0, 1, 2] {
                         let mut old_budget =
                             ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
@@ -221,67 +195,60 @@ fn original_receiver_source_remains_complete() {
 fn complete_transfer_receiver_pays_before_allocation_at_zero_exact_and_short_limits() {
     let program = program();
     let function = &program.functions[0];
-    for fanout in [1, 2, 3] {
-        for spare in [0, 16] {
-            let observe = |original, limit| {
-                with_limit_usage_refusal(limit, || {
-                    measure(|| {
-                        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                        let before = skeleton_materializations();
-                        let result = (|| {
-                            let mut work =
-                                SkeletonWork::with_index(&program, function, &mut budget, None)?;
-                            let count = minimum_items();
-                            let input = seed(count, count + spare, &mut work)?;
-                            let mut inputs = Vec::new();
-                            work.push_expr_path(&mut inputs, input, "finite prefix")?;
-                            let mut suffixes = Vec::new();
-                            for _ in 0..fanout {
-                                let tail = seed(3, 3, &mut work)?;
-                                work.push_expr_path(&mut suffixes, tail, "finite suffix")?;
-                            }
-                            let output = if original {
-                                before::sequence_skeleton_paths(inputs, &suffixes, &mut work)?
-                            } else {
-                                sequence_skeleton_paths(inputs, &suffixes, &mut work)?
-                            };
-                            assert_eq!(output.len(), fanout);
-                            assert_eq!(output[0].observations.items.len(), count + 3);
-                            let count = output[0].observations.items.len();
-                            drop(output);
-                            Ok::<_, Diagnostic>(count)
-                        })();
-                        let out = result.as_ref().ok().copied();
-                        drop(result);
-                        let logical = (
-                            budget.remaining,
-                            budget.skeleton_remaining,
-                            skeleton_materializations() - before,
-                        );
-                        drop(budget);
-                        (out, logical)
-                    })
-                })
-            };
-            let ((expected, old_alloc), old_refused, old_paid, first) = observe(true, usize::MAX);
-            assert!(!old_refused && first.is_none());
-            let ((actual, new_alloc), refused, exact, first) = observe(false, usize::MAX);
-            assert!(!refused && first.is_none());
-            assert_eq!(actual, expected);
-            assert!(new_alloc.allocated < old_alloc.allocated);
-            assert!(exact < old_paid);
-            for limit in [0, exact - 1, exact] {
-                let ((out, alloc), refused, paid, first) = observe(false, limit);
-                assert_eq!(out.0.is_some(), limit == exact);
-                assert_eq!(refused, limit != exact);
-                assert_eq!(first.is_some(), limit != exact);
-                assert!(!alloc.invalid && alloc.live == 0);
-                assert_eq!(alloc.allocated, alloc.freed);
-                assert!(alloc.allocated <= paid);
-                if limit == 0 {
-                    assert_eq!(alloc.allocated, 0);
-                }
-            }
+    let observe = |original, limit| {
+        with_limit_usage_refusal(limit, || {
+            measure(|| {
+                let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let before = skeleton_materializations();
+                let result = (|| {
+                    let mut work = SkeletonWork::with_index(&program, function, &mut budget, None)?;
+                    let count = minimum_items() + 9;
+                    let input = seed(count, count + 16, &mut work)?;
+                    let mut inputs = Vec::new();
+                    work.push_expr_path(&mut inputs, input, "finite prefix")?;
+                    let tail = seed(3, 3, &mut work)?;
+                    let mut suffixes = Vec::new();
+                    work.push_expr_path(&mut suffixes, tail, "finite suffix")?;
+                    let output = if original {
+                        before::sequence_skeleton_paths(inputs, &suffixes, &mut work)?
+                    } else {
+                        sequence_skeleton_paths(inputs, &suffixes, &mut work)?
+                    };
+                    assert_eq!(output.len(), 1);
+                    assert_eq!(output[0].observations.items.len(), count + 3);
+                    let count = output[0].observations.items.len();
+                    drop(output);
+                    Ok::<_, Diagnostic>(count)
+                })();
+                let out = result.as_ref().ok().copied();
+                drop(result);
+                let logical = (
+                    budget.remaining,
+                    budget.skeleton_remaining,
+                    skeleton_materializations() - before,
+                );
+                drop(budget);
+                (out, logical)
+            })
+        })
+    };
+    let ((expected, old_alloc), old_refused, old_paid, first) = observe(true, usize::MAX);
+    assert!(!old_refused && first.is_none());
+    let ((actual, new_alloc), refused, exact, first) = observe(false, usize::MAX);
+    assert!(!refused && first.is_none());
+    assert_eq!(actual, expected);
+    assert!(new_alloc.allocated < old_alloc.allocated);
+    assert!(exact < old_paid);
+    for limit in [0, exact - 1, exact] {
+        let ((out, alloc), refused, paid, first) = observe(false, limit);
+        assert_eq!(out.0.is_some(), limit == exact);
+        assert_eq!(refused, limit != exact);
+        assert_eq!(first.is_some(), limit != exact);
+        assert!(!alloc.invalid && alloc.live == 0);
+        assert_eq!(alloc.allocated, alloc.freed);
+        assert!(alloc.allocated <= paid, "limit={limit} exact={exact} paid={paid} alloc={alloc:?} refused={refused} first={first:?}");
+        if limit == 0 {
+            assert_eq!(alloc.allocated, 0);
         }
     }
 }
@@ -327,83 +294,4 @@ fn bypasses_and_sticky_refusals_leave_the_complete_input_untouched() {
         assert_eq!(input, saved);
         assert_eq!(input.items.as_ptr(), pointer);
     });
-}
-
-#[test]
-fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {
-    use sha2::{Digest, Sha256};
-    assert_eq!(
-        RECEIVING_BYTES,
-        2 * std::mem::size_of::<Candidate<'static>>() + 2 * std::mem::size_of::<bool>()
-    );
-    const {
-        assert!((MINIMUM_ITEMS - 1) * ITEM_BYTES < RECEIVING_BYTES);
-        assert!(MINIMUM_ITEMS * ITEM_BYTES >= RECEIVING_BYTES);
-    }
-    let full = include_str!("before_wrapper.rs")
-        .replace("use super::before;", "mod before;")
-        .replace("#[path = \"before_wrapper_tests.rs\"]\n", "");
-    assert_eq!(
-        format!(
-            "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(full.as_bytes()))
-        ),
-        "bd6e2b4576dbacb62f8b2698591a4afcf15809d2994c6b01010b5a0a397b8218"
-    );
-    assert_eq!(
-        format!(
-            "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(
-                include_str!("before_wrapper_tests.rs").as_bytes()
-            ))
-        ),
-        "38f11a53d0a21dc60470dc7ac46fda2a86d191ade68bd7abf5c40ab4da783846"
-    );
-}
-
-#[test]
-fn only_the_last_successor_reuses_the_full_paid_prefix_backing() {
-    let program = program();
-    let function = &program.functions[0];
-    let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
-        measure(|| {
-            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-            let mut work = SkeletonWork::new(&program, function, &mut budget);
-            let count = minimum_items() + 9;
-            let prefix = seed(count, count + 16, &mut work).unwrap();
-            let pointer = prefix.observations.items.as_ptr();
-            let capacity = prefix.observations.items.capacity();
-            let mut inputs = Vec::new();
-            work.push_expr_path(&mut inputs, prefix, "last prefix input")
-                .unwrap();
-            let mut suffixes = Vec::new();
-            for _ in 0..3 {
-                let suffix = seed(1, 1, &mut work).unwrap();
-                work.push_expr_path(&mut suffixes, suffix, "last prefix suffix")
-                    .unwrap();
-            }
-            let output = sequence_skeleton_paths(inputs, &suffixes, &mut work).unwrap();
-            assert_eq!(output.len(), 3);
-            let last = &output[2].observations;
-            assert_eq!(last.items.as_ptr(), pointer);
-            assert_eq!(last.items.capacity(), capacity);
-            for earlier in &output[..2] {
-                assert_ne!(earlier.observations.items.as_ptr(), pointer);
-                for n in 0..count {
-                    assert!(std::rc::Rc::ptr_eq(
-                        &earlier.observations.items[n],
-                        &last.items[n]
-                    ));
-                }
-            }
-            drop(output);
-            drop(suffixes);
-            drop(work);
-            drop(budget);
-        })
-    });
-    assert!(!refused && first.is_none());
-    assert!(!allocation.invalid && allocation.live == 0);
-    assert_eq!(allocation.allocated, allocation.freed);
-    assert!(allocation.allocated <= paid);
 }

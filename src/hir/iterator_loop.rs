@@ -11,7 +11,7 @@ pub(crate) use renewal::renewal_bindings_funded;
 pub(crate) use renewal::{
     function_has_record_renewal_outside_loop_paid, function_may_require_record_renewal,
     function_requires_record_renewal, function_requires_renewal, is_owner_renewal_record,
-    is_record_owner_renewal, renewal_binding, renewal_bindings, template_requires_renewal,
+    is_record_owner_renewal, renewal_binding, template_requires_renewal,
 };
 
 pub(crate) struct IteratorLoop<'a> {
@@ -411,3 +411,6 @@ pub(crate) fn template_contains(template: &ResolvedFunctionTemplate) -> bool {
 
 #[cfg(test)]
 mod feasibility_tests;
+
+#[cfg(test)]
+pub(crate) use renewal::renewal_bindings;

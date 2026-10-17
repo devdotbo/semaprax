@@ -231,3 +231,58 @@ mod tests {
         );
     }
 }
+
+#[cfg(test)]
+mod current_union {
+    #[test]
+    fn current_union_retains_every_frozen_legacy_input_and_all_owned_paths() {
+        let legacy = include_str!("../../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv");
+        let current = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-projection-inputs.tsv");
+        let owned = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-owned-inputs.tsv");
+        let current: Vec<_> = current.lines().collect();
+        assert_eq!(legacy.lines().count(), 90);
+        for input in legacy.lines() {
+            assert!(current.contains(&input), "frozen legacy source omitted: {input}");
+        }
+        for input in owned.lines() {
+            assert_eq!(current.iter().filter(|path| **path == input).count(), 1, "current owned source missing or duplicated: {input}");
+        }
+    }
+}
+
+// Exact current owning closure; broad raw inventory remains separately authenticated.
+pub(super) fn current_owned_source_inventory() -> String {
+    [
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/capacity_before.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/capacity_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/capacity_tests/owner_controls.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry/storage.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry/before_retained.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry/retained_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/before_registry.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/sorting.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/ledger.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/registry/tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/names.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/shape.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/roots.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/owner_index.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/owner_index/tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_invocation.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_invocation/tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_view.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_oracle.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_view_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/function_tests.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/function_runtime.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch.rs")),
+        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs")),
+    ].concat()
+}

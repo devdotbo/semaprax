@@ -16,9 +16,11 @@ use super::nodes::{is_scalar_resolved_type, DeclarationKind, ResolvedBinding, Re
 use super::{Binding, Resolver};
 
 #[cfg(test)]
+mod nested_byte_tests;
+#[cfg(test)]
 pub(in crate::hir) mod text_reference;
 
-impl Resolver<'_> {
+impl Resolver<'_, '_> {
     pub(super) fn resolve_expr(
         &self,
         function: &FunctionExecutionId,
@@ -159,22 +161,26 @@ impl Resolver<'_> {
     ) -> Result<(), Diagnostic> {
         self.reject_while_disallowed_in_scope(expression, execution, None)
     }
+
+    /// Source verification owns outermost-byte ancestry and entry availability.
+    /// This lowering pre-scan independently narrows each nested source against
+    /// the current immutable typed bindings, then scans its COMPLETE body with
+    /// the unchanged bounded-loop restrictions. The old contextless receiver
+    /// remains strict, including for Vec/record/owned traversal callers.
     pub(super) fn reject_while_disallowed_in_scope(
         &self,
         expression: &Expr,
         execution: Option<&FunctionExecutionId>,
-        byte_entry: Option<&BTreeMap<String, Binding>>,
+        byte_scope: Option<&BTreeMap<String, Binding>>,
     ) -> Result<(), Diagnostic> {
         if execution
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {
-                self.program
-                    .functions()
-                    .iter()
-                    .find(|f| f.stable_id == owner.as_str())
+                self.source_functions()
+                    .find(|f| f.payload().stable_id == owner.as_str())
             })
             .is_some_and(|function| {
-                crate::finite_owned_record_loop::source(function, expression).is_some()
+                crate::finite_owned_record_loop::source(function.payload(), expression).is_some()
             })
         {
             return Ok(());
@@ -182,12 +188,10 @@ impl Resolver<'_> {
         let generic = execution
             .and_then(FunctionExecutionId::monomorphic_declaration)
             .and_then(|owner| {
-                self.program
-                    .functions()
-                    .iter()
-                    .find(|f| f.stable_id == owner.as_str())
+                self.source_functions()
+                    .find(|f| f.payload().stable_id == owner.as_str())
             })
-            .filter(|f| crate::source_verify::generic_collection_profile(f));
+            .filter(|f| crate::source_verify::generic_collection_profile(f.payload()));
         enum Item<'a> {
             Expression(&'a Expr),
             Statement(&'a Statement),
@@ -225,21 +229,19 @@ impl Resolver<'_> {
                         continue;
                     }
                     Statement::For { values, body, .. }
-                        if byte_entry.is_some_and(|scope| {
+                        if byte_scope.is_some_and(|scope| {
                             matches!(&values.kind, ExprKind::Var(name)
                                 if scope.get(name).is_some_and(super::resolve_for::bytes::admits))
                                 && execution.is_none_or(|owner| {
                                     owner
                                         .monomorphic_declaration()
                                         .and_then(|id| {
-                                            self.program
-                                                .functions()
-                                                .iter()
-                                                .find(|f| f.stable_id == id.as_str())
+                                            self.source_functions()
+                                                .find(|f| f.payload().stable_id == id.as_str())
                                         })
                                         .is_some_and(|function| {
                                             super::resolve_for::bytes::source_byte_ancestry(
-                                                &function.body,
+                                                &function.payload().body,
                                                 expression,
                                                 scope,
                                             )
@@ -247,11 +249,10 @@ impl Resolver<'_> {
                                 })
                         }) =>
                     {
-                        // Construct only the immutable named-byte profile.
-                        // Source verification owns outer-entry availability;
-                        // full HIR replay independently proves every ancestor
-                        // freeze and exact receiver before backend admission.
+                        // Same left-to-right pre-scan order as While. Never
+                        // skip an inner subtree or its unsafe/call/alloc gates.
                         pending.push(Item::Expression(body));
+                        pending.push(Item::Expression(values));
                         continue;
                     }
                     Statement::For { span, .. }
@@ -348,9 +349,15 @@ impl Resolver<'_> {
                                     || !matches!(args.as_slice(), [source, _] if matches!(source.kind, ExprKind::Var(_)))
                             } else {
                                 type_arguments.len() != 1
-                                    || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || crate::source_verify::copy_record_source_admitted(self.program, &type_arguments[0]) || crate::source_verify::owned_leaf_source_admitted(self.program, &type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.type_parameters.iter().any(|parameter| parameter.name == *name))))
+                                    || !(crate::vec_ops::ast_element_is_admitted(&type_arguments[0]) || crate::source_verify::copy_record_source_admitted(self.program, &type_arguments[0]) || crate::source_verify::owned_leaf_source_admitted(self.program, &type_arguments[0]) || generic.is_some_and(|f| matches!(&type_arguments[0], Type::Named { name, arguments } if arguments.is_empty() && f.payload().type_parameters.iter().any(|parameter| parameter.name == *name))))
                             })
-                            || args.len() != operation.arity()
+                            || args.len()
+                                != if operation == crate::vec_ops::VecOp::UpdateField {
+                                    // The source-only literal selector is removed before HIR.
+                                    4
+                                } else {
+                                    operation.arity()
+                                }
                         {
                             return Err(self.error(
                                 "SPX-T283",
@@ -385,19 +392,17 @@ impl Resolver<'_> {
                     // before any argument in the same order as the recursive
                     // admission scan.
                     let declared = self
-                        .program
-                        .functions()
-                        .iter()
-                        .find(|function| function.name == *name);
+                        .source_functions()
+                        .find(|function| function.name() == name.as_str());
                     if let Some(declared) = declared {
-                        let scalar_signature = self.byte_helpers.target(declared)
-                            || crate::stdin_stream_ops::ast_forward_signature(declared)
-                            || (crate::loop_calls::effects_admitted(&declared.effects)
+                        let scalar_signature = self.byte_helpers.target_ref(declared)
+                            || crate::stdin_stream_ops::ast_forward_signature(declared.payload())
+                            || (crate::loop_calls::effects_admitted(&declared.payload().effects)
                                 && crate::loop_calls::ast_result_admitted(
                                     self.program,
-                                    &declared.return_type,
+                                    &declared.payload().return_type,
                                 )
-                                && declared.params.iter().all(|param| {
+                                && declared.payload().params.iter().all(|param| {
                                     crate::loop_calls::ast_param_admitted(
                                         self.program,
                                         param.mode,
@@ -544,40 +549,40 @@ impl Resolver<'_> {
             return false;
         };
         let Some(target) = self
-            .program
-            .functions()
-            .iter()
-            .find(|function| function.name == *name)
+            .source_functions()
+            .find(|function| function.name() == name.as_str())
         else {
             return false;
         };
         type_arguments.is_empty()
-            && target.type_parameters.is_empty()
-            && target.effects.is_empty()
+            && target.payload().type_parameters.is_empty()
+            && target.payload().effects.is_empty()
             && self
-                .resolve_type(&target.return_type, value.span)
+                .resolve_type(&target.payload().return_type, value.span)
                 .is_ok_and(|ty| {
                     crate::hir::iterator_loop::is_owner_renewal_record(&self.declarations, &ty)
                 })
-            && target.params.len() == args.len()
+            && target.payload().params.len() == args.len()
             && target
+                .payload()
                 .params
                 .iter()
                 .zip(args)
                 .filter(|(parameter, argument)| {
                     parameter.mode == crate::ast::ParamMode::Own
-                        && parameter.ty == target.return_type
+                        && parameter.ty == target.payload().return_type
                         && matches!(&argument.kind, ExprKind::Var(name) if name == binding)
                 })
                 .count()
                 == 1
             && target
+                .payload()
                 .params
                 .iter()
                 .zip(args)
                 .all(|(parameter, argument)| match parameter.mode {
                     crate::ast::ParamMode::Own => {
-                        parameter.ty == target.return_type
+                        parameter.ty == target.payload().return_type
                             && matches!(&argument.kind, ExprKind::Var(name) if name == binding)
                     }
                     crate::ast::ParamMode::Borrow => {

@@ -1,5 +1,6 @@
 //! Complete unchanged sequencing receiver before owned prefix transfer.
 use super::super::*;
+use super::path_array;
 
 pub(super) fn sequence_skeleton_paths(
     prefixes: Vec<ExprSkeletonPath>,

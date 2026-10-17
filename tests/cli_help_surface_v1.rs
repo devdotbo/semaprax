@@ -13,7 +13,7 @@ const DOCTOR_LINE: &str = "semaprax doctor [--profile <id>] [--target native|web
 const NEW_LINE: &str = "semaprax new <destination> [--name project-name] [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text]\n";
 const PROJECT_SCAFFOLD_LINE: &str = "semaprax project-scaffold --name project-name [--template calculator|library|service|stdin-stream-text|stdin-stream-data|stdin-stream-collection-record|source-command-file-text] [--layout frozen|tables|current]\n";
 const BANNER: &str = "SEMAPRAX — Meaning in. Verified machine code out.\n";
-const JSON_CODEC_HELP: &str = "Derives checked ordinary source for explicit scalar records; opt-in identifier-views.v1, request-views.v1 and stream-request-views.v1 add bounded identifier/array views; owned-request.v1 and stream-owned-request.v1 materialize bounded identifier String/record collections under an owning runtime profile. UTF-8 owned request profiles bound each decoded string with --max-string-bytes (1..64 UTF-8 bytes). bounded-collection-response.v1 selects an encode-only nested collection view and also requires that bound. bounded-nested-request.v1 requires both --max-string-bytes (1..64) and --max-array-items (1..256); direct decoding only, under the independently admitted caller Project profile. bounded-stream-nested-request.v1 uses the same bounds, original schema stdin permit and a computed normalized spelling envelope; it adds no raw-input or whitespace cap. bounded-nested-response.v1 requires the same two bounds and derives encode-only borrowed finite nested records; primitive Vec<string> refuses. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md. bounded-nested-response.v2 adds named borrowed Vec<string> slot reads with the same caps and distinct generated identities. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md.\nRequires declared std.data.json scan/token/digits/write dependencies. Publishes a new complete module replacement; never overwrites source.\nAdd --plan <plan-json> --output <new-bundle> instead of single-codec selectors to derive 1..8 distinct replacements against one immutable revision and validate the complete candidate. The deterministic JSON bundle preserves authored schema bytes, complete candidate sources and exact per-entry evidence; no authority to install it. Existing destinations refuse. Plan contract: docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\nRead-only shape discovery: json-codec <project> --explain --type <stable-id> [--source <path>] [--target native64|wasm32] [--max-string-bytes N] [--max-array-items N] [--max-bytes N] [--revision <digest>] [--offset N]. Reports actual shape predicates and explicit unmet policy; candidate/backend admission remains unperformed. Continuations require the returned project revision. Contract: docs/JSON-CODEC-SUITABILITY-V1.md\nContract and typed failure codes: docs/APPLICATION-JSON-CODECS-V1.md\n";
+const JSON_CODEC_HELP: &str = "Derives checked ordinary source for explicit scalar records; opt-in identifier-views.v1, request-views.v1 and stream-request-views.v1 add bounded identifier/array views; owned-request.v1 and stream-owned-request.v1 materialize bounded identifier String/record collections under an owning runtime profile. UTF-8 owned request profiles bound each decoded string with --max-string-bytes (1..64 UTF-8 bytes). bounded-collection-response.v1 selects an encode-only nested collection view and also requires that bound. bounded-nested-request.v1 requires both --max-string-bytes (1..64) and --max-array-items (1..256); direct decoding only, under the independently admitted caller Project profile. bounded-stream-nested-request.v1 uses the same bounds, original schema stdin permit and a computed normalized spelling envelope; it adds no raw-input or whitespace cap. bounded-nested-response.v1 requires the same two bounds and derives encode-only borrowed finite nested records; primitive Vec<string> refuses. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V1.md. bounded-nested-response.v2 adds named borrowed Vec<string> slot reads with the same caps and distinct generated identities. Contract: docs/APPLICATION-JSON-NESTED-RESPONSE-V2.md.\nRequires declared std.data.json scan/token/digits/write dependencies. Publishes a new complete module replacement; never overwrites source.\nAdd --plan <plan-json> --output <new-bundle> instead of single-codec selectors to derive 1..8 distinct replacements against one immutable revision and validate the complete candidate. The deterministic JSON bundle preserves authored schema bytes, complete candidate sources and exact per-entry evidence; no authority to install it. Existing destinations refuse. Plan contract: docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\nFull-host fresh application assembly: semaprax-full new <fresh-directory> --from <project> --codec-plan <plan-json> --command-profile <exact-profile> [--command-path <declared-path> --command-source <source-file>]. Reuses this plan and complete ordinary checks; preserves the manifest grant, writes canonical authored inventory and generation/source receipts through held-parent no-replace publication. Only direct src/*.spx modules (1..32); source-command v26/v28/v33/v34 and collection-record v31. V31 explicitly selects test --target native-collection-record-pure.v1, a pure typed declared-test successor; --target native retains its old refusal. Installation executes no native code; unresolved source-capacity/compiler admission still refuses before publication. Standalone new has no installer authority. Contract: docs/APPLICATION-STARTER-V1.md.\nRead-only shape discovery: json-codec <project> --explain --type <stable-id> [--source <path>] [--target native64|wasm32] [--max-string-bytes N] [--max-array-items N] [--max-bytes N] [--revision <digest>] [--offset N]. Reports actual shape predicates and explicit unmet policy; candidate/backend admission remains unperformed. Continuations require the returned project revision. Contract: docs/JSON-CODEC-SUITABILITY-V1.md\nRetained receipt publication may add --receipt-stdout-seal <nonce>: 1..64 ASCII letters/digits/_/-, with no leading --. The compiler publishes the exact receipt first, then writes and flushes its byte count and SHA-256 seal to stdout; a stdout failure leaves the published receipt intact. Contract: docs/JSON-CODEC-PUBLICATION-SEAL-V1.md\nContract and typed failure codes: docs/APPLICATION-JSON-CODECS-V1.md\nAdd --retained-receipt to the single-codec form to publish one JSON receipt bundle instead of source: exact held original manifest/source/dependency bytes, resolved sources and two ordinary derivations from one retained revision. No independent execution or binary authentication claim. Contract: docs/JSON-CODEC-RETAINED-RECEIPT-V1.md\n";
 /// The guided overview must stay one screen; CLI Help v4 fixes the bound.
 const GUIDE_MAX_BYTES: usize = 2048;
 const GUIDE_HEADINGS: &[&str] = &[
@@ -58,6 +58,11 @@ const DIAGNOSTIC_G171: &str = concat!(
     "SPX-G171\n",
     "wrote: resolved-core builder ledger refusal\n",
     "fix: Preserve behavior/caps; record source, requested/remaining/floor and compiler stage. Reduce source or optimize its compiler owner. Ledger bytes are not RSS/peak; do not infer unknowns.\n",
+);
+const DIAGNOSTIC_T267: &str = concat!(
+    "SPX-T267\n",
+    "wrote: Bytes allocation capacity: loop/cycle, per-value or full-path bound\n",
+    "fix: Follow the diagnostic's named limit; reduce complete allocation/input-read demand or per-value capacity. Keep Bytes allocation/copy and allocating calls out of ordinary while/cycles; nonallocating updates may fill a live owner where equivalent. Drops do not refund cumulative limits. Separate finite scratch/fused routes need their own proof/profile and qualification; help grants no admission. [Bytes](OWNED-BOUNDED-BYTE-BUFFER-V1.md)\n",
 );
 
 /// The command named by every indented entry of the guided overview.
@@ -323,6 +328,11 @@ fn standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
                 .then(|| format!("  {line}\n"))
             })
             .collect();
+        let expected = if command == "new" {
+            format!("{expected}  semaprax-full new <fresh-directory> --from <project> --codec-plan <plan-json> --command-profile <exact-profile> [--command-path <declared-path> --command-source <source-file>]\n")
+        } else {
+            expected
+        };
         // The exhaustive catalog carries exact grammar only. Scoped codec
         // help deliberately appends its profile contract, which is part of
         // the public no-side-effect authoring surface.
@@ -489,6 +499,12 @@ fn standalone_scoped_help_is_exhaustive_exact_capability_aware_and_inert() {
     assert_eq!(g171.stdout, DIAGNOSTIC_G171.as_bytes());
     assert!(g171.stdout.len() <= 256);
     std::fs::remove_dir(g171_dir).unwrap();
+    let (t267, t267_dir) = invoke(&["help", "diagnostic", "SPX-T267"]);
+    assert!(t267.status.success());
+    assert!(t267.stderr.is_empty());
+    assert_eq!(t267.stdout, DIAGNOSTIC_T267.as_bytes());
+    assert!(t267.stdout.len() <= 768);
+    std::fs::remove_dir(t267_dir).unwrap();
     let (p106, p106_dir) = invoke(&["help", "diagnostic", "SPX-P106"]);
     assert!(p106.status.success());
     assert!(p106.stderr.is_empty());
@@ -891,6 +907,29 @@ fn cli_authoring_card_search_is_bounded_exact_and_inert() {
         let (page, directory) = invoke(&["help", "language", selector]);
         assert_eq!(page.status.code(), Some(2), "{selector}: {page:?}");
         assert!(page.stdout.is_empty());
+        assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);
+        std::fs::remove_dir(directory).unwrap();
+    }
+}
+
+#[path = "cli_help_surface_v1/task_pages.rs"]
+mod task_pages;
+
+#[test]
+fn standalone_application_starter_options_explain_full_host_and_leave_no_files() {
+    for option in [
+        "--from",
+        "--codec-plan",
+        "--command-profile",
+        "--command-path",
+        "--command-source",
+    ] {
+        let (output, directory) = invoke(&["new", "fresh", option, "missing"]);
+        assert_eq!(output.status.code(), Some(2), "{option}: {output:?}");
+        assert!(output.stdout.is_empty());
+        assert!(String::from_utf8(output.stderr).unwrap().contains(
+            "new application starters require semaprax-full; use `semaprax-full help new`"
+        ));
         assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);
         std::fs::remove_dir(directory).unwrap();
     }

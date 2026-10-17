@@ -157,6 +157,11 @@ fn overflow(
 }
 
 impl<K: KeyWork> Directory<K> {
+    #[cfg(test)]
+    pub(super) fn has_frozen_lookup_for_test(&self) -> bool {
+        self.lookup.is_some()
+    }
+
     pub(super) fn new(
         function: &ResolvedFunction,
         budget: &mut ReplayBudget,
@@ -179,6 +184,21 @@ impl<K: KeyWork> Directory<K> {
             phase,
             lookup: None,
         })
+    }
+
+    #[cfg(test)]
+    pub(super) fn nodes_pointer_for_test(&self) -> *const () {
+        self.nodes.as_ptr().cast()
+    }
+
+    #[cfg(test)]
+    pub(super) fn first_key_for_test(&self) -> Option<&K> {
+        self.nodes.get(self.first).map(|node| &node.key)
+    }
+
+    #[cfg(test)]
+    pub(super) fn node_layout_bytes() -> usize {
+        std::mem::size_of::<Node<K>>()
     }
 
     pub(super) fn is_empty(&self) -> bool {
@@ -610,3 +630,6 @@ impl<K: KeyWork> Directory<K> {
 
 mod status_prefix;
 pub(super) use status_prefix::Owner as StatusInsertionOwner;
+
+#[cfg(test)]
+mod before_cursor;

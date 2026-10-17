@@ -69,7 +69,7 @@ pub(in crate::loan_plan) fn inspect<'a, 'p>(
         }
     }
 
-    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
+    let byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     // One expansion governs all five positive branches, so every initializer
     // and its affine consuming/receiving carriers have the same full payment.
     macro_rules! retain {
@@ -88,6 +88,7 @@ pub(in crate::loan_plan) fn inspect<'a, 'p>(
             }));
         }};
     }
+    let mut byte_census = crate::hir::ByteTraversalSlot::new(program, function)?;
     let provisional = provisional_result::root(function);
     let mut root_ownership = cfg_directory::Map::<ValueId, bool>::new(payer)?;
     discovery.reset()?;
@@ -227,3 +228,6 @@ pub(in crate::loan_plan) fn before_inventory_source(path: &str, source: &str) ->
     }
     restored
 }
+
+#[cfg(test)]
+mod nested_tests;

@@ -24,14 +24,17 @@
 //! * Bottom-up hash-consing of the weighted subset construction assigns two
 //!   states the same id exactly when they accept every sequence the same
 //!   number of times, so equal roots prove equal path multisets.
-use super::skeleton_work::{ObservationDag, ObservationDagKind};
+use super::skeleton_work::{ObservationDag, ObservationDagKind}; #[cfg(test)] use crate::bounded_output::stage_debits::route_debits as debit_routes;
 use super::*;
 use std::rc::Rc;
+#[cfg(test)]
+mod before_closure_invocation;
 #[cfg(test)]
 mod borrowed_canonical;
 #[cfg(test)]
 mod canonical_before;
 mod canonical_shared;
+mod compact_nodes;
 pub(super) mod copy_regions;
 mod dag_memo;
 #[cfg(test)]
@@ -39,6 +42,7 @@ mod instrumentation;
 mod storage;
 #[cfg(test)]
 use canonical_before::Receiver as Canonicalizer;
+use compact_nodes::Node;
 use storage::{memo_insert, push_end, push_frame, reserve_transition_observation};
 
 /// Representation crossover, independent of the admitted path/work limits.
@@ -51,12 +55,6 @@ const ENUMERATION_CROSS_CHECK_THRESHOLD: usize = 4_096;
 enum Label {
     Observation(Rc<SkeletonObservation>),
     End(SkeletonTerminal),
-}
-
-#[derive(Default)]
-struct Node {
-    moves: Vec<(Label, usize)>,
-    epsilon: Vec<usize>,
 }
 
 // Borrowed headers select a representation; structural and complete weighted
@@ -233,11 +231,11 @@ fn compare_with_index_storage<'hir>(
         // The exact reconstructed automaton is unchanged. An Oracle account
         // pays the full general label order; it grants no borrowed-helper lease.
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        };
+        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -249,11 +247,11 @@ fn compare_with_index_storage<'hir>(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         lease.validate(program, function, budget)?;
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        };
+        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -261,13 +259,41 @@ fn compare_with_index_storage<'hir>(
         return Ok(Some(hir == plan));
     }
 
+    budget.reserve_bytes(
+        function, canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
+        "canonical ordered dictionary owner receiving",
+    )?;
     let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
+    if budget.pays_allocations() {
+        budget.reserve_bytes(function, canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
+            "factored cold terminal node predicate")?;
+    }
+    if canonical.cold_dead_node(hir_root) { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+        budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
+        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else { return Ok(None); }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
+        let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)? else { return Ok(None); };
+        return Ok(Some(hir == plan));
+    }
+    if budget.pays_allocations() {
+        budget.reserve_bytes(
+            function,
+            canonical_shared::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+            "factored held closure invocation controls",
+        )?;
+    }
+    let mut receiving =
+        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
-    let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
+    let Some(hir) =
+        canonical.id_with_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?
+    else {
         return Ok(None);
-    };
+    }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
-    let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
+    let Some(plan) =
+        canonical.id_with_receiving(function, vec![(plan_root, 1)], budget, &mut receiving)?
+    else {
         return Ok(None);
     };
     Ok(Some(hir == plan))
@@ -304,7 +330,7 @@ fn build_comparison<'hir>(
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
     budget.lent_skeleton = true;
     let result = (|| {
-        budget.merge_paths = true;
+        budget.merge_paths = true; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FactoredHIR);
         let hir_paths = hir_skeleton_paths_with_index_storage(
             program,
             function,
@@ -321,7 +347,7 @@ fn build_comparison<'hir>(
             hir_paths.as_ref().map(|paths| paths.as_slice()).ok(),
         );
         let hir_paths = hir_paths?;
-
+ #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HIRAutomaton);
         let mut automaton = Automaton::default();
         let sink = automaton.node(function, budget)?;
         let success = automaton.end(function, budget, sink, SkeletonTerminal::Success)?;
@@ -345,7 +371,7 @@ fn build_comparison<'hir>(
             automaton.epsilon(function, budget, end, terminal)?;
         }
         #[cfg(test)]
-        instrumentation::phase(function, budget, "HIR automaton", None);
+        instrumentation::phase(function, budget, "HIR automaton", None); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PLANAutomaton);
         let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
         #[cfg(test)]
         instrumentation::phase(function, budget, "plan automaton", None);
@@ -413,13 +439,41 @@ impl Automaton {
         to: usize,
     ) -> Result<(), Diagnostic> {
         budget.charge(function, 1, "factored automaton labelled movement")?;
-        budget.reserve_vec(
-            function,
-            &mut self.nodes[from].moves,
-            1,
-            "factored automaton moves",
-        )?;
-        self.nodes[from].moves.push((label, to));
+        if matches!(self.nodes[from], Node::Empty) {
+            // Existing incoming tuple remains; only the enclosing inline enum
+            // is a new initializer. Payment replaces the old reserve_vec call.
+            budget.reserve_bytes(
+                function,
+                std::mem::size_of::<Node>(),
+                "factored automaton moves",
+            )?;
+            self.nodes[from] = Node::Movement((label, to));
+        } else {
+            if !matches!(self.nodes[from], Node::Many(_)) {
+                budget.reserve_bytes(
+                    function,
+                    Node::PROMOTION_CONTROLS,
+                    "factored compact node promotion controls",
+                )?;
+                self.nodes[from].promote(function, budget, true)?;
+            } else {
+                budget.reserve_bytes(
+                    function,
+                    std::mem::size_of::<Result<(), Diagnostic>>()
+                        + 2 * std::mem::size_of::<&mut Box<compact_nodes::Many>>()
+                        + 2 * std::mem::size_of::<&mut compact_nodes::Many>(),
+                    "factored compact many receiving controls",
+                )?;
+                let Node::Many(many) = &mut self.nodes[from] else {
+                    unreachable!()
+                };
+                budget.reserve_vec(function, &mut many.moves, 1, "factored automaton moves")?;
+            }
+            let Node::Many(many) = &mut self.nodes[from] else {
+                unreachable!()
+            };
+            many.moves.push((label, to));
+        }
         #[cfg(test)]
         instrumentation::edge();
         Ok(())
@@ -433,13 +487,44 @@ impl Automaton {
         to: usize,
     ) -> Result<(), Diagnostic> {
         budget.charge(function, 1, "factored automaton epsilon movement")?;
-        budget.reserve_vec(
-            function,
-            &mut self.nodes[from].epsilon,
-            1,
-            "factored automaton epsilon moves",
-        )?;
-        self.nodes[from].epsilon.push(to);
+        if matches!(self.nodes[from], Node::Empty) {
+            budget.reserve_bytes(
+                function,
+                std::mem::size_of::<Node>(),
+                "factored automaton epsilon moves",
+            )?;
+            self.nodes[from] = Node::Epsilon(to);
+        } else {
+            if !matches!(self.nodes[from], Node::Many(_)) {
+                budget.reserve_bytes(
+                    function,
+                    Node::PROMOTION_CONTROLS,
+                    "factored compact node promotion controls",
+                )?;
+                self.nodes[from].promote(function, budget, false)?;
+            } else {
+                budget.reserve_bytes(
+                    function,
+                    std::mem::size_of::<Result<(), Diagnostic>>()
+                        + 2 * std::mem::size_of::<&mut Box<compact_nodes::Many>>()
+                        + 2 * std::mem::size_of::<&mut compact_nodes::Many>(),
+                    "factored compact many receiving controls",
+                )?;
+                let Node::Many(many) = &mut self.nodes[from] else {
+                    unreachable!()
+                };
+                budget.reserve_vec(
+                    function,
+                    &mut many.epsilon,
+                    1,
+                    "factored automaton epsilon moves",
+                )?;
+            }
+            let Node::Many(many) = &mut self.nodes[from] else {
+                unreachable!()
+            };
+            many.epsilon.push(to);
+        }
         #[cfg(test)]
         instrumentation::edge();
         Ok(())
@@ -793,6 +878,7 @@ fn transition_observation(
                 .collect(),
         },
         CleanupTransition::StageCopyResult { source } => {
+            compact_stage::prepare!(function, budget, source);
             SkeletonObservation::StageCopyResult(CopySource::new(function, budget, source.clone())?)
         }
         CleanupTransition::AuthenticateVariantCase { .. }
@@ -863,15 +949,15 @@ enum CanonicalFrame {
 /// Test builds compare the factored verdict with the enumerating one on every
 /// function small enough to enumerate.
 #[cfg(test)]
-fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) {
+fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) { let _debit_route = debit_routes::route(debit_routes::Route::UnoptedCrosscheck); let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-    let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
-        let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
+    let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| { let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+        let mut plan = plan_skeleton_paths(function, &mut enumerating)?; let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
         hir.sort();
         plan.sort();
         Ok(hir == plan)
-    });
+    }); let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if let Ok(true) = enumerated {
         let mut factored = ReplayBudget::with_skeleton_limit(0);
         let verdict = compare(program, function, &mut factored);
@@ -935,8 +1021,8 @@ mod continuation_tests {
             );
             assert_eq!(old.automaton.nodes.len(), current.automaton.nodes.len());
             for (old, current) in old.automaton.nodes.iter().zip(&current.automaton.nodes) {
-                assert_eq!(old.moves, current.moves);
-                assert_eq!(old.epsilon, current.epsilon);
+                assert_eq!(old.moves(), current.moves());
+                assert_eq!(old.epsilon(), current.epsilon());
             }
             assert!(
                 storage.frames.is_some(),
@@ -1017,6 +1103,9 @@ mod oracle_order;
 
 #[cfg(test)]
 mod continuation_receiver;
+
+#[cfg(test)]
+pub(crate) use canonical_shared::app_census::Scope as EpsilonAppCensus;
 
 #[cfg(test)]
 mod moderate_tests;

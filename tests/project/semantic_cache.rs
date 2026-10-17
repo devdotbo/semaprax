@@ -84,6 +84,7 @@ fn image(revision: Arc<ProjectRevision>) -> Arc<ProjectSemanticImage> {
     let expected = revision.project_revision().to_owned();
     Arc::new(ProjectSemanticImage::derive(revision, &expected).unwrap())
 }
+#[track_caller]
 fn same(cached: &Arc<ProjectRevision>, cold: Arc<ProjectRevision>) {
     assert_eq!(cached.project_revision(), cold.project_revision());
     assert_eq!(cached.workspace_revision(), cold.workspace_revision());
@@ -114,7 +115,7 @@ fn work_split(
     assert_eq!(report["schema"], "semaprax.project-semantic-cache-work.v1");
     assert_eq!(
         report["compiler"]["compatibility"],
-        "semaprax.project-checked-module-hir.v11"
+        semaprax::project::PROJECT_SEMANTIC_CACHE_COMPATIBILITY
     );
     assert_eq!(report["work"]["modules_parsed"], ast_parsed);
     assert_eq!(report["work"]["canonicalizer_calls"], ast_parsed);

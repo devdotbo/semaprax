@@ -7,20 +7,22 @@ pub(in crate::cleanup_plan::replay::structural_control) struct CallCursor<'a> {
     frames: Vec<Slot<'a>>,
 }
 impl<'a> CallCursor<'a> {
-    pub(in crate::cleanup_plan::replay::structural_control) fn new(
+    pub(in crate::cleanup_plan::replay::structural_control) fn new<E: Policy>(
         function: &ResolvedFunction,
         budget: &mut ReplayBudget,
-    ) -> Result<Self, Diagnostic> {
+    ) -> Result<Self, E> {
+        let _permit = E::enter::<Self>(function, budget)?;
         budget.reserve_array::<Self>(function, 1, "structural call cursor owner")?;
         Ok(Self { frames: Vec::new() })
     }
 
-    fn grow(
+    fn grow<E: Policy>(
         &mut self,
         function: &ResolvedFunction,
         required: usize,
         budget: &mut ReplayBudget,
-    ) -> Result<(), Diagnostic> {
+    ) -> Result<(), E> {
+        let permit = E::enter::<()>(function, budget)?;
         budget.reserve_bytes(function, 0, "structural call cursor")?;
         if required <= self.frames.len() {
             return Ok(());
@@ -28,9 +30,9 @@ impl<'a> CallCursor<'a> {
         // This is the original independent traversal ceiling, never the
         // current allocation's capacity. A deep source cannot grow past it.
         if required > DEPTH {
-            return Err(replay_error(
-                function,
-                "structural call lookup depth exceeds bound",
+            return Err(E::static_error(
+                &permit,
+                Kind::StructuralCallLookupDepthExceedsBound,
             ));
         }
         let target = self.frames.len().saturating_mul(2).clamp(2, DEPTH);
@@ -41,11 +43,11 @@ impl<'a> CallCursor<'a> {
         let mut replacement = Vec::new();
         replacement
             .try_reserve_exact(target)
-            .map_err(|_| replay_error(function, "structural call cursor allocation refused"))?;
+            .map_err(|_| E::static_error(&permit, Kind::StructuralCallCursorAllocationRefused))?;
         if replacement.capacity() != target {
-            return Err(replay_error(
-                function,
-                "structural call cursor capacity differs from reservation",
+            return Err(E::static_error(
+                &permit,
+                Kind::StructuralCallCursorCapacityDiffersFromReservation,
             ));
         }
         // Both complete allocations are charged while their backing overlaps.
@@ -56,13 +58,14 @@ impl<'a> CallCursor<'a> {
         Ok(())
     }
 
-    pub(super) fn find(
+    pub(super) fn find<E: Policy>(
         &mut self,
         function: &'a ResolvedFunction,
         id: &ExpressionId,
         budget: &mut ReplayBudget,
-    ) -> Result<&'a ResolvedExpr, Diagnostic> {
-        self.grow(function, 1, budget)?;
+    ) -> Result<&'a ResolvedExpr, E> {
+        let permit = E::enter::<&ResolvedExpr>(function, budget)?;
+        self.grow::<E>(function, 1, budget)?;
         for root in function
             .requires
             .iter()
@@ -82,12 +85,12 @@ impl<'a> CallCursor<'a> {
                 }
                 if let Some(child) = frame.next() {
                     if depth == DEPTH {
-                        return Err(replay_error(
-                            function,
-                            "structural call lookup depth exceeds bound",
+                        return Err(E::static_error(
+                            &permit,
+                            Kind::StructuralCallLookupDepthExceedsBound,
                         ));
                     }
-                    self.grow(function, depth + 1, budget)?;
+                    self.grow::<E>(function, depth + 1, budget)?;
                     self.frames[depth] = Some(ChildCursor::new(child));
                     depth += 1;
                 } else {
@@ -96,7 +99,7 @@ impl<'a> CallCursor<'a> {
                 }
             }
         }
-        Err(replay_error(function, "call commit expression is absent"))
+        Err(E::static_error(&permit, Kind::CallCommitExpressionIsAbsent))
     }
 }
 
@@ -109,3 +112,11 @@ impl<'a> CallCursor<'a> {
 mod before;
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "complete immediate677 generic selected-policy cursor remains independent"
+)]
+#[path = "cursor_before_selected.rs"]
+mod before_selected;

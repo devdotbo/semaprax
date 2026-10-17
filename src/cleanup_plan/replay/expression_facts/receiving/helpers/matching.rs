@@ -1,6 +1,39 @@
 //! Compare the full expected prefix without constructing owned ancestry results.
 use super::*;
 
+// One existing authority-query frame is replaced, without a wider payer copy.
+const _: () = assert!(
+    std::mem::size_of::<&AllocationPayer>() + std::mem::size_of::<bool>()
+        <= std::mem::size_of::<&ReplayBudget>() + std::mem::size_of::<bool>()
+);
+// The selected call replaces expected_exit_regions at the same lexical site.
+// Its actual borrowed arguments are identical; its returned/received bool
+// result and comparison fit the old result/received Vec header and comparison.
+// This is a header counterpart only: no removed Vec allocation funds a role.
+const _: () = assert!(
+    2 * std::mem::size_of::<Result<bool, Diagnostic>>()
+        + std::mem::size_of::<bool>()
+        + std::mem::size_of::<&ResolvedFunction>()
+        + std::mem::size_of::<&ExitTarget>()
+        + std::mem::size_of::<&mut ReplayBudget>()
+        <= 2 * std::mem::size_of::<Result<Vec<CleanupRegionId>, Diagnostic>>()
+            + std::mem::size_of::<Vec<CleanupRegionId>>()
+            + std::mem::size_of::<bool>()
+            + std::mem::size_of::<&ResolvedFunction>()
+            + std::mem::size_of::<&ExitTarget>()
+            + std::mem::size_of::<&mut ReplayBudget>()
+);
+// Actual new latch predicate slots and the reserve/charge preflight call and
+// receiving families. These invocation-owned slots are reused across exits;
+// the two predicate operations themselves are charged before every evaluation.
+pub(in crate::cleanup_plan::replay::expression_facts::receiving) const EXIT_SELECTOR_BYTES: usize =
+    2 * std::mem::size_of::<bool>()
+        + 4 * std::mem::size_of::<Result<(), Diagnostic>>()
+        + 4 * std::mem::size_of::<&mut ReplayBudget>()
+        + 4 * std::mem::size_of::<&ResolvedFunction>()
+        + 4 * std::mem::size_of::<usize>()
+        + 4 * std::mem::size_of::<&str>();
+
 struct Matching<'hir> {
     source: Option<CleanupRegionId>,
     target: Option<CleanupRegionId>,
@@ -25,7 +58,6 @@ pub(in crate::cleanup_plan::replay::expression_facts::receiving) fn exit_regions
     const PHASE: &str = "cleanup exit region comparison";
     budget.reserve_bytes(function, 0, PHASE)?;
     budget.charge(function, 0, PHASE)?;
-    let plan = &function.cleanup_plan;
     budget.reserve_bytes(
         function,
         std::mem::size_of::<Matching<'_>>()
@@ -47,6 +79,8 @@ pub(in crate::cleanup_plan::replay::expression_facts::receiving) fn exit_regions
         PHASE,
     )?;
     budget.charge(function, 11, PHASE)?;
+    budget.charge(function, 1, PHASE)?;
+    let plan = &function.cleanup_plan;
     let mut state = Matching {
         source: None,
         target: None,

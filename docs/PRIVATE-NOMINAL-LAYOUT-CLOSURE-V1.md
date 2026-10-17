@@ -185,6 +185,41 @@ before allocation. Its monotonic receipt is carried into every core attempt and
 retention forecast, including retained overlap. The no-inference route creates
 no registry backing. There is no global cache or serialized validation lease.
 
+Source-authored #833 additionally retains only the identifier census's three
+capacity-513 traversal vectors in that same authenticated registry. The enlarged
+registry header is included in its existing first-preparation prepayment. Each
+vector is acquired at the old census point after unsupported-surface checks.
+Each later child preparation reserves the complete original census backing
+again at that same frontier before borrowing retained vectors: the numeric
+receipt and shared semantic work ledger grant no physical budget authority.
+This is allocation reuse only, with no reservation-saving claim;
+existing census work and both layout traversals remain unchanged. The new
+scratch derivation also retains #834's `min(count, total_workspace_types)` entry
+bound after the same checked total-type fold; the complete old940 derivation
+remains byte exact as an independent oracle. Each census
+adds one paid selection operation and five paid successful reset operations to
+the invocation ledger, plus one prepaid teardown operation for each acquired
+buffer generation. Successful walks clear references and reset the private
+census counters before a distinct caller can reuse backing. Any failed query
+poisons the invocation and drops retained scratch. Every core attempt releases
+preparation scratch after its last compact forecast and before acquiring the
+core owner; the monotonic receipt is unchanged. An unexpected later cold caller
+honestly reacquires backing and adds its ordinary preparation receipt. Held hits
+acquire nothing. There is no budget donation, refund, scope fusion, global/TLS
+scratch authority, lifetime cast or changed limit. Layout traversal frames and
+ownership-index facts/frames remain per derivation; this is partial reuse.
+
+The complete old registry, old derivation and old identifier census remain
+independently executable. The seven `registry::scratch_tests::` definitions
+cover distinct/interleaved callers, held hits, successful counter reset,
+release/reacquisition, malformed full diagnostics, exact/short/zero limits,
+sticky failures, restored/foreign owners and nested floors. Paired allocator
+observations include complete registry Drop and report actual reservation,
+allocation/reallocation bytes and peak. They are source-authored and unexecuted
+at this checkpoint. Neither physical savings nor an application gain is yet
+established; retained preparation overlap and the larger registry header must be
+included in actual qualification.
+
 Entry, nominal-fact and signature-site ordering uses allocation-free fallible
 heapsort. Identity-byte comparisons and swaps debit the same remaining work
 before execution; refusal never publishes an incomplete directory. The four
@@ -246,3 +281,55 @@ Related contracts: [Project v32 Nested-Outcome Command v1](PROJECT-V32-NESTED-OU
 [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md),
 [Semantic Kernel v1](SEMANTIC-KERNEL-V1.md), and
 [Architecture](ARCHITECTURE.md#internal-owned-data-libraries).
+
+## Entry buffer bound source checkpoint (#834)
+
+The existing first-pass visit count bounds entry insertions: a second-pass callback inserts at most one entry and duplicate full stable IDs insert none. The entry buffer therefore uses the smaller of this occurrence count and the checked total workspace type count. The original checked fold, name allocation, work, diagnostic order and owner-index backing remain unchanged. The preceding receiver and full source archive remain available for independent comparison.
+
+The owning `private_layout::capacity_tests::` cases compare outcomes, all diagnostic fields, work and actual allocation/reservation/peak/release observations across sparse, dense, duplicate and imported-descendant layouts. These newly authored cases are unexecuted; issue #834 remains open pending consolidated qualification.
+
+
+## Retained cold-success storage owner (#833 successor, source authored)
+
+Distinct successful cold derivations now borrow the census, closure frames and
+ownership facts/frames from one registry-owned storage generation. Its real
+first acquisition occurs inside the existing preparation child, after ordinary
+source/work checks and before its physical vectors are constructed. The old
+child ledger is retained as acquisition evidence only: its remaining allowance
+is never read or spent by later children. Exact immutable source/index pointers
+and the same invocation work-ledger Rc bind storage independently of the registry's
+stack address, so moving the registry does not mint or invalidate permission.
+
+Every later cold entry consumes one specific receiving-control bank that the
+preceding real child prepaid. It checks source/work custody and its original
+parent association before the next child queries its prospective payer. The
+next actual child pays exactly one replacement bank and its current borrowed
+lease controls before touching storage. The bank is not a general allowance,
+never grants backing growth, and cannot be consumed twice. A refused renewal
+poisons/drops the generation. One unused next-entry bank remains charged through
+Drop; no refund or previous-layout credit exists. All ordinary independent child
+budgets, original declared work and vector/directory/String charges remain.
+
+New cold-parent rejection moves a separately acquired one-Diagnostic G172 Vec,
+with borrowed static message bytes matching every original public field. It
+allocates no replacement report under a foreign/exhausted payer. This is local
+publication of this new storage rejection, not certification of the existing
+constructor failure pipeline: original acquisition/traversal/semantic failure
+helpers and repeated terminal compatibility output remain explicit #825 legacy
+routes. The old cached-layout get remains byte exact and touches no retained
+storage or new scope authority; its existing source/work guards still apply.
+
+Successful traversals clear every child reference before a distinct derivation.
+Release at the existing pre-core boundary drops all retained storage and its
+preowned refusal slot without reducing the monotonic receipt. Held hits do not
+reacquire storage. A later cold derivation must pay a new generation under its
+actual current child; it receives no old ledger allowance. Nested floor,
+foreign/restored, stale-source, move, exact/short/zero work and byte, malformed
+six-field diagnostic and whole constructor-to-final-Drop controls are authored
+in registry::retained_tests. Complete immediate old registry and scratch owning
+bodies remain independently compiled and retain their old expectations.
+
+These definitions have not run. One-caller/header/refusal-slot/control costs and
+retained peak overlap must be reported honestly alongside distinct-caller actual
+reservation/allocation observations. No physical saving, application fit, agent
+token improvement or issue closure is established by this source checkpoint.

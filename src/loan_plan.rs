@@ -1,5 +1,4 @@
 //! Bounded target-neutral shared-loan proof attachment.
-
 use std::collections::{BTreeMap, BTreeSet};
 
 use crate::ast::{BinaryOp, Span};
@@ -1496,3 +1495,6 @@ fn error(message: impl Into<String>) -> Diagnostic {
 #[cfg(test)]
 #[path = "loan_plan/tests.rs"]
 mod tests;
+
+#[cfg(test)]
+mod nested_candidate_before;

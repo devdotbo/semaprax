@@ -1,12 +1,16 @@
 use super::*;
 mod funded;
-mod selected;
-pub(super) mod validation;
 #[cfg(test)]
-pub(crate) use funded::checked_bindings_funded;
+mod selected;
+mod selected_inline;
+pub(crate) use selected_inline::checked_bindings_with_reservation_and_work_inline;
+pub(super) mod validation;
 pub(crate) use funded::checked_bindings_funded_with_work;
 #[cfg(test)]
+pub(crate) use funded::checked_bindings_funded;
+#[cfg(test)]
 pub(crate) use selected::checked_absent_with_work_reservation;
+#[cfg(test)]
 pub(crate) use selected::checked_bindings_with_reservation_and_work;
 #[derive(Clone, Copy)]
 enum Frame<'a> {

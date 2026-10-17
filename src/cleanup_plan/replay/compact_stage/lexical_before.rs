@@ -2,7 +2,7 @@
 use super::*;
 use crate::cleanup_plan::ExitTargetId;
 
-pub(super) fn plan_exit_observation(
+pub(in crate::cleanup_plan::replay) fn plan_exit_observation(
     budget: &mut ReplayBudget,
     function: &ResolvedFunction,
     exit: ExitTargetId,

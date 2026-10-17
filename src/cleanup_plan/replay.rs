@@ -1,11 +1,12 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
-mod branch_clone;
+mod branch_clone; #[cfg(test)] use crate::bounded_output::stage_debits::route_debits as debit_routes;
 mod compact_stage;
 mod constructed_variant;
 #[cfg(test)]
 mod context_closure;
 mod continuation_storage;
+mod final_output;
 mod path_array;
 use constructed_variant::materialize_constructed_variant;
 pub(in crate::cleanup_plan) mod allocation_coverage;
@@ -18,7 +19,10 @@ mod flat_records;
 use call_paths::finish_call_states;
 mod inventory_coverage;
 pub(in crate::cleanup_plan) mod ordinary_status;
+mod ordinary_plan_history;
 mod physical_budget;
+#[cfg(test)]
+mod merge_census;
 mod physical_clone;
 mod physical_storage;
 mod scalar_match;
@@ -32,6 +36,7 @@ mod scalar_replay_tree;
 mod selected_callees;
 mod selected_context;
 mod selected_entry;
+#[cfg(test)]
 mod sequence_prefix;
 mod sequence_vector;
 mod shape_cursor;
@@ -62,7 +67,6 @@ mod selected_profile;
 mod semantic_refusal;
 mod status_validation;
 pub(crate) use physical_clone::ClonePayload;
-#[cfg(test)]
 pub(crate) use physical_storage::PhysicalRefusal as ReplayPhysicalRefusal;
 pub(crate) use physical_storage::{
     btree_node_upper as replay_btree_node_upper, replay_reserve_vec, PhysicalReservation,
@@ -107,6 +111,9 @@ use crate::prelude;
 mod factored;
 mod leaf_index;
 use leaf_index::Leaves;
+mod owned_suffix;
+#[cfg(test)]
+mod owned_suffix_878;
 mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
@@ -178,6 +185,13 @@ const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 
 mod allocation;
 use allocation::{AdmissionMode, AllocationPayer};
+
+// Setup identity for the direct selected-budget compatibility receiver only.
+// General Session spending remains multi-function; this is not admission data.
+struct SelectedDirectAnchor {
+    function: *const ResolvedFunction,
+    ledger: crate::bounded_output::classifier_string::ClassifierLedger,
+}
 
 struct ReplayBudget {
     admission: AdmissionMode,
@@ -525,8 +539,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
         ),
         &mut budget,
     )?;
-    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;
-    for function in program.functions() {
+    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?; #[cfg(test)] let mut diagnostic_ordinal = 0usize;
+    for function in program.functions() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_ordinal, false, function.id.as_str()); diagnostic_ordinal = diagnostic_ordinal.saturating_add(1); scope };
         validate_structure_with_budget_storage(
             program,
             function,
@@ -534,8 +548,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
             Some(&helpers),
             Some(&mut continuations),
         )?;
-    }
-    for instance in program.function_instances() {
+    } #[cfg(test)] let mut diagnostic_instance = 0usize;
+    for instance in program.function_instances() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_instance, true, instance.function.id.as_str()); diagnostic_instance = diagnostic_instance.saturating_add(1); scope };
         validate_structure_with_budget_storage(
             program,
             &instance.function,
@@ -651,13 +665,15 @@ fn validate_structure_with_budget_storage<'hir>(
 
     let expression_facts = expression_facts::with_budget(function, budget)?;
     ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
-    validate_required_status_sources(program, function)?;
+    let status_cases =
+        expression_facts::receiving::StatusCases::validate(program, function, budget)?;
     let storage = validate_slots_paid(function, budget)?;
     let leaves = collect_leaves_paid(function, budget)?;
-    let statuses = expression_facts::receiving::validate_status_sources_retained(
+    let statuses = expression_facts::receiving::validate_status_sources_certified(
         function,
         &expression_facts,
         budget,
+        &status_cases,
     )?;
     expression_facts::receiving::validate_regions(function, &storage, budget)?;
     expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;
@@ -2790,7 +2806,7 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
-) -> Result<(), Diagnostic> {
+) -> Result<(), Diagnostic> { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if function.cleanup_plan.lexical_control.is_none()
         && factored::validate_with_index_storage(
             program,
@@ -2801,13 +2817,64 @@ fn validate_typed_control_skeleton_with_index<'hir>(
         )?
     {
         return Ok(());
-    }
+    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let mut expected =
-        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
-    let mut actual = plan_skeleton_paths(function, budget)?;
-    expected.sort();
-    actual.sort();
-    if actual != expected {
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+    // Match the existing received reference, with no new payer/tag/flag carrier.
+    if let ReplayBudget {
+        payer: AllocationPayer::ActiveBuilder,
+        ..
+    } = budget
+    {
+        budget.reserve_bytes(
+            function,
+            ordinary_plan_history::SELECT_CALL_CONTROLS,
+            "ordinary plan history selector call receivers",
+        )?;
+        if ordinary_plan_history::select(function, budget)? { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
+            budget.reserve_bytes(
+                function,
+                ordinary_plan_history::PRODUCE_CALL_CONTROLS,
+                "ordinary plan history producer call receivers",
+            )?;
+            let actual = ordinary_plan_history::produce(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+            budget.reserve_bytes(
+                function,
+                skeleton_work::enumerated_prefix::ENTRY_CALL,
+                "enumerated HIR sort entry receivers",
+            )?;
+            skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;
+            budget.reserve_bytes(
+                function,
+                ordinary_plan_history::COMPARE_CALL_CONTROLS,
+                "ordinary plan history owned comparison call receivers",
+            )?;
+            return ordinary_plan_history::compare(function, budget, actual, &expected);
+        }
+    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+    let mut actual = plan_skeleton_paths(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+    if match budget {
+        ReplayBudget {
+            payer: AllocationPayer::ActiveBuilder,
+            admission: AdmissionMode::Ordinary,
+            lent_skeleton: false,
+            ..
+        } => {
+            budget.reserve_bytes(
+                function,
+                2 * skeleton_work::enumerated_prefix::ENTRY_CALL,
+                "enumerated HIR sort and equality entry receivers",
+            )?;
+            skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;
+            actual.sort();
+            !skeleton_work::enumerated_prefix::equal(&expected, &actual, function, budget)?
+        }
+        _ => {
+            expected.sort();
+            actual.sort();
+            actual != expected
+        }
+    } {
         if std::env::var_os("SPX_PROBE_SKELETON").is_some() {
             for (index, path) in expected.iter().enumerate() {
                 eprintln!("EXP[{index}] {path:?}");
@@ -2929,12 +2996,24 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
         paths = split_contract(paths, contract, &mut work)?;
     }
     let mut completed = Vec::new();
-    path_array::completed_minimum(
-        &mut completed,
-        paths.len(),
-        &mut work,
-        "completed HIR skeleton capacity",
-    )?;
+    // This is the original consuming for-loop's IntoIter/Option state, made
+    // explicit to query its remaining length only after the first old push work.
+    let mut paths = paths.into_iter();
+    let path = match paths.next() {
+        Some(path) => path,
+        None => return Ok(completed),
+    };
+    let terminal = lexical_skeleton::terminal(&path);
+    path_array::completed_first!(
+        work,
+        paths,
+        completed,
+        SkeletonPath {
+            observations: path.observations,
+            terminal
+        },
+        "completed HIR skeleton path"
+    );
     for path in paths {
         let terminal = lexical_skeleton::terminal(&path);
         work.push_skeleton_path(
@@ -2960,6 +3039,7 @@ fn sequence_expression<'hir>(
         return Ok(prefixes);
     }
     let suffixes = expression_skeleton(program, function, expression, work)?;
+    owned_suffix::dispatch!(prefixes, suffixes, work);
     sequence_skeleton_paths(prefixes, &suffixes, work)
 }
 
@@ -2968,62 +3048,81 @@ fn sequence_skeleton_paths(
     suffixes: &[ExprSkeletonPath],
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    let prefixes = work.merged_paths(prefixes)?;
+    #[cfg(test)]
+    if skeleton_work::enumerated_prefix::original_selected() {
+        return skeleton_work::enumerated_prefix::old_sequence(prefixes, suffixes, work);
+    }
+    #[cfg(test)]
+    if path_array_main44::selected() {
+        return path_array_main44::current_sequence(prefixes, suffixes, work);
+    }
+    #[cfg(test)]
+    if sequence_vector_maina3::selected() {
+        return sequence_vector_maina3::current_sequence(prefixes, suffixes, work);
+    }
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::sequence_skeleton_paths(prefixes, suffixes, work);
+    }
+    let mut prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
-    if sequence_vector::can_reuse(sequence_vector::Candidate {
-        prefixes: &prefixes,
-        suffixes: &suffixes,
-        budget: work.budget,
-    }) {
-        work.budget.reserve_array::<u8>(
-            work.function,
-            sequence_vector::receiving_bytes(),
-            "single-successor receiving frame",
-        )?;
-        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);
-    }
     let mut combined = Vec::new();
-    if !suffixes.is_empty() {
-        path_array::sequence::minimum(
-            &mut combined,
-            &prefixes,
-            &suffixes,
-            work,
-            "sequenced path capacity",
-        )?;
+    let minimum = path_array::count!(
+        work,
+        true,
+        if suffixes.is_empty() {
+            0
+        } else {
+            prefixes.len()
+        },
+        "sequenced path capacity"
+    );
+    path_array::select!(first, minimum, &combined, work);
+    work.budget.reserve_bytes(
+        work.function,
+        final_output::HIR_SELECTION_CONTROLS,
+        "HIR single-suffix selection controls",
+    )?;
+    let single = suffixes.len() == 1;
+    let mut precharged = false;
+    if single && first {
+        sequence_vector::reuse!(prefixes, suffixes, work, share_prefix, minimum, precharged);
     }
     for mut prefix in prefixes {
         if prefix.failed || prefix.residual {
-            work.push_expr_path(&mut combined, prefix, "short-circuited skeleton path")?;
+            if precharged {
+                precharged = false;
+                sequence_vector::stopped_after_work!(work, first, minimum, combined, prefix);
+                continue;
+            }
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut combined,
+                prefix,
+                "short-circuited skeleton path"
+            );
             continue;
         }
-        if share_prefix {
+        if !precharged && share_prefix {
             work.share_prefix_tail(&mut prefix.observations)?;
         }
-        // This is the original for-loop's Iter/Option state. Earlier
-        // successors borrow the prefix; the last one can take it intact.
-        let mut remaining_suffixes = suffixes.iter();
-        while let Some(suffix) = remaining_suffixes.next() {
-            let observations = if sequence_prefix::can_take(sequence_prefix::Candidate {
-                prefix: &prefix.observations,
-                suffix: &suffix.observations,
-                remaining_suffixes: remaining_suffixes.len(),
-                budget: work.budget,
-            }) {
-                // Retain the original clone's work and materialization, while
-                // funding the pure probe before transferring any owned field.
-                work.charge(1, "skeleton prefix clone")?;
-                work.budget.reserve_array::<u8>(
-                    work.function,
-                    sequence_prefix::RECEIVING_BYTES,
-                    "skeleton prefix clone",
-                )?;
-                note_skeleton_materialization();
-                std::mem::take(&mut prefix.observations)
+        if single {
+            if precharged {
+                precharged = false;
             } else {
-                work.clone_observations(&prefix.observations, "skeleton prefix clone")?
-            };
+                work.budget.reserve_bytes(
+                    work.function,
+                    final_output::HIR_MOVE_CONTROLS,
+                    "HIR single-suffix move controls",
+                )?;
+                work.charge(1, "skeleton prefix clone")?;
+                note_skeleton_materialization();
+            }
+            let suffix = &suffixes[0];
+            let observations = prefix.observations;
             let observations = work.extend_owned_observations(
                 observations,
                 &suffix.observations,
@@ -3033,7 +3132,10 @@ fn sequence_skeleton_paths(
                 &suffix.owned_source,
                 "sequenced skeleton owned-source clone",
             )?;
-            work.push_expr_path(
+            path_array::push!(
+                work,
+                first,
+                minimum,
                 &mut combined,
                 ExprSkeletonPath {
                     observations,
@@ -3046,8 +3148,151 @@ fn sequence_skeleton_paths(
                     ),
                 },
                 "sequenced skeleton path",
-            )?;
+            );
+            continue;
         }
+        // The first original clone work debit wins before optional metadata.
+        // Iter/next are the original borrowed for-loop state; empty input does
+        // not introduce either a work debit or a selector payment.
+        let mut pending = suffixes.iter();
+        let Some(first_suffix) = pending.next() else {
+            continue;
+        };
+        #[cfg(test)]
+        final_output::record_final_frontier(0, work);
+        work.charge(1, "skeleton prefix clone")?;
+        work.budget.reserve_bytes(
+            work.function,
+            final_output::FINAL_SPLIT_CONTROLS,
+            "HIR final-suffix split controls",
+        )?;
+        skeleton_work::enumerated_prefix::share!(work, prefix);
+        // Lexical remainder of the original first clone: no second charge and
+        // no newly forwarded Result<Observations, Diagnostic>.
+        let observations = skeleton_work::prefix_fusion::after_work!(
+            work, prefix.observations, first_suffix.observations
+        );
+        let owned_source = work.clone_owned(
+            &first_suffix.owned_source,
+            "sequenced skeleton owned-source clone",
+        )?;
+        path_array::sequence_minimum::optimized::push!(
+            work,
+            first,
+            minimum,
+            pending,
+            &mut combined,
+            ExprSkeletonPath {
+                observations,
+                owned_source,
+                failed: first_suffix.failed,
+                residual: first_suffix.residual,
+                continuation: lexical_skeleton::Continuation::sequenced(
+                    &prefix.continuation,
+                    &first_suffix.continuation,
+                ),
+            },
+            "sequenced skeleton path",
+        );
+        // Preserve the original first-output remaining-count receiver: only
+        // after that publication may the last suffix leave this iterator.
+        let Some(last) = pending.next_back() else {
+            continue;
+        };
+        for suffix in pending {
+            let observations =
+                work.clone_observations(&prefix.observations, "skeleton prefix clone")?;
+            let observations = work.extend_owned_observations(
+                observations,
+                &suffix.observations,
+                "skeleton suffix clone",
+            )?;
+            let owned_source = work.clone_owned(
+                &suffix.owned_source,
+                "sequenced skeleton owned-source clone",
+            )?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut combined,
+                ExprSkeletonPath {
+                    observations,
+                    owned_source,
+                    failed: suffix.failed,
+                    residual: suffix.residual,
+                    continuation: lexical_skeleton::Continuation::sequenced(
+                        &prefix.continuation,
+                        &suffix.continuation,
+                    ),
+                },
+                "sequenced skeleton path",
+            );
+        }
+        // The last original clone also debits work before any header query.
+        #[cfg(test)]
+        final_output::record_final_frontier(1, work);
+        work.charge(1, "skeleton prefix clone")?;
+        work.budget.reserve_bytes(
+            work.function,
+            final_output::FINAL_HEADER_CONTROLS,
+            "HIR final-suffix header controls",
+        )?;
+        let len = prefix.observations.items.len();
+        let capacity = prefix.observations.items.capacity();
+        let suffix_len = last.observations.items.len();
+        let take = if work.budget.pays_allocations() {
+            if work.budget.selected() || len < final_output::FINAL_MINIMUM_ITEMS {
+                false
+            } else if last.observations.prefix.is_some() || capacity == len {
+                true
+            } else {
+                suffix_len <= capacity - len
+            }
+        } else {
+            false
+        };
+        let observations = if take {
+            work.budget.reserve_bytes(
+                work.function,
+                final_output::FINAL_MOVE_CONTROLS,
+                "HIR final-suffix move controls",
+            )?;
+            note_skeleton_materialization();
+            prefix.observations
+        } else {
+            work.budget.reserve_clone(
+                work.function,
+                &prefix.observations,
+                "skeleton prefix clone",
+            )?;
+            note_skeleton_materialization();
+            prefix.observations.clone()
+        };
+        let observations = work.extend_owned_observations(
+            observations,
+            &last.observations,
+            "skeleton suffix clone",
+        )?;
+        let owned_source =
+            work.clone_owned(&last.owned_source, "sequenced skeleton owned-source clone")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut combined,
+            ExprSkeletonPath {
+                observations,
+                owned_source,
+                failed: last.failed,
+                residual: last.residual,
+                continuation: lexical_skeleton::Continuation::sequenced(
+                    &prefix.continuation,
+                    &last.continuation,
+                ),
+            },
+            "sequenced skeleton path",
+        );
     }
     Ok(combined)
 }
@@ -3071,10 +3316,16 @@ fn expression_skeleton<'hir>(
     } else {
         (
             continuation_storage::Lease::Local,
-            if work.budget.payer == AllocationPayer::ActiveBuilder {
-                continuation_storage::fresh_receiving(function, work.budget)?
-            } else {
-                continuation_storage::fresh(function, work.budget)?
+            match work.budget {
+                ReplayBudget {
+                    payer: AllocationPayer::ActiveBuilder,
+                    lent_skeleton: false,
+                    ..
+                } => continuation_storage::fresh_receiving(function, work.budget)?,
+                // A factored constructor has lent its ordinary allowance to the
+                // original skeleton events. Keep its standalone fixed backing;
+                // incremental relocation needs an independent ordinary account.
+                _ => continuation_storage::fresh(function, work.budget)?,
             },
         )
     };
@@ -3680,10 +3931,11 @@ fn expression_skeleton_run<'hir>(
                                             "bounded Vec skeleton call has incorrect type arity",
                                         ));
                                     };
-                                    crate::vec_ops::resolved_params_in(
+                                    resolved_call::vector_params(
                                         program.declarations(),
                                         op,
                                         element,
+                                        callee,
                                     )
                                     .into()
                                 }
@@ -5840,9 +6092,14 @@ fn append_expr_paths(
     work: &mut SkeletonWork<'_, '_>,
     phase: &str,
 ) -> Result<(), Diagnostic> {
-    path_array::minimum(target, paths.len(), work, phase)?;
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::append_expr_paths(target, paths, work, phase);
+    }
+    let minimum = path_array::count!(work, false, paths.len(), phase);
+    path_array::select!(first, minimum, target, work);
     for path in paths {
-        work.push_expr_path(target, path, phase)?;
+        path_array::push!(work, first, minimum, target, path, phase);
     }
     Ok(())
 }
@@ -6057,6 +6314,7 @@ fn finish_try_paths(
         )?;
         if let Some(source) = &source {
             let staged_source = work.clone_owned(source, "try staged-result source clone")?;
+            compact_stage::prepare!(work.function, work.budget, &staged_source);
             let staged_source = CopySource::new(work.function, work.budget, staged_source)?;
             work.push_observation(
                 &mut residual,
@@ -6295,11 +6553,23 @@ fn split_status_paths(
     source: StatusSourceId,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::split_status_paths(paths, source, work);
+    }
     let mut results = Vec::new();
-    path_array::minimum(&mut results, paths.len(), work, "status path capacity")?;
+    let minimum = path_array::count!(work, false, paths.len(), "status path capacity");
+    path_array::select!(first, minimum, &results, work);
     for mut path in paths {
         if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited status path")?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                path,
+                "short-circuited status path"
+            );
             continue;
         }
         let mut failure = work.clone_expr_path(&path, "status failure path clone")?;
@@ -6314,7 +6584,14 @@ fn split_status_paths(
         )?;
         failure.failed = true;
         failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "status failure path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            failure,
+            "status failure path"
+        );
         let success_source = work.clone_owned(&source, "success status-source clone")?;
         work.push_observation(
             &mut path,
@@ -6325,7 +6602,14 @@ fn split_status_paths(
             "status success observation",
         )?;
         path.owned_source = None;
-        work.push_expr_path(&mut results, path, "status success path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            path,
+            "status success path"
+        );
     }
     Ok(results)
 }
@@ -6335,11 +6619,23 @@ fn split_contract(
     contract: &ResolvedExpr,
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    if path_array::main696::selected() {
+        return path_array::main696::split_contract(paths, contract, work);
+    }
     let mut results = Vec::new();
-    path_array::minimum(&mut results, paths.len(), work, "contract path capacity")?;
+    let minimum = path_array::count!(work, false, paths.len(), "contract path capacity");
+    path_array::select!(first, minimum, &results, work);
     for mut path in paths {
         if path.failed || path.residual {
-            work.push_expr_path(&mut results, path, "short-circuited contract path")?;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                path,
+                "short-circuited contract path"
+            );
             continue;
         }
         let mut failure = work.clone_expr_path(&path, "contract failure path clone")?;
@@ -6355,7 +6651,14 @@ fn split_contract(
         )?;
         failure.failed = true;
         failure.owned_source = None;
-        work.push_expr_path(&mut results, failure, "contract failure path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            failure,
+            "contract failure path"
+        );
         let success_expression =
             work.clone_owned(&contract.id, "contract success expression clone")?;
         work.push_observation(
@@ -6367,7 +6670,14 @@ fn split_contract(
             "contract success observation",
         )?;
         path.owned_source = None;
-        work.push_expr_path(&mut results, path, "contract success path")?;
+        path_array::push!(
+            work,
+            first,
+            minimum,
+            &mut results,
+            path,
+            "contract success path"
+        );
     }
     Ok(results)
 }
@@ -6618,6 +6928,7 @@ fn plan_skeleton_paths(
                         source,
                         "plan staged-result source clone",
                     )?;
+                    compact_stage::prepare!(function, budget, &source);
                     let source = CopySource::new(function, budget, source)?;
                     skeleton_push(
                         budget,
@@ -6667,6 +6978,84 @@ fn plan_skeleton_paths(
                 )?;
             }
             CleanupTerminator::Branch(edges) => {
+                budget.reserve_bytes(
+                    function,
+                    final_output::PLAN_SELECTION_CONTROLS,
+                    "plan final-output selection controls",
+                )?;
+                if edges.len() == 2 && observations.len() < observations.capacity() {
+                    let edge = &plan.edges[edges[0].0 as usize];
+                    let observation = final_output::observation!(edge, budget, function);
+                    budget.reserve_bytes(
+                        function,
+                        branch_clone::direct::inline_controls::<std::rc::Rc<SkeletonObservation>, SkeletonObservation>(),
+                        "branch clone receiving controls",
+                    )?;
+                    // The direct generic call's actual/formal arguments and
+                    // Vec Result are funded above, before their formation.
+                    let mut branch;
+                    if !budget.pays_allocations() {
+                        branch = skeleton_clone(
+                            budget,
+                            function,
+                            &observations,
+                            "cleanup-plan skeleton branch clone",
+                        )?;
+                        skeleton_push(
+                            budget,
+                            function,
+                            &mut branch,
+                            observation,
+                            "plan branch observation push",
+                        )?;
+                    } else {
+                        branch = branch_clone::direct::copy_prepaid(
+                            budget, function, &observations, observation,
+                            "cleanup-plan skeleton branch clone", plan, edge.to,
+                        )?;
+                    }
+                    skeleton_queue_push(
+                        budget,
+                        function,
+                        &mut queue,
+                        (edge.to, branch),
+                        "plan branch state push",
+                    )?;
+                    let edge = &plan.edges[edges[1].0 as usize];
+                    let observation = final_output::observation!(edge, budget, function);
+                    budget.reserve_bytes(
+                        function,
+                        final_output::PLAN_MOVE_CONTROLS,
+                        "plan final-output move controls",
+                    )?;
+                    budget.charge_skeleton(function, 1, "cleanup-plan skeleton branch clone")?;
+                    note_skeleton_materialization();
+                    #[cfg(test)]
+                    final_output::record_move(observations.len(), observations.capacity());
+                    #[cfg(test)]
+                    branch_clone::note_take();
+                    let mut branch = observations;
+                    budget.charge_skeleton(function, 1, "plan branch observation push")?;
+                    note_skeleton_materialization();
+                    budget.reserve_bytes(function, 0, "plan branch observation push")?;
+                    budget.reserve_bytes(
+                        function,
+                        physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(
+                            &observation,
+                        ),
+                        "plan branch observation push",
+                    )?;
+                    branch.push(observation.into());
+                    skeleton_queue_push(
+                        budget,
+                        function,
+                        &mut queue,
+                        (edge.to, branch),
+                        "plan branch state push",
+                    )?;
+                    continue;
+                }
+                // Same slice iterator as the original for-loop, now named for the final-edge query.
                 let mut remaining_edges = edges.iter();
                 while let Some(edge) = remaining_edges.next() {
                     let edge = &plan.edges[edge.0 as usize];
@@ -6740,47 +7129,86 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    let mut branch = if branch_clone::can_take(branch_clone::TakeCandidate {
-                        values: &observations,
-                        remaining_edges: remaining_edges.len(),
-                        edge_count: edges.len(),
-                        budget,
-                        plan,
-                        target: edge.to,
-                    }) {
-                        // Keep the original clone work/materialization, fund the
-                        // complete probe, then move this final prefix unchanged.
+                    if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
+                        budget.reserve_bytes(function, branch_clone::production_capacity::production_inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls")?;
+                    } else {
+                    budget.reserve_bytes(
+                        function,
+                        branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                        "branch clone receiving controls",
+                    )?;
+                    }
+                    // The branch producer has no Result<Vec<_>, Diagnostic>
+                    // receiver or owned observation forwarding argument. Its
+                    // nested work/census/payment Results retain their charges.
+                    let mut branch;
+                    if !budget.pays_allocations() {
+                        branch = skeleton_clone(
+                            budget,
+                            function,
+                            &observations,
+                            "cleanup-plan skeleton branch clone",
+                        )?;
+                        skeleton_push(
+                            budget,
+                            function,
+                            &mut branch,
+                            observation,
+                            "plan branch observation push",
+                        )?;
+                    } else {
                         budget.charge_skeleton(
                             function,
                             1,
                             "cleanup-plan skeleton branch clone",
                         )?;
-                        budget.reserve_array::<u8>(
-                            function,
-                            branch_clone::TAKE_BYTES,
-                            "cleanup-plan skeleton branch clone",
-                        )?;
-                        note_skeleton_materialization();
-                        #[cfg(test)]
-                        branch_clone::note_take();
-                        std::mem::take(&mut observations)
-                    } else {
-                        branch_clone::for_plan_push(
-                            budget,
+                        // Original clone1 is charged above on both true and
+                        // false probe paths; this is a bounded implementation
+                        // detail of that materialization, not a CPU ledger.
+                        if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
+                            budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,
+                                "plan final branch probe receiving")?;
+                            branch_clone::production_capacity::produce!(budget, function, observations,
+                                observation, plan, edge, remaining_edges, edges, branch, queue);
+                        }
+                        budget.reserve_clone(
                             function,
                             &observations,
                             "cleanup-plan skeleton branch clone",
-                            plan,
-                            edge.to,
-                        )?
-                    };
-                    skeleton_push(
-                        budget,
-                        function,
-                        &mut branch,
-                        observation,
-                        "plan branch observation push",
-                    )?;
+                        )?;
+                        note_skeleton_materialization();
+                        // Original push work precedes every extra backing debit.
+                        budget.charge_skeleton(function, 1, "plan branch observation push")?;
+                        note_skeleton_materialization();
+                        let capacity = if observations.is_empty() {
+                            1
+                        } else {
+                            if observations.len() > usize::MAX / 2 {
+                                return Err(budget.budget_refusal(
+                                    function,
+                                    "cleanup replay branch capacity overflowed",
+                                    "",
+                                ));
+                            }
+                            observations.len() * 2
+                        };
+                        budget.reserve_array::<std::rc::Rc<SkeletonObservation>>(
+                            function,
+                            capacity - observations.len(),
+                            "plan branch observation push",
+                        )?;
+                        budget.reserve_bytes(
+                            function,
+                            physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(
+                                &observation,
+                            ),
+                            "plan branch observation push",
+                        )?;
+                        branch = Vec::with_capacity(capacity);
+                        branch.extend(observations.iter().cloned());
+                        branch.push(observation.into());
+                    }
                     skeleton_queue_push(
                         budget,
                         function,
@@ -7415,6 +7843,60 @@ mod live_oracle;
 #[cfg(test)]
 pub(crate) use live_oracle::with_financed_test_oracles;
 
+#[cfg(test)]
+pub(crate) use factored::EpsilonAppCensus;
+
+mod selected_type_drop;
+
+#[cfg(test)]
+#[path = "replay/sequence_prefix/main24/mod.rs"]
+mod sequence_prefix_main24;
+
+#[cfg(test)]
+#[path = "replay/sequence_prefix/main_c11/mod.rs"]
+mod sequence_prefix_main_c11;
+
+#[cfg(test)]
+#[path = "replay/branch_clone/main8a.rs"]
+mod branch_clone_main8a;
+#[cfg(test)]
+#[path = "replay/path_array/main8a/mod.rs"]
+mod path_array_main8a;
+#[cfg(test)]
+#[path = "replay/sequence_prefix/main8a/mod.rs"]
+mod sequence_prefix_main8a;
+
+#[cfg(test)]
+#[path = "replay/sequence_vector/main_a3/mod.rs"]
+mod sequence_vector_maina3;
+
+#[cfg(test)]
+#[path = "replay/path_array/main44/mod.rs"]
+mod path_array_main44;
+
+#[cfg(test)]
+#[allow(dead_code)]
+struct BeforeDirectAnchorBudgetLayout {
+    admission: AdmissionMode,
+    payer: AllocationPayer,
+    remaining: usize,
+    skeleton_remaining: usize,
+    /// Actual successful skeleton debits, including deferred lexical walks.
+    skeleton_spent: usize,
+    /// Ordinary constructors share the temporarily lent skeleton allowance.
+    lent_skeleton: bool,
+    /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
+    merge_paths: bool,
+    /// Present only for the selected retained lexical replay entry.
+    physical: Option<Box<physical_storage::PhysicalReservation>>,
+    /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+    refusal_text: Option<String>,
+    refusal_spent: bool,
+    /// One reusable fixed clone census cursor on the ordinary builder path.
+    builder_clone_cursor_paid: bool,
+}
+#[cfg(test)]
+const _: () = assert!(std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>());
 // Test diagnostics only. This POD record owns no HIR, text or heap allocation
 // and is never consulted by validation or a budget decision.
 #[cfg(test)]

@@ -1,24 +1,9 @@
-macro_rules! before {
-    ($name:literal) => {
-        include_str!(concat!(
-            "../../../../../docs/evidence/opt810-live-oracle/",
-            $name,
-            ".before"
-        ))
-    };
-}
-macro_rules! prior {
-    ($current:ident, $name:literal) => {
-        assert_eq!($current, before!($name), $name);
-    };
-}
 use super::undo;
 #[test]
 fn complete_original_sources_and_compiled_owning_receivers_remain_exact() {
     {
-        let mut current = ci_str!("../../../../bounded_output/classifier_string.rs").to_owned();
-        undo(
-            &mut current,
+        let mut current = crate::source_reflows_merge::source36_classifier_input("src/bounded_output/classifier_string.rs", include_str!("../../../../bounded_output/classifier_string.rs")); undo(&mut current, "//! Physical backing counterpart of the original classifier's logical sink.\n//! Logical decline keeps the original partial/suppressed output; only physical\n//! acquisition publishes a typed failure. No allowance or authority is created.\nuse super::{active, reserve, reserve_sink, Budget};\nuse std::fmt;\nuse std::mem::size_of;\nuse std::rc::Rc;\n\n#[derive(Debug)]\npub(crate) enum GrowthFailure<E> {\n    Payment(E),\n    Arithmetic,\n    Allocation,\n    Capacity,\n    Formatter,\n}\n\npub(crate) struct ClassifierString {\n    bytes: String,\n    logical: Option<Rc<Budget>>,\n}\nimpl ClassifierString {\n    pub(crate) fn acquire<E>(\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<Self, GrowthFailure<E>> {\n        pay(size_of::<Self>()).map_err(GrowthFailure::Payment)?;\n        Ok(Self {\n            bytes: String::new(),\n            logical: active(),\n        })\n    }\n\n    fn append<E>(\n        &mut self,\n        value: &str,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n        logical: bool,\n        strict: bool,\n    ) -> Result<bool, GrowthFailure<E>> {\n        // Keep the original reserve_sink frontier BEFORE any physical request.\n        // A reserved-floor decline is not necessarily sticky physical refusal.\n        if logical {\n            // Strict budgeted_format reserves against its captured budget;\n            // CappedString uses reserve_sink's current-or-captured rule.\n            let accepted = if strict {\n                reserve(self.logical.as_deref(), value.len())\n            } else {\n                reserve_sink(self.logical.as_ref(), value.len())\n            };\n            if !accepted {\n                return Ok(false);\n            }\n        }\n        let required = self\n            .bytes\n            .len()\n            .checked_add(value.len())\n            .ok_or(GrowthFailure::Arithmetic)?;\n        if required > self.bytes.capacity() {\n            let doubled = self\n                .bytes\n                .capacity()\n                .checked_mul(2)\n                .ok_or(GrowthFailure::Arithmetic)?;\n            let target = required.max(doubled).max(8);\n            // The whole new requested buffer is paid while the prior buffer\n            // remains charged. Dropping either carrier never refunds the payer.\n            pay(target).map_err(GrowthFailure::Payment)?;\n            self.bytes\n                .try_reserve_exact(target - self.bytes.len())\n                .map_err(|_| GrowthFailure::Allocation)?;\n            if self.bytes.capacity() != target {\n                return Err(GrowthFailure::Capacity);\n            }\n        }\n        self.bytes.push_str(value);\n        Ok(true)\n    }\n\n    /// Exact CappedString semantics: declined logical appends are suppressed,\n    /// later formatters still run, and the accepted partial bytes are retained.\n    pub(crate) fn capped<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        self.write(arguments, pay, false, true).map(|_| ())\n    }\n\n    /// Exact budgeted_format semantics: the first logical decline stops its\n    /// formatter and discards the whole string, without inventing sticky state.\n    pub(crate) fn strict<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        match self.write(arguments, pay, true, true) {\n            Ok(true) => {}\n            Ok(false) => self.bytes = String::new(),\n            Err(GrowthFailure::Formatter) => match &self.logical {\n                Some(budget) => {\n                    budget.overflowed.set(true);\n                    self.bytes = String::new();\n                }\n                None => panic!(\"a formatting trait implementation returned an error\"),\n            },\n            Err(error) => return Err(error),\n        }\n        Ok(())\n    }\n\n    /// Original writes to an ordinary String do not debit logical sink text.\n    /// They still acquire actual physical replacement backing before growth.\n    pub(crate) fn raw<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        self.write(arguments, pay, false, false).map(|_| ())\n    }\n\n    fn write<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n        strict: bool,\n        logical: bool,\n    ) -> Result<bool, GrowthFailure<E>> {\n        struct Writer<'a, E, P> {\n            output: &'a mut ClassifierString,\n            pay: &'a mut P,\n            strict: bool,\n            logical: bool,\n            logical_refusal: bool,\n            physical: Option<GrowthFailure<E>>,\n        }\n        impl<E, P: FnMut(usize) -> Result<(), E>> fmt::Write for Writer<'_, E, P> {\n            fn write_str(&mut self, value: &str) -> fmt::Result {\n                if self.physical.is_some() || (self.strict && self.logical_refusal) {\n                    return Err(fmt::Error);\n                }\n                match self\n                    .output\n                    .append(value, self.pay, self.logical, self.strict)\n                {\n                    Ok(true) => Ok(()),\n                    Ok(false) => {\n                        self.logical_refusal = true;\n                        if self.strict {\n                            Err(fmt::Error)\n                        } else {\n                            Ok(())\n                        }\n                    }\n                    Err(error) => {\n                        self.physical = Some(error);\n                        Err(fmt::Error)\n                    }\n                }\n            }\n        }\n        let mut writer = Writer {\n            output: self,\n            pay,\n            strict,\n            logical,\n            logical_refusal: false,\n            physical: None,\n        };\n        let outcome = fmt::write(&mut writer, arguments);\n        if let Some(error) = writer.physical {\n            return Err(error);\n        }\n        if writer.strict && writer.logical_refusal {\n            return Ok(false);\n        }\n        outcome.map_err(|_| GrowthFailure::Formatter)?;\n        Ok(true)\n    }\n\n    #[cfg(test)]\n    pub(crate) fn as_str(&self) -> &str {\n        &self.bytes\n    }\n    pub(crate) fn into_string(self) -> String {\n        self.bytes\n    }\n}\n\n/// Exact invocation binding only; this scalar/Rc carrier grants no allowance,\n/// cached admission or source authority. Its caller pays its containing control.\npub(crate) struct ClassifierLedger(Option<Rc<Budget>>);\nimpl ClassifierLedger {\n    /// A test-account caller authenticates its own invocation separately. This\n    /// detached marker contains no ACTIVE handle and grants no ordinary payer.\n    #[cfg(test)]\n    pub(crate) fn oracle_marker() -> Self {\n        Self(None)\n    }\n\n    pub(crate) fn capture() -> Self {\n        Self(active())\n    }\n    /// Immutable diagnostic data from this held invocation. It grants neither\n    /// permission to spend nor authority to publish under another ACTIVE owner.\n    pub(crate) fn first_refusal(&self) -> Option<super::ReservationRefusal> {\n        self.0\n            .as_ref()\n            .and_then(|budget| budget.first_refusal.get())\n    }\n    pub(crate) fn current(&self) -> bool {\n        let current = active();\n        let same = match (&self.0, current) {\n            (None, None) => true,\n            (Some(held), Some(current)) => Rc::ptr_eq(held, &current),\n            _ => false,\n        };\n        if !same {\n            if let Some(held) = &self.0 {\n                super::record_refusal(held, 0);\n                held.overflowed.set(true);\n            }\n        }\n        same\n    }\n}\n\n#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\nmod explicit;\n\nmod inventory_work;\n\n#[cfg(test)]\nmod oracle_work;\n", "//! Physical backing counterpart of the original classifier's logical sink.\n//! Logical decline keeps the original partial/suppressed output; only physical\n//! acquisition publishes a typed failure. No allowance or authority is created.\nuse super::{active, reserve, reserve_sink, Budget};\nuse std::fmt;\nuse std::mem::size_of;\nuse std::rc::Rc;\n\n#[derive(Debug)]\npub(crate) enum GrowthFailure<E> {\n    Payment(E),\n    Arithmetic,\n    Allocation,\n    Capacity,\n    Formatter,\n}\n\npub(crate) struct ClassifierString {\n    bytes: String,\n    logical: Option<Rc<Budget>>,\n}\nimpl ClassifierString {\n    pub(crate) fn acquire<E>(\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<Self, GrowthFailure<E>> {\n        pay(size_of::<Self>()).map_err(GrowthFailure::Payment)?;\n        Ok(Self {\n            bytes: String::new(),\n            logical: active(),\n        })\n    }\n\n    fn append<E>(\n        &mut self,\n        value: &str,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n        logical: bool,\n        strict: bool,\n    ) -> Result<bool, GrowthFailure<E>> {\n        // Keep the original reserve_sink frontier BEFORE any physical request.\n        // A reserved-floor decline is not necessarily sticky physical refusal.\n        if logical {\n            // Strict budgeted_format reserves against its captured budget;\n            // CappedString uses reserve_sink's current-or-captured rule.\n            let accepted = if strict {\n                reserve(self.logical.as_deref(), value.len())\n            } else {\n                reserve_sink(self.logical.as_ref(), value.len())\n            };\n            if !accepted {\n                return Ok(false);\n            }\n        }\n        let required = self\n            .bytes\n            .len()\n            .checked_add(value.len())\n            .ok_or(GrowthFailure::Arithmetic)?;\n        if required > self.bytes.capacity() {\n            let doubled = self\n                .bytes\n                .capacity()\n                .checked_mul(2)\n                .ok_or(GrowthFailure::Arithmetic)?;\n            let target = required.max(doubled).max(8);\n            // The whole new requested buffer is paid while the prior buffer\n            // remains charged. Dropping either carrier never refunds the payer.\n            pay(target).map_err(GrowthFailure::Payment)?;\n            self.bytes\n                .try_reserve_exact(target - self.bytes.len())\n                .map_err(|_| GrowthFailure::Allocation)?;\n            if self.bytes.capacity() != target {\n                return Err(GrowthFailure::Capacity);\n            }\n        }\n        self.bytes.push_str(value);\n        Ok(true)\n    }\n\n    /// Exact CappedString semantics: declined logical appends are suppressed,\n    /// later formatters still run, and the accepted partial bytes are retained.\n    pub(crate) fn capped<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        self.write(arguments, pay, false, true).map(|_| ())\n    }\n\n    /// Exact budgeted_format semantics: the first logical decline stops its\n    /// formatter and discards the whole string, without inventing sticky state.\n    pub(crate) fn strict<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        match self.write(arguments, pay, true, true) {\n            Ok(true) => {}\n            Ok(false) => self.bytes = String::new(),\n            Err(GrowthFailure::Formatter) => match &self.logical {\n                Some(budget) => {\n                    budget.overflowed.set(true);\n                    self.bytes = String::new();\n                }\n                None => panic!(\"a formatting trait implementation returned an error\"),\n            },\n            Err(error) => return Err(error),\n        }\n        Ok(())\n    }\n\n    /// Original writes to an ordinary String do not debit logical sink text.\n    /// They still acquire actual physical replacement backing before growth.\n    pub(crate) fn raw<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n    ) -> Result<(), GrowthFailure<E>> {\n        self.write(arguments, pay, false, false).map(|_| ())\n    }\n\n    fn write<E>(\n        &mut self,\n        arguments: fmt::Arguments<'_>,\n        pay: &mut impl FnMut(usize) -> Result<(), E>,\n        strict: bool,\n        logical: bool,\n    ) -> Result<bool, GrowthFailure<E>> {\n        struct Writer<'a, E, P> {\n            output: &'a mut ClassifierString,\n            pay: &'a mut P,\n            strict: bool,\n            logical: bool,\n            logical_refusal: bool,\n            physical: Option<GrowthFailure<E>>,\n        }\n        impl<E, P: FnMut(usize) -> Result<(), E>> fmt::Write for Writer<'_, E, P> {\n            fn write_str(&mut self, value: &str) -> fmt::Result {\n                if self.physical.is_some() || (self.strict && self.logical_refusal) {\n                    return Err(fmt::Error);\n                }\n                match self\n                    .output\n                    .append(value, self.pay, self.logical, self.strict)\n                {\n                    Ok(true) => Ok(()),\n                    Ok(false) => {\n                        self.logical_refusal = true;\n                        if self.strict {\n                            Err(fmt::Error)\n                        } else {\n                            Ok(())\n                        }\n                    }\n                    Err(error) => {\n                        self.physical = Some(error);\n                        Err(fmt::Error)\n                    }\n                }\n            }\n        }\n        let mut writer = Writer {\n            output: self,\n            pay,\n            strict,\n            logical,\n            logical_refusal: false,\n            physical: None,\n        };\n        let outcome = fmt::write(&mut writer, arguments);\n        if let Some(error) = writer.physical {\n            return Err(error);\n        }\n        if writer.strict && writer.logical_refusal {\n            return Ok(false);\n        }\n        outcome.map_err(|_| GrowthFailure::Formatter)?;\n        Ok(true)\n    }\n\n    #[cfg(test)]\n    pub(crate) fn as_str(&self) -> &str {\n        &self.bytes\n    }\n    pub(crate) fn into_string(self) -> String {\n        self.bytes\n    }\n}\n\n/// Exact invocation binding only; this scalar/Rc carrier grants no allowance,\n/// cached admission or source authority. Its caller pays its containing control.\npub(crate) struct ClassifierLedger(Option<Rc<Budget>>);\nimpl ClassifierLedger {\n    /// A test-account caller authenticates its own invocation separately. This\n    /// detached marker contains no ACTIVE handle and grants no ordinary payer.\n    #[cfg(test)]\n    pub(crate) fn oracle_marker() -> Self {\n        Self(None)\n    }\n\n    pub(crate) fn capture() -> Self {\n        Self(active())\n    }\n    pub(crate) fn current(&self) -> bool {\n        let current = active();\n        let same = match (&self.0, current) {\n            (None, None) => true,\n            (Some(held), Some(current)) => Rc::ptr_eq(held, &current),\n            _ => false,\n        };\n        if !same {\n            if let Some(held) = &self.0 {\n                super::record_refusal(held, 0);\n                held.overflowed.set(true);\n            }\n        }\n        same\n    }\n}\n\n#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\nmod explicit;\n\nmod inventory_work;\n\n#[cfg(test)]\nmod oracle_work;\n");
+        undo(&mut current,
             r#"mod explicit;
 
 mod inventory_work;
@@ -31,8 +16,7 @@ mod oracle_work;
 mod inventory_work;
 "#,
         );
-        undo(
-            &mut current,
+        undo(&mut current,
             r#"/// cached admission or source authority. Its caller pays its containing control.
 pub(crate) struct ClassifierLedger(Option<Rc<Budget>>);
 impl ClassifierLedger {
@@ -55,10 +39,16 @@ impl ClassifierLedger {
     }
 "#,
         );
-        prior!(current, "src__bounded_output__classifier_string.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__bounded_output__classifier_string.rs.before"
+            ),
+            "src/bounded_output/classifier_string.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../../../cleanup_plan.rs").to_owned();
+        let mut current = crate::source_reflows_merge::current344::project("src/cleanup_plan.rs", include_str!("../../../../cleanup_plan.rs")); undo(&mut current, "\n#[cfg(test)]\npub(crate) use replay::EpsilonAppCensus;\n", "");
         undo(
             &mut current,
             r#"
@@ -73,35 +63,27 @@ pub(crate) use replay::with_financed_test_oracles;
 pub(crate) use replay::replay_btree_node_upper as compiler_btree_node_upper;
 "#,
         );
-        prior!(current, "src__cleanup_plan.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan.rs.before"
+            ),
+            "src/cleanup_plan.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../../replay.rs").to_owned();
-        undo(&mut current, "    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;\n", "");
-        undo(&mut current, "    let mut budget = ReplayBudget::new();\n    let helpers = ordinary_renewals::index(full, &mut budget)?;", "    let mut budget = ReplayBudget::new();\n    let mut continuations = continuation_storage::Storage::new(full);\n    let helpers = ordinary_renewals::index(full, &mut budget)?;");
+        let mut current = super::current_view::project("src/cleanup_plan/replay.rs", include_str!("../../../replay.rs")); undo(&mut current, "    let status_cases = expression_facts::receiving::StatusCases::validate(program, function, budget)?;", "    validate_required_status_sources(program, function)?;"); undo(&mut current, "    let statuses = expression_facts::receiving::validate_status_sources_certified(\n        function, &expression_facts, budget, &status_cases,", "    let statuses = expression_facts::receiving::validate_status_sources_retained(\n        function, &expression_facts, budget,"); undo(&mut current, "\n#[cfg(test)]\npub(crate) use factored::EpsilonAppCensus;\n", ""); undo(&mut current, "    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;\n", ""); undo(&mut current, "    let mut budget = ReplayBudget::new();\n    let helpers = ordinary_renewals::index(full, &mut budget)?;", "    let mut budget = ReplayBudget::new();\n    let mut continuations = continuation_storage::Storage::new(full);\n    let helpers = ordinary_renewals::index(full, &mut budget)?;");
         undo(&mut current, "    expression_facts::receiving::validate_exits_retained(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n        &statuses,\n    )?;\n", "    expression_facts::receiving::validate_exits(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n    )?;\n");
-        undo(
-            &mut current,
+        undo(&mut current,
             r#"    let statuses = expression_facts::receiving::validate_status_sources_retained(
         function, &expression_facts, budget,
     )?;"#,
-            r#"    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;"#,
-        );
-        undo(
-            &mut current,
-            "    expression_facts::receiving::validate_blocks_and_edges_retained(\n",
-            "    expression_facts::receiving::validate_blocks_and_edges(\n",
-        );
-        undo(
-            &mut current,
-            "        budget,\n        &statuses,\n    )?;",
-            "        budget,\n    )?;",
-        );
-        undo(
-            &mut current,
-            "pub(crate) use live_oracle::with_financed_test_oracles;",
-            "pub(super) use live_oracle::with_financed_test_oracles;",
-        );
+            r#"    expression_facts::receiving::validate_status_sources(function, &expression_facts, budget)?;"#);
+        undo(&mut current, "    expression_facts::receiving::validate_blocks_and_edges_retained(\n",
+            "    expression_facts::receiving::validate_blocks_and_edges(\n");
+        undo(&mut current, "        budget,\n        &statuses,\n    )?;",
+            "        budget,\n    )?;");
+        undo(&mut current, "pub(crate) use live_oracle::with_financed_test_oracles;", "pub(super) use live_oracle::with_financed_test_oracles;");
         undo(
             &mut current,
             r#"
@@ -149,10 +131,16 @@ pub(super) mod phase_measurement;
     structural_maps::validate_reference_coverage(function, budget)?;
 "####,
         );
-        prior!(current, "src__cleanup_plan__replay.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay.rs.before"
+            ),
+            "src/cleanup_plan/replay.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../allocation.rs").to_owned();
+        let mut current = super::current_view::project("src/cleanup_plan/replay/allocation.rs", include_str!("../../allocation.rs"));
         undo(
             &mut current,
             r#"mod oracle;
@@ -175,10 +163,16 @@ pub(super) fn set_key<K: Ord + ClonePayload>(
     function: &ResolvedFunction,
 "#,
         );
-        prior!(current, "src__cleanup_plan__replay__allocation.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation.rs.before"
+            ),
+            "src/cleanup_plan/replay/allocation.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../allocation/oracle.rs").to_owned();
+        let mut current = super::current_view::project("src/cleanup_plan/replay/allocation/oracle.rs", include_str!("../../allocation/oracle.rs"));
         undo(
             &mut current,
             r#"mod tests;
@@ -198,10 +192,16 @@ pub(in crate::cleanup_plan::replay) use invocation::{
     authority, authority_for_function, enter, opt_in, opted, InvocationRefusal,
 "#,
         );
-        prior!(current, "src__cleanup_plan__replay__allocation__oracle.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation__oracle.rs.before"
+            ),
+            "src/cleanup_plan/replay/allocation/oracle.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../allocation/oracle/diagnostic.rs").to_owned();
+        let mut current = include_str!("../../allocation/oracle/diagnostic.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -266,19 +266,16 @@ pub(in crate::cleanup_plan::replay) use metered::raw as raw_error_metered;
         count,
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__allocation__oracle__diagnostic.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__allocation__oracle__diagnostic.rs.before"
+            ),
+            "src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"
         );
     }
     {
-        let mut current = ci_str!("../../factored.rs").to_owned();
-        undo(&mut current, "        oracle_hook::cross_check_with_storage(\n            program,\n            function,\n            budget,\n            continuations,\n        )?;", "        oracle_hook::cross_check(program, function);");
-        undo(
-            &mut current,
-            "\n#[cfg(test)]\nmod continuation_receiver;\n",
-            "",
-        );
+        let mut current = super::current_view::project("src/cleanup_plan/replay/factored.rs", include_str!("../../factored.rs")); undo(&mut current, "pub(crate) use canonical_shared::app_census::Scope as EpsilonAppCensus;", "pub(super) use canonical_shared::app_census::Scope as EpsilonAppCensus;"); undo(&mut current, "\n#[cfg(test)]\npub(super) use canonical_shared::app_census::Scope as EpsilonAppCensus;\n", ""); undo(&mut current, "        oracle_hook::cross_check_with_storage(\n            program,\n            function,\n            budget,\n            continuations,\n        )?;", "        oracle_hook::cross_check(program, function);"); undo(&mut current, "\n#[cfg(test)]\nmod continuation_receiver;\n", "");
         undo(&mut current, "#[cfg(test)]\nenum CanonicalFrame {\n    Enter(Weighted),\n    Exit(Weighted, u64, Vec<(Label, Weighted)>),\n}\n\n", "");
         // Join the complete relocated old receiver before the existing inverse.
         let before = ci_str!("../../factored/canonical_before.rs");
@@ -315,16 +312,8 @@ impl<'a> Receiver<'a> {
 "###,
             )
             .unwrap();
-        undo(
-            &mut current,
-            "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n",
-            "",
-        );
-        undo(
-            &mut current,
-            "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n",
-            "",
-        );
+        undo(&mut current, "#[cfg(test)]\nmod canonical_before;\nmod canonical_shared;\n", "");
+        undo(&mut current, "#[cfg(test)]\nuse canonical_before::Receiver as Canonicalizer;\n", "");
         undo(
             &mut current,
             "    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);",
@@ -685,16 +674,22 @@ impl<'a> Canonicalizer<'a> {
 "####,
         );
         let joined = format!("{original}{marker}");
+        assert_eq!(current.matches(&joined).count(), 1,
+            "complete compiled old canonical receiver remains byte-exact");
         assert_eq!(
-            current.matches(&joined).count(),
-            1,
-            "complete compiled old canonical receiver remains byte-exact"
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored.rs.before"
+            ),
+            "src/cleanup_plan/replay/factored.rs"
         );
-        prior!(current, "src__cleanup_plan__replay__factored.rs");
     }
     {
         let mut current =
-            ci_str!("../../factored/borrowed_canonical/dictionary/keys.rs").to_owned();
+            crate::source_reflows_merge::current344::project(
+                "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs",
+                include_str!("../../factored/borrowed_canonical/dictionary/keys.rs"),
+            );
         undo(
             &mut current,
             r#"        function: &ResolvedFunction,
@@ -718,17 +713,17 @@ impl<'a> Canonicalizer<'a> {
             (Label::End(a), Label::End(b)) => return Ok(a.cmp(b)),
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs.before"
+            ),
+            "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"
         );
     }
     {
-        let mut current = ci_str!("../../factored/oracle_hook.rs").to_owned();
-        undo(&mut current, "/// Ordinary storage sharing changes backing only; explicitly opted oracle\n/// routes keep their complete independent account and never borrow this lease.\npub(super) fn cross_check_with_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    storage: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    match super::super::allocation::opted() {\n        Ok(None) => match storage {\n            Some(storage) if storage.has_receiving_owner() => {\n                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage);\n            }\n            _ => super::cross_check(program, function),\n        },\n        Ok(Some(lease)) => cross_check_oracle(program, function, lease),\n        Err(refusal) => panic!(\"opted oracle lease is not live: {refusal:?}\"),\n    }\n    Ok(())\n}\n\n", "");
-        undo(
-            &mut current,
-            r###"
+        let mut current = super::current_view::project("src/cleanup_plan/replay/factored/oracle_hook.rs", include_str!("../../factored/oracle_hook.rs")); undo(&mut current, "/// Ordinary storage sharing changes backing only; explicitly opted oracle\n/// routes keep their complete independent account and never borrow this lease.\npub(super) fn cross_check_with_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    storage: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    match super::super::allocation::opted() {\n        Ok(None) => match storage {\n            Some(storage) if storage.has_receiving_owner() => {\n                storage.authenticate(program, function, budget)?;\n                super::continuation_receiver::cross_check(program, function, storage);\n            }\n            _ => super::cross_check(program, function),\n        },\n        Ok(Some(lease)) => cross_check_oracle(program, function, lease),\n        Err(refusal) => panic!(\"opted oracle lease is not live: {refusal:?}\"),\n    }\n    Ok(())\n}\n\n", "");
+        undo(&mut current, r###"
 // Classification of an undecided result carries no comparison authority.
 fn require_decided(
     function: &ResolvedFunction,
@@ -743,14 +738,8 @@ fn require_decided(
 
 #[cfg(test)]
 mod closure_controls;
-"###,
-            "",
-        );
-        undo(
-            &mut current,
-            "        require_decided(function, &factored);\n",
-            "",
-        );
+"###, "");
+        undo(&mut current, "        require_decided(function, &factored);\n", "");
         undo(
             &mut current,
             r#"            let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -860,13 +849,16 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
         Ok(Some(lease)) => cross_check_oracle(program, function, lease),
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__factored__oracle_hook.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__factored__oracle_hook.rs.before"
+            ),
+            "src/cleanup_plan/replay/factored/oracle_hook.rs"
         );
     }
     {
-        let mut current = ci_str!("../../nested_shape/paid.rs").to_owned();
+        let mut current = include_str!("../../nested_shape/paid.rs").to_owned();
         undo(
             &mut current,
             r#"    }
@@ -904,10 +896,16 @@ mod oracle;
     let mut lease = scratch.lease();
 "#,
         );
-        prior!(current, "src__cleanup_plan__replay__nested_shape__paid.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__nested_shape__paid.rs.before"
+            ),
+            "src/cleanup_plan/replay/nested_shape/paid.rs"
+        );
     }
     {
-        let mut current = ci_str!("../../ordinary_inventory/substitute.rs").to_owned();
+        let mut current = include_str!("../../ordinary_inventory/substitute.rs").to_owned();
         undo(
             &mut current,
             r#"                    index,
@@ -959,13 +957,16 @@ mod oracle;
         };
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__ordinary_inventory__substitute.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__ordinary_inventory__substitute.rs.before"
+            ),
+            "src/cleanup_plan/replay/ordinary_inventory/substitute.rs"
         );
     }
     {
-        let mut current = ci_str!("../../paid_type_facts.rs").to_owned();
+        let mut current = include_str!("../../paid_type_facts.rs").to_owned();
         undo(
             &mut current,
             r#"mod inventory_lifecycle;
@@ -1023,25 +1024,27 @@ pub(super) mod inventory_summary;
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(
-            &mut current,
-            r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+        undo(&mut current, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
 
 pub(super) struct Payer<'a> {
     function: &'a ResolvedFunction,
     budget: &'a mut ReplayBudget,
-"###,
-            r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
+"###, r###"use crate::hir::{DeclarationIndex, TypeFactsPayer};
 
 struct Payer<'a> {
     function: &'a ResolvedFunction,
     budget: &'a mut ReplayBudget,
-"###,
+"###);
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts.rs.before"
+            ),
+            "src/cleanup_plan/replay/paid_type_facts.rs"
         );
-        prior!(current, "src__cleanup_plan__replay__paid_type_facts.rs");
     }
     {
-        let mut current = ci_str!("../../paid_type_facts/inventory_encoded.rs").to_owned();
+        let mut current = include_str!("../../paid_type_facts/inventory_encoded.rs").to_owned();
         undo(
             &mut current,
             r#"    arguments: fmt::Arguments<'_>,
@@ -1150,13 +1153,17 @@ pub(super) fn capped(
 pub(super) fn capped(
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__paid_type_facts__inventory_encoded.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_encoded.rs.before"
+            ),
+            "src/cleanup_plan/replay/paid_type_facts/inventory_encoded.rs"
         );
     }
     {
-        let mut current = ci_str!("../../paid_type_facts/inventory_encoded/tests.rs").to_owned();
+        let mut current =
+            include_str!("../../paid_type_facts/inventory_encoded/tests.rs").to_owned();
         undo(
             &mut current,
             r###"}
@@ -1187,9 +1194,7 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(
-            &mut current,
-            r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+        undo(&mut current, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     assert_eq!(
         include_str!("../../../../../bounded_output/classifier_string.rs")
             .strip_suffix("\nmod inventory_work;\n")
@@ -1197,8 +1202,7 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         include_str!("../../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
-"###,
-            r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
+"###, r###"fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
     assert_eq!(
         include_str!("../../../../bounded_output/classifier_string.rs")
             .strip_suffix("\nmod inventory_work;\n")
@@ -1206,27 +1210,25 @@ fn full_classifier_string_original_body_remains_independent_of_work_receiver() {
         include_str!("../../../../../docs/evidence/schema-summary/classifier_string.rs.before")
     );
 }
-"###,
-        );
-        prior!(
+"###);
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__paid_type_facts__inventory_encoded__tests.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_encoded__tests.rs.before"
+            ),
+            "src/cleanup_plan/replay/paid_type_facts/inventory_encoded/tests.rs"
         );
     }
     {
-        let mut current = ci_str!("../../paid_type_facts/inventory_tests.rs").to_owned();
+        let mut current = super::current_view::project("src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs", include_str!("../../paid_type_facts/inventory_tests.rs"));
         // Undo only the unique visibility hook before the complete old receiver.
-        undo(
-            &mut current,
-            r###"    assert_eq!(current.matches("pub(super) struct Payer<'a> {").count(), 1);
+        undo(&mut current, r###"    assert_eq!(current.matches("pub(super) struct Payer<'a> {").count(), 1);
     let current = current.replacen(
         "pub(super) struct Payer<'a> {",
         "struct Payer<'a> {",
         1,
     );
-"###,
-            "",
-        );
+"###, "");
         undo(
             &mut current,
             r###"#[test]
@@ -1256,43 +1258,33 @@ fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapte
 "#,
         );
         // Exact receiving edits; the complete original source remains the final oracle.
-        undo(
-            &mut current,
-            r###"#[test]
+        undo(&mut current, r###"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../../paid_type_facts.rs");
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
-"###,
-            r###"#[test]
+"###, r###"#[test]
 fn full_current_classifier_source_equals_complete_saved_receiver_plus_raw_adapter() {
     let current = include_str!("../paid_type_facts.rs");
     let (head, rest) = current
         .split_once("/// Raw ordinary inventory diagnostic adapter.")
-"###,
-        );
+"###);
         // Exact composed receiving hooks; reconstruct every original byte below.
-        undo(
-            &mut current,
-            r###"    for program in tests::fixtures() {
+        undo(&mut current, r###"    for program in tests::fixtures() {
         for function in &program.functions {
             let (results, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
                 let mut budget = ReplayBudget::new();
                 budget.prepare_builder(function).unwrap();
                 reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget)
                     .unwrap();
-"###,
-            r###"    for program in tests::fixtures() {
+"###, r###"    for program in tests::fixtures() {
         for function in &program.functions {
             let mut budget = ReplayBudget::new();
             let (results, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
                 reserve_program_skeleton_work(&program, std::iter::once(function), &mut budget)
                     .unwrap();
-"###,
-        );
-        undo(
-            &mut current,
-            r###"    assert!(adapter.contains("text::raw(payer, message)"));
+"###);
+        undo(&mut current, r###"    assert!(adapter.contains("text::raw(payer, message)"));
 }
 
 // The complete prior setup/body stays compiled against its original pure bool
@@ -1398,18 +1390,19 @@ fn complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_sour
     )
     );
 }
-"###,
-            r###"    assert!(adapter.contains("text::raw(payer, message)"));
+"###, r###"    assert!(adapter.contains("text::raw(payer, message)"));
 }
-"###,
-        );
-        prior!(
+"###);
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__paid_type_facts__inventory_tests.rs.before"
+            ),
+            "src/cleanup_plan/replay/paid_type_facts/inventory_tests.rs"
         );
     }
     {
-        let mut current = ci_str!("../../skeleton_work/oracle_entry.rs").to_owned();
+        let mut current = include_str!("../../skeleton_work/oracle_entry.rs").to_owned();
         undo(
             &mut current,
             r#"                Err(error) => return Err(refused(budget, function, error)),
@@ -1472,13 +1465,16 @@ fn complete_prior_raw_and_zero_work_receivers_and_identity_formatter_remain_sour
                 Err(error) => return Err(refused(budget, function, error)),
 "#,
         );
-        prior!(
+        assert_eq!(
             current,
-            "src__cleanup_plan__replay__skeleton_work__oracle_entry.rs"
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__cleanup_plan__replay__skeleton_work__oracle_entry.rs.before"
+            ),
+            "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"
         );
     }
     {
-        let mut current = ci_str!("../../../../hir/function_value.rs").to_owned();
+        let mut current = super::current_view::before_production_promotion("src/hir/function_value.rs", include_str!("../../../../hir/function_value.rs"));
         undo(
             &mut current,
             r#"    };
@@ -1493,6 +1489,12 @@ pub(crate) use funded::work::{walk_funded_paying_with_work, walk_funded_with_wor
 }
 "#,
         );
-        prior!(current, "src__hir__function_value.rs");
+        assert_eq!(
+            current,
+            include_str!(
+                "../../../../../docs/evidence/opt810-live-oracle/src__hir__function_value.rs.before"
+            ),
+            "src/hir/function_value.rs"
+        );
     }
 }

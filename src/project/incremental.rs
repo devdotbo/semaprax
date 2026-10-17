@@ -50,7 +50,7 @@ pub const PROJECT_FRONTEND_CACHE_COMPATIBILITY: &str = "semaprax.project-fronten
 pub const PROJECT_SEMANTIC_CACHE_SCHEMA: &str = "semaprax.project-semantic-cache-work.v1";
 /// v11 retains scoped field source forms after v10 CopyDiscard and v9 row loans.
 /// Older cached modules must be freshly source-checked, never reinterpreted.
-pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v11";
+pub const PROJECT_SEMANTIC_CACHE_COMPATIBILITY: &str = "semaprax.project-checked-module-hir.v12";
 pub const MAX_PROJECT_FRONTEND_CACHE_SOURCE_BYTES: usize = MAX_TOTAL_SOURCE_BYTES;
 /// The frontend retains the complete admitted semantic module closure, which
 /// includes bundled/dependency modules beyond the manifest's sixteen authored
@@ -1025,6 +1025,7 @@ mod cache_attempt_fit_tests {
     #[test]
     fn complete_cache_fit_sources_and_original_lookup_remain_bound() {
         use sha2::{Digest, Sha256};
+        crate::source_reflows_merge::main7f8_source_inputs::controls();
         let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
         let evidence = root.join("docs/evidence/checked-cache-attempt-fit-v1");
         let records: serde_json::Value =
@@ -1043,6 +1044,7 @@ mod cache_attempt_fit_tests {
             );
             let current =
                 std::fs::read_to_string(root.join(record["path"].as_str().unwrap())).unwrap();
+            let current = crate::source_reflows_merge::main7f8_source_inputs::source("cache-fit", record["path"].as_str().unwrap(), &current);
             let restore = |source: &str| -> Option<String> {
                 let mut restored = source.to_owned();
                 for edit in record["edits"].as_array().unwrap().iter().rev() {

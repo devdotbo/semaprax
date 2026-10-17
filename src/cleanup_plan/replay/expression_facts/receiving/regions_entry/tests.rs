@@ -352,6 +352,18 @@ fn complete_regions_and_entry_work_exact_short_sticky_keep_the_same_payer() {
 #[test]
 fn complete_region_entry_and_four_variant_source_projections_restore_full_originals() {
     use sha2::{Digest, Sha256};
+    let complete_current = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/owning-corrections-940/complete-regions-entry-current.rs.txt"
+    ));
+    assert_eq!(include_str!("../regions_entry.rs"), complete_current);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(complete_current.as_bytes()))
+        ),
+        "f27fb4d28d71bb522bafb208a3da4bd8098ec61b5cca904f33d5d9858738b0e4"
+    );
     let current = ci_str!("../regions_entry.rs");
     let later_helper = "helpers::validate_place(function, place, storage, leaves, budget)?";
     assert_eq!(current.matches(later_helper).count(), 1);
@@ -367,16 +379,49 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
         ),
         "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b"
     );
-    let records: serde_json::Value = serde_json::from_str(ci_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/docs/evidence/region-entry-receiving-816/exact-source-inverses.json"
-    )))
-    .unwrap();
-    let sources=[
-        (ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/src/cleanup_plan/replay.rs")),ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay.rs.before.txt"))),
-        (ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/src/cleanup_plan/replay/lexical_replay.rs")),ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__lexical_replay.rs.before.txt"))),
-        (ci_str!("../../receiving.rs"),ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt"))),
-        (ci_str!("../directory.rs"),ci_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving__directory.rs.before.txt"))),
+    let records_source = region_entry_original_input(
+        "docs/evidence/region-entry-receiving-816/exact-source-inverses.json",
+        ci_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/region-entry-receiving-816/exact-source-inverses.json"
+        )),
+    );
+    let records: serde_json::Value = serde_json::from_str(&records_source).unwrap();
+    let sources = [
+        (
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay.rs.before.txt"
+            )),
+        ),
+        (
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay/lexical_replay.rs"
+            )),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__lexical_replay.rs.before.txt"
+            )),
+        ),
+        (
+            include_str!("../../receiving.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt"
+            )),
+        ),
+        (
+            include_str!("../directory.rs"),
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/region-entry-receiving-816/src__cleanup_plan__replay__expression_facts__receiving__directory.rs.before.txt"
+            )),
+        ),
     ];
     assert_eq!(records.as_array().unwrap().len(), sources.len());
     for (record, (current, original)) in records.as_array().unwrap().iter().zip(sources) {
@@ -387,7 +432,7 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
             ),
             record["sha256"].as_str().unwrap()
         );
-        let mut current = current.to_owned();
+        let mut current = region_entry_original_input(record["source"].as_str().unwrap(), current);
         // The later status-prefix owner is a separate compiled child. Its
         // registration adds no directory implementation to this frozen root.
         if record["source"] == "src/cleanup_plan/replay/expression_facts/receiving/directory.rs" {
@@ -398,7 +443,11 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
                 format!(
                     "{:x}",
                     crate::digest_hex::LowerHex(Sha256::digest(
-                        include_str!("../directory/status_prefix.rs").as_bytes()
+                        region_entry_original_input(
+                            "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+                            include_str!("../directory/status_prefix.rs"),
+                        )
+                        .as_bytes()
                     ))
                 ),
                 "914e1a78079f871cb37462414b1991cde6722e78b7af39cb7979e11f16f767e9"
@@ -439,8 +488,21 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
         assert_eq!(record["before"].as_str().unwrap(), original);
         let after = record["after"].as_str().unwrap();
         assert_eq!(original_receiver.matches(after).count(), 1);
+        // The moved entry receiver explicitly qualifies its existing helper;
+        // restore that recorded relocation adapter before checking the full body.
+        let after = record["after"].as_str().unwrap().replace(
+            "let under = validate_place(function, place, storage, leaves)?;",
+            "let under = helpers::validate_place(function, place, storage, leaves, budget)?;",
+        );
+
         assert_eq!(
-            ci_str!(concat!(
+            include_str!("../regions_entry.rs")
+                .matches(after.as_str())
+                .count(),
+            1
+        );
+        assert_eq!(
+            include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/src/cleanup_plan/replay.rs"
             ))
@@ -449,4 +511,27 @@ fn complete_region_entry_and_four_variant_source_projections_restore_full_origin
             1
         );
     }
+}
+
+// Full physical/runtime domains stay separate from immutable source proof JSON.
+fn region_entry_original_input(source: &str, current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"
+    )))
+    .unwrap();
+    let row = rows.as_array().unwrap().iter().find(|row| row["source"] == source)
+        .expect("complete named region-entry input");
+    assert_eq!(
+        format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))),
+        row["current_sha256"].as_str().unwrap()
+    );
+    assert_eq!(current, row["edits"][0]["new"].as_str().unwrap());
+    let original = row["edits"][0]["old"].as_str().unwrap();
+    assert_eq!(
+        format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))),
+        row["original_sha256"].as_str().unwrap()
+    );
+    original.to_owned()
 }

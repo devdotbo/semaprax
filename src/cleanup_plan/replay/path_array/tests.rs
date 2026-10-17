@@ -1,4 +1,6 @@
 use super::*;
+use super::super::*;
+use super::main696::{append_expr_paths, sequence_skeleton_paths, split_status_paths, split_contract, hir_skeleton_paths, receiving_bytes};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 use std::cell::Cell;
@@ -17,7 +19,7 @@ fn with_original<T>(run: impl FnOnce() -> T) -> T {
     let _restore = Restore(ORIGINAL.with(|flag| flag.replace(true)));
     run()
 }
-pub(super) fn program() -> ResolvedProgram {
+fn program() -> ResolvedProgram {
     let source = "module path_arrays; @id(\"condition\") fn condition()->bool {true} @id(\"f\") fn f(a:bool,b:bool,c:bool,d:bool)->i64 {let x=if a {1}else{2};let y=if b {3}else{4};let z=if c {5}else{6};let w=if d {7}else{8};x+y+z+w} @id(\"main\") fn main()->i64 {f(true,false,true,false)}";
     let checked = crate::check(source, "path-arrays.spx").unwrap();
     let canonical = crate::format::canonical(&checked);
@@ -55,8 +57,18 @@ fn four_complete_original_receivers_keep_all_path_fields_order_and_work() {
         measure(|| {
             for count in [0, 1, 7, 8, 9, 16, 17] {
                 for receiver in 0..4 {
-                    let mut old_budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut old_budget = ReplayBudget::new();
+                    let mut budget = ReplayBudget::new();
+                    // Exact seed + receiver work: every third seed is live.
+                    let live = count / 3;
+                    let units = match receiver {
+                        0 => 2 * count,
+                        1 => 2 * count + 1 + 3 * live,
+                        2 => 2 * count + 1 + 6 * live,
+                        _ => 2 * count + 6 * live,
+                    };
+                    old_budget.reserve_skeleton(function, units).unwrap();
+                    budget.reserve_skeleton(function, units).unwrap();
                     let mut old_work = SkeletonWork::new(&program, function, &mut old_budget);
                     let mut work = SkeletonWork::new(&program, function, &mut budget);
                     let old_input = seed(count, &mut old_work);
@@ -136,9 +148,11 @@ fn append_pays_complete_backing_and_drop_with_exact_short_and_zero_controls() {
         let observe = |original, limit| {
             with_limit_usage_refusal(limit, || {
                 measure(|| {
-                    let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                    let mut budget = ReplayBudget::new();
                     let before = skeleton_materializations();
                     let result = (|| {
+                        // count seed pushes, count append pushes, three later pushes.
+                        budget.reserve_skeleton(function, 2 * count + 3)?;
                         let mut work =
                             SkeletonWork::with_index(&program, function, &mut budget, None)?;
                         let mut input = Vec::new();
@@ -201,21 +215,29 @@ fn complete_hir_enumeration_keeps_paths_work_materializations_and_legacy() {
                 measure(|| {
                     for function in &program.functions {
                         let mut old = if paid {
-                            ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS)
+                            ReplayBudget::new()
                         } else {
-                            ReplayBudget {
-                                skeleton_remaining: MAX_REPLAY_WORK_UNITS,
-                                ..ReplayBudget::unobserved()
-                            }
+                            ReplayBudget::unobserved()
                         };
                         let mut current = if paid {
-                            ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS)
+                            ReplayBudget::new()
                         } else {
-                            ReplayBudget {
-                                skeleton_remaining: MAX_REPLAY_WORK_UNITS,
-                                ..ReplayBudget::unobserved()
-                            }
+                            ReplayBudget::unobserved()
                         };
+                        // The owning HIR enumerator consumes the exact preflight
+                        // bank; a newly paid budget starts with no skeleton work.
+                        reserve_program_skeleton_work(
+                            &program,
+                            std::iter::once(function),
+                            &mut old,
+                        )
+                        .unwrap();
+                        reserve_program_skeleton_work(
+                            &program,
+                            std::iter::once(function),
+                            &mut current,
+                        )
+                        .unwrap();
                         let before = skeleton_materializations();
                         let expected =
                             with_original(|| hir_skeleton_paths(&program, function, &mut old))
@@ -251,7 +273,8 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         "/docs/evidence/minimum-path-array-v1/functions.json"
     )))
     .unwrap();
-    let root = include_str!("../../replay.rs");
+    let root = crate::source_reflows_merge::main696_input(
+        "src/cleanup_plan/replay.rs", include_str!("../../replay.rs"));
     let compiled = include_str!("before.rs");
     for record in records.as_array().unwrap() {
         let name = record["name"].as_str().unwrap();
@@ -275,47 +298,6 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
             "split_status_paths" => current = current.replacen("    let mut results = Vec::new();\n", "    let mut results = Vec::new();\n    path_array::minimum(&mut results, paths.len(), work, \"status path capacity\")?;\n", 1),
             "split_contract" => current = current.replacen("    let mut results = Vec::new();\n", "    let mut results = Vec::new();\n    path_array::minimum(&mut results, paths.len(), work, \"contract path capacity\")?;\n", 1),
             _ => panic!("unregistered receiver"),
-        }
-        if name == "sequence_skeleton_paths" {
-            // Compose the later independently frozen prefix-transfer receiver;
-            // keep this complete predecessor and every original assertion.
-            let intermediate = include_str!("../sequence_prefix/before.rs");
-            assert!(intermediate.contains(&current.replacen(
-                "fn sequence_skeleton_paths(",
-                "pub(super) fn sequence_skeleton_paths(",
-                1
-            )));
-            current = current.replacen(
-                "            let observations =\n                work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?;",
-                "            let observations = match sequence_prefix::try_take(\n                &mut prefix.observations,\n                &suffix.observations,\n                suffixes.len(),\n                work.function,\n                work.budget,\n                \"skeleton prefix clone\",\n            )? {\n                Some(observations) => observations,\n                None => work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?,\n            };", 1
-            );
-        }
-        if name == "sequence_skeleton_paths" {
-            // Compose the pure-probe follow-up without changing either full
-            // predecessor, the earlier inverse, or the final exact match.
-            current = current.replacen("            let observations = match sequence_prefix::try_take(\n                &mut prefix.observations,\n                &suffix.observations,\n                suffixes.len(),\n                work.function,\n                work.budget,\n                \"skeleton prefix clone\",\n            )? {\n                Some(observations) => observations,\n                None => work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?,\n            };","            let observations = if sequence_prefix::can_take(sequence_prefix::Candidate {\n                prefix: &prefix.observations,\n                suffix: &suffix.observations,\n                suffix_count: suffixes.len(),\n                budget: work.budget,\n            }) {\n                // Retain the original clone's work and materialization, while\n                // funding the pure probe before transferring any owned field.\n                work.charge(1, \"skeleton prefix clone\")?;\n                work.budget.reserve_array::<u8>(\n                    work.function,\n                    sequence_prefix::RECEIVING_BYTES,\n                    \"skeleton prefix clone\",\n                )?;\n                note_skeleton_materialization();\n                std::mem::take(&mut prefix.observations)\n            } else {\n                work.clone_observations(&prefix.observations, \"skeleton prefix clone\")?\n            };", 1);
-        }
-        if name == "sequence_skeleton_paths" {
-            current = current.replacen("        for suffix in suffixes.iter() {", "        // This is the original for-loop's Iter/Option state. Earlier\n        // successors borrow the prefix; the last one can take it intact.\n        let mut remaining_suffixes = suffixes.iter();\n        while let Some(suffix) = remaining_suffixes.next() {", 1);
-            current = current.replacen(
-                "                suffix_count: suffixes.len(),",
-                "                remaining_suffixes: remaining_suffixes.len(),",
-                1,
-            );
-        }
-        if name == "sequence_skeleton_paths" {
-            current = current.replacen(
-                "    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n",
-                "    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n    if sequence_vector::can_reuse(sequence_vector::Candidate {\n        prefixes: &prefixes,\n        suffixes: &suffixes,\n        budget: work.budget,\n    }) {\n        work.budget.reserve_array::<u8>(\n            work.function,\n            sequence_vector::receiving_bytes(),\n            \"single-successor receiving frame\",\n        )?;\n        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);\n    }\n",
-                1,
-            );
-        }
-        if name == "sequence_skeleton_paths" {
-            current = current.replacen(
-                "path_array::minimum(\n            &mut combined,\n            prefixes.len(),",
-                "path_array::sequence::minimum(\n            &mut combined,\n            &prefixes,\n            &suffixes,",
-                1,
-            );
         }
         assert_eq!(root.matches(&current).count(), 1, "{name}");
     }

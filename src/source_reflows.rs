@@ -14,7 +14,8 @@ macro_rules! ci_str {
     };
 }
 
-const REPAIRS: &str = include_str!("source_reflows.json");
+const REPAIRS: &str =
+    include_str!("../docs/evidence/mainf045-source-successor-20261015/live-mainf045-ci93.json");
 type Cache = HashMap<(&'static str, &'static str), &'static str>;
 static CACHE: OnceLock<Mutex<Cache>> = OnceLock::new();
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
@@ -23,17 +24,24 @@ static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 // those edits separate from the original formatting/lint repair registry.
 #[path = "source_reflows/semantic_receivers.rs"]
 mod semantic_receivers;
+#[cfg(test)]
+#[path = "source_reflows/incoming67107_semantic_receivers.rs"]
+mod incoming67107_semantic_receivers;
+#[cfg(test)]
+#[path = "source_reflows/semantic_receivers_mainb80.rs"]
+mod semantic_receivers_mainb80;
+
+#[path = "source_reflows/semantic_receivers_main7c6.rs"]
+mod semantic_receivers_main7c6;
 
 #[path = "source_reflows/nested_scope.rs"]
 mod nested_scope;
-
-#[path = "source_reflows/factored_sources.rs"]
-mod factored_sources;
-pub(crate) use factored_sources::{
-    complete_outer_label_sources_and_original_producer_remain_exact,
-    complete_predecessors_and_new_target_sources_are_bound,
+pub(crate) use nested_scope::{
+    nested_scope_correction_retains_complete_original_hostile_and_loan_controls,
+    nested_source_incoming_current,
+    nested_source_keeps_full_live_union_and_both_complete_parent_custodies,
+    nested_source_refuses_foreign_truncated_drifted_predicates_and_partial_recipes,
 };
-pub(crate) use nested_scope::nested_scope_correction_retains_complete_original_hostile_and_loan_controls;
 
 fn records() -> &'static [serde_json::Value] {
     RECORDS
@@ -68,6 +76,14 @@ fn logical_path(caller: &str, included: &str) -> String {
 }
 
 fn restore(record: &serde_json::Value, current: &str) -> String {
+    let path = record["path"].as_str().unwrap();
+    let merged = crate::source_reflows_merge::main(path, current);
+    let current = merged.as_str();
+    restore_formatting(record, current)
+}
+
+// A semantic custody predecessor is already authenticated at its named front.
+fn restore_formatting(record: &serde_json::Value, current: &str) -> String {
     let path = record["path"].as_str().unwrap();
     assert_eq!(
         format!(
@@ -115,6 +131,7 @@ pub(crate) fn source(
         // One bounded fixture allocation per included file, retained only for
         // this test process. This helper is absent from production builds.
         let restored = match record {
+            Some(record) if predecessor.is_some() => restore_formatting(record, current),
             Some(record) => restore(record, current),
             None => predecessor.unwrap(),
         };
@@ -131,7 +148,18 @@ fn approved_reflows_authenticate_full_inputs_and_reconstruct_full_predecessors()
         assert!(paths.insert(path));
         let current = std::fs::read_to_string(root.join(path)).unwrap();
         let predecessor = semantic_receivers::predecessor(path, &current);
-        let old = restore(record, predecessor.as_deref().unwrap_or(&current));
+        let old = match predecessor {
+            Some(ref previous) => restore_formatting(record, previous),
+            None => restore(record, &current),
+        };
+        assert_ne!(current, old);
+    }
+    let mut main_paths = std::collections::BTreeSet::new();
+    for record in main927_records() {
+        let path = record["path"].as_str().unwrap();
+        assert!(main_paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let old = restore_main927(record, &current);
         assert_ne!(current, old);
     }
 }
@@ -149,6 +177,100 @@ fn a_changed_current_byte_is_refused_before_an_inverse_can_hide_it() {
     let mut forged = record.clone();
     forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
     assert!(std::panic::catch_unwind(|| restore(&forged, &current)).is_err());
+    let record = main927_records().first().unwrap();
+    let current = std::fs::read_to_string(
+        Path::new(env!("CARGO_MANIFEST_DIR")).join(record["path"].as_str().unwrap()),
+    )
+    .unwrap();
+    let mut changed = current.clone();
+    changed.push(' ');
+    assert!(std::panic::catch_unwind(|| restore_main927(record, &changed)).is_err());
+    let mut forged = record.clone();
+    forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+    assert!(std::panic::catch_unwind(|| restore_main927(&forged, &current)).is_err());
 }
 
+// Separate MAIN927 semantic/source-reader domain; the old93 table stays immutable.
+fn main927_records() -> &'static [serde_json::Value] {
+    static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
+    RECORDS
+        .get_or_init(|| {
+            serde_json::from_str(include_str!(
+                "../docs/evidence/main927-source-successor-20261015/actual-main927-reflows.json"
+            ))
+            .unwrap()
+        })
+        .as_array()
+        .unwrap()
+}
+fn restore_main927(record: &serde_json::Value, current: &str) -> String {
+    let path = record["path"].as_str().unwrap();
+    let mut restored = crate::source_reflows_merge::main927_input(path, current);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
+        record["after_sha256"],
+        "MAIN927 complete input drifted: {path}"
+    );
+    for edit in record["inverse"].as_array().unwrap() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(
+            restored.matches(after).count(),
+            1,
+            "unique MAIN927 inverse: {path}"
+        );
+        restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
+        record["before_sha256"],
+        "MAIN927 complete predecessor drifted: {path}"
+    );
+    restored
+}
+
+#[path = "source_reflows/semantic_receivers_main_afba.rs"]
+mod semantic_receivers_main_afba;
+
+#[path = "source_reflows/semantic_receivers_main_f1.rs"]
+mod semantic_receivers_main_f1;
+
+#[cfg(test)]
+#[path = "source_reflows/semantic_receivers_main8a.rs"]
+mod semantic_receivers_main8a;
+
+#[cfg(test)]
+#[path = "source_reflows/semantic_receivers_maina3.rs"]
+mod semantic_receivers_maina3;
+
+#[cfg(test)]
+#[path = "source_reflows/semantic_receivers_main44.rs"]
+mod semantic_receivers_main44;
+
+#[path = "source_reflows/main043.rs"]
+mod main043;
+
+#[path = "source_reflows/factored_sources.rs"]
+mod factored_sources;
+pub(crate) use factored_sources::{
+    joined_labels as complete_outer_label_sources_and_original_producer_remain_exact,
+    joined_predecessors as complete_predecessors_and_new_target_sources_are_bound,
+};
+
 pub(crate) use semantic_receivers::helper_digest_capture_predecessor;
+
+#[path = "source_reflows/main_f247_controllers.rs"]
+pub(crate) mod main_f247_controllers;
+
+#[path = "source_reflows/main99f_controllers.rs"]
+mod main99f_controllers;
+
+#[path = "source_reflows/main_e177_support.rs"]
+mod main_e177_support;
+#[path = "source_reflows/main_e177_controllers.rs"]
+mod main_e177_controllers;

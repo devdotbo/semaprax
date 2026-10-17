@@ -14,6 +14,7 @@ pub(in crate::cleanup_plan::replay) struct StatusSources<'hir> {
     ids: Option<Directory<&'hir StatusSourceId>>,
 }
 
+#[cfg(test)]
 pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
     function: &'hir ResolvedFunction,
     facts: &Facts<'_>,
@@ -40,9 +41,6 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_retained<'hir>(
         && !budget.selected()
     {
         return inline_status::validate(function, facts, budget);
-    }
-    if function.cleanup_plan.status_sources.len() >= 3 {
-        return validate_status_sources_held_prefix(function, facts, budget);
     }
     let expressions: &dyn Lookup = facts;
     let mut ids = Directory::new(function, budget, "cleanup status identity directory")?;
@@ -707,6 +705,10 @@ mod status_before_prefix;
 #[cfg(test)]
 mod component_before_prefix;
 
+mod case_certified;
+mod case_proof;
+pub(in crate::cleanup_plan::replay) use case_certified::validate_status_sources_certified;
+pub(in crate::cleanup_plan::replay) use case_proof::StatusCases;
 // Same complete validation loop; only the owned insertion builder differs.
 pub(in crate::cleanup_plan::replay) fn validate_status_sources_held_prefix<'hir>(
     function: &'hir ResolvedFunction,

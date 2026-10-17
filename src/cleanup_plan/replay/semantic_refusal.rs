@@ -4,7 +4,11 @@
 use super::*;
 #[derive(Debug)]
 pub(super) enum Atom {
+    SelectedCall(structural_control::call_receiving::Kind),
+    UnknownCallCallee(DeclarationId),
+    StatusUnknownCallee(DeclarationId),
     SelectedSession(&'static str),
+    SelectedChild(crate::cleanup_plan::renewal_profile::child_refusal::Refusal),
     RepeatedStatus(ExpressionId),
     UnknownStatus(ExpressionId),
     NoncontiguousSlot(usize),
@@ -33,9 +37,20 @@ impl Receipt {
             atom: Atom::SelectedSession(detail),
         }
     }
+    pub(super) fn selected_child(
+        function: &ResolvedFunction,
+        reason: crate::cleanup_plan::renewal_profile::child_refusal::Refusal,
+    ) -> Self {
+        Self {
+            source: function.body.id.clone(),
+            atom: Atom::SelectedChild(reason),
+        }
+    }
     pub(super) fn stage(&self) -> &'static str {
         match &self.atom {
+            Atom::SelectedCall(_) | Atom::UnknownCallCallee(_) => "selected call",
             Atom::SelectedSession(_) => "selected session",
+            Atom::SelectedChild(_) => "selected child",
             _ => "structural replay",
         }
     }
@@ -43,7 +58,55 @@ impl Receipt {
     pub(super) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
         // Branch-local calls: no `fmt::Arguments` escapes its own statement.
         match self.atom {
+            Atom::SelectedCall(kind) => replay_error(function, kind.detail()),
+            Atom::StatusUnknownCallee(callee) => replay_error(
+                function,
+                format_args!("status source call has unknown callee `{callee}`"),
+            ),
+            Atom::UnknownCallCallee(callee) => replay_error(
+                function,
+                format_args!("call commit has unknown callee `{callee}`"),
+            ),
             Atom::SelectedSession(detail) => replay_error(function, detail),
+            Atom::SelectedChild(reason) => {
+                if reason.prefixed() {
+                    replay_error(function, reason.detail())
+                } else {
+                    // Ordinary legacy text keeps its complete original renderer.
+                    // An explicit matching oracle invocation must fund raw text
+                    // before allocation, just as the prefixed replay bridge does.
+                    #[cfg(test)]
+                    match allocation::authority_for_function(function) {
+                        Ok(Some(lease)) => {
+                            let result = if matches!(allocation::opted(), Ok(Some(current)) if current == lease)
+                            {
+                                allocation::raw_error_metered(
+                                    lease,
+                                    function,
+                                    format_args!("{}", reason.detail()),
+                                )
+                            } else {
+                                allocation::raw_error_funded(
+                                    lease,
+                                    format_args!("{}", reason.detail()),
+                                )
+                            };
+                            return match result {
+                                Ok(diagnostic) => diagnostic,
+                                Err(failure) => failure.into_diagnostic(),
+                            };
+                        }
+                        Err(_) => {
+                            return Diagnostic::io_static(
+                                "SPX-H006",
+                                "oracle invocation authority refused a raw diagnostic",
+                            );
+                        }
+                        Ok(None) => {}
+                    }
+                    reason.legacy()
+                }
+            }
             Atom::RepeatedStatus(id) => replay_error(
                 function,
                 format_args!("status source for `{id}` is repeated"),
@@ -87,11 +150,18 @@ impl Receipt {
         }
     }
     #[cfg(test)]
+    pub(super) fn call_callee(&self) -> Option<&DeclarationId> {
+        match &self.atom {
+            Atom::UnknownCallCallee(id) => Some(id),
+            _ => None,
+        }
+    }
+    #[cfg(test)]
     pub(super) fn source(&self) -> &ExpressionId {
         &self.source
     }
 }
-pub(super) trait Error: From<Diagnostic> {
+pub(super) trait Error: From<Diagnostic> + lexical_boundary::Policy {
     fn structural(function: &ResolvedFunction, atom: Atom) -> Self;
 }
 impl Error for Diagnostic {

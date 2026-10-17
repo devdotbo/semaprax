@@ -83,6 +83,7 @@ HARNESS_SOURCE_FILES = (
     "benchmarks/authored_source_recount.py",
     "benchmarks/compiler_output_provenance.py",
     "benchmarks/compiler_input_capture.py",
+    "benchmarks/compiler_retained_receipt.py",
     "benchmarks/webapp-tokens-v2/typescript_bootstrap.py",
     "benchmarks/webapp-tokens-v2/dependency_bundle.py",
     "benchmarks/live_campaign_common.py",
@@ -568,7 +569,7 @@ def copy_task_rollout(thread_ids: list[str], workspace: Path, destination: Path,
     """Read only the exact CLI-emitted thread, authenticated by ID and cwd."""
     if len(thread_ids) != 1 or not re.fullmatch(r"[0-9a-f-]{36}", thread_ids[0]):
         return None
-    root = sessions_root or (Path.home() / ".codex" / "sessions")
+    root = sessions_root if sessions_root is not None else common.codex_sessions_root()
     paths = list(root.rglob(f"*{thread_ids[0]}.jsonl"))
     if len(paths) != 1:
         return None
@@ -798,6 +799,7 @@ def check_candidate(candidate: Path, output: Path, arm: str, settings: dict[str,
 def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any], settings: dict[str, Any], semaprax_bin: Path) -> dict[str, Any]:
     """Run one paid attempt. Every attempted trial remains in the result denominator."""
     common.require_compiler_binding(settings, semaprax_bin)
+    common.require_authored_source_tokenizer(settings)
     arm, number = trial["arm"], trial["number"]
     label = f"{arm}-{number:02d}"
     workspace = artifacts / "worktrees" / label
@@ -843,6 +845,7 @@ def launch_trial(repo: Path, artifacts: Path, commit: str, trial: dict[str, Any]
             row["prompt_sha256"] = hashlib.sha256(prompt.encode()).hexdigest()
             row["fixed_prompt_utf8_bytes"] = len(prompt.encode())
             common.require_compiler_binding(settings, semaprax_bin)
+            common.require_authored_source_tokenizer(settings)
             process = run_codex(_command(settings, prompt), workspace, trial_environment(authoring_binary),
                                 transcript, stderr, settings["timeout_seconds"])
         row.update(process)
@@ -1022,6 +1025,7 @@ def _summarize(rows: list[dict[str, Any]], arms: tuple[str, ...] = ARMS) -> dict
         "clean_comparison_eligible": all(count >= MIN_TRIALS_PER_ARM for count in arm_counts.values())
             and sum(arm_counts.values()) == len(rows) and all(
                 row.get("resource_assessment", {}).get("clean_comparison_eligible") is True for row in rows),
+        "retained_compiler_file_inventories_per_attempt": [row.get("retained_compiler_file_inventories") for row in rows],
         "accepted_attempts": accepted,
         "failed_or_rejected_attempts": len(rows) - accepted,
         "codex_outer_turns_all_attempts": outer_turns,

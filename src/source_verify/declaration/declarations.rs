@@ -25,64 +25,11 @@ pub(super) fn check_byte_data_declarations<'p>(
 ) {
     for declaration in program.types() {
         match &declaration.kind {
-            TypeDeclarationKind::Record { fields } => {
-                // The nested owned-Bytes profile is monomorphic, and a generic
-                // declaration has no arguments to substitute into its fields,
-                // so classifying its root would read an unsubstituted parameter
-                // as owning. Ask each declared field instead: a type parameter
-                // resolves to no declaration and so owns nothing, while a
-                // `Bytes` field or a field whose record reaches one is refused
-                // here. Concrete instances are admitted through HIR type
-                // reachability.
-                if !declaration.type_parameters.is_empty() {
-                    if fields
-                        .iter()
-                        .any(|field| types.contains_owned_bytes(&field.ty))
-                    {
-                        diagnostics.push(error(
-                            program,
-                            "SPX-T268",
-                            format!(
-                                "owned-Bytes record `{}` must be monomorphic in this tranche",
-                                declaration.name
-                            ),
-                            declaration.span,
-                        ));
-                    }
-                    continue;
-                }
-                let root = Type::Named {
-                    name: declaration.name.clone(),
-                    arguments: Vec::new(),
-                };
-                if types.contains_owned_bytes(&root)
-                    && !super::super::declared_type::string_record::runtime_admitted(&root, types)
+            TypeDeclarationKind::Record { .. } => {
+                if let Some(diagnostic) =
+                    super::record_shape::diagnostic(program, types, declaration)
                 {
-                    match classify_nested_owned_byte_record(types, &root) {
-                        NestedOwnedRecordAdmission::Admitted
-                        | NestedOwnedRecordAdmission::Recursive => {}
-                        NestedOwnedRecordAdmission::NoOwnedBytes => unreachable!(
-                            "owned-byte precheck and structural classifier disagree"
-                        ),
-                        NestedOwnedRecordAdmission::OutsideProfile => diagnostics.push(error(
-                            program,
-                            "SPX-T268",
-                            format!(
-                                "owned-Bytes record `{}` must be a monomorphic acyclic record tree with only `Bytes` or direct Copy scalar leaves",
-                                declaration.name
-                            ),
-                            declaration.span,
-                        )),
-                        NestedOwnedRecordAdmission::LimitExceeded => diagnostics.push(error(
-                            program,
-                            "SPX-T268",
-                            format!(
-                                "owned-Bytes record `{}` exceeds the nested record depth, owned-leaf, or field bound",
-                                declaration.name
-                            ),
-                            declaration.span,
-                        )),
-                    }
+                    diagnostics.push(diagnostic);
                 }
             }
             TypeDeclarationKind::Class { fields, .. } => {
@@ -234,9 +181,9 @@ pub(super) fn check_native_rust_imports<'p>(
             }
             if import.native_rust
                 && program
-                    .functions()
-                    .iter()
-                    .any(|function| function.name == import.name)
+                    .function_refs()
+                    .payload_by_name(&import.name)
+                    .is_some()
             {
                 diagnostics.push(error(
                     program,

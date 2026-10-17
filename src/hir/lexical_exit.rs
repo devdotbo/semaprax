@@ -63,6 +63,8 @@ pub enum LoopLatchKind {
 }
 
 mod walk;
+mod selected_child;
+pub(crate) use selected_child::{requires_inline,validate_owner_inline};
 pub(crate) use walk::{child, contains, requires, ChildCursor};
 
 mod owner;
@@ -70,13 +72,15 @@ mod owner;
 pub(crate) use owner::validate_monomorphic_owner_with_work;
 pub(crate) use owner::{owner, owner_with, validate_owner};
 mod owner_funded;
-pub(crate) use owner_funded::{owner_funded, requires_with_funded_cursor};
+pub(crate) use owner_funded::{owner_funded, requires_with_funded_cursor, OwnerVerdict};
 #[cfg(test)]
-pub(crate) use owner_funded::{requires_funded, OwnerVerdict};
+pub(crate) use owner_funded::requires_funded;
 
 pub(super) mod rekey;
 
 mod latch;
+mod latch_inline;
+pub(crate) use latch_inline::validate_latch_inline;
 pub(crate) use latch::validate_latch;
 
 mod wrapper;

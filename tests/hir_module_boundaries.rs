@@ -1,9 +1,41 @@
+macro_rules! audit_source_join { ($($piece:expr),* $(,)?) => {{ let pieces: &[&str] = &[$(&$piece),*]; pieces.concat() }}; }
 #[test]
 fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
-    let validation = concat!(
-        concat!(
-            concat!(
-                include_str!("../src/hir/validation.rs"),
+    assert_eq!(audit_source_join!("", "α", "\0", "\r\n", "β"), "α\0\r\nβ");
+    let validation_raw = audit_source_join!(include_str!("../src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs"),include_str!("../src/loop_calls/byte_writer/tests/string_slots.rs"),include_str!("../tests/wasm/scalar_browser_ci_contract/before_21abc.rs"),include_str!("../src/cleanup_plan/replay/factored/moderate_tests.rs"),include_str!("../src/cleanup_plan/replay/factored/moderate_tests/before.rs"),include_str!("../src/cleanup_plan/replay/ordinary_plan_history/before_hir_compare.rs"),include_str!("../src/cleanup_plan/replay/owned_suffix.rs"),include_str!("../src/cleanup_plan/replay/owned_suffix/before.rs"),include_str!("../src/cleanup_plan/replay/owned_suffix/sequence_vector.rs"),include_str!("../src/cleanup_plan/replay/owned_suffix/tests.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/merge_keys.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/merge_keys_before.rs"),include_str!("../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs"),include_str!("../src/bounded_output/stage_debits/route_debits.rs"),include_str!("../src/cleanup_plan/replay/branch_clone/production_capacity.rs"),include_str!("../src/cleanup_plan/replay/branch_clone/production_capacity/before.rs"),include_str!("../src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs"),include_str!("../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),include_str!("../src/source_reflows/main_c883_receivers.rs"),include_str!("../src/source_reflows_merge/main_c883_inputs.rs"),include_str!("../tests/workspace/semantic_graph/source_inventory_controls.rs"), include_str!("../src/cli/json_codec/retained_receipt/stdout_seal.rs"), include_str!("../src/cli/json_codec/retained_receipt/stdout_seal/tests.rs"), include_str!("../tests/project/standard_library/application_json/retained_receipt/stdout_seal.rs"), include_str!("../src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs"), include_str!("../src/cleanup_plan/replay/skeleton_work/prefix_fusion/before.rs"), include_str!("../src/cleanup_plan/replay/skeleton_work/prefix_fusion/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/terminal_leaf.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs"),include_str!("../src/source_reflows/incoming67107_semantic_receivers.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/tests.rs"), include_str!("../src/source_reflows/incoming21_semantic_receivers.rs"),include_str!("../src/source_reflows/incoming090_semantic_receivers.rs"),include_str!("../src/source_reflows_merge/main67107_inputs.rs"),include_str!("../tests/wasm/scalar_browser_ci_contract/before_671.rs"),include_str!("../tests/wasm/scalar_browser_ci_contract/before_7d34.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/paid_many.rs"),include_str!("../src/source_reflows_merge/final_ready_inputs.rs"),include_str!("../src/cleanup_plan/replay/supplemental/receiving/tests/legacy.rs"),include_str!("../src/workspace_graph/identity_resolution/base/cache_billing/main7f8_inputs.rs"), include_str!("../src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs"), include_str!("../src/workspace_graph/expected_projection/import_stub/core_proofs/main7f8_provider.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/observation_parity.rs"), include_str!("../src/cli/json_codec/retained_receipt.rs"), include_str!("../src/cli/json_codec/retained_receipt/tests.rs"), include_str!("../src/project/authority/retained_input.rs"), include_str!("../src/project/json_codec/retained_receipt.rs"), include_str!("../src/project/json_codec/retained_receipt/tests.rs"), include_str!("../tests/project/standard_library/application_json/retained_receipt.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_main_7f8.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_524.rs"), include_str!("../src/source_reflows_merge/main7f8_presence.rs"), include_str!("../src/source_reflows_merge/main7f8_source_inputs.rs"),include_str!("../src/source_reflows_merge/main_eb2_inputs.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum/optimized.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum/immediate.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs"), include_str!("../src/source_reflows_merge/opt858_sequence_input.rs"), include_str!("../src/bounded_output/invocation_binding.rs"), include_str!("../src/source_verify/declaration/record_shape.rs"), include_str!("../src/source_verify/declaration/record_shape_before.rs"), include_str!("../src/cleanup_plan/replay/schema/original_materializer.rs"), include_str!("../src/cleanup_plan/replay/schema/ordinary_tests.rs"), include_str!("support/production_source_inventory_original.rs"), include_str!("support/new_boundary_module.rs"), include_str!("../src/workspace_graph/before_private_roots.rs"), include_str!("../src/workspace_graph/cache_key_original.rs"), include_str!("../src/workspace_graph/constructor_failure/receiving/before.rs"), include_str!("../src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch.rs"), include_str!("../src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs"), include_str!("../src/workspace_graph/validation/before_roots.rs"),
+        audit_source_join!(
+            audit_source_join!(
+include_str!("../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"), include_str!("../src/hir/validation/byte_traversal/nested/tests/source_composition.rs"), include_str!("../src/source_reflows/nested_scope.rs"), include_str!("../src/source_reflows/factored_sources.rs"), include_str!("../src/cleanup_plan/replay/allocation/tests/clone_cursor.rs"), include_str!("../src/cleanup_plan/replay/allocation/tests/clone_cursor/before.rs"),
+include_str!("../src/cleanup_plan/replay.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/frontiers.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs"), include_str!("../src/source_reflows_merge/ordinary_plan_inputs.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels/lexical_finish.rs"),include_str!("../src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/producer.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/before.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/tests.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/source_custody.rs"),
+include_str!("../src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs"),
+include_str!("../src/cleanup_plan/replay/factored.rs"),
+include_str!("../src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"),
+include_str!("../src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs"),
+include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/a.rs"),
+include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/b.rs"),
+include_str!("../src/cleanup_plan/replay/selected_context.rs"),
+include_str!("../src/cleanup_plan/replay/selected_entry.rs"),
+include_str!("../src/cleanup_plan/replay/selected_entry/paid.rs"),
+include_str!("../src/cleanup_plan/replay/selected_entry/tests.rs"),
+include_str!("../src/cleanup_plan/replay/selected_entry/tests/structural_errors.rs"),
+include_str!("../src/cleanup_plan/replay/selected_owner.rs"),
+include_str!("../src/cleanup_plan/replay/selected_profile.rs"),
+include_str!("../src/hir/declaration_index/identity_payer.rs"),
+include_str!("../src/source_reflows/main043.rs"),
+include_str!("../src/source_reflows/main043/audit_0.rs"),
+include_str!("../src/source_reflows/main043/audit_1.rs"),
+include_str!("../src/source_reflows/main043/audit_2.rs"),
+include_str!("../src/source_reflows/main043/audit_3.rs"),
+include_str!("../src/source_reflows/main043/audit_4.rs"),
+include_str!("../src/source_reflows/main043/audit_5.rs"),
+include_str!("../src/source_reflows/main043/audit_6.rs"),
+include_str!("../src/source_reflows/main043/audit_7.rs"),
+include_str!("../src/source_reflows/main043/audit_8.rs"),
+include_str!("../src/source_reflows/main043/semantic_receivers.rs"),
+include_str!("../src/source_reflows_merge/main043_custody.rs"),
+include_str!("../src/source_verify/declaration.rs"),
+include_str!("../tests/workspace/semantic_graph/source_inventory.rs"),
+                include_str!("../src/cleanup_plan/replay/final_output.rs"), include_str!("wasm/scalar_browser_ci_contract/actual_83ca.rs"),  include_str!("../src/bounded_output/checked_string.rs"),  include_str!("../src/hir/ids/instance_match.rs"),  include_str!("../src/hir/ids/instance_match/tests.rs"),  include_str!("../src/hir/nodes/instance_key.rs"),  include_str!("../src/cleanup_plan/replay/structural_maps/paid_reference.rs"),  include_str!("../src/cleanup_plan/replay/structural_maps/tests/paid_reference.rs"),  include_str!("../src/cleanup_plan/replay/selected_entry/tests/driver_local_receivers.rs"),  include_str!("../src/cleanup_plan/replay/compact_stage.rs"),  include_str!("../src/cleanup_plan/replay/compact_stage/before.rs"),  include_str!("../src/cleanup_plan/replay/compact_stage/lexical_before.rs"),  include_str!("../src/cleanup_plan/replay/compact_stage/source_custody.rs"),  include_str!("../src/cleanup_plan/replay/compact_stage/tests.rs"),  include_str!("../src/cleanup_plan/replay/final_output/before_compaction.rs"),  include_str!("../src/cleanup_plan/replay/final_output/before_transfer_current.rs"),  include_str!("../src/cleanup_plan/replay/final_output/current_observation_tests.rs"),  include_str!("../src/source_reflows/semantic_receivers_mainb80.rs"),  include_str!("wasm/scalar_browser_ci_contract/before_c451.rs"),  include_str!("wasm/scalar_browser_ci_contract/historical_main_c451.rs"),  include_str!("wasm/scalar_browser_ci_contract/main_c451_before_2600.rs"),  include_str!("../src/cleanup_plan/replay/final_output/before.rs"), include_str!("../src/cleanup_plan/replay/final_output/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_final_edge.rs"), include_str!("../src/cleanup_plan/replay/path_join/final_edge_tests.rs"), include_str!("../src/source_verify/hints/before_capacity_witness.rs"), include_str!("../src/cli/help/authoring/tasks.rs"), include_str!("../src/cleanup_plan/replay/factored/strategy/before_fitting.rs"), include_str!("../src/cleanup_plan/replay/factored/strategy/fitting_tests.rs"), include_str!("../src/cli/help/authoring/tasks/tests.rs"), include_str!("../src/cli/help/authoring/tasks/derive.rs"), include_str!("../tests/cli_help_surface_v1/task_pages.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_state_move.rs"), include_str!("../src/cleanup_plan/replay/path_join/state_move_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/main696.rs"), include_str!("../src/cleanup_plan/replay/path_array/funded_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array.rs"), include_str!("../src/cleanup_plan/replay/path_array/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/tests.rs"), include_str!("../src/source_reflows/semantic_receivers.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/before_inline.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/inline_tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/before.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/boxed_states.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/boxed_states/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/grouping.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/grouping/source_custody.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/grouping/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/mod.rs"), include_str!("../src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/ordered_weights/receiver_tests.rs"), include_str!("../src/hir/validation.rs"),
                 include_str!("../src/hir/validation/held_profiles.rs"),
                 include_str!("../src/hir/validation/held_profiles/tests.rs"),
                 include_str!("../src/hir/validation/held_profiles/source_audit.rs"),
@@ -90,26 +122,26 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/inspection/tests/inline_worklists.rs"),
                 include_str!("../src/hir/inspection/tests/inline_worklists/old.rs"),
                 include_str!("../src/hir/inspection/tests/inline_worklists/frozen_walkers.txt"),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/validation/function_lookup.rs"),
                     include_str!("../src/hir/validation/function_lookup/original.rs"),
                     include_str!("../src/hir/validation/function_lookup/paid_custody.rs")
                 ),
                 include_str!("../src/hir/validation/function_lookup/permits.rs"),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/function_directory.rs"),
                     "\n",
                     include_str!("../src/hir/function_directory/caller.rs")
                 ),
                 include_str!("../src/hir/validation/type_requirement.rs"),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/validation/canonical_loans.rs"),
                     include_str!("../src/hir/validation/canonical_loans/constructors_before.rs"),
                     include_str!("../src/hir/validation/canonical_loans/ownership_tests.rs")
                 ),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/validation/constructor_seed.rs"),
-                    concat!(
+                    audit_source_join!(
                         include_str!("../src/hir/validation/constructor_seed/original.rs"),
                         include_str!("../src/list_ops/original_constructor.rs"),
                         include_str!("../src/iterator_ops/original_constructor.rs"),
@@ -119,15 +151,15 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                         include_str!("../src/hir/validation/constructor_seed/intrinsic_tests.rs")
                     )
                 ),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/canonical_loan_storage.rs"),
                     include_str!("../src/bounded_output/canonical_stage_tests.rs"),
                     include_str!("../src/bounded_output/loan_inner_stage_tests.rs"),
                     include_str!("../src/hir/canonical_loan_storage/caller/stage_tests.rs"),
                     include_str!("../src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"),
                     "\n",
-                    concat!(
-                        concat!(
+                    audit_source_join!(
+                        audit_source_join!(
                             include_str!("../src/hir/canonical_loan_storage/caller.rs"),
                             include_str!("../src/hir/canonical_loan_storage/caller/shared.rs"),
                             include_str!(
@@ -146,7 +178,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
                 include_str!("../src/hir/canonical_loan_storage/deferred/tests.rs"),
                 include_str!("../src/hir/canonical_loan_storage/deferred/tests/selected.rs"),
                 include_str!("../src/hir/validation/canonical_loans/tests.rs"),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/hir/vec_constructor.rs"),
                     include_str!("../src/hir/vec_constructor/capture.rs")
                 )
@@ -185,7 +217,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/string_ops/take.rs")
         ),
         include_str!("../src/hir/validation/vec_field.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/hir/validation/row_loan.rs"),
             "\n",
             include_str!("../src/hir/row_loan/validate.rs"),
@@ -226,7 +258,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/collection_outcome/stream_input.rs"),
         include_str!("../src/hir/collection_outcome/nested.rs"),
         include_str!("../src/hir/collection_outcome/nested/profile.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/hir/validation/stdin_stream.rs"),
             include_str!("../src/hir/validation/stdin_stream/paid.rs"),
             include_str!("../src/hir/validation/stdin_stream/paid/analysis.rs"),
@@ -234,7 +266,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         ),
         include_str!("../src/stdin_stream_ops/analysis.rs"),
         include_str!("../src/hir/validation/borrowed_bytes_call_tests.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/hir/validation/iterator_loops.rs"),
             include_str!("../src/hir/validation/iterator_loops/field_scope.rs"),
             "\n",
@@ -242,11 +274,11 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             "\n",
             include_str!("../src/finite_byte_scratch/source.rs"),
             "\n",
-            concat!(
+            audit_source_join!(
                 include_str!("../src/finite_byte_scratch/resolved.rs"),
                 include_str!("../src/finite_owned_record_loop.rs"),
                 include_str!("../src/finite_owned_record_loop/source.rs"),
-                concat!(
+                audit_source_join!(
                     include_str!("../src/finite_owned_record_loop/resolved.rs"),
                     include_str!("../src/finite_owned_record_loop/tests.rs")
                 ),
@@ -264,7 +296,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/allocation/oracle/diagnostic/metered.rs"),
         include_str!("../src/cleanup_plan/replay/factored/oracle_order.rs"),
         include_str!("../src/cleanup_plan/replay/factored/oracle_order/tests.rs"),
-        concat!(include_str!("../src/cleanup_plan/replay/live_oracle.rs"),concat!(include_str!("../src/cleanup_plan/replay/live_oracle/source_custody.rs"),include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/a.rs"),include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/b.rs"),include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/presence.rs"),),),
+        include_str!("../src/cleanup_plan/replay/live_oracle.rs"),
         include_str!("../src/cleanup_plan/replay/nested_shape/paid/oracle.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/oracle_inventory.rs"),
         include_str!("../src/cleanup_plan/replay/paid_type_facts/oracle_inventory/tests.rs"),
@@ -363,7 +395,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/box_intrinsic.rs"),
         include_str!("../src/hir/validation/branch_merge.rs"),
         include_str!("../src/hir/validation/borrowed_str.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/hir/validation/generic_template.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph.rs"),
             include_str!("../src/hir/validation/generic_template/call_graph/ordered.rs"),
@@ -381,7 +413,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/generic_variant.rs"),
         include_str!("../src/hir/validation/generic_record_composition.rs"),
         include_str!("../src/hir/validation/host_command.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/hir/validation/owned_buffer.rs"),
             "\n",
             include_str!("../src/hir/validation/owned_buffer/iterator_view.rs"),
@@ -390,14 +422,14 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         ),
         include_str!("../src/hir/validation/owned_result_try.rs"),
         include_str!("../src/hir/validation/owner_renewal.rs"),
-        concat!(
-            concat!(include_str!("../src/loop_calls/byte_writer.rs"),include_str!("../src/loop_calls/byte_writer/source_index_original.rs"),),
+        audit_source_join!(
+            include_str!("../src/loop_calls/byte_writer.rs"),
             "\n",
             include_str!("../src/loop_calls/byte_writer/source.rs"),
             "\n",
             include_str!("../src/loop_calls/byte_writer/source_index.rs")
         ),
-        concat!(
+        audit_source_join!(
             include_str!("../src/loop_calls/byte_writer/resolved.rs"),
             "\n",
             include_str!("../src/loop_calls/byte_writer/resolved/selected.rs"),
@@ -414,7 +446,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/lexical_exit/owner_funded.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle/invocation.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/cleanup_plan/replay/skeleton_work.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs"),
             include_str!("../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs"),
@@ -437,41 +469,48 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/test_allocation_observer.rs"),
             include_str!("../src/test_allocation_observer/free_order.rs"),
         ),
-        include_str!("../src/cleanup_plan/replay/path_join/grouping.rs"),
-        include_str!("../src/cleanup_plan/replay/path_join/grouping/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/path_join/grouping/source_custody.rs"),
-        include_str!("../src/cleanup_plan/replay/compact_stage.rs"),
-        include_str!("../src/cleanup_plan/replay/compact_stage/before.rs"),
-        include_str!("../src/cleanup_plan/replay/compact_stage/lexical_before.rs"),
-        include_str!("../src/cleanup_plan/replay/compact_stage/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/compact_stage/source_custody.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/sequence.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/sequence/before.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/sequence/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/before.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/final_before.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/completed_tests.rs"),
-        include_str!("../src/cleanup_plan/replay/path_array/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_prefix.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_vector.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_vector/before.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_vector/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_prefix/before.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_prefix/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_prefix/before_wrapper.rs"),
-        include_str!("../src/cleanup_plan/replay/sequence_prefix/before_wrapper_tests.rs"),
-        include_str!("../src/cleanup_plan/replay/branch_clone.rs"),
-        include_str!("../src/cleanup_plan/replay/branch_clone/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"),
+        include_str!("../src/cleanup_plan/replay/branch_clone.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs"), include_str!("../src/cleanup_plan/replay/merge_census.rs"), include_str!("../src/cleanup_plan/replay/owned_suffix_878.rs"), include_str!("../src/cleanup_plan/replay/owned_suffix_878_vector.rs"), include_str!("../src/cleanup_plan/replay/skeleton_work/merge_keys_878.rs"), include_str!("../src/cleanup_plan/replay/skeleton_work/merge_search.rs"), include_str!("../src/source_reflows/main_e177_controllers.rs"), include_str!("../src/source_reflows/main_e177_support.rs"), include_str!("../src/source_reflows_merge/main_e177_final_inputs.rs"), include_str!("../src/source_reflows_merge/main_e177_inputs.rs"), include_str!("../tests/workspace/pin_capture.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/direct.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/direct/before.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/direct/tests.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"), include_str!("../src/source_reflows/main99f_controllers.rs"), include_str!("../src/source_reflows_merge/main99f_inputs.rs"), include_str!("../src/source_reflows_merge/next_big_batch_inputs.rs"), include_str!("../src/workspace_graph/tests/core_attempt_trace.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_3e66.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/selected_labels.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs"), include_str!("../src/source_reflows/main_f247_controllers.rs"), include_str!("../src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_main2600.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/browser_custody.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_2600.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/before.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/funded_tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_singleton.rs"), include_str!("../src/cleanup_plan/replay/path_join/singleton_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_unit/closure_receiving.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/unit_receiving_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/arena_source.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_closure.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_closure_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/empty_memo/retained.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/closure_receiving.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/memo.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/ordered_alias.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/ordered_weights.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/cached_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_empty/memo/retained.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/before_alias.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/before_index.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/before_unit.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/epsilon_alias.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/memo.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/source.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight_tests.rs"), include_str!("../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs"), include_str!("../src/bounded_output/format_acceptance.rs"), include_str!("../src/bounded_output/format_acceptance/tests.rs"), include_str!("../src/workspace_graph/diagnostics/initial.rs"), include_str!("../src/workspace_graph/diagnostics/initial/context.rs"), include_str!("../src/workspace_graph/diagnostics/initial/tests.rs"), include_str!("../src/workspace_graph/initial_report.rs"), include_str!("../src/workspace_graph/initial_report/before.rs"), include_str!("../src/workspace_graph/initial_report/before_mappers.rs"), include_str!("../src/workspace_graph/initial_report/build.rs"), include_str!("../src/workspace_graph/initial_report/tests.rs"), include_str!("../src/workspace_report/initial.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/borrowed.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/mod.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/storage.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/before/strategy.rs"), include_str!("../src/ast/program_source/decl_slices/alias_tests.rs"), include_str!("../src/ast/program_source/decl_slices/before_alias.rs"), include_str!("../src/ast/program_source/function_alias.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs"), include_str!("../src/ast/program_source/function_alias/presentation.rs"), include_str!("../src/ast/program_source/function_alias/presentation/metadata.rs"), include_str!("../src/ast/program_source/function_alias/presentation/metadata/tests.rs"), include_str!("../src/source_verify/funding.rs"), include_str!("../src/bounded_output/identity_reservation/source_abort.rs"), include_str!("../src/source_verify/funding/tests.rs"), include_str!("../src/source_verify/declaration/functions/funding_tests.rs"), include_str!("../src/source_verify/declaration/functions/generic_cycle_compat.rs"), include_str!("../src/source_verify/function_map.rs"), include_str!("../src/source_verify/function_map/tests.rs"), include_str!("../src/bounded_output/identity_reservation/function_cells.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/name_equal.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/before_alias.rs"), include_str!("../src/workspace_graph/function_alias/before_core.rs"), include_str!("../src/workspace_graph/function_alias/before_core/tests.rs"), include_str!("../src/cleanup_plan/replay/factored/compact_nodes/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/source.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/before_closure_invocation.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/closure_receiving.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/closure_receiving/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/closure_receiving/source.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_held.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_held_memo.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_held_retained.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/held_auth_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_budget/authentication.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_budget/authentication/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_budget/authentication/source.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_storage.rs"),
+        include_str!("../src/cleanup_plan/replay/physical_storage/zero_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/allocation/oracle/zero_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/receiver_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/source.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/amortized_source.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/ordered_alias.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/successor_targets.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/singleton_target_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/memo.rs"),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/unit_weight.rs"),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/unit_weight/tests.rs"),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/unit_weight_tests.rs"),
-        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/memo/retained.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_scratch_memo.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/scratch_tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/canonical_shared/app_census.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias/tests.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_alias.rs"),
         include_str!("../src/cleanup_plan/replay/factored/canonical_shared/before_index.rs"),
@@ -492,17 +531,76 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/loan_plan/paid_candidate/retained.rs"),
         include_str!("../src/loan_plan/paid_candidate/retained/inventory.rs"),
         include_str!("../src/loan_plan/paid_candidate/retained/tests.rs"),
+        include_str!("../src/loan_plan/paid_candidate/retained/nested_tests.rs"),
+        include_str!("../src/loan_plan/nested_candidate_before.rs"),
         include_str!("../src/cleanup_plan/replay/selected_context/paid.rs"),
+        include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/current_view.rs"),
+        include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/presence.rs"),
+        include_str!("../src/cleanup_plan/replay/live_oracle/source_custody/presence_tests.rs"),
+include_str!("../src/source_reflows_merge/current344.rs"), include_str!("../src/source_reflows_merge/main8a_historical.rs"),
+        include_str!("../src/source_reflows_merge.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/actual_67b.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/next_actual.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/completed_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/current.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/final_before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/mod.rs"), include_str!("../src/cleanup_plan/replay/path_array/main8a/tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/before.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/before_wrapper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/before_wrapper_tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/helper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/old_current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/main8a/tests.rs"), include_str!("../src/workspace_graph/source_schema/nominal_context/main8a/tests.rs"), include_str!("../src/cleanup_plan/replay/branch_clone/main8a.rs"), include_str!("../src/workspace_graph/source_schema/nominal_context.rs"), include_str!("../src/workspace_graph/source_schema/nominal_context/tests.rs"), include_str!("../src/workspace_graph/source_schema/nominal_context/main8a.rs"), include_str!("../src/cleanup_plan/replay/final_output/fanout_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/completed_tests.rs"), include_str!("../src/loop_calls/byte_writer/source_index_original.rs"), include_str!("../src/source_reflows/semantic_receivers_main8a.rs"), include_str!("../src/source_reflows_merge/main8a_custody.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_main_f82.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_f82.rs"), include_str!("../src/source_reflows_merge/runtime_json.rs"), include_str!("../src/source_reflows_merge/runtime_json/inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/tests.rs"), include_str!("../tests/support/production_source_inventory.rs"), include_str!("../src/source_reflows_merge/runtime_json/membership.rs"), include_str!("../src/source_reflows_merge/runtime_json/transport_runtime.rs"), include_str!("../src/source_reflows_merge/runtime_json/transport_embedded.rs"), include_str!("../src/source_reflows_merge/runtime_json/pair_custody.rs"), include_str!("../src/source_reflows_merge/metadata_json.rs"), include_str!("../docs/evidence/receiver-source-custody-v1/src__hir__expr_nodes.rs.before.txt"), include_str!("../src/cleanup_plan/renewal_profile/boundary_refusal.rs"), include_str!("../src/cleanup_plan/renewal_profile/certificate_refusal.rs"), include_str!("../src/cleanup_plan/renewal_profile/scalar_refusal.rs"), include_str!("../src/cleanup_plan/renewal_profile/status_refusal.rs"), include_str!("../src/cleanup_plan/renewal_profile/structural_refusal.rs"), include_str!("../src/cleanup_plan/replay/flat_records/paid_leaves.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_boundary.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_certificate.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_families.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_status_scalar.rs"), include_str!("../src/cleanup_plan/replay/leaf_index/receiving.rs"), include_str!("../src/cleanup_plan/replay/lexical_boundary/paid.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/before_boundary.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/before_boundary/storage.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/paid.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/paid/storage.rs"), include_str!("../src/cleanup_plan/replay/lexical_replay/before_boundary.rs"), include_str!("../src/cleanup_plan/replay/lexical_replay/before_certificate.rs"), include_str!("../src/cleanup_plan/replay/lexical_replay/before_owned_families.rs"), include_str!("../src/cleanup_plan/replay/lexical_replay/before_status_scalar.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_certificate.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_certificate/paid_nodes.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_certificate/records.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_certificate/records/paid.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_owned_families.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/before_status_scalar.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/paid_nodes.rs"), include_str!("../src/cleanup_plan/replay/scalar_replay/records/paid.rs"), include_str!("../src/cleanup_plan/replay/selected_context/child/receiving.rs"), include_str!("../src/cleanup_plan/replay/status_construction/paid.rs"), include_str!("../src/cleanup_plan/replay/structural_maps/paid.rs"), include_str!("../src/source_reflows/semantic_receivers_main7c6.rs"), include_str!("../src/cleanup_plan/renewal_profile/type_drop_refusal.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_type_drop.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/before_type_drop.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/before_type_drop/storage.rs"), include_str!("../src/cleanup_plan/replay/selected_type_drop.rs"), include_str!("../src/hir/residual_type/before.rs"), include_str!("../src/source_reflows_merge/final_custody.rs"), include_str!("../src/cleanup_plan/renewal_profile/ordinary/direct_presence_tests.rs"), include_str!("../src/source_reflows/semantic_receivers_main_afba.rs"), include_str!("../src/source_reflows_merge/successor_custody.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/before.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/shipping_tests.rs"), include_str!("../src/source_reflows/semantic_receivers_main_f1.rs"), include_str!("../src/source_reflows_merge/prefix_custody.rs"), include_str!("../src/source_reflows_merge/joined_custody.rs"), include_str!("../src/cleanup_plan/renewal_profile/path_boundary_refusal.rs"), include_str!("../src/cleanup_plan/replay/flat_records/tests/receiving_path_boundary.rs"), include_str!("../src/cleanup_plan/replay/lexical_boundary/legacy_policy.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/paid/chains.rs"), include_str!("../src/cleanup_plan/replay/lexical_cert/paid/chains_tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_path_boundary.rs"), include_str!("../src/source_reflows_merge/release_custody.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/before.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/helper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/mod.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/old_current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/before.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/helper.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/old_current.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_main_c11.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_c11.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_c451_c11.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/c11_before_2600.rs"), include_str!("../src/cleanup_plan/replay/compact_stage/source_custody_main8a.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/source_main8a.rs"), include_str!("../src/cleanup_plan/replay/selected_entry/tests/session_errors/source_main8a.rs"), include_str!("../src/hir/nominal_payload/legacy/source_tests_main8a.rs"), include_str!("../docs/evidence/compact-staged-hostile-owner-852-20261016/before/oracle-order-tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/final_before.rs"), include_str!("../src/bounded_output/reservation_site_e47.rs"), include_str!("../src/cleanup/inventory_builder/typed.rs"), include_str!("../src/cleanup/inventory_builder/typed/before_initial.rs"), include_str!("../src/cleanup/inventory_builder/typed/before_initial_receiving.rs"), include_str!("../src/cleanup/inventory_builder/typed/failure.rs"), include_str!("../src/cleanup/inventory_builder/typed/queries.rs"), include_str!("../src/cleanup/inventory_builder/typed/receiving.rs"), include_str!("../src/cleanup/inventory_builder/typed/selected.rs"), include_str!("../src/cleanup/inventory_builder/typed/traversal.rs"), include_str!("../src/cleanup_plan/replay/compact_stage/source_custody_maina3.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/source_maina3.rs"), include_str!("../src/cleanup_plan/replay/inventory_coverage/paid.rs"), include_str!("../src/cleanup_plan/replay/inventory_coverage/typed_tests.rs"), include_str!("../src/cleanup_plan/replay/inventory_coverage/typed_tests/initial_tests.rs"), include_str!("../src/cleanup_plan/replay/selected_entry/tests/session_errors/source_maina3.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/before_funded.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/funded_tests.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/before.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/current.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/helper.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/path_array_source.rs"), include_str!("../src/cleanup_plan/replay/sequence_vector/main_a3/tests.rs"), include_str!("../src/hir/nominal_payload/legacy/source_tests_maina3.rs"), include_str!("../src/source_reflows/semantic_receivers_maina3.rs"), include_str!("../src/source_reflows_merge/maina3_custody.rs"), include_str!("../src/cleanup_plan/replay/compact_stage/source_custody_main44.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/completed_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/current.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/final_before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/mod.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/source_domain.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/sequence.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/sequence/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/sequence/tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/vector.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/vector_before.rs"), include_str!("../src/cleanup_plan/replay/path_array/main44/vector_tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence/tests.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum/before.rs"), include_str!("../src/cleanup_plan/replay/path_array/sequence_minimum/tests.rs"), include_str!("../src/source_reflows/semantic_receivers_main44.rs"), include_str!("../src/source_reflows_merge/main44_custody.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/before_owned_directory.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs"), include_str!("../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/before_75b.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/browser_75b_controls.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_main_75b.rs"),
+        include_str!("../src/cleanup_plan/replay/path_join/storage/empty_renewals.rs"), include_str!("../src/cleanup_plan/replay/path_join/before.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/receiver_tests.rs"), include_str!("../src/cleanup_plan/renewal_profile/ordinary/consuming/tests.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/before.rs"), include_str!("../src/cleanup_plan/replay/path_join/before_receiving.rs"), include_str!("../src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/path_join/storage/atomic_controls.rs"),
+        include_str!("../src/cleanup_plan/replay/path_join/storage/empty_renewals/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/path_join/storage/atomic_controls/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/return_operands.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/return_operands/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/lexical_replay.rs"),
+        include_str!("../src/cleanup_plan/replay/lexical_replay/before_operands.rs"),
+        include_str!("../src/cleanup_plan/replay/lexical_replay/operand_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs"),
+        include_str!("../src/cleanup_plan/replay/lexical_replay/ordinary.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control/blocks.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control/call_receiving.rs"), include_str!("../src/cleanup_plan/replay/supplemental/receiving.rs"), include_str!("../src/cleanup_plan/replay/supplemental/receiving/tests.rs"),
+        audit_source_join!(include_str!("../src/cleanup_plan/replay/structural_control/calls.rs"), include_str!("../src/cleanup_plan/replay/structural_control/calls/cursor.rs"), include_str!("../src/cleanup_plan/replay/structural_control/calls/cursor/tests.rs"), include_str!("../src/cleanup_plan/replay/structural_control/calls/cursor_before.rs"), include_str!("../src/cleanup_plan/replay/structural_control/calls/cursor_before_selected.rs")),
+        include_str!("../src/cleanup_plan/replay/structural_control/calls/custody_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs"),
+        include_str!("../src/cleanup_plan/replay/structural_control/calls_before_receipt.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs"),
+        include_str!("../src/cleanup_plan/replay/semantic_refusal.rs"),
+        include_str!("../src/cleanup_plan/replay/semantic_refusal/tests.rs"),
+        include_str!("../src/workspace_graph/expected_projection/private_layout.rs"), include_str!("../src/workspace_graph/expected_projection/private_layout/registry/storage.rs"), include_str!("../src/workspace_graph/expected_projection/private_layout/registry/before_retained.rs"), include_str!("../src/workspace_graph/expected_projection/private_layout/registry/retained_tests.rs"),
+        include_str!("../src/workspace_graph/expected_projection/private_layout/capacity_before.rs"),
+        include_str!("../src/workspace_graph/expected_projection/private_layout/capacity_tests.rs"),
+        include_str!("../src/workspace_graph/expected_projection/private_layout/capacity_tests/owner_controls.rs"),
+        include_str!("../src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs"),
+        include_str!("../src/cleanup_plan/renewal_profile/child_refusal.rs"),
+        include_str!("../src/cleanup_plan/renewal_profile/selected_inline.rs"),
+        include_str!("../src/cleanup_plan/renewal_profile/selected_inline/append.rs"),
+        include_str!("../src/cleanup_plan/renewal_profile/selected_inline/cells.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_context/child.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_context/child/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_context/child/tests/source.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_context/child/tests/source/compressed_fixture.rs"), include_str!("../src/diagnostic/writer.rs"), include_str!("../src/diagnostic/writer/tests.rs"), include_str!("../src/diagnostic/before_writer.rs"), include_str!("../src/ast/expression_statement/tests.rs"), include_str!("../tests/wasm/scalar_browser_ci_contract/historical_builder.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_context/paid_before_children.rs"),
+        include_str!("../src/hir/lexical_exit/selected_child.rs"),
+        include_str!("../src/loop_calls/byte_writer/resolved/selected_inline.rs"),
+        include_str!("../src/cleanup/inventory_builder/selected_inline.rs"),
+        include_str!("../src/cleanup_plan/renewal_profile/profile_refusal.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_owner/paid_before_children.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_before_children.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/collections.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/flat_records.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/row_loan.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/string_transfer.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/selected_profile/paid_children/tests/fixtures.rs"),
+        include_str!("../src/hir/lexical_exit/latch_inline.rs"),
         include_str!("../src/cleanup_plan/replay/selected_owner/paid.rs"),
         include_str!("../src/cleanup_plan/replay/selected_profile/paid.rs"),
         include_str!("../src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"),
         include_str!("../src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"),
-        concat!(include_str!("../src/loan_plan/paid_live.rs"),include_str!("../src/loan_plan/paid_live/original.rs"),include_str!("../src/loan_plan/paid_live/funded_before.rs"),),
+        include_str!("../src/loan_plan/paid_live.rs"),
         include_str!("../src/loan_plan/paid_live/dense.rs"),
         include_str!("../src/loan_plan/paid_live/dense/tests.rs"),
         include_str!("../src/loan_plan/paid_plan/retained_before_dense.rs"),
         include_str!("../src/loan_plan/funded_flat/before_dense.rs"),
-        concat!(include_str!("../src/loan_plan/paid_plan.rs"),include_str!("../src/loan_plan/paid_plan/pre_live_reuse.rs"),),
+        include_str!("../src/loan_plan/paid_plan.rs"),
         include_str!("../src/loan_plan/paid_plan/retained.rs"),
         include_str!("../src/loan_plan/funded_flat.rs"),
         include_str!("../src/loan_plan/funded_flat/inventory_before.rs"),
@@ -530,15 +628,15 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/expression_facts/ordinary_before.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/tests/ordinary_before.rs"),
         include_str!("../src/cleanup_plan/replay/allocation/tests/accounting_scope.rs"),
-        include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer.rs"),
-        concat!(concat!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer_before_cursor.rs"),include_str!("../src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs"),),
+        audit_source_join!(include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/producer_before_cursor.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/capacity/cursor_tests.rs")),
+        audit_source_join!(include_str!("../src/cleanup_plan/replay/expression_facts/arena.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),
         include_str!("../src/cleanup_plan/replay/expression_facts/borrowed/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/borrowed.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/capacity.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/errors.rs"),
-        concat!(concat!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),include_str!("../src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs"),),
+        audit_source_join!(include_str!("../src/cleanup_plan/replay/expression_facts/receiving.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs"),
@@ -561,6 +659,11 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs")),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs"),
@@ -568,7 +671,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs"),
-        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs"), include_str!("../src/source_reflows/semantic_receivers/status_inline.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/directory.rs"),
@@ -626,7 +729,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/cleanup_plan/build/lexical_control/validation.rs"),
         include_str!("../src/cleanup_plan/validate.rs"),
         include_str!("../src/cleanup_plan/validate/owned.rs"),
-        concat!(
+        audit_source_join!(
             include_str!("../src/loop_calls/byte_writer/module_index.rs"),
             "\n",
             include_str!("../src/loop_calls/byte_writer/module_index/directory.rs"),
@@ -673,6 +776,10 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/validation/generic_template/values/charge/refusal_tests.rs"),
         include_str!("../src/hir/validation/iterator_loops/field_scope/refusal_tests.rs"),
     );
+    let validation = production_source_inventory::production(
+        &validation_raw,
+        include_str!("../docs/evidence/a3-e47-final-custody-20261016/hir.json"),
+    );
     for forbidden in [
         "struct Resolver",
         "impl Resolver",
@@ -692,7 +799,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         );
     }
 
-    let root = concat!(
+    let root = audit_source_join!(
         include_str!("../src/hir.rs"),
         include_str!("../src/hir/expr_nodes.rs"),
         include_str!(
@@ -713,6 +820,12 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/declaration_index/linked_owned_data.rs"),
         include_str!("../src/hir/declaration_index/linked_owned_data/original.rs"),
         include_str!("../src/hir/declaration_index/linked_owned_data/tests.rs"),
+        include_str!("../src/hir/declaration_index/linked_owned_data/tests/legacy.rs"),
+        include_str!("../src/hir/declaration_index/legacy_drop.rs"),
+        include_str!("../src/hir/declaration_index/legacy_drop/before.rs"),
+        include_str!("../src/hir/declaration_index/legacy_drop/tests.rs"),
+        include_str!("../src/hir/declaration_index/linked_owned_data/legacy_before.rs"),
+        include_str!("../src/hir/workspace_link/legacy_nominal_before.rs"),
         include_str!("../src/hir/identity_resolution/nominal.rs"),
         include_str!("../src/hir/identity_resolution/nominal_original.rs"),
         include_str!("../src/hir/identity_resolution/nominal_tests.rs"),
@@ -733,10 +846,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/prelude_bundle/fixed_work.rs"),
         include_str!("../src/hir/prelude_bundle/invocation.rs"),
         include_str!("../src/cleanup_plan/replay/continuation_storage/paid_receiving.rs"),
-        concat!(
-            include_str!("../src/cleanup_plan/replay/factored/continuation_receiver.rs"),
-            include_str!("../src/cleanup_plan/replay/factored/continuation_receiver/before.rs"),
-        ),
+        include_str!("../src/cleanup_plan/replay/factored/continuation_receiver.rs"),
+        include_str!("../src/cleanup_plan/replay/factored/continuation_receiver/before.rs"),
         include_str!("../src/cleanup_plan/replay/factored/continuation_receiver/tests.rs"),
         include_str!("../src/hir/prelude_bundle/extension_work.rs"),
         include_str!("../src/hir/prelude_bundle/extension_model.rs"),
@@ -755,6 +866,15 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
         include_str!("../src/hir/prelude_bundle/work_model.rs"),
         include_str!("../src/project/incremental/paid_resolution/base.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base.rs"),
+        include_str!("../src/workspace_graph/identity_resolution/base/cache_billing.rs"),
+        include_str!(
+            "../src/workspace_graph/identity_resolution/base/cache_billing/source_reference.rs"
+        ),
+        include_str!("../src/workspace_graph/identity_resolution/base/cache_billing/tests.rs"),
+        include_str!("../src/workspace_graph/constructor_failure/before_publication.rs"),
+        include_str!("../src/workspace_graph/constructor_failure/before_publication/attempt.rs"),
+        include_str!("../src/workspace_graph/constructor_failure/before_publication/report.rs"),
+        include_str!("../src/workspace_graph/constructor_failure/publication_tests.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base/tests.rs"),
         include_str!("../src/workspace_graph/identity_resolution/base/affinity_tests.rs"),
         include_str!("../src/hir/function_reuse_source.rs"),
@@ -782,3 +902,7 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
 #[cfg(test)]
 #[path = "hir_module_boundaries/oracle_source_inventory.rs"]
 mod oracle_source_inventory;
+
+#[cfg(test)]
+#[path = "support/production_source_inventory.rs"]
+mod production_source_inventory;

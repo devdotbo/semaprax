@@ -77,7 +77,11 @@ fn full_current_expression_entry_is_exact_original_plus_test_dispatch() {
                         continue;
                     }
 "#;
-    let current = include_str!("../resolve_statement.rs");
+    let current = crate::source_reflows_merge::main_f045_input(
+        "src/hir/resolve_statement.rs",
+        include_str!("../resolve_statement.rs"),
+    );
+    let current = current.as_str();
     assert_eq!(current.matches(DECLARATION).count(), 1);
     assert_eq!(current.matches(DISPATCH).count(), 1);
     assert_eq!(current.matches(BYTE_SCOPE_ENTRY).count(), 1);

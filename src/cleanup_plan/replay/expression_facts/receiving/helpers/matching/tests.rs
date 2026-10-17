@@ -323,3 +323,58 @@ fn physical_and_work_frontiers_keep_full_payment_sticky_refusal_and_last_drop() 
         assert!(!value.refused);
     }
 }
+
+#[test]
+fn actual_active_selector_is_prepaid_at_exact_short_zero_and_drops_without_debt() {
+    let program = super::super::tests::program();
+    let function = &program.functions[0];
+    let storage = crate::cleanup_plan::replay::validate_slots(function).unwrap();
+    let leaves = crate::cleanup_plan::replay::collect_leaves(function).unwrap();
+    let returns = BTreeSet::new();
+    // The existing refusal-buffer bootstrap remains a real earlier debit, not
+    // a free bank. Measure it independently, then hold exactly the requested
+    // selector frontier after performing that same ordinary bootstrap again.
+    let ((), refused, bootstrap, first) = with_limit_usage_refusal(1 << 26, || {
+        let mut budget = ReplayBudget::new();
+        budget.prepare_builder(function).unwrap();
+    });
+    assert!(!refused && first.is_none() && bootstrap > 0);
+    for remaining in [0, EXIT_SELECTOR_BYTES - 1, EXIT_SELECTOR_BYTES] {
+        let limit = bootstrap + remaining;
+        let (((), allocation), refused, used, first) = with_limit_usage_refusal(limit, || {
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                budget.prepare_builder(function).unwrap();
+                let result = super::super::super::remaining::validate_exits(
+                    &program,
+                    function,
+                    &storage,
+                    &leaves,
+                    &returns,
+                    &mut budget,
+                );
+                let error = result.as_ref().unwrap_err();
+                assert_eq!(error.code, "SPX-H006");
+                if remaining < EXIT_SELECTOR_BYTES {
+                    assert!(error
+                        .message
+                        .contains("borrowed exit selector receiving controls"));
+                } else {
+                    assert!(!error
+                        .message
+                        .contains("borrowed exit selector receiving controls"));
+                }
+                drop(result);
+            })
+        });
+        assert!(refused && first.is_some());
+        if remaining < EXIT_SELECTOR_BYTES {
+            assert_eq!(first.unwrap().requested, EXIT_SELECTOR_BYTES);
+            assert_eq!(used, bootstrap);
+        } else {
+            assert!(used >= bootstrap + EXIT_SELECTOR_BYTES);
+        }
+        assert!(!allocation.invalid && allocation.live == 0);
+        assert_eq!(allocation.allocated, allocation.freed);
+    }
+}
