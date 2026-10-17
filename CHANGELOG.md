@@ -1,6 +1,6 @@
 ## SPX-I301 output parent diagnostics (2026-10-28)
 
-- Name the rejected output parent in SPX-I301 for native, Web package and explicit Project outputs, identify symbolic links with their resolved output path, and hint to create a missing parent, keeping the real non-reparse parent policy.
+- Name the rejected output parent in SPX-I301 for native, Web package and explicit Project outputs, identify symbolic links with their resolved output path, and hint to create a missing parent, keeping the real non-reparse parent policy. Control characters in the named paths are escaped so a hostile file name cannot forge diagnostic lines.
 
 ## Replay and loan scratch allocation (2026-10-27)
 

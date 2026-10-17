@@ -2991,7 +2991,7 @@ fn publish_scalar_package(output: &Path, artifacts: &[(&str, &[u8])]) -> Result<
             "SPX-I301",
             format!(
                 "cannot inspect Public Scalar Export output parent {}: {error}",
-                parent_path.display()
+                output_parent::shown(parent_path)
             ),
         );
         match output_parent::missing_directory_help(parent_path, &error) {

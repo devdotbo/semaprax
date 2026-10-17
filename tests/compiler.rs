@@ -546,6 +546,33 @@ fn single_file_native_build_names_linked_parent_and_resolved_output() {
     let stderr = String::from_utf8_lossy(&human.stderr);
     assert!(stderr.contains("error[SPX-I301]: single-file native output parent "));
     assert!(stderr.contains("\n  help: "), "{stderr}");
+    // A hostile output basename is echoed in the help with its control
+    // characters escaped, so it cannot forge a diagnostic line or reach the
+    // terminal as an escape sequence; the JSON help carries the same text.
+    #[cfg(unix)]
+    {
+        let hostile = linked.join("evil\n\u{1b}[31mFAKE error[SPX-X]: forged");
+        let escaped = format!(
+            "use the resolved output path {}/evil\\n\\u{{1b}}[31mFAKE error[SPX-X]: forged, or ",
+            resolved.display()
+        );
+        let human = build(&hostile, false);
+        assert_eq!(human.status.code(), Some(1));
+        let stderr = String::from_utf8(human.stderr).unwrap();
+        assert!(!stderr.contains('\u{1b}'), "{stderr:?}");
+        let lines = stderr.lines().collect::<Vec<_>>();
+        assert_eq!(lines.len(), 2, "{stderr:?}");
+        assert!(lines[0].starts_with("error[SPX-I301]: "), "{stderr:?}");
+        assert!(lines[1].starts_with("  help: "), "{stderr:?}");
+        assert!(stderr.contains(&escaped), "{stderr:?}");
+        let rejected = build(&hostile, true);
+        assert_eq!(rejected.status.code(), Some(1));
+        let diagnostic: serde_json::Value = serde_json::from_slice(&rejected.stdout).unwrap();
+        assert_eq!(diagnostic["code"], "SPX-I301");
+        let help = diagnostic["help"].as_str().unwrap();
+        assert!(!help.chars().any(char::is_control), "{help:?}");
+        assert!(help.contains(&escaped), "{help:?}");
+    }
     project_directory_link::assert_intact(&root);
     assert_eq!(project_directory_link::entries(&root), inventory);
 

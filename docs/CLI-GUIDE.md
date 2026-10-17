@@ -234,10 +234,11 @@ For `--target native` executables and Web packages built with `--export`, the
 output's parent directory must already exist and be a real directory, not a
 symbolic link or Windows junction. Otherwise the build fails with `SPX-I301`,
 which names the parent and, for a link, suggests the resolved output path; a
-missing parent gets a hint to create it first. Only the immediate parent is
-checked: on macOS, `--target native -o /tmp/app` fails because `/tmp` links to
-`/private/tmp`, so use `-o /private/tmp/app`. Other targets keep their own
-parent handling and also report a bad parent with `SPX-I301`.
+missing parent gets a hint to create it first. Control characters in those
+paths are shown escaped. Only the immediate parent is checked: on macOS,
+`--target native -o /tmp/app` fails because `/tmp` links to `/private/tmp`, so
+use `-o /private/tmp/app`. Other targets keep their own parent handling and
+also report a bad parent with `SPX-I301`.
 
 For command-profile projects, `run` executes the ordinary project entry, not
 the process-input command function. The output points to the built adapters
