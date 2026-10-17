@@ -1,5 +1,5 @@
 //! Private diagnostic attribution, enabled only by the existing codec witness.
-//! Fixed TLS never becomes a payer, allowance, source key or compiler limit.
+//! Fixed-capacity backing is prepared before observation; it grants no compiler credit.
 use std::cell::{Cell, RefCell};
 const ROWS: usize = 1024;
 const ID_BYTES: usize = 256;
@@ -53,11 +53,18 @@ struct ComparisonCell {
     refused: usize,
 }
 impl ComparisonCell {
-    const EMPTY: Self = Self { attempts: 0, requested: 0, acquired: 0, refused: 0 };
+    const EMPTY: Self = Self {
+        attempts: 0,
+        requested: 0,
+        acquired: 0,
+        refused: 0,
+    };
 }
 fn comparison_phase(phase: &str) -> Option<usize> {
     match phase {
-        "ordinary plan history comparator controls" | "ordinary plan retained comparison owner" => Some(0),
+        "ordinary plan history comparator controls" | "ordinary plan retained comparison owner" => {
+            Some(0)
+        }
         "ordinary plan history order call" => Some(1),
         "ordinary plan history sift call" => Some(2),
         "ordinary plan history comparison receivers" => Some(3),
@@ -88,28 +95,58 @@ pub(crate) fn comparison_before(phase: &'static str, requested: usize) -> Option
     let mut ticket = None;
     update(|state| {
         let packet = &mut state.current;
-        let Some(row) = packet.coordinate.row.filter(|row| *row < packet.used) else { return; };
-        if packet.owner == 0 { return; }
-        let Some(remaining) = crate::bounded_output::active_remaining() else { packet.comparison_complete = false; return; };
+        let Some(row) = packet.coordinate.row.filter(|row| *row < packet.used) else {
+            return;
+        };
+        if packet.owner == 0 {
+            return;
+        }
+        let Some(remaining) = crate::bounded_output::active_remaining() else {
+            packet.comparison_complete = false;
+            return;
+        };
         let route = packet.coordinate.route as usize;
         let cell = &mut packet.rows[row].comparison[route][phase];
         add(&mut cell.attempts, 1, &mut packet.comparison_complete);
-        add(&mut cell.requested, requested, &mut packet.comparison_complete);
-        ticket = Some(ComparisonTicket { owner: packet.owner, row, route, phase, remaining });
+        add(
+            &mut cell.requested,
+            requested,
+            &mut packet.comparison_complete,
+        );
+        ticket = Some(ComparisonTicket {
+            owner: packet.owner,
+            row,
+            route,
+            phase,
+            remaining,
+        });
     });
     ticket
 }
 pub(crate) fn comparison_after(ticket: Option<ComparisonTicket>, success: bool) {
-    let Some(ticket) = ticket else { return; };
+    let Some(ticket) = ticket else {
+        return;
+    };
     update(|state| {
         let packet = &mut state.current;
-        if packet.owner != ticket.owner || ticket.row >= packet.used { packet.comparison_complete = false; return; }
+        if packet.owner != ticket.owner || ticket.row >= packet.used {
+            packet.comparison_complete = false;
+            return;
+        }
         let cell = &mut packet.rows[ticket.row].comparison[ticket.route][ticket.phase];
-        match crate::bounded_output::active_remaining().and_then(|after| ticket.remaining.checked_sub(after)) {
-            Some(acquired) => add(&mut cell.acquired, acquired, &mut packet.comparison_complete),
+        match crate::bounded_output::active_remaining()
+            .and_then(|after| ticket.remaining.checked_sub(after))
+        {
+            Some(acquired) => add(
+                &mut cell.acquired,
+                acquired,
+                &mut packet.comparison_complete,
+            ),
             None => packet.comparison_complete = false,
         }
-        if !success { add(&mut cell.refused, 1, &mut packet.comparison_complete); }
+        if !success {
+            add(&mut cell.refused, 1, &mut packet.comparison_complete);
+        }
     });
 }
 #[derive(Clone, Copy)]
@@ -151,7 +188,7 @@ struct Packet {
     coordinate: Coordinate,
     first: Option<Coordinate>,
     first_is_hir_cleanup: bool,
-    rows: [Row; ROWS],
+    rows: Vec<Row>,
 }
 impl Packet {
     const EMPTY: Self = Self {
@@ -170,7 +207,7 @@ impl Packet {
         coordinate: Coordinate::EMPTY,
         first: None,
         first_is_hir_cleanup: false,
-        rows: [Row::EMPTY; ROWS],
+        rows: Vec::new(),
     };
 
     // Rows are overwritten when registered; clearing the header avoids a
@@ -193,7 +230,7 @@ impl Packet {
         self.first_is_hir_cleanup = false;
     }
 
-    // Copy directly between TLS packets, retaining only the populated rows.
+    // Copy directly between prepared packets, retaining only the populated rows.
     fn copy_from(&mut self, source: &Self) {
         self.owner = source.owner;
         self.prebound = source.prebound;
@@ -249,6 +286,22 @@ pub(crate) struct Observation {
     previous: bool,
 }
 pub(crate) fn observe() -> Observation {
+    // Keep the three large diagnostic banks out of every thread's static TLS.
+    // Acquire all fixed backing before activating callbacks or live measures.
+    if !ENABLED.with(Cell::get) {
+        STATE.with(|state| {
+            let mut state = state.borrow_mut();
+            if state.current.rows.is_empty() {
+                state.current.rows.resize(ROWS, Row::EMPTY);
+            }
+            if state.last.rows.is_empty() {
+                state.last.rows.resize(ROWS, Row::EMPTY);
+            }
+            if state.maximum.rows.is_empty() {
+                state.maximum.rows.resize(ROWS, Row::EMPTY);
+            }
+        });
+    }
     let previous = ENABLED.with(|enabled| enabled.replace(true));
     if !previous {
         LOST.with(|lost| lost.set(false));
@@ -445,8 +498,10 @@ pub(crate) fn print_settled() {
 
 #[test]
 fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled() {
-    use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal, with_reservation_stage, ReservationStage};
     use super::Operation;
+    use crate::bounded_output::{
+        reserve_active_required, with_limit_usage_refusal, with_reservation_stage, ReservationStage,
+    };
     let _observation = observe();
     let (((), metrics), refused, used, first) = with_limit_usage_refusal(64, || {
         crate::test_allocation_observer::measure(|| {
@@ -454,11 +509,17 @@ fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled()
             with_reservation_stage(ReservationStage::HirValidation, || {
                 let _function = function(0, false, "route-child");
                 let _phase = phase(Phase::EnumeratedHIR);
-                for operation in [Operation::CleanupReplay, Operation::ReplayStructure,
-                    Operation::ReplayExpressionFacts, Operation::ReplayPathStates,
-                    Operation::ReplayHirSkeleton, Operation::ReplayPlanSkeleton,
-                    Operation::ReplayFactored, Operation::ReplayFactoredConstruction,
-                    Operation::ReplayFactoredCanonical] {
+                for operation in [
+                    Operation::CleanupReplay,
+                    Operation::ReplayStructure,
+                    Operation::ReplayExpressionFacts,
+                    Operation::ReplayPathStates,
+                    Operation::ReplayHirSkeleton,
+                    Operation::ReplayPlanSkeleton,
+                    Operation::ReplayFactored,
+                    Operation::ReplayFactoredConstruction,
+                    Operation::ReplayFactoredCanonical,
+                ] {
                     let _operation = super::operation_guard(operation);
                     assert!(reserve_active_required(1));
                 }
@@ -475,22 +536,38 @@ fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled()
     let first = first.unwrap();
     assert_eq!((first.requested, first.remaining, first.floor), (64, 53, 0));
     assert!(!metrics.invalid);
-    assert_eq!((metrics.allocations, metrics.allocated, metrics.live), (0, 0, 0));
+    assert_eq!(
+        (metrics.allocations, metrics.allocated, metrics.live),
+        (0, 0, 0)
+    );
     STATE.with(|state| {
         let state = state.borrow();
         assert!(state.have_last && state.have_max);
         let packet = &state.last;
         assert!(packet.complete && packet.first_is_hir_cleanup);
-        assert_eq!((packet.hir, packet.expected_hir, packet.non_cleanup_hir), (11, 11, 2));
-        assert_eq!((packet.unknown_cleanup, packet.overflow_cleanup, packet.used), (0, 0, 1));
-        assert_eq!(packet.rows[0].bytes[Route::Production as usize][Phase::EnumeratedHIR as usize], 9);
-        assert_eq!(packet.rows[0].calls[Route::Production as usize][Phase::EnumeratedHIR as usize], 9);
+        assert_eq!(
+            (packet.hir, packet.expected_hir, packet.non_cleanup_hir),
+            (11, 11, 2)
+        );
+        assert_eq!(
+            (packet.unknown_cleanup, packet.overflow_cleanup, packet.used),
+            (0, 0, 1)
+        );
+        assert_eq!(
+            packet.rows[0].bytes[Route::Production as usize][Phase::EnumeratedHIR as usize],
+            9
+        );
+        assert_eq!(
+            packet.rows[0].calls[Route::Production as usize][Phase::EnumeratedHIR as usize],
+            9
+        );
         assert_eq!(packet.first.unwrap().row, Some(0));
     });
 }
 
 #[test]
-fn comparison_aggregate_census_keeps_8769_calls_and_marks_arithmetic_overflow_without_event_buffer() {
+fn comparison_aggregate_census_keeps_8769_calls_and_marks_arithmetic_overflow_without_event_buffer()
+{
     let mut cell = ComparisonCell::EMPTY;
     let mut complete = true;
     for _ in 0..8_769 {
@@ -528,10 +605,17 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
         "ordinary plan retained final Zip next receivers",
     ];
     assert_eq!(LABELS.len(), COMPARISON_PHASES);
-    assert_eq!(comparison_phase("ordinary plan retained comparison owner"), Some(0));
+    assert_eq!(
+        comparison_phase("ordinary plan retained comparison owner"),
+        Some(0)
+    );
     assert_eq!(comparison_phase("foreign comparison phase"), None);
     let _observation = observe();
-    for selected_route in [Route::Production, Route::UnoptedCrosscheck, Route::OptedOracle] {
+    for selected_route in [
+        Route::Production,
+        Route::UnoptedCrosscheck,
+        Route::OptedOracle,
+    ] {
         for (category, label) in LABELS.into_iter().enumerate() {
             assert_eq!(comparison_phase(label), Some(category));
             let (((), metrics), refused, used, first) = with_limit_usage_refusal(8_769, || {
@@ -560,7 +644,16 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
             let first = first.unwrap();
             assert_eq!((first.requested, first.remaining, first.floor), (1, 0, 0));
             assert!(!metrics.invalid);
-            assert_eq!((metrics.allocations, metrics.reallocations, metrics.allocated, metrics.freed, metrics.live), (0, 0, 0, 0, 0));
+            assert_eq!(
+                (
+                    metrics.allocations,
+                    metrics.reallocations,
+                    metrics.allocated,
+                    metrics.freed,
+                    metrics.live
+                ),
+                (0, 0, 0, 0, 0)
+            );
             STATE.with(|state| {
                 let state = state.borrow();
                 assert!(state.have_last && state.have_max);
@@ -570,10 +663,16 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
                 for route_index in 0..ROUTES {
                     for phase_index in 0..COMPARISON_PHASES {
                         let cell = packet.rows[0].comparison[route_index][phase_index];
-                        let expected = if route_index == selected_route as usize && phase_index == category {
-                            (8_770, 8_770, 8_769, 1)
-                        } else { (0, 0, 0, 0) };
-                        assert_eq!((cell.attempts, cell.requested, cell.acquired, cell.refused), expected);
+                        let expected =
+                            if route_index == selected_route as usize && phase_index == category {
+                                (8_770, 8_770, 8_769, 1)
+                            } else {
+                                (0, 0, 0, 0)
+                            };
+                        assert_eq!(
+                            (cell.attempts, cell.requested, cell.acquired, cell.refused),
+                            expected
+                        );
                     }
                 }
             });
@@ -581,7 +680,12 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
             // exercise each field independently, without saturating away the
             // incomplete flag or confusing it with a compiler refusal.
             let mut cell = ComparisonCell::EMPTY;
-            for slot in [&mut cell.attempts, &mut cell.requested, &mut cell.acquired, &mut cell.refused] {
+            for slot in [
+                &mut cell.attempts,
+                &mut cell.requested,
+                &mut cell.acquired,
+                &mut cell.refused,
+            ] {
                 let mut complete = true;
                 add(slot, usize::MAX, &mut complete);
                 assert!(complete);
@@ -591,4 +695,84 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
             }
         }
     }
+}
+
+#[test]
+fn fixed_route_banks_are_lazy_and_reused_without_allocating_in_callbacks() {
+    std::thread::spawn(|| {
+        assert!(std::mem::size_of::<State>() < 1024);
+        STATE.with(|state| {
+            let state = state.borrow();
+            assert!(state.current.rows.is_empty());
+            assert!(state.last.rows.is_empty());
+            assert!(state.maximum.rows.is_empty());
+        });
+        start(7, 0, 0); // Inactive instrumentation acquires no backing.
+        STATE.with(|state| assert!(state.borrow().current.rows.is_empty()));
+        let observation = observe();
+        let backing = || {
+            STATE.with(|state| {
+                let state = state.borrow();
+                [&state.current, &state.last, &state.maximum].map(|packet| {
+                    assert_eq!(packet.rows.len(), ROWS);
+                    (packet.rows.as_ptr() as usize, packet.rows.capacity())
+                })
+            })
+        };
+        let before = backing();
+        let ((), metrics) = crate::test_allocation_observer::measure(|| {
+            start(7, 0, 0);
+            for ordinal in 0..=ROWS {
+                let _function = function(ordinal, false, "fixed-bank");
+            }
+            finish(7, 0, 0);
+        });
+        assert!(!metrics.invalid);
+        assert_eq!(
+            (
+                metrics.allocations,
+                metrics.reallocations,
+                metrics.allocated,
+                metrics.freed,
+                metrics.live
+            ),
+            (0, 0, 0, 0, 0)
+        );
+        assert_eq!(backing(), before);
+        STATE.with(|state| {
+            let state = state.borrow();
+            assert_eq!(state.last.used, ROWS);
+            assert!(
+                !state.last.complete,
+                "the original row overflow still refuses completeness"
+            );
+        });
+        STATE.with(|state| {
+            let held = state.borrow();
+            let nested = observe();
+            assert!(LOST.with(Cell::get));
+            drop(nested);
+            drop(held);
+        });
+        drop(observation);
+        let ((), reused) = crate::test_allocation_observer::measure(|| {
+            let _observation = observe();
+            start(8, 0, 0);
+            finish(8, 0, 0);
+        });
+        assert!(!reused.invalid);
+        assert_eq!(
+            (
+                reused.allocations,
+                reused.reallocations,
+                reused.allocated,
+                reused.freed,
+                reused.live
+            ),
+            (0, 0, 0, 0, 0)
+        );
+        assert_eq!(backing(), before);
+    })
+    .join()
+    .unwrap();
 }
