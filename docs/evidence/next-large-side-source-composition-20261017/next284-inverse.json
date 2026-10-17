@@ -1,0 +1,23 @@
+{
+  "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
+  "before_sha256": "8e0c754cdf2cc8890fac140ba7f7a76c7387a4d247ed66a328e640922cdd1b73",
+  "after_sha256": "e62e0d8a47babe99eebc898f2c2fd7d988476741abbae53f7af42ca8b81a8918",
+  "inverse": [
+    {
+      "before": "    let value=crate::source_reflows_merge::main_e177_final_inputs::file(&root.join(source),current[\"length\"].as_u64().unwrap()as usize,current[\"sha256\"].as_str().unwrap())\n",
+      "after": "    let value=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(&root.join(source),current[\"length\"].as_u64().unwrap()as usize,current[\"sha256\"].as_str().unwrap())\n        .or_else(||crate::source_reflows_merge::main_e177_final_inputs::file(&root.join(source),current[\"length\"].as_u64().unwrap()as usize,current[\"sha256\"].as_str().unwrap()))\n"
+    },
+    {
+      "before": "        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(source,current[\"sha256\"].as_str().unwrap(),compiled(source).unwrap());",
+      "after": "        let compiled=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,current[\"sha256\"].as_str().unwrap(),compiled(source).unwrap());\n        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(source,current[\"sha256\"].as_str().unwrap(),&compiled);"
+    },
+    {
+      "before": "pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {\n",
+      "after": "pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {\n    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(path,length,expected) { return Some(value); }\n"
+    },
+    {
+      "before": "    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,supplied);",
+      "after": "    let side=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,expected,supplied);\n    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,&side);"
+    }
+  ]
+}

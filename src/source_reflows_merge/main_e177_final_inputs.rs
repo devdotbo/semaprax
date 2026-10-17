@@ -225,3 +225,74 @@ fn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wro
     assert!(file(&root.join("foreign"),0,"foreign").is_none());
     assert!(file(&root.join("src/../Cargo.toml"),0,"foreign").is_none());
 }
+
+// Independent complete785/885/886 side views. These never feed a current raw audit.
+fn combined_side_packet() -> serde_json::Value {
+    let data=include_str!("../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json");
+    assert_eq!(data.len(),17923);
+    assert_eq!(digest(data.as_bytes()),"885ed2f6970e922f8d699bc744f5270311751550fb5ce5fdb42d5c15d561a9cc");
+    let root=Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held(&root.join("docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
+    let value: serde_json::Value=serde_json::from_str(data).unwrap();
+    assert_eq!(value["schema"],"semaprax.next-large-complete-side-projections.v1");
+    assert_eq!(value["rows"].as_array().unwrap().len(),9);
+    value
+}
+fn combined_side_compiled(source: &str) -> Option<&'static str> {
+    match source {
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs")),
+        "src/source_reflows_merge/main_c883_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main_c883_inputs.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),
+        _ => compiled(source),
+    }
+}
+fn combined_side_actual(row: &serde_json::Value) -> String {
+    let root=Path::new(env!("CARGO_MANIFEST_DIR"));let source=row["source"].as_str().unwrap();let current=&row["current"];
+    let actual=held(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap()).unwrap();
+    assert_eq!(Some(actual.as_str()),combined_side_compiled(source),"complete combined current compiled source");
+    assert_eq!(actual,read_view(current),"complete combined raw-carrier archive");actual
+}
+pub(crate) fn combined_side_value(source: &str,view: &str,supplied: &str) -> String {
+    let packet=combined_side_packet();
+    let Some(row)=packet["rows"].as_array().unwrap().iter().find(|row|row["source"]==source)else{return supplied.to_owned()};
+    let views=row["views"].as_array().unwrap();assert_eq!(views.iter().filter(|old|old["name"]==view).count(),1);
+    let previous=read_view(views.iter().find(|old|old["name"]==view).unwrap());let actual=combined_side_actual(row);
+    if supplied==actual || supplied==previous {previous}else{supplied.to_owned()}
+}
+pub(crate) fn combined_side_expected_value(source: &str,expected: &str,supplied: &str) -> String {
+    let packet=combined_side_packet();
+    let Some(row)=packet["rows"].as_array().unwrap().iter().find(|row|row["source"]==source)else{return supplied.to_owned()};
+    let Some(previous)=row["views"].as_array().unwrap().iter().find(|view|view["sha256"]==expected)else{return supplied.to_owned()};
+    let old=read_view(previous);let actual=combined_side_actual(row);
+    if supplied==actual || supplied==old {old}else{supplied.to_owned()}
+}
+pub(crate) fn combined_side_file(path: &Path,length: usize,expected: &str) -> Option<String> {
+    let root=Path::new(env!("CARGO_MANIFEST_DIR"));let relative=path.strip_prefix(root).ok()?;
+    if !relative.components().all(|part|matches!(part,std::path::Component::Normal(_))) {return None;}
+    let source=relative.to_str()?;let packet=combined_side_packet();
+    let row=packet["rows"].as_array().unwrap().iter().find(|row|row["source"]==source)?;
+    let previous=row["views"].as_array().unwrap().iter().find(|old|old["length"].as_u64()==Some(length as u64)&&old["sha256"]==expected)?;
+    combined_side_actual(row);Some(read_view(previous))
+}
+#[test]
+fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_old_guards() {
+    let packet=combined_side_packet();let root=Path::new(env!("CARGO_MANIFEST_DIR"));
+    for row in packet["rows"].as_array().unwrap() {
+        let source=row["source"].as_str().unwrap();let current=combined_side_actual(row);
+        for previous in row["views"].as_array().unwrap() {
+            let old=read_view(previous);let name=previous["name"].as_str().unwrap();let sha=previous["sha256"].as_str().unwrap();let length=previous["length"].as_u64().unwrap()as usize;
+            assert_eq!(combined_side_value(source,name,&current),old);
+            assert_eq!(combined_side_value(source,name,&old),old);
+            assert_eq!(combined_side_file(&root.join(source),length,sha),Some(old));
+            for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
+                assert_eq!(combined_side_value(source,name,&foreign),foreign);
+            }
+            assert!(combined_side_file(&root.join(source),length+1,sha).is_none());
+            assert!(combined_side_file(&root.join(source),length,&"0".repeat(64)).is_none());
+        }
+    }
+    assert_eq!(combined_side_value("unlisted","whole785","unchanged"),"unchanged");
+    assert!(combined_side_file(&root.join("unlisted"),0,"unlisted").is_none());
+}

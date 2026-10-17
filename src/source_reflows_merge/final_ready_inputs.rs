@@ -173,7 +173,11 @@ fn projection344_stage(supplied: &str) -> String {
     let row: serde_json::Value=serde_json::from_str(data).unwrap();
     assert_eq!(row["schema"],"semaprax.current339.projection344-whole-stage.v1");
     let carrier=&row["carrier"];
-    read(carrier["source"].as_str().unwrap(),carrier["length"].as_u64().unwrap()as usize,carrier["sha256"].as_str().unwrap());
+    let carrier_path=root.join(carrier["source"].as_str().unwrap());
+    let carrier_length=carrier["length"].as_u64().unwrap()as usize;let carrier_sha=carrier["sha256"].as_str().unwrap();
+    let carrier=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(&carrier_path,carrier_length,carrier_sha)
+        .unwrap_or_else(||read(carrier["source"].as_str().unwrap(),carrier_length,carrier_sha));
+    assert_eq!(carrier.len(),carrier_length);assert_eq!(digest(&carrier),carrier_sha);
     let mut actual=String::new();
     for part in row["parts"].as_array().unwrap() {
         if let Some(literal)=part["literal"].as_str() { actual.push_str(literal); }

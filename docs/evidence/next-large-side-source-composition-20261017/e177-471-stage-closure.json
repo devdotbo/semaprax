@@ -1,0 +1,206 @@
+{
+  "rows": [
+    {
+      "source": "CHANGELOG.md",
+      "expected_length": 574472,
+      "expected_sha256": "90cfc8ca63fedd70552b5346ae8cd68cc5b93ddecd49e56a5bb7371a6dcbce12",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "expected_length": 161846,
+      "expected_sha256": "965d9c0abea40a0e806074877222428a814a127b4719bf695126d00828b8eb53",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "docs/ARCHITECTURE.md",
+      "expected_length": 389273,
+      "expected_sha256": "a708ade97a282ba6f23096d95143b8584627fda4af24b905040bd77da5c36032",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "docs/SUMMARY.md",
+      "expected_length": 87327,
+      "expected_sha256": "bd841eeed499d0fc2c520ca9879be8263b67cc5887aa279f8328fcb7e0a9b020",
+      "stage_membership": [
+        "outer99-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+      "expected_length": 10291,
+      "expected_sha256": "8a1f1a40b4ca31f0f345e6e1f46b79bd84480e9aa2362470dfdd41cbae1a3127",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan.rs",
+      "expected_length": 33704,
+      "expected_sha256": "13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "expected_length": 324455,
+      "expected_sha256": "733505ad93eda40bcbfa03ed0d2978f5e1dd5f0aa93020daff78d833def3b464",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena.rs",
+      "expected_length": 13563,
+      "expected_sha256": "2eae0ecc943b9114099a7e87c7b2acf565c0f6454cb02f396ee30e981a109488",
+      "stage_membership": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+      "expected_length": 11364,
+      "expected_sha256": "af5646f90884f31ab2a52f32a98a90a0a1d2710c36e1b0e04838f4a27ac98365",
+      "stage_membership": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
+      "expected_length": 22243,
+      "expected_sha256": "cf3a63ba83b16a9308def7f749b37f30e9287cf34ee0bb2845baf4c26fca78d8",
+      "stage_membership": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+      "expected_length": 20833,
+      "expected_sha256": "71bddf2e91cd7b6768523035ce49c111e41686dc5104adbcdb8dd7165675e464",
+      "stage_membership": [
+        "outer99-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored.rs",
+      "expected_length": 45985,
+      "expected_sha256": "aefc6b83feccaab7f919718135f285bba22243c4e726adccef37ca72cfd7a73b",
+      "stage_membership": [
+        "outer99-prior",
+        "older54-prior",
+        "older54-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "expected_length": 65279,
+      "expected_sha256": "2fff3a253c6ec2d020346026985dd3a6f5bd61497b78ed8b20862ba0cfed6201",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/source_reflows/semantic_receivers.rs",
+      "expected_length": 37121,
+      "expected_sha256": "8b00af61a5f21c12aa5979f900f428993d70fad597e03e6303c5b1851b9cbaf2",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/workspace_graph/expected_projection/held_projection.rs",
+      "expected_length": 21539,
+      "expected_sha256": "51c2e34bbc8906757ae0b781e3988b732177da0bba8c05b011c378792d54c356",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+      "expected_length": 33531,
+      "expected_sha256": "b912238b74ededd9143f1a2d039c8d3a41a9af9723f3aee877a85f4f5f8d2685",
+      "stage_membership": [
+        "outer99-prior",
+        "older54-prior",
+        "older54-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "src/workspace_graph/tests/builder_limits.rs",
+      "expected_length": 37186,
+      "expected_sha256": "940bf1ec02a53cf5628b5a8a5d2958709a81b76df1f94317bd8aff5692ee236e",
+      "stage_membership": [
+        "outer99-prior",
+        "older54-prior",
+        "older54-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "src/workspace_graph/type_proof_tests.rs",
+      "expected_length": 52672,
+      "expected_sha256": "53dff12c17b2f8733dbe19b3404585b7f4d6d58ff5a17d55a27ff64ce76b8d4b",
+      "stage_membership": [
+        "outer99-prior",
+        "older54-prior",
+        "older54-current-to-retain-at-freeze"
+      ]
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "expected_length": 103016,
+      "expected_sha256": "fa08554873fa7fb49ed7ec5680cb3d09e482903cbc3bbfed9c9d85eae3bc8e49",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "tests/workspace/semantic_graph.rs",
+      "expected_length": 57469,
+      "expected_sha256": "e0e7f1bfff449baf1a3b40166de9b1334f4b639339c3f59a48940505b0e991c2",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "expected_length": 100916,
+      "expected_sha256": "0a441a45fbb033af2a02afd42b9e62d0a204773d96a9391d37df4eefb3f2353d",
+      "stage_membership": [
+        "outer99-prior"
+      ]
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+      "expected_length": 13153,
+      "expected_sha256": "041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d",
+      "stage_membership": [
+        "outer99-prior",
+        "older54-prior",
+        "older54-current-to-retain-at-freeze"
+      ]
+    }
+  ],
+  "uncovered": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena.rs",
+      "expected_length": 13563,
+      "expected_sha256": "2eae0ecc943b9114099a7e87c7b2acf565c0f6454cb02f396ee30e981a109488",
+      "stage_membership": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+      "expected_length": 11364,
+      "expected_sha256": "af5646f90884f31ab2a52f32a98a90a0a1d2710c36e1b0e04838f4a27ac98365",
+      "stage_membership": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
+      "expected_length": 22243,
+      "expected_sha256": "cf3a63ba83b16a9308def7f749b37f30e9287cf34ee0bb2845baf4c26fca78d8",
+      "stage_membership": []
+    }
+  ],
+  "immutable471_sha256": "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44",
+  "status": "SOURCE_ONLY_NO_EXECUTION"
+}

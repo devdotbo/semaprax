@@ -32,6 +32,9 @@ fn main_e177_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
 }
 pub(crate) fn main_e177_file_raw(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, &'static str> {
     if length > MAIN_E177_CAP { return Err("bound"); }
+    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(path,length,expected) {return Ok(value);}
+    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::file(path,length,expected) {return Ok(value);}
+    if let Some(value)=crate::source_reflows_merge::next_big_batch_inputs::file(path,length,expected) {return Ok(value);}
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
     if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
     let mut options = std::fs::OpenOptions::new(); options.read(true);
@@ -261,12 +264,21 @@ fn acquire(path: &Path) -> std::io::Result<(String,String)> {
     let row=rows.iter().find(|row|row["path"]==relative).unwrap();
     let read=|path:&Path,len,sha|main_e177_file_raw(path,len,sha).map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message));
     let actual=read(path,row["current_length"].as_u64().unwrap()as usize,row["current_sha256"].as_str().unwrap())?;
-    if let Some(compiled)=compiled(relative) {assert_eq!(actual,compiled,"whole current compiled MAIN_E177 input");}
+    if let Some(compiled)=compiled(relative) {
+        let compiled=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(relative,row["current_sha256"].as_str().unwrap(),compiled);
+        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(relative,row["current_sha256"].as_str().unwrap(),&compiled);
+        let compiled=crate::source_reflows_merge::next_big_batch_inputs::value(relative,row["current_sha256"].as_str().unwrap(),&compiled);
+        assert_eq!(actual,compiled,"whole current compiled MAIN_E177 input");
+    }
     let incoming=read(&root.join(row["main_archive"].as_str().unwrap()),row["main_length"].as_u64().unwrap()as usize,row["main_sha256"].as_str().unwrap())?;
     Ok((actual,incoming))
 }
 pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {acquire(path.as_ref()).map(|(_,incoming)|incoming)}
 pub(crate) fn expected(path: &str,supplied: &str) -> String {
     let (actual,incoming)=acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
+    let packet=packet();let row=packet["rows"].as_array().unwrap().iter().find(|row|row["path"]==path).unwrap();
+    let supplied=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(path,row["current_sha256"].as_str().unwrap(),supplied);
+    let supplied=crate::source_reflows_merge::main_e177_final_inputs::value(path,row["current_sha256"].as_str().unwrap(),&supplied);
+    let supplied=crate::source_reflows_merge::next_big_batch_inputs::value(path,row["current_sha256"].as_str().unwrap(),&supplied);
     assert!(supplied==actual || supplied==incoming,"foreign MAIN_E177 supplied source");incoming
 }

@@ -1,0 +1,97 @@
+{
+  "status": "SOURCE_ONLY_CHECKPOINT_PENDING55_AND886_NO_FINAL_COUPLING",
+  "base_head": "4624d6b6a6855d9230da3be673355ec497a626d5",
+  "whole_source_inverses": [
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "whole_inverse": true,
+      "before_sha256": "d697b5c8ecfdfbe9a10111463f09afe17d7cecf2f34d3113fede48b43a077adb",
+      "after_sha256": "ab6cca238a350fa32ef461e3faa93fcf0e1c92323675e324f47549adda404590"
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "whole_inverse": true,
+      "before_sha256": "2c7f3e63539aed65ee601f74f77e56e29b36676d4e9b410ca0d5bc68b6322321",
+      "after_sha256": "c822070eedd832138b38caa064165952a74c5fac16077485c085b95561db4241"
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "whole_inverse": true,
+      "before_sha256": "3bcf9548d5b6f1b35428598e527626e78e084e6e552ca1efe84ef5420bfd5bea",
+      "after_sha256": "766b90f0b2671e3a1bdbf697d06f0f95c880ee2a07f6fdcd43db7319d7355a32"
+    },
+    {
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "whole_inverse": true,
+      "before_sha256": "49d75a4611d30ca868f57f9ddb67f0a7a388b615733f29db8608aa23b0b9c220",
+      "after_sha256": "c3db3bcf1d55f41fe16272e760feb7091b3c497d10304f1c66c7207adf5e83d9"
+    },
+    {
+      "source": "src/workspace_graph/shape_identity/source_controls.rs",
+      "whole_inverse": true,
+      "before_sha256": "953650f63fc7c0aa2adc3f2d9791164857fef442f4948b63c814f9ad73718729",
+      "after_sha256": "920aa73044beff01f954329813154bc5b1bf762b0372b16de8f163c84a730399"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+      "whole_inverse": true,
+      "before_sha256": "9ffe5c750c5a0d0aa48847cce89cfcfcf5cf77edb7360a3334a6ebdac74a2f79",
+      "after_sha256": "bafc9c6c1c2ad5a581de20715c145732d13b0b3ba88f8f403a0370b345491076"
+    },
+    {
+      "source": "src/source_reflows_merge/final_ready_inputs.rs",
+      "whole_inverse": true,
+      "before_sha256": "9e3928bb0c61b450efb0e6c9c1224e552da988ffc05966530e1dd05b661202b0",
+      "after_sha256": "d62006373c3e7996f61acbc6066c42115841bcfc41b2edc5294322b85ab94412"
+    },
+    {
+      "source": "src/source_reflows_merge/main_e177_inputs.rs",
+      "whole_inverse": true,
+      "before_sha256": "6eb1507d513397b5fd93336b51fadff0045e2c49b4dfb56ea39c3d9266726e11",
+      "after_sha256": "bd8cc74c226379754edde8ccfb2d97312ce518972e902204a799fcf5d4c29fd9"
+    },
+    {
+      "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
+      "whole_inverse": true,
+      "before_sha256": "8e0c754cdf2cc8890fac140ba7f7a76c7387a4d247ed66a328e640922cdd1b73",
+      "after_sha256": "e62e0d8a47babe99eebc898f2c2fd7d988476741abbae53f7af42ca8b81a8918"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
+      "whole_inverse": true,
+      "before_sha256": "54fee23c22ec6d3b830f543c4f1cbb05e69f34be324fa8b48b6286e01464e432",
+      "after_sha256": "bbcaa3b83704ec1a77b654c33abb2de209e405a2dee63bde6bc23a6449189c49"
+    }
+  ],
+  "closed_side_subjects": 9,
+  "all_current_physical_and_old_Git_images_authenticated": true,
+  "raw_arity_joins": {
+    "HIR": 915,
+    "graph": 826,
+    "native": 1500
+  },
+  "new_physical_modules_this_change": 0,
+  "added_test_selectors": [
+    "source_reflows_merge::main_e177_final_inputs::combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_old_guards",
+    "cleanup_plan::replay::factored::canonical_shared::paid_many::source::live_root_and_lexical_macro_keep_all_actual_paid_many_payment_order_and_observer_guards"
+  ],
+  "remaining": [
+    "merge55fc37 and complete2 joins preservingarity",
+    "merge886 sealedsource afterparent acceptance",
+    "regenerate working-current side images once actual semantic source is complete",
+    "perform one finite full actual-current source coupling/174/F6/roles underparent authorization",
+    "actualfocused runtime; no gain orcurrentPASS inferred"
+  ],
+  "old_tables_not_edited": [
+    "ROOT42",
+    "older54",
+    "future57",
+    "old98",
+    "current99",
+    "E177471",
+    "MAIN99f454",
+    "785inverses",
+    "885whole8c preimages"
+  ],
+  "no_cargo_tests_build_binders_executed": true
+}

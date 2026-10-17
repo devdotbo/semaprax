@@ -1,0 +1,29 @@
+[
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "before_sha256": "d697b5c8ecfdfbe9a10111463f09afe17d7cecf2f34d3113fede48b43a077adb",
+    "after_sha256": "ab6cca238a350fa32ef461e3faa93fcf0e1c92323675e324f47549adda404590",
+    "before": "include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\")",
+    "after": "include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\"), include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs\")",
+    "line_count": 915,
+    "new_module_literal_count": 1
+  },
+  {
+    "source": "tests/workspace/semantic_graph/source_inventory.rs",
+    "before_sha256": "2c7f3e63539aed65ee601f74f77e56e29b36676d4e9b410ca0d5bc68b6322321",
+    "after_sha256": "c822070eedd832138b38caa064165952a74c5fac16077485c085b95561db4241",
+    "before": "include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\")",
+    "after": "include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\"), include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs\")",
+    "line_count": 826,
+    "new_module_literal_count": 1
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "before_sha256": "3bcf9548d5b6f1b35428598e527626e78e084e6e552ca1efe84ef5420bfd5bea",
+    "after_sha256": "766b90f0b2671e3a1bdbf697d06f0f95c880ee2a07f6fdcd43db7319d7355a32",
+    "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\")",
+    "after": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs\")",
+    "line_count": 1500,
+    "new_module_literal_count": 1
+  }
+]

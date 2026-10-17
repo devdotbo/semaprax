@@ -32,6 +32,7 @@ macro_rules! include_str {
     ("../../canonical_shared.rs") => { &paid_view(&paid_rows(), "src/cleanup_plan/replay/factored/canonical_shared.rs", ::std::include_str!("../../canonical_shared.rs")) };
     ("../../../factored.rs") => { &whole_source_value("src/cleanup_plan/replay/factored.rs", 44197, "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6", ::std::include_str!("../../../factored.rs")) };
     ("../terminal_leaf.rs") => { &whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs", 7251, "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275", ::std::include_str!("../terminal_leaf.rs")) };
+    ("../before_paid_many/compare.rs") => { &crate::source_reflows_merge::main_e177_final_inputs::combined_side_value("src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs", "whole6ef", ::std::include_str!("../before_paid_many/compare.rs")) };
     ($path:literal) => { ::std::include_str!($path) };
 }
 macro_rules! include_bytes {
@@ -107,10 +108,11 @@ fn composed_production_prepays_both_real_promotion_search_and_finish_receivers()
         digest(current.as_bytes()),
         recipe["canonical"]["current_sha256"]
     );
-    // The historical whole-module equality above remains exact. Every actual
-    // production receiving/order/predicate assertion below uses RAW shipping
-    // source, independently authenticated by paid_view before it yields a view.
-    let current = ::std::include_str!("../../canonical_shared.rs");
+    // Keep this complete original6ef production-source contract unchanged.
+    // The additive current owner below separately checks all live root/macro/frame paths.
+    let current = &crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+        "src/cleanup_plan/replay/factored/canonical_shared.rs", "whole6ef",
+        ::std::include_str!("../../canonical_shared.rs"));
     for (phase, receiver, call) in [
         (
             "factored composed promotion receivers",
@@ -321,4 +323,52 @@ pub(super) fn whole_source_value(source: &str, length: usize, expected: &str, su
     assert_eq!(actual.len(), length);
     assert_eq!(digest(actual.as_bytes()), expected);
     actual
+}
+
+#[test]
+fn live_root_and_lexical_macro_keep_all_actual_paid_many_payment_order_and_observer_guards() {
+    let root=::std::include_str!("../../canonical_shared.rs");
+    let lexical=::std::include_str!("../lexical_successors.rs");
+    let frame=::std::include_str!("../lexical_successors/frame_loop.rs");
+    let previous=crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+        "src/cleanup_plan/replay/factored/canonical_shared.rs","whole6ef",root);
+    assert_ne!(previous,root,"genuine complete6ef control is independently retained");
+    for (phase,receiver,call) in [
+        ("factored composed promotion receivers","paid_many::PROMOTE_RECEIVING","paid_many::promote("),
+        ("factored composed flat add receivers","paid_many::ADD_RECEIVING","paid_many::add("),
+        ("factored composed flat finish receivers","paid_many::FINISH_RECEIVING","own_weighted(function, budget, flat)"),
+    ] {
+        assert_eq!(root.matches(phase).count(),2);assert_eq!(root.matches(receiver).count(),2);
+        let mut offset=0;
+        for _ in 0..2 {
+            let at=root[offset..].find(receiver).unwrap()+offset;let end=root[at..].find(call).unwrap()+at;
+            assert!(root[at..end].contains(phase));assert!(root[at..end].contains("?;"));offset=end+call.len();
+        }
+    }
+    for (branch,indent) in [("true","                                "),("false","                            ")] {
+        let observer=format!("#[cfg(test)]\n{indent}if budget.pays_allocations() {{\n{indent}    paid_many::note_branch({branch});\n{indent}}}");
+        assert_eq!(root.matches(&observer).count(),1,"every complete current fallback observer is payer gated");
+    }
+    for (phase,receiver,call) in [
+        ("factored one-pass distinct-target receivers","paid_many::PROMOTE_RECEIVING","paid_many::promote("),
+        ("factored one-pass flat-target receivers","paid_many::ADD_RECEIVING","paid_many::add("),
+        ("factored one-pass flat finish receivers","paid_many::FINISH_RECEIVING","own_weighted("),
+    ] {
+        assert_eq!(lexical.matches(phase).count(),1);assert_eq!(lexical.matches(receiver).count(),1);
+        let at=lexical.find(receiver).unwrap();let end=lexical[at..].find(call).unwrap()+at;
+        assert!(lexical[at..end].contains(phase));assert!(lexical[at..end].contains("));"));
+        let begin=lexical[..at].rfind("$attempt!($budget.reserve_bytes(").unwrap();
+        assert!(begin<at && lexical[begin..end].contains("$function"),"actual primitive admission precedes helper arguments");
+    }
+    let repeated="let Some(sum) = total.checked_add(*$weight) else {";
+    assert_eq!(lexical.matches(repeated).count(),1);
+    let repeated_at=lexical.find(repeated).unwrap();let promote_at=lexical.find("paid_many::PROMOTE_RECEIVING").unwrap();
+    assert!(repeated_at<promote_at,"checked duplicate addition precedes every distinct-target admission");
+    assert!(lexical[repeated_at..promote_at].contains("$receiving.finish_overflow();\n                            return;"));
+    assert!(lexical[repeated_at..promote_at].contains("*total = sum;"));
+    assert_eq!(lexical.matches("lexical_one_pass_successors!(").count(),2,"both live unit/general expansions audited");
+    assert_eq!(lexical.matches("if $budget.pays_allocations() {\n                            paid_many::note_branch(true);").count(),1);
+    assert_eq!(frame.matches("=> lexical_successors!(self, function, state, budget, receiving, attempt)").count(),1);
+    assert!(frame.contains("payer: AllocationPayer::ActiveBuilder"));
+    assert_eq!(frame.matches("self.successors_with_receiving(function, &state, budget, receiving)").count(),1);
 }

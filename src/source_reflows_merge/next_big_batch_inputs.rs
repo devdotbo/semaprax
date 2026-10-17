@@ -132,15 +132,18 @@ fn read_view(view: &serde_json::Value) -> String {
 }
 fn actual(row: &serde_json::Value) -> String {
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));let source=row["source"].as_str().unwrap();let current=&row["current"];
-    let value=crate::source_reflows_merge::main_e177_final_inputs::file(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())
+    let value=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())
+        .or_else(||crate::source_reflows_merge::main_e177_final_inputs::file(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap()))
         .unwrap_or_else(|| held(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap()).unwrap());
     if row["compiled"].as_bool().unwrap() {
-        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(source,current["sha256"].as_str().unwrap(),compiled(source).unwrap());
+        let compiled=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,current["sha256"].as_str().unwrap(),compiled(source).unwrap());
+        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(source,current["sha256"].as_str().unwrap(),&compiled);
         assert_eq!(value,compiled,"complete actual compiled source");
     }
     assert_eq!(value,read_view(current),"complete actual archive");value
 }
 pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {
+    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(path,length,expected) { return Some(value); }
     if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::file(path,length,expected) { return Some(value); }
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));let relative=path.strip_prefix(root).ok()?;
     if !relative.components().all(|p|matches!(p,std::path::Component::Normal(_))) { return None; }
@@ -149,7 +152,8 @@ pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {
     actual(row);Some(read_view(prior))
 }
 pub(crate) fn value(source: &str,expected: &str,supplied: &str) -> String {
-    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,supplied);
+    let side=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,expected,supplied);
+    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,&side);
     let supplied=outer.as_str();
     let packet=packet();let Some(row)=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)else{return supplied.to_owned()};
     let Some(prior)=row["views"].as_array().unwrap().iter().find(|v|v["sha256"]==expected)else{return supplied.to_owned()};
