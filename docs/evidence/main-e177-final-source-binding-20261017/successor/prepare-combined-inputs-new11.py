@@ -1,0 +1,126 @@
+#!/usr/bin/env python3
+"""Prepare finite source-only overlays from an explicit immutable combined HEAD.
+No checkout writes, binder, module parser, Rust or Cargo execution.
+"""
+from pathlib import Path
+import argparse,subprocess,json,hashlib,re,ast
+P=argparse.ArgumentParser();P.add_argument('--repo',type=Path,required=True);P.add_argument('--expected-head',required=True);P.add_argument('--out',type=Path,required=True);a=P.parse_args();R=a.repo.resolve();OUT=a.out.resolve();HEAD=a.expected_head
+assert re.fullmatch('[0-9a-f]{40}',HEAD) and not OUT.exists() and OUT.is_relative_to('/Volumes/Semaprax/provenance')
+assert R!=Path('/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang'),'never prepare against frozen ROOT'
+git=lambda *args:subprocess.check_output(['git',*args],cwd=R);G=lambda h,p:git('show',h+':'+p);H=lambda b:hashlib.sha256(b).hexdigest();enc=lambda x:(json.dumps(x,indent=2)+'\n').encode()
+assert git('rev-parse','HEAD').decode().strip()==HEAD and not git('status','--porcelain','--untracked-files=all').strip()
+BASE='6efb0d75020a3feeb6ea7ce0660f29a69c8b2661';PIN='7df356dad83653f30f3610a1ede238289607baa4';COMBINED='25d6fc1786f853e92d64f8fd22845a3baaebcb93'
+assert git('merge-base','--is-ancestor',COMBINED,HEAD)==b''
+ST='docs/evidence/main-e177-final-source-binding-20261017';RAW=('tests/hir_module_boundaries.rs','tests/workspace/semantic_graph/source_inventory.rs','crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs')
+NEW={'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs','src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs','src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs','src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs'}
+actual={p for p in git('diff','--name-only','--diff-filter=A',BASE,HEAD,'--','src','tests','crates').decode().splitlines()if p.endswith('.rs')};assert actual==NEW,'new module needs an explicit reviewed delta'
+oldpacket=G(HEAD,ST+'/current-inputs.json');assert oldpacket==G(PIN,ST+'/current-inputs.json');v=json.loads(oldpacket);assert len(v['rows'])==76
+oldguard=G(HEAD,ST+'/guard_payload.py');assert oldguard==G(PIN,ST+'/guard_payload.py');guard=oldguard.decode();node=next(x.value for x in ast.parse(guard).body if isinstance(x,ast.Assign)and isinstance(x.targets[0],ast.Name)and x.targets[0].id=='CONFIG');cfg=ast.literal_eval(node);assert len(cfg['modules'])==46
+request_path='docs/evidence/core300-historical-acquisition-repair-20261017/required-whole-view-additions.json';request_raw=G(HEAD,request_path);requests=json.loads(request_raw)['requests'];assert len(requests)==12
+outputs={};before={};proofs=[]
+def current(p):return outputs.get(p,G(HEAD,p))
+def save(p,b):
+ before.setdefault(p,G(HEAD,p));outputs[p]=b
+
+def archive(raw,kind):
+ p=ST+'/'+kind+'/'+H(raw)+'.txt'
+ try:b=G(HEAD,p)
+ except subprocess.CalledProcessError:b=None
+ if b is not None:assert b==raw
+ else:outputs[p]=raw
+ return dict(length=len(raw),sha256=H(raw),archive=p)
+# Exact two lexical insertion sites, identical module order in all three carriers.
+GROUPS=[('src/cleanup_plan/replay/factored/canonical_shared.rs',[
+'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs','src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs','src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs','src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs']),('src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs',[
+'src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs','src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs'])]
+assert {x for _,items in GROUPS for x in items}==NEW
+for carrier in RAW:
+ raw=G(HEAD,carrier);s=raw.decode();base=cfg['carriers'][carrier]['base'];edits=[]
+ for parent,items in GROUPS:
+  old='include_str!("'+base+parent+'")';new=old+''.join(', include_str!("'+base+p+'")'for p in items)
+  assert s.count(old)==1 and all(s.count('include_str!("'+base+p+'")')==0 for p in items);s=s.replace(old,new,1);edits.append(dict(before=old,after=new))
+ back=s
+ for e in reversed(edits):assert back.count(e['after'])==1;back=back.replace(e['after'],e['before'],1)
+ assert back.encode()==raw
+ if 'ledger_capacity' in carrier:assert len(s.splitlines())<=1500
+ save(carrier,s.encode());proofs.append(dict(source=carrier,whole_before_sha256=H(raw),whole_after_sha256=H(s.encode()),exact_insertions=edits,inverse_verified=True))
+# Same old451 order plus eleven named adjacent insertions, no blind append.
+table=cfg['table']['path'];oldtsv=G(HEAD,table);rows=oldtsv.decode().splitlines();assert len(rows)==len(set(rows))==451;insertions=[]
+for parent,items in GROUPS:
+ assert rows.count(parent)==1
+ at=rows.index(parent)+1
+ for path in items:assert path not in rows;rows.insert(at,path);insertions.append(dict(at=at,path=path));at+=1
+assert len(rows)==462
+back=rows.copy()
+for item in reversed(insertions):assert back.pop(item['at'])==item['path']
+assert ('\n'.join(back)+'\n').encode()==oldtsv
+save(table,('\n'.join(rows)+'\n').encode())
+# Derive actual domain closure instead of hardcoding a headline row count.
+changed=set(git('diff','--name-only',BASE,HEAD).decode().splitlines())|set(RAW);domain=set()
+for p in ['docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json','docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json']:
+ packet=json.loads(G(HEAD,p));domain|={r['path']for r in packet['rows']}
+oldrows={r['source']for r in v['rows']};targets=oldrows|NEW|{r['source']for r in requests}|(changed&domain)
+# Preserve each exact whole prior table/current row before authenticating new views.
+newtables=[]
+for t in {r['immutable_table']['path']:r['immutable_table']for r in requests}.values():
+ b=G(HEAD,t['path']);assert(len(b),H(b))==(t['length'],t['sha256'])
+ if not any(x['path']==t['path']for x in v['complete_old_table_anchors']):
+  item=archive(b,'views');v['complete_old_table_anchors'].append(dict(path=t['path'],**item));newtables.append(t['path'])
+old76=archive(oldpacket,'views');v['complete_old_table_anchors'].append(dict(path=old76['archive'],**old76));newtables.append(old76['archive'])
+for source in sorted(targets):
+ matches=[r for r in v['rows']if r['source']==source];raw=current(source)
+ if matches:
+  assert len(matches)==1;r=matches[0];old=r['current'];prior=G(HEAD,old['archive']);assert(len(prior),H(prior))==(old['length'],old['sha256'])
+  if raw!=prior:
+   if not any((x['length'],x['sha256'])==(old['length'],old['sha256'])for x in r['views']):r['views'].append(dict(name='whole-earned76-current',**old))
+   r['current']=archive(raw,'current')
+ else:
+  views=[]
+  if source not in NEW:views.append(dict(name='whole6ef-pre-successor',**archive(G(BASE,source),'views')))
+  r=dict(source=source,compiled=True,current=archive(raw,'current'),views=views);v['rows'].append(r)
+ for req in [x for x in requests if x['source']==source]:
+  view=req['view'];b=G(HEAD,view['archive']);assert(len(b),H(b))==(view['length'],view['sha256'])
+  if not any(x['name']==view['name']and x['sha256']==view['sha256']for x in r['views']):r['views'].append(view)
+assert {r['source']for r in v['rows']}==targets and len(v['rows'])==len(targets)
+v['current_stage']=dict(kind='reviewed-working-source-overlay',git_head=HEAD,raw_working_delta=[dict(source=x['source'],before_sha256=x['whole_before_sha256'],after_sha256=x['whole_after_sha256'])for x in proofs],earned76_checkpoint=PIN,source_input_baseline=BASE,pending_strict210=False)
+packet=enc(v);assert len(packet)<=262144;save(ST+'/current-inputs.json',packet)
+# Exact existing helper grammar/algorithm; only closed literal arms and seals grow.
+helper='src/source_reflows_merge/main_e177_final_inputs.rs';s=G(HEAD,helper).decode();edits=[]
+def edit(old,new,count=1):
+ global s
+ assert s.count(old)==count,(old,s.count(old));s=s.replace(old,new);edits.append(dict(before=old,after=new,count=count))
+anchor='        _ => None,\n    }\n}\nfn compiled('
+edit(anchor,''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in newtables)+anchor)
+anchor='        _ => None,\n    }\n}\nfn read_view('
+edit(anchor,''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in sorted(targets-oldrows))+anchor)
+edit('assert_eq!(data.len(), '+str(len(oldpacket))+');','assert_eq!(data.len(), '+str(len(packet))+');')
+edit('assert_eq!(digest(data.as_bytes()), "'+H(oldpacket)+'");','assert_eq!(digest(data.as_bytes()), "'+H(packet)+'");')
+edit('assert_eq!(packet["rows"].as_array().unwrap().len(), 76);','assert_eq!(packet["rows"].as_array().unwrap().len(), '+str(len(targets))+');')
+back=s
+for e in reversed(edits):assert back.count(e['after'])==e['count'];back=back.replace(e['after'],e['before'])
+assert back.encode()==G(HEAD,helper);save(helper,s.encode())
+# Guard body/prior generations retained; current raw54 and old451 insertion map are explicit.
+cfg['packet']=dict(path=ST+'/current-inputs.json',length=len(packet),sha256=H(packet));cfg['rows']=len(targets)
+for path in sorted(set(cfg['modules'])|NEW):cfg['modules'][path]=dict(path=path,length=len(current(path)),sha256=H(current(path)))
+for path in RAW:cfg['carriers'][path].update(length=len(current(path)),sha256=H(current(path)))
+cfg['table'].update(length=len(current(table)),sha256=H(current(table)),rows=462);cfg['table']['insertions']+=insertions
+for p in sorted(targets-oldrows):
+ row=next(x for x in v['rows']if x['source']==p)
+ for view in [row['current']]+row['views']:
+  raw=outputs[view['archive']]if view['archive']in outputs else G(HEAD,view['archive'])
+  assert len(raw)==view['length']<=262144 and H(raw)==view['sha256'],('new bounded Python channel',p)
+ if p not in cfg['closed_prior_sources']:cfg['closed_prior_sources'].append(p)
+lines=guard.splitlines(True);lo=sum(map(len,lines[:node.lineno-1]))+node.col_offset;hi=sum(map(len,lines[:node.end_lineno-1]))+node.end_col_offset
+newguard=(guard[:lo]+repr(cfg)+guard[hi:]).encode();ast.parse(newguard);save(ST+'/guard_payload.py',newguard)
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ s=G(HEAD,p).decode();assert s.count(H(oldguard))==1;s=s.replace(H(oldguard),H(newguard));prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';old=prefix+str(len(oldguard));new=prefix+str(len(newguard));assert s.count(old)==1;s=s.replace(old,new);ast.parse(s);save(p,s.encode())
+# Never silently modify original incoming454/471, ROOT42, old54, earned76/prepin74 archives.
+manifest174=json.loads(G(HEAD,'docs/evidence/main09013-source-namespaces-v1/input-domains.json'));physical={r['path']for r in manifest174['physical']};assert len(physical)==174
+six=json.loads(G(HEAD,'docs/evidence/ordinary-plan-final-ingress-20261017/current-inputs.json'));sixpaths={r['path']for r in six};assert len(sixpaths)==6
+actual_delta={p for p in set(outputs)|changed if p.startswith(('src/','tests/','crates/')) and p.endswith('.rs')and (p in NEW or current(p)!=G(BASE,p))}
+report=dict(status='PREPARED_SOURCE_ONLY_NOT_APPLIED_OR_FROZEN',observed_head=HEAD,source_baseline=BASE,earned76_checkpoint=PIN,new_physical_modules=sorted(NEW),new_module_count=len(NEW),current_rows=len(targets),additional_existing_domain_rows=sorted((changed&domain)-oldrows-NEW-{r['source']for r in requests}),raw_modules=57,ordered_rows=462,next_role_owners=241,physical174_changed=sorted(actual_delta&physical),FINAL6_changed=sorted(actual_delta&sixpaths),small_metadata_cap=262144,current_packet_length=len(packet),current_guard_length=len(newguard),all_old_cap_rules_unchanged=True,old_454_471_packets_readers_unchanged=True,raw_insertion_proofs=proofs,TSV_insertions=insertions,pending=['parent authorization to apply overlay in isolatedcandidate','independent role-v2/source-tool review','actual owning literal-parser order validation after overlay','one genuine174/F6/238role/postbind pass on finalpromotedHEAD'])
+assert git('rev-parse','HEAD').decode().strip()==HEAD and not git('status','--porcelain','--untracked-files=all').strip()
+OUT.mkdir();(OUT/'report.json').write_bytes(enc(report))
+for path,raw in outputs.items():q=OUT/'candidate-repository'/path;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
+for path,raw in before.items():q=OUT/'whole-before'/path;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw)
+(OUT/'literal-source-insertion-inverses.json').write_bytes(enc(proofs));print(str(OUT/'report.json'))

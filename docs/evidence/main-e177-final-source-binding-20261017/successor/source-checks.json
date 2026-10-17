@@ -1,0 +1,17 @@
+{
+  "status": "ACTUAL_SOURCE_ONLY_STRICT58_AND_BOOTSTRAP_PASS",
+  "strict_stdout": "{\"status\": \"PASS_SOURCE_ONLY_STRICT_AND_BOOTSTRAP\", \"complete_current_carriers\": 3, \"complete_original_guard_carriers\": 3, \"old_maximums_unchanged\": true, \"refusals\": 58, \"original_verifier_executed\": false, \"rust_executed\": false}\n",
+  "source_input_head": "f266509b0526b0486ce20f04e64cf61027e9546f",
+  "current_rows": 98,
+  "new_physical_Rust_modules": 11,
+  "current_required_modules": 57,
+  "ordered_projection_rows": 462,
+  "old_Python_closed_channels": 47,
+  "additional_bounded_channels": 22,
+  "large_replay_Rust_only": true,
+  "old174_membership": 174,
+  "new_role_owners": 241,
+  "Cargo_Rust_execution": false,
+  "genuine_binders_executed": 0,
+  "pending": "ONE174 thenFINAL6 thenfinite241rolemetadata thenallcurrentreauth"
+}

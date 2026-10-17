@@ -1,0 +1,17 @@
+{
+  "status": "SOURCE_ONLY_174_PREPARATION_DETERMINISM_PASS",
+  "seeds": [
+    11,
+    37
+  ],
+  "all_new_preparation_outputs_identical": {
+    "docs/evidence/main-e177-final-source-binding-20261017/successor174/bind_current.before.py.txt": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+    "docs/evidence/main-e177-final-source-binding-20261017/successor174/incoming090_semantic_receivers.before.rs.txt": "907cefedf059b48eff648d7f6a2e30494ef41c0a7bae59d2d611a7fe12e908a0",
+    "docs/evidence/main-e177-final-source-binding-20261017/successor174/bind-next.py": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+    "docs/evidence/main-e177-final-source-binding-20261017/successor174/input-domains.before.json": "0e57b755b29082c41bd10230cec8d0c79ead9fecb50e2e3112511187a0640eb2",
+    "docs/evidence/main-e177-final-source-binding-20261017/successor174/bind-next.before.py.txt": "041589b958381235f548ee2bbe40b655a52db9be69acc9d20cf5e0c5830d8fa0",
+    "docs/evidence/main-e177-final-source-binding-20261017/frozen174-preparation.json": "e2aad1aed6d0c00c080da001ebe542b8abf27997cabfeab924c85bc5ab25cf73"
+  },
+  "all_immutable_input_files_identical": 389,
+  "genuine174binder_executions": 0
+}

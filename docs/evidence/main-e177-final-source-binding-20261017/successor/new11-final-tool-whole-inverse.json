@@ -1,0 +1,88 @@
+{
+  "before_sha256": "190e371ec758d88cffc57e314e9a0acc391e548222ae15cce4fcf96b03cc6bb0",
+  "after_sha256": "c0adaaf7d0c97b72ea894015aa719001e472003254fa84588c4261ef9e53e327",
+  "whole_before": "prepare-combined-inputs.190-whole-before.py.txt",
+  "byte_edits": [
+    {
+      "before_start": 1928,
+      "before_end": 1928,
+      "after_start": 1928,
+      "after_end": 2244,
+      "before_hex": "",
+      "after_hex": "2e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f6265666f72655f626f72726f7765645f73696e676c652e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f626f72726f7765645f73696e676c652e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f626f72726f7765645f73696e676c652f7465737473"
+    },
+    {
+      "before_start": 3952,
+      "before_end": 3952,
+      "after_start": 4268,
+      "after_end": 4584,
+      "before_hex": "",
+      "after_hex": "6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f6265666f72655f626f72726f7765645f73696e676c652e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f626f72726f7765645f73696e676c652e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f6c65786963616c5f737563636573736f72732f6672616d655f6c6f6f702f626f72726f7765645f73696e676c652f74657374732e7273272c277372632f636c65616e75705f706c616e2f7265706c61792f666163746f7265642f63616e6f6e6963616c5f7368617265642f"
+    },
+    {
+      "before_start": 5158,
+      "before_end": 5162,
+      "after_start": 5790,
+      "after_end": 5795,
+      "before_hex": "69676874",
+      "after_hex": "6c6576656e"
+    },
+    {
+      "before_start": 5554,
+      "before_end": 5556,
+      "after_start": 6187,
+      "after_end": 6189,
+      "before_hex": "3539",
+      "after_hex": "3632"
+    },
+    {
+      "before_start": 8052,
+      "before_end": 8055,
+      "after_start": 8685,
+      "after_end": 8689,
+      "before_hex": "547275",
+      "after_hex": "46616c73"
+    },
+    {
+      "before_start": 9883,
+      "before_end": 9885,
+      "after_start": 10517,
+      "after_end": 10519,
+      "before_hex": "3539",
+      "after_hex": "3632"
+    },
+    {
+      "before_start": 11745,
+      "before_end": 11746,
+      "after_start": 12379,
+      "after_end": 12380,
+      "before_hex": "34",
+      "after_hex": "37"
+    },
+    {
+      "before_start": 11761,
+      "before_end": 11763,
+      "after_start": 12395,
+      "after_end": 12397,
+      "before_hex": "3539",
+      "after_hex": "3632"
+    },
+    {
+      "before_start": 11782,
+      "before_end": 11784,
+      "after_start": 12416,
+      "after_end": 12418,
+      "before_hex": "3338",
+      "after_hex": "3431"
+    },
+    {
+      "before_start": 12114,
+      "before_end": 12142,
+      "after_start": 12748,
+      "after_end": 12748,
+      "before_hex": "2773747269637432313020736f75726365206465636973696f6e272c",
+      "after_hex": ""
+    }
+  ],
+  "exact_inverse_verified": true
+}

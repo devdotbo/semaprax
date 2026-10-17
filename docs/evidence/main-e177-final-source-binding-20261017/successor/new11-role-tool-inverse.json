@@ -1,0 +1,15 @@
+{
+  "before_sha256": "14230ce90cbb9e2d56c9a2a2dd484bcb939d4ce2caea85e650c12207dd3676ea",
+  "after_sha256": "8ddfb68570c71cf552fc6ee37b8804beff87849330693cb800faf901ee27ee6e",
+  "edits": [
+    {
+      "before": "NEW={'src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs', 'src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs', 'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs', 'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs'} # Exact eight new physical modules; no883 prototype-only module beyond accepted arena successor.",
+      "after": "NEW={'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs', 'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs', 'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs', 'src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs', 'src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs'} # Exact eleven new physical modules; original classification semantics unchanged."
+    },
+    {
+      "before": "FINITE_230_OLD_EDGE_REMAP_AND_EIGHT_ACTUAL_CHILDREN",
+      "after": "FINITE_230_OLD_EDGE_REMAP_AND_ELEVEN_ACTUAL_CHILDREN"
+    }
+  ],
+  "all_other_role_semantics_exact": true
+}

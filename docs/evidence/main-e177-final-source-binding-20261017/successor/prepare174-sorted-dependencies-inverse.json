@@ -1,0 +1,11 @@
+{
+  "before_sha256": "cdbd4f7f006c4fac282a91d805af0a9988f01346bca3deedcf511516ce3df9ca",
+  "after_sha256": "7212ee249b749281f934dc7287081ab17d6ffd6695707c833a2ce519d04bafb6",
+  "edits": [
+    {
+      "before": "for p in needed:strict.setdefault(p,None)",
+      "after": "for p in sorted(needed):strict.setdefault(p,None)"
+    }
+  ],
+  "existing_STRICT_order_retained": true
+}

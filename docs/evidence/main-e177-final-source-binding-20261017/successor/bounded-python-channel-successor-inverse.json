@@ -1,0 +1,17 @@
+{
+  "before_sha256": "c0adaaf7d0c97b72ea894015aa719001e472003254fa84588c4261ef9e53e327",
+  "after_sha256": "fcc35ca2f705eef5d76aec012fbcfd77fb0f4c82509fca38ef4aad6973d4df31",
+  "edits": [
+    {
+      "before": "for p in sorted(targets):\n if p not in cfg['closed_prior_sources']:cfg['closed_prior_sources'].append(p)",
+      "after": "for p in sorted(targets-oldrows):\n row=next(x for x in v['rows']if x['source']==p)\n for view in [row['current']]+row['views']:\n  raw=outputs[view['archive']]if view['archive']in outputs else G(HEAD,view['archive'])\n  assert len(raw)==view['length']<=262144 and H(raw)==view['sha256'],('new bounded Python channel',p)\n if p not in cfg['closed_prior_sources']:cfg['closed_prior_sources'].append(p)"
+    },
+    {
+      "before": "kind='prepared-immutable-checkpoint-not-final-qualified',git_head=HEAD,earned76_checkpoint=PIN,source_input_baseline=BASE,pending_strict210=False",
+      "after": "kind='reviewed-working-source-overlay',git_head=HEAD,raw_working_delta=[dict(source=x['source'],before_sha256=x['whole_before_sha256'],after_sha256=x['whole_after_sha256'])for x in proofs],earned76_checkpoint=PIN,source_input_baseline=BASE,pending_strict210=False"
+    }
+  ],
+  "original47channels_retained": true,
+  "new22channels_cap_authenticated": 262144,
+  "raw_stage_honestly_named_working_delta": true
+}

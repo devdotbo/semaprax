@@ -1,0 +1,11 @@
+{
+  "before_sha256": "8ddfb68570c71cf552fc6ee37b8804beff87849330693cb800faf901ee27ee6e",
+  "after_sha256": "17ffb9b2d6659501e9b900e3434d785bfd5e7b3f76e16533fb26ab371ff7930d",
+  "edits": [
+    {
+      "before": "assert R==Path('/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang')",
+      "after": "assert R==Path('/Volumes/Semaprax/worktrees/next-successor-final-source-coupling-20261017')"
+    }
+  ],
+  "root_authority_not_broadened": "exact isolated owningcheckout replaces exact frozenROOT; original frozenROOT refused"
+}

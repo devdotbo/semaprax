@@ -7,14 +7,14 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 56884);
-    assert_eq!(digest(data.as_bytes()), "bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41");
+    assert_eq!(data.len(), 80681);
+    assert_eq!(digest(data.as_bytes()), "de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 76);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 98);
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -61,6 +61,10 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         "docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json" => Some(include_str!("../../docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json")),
         "docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json" => Some(include_str!("../../docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/7ce1ea34daa31a1eda756cf7c0cd542adcfa3d351cbc3e0d12a37c51e5036986.txt")),
+        "docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json" => Some(include_str!("../../docs/evidence/earned-managed-pin42-source-coupling-20261017/inputs.json")),
+        "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json" => Some(include_str!("../../docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json")),
+        "docs/evidence/next-semantic-source-views-20261017/inputs.json" => Some(include_str!("../../docs/evidence/next-semantic-source-views-20261017/inputs.json")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41.txt")),
         _ => None,
     }
 }
@@ -138,6 +142,28 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs")),
         "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs" => Some(include_str!("../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs")),
         "src/workspace_graph/type_proof_tests.rs" => Some(include_str!("../../src/workspace_graph/type_proof_tests.rs")),
+        "src/cleanup_plan.rs" => Some(include_str!("../../src/cleanup_plan.rs")),
+        "src/cleanup_plan/replay/factored.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs")),
+        "src/cleanup_plan/replay/owned_suffix.rs" => Some(include_str!("../../src/cleanup_plan/replay/owned_suffix.rs")),
+        "src/cleanup_plan/replay/owned_suffix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/owned_suffix/tests.rs")),
+        "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs")),
+        "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs")),
+        "src/workspace_graph/expected_projection/held_projection.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/held_projection.rs")),
+        "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs" => Some(include_str!("../../src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs")),
+        "src/workspace_graph/tests/builder_limits.rs" => Some(include_str!("../../src/workspace_graph/tests/builder_limits.rs")),
+        "tests/workspace/semantic_graph/source_inventory_controls.rs" => Some(include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs")),
         _ => None,
     }
 }
