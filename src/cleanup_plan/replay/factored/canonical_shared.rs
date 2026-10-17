@@ -31,6 +31,8 @@ mod empty_closure;
 mod empty_closure_tests;
 mod empty_memo;
 #[cfg(test)]
+mod before_scope_memo;
+#[cfg(test)]
 mod epsilon_alias;
 #[cfg(test)]
 mod held_auth_tests;
@@ -108,7 +110,7 @@ macro_rules! authenticate_closure {
     ($this:ident, $function:ident, $budget:ident, $receiving:ident) => {{
         // The returned branch predicate replaces the former controls_paid /
         // binding branch; no second Option<Binding> borrow or named local exists.
-        if $this.closures.preflight($function, $budget) {
+        if $this.closures.preflight_owned($function, $budget) {
             if $this.closures.failed() {
                 $receiving.refusal = Some(Diagnostic::io("SPX-H006", String::new()));
             } else {
@@ -271,7 +273,7 @@ impl<'a> Canonicalizer<'a> {
     ) -> Result<Option<usize>, Diagnostic> {
         // Preserve the old entry's owner rejection before a fresh test-only slot
         // can query or charge a foreign payer. A valid call still pays acquisition.
-        if self.closures.preflight(function, budget) {
+        if self.closures.preflight_owned(function, budget) {
             if self.closures.failed() {
                 return Err(Diagnostic::io("SPX-H006", String::new()));
             }
@@ -317,7 +319,7 @@ impl<'a> Canonicalizer<'a> {
     ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
         // Identity/sticky preflight precedes every invocation payment. Cold
         // activation and all original payment order remain in the old body.
-        self.closures.preflight(function, budget);
+        self.closures.preflight_owned(function, budget);
         if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
         if budget.pays_allocations() {
             budget.reserve_bytes(
@@ -337,7 +339,7 @@ impl<'a> Canonicalizer<'a> {
         budget: &mut ReplayBudget,
     ) -> Result<Option<empty_closure::Closure>, Diagnostic> {
         // Reject foreign/sticky owners before any adapter payment.
-        if self.closures.preflight(function, budget) {
+        if self.closures.preflight_owned(function, budget) {
             if self.closures.failed() {
                 return Err(Diagnostic::io("SPX-H006", String::new()));
             }

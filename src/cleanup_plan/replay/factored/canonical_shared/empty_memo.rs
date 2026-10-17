@@ -115,6 +115,35 @@ impl<T> Memo<T> {
             false
         }
     }
+    // Canonical owned validation replaces its old retained-owner gateway with
+    // the same arguments, bool result and receiving roles. A scope mismatch
+    // refuses only the captured parent ledger, exactly as RetainedMemo and
+    // ClosureReceiving::valid; it never reads or pays the foreign child.
+    // Keep the separate identity-only API above unchanged for direct Memo users.
+    pub(super) fn preflight_owned(&mut self, function: &ResolvedFunction, budget: &ReplayBudget) -> bool {
+        if self.failed {
+            return false;
+        }
+        if let Some(binding) = &self.binding {
+            let ledger_matches = binding.ledger.current();
+            if binding.function != std::ptr::from_ref(function)
+                || binding.budget != std::ptr::from_ref(budget)
+                || !ledger_matches
+            {
+                self.failed = true;
+            } else if budget.refusal_spent
+                || (budget.pays_allocations() && crate::bounded_output::active_refused())
+            {
+                // Identity is already bound before reading this same account.
+                // A warm poisoned owner must not consume its report or reset
+                // work through a fresh zero-byte payer authentication.
+                self.failed = true;
+            }
+            true
+        } else {
+            false
+        }
+    }
     pub(super) fn unpublished(&self) -> bool { self.chunks.is_empty() }
     #[cfg(test)]
     pub(super) fn payload_chunks(&self) -> usize {
@@ -241,3 +270,6 @@ impl<T> Memo<T> {
         Ok(())
     }
 }
+
+#[cfg(test)]
+mod owned_tests;

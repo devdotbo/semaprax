@@ -1,0 +1,21 @@
+Audience: compiler maintainers and independent reviewers.
+Status: authored source-only correction; all execution and qualification pending.
+Base: 4201f657d68f59794693089f451184d655ac8fa0.
+
+The canonical owned gateway now substitutes preflight_owned at its four existing
+preflight call sites. This uses the original retained-parent current() behavior,
+matching RetainedMemo and ClosureReceiving.valid. It replaces a probe at the same
+ABI boundary, retaining the same arguments, locals, bool return and receiving
+roles. It does not add a second probe, flag, receipt, refund, fee waiver or payer.
+Shared Memo.preflight and authenticate retain their exact identity-only bodies.
+
+The entire immediate Memo is independently compiled as before_scope_memo.
+The source regression authenticates its whole archived bytes and shared APIs.
+The behavior regression retains original owned, current owned, immediate identity
+and current identity witnesses at zero/large child limits; actual Canonicalizer
+singleton and epsilon foreign/restored/function/budget/stale controls remain
+unchanged. All existing paid_many identity assertions remain unchanged.
+
+Parent integration owns final source binding, qualification and any predecessor
+import custody. This packet includes full before/after source text and SHA-256
+for every source edit or addition. No Cargo, tests, build, or Claude was run.
