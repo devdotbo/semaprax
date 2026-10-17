@@ -1162,11 +1162,14 @@
         "src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs",
         "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/source_main8a.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/source_maina3.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer_before_cursor.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
         "src/cleanup_plan/replay/expression_facts/borrowed.rs",
         "src/cleanup_plan/replay/expression_facts/borrowed/tests.rs",
         "src/cleanup_plan/replay/expression_facts/capacity.rs",
@@ -1199,6 +1202,10 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof/tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs",
@@ -1293,10 +1300,13 @@
         "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs",
@@ -2268,6 +2278,7 @@
         "src/cleanup_plan/replay/expression_facts/arena.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
         "src/cleanup_plan/replay/expression_facts/capacity.rs",
         "src/cleanup_plan/replay/expression_facts/errors.rs",
         "src/cleanup_plan/replay/expression_facts/receiving.rs",
@@ -2283,6 +2294,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/remaining/selected.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
@@ -2717,9 +2729,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "a6ba2d693dcc687f1fa0aead5ab5a1b4ab2a4ac3003a0aa376096e1643dff257",
-      "full_raw_sha256": "32ef7c729da3376d57cbbb73f5e130d36f2d136273fd071c8af4134defd872aa",
-      "full_authenticated_production_sha256": "0e158ea1cff67b1c8493795728bce102aa95d58df39926fcf8362b31123c0ac5"
+      "full_manifest_sha256": "5591b871d2c8923b1cf219321f8dbe84664c675a634d6fa62d578084d982e96c",
+      "full_raw_sha256": "44aba3f7263ae9d9219db63898787706ceaa167158bf04d9a9645f5af2ccb13a",
+      "full_authenticated_production_sha256": "91c9231b46d34f86f5d2f84089699e692d8350fca7a571d6525c7c73111c665b"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3200,6 +3212,7 @@
         "src/cleanup_plan/replay/expression_facts/arena.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
         "src/cleanup_plan/replay/expression_facts/capacity.rs",
         "src/cleanup_plan/replay/expression_facts/errors.rs",
         "src/cleanup_plan/replay/expression_facts/receiving.rs",
@@ -3215,6 +3228,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/remaining/selected.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
@@ -3728,9 +3742,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "6f2f7bc72b518a8cb827a459b802b57c5529aaa147994003cbba5ab1fcba42d5",
-      "full_raw_sha256": "a602e502a81120055ad1c63d7fc2580a6a657c94fb0b3710aa461eaf332e2d53",
-      "full_authenticated_production_sha256": "fe8648ba29b907e6ace1776d2b4ee23c4bc5f120c4e54a61da9cc03e084a9e49"
+      "full_manifest_sha256": "7adfd890e6de86bebd72d46131f06a963d5bbf72c1d38f807464791ab1f80f1e",
+      "full_raw_sha256": "a6b41fbbd697f49442437c6a5b748f399cb5b6d955372b29ee3003910e8404e9",
+      "full_authenticated_production_sha256": "35cf6d40fc1277dcec1773a6fc5025d9247e8d798c1a0861cd3d55c780d62a26"
     }
   }
 }

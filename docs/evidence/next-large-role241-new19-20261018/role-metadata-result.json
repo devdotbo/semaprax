@@ -1,0 +1,185 @@
+{
+  "status": "PASS_SOURCE_ONLY_FINITE_ROLE_METADATA",
+  "source_head": "f27952cabb4f831feae4ec7e122b3c48dccb21dd",
+  "source_checkpoint": "7feba22efb492b2ec4e1115373e8acc16ded541d",
+  "whole_before_base": "7feba22efb492b2ec4e1115373e8acc16ded541d",
+  "new_modules": [
+    "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/workspace_graph/shape_identity/before785.rs",
+    "src/workspace_graph/shape_identity/before_caller785.rs",
+    "src/workspace_graph/shape_identity/before_validation785.rs",
+    "src/workspace_graph/shape_identity/source_controls.rs",
+    "src/workspace_graph/shape_identity/tests.rs"
+  ],
+  "parsed_registration_parents": [
+    "src/bounded_output.rs",
+    "src/cleanup_plan/replay/expression_facts/arena.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+    "src/cleanup_plan/replay/semantic_refusal.rs",
+    "src/source_reflows_merge/final_ready_inputs.rs",
+    "src/workspace_graph/validation/before_roots.rs",
+    "tests/hir_module_boundaries.rs"
+  ],
+  "old_owners": 241,
+  "current_owners": 260,
+  "full_root_enumeration": false,
+  "literal_grammar_transports": [
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "physical_length": 106143,
+      "physical_sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "join_original_offset": 0,
+      "grammar_view_sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "complete_inverse_verified": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "physical_length": 104065,
+      "physical_sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "join_original_offset": 2460,
+      "grammar_view_sha256": "e5f761225d849c1fd70c1f9f7b5e0ba8e1368c371e6a774caa580a136b3861f8",
+      "complete_inverse_verified": true
+    }
+  ],
+  "actual_source_bytes_never_normalized": true,
+  "original_parser_sha256": "87a903ce0f9927d3d90063fdd686b50b5302e2ac10cfea324918f7c030b28599",
+  "original_generator_sha256": "0c4b31857cdb8a4f645d61c6f0d2453c33c6adddb8c6f26d9c37b56620841590",
+  "original_boundary_tools_sha256": "718beb6f09628fa0798fb267ba1b2978527d46ae64f8aa3acb85b6e48de499d3",
+  "all_other_roles_preserved": true,
+  "role_reclassifications": [],
+  "old_ordered_chunks_preserved": true,
+  "historical_generic_proof_preserved_unchanged": true,
+  "global_generic_purity_result_not_claimed": true,
+  "distinct_current_boundary_proof": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "whole_inverses": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2131842,
+        "sha256": "a6ba2d693dcc687f1fa0aead5ab5a1b4ab2a4ac3003a0aa376096e1643dff257",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      },
+      "after": {
+        "length": 2165134,
+        "sha256": "5591b871d2c8923b1cf219321f8dbe84664c675a634d6fa62d578084d982e96c"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "5591b871d2c8923b1cf219321f8dbe84664c675a634d6fa62d578084d982e96c",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2423839,
+        "sha256": "6f2f7bc72b518a8cb827a459b802b57c5529aaa147994003cbba5ab1fcba42d5",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      },
+      "after": {
+        "length": 2451898,
+        "sha256": "7adfd890e6de86bebd72d46131f06a963d5bbf72c1d38f807464791ab1f80f1e"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "7adfd890e6de86bebd72d46131f06a963d5bbf72c1d38f807464791ab1f80f1e",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 44526,
+        "sha256": "5ec2a772805b07f8732167475240910649a553835f380ea706ef90ab81cb8cae",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      },
+      "after": {
+        "length": 48366,
+        "sha256": "7637b5eea0ba6491f72a5dcf9abbc08544ea2ffcf27d6d7cdd68e10a8836299d"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "7637b5eea0ba6491f72a5dcf9abbc08544ea2ffcf27d6d7cdd68e10a8836299d",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      }
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 238684,
+        "sha256": "f0c49ffa034d1f964d2c609f349e714b7d61599cf52eda9a6e3f77ee8fa1e318",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+      },
+      "after": {
+        "length": 239994,
+        "sha256": "cff3666cd791d01c5706d53314b12941e2bc90666efb48b06aab20dddd915e5e"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "cff3666cd791d01c5706d53314b12941e2bc90666efb48b06aab20dddd915e5e",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+      }
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3300,
+        "sha256": "284e82064db06ad6065405ff6daaf72f3f3819fbf16d65ca70cd15497b717b91",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2768,
+        "sha256": "07420831203ffd3761aa50d7b9e08988c1858011068cacaaca9d545f8ca0ad18"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "07420831203ffd3761aa50d7b9e08988c1858011068cacaaca9d545f8ca0ad18",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/authority-source-proof.json",
+      "before": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c",
+        "archive": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__authority-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c"
+      },
+      "inverse": {
+        "require_complete_after_sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c",
+        "restore_whole_before": "docs/evidence/next-large-role241-new19-20261018/role-metadata-before/docs__evidence__a3-e47-final-custody-20261016__authority-source-proof.json.txt"
+      }
+    }
+  ],
+  "written": true,
+  "Cargo": false
+}

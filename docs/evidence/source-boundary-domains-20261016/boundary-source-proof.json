@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1158,
-      "current_boundary_production": 416,
+      "current_boundary_members": 1168,
+      "current_boundary_production": 418,
       "outside_production_still_fully_authenticated": 84,
-      "full_role_production": 500,
-      "full_role_test_only": 886,
-      "full_raw_sha256": "32ef7c729da3376d57cbbb73f5e130d36f2d136273fd071c8af4134defd872aa",
-      "boundary_production_sha256": "2911fbb9e54c98ecc503dca07fc249c8072b2e0ebe0b3e2749962f3ecdde3434",
+      "full_role_production": 502,
+      "full_role_test_only": 903,
+      "full_raw_sha256": "44aba3f7263ae9d9219db63898787706ceaa167158bf04d9a9645f5af2ccb13a",
+      "boundary_production_sha256": "b3211644a43bce26f9f54212c6106dc3d42ac6e54c9d23ceb5d425f8eec7acf9",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -33,10 +33,10 @@
       "original_roots": 179,
       "current_boundary_members": 196,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 548,
-      "full_role_production": 621,
-      "full_role_test_only": 950,
-      "full_raw_sha256": "a602e502a81120055ad1c63d7fc2580a6a657c94fb0b3710aa461eaf332e2d53",
+      "outside_production_still_fully_authenticated": 550,
+      "full_role_production": 623,
+      "full_role_test_only": 962,
+      "full_raw_sha256": "a6b41fbbd697f49442437c6a5b748f399cb5b6d955372b29ee3003910e8404e9",
       "boundary_production_sha256": "8c3c84a79e79fde1321b31c995c23a4ad648c3856eb0dfb03589b88d680891d0",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -65,10 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "TWO_EXISTING_TEST_HELPERS_LEGACY_VIEW_DELEGATION",
-  "before_head": "886b75626e7935323f2dd37f38e2884abf87fa43",
-  "global_polluted_purity_result_not_claimed": true,
-  "verification_storage": "The original verifier code and all assertions run unchanged. Its immutable UTF-8 buffers are stored on the external SSD, preserving exact bytes, order and multiplicity. Original whole-JSON equality is strengthened to exact canonical byte equality.",
-  "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
-  "storage_implementation_sha256": "653cf683557b582baa60790b78f00ee51c65e48f2bbea75818a888a437749a26"
+  "registration_update": "FINITE_241_OLD_EDGE_REMAP_AND_NINETEEN_ACTUAL_CHILDREN",
+  "global_polluted_purity_result_not_claimed": true
 }
