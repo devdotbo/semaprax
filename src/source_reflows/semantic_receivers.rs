@@ -779,3 +779,43 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
         }
     }
 }
+
+#[test]
+fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let evidence = root.join("docs/evidence/string-slot-byte-helper-v1");
+    let sources: Vec<serde_json::Value> =
+        serde_json::from_str(&std::fs::read_to_string(evidence.join("sources.json")).unwrap())
+            .unwrap();
+    assert_eq!(sources.len(), 9);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &sources {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+        if path.ends_with("byte_writer/tests.rs") {
+            assert_eq!(
+                current.strip_suffix("\nmod string_slots;\n").unwrap(),
+                before
+            );
+        }
+    }
+    let new_files: Vec<serde_json::Value> =
+        serde_json::from_str(&std::fs::read_to_string(evidence.join("new-files.json")).unwrap())
+            .unwrap();
+    assert_eq!(new_files.len(), 1);
+    for file in new_files {
+        let current = std::fs::read_to_string(root.join(file["path"].as_str().unwrap())).unwrap();
+        assert_eq!(digest(&current), file["sha256"]);
+        assert_ne!(digest(&(current + "\n")), file["sha256"]);
+    }
+}

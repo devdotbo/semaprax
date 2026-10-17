@@ -1161,3 +1161,4 @@ Audience: all documentation readers.
 - [Borrowed exit region comparison](evidence/borrowed-exit-region-match-v1/README.md)
 - [Hosted graph accounting after replay route fixes](evidence/browser-graph-pins-7d34f1269/README.md)
 - [Hosted graph accounting after borrowed exit comparison](evidence/browser-graph-pins-21abcda9b/README.md)
+- [String-slot byte helpers and declaration-bound diagnostics](evidence/string-slot-byte-helper-v1/README.md)

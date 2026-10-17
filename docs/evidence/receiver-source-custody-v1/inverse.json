@@ -265,10 +265,14 @@
   },
   {
     "path": "src/source_verify/declaration.rs",
-    "after_sha256": "f6687bf16ba0ae287c79b96ab888de22e41d4ec7cecf010c81cdd6545018fc23",
+    "after_sha256": "1ee6c27c7e20e6578261de0f58d0019762080e33f5631685081a8318485420d8",
     "before_sha256": "11b26f1bc56c129657268cf90436753cfaf037fa7c37ec49596284fd5d1bdcd8",
     "archive": "src__source_verify__declaration.rs.before.txt",
     "inverse": [
+      {
+        "after": " before executable checks.\n    if storage_declaration_refused {\n        // Generic declaration shape/depth/leaf bounds remain independently\n        // authoritative even when a concrete storage declaration was refused.\n        // Keep those declaration receipts without checking executable bodies\n        // or exposing unsupported-storage signature cascades.\n        let declaration_prefix = diagnostics.len();\n        check_function_declarations(program, &types, &mut functions, &mut ids, &mut diagnostics);\n        let mut position = 0;\n        diagnostics.retain(|diagnostic| {\n            let retain =\n                position < declaration_prefix || matches!(diagnostic.code, \"SPX-T223\" | \"SPX-T224\");\n            position += 1;\n            retain\n        });\n        return finish_diagnostics(diagnostics);\n    }\n\n    check",
+        "before": " before executable checks.\n    if storage_declaration_refused {\n        return finish_diagnostics(diagnostics);\n    }\n\n    check"
+      },
       {
         "after": "    }\n            diagnostics.push(diagnostic);\n        }\n    }\n    finish_diagnostics(diagnostics)\n}\n\nfn finish_diagnostics(mut diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {\n    let mut native_interop_failures = HashSet::new();\n    diagno",
         "before": "    }\n            diagnostics.push(diagnostic);\n        }\n    }\n    let mut native_interop_failures = HashSet::new();\n    diagno"

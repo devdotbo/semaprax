@@ -1455,8 +1455,10 @@ response selectors. They write literals, decimal integers and escaped UTF-8 into
 one exactly sized bounded Bytes owner, then perform the ordinary final UTF-8
 String copy. The compiler admits helper renewal from a bounded transitive
 source/HIR closure proof in `src/loop_calls/byte_writer`, independently of codec
-names. Its immutable phase-owned ModuleIndex retains original census and proof
-order, with separately precharged borrowed numeric directories for functions,
+names. Primitive String-slot reads use the complete canonical fixed-call
+inspector in the typed proof and exact named-root/arity checks in the source
+proof, including the compiler-only fused byte form. Its immutable phase-owned
+ModuleIndex retains original census and proof order, with separately precharged borrowed numeric directories for functions,
 positive targets and exact expression-ID fields. Numeric keys only discover a
 candidate; receiving checks still require current pointer identity and original
 binding equality. Unseen/negative targets retain independent proof fallback.
