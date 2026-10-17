@@ -1000,9 +1000,9 @@ fn compile_repair_file(path: &::std::path::Path, length: usize, expected: &str) 
 
 // Whole-source finite admission in front of the independently frozen prior chains.
 fn accepted_records() -> serde_json::Value {
-    let data = include_str!("../../docs/evidence/accepted-whole-source-ingress-20261017/inputs.json");
-    assert_eq!(data.len(), 31680);
-    assert_eq!(digest(data), "45d050b7ea9a8a785aa4358d87fd4d9ffcc04acc47f114946ab5ac9d961b884a");
+    let data = include_str!("../../docs/evidence/compile4-exact-source-successor-20261017/inputs.json");
+    assert_eq!(data.len(), 32661);
+    assert_eq!(digest(data), "a1a438f20890ef13c17073bedf664bae77affb71fd07616a378a31d528bbccc8");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.accepted-whole-source-ingress.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 41);
