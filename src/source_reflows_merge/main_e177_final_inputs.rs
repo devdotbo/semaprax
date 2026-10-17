@@ -229,8 +229,8 @@ fn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wro
 // Independent complete785/885/886 side views. These never feed a current raw audit.
 fn combined_side_packet() -> serde_json::Value {
     let data=include_str!("../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json");
-    assert_eq!(data.len(),17923);
-    assert_eq!(digest(data.as_bytes()),"885ed2f6970e922f8d699bc744f5270311751550fb5ce5fdb42d5c15d561a9cc");
+    assert_eq!(data.len(),18033);
+    assert_eq!(digest(data.as_bytes()),"c185ed85f164ff3295e55d29d69e47de8616d3a582ffe359abb959b5d693713c");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
     let value: serde_json::Value=serde_json::from_str(data).unwrap();

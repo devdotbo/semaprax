@@ -1,12 +1,13 @@
 {
-  "current_stage": "reviewed-working-arity-raw-insertion-on4624d6b6a",
+  "current_composition_git_before": "c577297ba45150546f0746a56c3312ea7c6293b0",
+  "current_stage": "source-only-working-composition-after-matched55-pair886-and-authentic-fixtures",
   "immutable_merge_before": "4624d6b6a6855d9230da3be673355ec497a626d5",
   "rows": [
     {
       "current": {
-        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/ab6cca238a350fa32ef461e3faa93fcf0e1c92323675e324f47549adda404590.txt",
-        "length": 105479,
-        "sha256": "ab6cca238a350fa32ef461e3faa93fcf0e1c92323675e324f47549adda404590"
+        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf.txt",
+        "length": 106143,
+        "sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf"
       },
       "source": "tests/hir_module_boundaries.rs",
       "views": [
@@ -42,9 +43,9 @@
     },
     {
       "current": {
-        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/c822070eedd832138b38caa064165952a74c5fac16077485c085b95561db4241.txt",
-        "length": 103383,
-        "sha256": "c822070eedd832138b38caa064165952a74c5fac16077485c085b95561db4241"
+        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18.txt",
+        "length": 104065,
+        "sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18"
       },
       "source": "tests/workspace/semantic_graph/source_inventory.rs",
       "views": [
@@ -80,9 +81,9 @@
     },
     {
       "current": {
-        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/766b90f0b2671e3a1bdbf697d06f0f95c880ee2a07f6fdcd43db7319d7355a32.txt",
-        "length": 164569,
-        "sha256": "766b90f0b2671e3a1bdbf697d06f0f95c880ee2a07f6fdcd43db7319d7355a32"
+        "archive": "docs/evidence/next-large-side-source-composition-20261017/images/08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df.txt",
+        "length": 165305,
+        "sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df"
       },
       "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
       "views": [
