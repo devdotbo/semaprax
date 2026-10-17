@@ -1,0 +1,28 @@
+{
+  "status": "LOCAL_SELECTED_LEGACY_PASS",
+  "tests": [
+    "exact_authored_legacy_delegation_controls",
+    "current_union_retains_every_frozen_legacy_input_and_all_owned_paths"
+  ],
+  "actual_Rust_legacy_rows": 90,
+  "current_physical_legacy_rows": 96,
+  "original_legacy_inventory_assertions_unchanged": true,
+  "compiler": "Rust 1.98.0 with existing SSD probe dependencies",
+  "observed_compiler_process_tree_peak_KiB": 202192,
+  "unchanged_process_tree_cap_KiB": 204800,
+  "scope": "Actual source family and original physical-file/packet guards execute for the compiled=false legacy row. Unrelated compiled=true source bodies fail closed only in the standalone local probe. This is not a full compiler, dependency/MSRV, full-quality, or hosted qualification.",
+  "staging_scope": [
+    {
+      "source": "/Volumes/Semaprax/worktrees/ci-legacy-886/src/source_reflows_merge/main_e177_final_inputs.rs",
+      "sha256": "872976f03fb8c86ffe6f3f9aec975f588bad411f143d0c61a29adf329651d72b",
+      "staged": "/Volumes/Semaprax/tmp/ci-38383508340/legacy-publish-886/main_e177_final_inputs-legacy-only.rs",
+      "scope": "Only compiled(source) is fail-closed for unrelated compiled=true rows; selected legacy row is compiled=false. All original acquisition loops, metadata/anchor checks, caps and inverse controls are unchanged. Include paths resolve against original source. No unrelated row pass is claimed."
+    },
+    {
+      "source": "/Volumes/Semaprax/worktrees/ci-legacy-886/src/source_reflows_merge/next_big_batch_inputs.rs",
+      "sha256": "e643fb593928867511c68c86580b47b85a943535d692303474c3a7b38d3aa887",
+      "staged": "/Volumes/Semaprax/tmp/ci-38383508340/legacy-publish-886/next_big_batch_inputs-legacy-only.rs",
+      "scope": "Only compiled(source) is fail-closed for unrelated compiled=true rows; selected legacy row is compiled=false. All original acquisition loops, metadata/anchor checks, caps and inverse controls are unchanged. Include paths resolve against original source. No unrelated row pass is claimed."
+    }
+  ]
+}

@@ -69,6 +69,12 @@
       "length": 82192,
       "sha256": "a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6",
       "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/a1e425d6dec0ae2619b7c2f6964966a15e287aeecbdc27507166f13245a75fa6.txt"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt",
+      "length": 82953,
+      "sha256": "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52",
+      "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt"
     }
   ],
   "rows": [
@@ -76,9 +82,9 @@
       "source": "CHANGELOG.md",
       "compiled": false,
       "current": {
-        "length": 575213,
-        "sha256": "10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5.txt"
+        "length": 575352,
+        "sha256": "6583eda96d4c6ef15cb80839132c6e98e7f434a3a8cfab98d1b38f2122ad9efa",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/6583eda96d4c6ef15cb80839132c6e98e7f434a3a8cfab98d1b38f2122ad9efa.txt"
       },
       "views": [
         {
@@ -104,6 +110,12 @@
           "length": 575026,
           "sha256": "dbd636fa36002567e1ede0ca85cb1515a37a78f9c5bfcf7e08d7f71370eec754",
           "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/dbd636fa36002567e1ede0ca85cb1515a37a78f9c5bfcf7e08d7f71370eec754.txt"
+        },
+        {
+          "name": "whole-before-legacy-row-delegation",
+          "length": 575213,
+          "sha256": "10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5.txt"
         }
       ]
     },
@@ -793,9 +805,9 @@
       "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
       "compiled": true,
       "current": {
-        "length": 16860,
-        "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2.txt"
+        "length": 19447,
+        "sha256": "e643fb593928867511c68c86580b47b85a943535d692303474c3a7b38d3aa887",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/e643fb593928867511c68c86580b47b85a943535d692303474c3a7b38d3aa887.txt"
       },
       "views": [
         {
@@ -803,6 +815,12 @@
           "length": 16397,
           "sha256": "6e59808e53c27ac7d60543c44d70b356f735bec892bca02947a391883ff12c01",
           "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/6e59808e53c27ac7d60543c44d70b356f735bec892bca02947a391883ff12c01.txt"
+        },
+        {
+          "name": "whole-before-legacy-row-delegation",
+          "length": 16860,
+          "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2.txt"
         }
       ]
     },

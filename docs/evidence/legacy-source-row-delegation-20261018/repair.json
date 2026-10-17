@@ -1,0 +1,182 @@
+{
+  "schema": "semaprax.legacy-source-row-delegation-repair.v1",
+  "status": "LOCAL_SOURCE_AND_SELECTED_LEGACY_VALIDATION_PASS",
+  "before_head": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "fix": "Absent newest-row entries delegate to the already authenticated previous owner; every original test selector, guard loop, cap, row, prior view, class, edge and chunk is retained.",
+  "canonical_packet_rows": 98,
+  "source_role_owners": 241,
+  "changed_existing_test_helpers": 2,
+  "new_Rust_modules": 0,
+  "original_historical_authority_source_proof_unchanged": true,
+  "whole_before_images": [
+    {
+      "path": "CHANGELOG.md",
+      "before": {
+        "length": 575213,
+        "sha256": "10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5.txt"
+      },
+      "after": {
+        "length": 575352,
+        "sha256": "6583eda96d4c6ef15cb80839132c6e98e7f434a3a8cfab98d1b38f2122ad9efa"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2131842,
+        "sha256": "456086f95b5f6f2b0d093c642c6a7dcb0b526796e8e024bdd9a85af47c92a93a",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/456086f95b5f6f2b0d093c642c6a7dcb0b526796e8e024bdd9a85af47c92a93a.txt"
+      },
+      "after": {
+        "length": 2131842,
+        "sha256": "a6ba2d693dcc687f1fa0aead5ab5a1b4ab2a4ac3003a0aa376096e1643dff257"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 44526,
+        "sha256": "fc24b5b6ed99830d46f48525332ae8acebfbfaba4d22557262b8ada7f2b4b7b8",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/fc24b5b6ed99830d46f48525332ae8acebfbfaba4d22557262b8ada7f2b4b7b8.txt"
+      },
+      "after": {
+        "length": 44526,
+        "sha256": "5ec2a772805b07f8732167475240910649a553835f380ea706ef90ab81cb8cae"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before": {
+        "length": 2253,
+        "sha256": "a45d4ffd957caaf60d6b8924c7f9a5f4090cb6d43714a4fdf5f4776e12bd0e83",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/a45d4ffd957caaf60d6b8924c7f9a5f4090cb6d43714a4fdf5f4776e12bd0e83.txt"
+      },
+      "after": {
+        "length": 2253,
+        "sha256": "85640c14f5083a235a46017c48eadddaf69805f0e323747f28f0a3bb28142b7e"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before": {
+        "length": 4404,
+        "sha256": "403f9229e4f56d9a1d40bfb7c9cc9ea1090eb0d0406e67d6a575c0f54ebd0028",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/403f9229e4f56d9a1d40bfb7c9cc9ea1090eb0d0406e67d6a575c0f54ebd0028.txt"
+      },
+      "after": {
+        "length": 4404,
+        "sha256": "dad0dc2555dd846b398b4dd1e09a585fc4ba6e42b4cd7eb55b36072f3e62a998"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json",
+      "before": {
+        "length": 82953,
+        "sha256": "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt"
+      },
+      "after": {
+        "length": 84060,
+        "sha256": "2e4b3b5441418b7e21a1424445e19bb4473d15f196ab3a897ca920417dce730f"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before": {
+        "length": 31018,
+        "sha256": "1385634708f8d57f0ecc47915cfeeed480f43e1ebe746a7265e33e286c67c866",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/1385634708f8d57f0ecc47915cfeeed480f43e1ebe746a7265e33e286c67c866.txt"
+      },
+      "after": {
+        "length": 31020,
+        "sha256": "2c5a1053ae02da6e267365f34d0753507d75fd958acd628500f3d5d48f53f0e7"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before": {
+        "length": 2766,
+        "sha256": "5e1780d9dd3d357e3d41e685557b69cb7c917f5cf37e3b2dca0969132105f035",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/5e1780d9dd3d357e3d41e685557b69cb7c917f5cf37e3b2dca0969132105f035.txt"
+      },
+      "after": {
+        "length": 2766,
+        "sha256": "b29c699206fadb046fc45fb484d32682d2c0cd056003a51de927627756b756b1"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 2767,
+        "sha256": "e21bc4ae1b4b5426ef1285b5f36999f6fcd5849bfb0d835865be7ae77251f248",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/e21bc4ae1b4b5426ef1285b5f36999f6fcd5849bfb0d835865be7ae77251f248.txt"
+      },
+      "after": {
+        "length": 3300,
+        "sha256": "284e82064db06ad6065405ff6daaf72f3f3819fbf16d65ca70cd15497b717b91"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 238684,
+        "sha256": "de2d96698c1a577d77050b6759e60e5bf519c8569001281e5d7953cf49090733",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/de2d96698c1a577d77050b6759e60e5bf519c8569001281e5d7953cf49090733.txt"
+      },
+      "after": {
+        "length": 238684,
+        "sha256": "f0c49ffa034d1f964d2c609f349e714b7d61599cf52eda9a6e3f77ee8fa1e318"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before": {
+        "length": 25228,
+        "sha256": "670f5428569e4cb158c667ec0afd72d204e2eb7e530f093b582a716e05865259",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/670f5428569e4cb158c667ec0afd72d204e2eb7e530f093b582a716e05865259.txt"
+      },
+      "after": {
+        "length": 26884,
+        "sha256": "872976f03fb8c86ffe6f3f9aec975f588bad411f143d0c61a29adf329651d72b"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    },
+    {
+      "path": "src/source_reflows_merge/next_big_batch_inputs.rs",
+      "before": {
+        "length": 16860,
+        "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
+        "archive": "docs/evidence/legacy-source-row-delegation-20261018/whole-before/10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2.txt"
+      },
+      "after": {
+        "length": 19447,
+        "sha256": "e643fb593928867511c68c86580b47b85a943535d692303474c3a7b38d3aa887"
+      },
+      "inverse": "Restore the complete before image; no old field or byte is omitted."
+    }
+  ],
+  "validation_scope": "Source-only metadata/role checks are distinct from the selected actual legacy Rust execution and from current-head hosted/full-quality qualification.",
+  "hosted_or_full_quality_pass_claimed": false,
+  "validation": {
+    "original_source_role_domains": 2,
+    "original_hostile_controls": 6,
+    "storage_equivalence_controls": 13,
+    "complete_current_packet_rows": 98,
+    "complete_prior_views": 109,
+    "wrong_tuple_refusals": 196,
+    "actual_Python_guard_supported_current_rows": 95,
+    "actual_Python_guard_oversize_refusals": 3,
+    "selected_Rust_legacy_cases": 2
+  }
+}

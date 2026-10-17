@@ -1,0 +1,13 @@
+{
+  "status": "PASS",
+  "current_rows": 98,
+  "complete_prior_views": 109,
+  "registered_named_view_replays": 76,
+  "wrong_length_or_digest_refusals": 196,
+  "foreign_named_source_refused": true,
+  "original_guard_sha256": "2c5a1053ae02da6e267365f34d0753507d75fd958acd628500f3d5d48f53f0e7",
+  "all_original_schema_caps_and_fields_retained": true,
+  "actual_Python_guard_supported_current_rows": 95,
+  "actual_Python_guard_oversize_refusals": 3,
+  "scope": "All 98 physical file/archive rows and prior views checked under unchanged Rust-source 9753094 cap. The actual Python guard runs within its existing 262144 cap and must refuse larger records; no cross-API support or Rust execution is inferred."
+}

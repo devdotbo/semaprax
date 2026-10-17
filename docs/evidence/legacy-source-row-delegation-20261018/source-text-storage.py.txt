@@ -1,0 +1,90 @@
+"""Local verifier storage only: immutable UTF-8 source snapshots on the SSD.
+Original verifier logic and assertions are not edited. Buffers retain exact bytes,
+source order, multiplicity and strict UTF-8 behavior; every snapshot read is hashed.
+"""
+from pathlib import Path
+import os,stat,hashlib,tempfile,mmap
+CAP=9753094
+def digest(raw):return hashlib.sha256(raw).hexdigest()
+class Store:
+ def __init__(self,path):self.path=Path(path);self.path.mkdir(parents=True,exist_ok=True)
+ def read(self,path,length,expected):
+  assert length<=CAP
+  fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+  try:
+   st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size==length
+   with os.fdopen(fd,'rb',closefd=False)as stream:raw=stream.read(length+1)
+   assert len(raw)==length and digest(raw)==expected
+   return raw
+  finally:os.close(fd)
+ def snapshot(self,raw):
+  text=bytes.decode(raw,'utf-8','strict');chars=len(text);del text
+  expected=digest(raw);path=self.path/(expected+'.utf8')
+  try:fd=os.open(path,os.O_WRONLY|os.O_CREAT|os.O_EXCL|os.O_CLOEXEC,0o600)
+  except FileExistsError:assert self.read(path,len(raw),expected)==raw
+  else:
+   try:
+    with os.fdopen(fd,'wb',closefd=False)as stream:stream.write(raw);stream.flush()
+    os.fchmod(fd,0o400)
+   finally:os.close(fd)
+  return Text(self,path,len(raw),expected,chars)
+ def materialize(self,text):
+  fd,path=tempfile.mkstemp(prefix='exact-source-concat-',dir=self.path);size=0
+  try:
+   with os.fdopen(fd,'wb',closefd=False)as stream:
+    for raw in pieces(text):stream.write(raw);size+=len(raw)
+    stream.flush()
+   if size==0:return b''
+   mapped=mmap.mmap(fd,size,access=mmap.ACCESS_READ)
+   return mapped
+  finally:
+   os.close(fd);os.unlink(path)
+class Buffer(bytes):
+ def __new__(cls,raw,store):
+  value=super().__new__(cls,raw);value.store=store;return value
+ def decode(self,encoding='utf-8',errors='strict'):
+  assert encoding.lower().replace('-','')=='utf8'and errors=='strict'
+  return self.store.snapshot(self)
+class Text:
+ def __init__(self,store,path,length,sha,chars):self.store=store;self.path=path;self.length=length;self.sha=sha;self.chars=chars
+ def encode(self,encoding='utf-8',errors='strict'):
+  assert encoding.lower().replace('-','')=='utf8'and errors=='strict'
+  return self.store.read(self.path,self.length,self.sha)
+ def __len__(self):return self.chars
+ def __add__(self,other):return Rope(self,other,self.store)
+ def __radd__(self,other):return Rope(other,self,self.store)
+ def __eq__(self,other):return equal(self,other)
+class Rope:
+ def __init__(self,left,right,store):assert isinstance(left,(str,Text,Rope))and isinstance(right,(str,Text,Rope));self.left=left;self.right=right;self.store=store;self.chars=len(left)+len(right)
+ def __len__(self):return self.chars
+ def __add__(self,other):return Rope(self,other,self.store)
+ def __radd__(self,other):return Rope(other,self,self.store)
+ def encode(self,encoding='utf-8',errors='strict'):
+  assert encoding.lower().replace('-','')=='utf8'and errors=='strict'
+  return self.store.materialize(self)
+ def __eq__(self,other):return equal(self,other)
+def pieces(root):
+ stack=[root]
+ while stack:
+  value=stack.pop()
+  if isinstance(value,Rope):stack.extend([value.right,value.left])
+  elif isinstance(value,Text):yield value.encode()
+  else:assert isinstance(value,str);yield value.encode('utf-8','strict')
+def equal(left,right):
+ if not isinstance(right,(str,Text,Rope)):return False
+ a=left.encode();b=right.encode()
+ try:
+  with memoryview(a)as av,memoryview(b)as bv:return av==bv
+ finally:
+  if isinstance(a,mmap.mmap):a.close()
+  if isinstance(b,mmap.mmap):b.close()
+class SnapshotPath:
+ def __init__(self,path,store):self.path=path;self.store=store
+ def read_bytes(self):
+  raw=self.path.read_bytes();assert len(raw)<=CAP
+  return Buffer(raw,self.store)
+class Root:
+ def __init__(self,path,store):self.path=Path(path);self.store=store
+ def __truediv__(self,path):
+  assert not Path(path).is_absolute()and'..'not in Path(path).parts
+  return SnapshotPath(self.path/path,self.store)
