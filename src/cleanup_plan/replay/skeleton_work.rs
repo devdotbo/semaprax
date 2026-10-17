@@ -9,6 +9,7 @@ mod dag_storage;
 #[cfg(test)]
 mod oracle_entry;
 mod ordinary_dag;
+pub(super) mod enumerated_prefix;
 pub(super) mod prefix_fusion;
 
 #[cfg(test)]
@@ -674,10 +675,11 @@ type Observation = std::rc::Rc<SkeletonObservation>;
 
 /// The observation sequences of one skeleton path.
 ///
-/// The enumerating replay keeps every path flat: `prefix` stays `None` and
-/// `items` is exactly the former observation vector, with the same clone,
-/// append and charge behavior. Only the factored replay merges paths that
-/// carry identical cleanup state; their sequences then become one shared
+/// Enumerating replay preserves every distinct path. The ordinary-only
+/// `enumerated_prefix` route may store immutable sequence prefixes with
+/// complete-content paid comparison; legacy/Selected/Oracle paths stay flat.
+/// Only factored replay merges paths that carry identical cleanup state;
+/// their sequences then become one shared
 /// `ObservationDag` prefix denoting the set of all merged sequences, followed
 /// by the flat `items` appended afterwards.
 #[derive(Clone, Default)]
@@ -879,8 +881,9 @@ impl std::fmt::Debug for Observations {
     }
 }
 
-/// Flat sequences compare by content; the enumerating comparison sorts only
-/// flat paths. A merged prefix compares by identity.
+/// Legacy flat sequences compare by content. Factored prefixes compare by
+/// identity; ordinary enumerated history never uses this ordering and instead
+/// enters `enumerated_prefix`'s paid complete-content comparator.
 impl PartialEq for Observations {
     fn eq(&self, other: &Self) -> bool {
         self.identity() == other.identity()

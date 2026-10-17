@@ -2790,34 +2790,58 @@ fn validate_typed_control_skeleton_with_index<'hir>(
         hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
-            payer: AllocationPayer::ActiveBuilder,
-            ..
-        } = budget {
+        payer: AllocationPayer::ActiveBuilder,
+        ..
+    } = budget
+    {
+        budget.reserve_bytes(
+            function,
+            ordinary_plan_history::SELECT_CALL_CONTROLS,
+            "ordinary plan history selector call receivers",
+        )?;
+        if ordinary_plan_history::select(function, budget)? {
             budget.reserve_bytes(
                 function,
-                ordinary_plan_history::SELECT_CALL_CONTROLS,
-                "ordinary plan history selector call receivers",
+                ordinary_plan_history::PRODUCE_CALL_CONTROLS,
+                "ordinary plan history producer call receivers",
             )?;
-            if ordinary_plan_history::select(function, budget)? {
-                budget.reserve_bytes(
-                    function,
-                    ordinary_plan_history::PRODUCE_CALL_CONTROLS,
-                    "ordinary plan history producer call receivers",
-                )?;
-                let actual = ordinary_plan_history::produce(function, budget)?;
-                expected.sort();
-                budget.reserve_bytes(
-                    function,
-                    ordinary_plan_history::COMPARE_CALL_CONTROLS,
-                    "ordinary plan history owned comparison call receivers",
-                )?;
-                return ordinary_plan_history::compare(function, budget, actual, &expected);
-            }
+            let actual = ordinary_plan_history::produce(function, budget)?;
+            budget.reserve_bytes(
+                function,
+                skeleton_work::enumerated_prefix::ENTRY_CALL,
+                "enumerated HIR sort entry receivers",
+            )?;
+            skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;
+            budget.reserve_bytes(
+                function,
+                ordinary_plan_history::COMPARE_CALL_CONTROLS,
+                "ordinary plan history owned comparison call receivers",
+            )?;
+            return ordinary_plan_history::compare(function, budget, actual, &expected);
+        }
     }
     let mut actual = plan_skeleton_paths(function, budget)?;
-    expected.sort();
-    actual.sort();
-    if actual != expected {
+    if match budget {
+        ReplayBudget {
+            payer: AllocationPayer::ActiveBuilder,
+            admission: AdmissionMode::Ordinary,
+            ..
+        } => {
+            budget.reserve_bytes(
+                function,
+                2 * skeleton_work::enumerated_prefix::ENTRY_CALL,
+                "enumerated HIR sort and equality entry receivers",
+            )?;
+            skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;
+            actual.sort();
+            !skeleton_work::enumerated_prefix::equal(&expected, &actual, function, budget)?
+        }
+        _ => {
+            expected.sort();
+            actual.sort();
+            actual != expected
+        }
+    } {
         if std::env::var_os("SPX_PROBE_SKELETON").is_some() {
             for (index, path) in expected.iter().enumerate() {
                 eprintln!("EXP[{index}] {path:?}");
@@ -2987,6 +3011,10 @@ fn sequence_skeleton_paths(
     work: &mut SkeletonWork<'_, '_>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
     #[cfg(test)]
+    if skeleton_work::enumerated_prefix::original_selected() {
+        return skeleton_work::enumerated_prefix::old_sequence(prefixes, suffixes, work);
+    }
+    #[cfg(test)]
     if path_array_main44::selected() {
         return path_array_main44::current_sequence(prefixes, suffixes, work);
     }
@@ -3100,6 +3128,7 @@ fn sequence_skeleton_paths(
             final_output::FINAL_SPLIT_CONTROLS,
             "HIR final-suffix split controls",
         )?;
+        skeleton_work::enumerated_prefix::share!(work, prefix);
         // Lexical remainder of the original first clone: no second charge and
         // no newly forwarded Result<Observations, Diagnostic>.
         let observations = skeleton_work::prefix_fusion::after_work!(

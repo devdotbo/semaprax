@@ -80,6 +80,15 @@ owns its bounded, sealed historical source acquisition. This ownership map does
 not establish runtime qualification or application savings; see the
 [candidate evidence](evidence/ordinary-plan-history-c8740045-v1/README.md).
 
+`cleanup_plan/replay/skeleton_work/enumerated_prefix` owns the private ordinary
+nonmerging HIR sequence-storage candidate and full-content cursor comparison.
+Its dedicated Seq/Cat constructor uses ordinary free work and the existing
+prepaid iterative destruction frontier. Both flat and immutable PLAN comparison
+routes consume full HIR observation content; marker/pointer identity carries no
+semantic authority. Existing path state and runtime cleanup order stay intact.
+[The source contract](ORDINARY-ENUMERATED-HIR-PREFIX-V1.md) records pending
+executable/physical/application qualification and the unchanged resource limits.
+
 ## System shape
 
 ```text
