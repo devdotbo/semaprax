@@ -181,6 +181,13 @@ const MAX_REPLAY_WORK_UNITS: usize = 32_000_000;
 mod allocation;
 use allocation::{AdmissionMode, AllocationPayer};
 
+// Setup identity for the direct selected-budget compatibility receiver only.
+// General Session spending remains multi-function; this is not admission data.
+struct SelectedDirectAnchor {
+    function: *const ResolvedFunction,
+    ledger: crate::bounded_output::classifier_string::ClassifierLedger,
+}
+
 struct ReplayBudget {
     admission: AdmissionMode,
     payer: AllocationPayer,
@@ -7845,3 +7852,27 @@ mod sequence_vector_maina3;
 #[cfg(test)]
 #[path = "replay/path_array/main44/mod.rs"]
 mod path_array_main44;
+
+#[cfg(test)]
+#[allow(dead_code)]
+struct BeforeDirectAnchorBudgetLayout {
+    admission: AdmissionMode,
+    payer: AllocationPayer,
+    remaining: usize,
+    skeleton_remaining: usize,
+    /// Actual successful skeleton debits, including deferred lexical walks.
+    skeleton_spent: usize,
+    /// Ordinary constructors share the temporarily lent skeleton allowance.
+    lent_skeleton: bool,
+    /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).
+    merge_paths: bool,
+    /// Present only for the selected retained lexical replay entry.
+    physical: Option<Box<physical_storage::PhysicalReservation>>,
+    /// Prepaid selected-budget refusal text; consumed without a fresh allocation.
+    refusal_text: Option<String>,
+    refusal_spent: bool,
+    /// One reusable fixed clone census cursor on the ordinary builder path.
+    builder_clone_cursor_paid: bool,
+}
+#[cfg(test)]
+const _: () = assert!(std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>());

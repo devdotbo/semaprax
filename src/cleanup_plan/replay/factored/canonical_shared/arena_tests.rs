@@ -429,6 +429,11 @@ impl Canonicalizer<'_> {
         state: &SharedWeighted,
         budget: &mut ReplayBudget,
     ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
+        // Identity/sticky preflight precedes every invocation payment. Cold
+        // activation and all original payment order remain in the old body.
+        if self.closures.preflight(function, budget) {
+            if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
+        } else if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
         if budget.pays_allocations() {
             budget.reserve_bytes(
                 function,
@@ -490,8 +495,8 @@ impl Canonicalizer<'_> {
             let accepted = closed.get(&self.sink).copied().unwrap_or(0);
             match &budget.payer {
                 AllocationPayer::ActiveBuilder => {
-                    budget.reserve_bytes(function, borrowed_labels::ordinary_receiving(), "factored direct singleton call receivers")?;
-                    return borrowed_labels::ordinary_successors(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(function, borrowed_labels::ordinary_receiving_before_selected_anchor(), "factored direct singleton call receivers")?;
+                    return borrowed_labels::ordinary_successors_before_selected_anchor(function, budget, self.automaton, closed, accepted);
                 }
                 AllocationPayer::LegacyUnobserved => {}
                 _ => {
@@ -716,8 +721,8 @@ impl Canonicalizer<'_> {
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         match &budget.payer {
             AllocationPayer::ActiveBuilder => {
-                budget.reserve_bytes(function, borrowed_labels::ordinary_receiving(), "factored direct singleton call receivers")?;
-                return borrowed_labels::ordinary_successors(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(function, borrowed_labels::ordinary_receiving_before_selected_anchor(), "factored direct singleton call receivers")?;
+                return borrowed_labels::ordinary_successors_before_selected_anchor(function, budget, self.automaton, closed, accepted);
             }
             AllocationPayer::LegacyUnobserved => {}
             _ => {
@@ -1134,5 +1139,78 @@ fn selected_generation_retains_complete_immediate_methods_and_original_arena_gat
             .replace("fn successors_with_receiving(","fn previous_selected_successors_with_receiving(")
             .replace("self.successors_with_receiving(","self.previous_selected_successors_with_receiving(");
         assert_eq!(tests.matches(&renamed).count(),1);
+    }
+}
+
+// Whole pre-preflight adapters retained independently; negative control below.
+impl Canonicalizer<'_> {
+    #[cfg(test)]
+    fn current_successors_before_owner_preflight(
+        &mut self,
+        function: &ResolvedFunction,
+        state: &SharedWeighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
+        self.successors_with_receiving(function, state, budget, &mut receiving)
+    }
+    fn previous_successors_before_owner_preflight(
+        &mut self,
+        function: &ResolvedFunction,
+        state: &SharedWeighted,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
+        if budget.pays_allocations() {
+            budget.reserve_bytes(
+                function,
+                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "factored held closure invocation controls",
+            )?;
+        }
+        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
+        self.previous_selected_successors_with_receiving(function, state, budget, &mut receiving)
+    }
+}
+
+#[test]
+fn complete_before_successor_adapters_record_payment_before_foreign_scope_as_negative() {
+    use crate::bounded_output::with_limit_usage_refusal;
+    let function = fixture();
+    let (graph, sink, roots) = super::tests::automaton(&function);
+    let state = selected_state(&[(roots[0], 1)]);
+    for old in [true, false] {
+        with_limit_usage_refusal(usize::MAX, || {
+            let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
+            budget.reserve_bytes(&function, Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "before adapter negative owner").unwrap();
+            let mut owner = Canonicalizer::new(&graph, sink);
+            let initial = if old {
+                owner.previous_successors_before_owner_preflight(&function, &state, &mut budget)
+            } else {
+                owner.current_successors_before_owner_preflight(&function, &state, &mut budget)
+            };
+            assert!(initial.unwrap().is_some());
+            // The complete previous adapter pays before it reaches the bound
+            // Memo's scope check. A zero child proves that original bad order;
+            // this source remains a negative, not a new production acceptance.
+            let (result, refused, _, _) = with_limit_usage_refusal(0, || {
+                if old {
+                    owner.previous_successors_before_owner_preflight(&function, &state, &mut budget)
+                } else {
+                    owner.current_successors_before_owner_preflight(&function, &state, &mut budget)
+                }
+            });
+            let error = result.unwrap_err();
+            assert!(refused);
+            assert_eq!(error, super::super::replay_error(&function,
+                "cleanup replay physical reservation exhausted during factored held closure invocation controls"));
+        });
     }
 }
