@@ -1,0 +1,44 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "base": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "changed_rust_files": [
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs"
+  ],
+  "new_rust_modules": [],
+  "whole_source_inverse_exact": true,
+  "old_memo_exact_51c1": true,
+  "attack_matrix": [
+    {
+      "attack": 0,
+      "parent_refused_first_site": true,
+      "foreign_child_paid": 0,
+      "foreign_child_refused": false
+    },
+    {
+      "attack": 1,
+      "parent_refused_first_site": false,
+      "foreign_child_paid": 0,
+      "foreign_child_refused": false
+    },
+    {
+      "attack": 2,
+      "parent_refused_first_site": false,
+      "foreign_child_paid": 0,
+      "foreign_child_refused": false
+    },
+    {
+      "attack": 3,
+      "parent_refused_first_site": true,
+      "foreign_child_paid": 0,
+      "foreign_child_refused": false
+    }
+  ],
+  "after_sha256": "632c899d500dbfd38fe9d7237c5e3f069b5c4e14da9400e564e15741fd26fc94",
+  "archives": {
+    "README.md": "3a8425c7e499ec9aeb7c9b84aaea2810a8bfd92b2aeb8bdf94df76b150d9a39b",
+    "before-paid-many-empty-memo.whole.rs.txt": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+    "owning-selected-25.log.txt": "c4a169e33a2e6c17aa43132a868c430867d44e4eab21a586b235ddcdea675cba",
+    "owning-selected-26.log.txt": "91c89253c14abbaf2258975d7c84b3a881600578219dd1c14bd4b4fb5ab4e400",
+    "paid-many-tests.whole-before.rs.txt": "a6480c8f6127aaa4fc7282cec875d1061aa00ffd7b1bc3b2f3e1f8f3ab0d0056"
+  }
+}

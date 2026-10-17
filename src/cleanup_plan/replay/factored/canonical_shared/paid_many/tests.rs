@@ -385,11 +385,21 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
     use super::super::super::{compare_with_index_storage, lexical_plan_tests};
     use std::fmt::Write as _;
     for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
-        // These complete sources contain no borrowed UTF-8 literals, so the
-        // closed static-text receiver has no inventory. Use the actual held
-        // workspace's production linker; detached HIR remains a negative below.
-        let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(source);
-        fixture.with_linked_context(|program| {
+        // The original probe source is byte-exact. A separate unused source
+        // function supplies the 16-byte literal required by the existing complete
+        // prepared source inventory; every function is authenticated together.
+        // The original literal-free linked fixture stays a strict negative below.
+        const INVENTORY_ANCHOR: &str = r#"
+@id("paid_many.replay.inventory") fn replay_inventory_anchor()->i64 {
+    let key=str"memo-fixture-key";
+    0
+}
+"#;
+        assert_eq!("memo-fixture-key".len(), 16);
+        let anchored = format!("{source}{INVENTORY_ANCHOR}");
+        assert_eq!(anchored.strip_suffix(INVENTORY_ANCHOR), Some(source));
+        let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(&anchored);
+        fixture.with_prepared_context(|program| {
         let functions = program.functions();
         let function = functions.iter().find(|function| function.id.as_str() == "probe").unwrap();
         lexical_plan_tests::assert_plan_oracle(&function);
@@ -591,9 +601,13 @@ fn composed_paid_memo_rejects_foreign_function_budget_and_ledger_then_stays_pois
                         }
                     })
                 });
-            assert_eq!(refused, attack == 0);
-            assert_eq!(first.is_some(), attack == 0);
-            assert_eq!(site.is_some(), attack == 0);
+            // Owned validation poisons its captured parent on foreign scope
+            // (attack 3), as does the whole prior producer. The nested child
+            // remains unpaid and unrefused above; same-scope function/budget
+            // mismatches (attacks 1/2) do not poison the parent.
+            assert_eq!(refused, matches!(attack, 0 | 3));
+            assert_eq!(first.is_some(), matches!(attack, 0 | 3));
+            assert_eq!(site.is_some(), matches!(attack, 0 | 3));
             assert!(!metrics.invalid && metrics.live == 0);
             assert_eq!(metrics.allocated, metrics.freed);
         }
@@ -1061,5 +1075,52 @@ fn standalone_comparison_fixture_retains_unsupported_inventory_as_six_field_nega
             drop(budget);
         });
         assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
+    }
+}
+
+// The entire prior positive fixture/body is archived for independent audit.
+// Exercise its real complete linked metadata as the unsupported context it is;
+// neither production type predicates nor compiler-owned declarations are hidden.
+#[test]
+fn original_literal_free_linked_comparison_keeps_exact_selected_inventory_refusal() {
+    use super::super::super::{compare_with_index_storage, lexical_plan_tests};
+    let expected = Diagnostic::io(
+        "SPX-H006",
+        "selected flat-record inventory has unauthenticated or unsupported fields".to_owned(),
+    );
+    for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
+        let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(source);
+        fixture.with_linked_context(|program| {
+            let functions = program.functions();
+            let function = functions.iter().find(|function| function.id.as_str() == "probe").unwrap();
+            let mut prior_receipt = None;
+            for old in [true, false] {
+                let (receipt, metrics) = measure(|| {
+                    let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
+                    let result = if old {
+                        before_paid_many::comparison::compare_with_index_storage(program, &function, &mut budget, None, None)
+                    } else {
+                        compare_with_index_storage(program, &function, &mut budget, None, None)
+                    };
+                    assert_eq!(result.as_ref(), Err(&expected), "whole original linked context remains a six-field negative");
+                    let paid = budget.physical.as_ref().unwrap().charged();
+                    assert!(paid > 0, "the physical whole-comparison route ran before refusal");
+                    assert!(current_metrics().allocated <= paid);
+                    let receipt = (paid, budget.remaining, budget.skeleton_remaining, budget.skeleton_spent, budget.lent_skeleton, budget.refusal_spent);
+                    let stopped = current_metrics().allocated;
+                    drop(result);
+                    drop(budget);
+                    assert_eq!(current_metrics().allocated, stopped, "negative Drop performs no allocation");
+                    receipt
+                });
+                assert!(!metrics.invalid && metrics.live == 0);
+                assert_eq!(metrics.allocated, metrics.freed);
+                assert!(receipt.0 >= metrics.allocated);
+                if let Some(prior) = prior_receipt {
+                    assert_eq!(receipt, prior, "whole old/current refusal accounting stays identical");
+                }
+                prior_receipt = Some(receipt);
+            }
+        });
     }
 }
