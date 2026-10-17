@@ -1,0 +1,119 @@
+{
+  "schema": "opt876-matched-source-inverse.v1",
+  "status": "SOURCE_ONLY",
+  "base": "4624d6b6a6855d9230da3be673355ec497a626d5",
+  "rows": [
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before_sha256": "3bcf9548d5b6f1b35428598e527626e78e084e6e552ca1efe84ef5420bfd5bea",
+      "after_sha256": "0a222c3af9e4b17ad8798d549b6fc4849b0f43abf321a354f003acd138a8d550",
+      "before_archive": "before/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "inverse_edits": [
+        {
+          "before_start": 2483,
+          "before_end": 2483,
+          "after_start": 2483,
+          "after_end": 2502,
+          "before": "",
+          "after": "audit_source_join!("
+        },
+        {
+          "before_start": 2593,
+          "before_end": 2593,
+          "after_start": 2612,
+          "after_end": 2847,
+          "before": "",
+          "after": "),include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs\"),include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs\")"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs",
+      "before_sha256": "5e0bc4576a2abc8a5093d60946f1272c2e9a50c6517c2003c98790f4c38bb3bb",
+      "after_sha256": "b8bb7a7b8c31465e0d33123cbb66d14bbd4e10ea9d49cdead14ee26a245765cd",
+      "before_archive": "before/src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs",
+      "inverse_edits": [
+        {
+          "before_start": 3483,
+          "before_end": 3483,
+          "after_start": 3483,
+          "after_end": 3495,
+          "before": "",
+          "after": "matched_876_"
+        },
+        {
+          "before_start": 7595,
+          "before_end": 7595,
+          "after_start": 7607,
+          "after_end": 7656,
+          "before": "",
+          "after": "\n#[path = \"current_tests.rs\"]\nmod current_tests;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
+      "before_sha256": "02302e1ed5ffd06792da3300d2031518a5611b6f1e7d684419d93bd3fdb01639",
+      "after_sha256": "77a20aec9ce8963716d7ad22a16da88cdeebb31f2e1ee7f357988e286760b1e3",
+      "before_archive": "before/src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
+      "inverse_edits": [
+        {
+          "before_start": 127,
+          "before_end": 127,
+          "after_start": 127,
+          "after_end": 153,
+          "before": "",
+          "after": "#[cfg(test)]\nmod matched;\n"
+        }
+      ]
+    },
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "before_sha256": "d697b5c8ecfdfbe9a10111463f09afe17d7cecf2f34d3113fede48b43a077adb",
+      "after_sha256": "62b0ded171ba5b00c655b082440d9ef8c5be88d4f2747844b06b489267ef077b",
+      "before_archive": "before/tests/hir_module_boundaries.rs",
+      "inverse_edits": [
+        {
+          "before_start": 2231,
+          "before_end": 2231,
+          "after_start": 2231,
+          "after_end": 2250,
+          "before": "",
+          "after": "audit_source_join!("
+        },
+        {
+          "before_start": 2329,
+          "before_end": 2329,
+          "after_start": 2348,
+          "after_end": 2559,
+          "before": "",
+          "after": "),include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs\"),include_str!(\"../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs\")"
+        }
+      ]
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before_sha256": "2c7f3e63539aed65ee601f74f77e56e29b36676d4e9b410ca0d5bc68b6322321",
+      "after_sha256": "b210a21a7cb2202f4e5994d2e8852a8743daf14e8f90c9f388bcf4fe97312422",
+      "before_archive": "before/tests/workspace/semantic_graph/source_inventory.rs",
+      "inverse_edits": [
+        {
+          "before_start": 4817,
+          "before_end": 4817,
+          "after_start": 4817,
+          "after_end": 4836,
+          "before": "",
+          "after": "audit_source_join!("
+        },
+        {
+          "before_start": 4918,
+          "before_end": 4918,
+          "after_start": 4937,
+          "after_end": 5154,
+          "before": "",
+          "after": "),include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs\"),include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs\")"
+        }
+      ]
+    }
+  ]
+}
