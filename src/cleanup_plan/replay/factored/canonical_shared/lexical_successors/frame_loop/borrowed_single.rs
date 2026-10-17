@@ -85,3 +85,11 @@ pub(super) fn note(budget: &ReplayBudget, warm: bool) {
         slot.set((active, events, count.saturating_add(1)));
     });
 }
+
+// Test-only exact role equations; no runtime fee helper or external authority.
+#[cfg(test)]
+impl Canonicalizer<'_> {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BORROWED_EXIT_PRIMITIVE: usize = PRIMITIVE;
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BORROWED_EXIT_WARM: usize = WARM;
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BORROWED_EXIT_LOCAL: usize = LOCAL_CONTROLS;
+}
