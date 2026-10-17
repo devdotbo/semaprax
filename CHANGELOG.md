@@ -1,5 +1,7 @@
 # Changelog
 
+- Keep the complete nested traversal custody assertions in the test source-reader layer, preserving their original body and fail-closed inverses while keeping filesystem operations outside core HIR.
+
 - Pass the installed macOS SDK explicitly when compiling native authority test executables with a scrubbed environment, so real system headers remain available.
 
 - Use paid small continuation backing for standalone validation and the authenticated held status prefix for unobserved wide validation, retaining limits, complete original paths, and historical controls.

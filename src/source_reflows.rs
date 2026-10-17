@@ -24,6 +24,10 @@ static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 #[path = "source_reflows/semantic_receivers.rs"]
 mod semantic_receivers;
 
+#[path = "source_reflows/nested_scope.rs"]
+mod nested_scope;
+pub(crate) use nested_scope::nested_scope_correction_retains_complete_original_hostile_and_loan_controls;
+
 fn records() -> &'static [serde_json::Value] {
     RECORDS
         .get_or_init(|| serde_json::from_str(REPAIRS).unwrap())
