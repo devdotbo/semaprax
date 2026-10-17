@@ -266,6 +266,16 @@ retain the complete immediate receiver and actual production comparison caller;
 all old helpers/tests remain source-bound and all children join the three raw
 inventories. Focused executable and application qualification remain pending.
 
+The source-only #884 candidate keeps the actual ordinary canonical frame loop
+in `canonical_shared/lexical_successors/frame_loop.rs`. Its two lexical
+successor expansions retain separate primitive caller banks per activation;
+fresh label/target/iterator/owning payloads remain paid per formation. The
+complete immediate receiver and production comparison caller stay compiled in
+`before_lexical_successors.rs` and its child. Fixed diagnostic counters and
+focused controls do not grant authority or establish gain. See
+[Lexical canonical successors v1](LEXICAL-CANONICAL-SUCCESSORS-V1.md); combined
+source binding and runtime qualification remain pending.
+
 `hir/resolve_program/initial_loan_plans.rs` owns the initial authored and
 instantiated loan-plan attachment. Active construction captures one existing
 CFG reservation and funds complete planner scratch. One caller-held staging

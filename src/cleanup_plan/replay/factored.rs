@@ -231,11 +231,11 @@ fn compare_with_index_storage<'hir>(
         // The exact reconstructed automaton is unchanged. An Oracle account
         // pays the full general label order; it grants no borrowed-helper lease.
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -247,11 +247,11 @@ fn compare_with_index_storage<'hir>(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         lease.validate(program, function, budget)?;
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -268,9 +268,9 @@ fn compare_with_index_storage<'hir>(
         budget.reserve_bytes(function, canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
             "factored cold terminal node predicate")?;
     }
-    if canonical.cold_dead_node(hir_root) { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+    if canonical.cold_dead_node(hir_root) { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
-        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else { return Ok(None); }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else { return Ok(None); }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
         let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)? else { return Ok(None); };
         return Ok(Some(hir == plan));
@@ -283,13 +283,13 @@ fn compare_with_index_storage<'hir>(
         )?;
     }
     let mut receiving =
-        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
     let Some(hir) =
         canonical.id_with_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?
     else {
         return Ok(None);
-    }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+    }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
     let Some(plan) =
         canonical.id_with_receiving(function, vec![(plan_root, 1)], budget, &mut receiving)?

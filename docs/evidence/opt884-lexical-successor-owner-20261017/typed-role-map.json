@@ -1,0 +1,126 @@
+{
+  "schema": "semaprax.lexical-canonical-successors-role-map.v1",
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "baseline": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+  "U": "2*sizeof((&mut ReplayBudget,&ResolvedFunction,usize,&str))+2*sizeof(Result<(),Diagnostic>)",
+  "V": "2*sizeof((&mut ReplayBudget,&ResolvedFunction,&str))+2*sizeof(Result<(),Diagnostic>)",
+  "P": "24*U+5*V",
+  "R": "4*sizeof(bool)+2*sizeof(usize)",
+  "A": "actual current CONSTRUCTOR_CONTROLS minus complete immediate old CONSTRUCTOR_CONTROLS; layout not assumed",
+  "primitive_sites": [
+    {
+      "sites": [
+        "zero bytes authentication",
+        "zero work authentication",
+        "subset charge",
+        "final vector reserve_array"
+      ],
+      "U": 4,
+      "V": 0
+    },
+    {
+      "sites": [
+        "movement payment",
+        "promotion payment"
+      ],
+      "U": 2,
+      "V": 0
+    },
+    {
+      "sites": [
+        "first label node",
+        "second label node"
+      ],
+      "U": 0,
+      "V": 2
+    },
+    {
+      "sites": [
+        "promotion authentication"
+      ],
+      "U": 1,
+      "V": 0
+    },
+    {
+      "sites": [
+        "later label node"
+      ],
+      "U": 0,
+      "V": 1
+    },
+    {
+      "sites": [
+        "later label authentication",
+        "empty label authentication"
+      ],
+      "U": 2,
+      "V": 0
+    },
+    {
+      "sites": [
+        "publication payment",
+        "final enum transport payment",
+        "owning iterator payment"
+      ],
+      "U": 3,
+      "V": 0
+    },
+    {
+      "sites": [
+        "inline add expansion promote bank",
+        "inline add expansion add bank",
+        "inline add expansion target node",
+        "tree add expansion promote bank",
+        "tree add expansion add bank",
+        "tree add expansion target node"
+      ],
+      "U": 4,
+      "V": 2
+    },
+    {
+      "sites": [
+        "inline publish row bank",
+        "inline publish enum bank",
+        "inline publish Rc backing",
+        "inline publish finish bank",
+        "tree publish row bank",
+        "tree publish enum bank",
+        "tree publish Rc backing",
+        "tree publish finish bank"
+      ],
+      "U": 8,
+      "V": 0
+    }
+  ],
+  "excluded": [
+    "Both owned weighted finish argument/formal/map and Result<SharedWeighted,Diagnostic> transports",
+    "all dynamic OnePassLabels/Targets pattern/initializer/borrow/query slots",
+    "all movement checked Option/u64/bool values",
+    "all iterators/next Options/tuples and publication transports",
+    "all backing allocations and Rc owners",
+    "all real PaidMany helper receiving/results"
+  ],
+  "formation_order": {
+    "resident_flags": "two initializer and owner fields covered by original two whole Self constructor payments; no new initializer helper",
+    "flags_read": "after original held receiving/Memo authentication, from existing paid owner place",
+    "selected_usize": "existing original reserve argument/return receiving counterpart; no pricing helper/runtime addition",
+    "R": "conservative additional scalar slots charged each expansion; not used as retroactive helper credit",
+    "success": "one cold/warm original-frontier reserve then only success flips resident flag",
+    "reset": "at actual id_inner activation, unit/general separate; HIR and PLAN independent"
+  },
+  "bound": "(N-M)*P-A-N*R; no outer/helper compound deletion credit",
+  "limits": [
+    "M<=2 per id_inner activation",
+    "M<=4 per complete HIR/PLAN comparison",
+    "no actual application N/M or net gain known",
+    "no cap/profile/order/baseline modification"
+  ],
+  "new_physical_modules": [
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs"
+  ]
+}

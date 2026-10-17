@@ -1,0 +1,57 @@
+{
+  "status": "UNREGISTERED_UNEXECUTED",
+  "checks": [
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::complete_immediate_canonicalizers_keep_every_state_signature_work_cut_cycle_and_overflow",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even_without_credit",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::actual_cold_warm_unit_general_banks_exact_short_zero_floor_match_primitive_six_fields_and_drop",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::complete_original_sources_and_all_primitive_site_banks_remain_separate",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::warm_lexical_banks_cannot_authenticate_foreign_function_budget_or_nested_restored_invocation",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::whole_shipping_comparison_records_separate_hir_plan_banks_and_complete_old_work_and_drop",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::tests::equal_observation_contents_with_distinct_rc_keep_complete_immediate_grouping",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::fixed_successor_census_8769_rows_and_checked_overflow_are_diagnostic_only",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::all_twelve_census_cells_route_without_event_buffer_or_authority",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    }
+  ],
+  "unchanged_required_application_owner": "CORE300 original index11 exact-two-attempt owner; no cap/profile/fixture changes",
+  "required_prior_owners": [
+    "original 831 and 870 strict owners",
+    "original 874 authority and full-work owners",
+    "original 876 cost/Drop owners",
+    "existing codec/catalog actual application owners"
+  ]
+}

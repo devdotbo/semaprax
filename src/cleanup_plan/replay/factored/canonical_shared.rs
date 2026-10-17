@@ -3,10 +3,9 @@
 //! payloads. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::{
-    physical_clone, replay_error, AllocationPayer, Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget,
-    ResolvedFunction, Weighted,
+    physical_clone, replay_error, AllocationPayer, Automaton, BTreeMap, Diagnostic, Label, Rc,
+    ReplayBudget, ResolvedFunction, Weighted,
 };
-
 #[cfg(test)]
 mod before_alias;
 #[cfg(test)]
@@ -20,18 +19,19 @@ mod before_index;
 #[cfg(test)]
 mod before_ordered;
 #[cfg(test)]
+mod before_scope_memo;
+#[cfg(test)]
 mod before_scratch;
 #[cfg(test)]
 mod before_targets;
 #[cfg(test)]
 mod before_unit;
+mod borrowed_labels;
 pub(in crate::cleanup_plan::replay) mod closure_receiving;
 mod empty_closure;
 #[cfg(test)]
 mod empty_closure_tests;
 mod empty_memo;
-#[cfg(test)]
-mod before_scope_memo;
 #[cfg(test)]
 mod epsilon_alias;
 #[cfg(test)]
@@ -40,17 +40,23 @@ mod held_auth_tests;
 mod memo;
 mod ordered_alias;
 mod ordered_weights;
+mod paid_many;
 #[cfg(test)]
 mod scratch_tests;
 #[cfg(test)]
 mod singleton_target_tests;
 #[cfg(test)]
 mod successor_targets;
-mod paid_many;
-mod borrowed_labels;
+#[macro_use]
+pub(in crate::cleanup_plan::replay::factored) mod lexical_successors;
+#[cfg(test)]
+mod before_lexical_successors;
 #[cfg(test)]
 #[macro_use]
 mod selected_labels;
+#[cfg(test)]
+#[path = "canonical_shared/before_paid_many.rs"]
+mod before_paid_many;
 #[cfg(test)]
 mod before_selected_labels;
 #[cfg(test)]
@@ -58,19 +64,15 @@ mod before_selected_route;
 #[cfg(test)]
 mod paid_route_tests;
 #[cfg(test)]
-#[path = "canonical_shared/before_paid_many.rs"]
-mod before_paid_many;
-#[cfg(test)]
 mod unit_receiving_tests;
 
+#[cfg(test)]
+mod before_arena;
 #[cfg(test)]
 mod before_inline_weighted;
 mod inline_weighted;
 mod intern_arena;
-#[cfg(test)]
-mod before_arena;
 use inline_weighted::SmallWeighted;
-
 // Invoked only after preflight proved an unbound, nonfailed Memo. This is the
 // original cold activation body at its caller: no authenticate Result or
 // forwarded method arguments are constructed. Nested reservation Results,
@@ -231,6 +233,8 @@ pub(super) struct Canonicalizer<'a> {
     frames: Vec<CanonicalFrame>,
     open: Vec<SharedWeighted>,
     scratch_paid: bool,
+    successor_unit_paid: bool,
+    successor_general_paid: bool,
 }
 
 impl<'a> Canonicalizer<'a> {
@@ -257,6 +261,8 @@ impl<'a> Canonicalizer<'a> {
             frames: Vec::new(),
             open: Vec::new(),
             scratch_paid: false,
+            successor_unit_paid: false,
+            successor_general_paid: false,
         }
     }
 
@@ -289,16 +295,28 @@ impl<'a> Canonicalizer<'a> {
         }
         // Existing received owner place: no copied tag, bool or reference.
         // scratch_paid=true makes cold_dead_node false by its own definition.
-        if let Self { scratch_paid: false, .. } = self {
-        if budget.pays_allocations() {
-            budget.reserve_bytes(function, Self::COLD_ROOT_CONTROLS, "factored cold terminal root predicate")?;
-        }
-        if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
+        if let Self {
+            scratch_paid: false,
+            ..
+        } = self
+        {
             if budget.pays_allocations() {
-                budget.reserve_bytes(function, Self::COLD_RESULT_CONTROLS, "factored cold terminal result receiving")?;
+                budget.reserve_bytes(
+                    function,
+                    Self::COLD_ROOT_CONTROLS,
+                    "factored cold terminal root predicate",
+                )?;
             }
-            return self.cold_dead_id(function, root, budget);
-        }
+            if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
+                if budget.pays_allocations() {
+                    budget.reserve_bytes(
+                        function,
+                        Self::COLD_RESULT_CONTROLS,
+                        "factored cold terminal result receiving",
+                    )?;
+                }
+                return self.cold_dead_id(function, root, budget);
+            }
         }
         if budget.pays_allocations() {
             budget.reserve_bytes(
@@ -320,7 +338,9 @@ impl<'a> Canonicalizer<'a> {
         // Identity/sticky preflight precedes every invocation payment. Cold
         // activation and all original payment order remain in the old body.
         self.closures.preflight_owned(function, budget);
-        if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
+        if self.closures.failed() {
+            return Err(Diagnostic::io("SPX-H006", String::new()));
+        }
         if budget.pays_allocations() {
             budget.reserve_bytes(
                 function,
@@ -740,14 +760,34 @@ impl<'a> Canonicalizer<'a> {
             let accepted = closed.get(&self.sink).copied().unwrap_or(0);
             match &budget.payer {
                 AllocationPayer::ActiveBuilder => {
-                    budget.reserve_bytes(function, borrowed_labels::one_pass_receiving(), "factored one-pass label call receivers")?;
-                    return borrowed_labels::one_pass_successors(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(
+                        function,
+                        borrowed_labels::one_pass_receiving(),
+                        "factored one-pass label call receivers",
+                    )?;
+                    return borrowed_labels::one_pass_successors(
+                        function,
+                        budget,
+                        self.automaton,
+                        closed,
+                        accepted,
+                    );
                 }
                 AllocationPayer::SelectedReservation => {}
                 AllocationPayer::LegacyUnobserved => {}
                 _ => {
-                    budget.reserve_bytes(function, borrowed_labels::receiving::<ordered_weights::OrderedWeights>(), "factored borrowed label call receivers")?;
-                    return borrowed_labels::successors(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(
+                        function,
+                        borrowed_labels::receiving::<ordered_weights::OrderedWeights>(),
+                        "factored borrowed label call receivers",
+                    )?;
+                    return borrowed_labels::successors(
+                        function,
+                        budget,
+                        self.automaton,
+                        closed,
+                        accepted,
+                    );
                 }
             }
             if budget.pays_allocations() {
@@ -815,18 +855,32 @@ impl<'a> Canonicalizer<'a> {
                                 weight: total,
                             } => {
                                 if budget.pays_allocations() {
-                                    budget.reserve_bytes(function, paid_many::PROMOTE_RECEIVING,
-                                        "factored composed promotion receivers")?;
+                                    budget.reserve_bytes(
+                                        function,
+                                        paid_many::PROMOTE_RECEIVING,
+                                        "factored composed promotion receivers",
+                                    )?;
                                 }
                                 #[cfg(test)]
-                                if budget.pays_allocations() { paid_many::note_branch(true); }
-                                *targets = paid_many::promote(function, budget, *first, *total, *child, *weight)?;
+                                if budget.pays_allocations() {
+                                    paid_many::note_branch(true);
+                                }
+                                *targets = paid_many::promote(
+                                    function, budget, *first, *total, *child, *weight,
+                                )?;
                             }
                             paid_many::Targets::PaidMany(_) => {
-                                budget.reserve_bytes(function, paid_many::ADD_RECEIVING,
-                                    "factored composed flat add receivers")?;
-                                let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat arm") };
-                                if !paid_many::add(function, budget, flat, *child, *weight)? { return Ok(None); }
+                                budget.reserve_bytes(
+                                    function,
+                                    paid_many::ADD_RECEIVING,
+                                    "factored composed flat add receivers",
+                                )?;
+                                let paid_many::Targets::PaidMany(flat) = targets else {
+                                    unreachable!("paid flat arm")
+                                };
+                                if !paid_many::add(function, budget, flat, *child, *weight)? {
+                                    return Ok(None);
+                                }
                             }
                             paid_many::Targets::Many(targets) => {
                                 if !targets.contains_key(child) {
@@ -858,10 +912,7 @@ impl<'a> Canonicalizer<'a> {
                     budget.reserve_bytes(
                         function,
                         std::mem::size_of::<
-                            std::collections::btree_map::IntoIter<
-                                Label,
-                                paid_many::Targets,
-                            >,
+                            std::collections::btree_map::IntoIter<Label, paid_many::Targets>,
                         >() + std::mem::size_of::<Option<(Label, paid_many::Targets)>>()
                             + std::mem::size_of::<(Label, paid_many::Targets)>(),
                         "factored successor target iterator receiving",
@@ -901,10 +952,18 @@ impl<'a> Canonicalizer<'a> {
                             Rc::new(singleton)
                         }
                         paid_many::Targets::PaidMany(_) => match budget {
-                            ReplayBudget { payer: AllocationPayer::LegacyUnobserved, .. } => {
-                                budget.reserve_bytes(function, paid_many::FINISH_RECEIVING,
-                                    "factored composed flat finish receivers")?;
-                                let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat finish") };
+                            ReplayBudget {
+                                payer: AllocationPayer::LegacyUnobserved,
+                                ..
+                            } => {
+                                budget.reserve_bytes(
+                                    function,
+                                    paid_many::FINISH_RECEIVING,
+                                    "factored composed flat finish receivers",
+                                )?;
+                                let paid_many::Targets::PaidMany(flat) = targets else {
+                                    unreachable!("paid flat finish")
+                                };
                                 own_weighted(function, budget, flat)?
                             }
                             _ => paid_many::finish!(function, budget, targets),
@@ -970,14 +1029,34 @@ impl<'a> Canonicalizer<'a> {
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         match &budget.payer {
             AllocationPayer::ActiveBuilder => {
-                budget.reserve_bytes(function, borrowed_labels::one_pass_receiving(), "factored one-pass label call receivers")?;
-                return borrowed_labels::one_pass_successors(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(
+                    function,
+                    borrowed_labels::one_pass_receiving(),
+                    "factored one-pass label call receivers",
+                )?;
+                return borrowed_labels::one_pass_successors(
+                    function,
+                    budget,
+                    self.automaton,
+                    closed,
+                    accepted,
+                );
             }
             AllocationPayer::SelectedReservation => {}
             AllocationPayer::LegacyUnobserved => {}
             _ => {
-                budget.reserve_bytes(function, borrowed_labels::receiving::<ordered_weights::OrderedWeights>(), "factored borrowed label call receivers")?;
-                return borrowed_labels::successors(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(
+                    function,
+                    borrowed_labels::receiving::<ordered_weights::OrderedWeights>(),
+                    "factored borrowed label call receivers",
+                )?;
+                return borrowed_labels::successors(
+                    function,
+                    budget,
+                    self.automaton,
+                    closed,
+                    accepted,
+                );
             }
         }
         if budget.pays_allocations() {
@@ -1045,18 +1124,32 @@ impl<'a> Canonicalizer<'a> {
                             weight: total,
                         } => {
                             if budget.pays_allocations() {
-                                budget.reserve_bytes(function, paid_many::PROMOTE_RECEIVING,
-                                    "factored composed promotion receivers")?;
+                                budget.reserve_bytes(
+                                    function,
+                                    paid_many::PROMOTE_RECEIVING,
+                                    "factored composed promotion receivers",
+                                )?;
                             }
                             #[cfg(test)]
-                            if budget.pays_allocations() { paid_many::note_branch(false); }
-                            *targets = paid_many::promote(function, budget, *first, *total, *child, *weight)?;
+                            if budget.pays_allocations() {
+                                paid_many::note_branch(false);
+                            }
+                            *targets = paid_many::promote(
+                                function, budget, *first, *total, *child, *weight,
+                            )?;
                         }
                         paid_many::Targets::PaidMany(_) => {
-                            budget.reserve_bytes(function, paid_many::ADD_RECEIVING,
-                                "factored composed flat add receivers")?;
-                            let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat arm") };
-                            if !paid_many::add(function, budget, flat, *child, *weight)? { return Ok(None); }
+                            budget.reserve_bytes(
+                                function,
+                                paid_many::ADD_RECEIVING,
+                                "factored composed flat add receivers",
+                            )?;
+                            let paid_many::Targets::PaidMany(flat) = targets else {
+                                unreachable!("paid flat arm")
+                            };
+                            if !paid_many::add(function, budget, flat, *child, *weight)? {
+                                return Ok(None);
+                            }
                         }
                         paid_many::Targets::Many(targets) => {
                             if !targets.contains_key(child) {
@@ -1128,10 +1221,18 @@ impl<'a> Canonicalizer<'a> {
                         Rc::new(singleton)
                     }
                     paid_many::Targets::PaidMany(_) => match budget {
-                        ReplayBudget { payer: AllocationPayer::LegacyUnobserved, .. } => {
-                            budget.reserve_bytes(function, paid_many::FINISH_RECEIVING,
-                                "factored composed flat finish receivers")?;
-                            let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat finish") };
+                        ReplayBudget {
+                            payer: AllocationPayer::LegacyUnobserved,
+                            ..
+                        } => {
+                            budget.reserve_bytes(
+                                function,
+                                paid_many::FINISH_RECEIVING,
+                                "factored composed flat finish receivers",
+                            )?;
+                            let paid_many::Targets::PaidMany(flat) = targets else {
+                                unreachable!("paid flat finish")
+                            };
                             own_weighted(function, budget, flat)?
                         }
                         _ => paid_many::finish!(function, budget, targets),
@@ -1220,229 +1321,6 @@ impl<'a> Canonicalizer<'a> {
         }
         Ok(Some(receiving.id))
     }
-
-    fn id_inner_into(
-        &mut self,
-        function: &ResolvedFunction,
-        root: Weighted,
-        budget: &mut ReplayBudget,
-        receiving: &mut closure_receiving::ClosureReceiving,
-    ) {
-        macro_rules! attempt {
-            ($operation:expr) => {
-                match $operation {
-                    Ok(value) => value,
-                    Err(error) => {
-                        receiving.refusal = Some(error);
-                        receiving.ready = true;
-                        return;
-                    }
-                }
-            };
-        }
-        receiving.overflow = false;
-        attempt!(budget.reserve_vec(
-            function,
-            &mut self.frames,
-            1,
-            "factored canonical initial frame",
-        ));
-        // This direct root construction has no Diagnostic-bearing helper Result.
-        // Both enum values, actual Rc initializer/receiving values and payment
-        // Result remain real and prepaid; the general successor helper is unchanged.
-        if budget.pays_allocations() {
-            attempt!(budget.reserve_bytes(
-                function,
-                2 * std::mem::size_of::<SmallWeighted>()
-                    + 2 * std::mem::size_of::<SharedWeighted>()
-                    + std::mem::size_of::<Result<(), Diagnostic>>(),
-                "factored direct root enum receiving",
-            ));
-        }
-        attempt!(budget.reserve_bytes(
-            function,
-            physical_clone::rc_backing_bytes::<SmallWeighted>(),
-            "factored weighted shared header",
-        ));
-        let shared = SmallWeighted::Many(root);
-        let root = Rc::new(shared);
-        let root_copy = attempt!(share_weighted(function, budget, &root));
-        self.frames.push(CanonicalFrame::Enter(root_copy));
-        while let Some(frame) = self.frames.pop() {
-            attempt!(budget.charge(function, 1, "factored canonical frame"));
-            match frame {
-                CanonicalFrame::Enter(state) => {
-                    if self.states.contains_key(&state) {
-                        continue;
-                    }
-                    if self.open.contains(&state) {
-                        receiving.refusal =
-                            Some(replay_error(function, "cleanup CFG contains a cycle"));
-                        receiving.ready = true;
-                        return;
-                    }
-                    attempt!(budget.reserve_vec(
-                        function,
-                        &mut self.open,
-                        1,
-                        "factored retained open-state identity slots",
-                    ));
-                    self.open
-                        .push(attempt!(share_weighted(function, budget, &state)));
-                    let Some((accepted, successors)) = attempt!(
-                        self.successors_with_receiving(function, &state, budget, receiving)
-                    ) else {
-                        receiving.finish_overflow();
-                        return;
-                    };
-                    let child_count = successors.len();
-                    attempt!(budget.reserve_vec(
-                        function,
-                        &mut self.frames,
-                        1,
-                        "factored canonical exit frame",
-                    ));
-                    let exit_index = self.frames.len();
-                    self.frames
-                        .push(CanonicalFrame::Exit(state, accepted, successors));
-                    for index in 0..child_count {
-                        let CanonicalFrame::Exit(_, _, successors) = &self.frames[exit_index]
-                        else {
-                            unreachable!("canonical exit retained below child frames");
-                        };
-                        let child =
-                            attempt!(share_weighted(function, budget, &successors[index].1));
-                        attempt!(budget.reserve_vec(
-                            function,
-                            &mut self.frames,
-                            1,
-                            "factored canonical child frames",
-                        ));
-                        self.frames.push(CanonicalFrame::Enter(child));
-                    }
-                }
-                CanonicalFrame::Exit(state, accepted, successors) => {
-                    self.open.retain(|entry| entry != &state);
-                    attempt!(budget.charge(
-                        function,
-                        successors.len(),
-                        "factored canonical signature construction",
-                    ));
-                    // The old signature-work debit above remains first. Acquire
-                    // the actual new branch receivers before evaluating the guard.
-                    if budget.pays_allocations() {
-                        attempt!(budget.reserve_bytes(
-                            function, empty_signature::BRANCH_CONTROLS,
-                            "canonical empty signature branch receiving",
-                        ));
-                    }
-                    if successors.is_empty() {
-                        if budget.pays_allocations() {
-                            attempt!(budget.reserve_bytes(
-                                function, empty_signature::EMPTY_CONTROLS,
-                                "canonical empty signature receiving",
-                            ));
-                        }
-                        self.child_ids.clear();
-                        // Retain the original key-vector zero authentication;
-                        // no child directory, borrowed query or Zip exists here.
-                        attempt!(budget.reserve_array::<(Label, usize)>(
-                            function, 0, "factored canonical signature vector",
-                        ));
-                        let key = (accepted, Vec::new());
-                        let id = match self.ids.get(&key) {
-                            Some(id) => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(true);
-                                *id
-                            }
-                            None => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(false);
-                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
-                                let id = self.ids.len();
-                                self.ids.insert_prepaid(key, id);
-                                id
-                            }
-                        };
-                        self.child_ids.clear();
-                        if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
-                        }
-                        self.states.insert_prepaid(state, id);
-                        continue;
-                    }
-                    attempt!(budget.reserve_bytes(
-                        function, intern_arena::SignatureQuery::LEXICAL_EXIT_CONTROLS,
-                        "canonical borrowed signature receiving",
-                    ));
-                    // Retained scalar scratch contains only the child IDs for
-                    // this frame; the epsilon cursor keeps its original shape.
-                    self.child_ids.clear();
-                    lexical_child_scratch::prepare!(self, successors, function, budget, receiving);
-                    attempt!(budget.reserve_array::<[usize; 2]>(
-                        function, successors.len(), "canonical child identity receiving",
-                    ));
-                    // Resolve every ID before signature comparison can stop at
-                    // its first mismatch. This preserves the original failure order.
-                    for (_, child) in &successors {
-                        let Some(id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
-                            receiving.ready = true;
-                            return;
-                        };
-                        self.child_ids.push(*id);
-                    }
-                    let query = intern_arena::SignatureQuery {
-                        accepted, successors: &successors, children: &self.child_ids,
-                    };
-                    let id = match self.ids.get(&query) {
-                        Some(id) => {
-                            #[cfg(test)]
-                            arena_tests::signature_lookup(true);
-                            *id
-                        }
-                        None => {
-                            #[cfg(test)]
-                            arena_tests::signature_lookup(false);
-                            attempt!(budget.reserve_array::<(Label, usize)>(
-                                function, successors.len(), "factored canonical signature vector",
-                            ));
-                            // Every ID is already resolved. Move each original
-                            // label with its borrowed ID, without an owned
-                            // scalar cursor or repeated index/increment operands.
-                            attempt!(budget.reserve_bytes(
-                                function, intern_arena::SignatureQuery::MISS_CONTROLS,
-                                "canonical signature miss iterator receiving",
-                            ));
-                            attempt!(budget.reserve_array::<[&usize; 2]>(
-                                function, successors.len(), "canonical signature miss borrowed IDs",
-                            ));
-                            let mut key = Vec::with_capacity(successors.len());
-                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids) {
-                                key.push((label, *id));
-                            }
-                            let key = (accepted, key);
-                            intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
-                            let id = self.ids.len();
-                            self.ids.insert_prepaid(key, id);
-                            id
-                        }
-                    };
-                    self.child_ids.clear();
-                    if !self.states.contains_key(&state) {
-                        intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
-                    }
-                    self.states.insert_prepaid(state, id);
-                }
-            }
-        }
-        match self.states.get(&root) {
-            Some(id) => receiving.id = *id,
-            None => receiving.overflow = true,
-        }
-        receiving.ready = true;
-    }
 }
 
 #[cfg(test)]
@@ -1469,19 +1347,19 @@ mod arena_tests;
 #[cfg(test)]
 mod arena_source;
 
-mod empty_signature;
 #[cfg(test)]
 mod before_empty_signature;
+mod empty_signature;
 #[cfg(test)]
 mod empty_signature_tests;
 
-mod terminal_leaf;
-#[cfg(test)]
-mod terminal_leaf_tests;
 #[cfg(test)]
 mod before_terminal_leaf;
 #[cfg(test)]
 mod before_terminal_leaf_empty_memo;
+mod terminal_leaf;
+#[cfg(test)]
+mod terminal_leaf_tests;
 
 // Complete independent incoming flat receiver; production composition has its own namespace.
 #[cfg(test)]
