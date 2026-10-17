@@ -539,6 +539,8 @@ fn core_validation_has_no_resolution_cleanup_build_or_physical_authority() {
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs"),
+            include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/tests.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs"),
             include_str!("../src/cleanup_plan/replay/leaf_index.rs"),

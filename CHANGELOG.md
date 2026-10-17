@@ -1,5 +1,7 @@
 # Changelog
 
+- Compare paid non-latch exit region prefixes through fully funded borrowed ancestry state, retaining complete chain validation, original owning paths, limits and whole-source controls.
+
 - Refresh browser graph pins from complete hosted 7d34f1269 captures, preserving every prior wire byte except the observed builder debit and self-digest, with all historical controls retained.
 
 - Stop executable signature and pattern checks after invalid storage declarations, keeping all declaration refusals, admitted text records, and existing native-import diagnostic priority.

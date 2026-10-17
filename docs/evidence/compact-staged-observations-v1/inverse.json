@@ -153,10 +153,14 @@
   },
   {
     "path": "tests/hir_module_boundaries.rs",
-    "after_sha256": "e0f96011e9747cfa5f36253933f6e6ea3c4647fe65212f4b16a5846e09706643",
+    "after_sha256": "d6e8ad51661a3f8727e9f654bd7e7f2687ffa6fa13fd9c66900217def541c1cc",
     "before_sha256": "0fe29b4e9a4c1aea7e6ff38c608e4bc3f8b82c4c3c3a4484f35cf7f2490842bb",
     "archive": "tests__hir_module_boundaries.rs.before.txt",
     "inverse": [
+      {
+        "after": "up_plan/replay/expression_facts/receiving/helpers/regions.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/tests.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_",
+        "before": "up_plan/replay/expression_facts/receiving/helpers/regions.rs\"),\n            include_str!(\"../src/cleanup_plan/replay/expression_"
+      },
       {
         "after": "        include_str!(\"../src/cleanup_plan/replay/compact_stage/lexical_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/compact_stage/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/compact_stage/source_custody.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/sequence.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/sequence/before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/sequence/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/final_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/completed_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/tests.rs\"),\n",
         "before": "        include_str!(\"../src/cleanup_plan/replay/compact_stage/lexical_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/compact_stage/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/compact_stage/source_custody.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/final_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/completed_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/path_array/tests.rs\"),\n"

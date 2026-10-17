@@ -99,6 +99,21 @@ fn receiving_lookups() -> &'static [serde_json::Value] {
     })
 }
 
+// Complete predecessors for borrowed exit-region comparison and its test entry.
+fn exit_region_matches() -> &'static [serde_json::Value] {
+    static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
+    RECORDS.get_or_init(|| {
+        serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/borrowed-exit-region-match-v1/views.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    })
+}
+
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
         let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
@@ -143,6 +158,12 @@ fn invert(proof: &serde_json::Value, current: &str) -> String {
 }
 
 pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
+    if let Some(proof) = exit_region_matches()
+        .iter()
+        .find(|proof| proof["path"] == path)
+    {
+        return Some(invert(proof, current));
+    }
     if let Some(proof) = receiving_lookups()
         .iter()
         .find(|proof| proof["path"] == path)
@@ -181,6 +202,7 @@ pub(super) fn contains(path: &str) -> bool {
         .chain(held_status())
         .chain(held_continuations())
         .chain(receiving_lookups())
+        .chain(exit_region_matches())
         .any(|proof| proof["path"] == path)
 }
 
@@ -689,5 +711,71 @@ fn ordinary_replay_routes_keep_complete_predecessors_and_existing_controls() {
         let mut forged = proof.clone();
         forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+}
+
+#[test]
+fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(exit_region_matches().len(), 5);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in exit_region_matches() {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        assert!(!proofs()
+            .iter()
+            .chain(followups())
+            .chain(ordinary_setup())
+            .chain(ordinary_helpers())
+            .chain(held_status())
+            .chain(held_continuations())
+            .chain(receiving_lookups())
+            .any(|old| old["path"] == path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert_eq!(predecessor(path, &current), Some(before.clone()));
+        assert!(contains(path));
+        if let Some(format) = records().iter().find(|record| record["path"] == path) {
+            assert_eq!(proof["before_sha256"], format["after_sha256"]);
+            assert_eq!(digest(&restore(format, &before)), format["before_sha256"]);
+        }
+        if path.ends_with("helpers/tests.rs") {
+            assert_eq!(
+                current.replacen("pub(super) fn program()", "fn program()", 1),
+                before
+            );
+        }
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+    let evidence = root.join("docs/evidence/borrowed-exit-region-match-v1");
+    let sources: Vec<serde_json::Value> =
+        serde_json::from_str(&std::fs::read_to_string(evidence.join("sources.json")).unwrap())
+            .unwrap();
+    assert_eq!(sources.len(), 7);
+    for proof in sources {
+        let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+        assert_eq!(
+            invert(&proof, &current),
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+    }
+    for manifest in ["new-files.json", "retained-sources.json"] {
+        let records: Vec<serde_json::Value> =
+            serde_json::from_str(&std::fs::read_to_string(evidence.join(manifest)).unwrap())
+                .unwrap();
+        assert_eq!(records.len(), 2);
+        for record in records {
+            let current =
+                std::fs::read_to_string(root.join(record["path"].as_str().unwrap())).unwrap();
+            assert_eq!(digest(&current), record["sha256"]);
+            assert_ne!(digest(&(current + "\n")), record["sha256"]);
+        }
     }
 }

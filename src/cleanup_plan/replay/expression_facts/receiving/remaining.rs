@@ -48,12 +48,23 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                 "cleanup exit has a non-contiguous ID or unknown source block",
             ));
         }
-        let expected_regions = helpers::expected_exit_regions(function, exit, budget)?;
-        if exit.leaves_regions != expected_regions {
-            return Err(replay_error(
-                function,
-                "cleanup exit does not leave the exact source-to-target region chain",
-            ));
+        if budget.payer == AllocationPayer::ActiveBuilder
+            && !matches!(exit.continuation, ExitContinuation::LoopLatch { .. })
+        {
+            if !helpers::exit_regions_match(function, exit, budget)? {
+                return Err(replay_error(
+                    function,
+                    "cleanup exit does not leave the exact source-to-target region chain",
+                ));
+            }
+        } else {
+            let expected_regions = helpers::expected_exit_regions(function, exit, budget)?;
+            if exit.leaves_regions != expected_regions {
+                return Err(replay_error(
+                    function,
+                    "cleanup exit does not leave the exact source-to-target region chain",
+                ));
+            }
         }
         let mut prior: Option<super::CleanupRegionId> = None;
         for region in &exit.leaves_regions {
