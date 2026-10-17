@@ -917,3 +917,29 @@ fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
         }
     }
 }
+
+#[test]
+fn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/replay-work-refusal-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sources.len(), 4);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &sources {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+}

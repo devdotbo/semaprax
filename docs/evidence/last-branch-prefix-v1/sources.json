@@ -3,8 +3,24 @@
     "path": "src/cleanup_plan/replay.rs",
     "archive": "docs/evidence/last-branch-prefix-v1/src__cleanup_plan__replay.rs.before.txt",
     "before_sha256": "f55a89e71e01d7254fd13ae57b9fbe104a08bddc1a3f080140b6d70213c1544d",
-    "after_sha256": "3cdae1143f4d8085c1991e0748cfb990da1e4464a3c671a90d75873d770e63a9",
+    "after_sha256": "cf2e96795b95afc62d016325b3676f6111ed650c41b27d22f69b30a23a6ba595",
     "inverse": [
+      {
+        "after": "(test)]\npub(crate) use live_oracle::with_financed_test_oracles;\n\n// Test diagnostics only. This POD record owns no HIR, text or heap allocation\n// and is never consulted by validation or a budget decision.\n#[cfg(test)]\n#[derive(Clone, Copy, Debug)]\npub(crate) struct ReplayWorkRefusal {\n    pub(crate) caller: &'static std::panic::Location<'static>,\n    pub(crate) requested: usize,\n    pub(crate) remaining: usize,\n    pub(crate) status_sources: usize,\n    pub(crate) first_status_bytes: usize,\n    pub(crate) payer: &'static str,\n}\n#[cfg(test)]\nthread_local! {\n    static REPLAY_WORK_REFUSAL: std::cell::Cell<Option<ReplayWorkRefusal>> = const { std::cell::Cell::new(None) };\n}\n#[cfg(test)]\npub(crate) fn take_replay_work_refusal() -> Option<ReplayWorkRefusal> {\n    REPLAY_WORK_REFUSAL.with(|record| record.take())\n}\n",
+        "before": "(test)]\npub(crate) use live_oracle::with_financed_test_oracles;\n"
+      },
+      {
+        "after": "f.remaining = self.remaining.checked_sub(units).ok_or_else(|| {\n            #[cfg(test)]\n            REPLAY_WORK_REFUSAL.with(|record| {\n                record.set(Some(ReplayWorkRefusal {\n                    caller,\n                    requested: units,\n                    remaining: self.remaining,\n                    status_sources: function.cleanup_plan.status_sources.len(),\n                    first_status_bytes: function\n                        .cleanup_plan\n                        .status_sources\n                        .first()\n                        .map_or(0, |source| source.id.expression.as_str().len()),\n                    payer: match self.payer {\n                        AllocationPayer::LegacyUnobserved => \"unobserved\",\n                        AllocationPayer::ActiveBuilder => \"builder\",\n                        AllocationPayer::SelectedReservation => \"selected\",\n                        AllocationPayer::Oracle(_) => \"oracle\",\n                    },\n                }))\n            });\n            self.budget_refusal(\n                function,\n     ",
+        "before": "f.remaining = self.remaining.checked_sub(units).ok_or_else(|| {\n            self.budget_refusal(\n                function,\n     "
+      },
+      {
+        "after": "    }\n        self.charge_oracle_work(function, units, phase)?;\n        #[cfg(test)]\n        let caller = std::panic::Location::caller();\n        self.remaining = self.remaining.checked_sub(units).ok_or",
+        "before": "    }\n        self.charge_oracle_work(function, units, phase)?;\n        self.remaining = self.remaining.checked_sub(units).ok_or"
+      },
+      {
+        "after": "th.\n    builder_clone_cursor_paid: bool,\n}\n\nimpl ReplayBudget {\n    #[cfg_attr(test, track_caller)]\n    fn charge(\n        &mut self,\n        function: &ResolvedFun",
+        "before": "th.\n    builder_clone_cursor_paid: bool,\n}\n\nimpl ReplayBudget {\n    fn charge(\n        &mut self,\n        function: &ResolvedFun"
+      },
       {
         "after": "                          \"cleanup-plan skeleton branch clone\",\n                            plan,\n                            edge.to,\n                        )?\n                    };\n              ",
         "before": "                          \"cleanup-plan skeleton branch clone\",\n                        )?\n                    };\n              "
@@ -67,8 +83,12 @@
     "path": "src/source_reflows/semantic_receivers.rs",
     "archive": "docs/evidence/last-branch-prefix-v1/src__source_reflows__semantic_receivers.rs.before.txt",
     "before_sha256": "88d2914bfe2a711b7cae92275ddf8e6c311dcdbc9b90024bd2f032fa357ab32a",
-    "after_sha256": "b8f0647bc3dff3fb89302df4f6b154f7d24477c0d1d34c1b5c6e2d19dcd08e05",
+    "after_sha256": "e1b14c3496208b1a2325e55a00cdbaa71cfda8429529fb053a39902d060fb57b",
     "inverse": [
+      {
+        "after": "A pure probe\").next().unwrap()\n            );\n        }\n    }\n}\n\n#[test]\nfn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let sources: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/replay-work-refusal-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(sources.len(), 4);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &sources {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
+        "before": "A pure probe\").next().unwrap()\n            );\n        }\n    }\n}\n"
+      },
       {
         "after": "fore.split(\"#[cfg(test)]\\nmod tests;\").next().unwrap()\n    );\n}\n\n#[test]\nfn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let sources: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/plan-branch-capacity-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(sources.len(), 5);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &sources {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n        if path.ends_with(\"branch_clone/tests.rs\") {\n            assert!(current.starts_with(&before));\n        }\n        if path.ends_with(\"branch_clone.rs\") {\n            assert_eq!(\n                current.split(\"/// A pure probe\").next().unwrap(),\n                before.split(\"/// A pure probe\").next().unwrap()\n            );\n        }\n    }\n}\n",
         "before": "fore.split(\"#[cfg(test)]\\nmod tests;\").next().unwrap()\n    );\n}\n"

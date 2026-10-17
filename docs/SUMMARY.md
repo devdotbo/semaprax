@@ -1168,3 +1168,5 @@ Audience: all documentation readers.
 - [Named byte owners in String-vector fixtures](evidence/string-fixture-owners-v1/README.md)
 
 - [Plan branch continuation capacity](evidence/plan-branch-capacity-v1/README.md)
+
+- [Replay work refusal capture](evidence/replay-work-refusal-v1/README.md)

@@ -1,10 +1,26 @@
 [
   {
     "path": "src/cleanup_plan/replay.rs",
-    "after_sha256": "3cdae1143f4d8085c1991e0748cfb990da1e4464a3c671a90d75873d770e63a9",
+    "after_sha256": "cf2e96795b95afc62d016325b3676f6111ed650c41b27d22f69b30a23a6ba595",
     "before_sha256": "1ee09bd6f221d0eb3e272016f243a00c67815d56fcc246b794975c9ee00a5220",
     "archive": "src__cleanup_plan__replay.rs.before.txt",
     "inverse": [
+      {
+        "after": "(test)]\npub(crate) use live_oracle::with_financed_test_oracles;\n\n// Test diagnostics only. This POD record owns no HIR, text or heap allocation\n// and is never consulted by validation or a budget decision.\n#[cfg(test)]\n#[derive(Clone, Copy, Debug)]\npub(crate) struct ReplayWorkRefusal {\n    pub(crate) caller: &'static std::panic::Location<'static>,\n    pub(crate) requested: usize,\n    pub(crate) remaining: usize,\n    pub(crate) status_sources: usize,\n    pub(crate) first_status_bytes: usize,\n    pub(crate) payer: &'static str,\n}\n#[cfg(test)]\nthread_local! {\n    static REPLAY_WORK_REFUSAL: std::cell::Cell<Option<ReplayWorkRefusal>> = const { std::cell::Cell::new(None) };\n}\n#[cfg(test)]\npub(crate) fn take_replay_work_refusal() -> Option<ReplayWorkRefusal> {\n    REPLAY_WORK_REFUSAL.with(|record| record.take())\n}\n",
+        "before": "(test)]\npub(crate) use live_oracle::with_financed_test_oracles;\n"
+      },
+      {
+        "after": "f.remaining = self.remaining.checked_sub(units).ok_or_else(|| {\n            #[cfg(test)]\n            REPLAY_WORK_REFUSAL.with(|record| {\n                record.set(Some(ReplayWorkRefusal {\n                    caller,\n                    requested: units,\n                    remaining: self.remaining,\n                    status_sources: function.cleanup_plan.status_sources.len(),\n                    first_status_bytes: function\n                        .cleanup_plan\n                        .status_sources\n                        .first()\n                        .map_or(0, |source| source.id.expression.as_str().len()),\n                    payer: match self.payer {\n                        AllocationPayer::LegacyUnobserved => \"unobserved\",\n                        AllocationPayer::ActiveBuilder => \"builder\",\n                        AllocationPayer::SelectedReservation => \"selected\",\n                        AllocationPayer::Oracle(_) => \"oracle\",\n                    },\n                }))\n            });\n            self.budget_refusal(\n                function,\n     ",
+        "before": "f.remaining = self.remaining.checked_sub(units).ok_or_else(|| {\n            self.budget_refusal(\n                function,\n     "
+      },
+      {
+        "after": "    }\n        self.charge_oracle_work(function, units, phase)?;\n        #[cfg(test)]\n        let caller = std::panic::Location::caller();\n        self.remaining = self.remaining.checked_sub(units).ok_or",
+        "before": "    }\n        self.charge_oracle_work(function, units, phase)?;\n        self.remaining = self.remaining.checked_sub(units).ok_or"
+      },
+      {
+        "after": "th.\n    builder_clone_cursor_paid: bool,\n}\n\nimpl ReplayBudget {\n    #[cfg_attr(test, track_caller)]\n    fn charge(\n        &mut self,\n        function: &ResolvedFun",
+        "before": "th.\n    builder_clone_cursor_paid: bool,\n}\n\nimpl ReplayBudget {\n    fn charge(\n        &mut self,\n        function: &ResolvedFun"
+      },
       {
         "after": "                          \"cleanup-plan skeleton branch clone\",\n                            plan,\n                            edge.to,\n                        )?\n                    };\n              ",
         "before": "                          \"cleanup-plan skeleton branch clone\",\n                        )?\n                    };\n              "

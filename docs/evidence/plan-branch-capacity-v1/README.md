@@ -59,5 +59,5 @@ custody packets compose those inverses, while their archives, original source
 assertions and static formatting registry remain unchanged. These packets
 carry no runtime authority. The original STD-08 corpus, native and installed
 journeys, low-stack run, all full quality gates and Lean remain required. The
-8c08 unit-heavy run also exposed an unretained status-directory work refusal;
+8c08 unit-heavy run also exposed a status-directory work refusal;
 that independent issue is not qualified by these clone probes.
