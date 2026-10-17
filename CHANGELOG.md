@@ -1,5 +1,7 @@
 # Changelog
 
+- Reuse a paid status diagnostic receiving cell on wide ordinary builder validation, retaining every original producer, identity, invocation and failure check; restore complete ordered source-audit coverage.
+
 - Emit bounded test-only public wire receipts in hosted CI so exact report digest failures carry complete bytes, while retaining all original hashes, fixtures, assertions and verdicts.
 
 - Hold paid status insertion search scratch across ordinary builder rows, preserving full-key comparisons, AVL links, validation work and the original independent search receivers.

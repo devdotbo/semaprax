@@ -51,8 +51,12 @@
     "path": "tests/hir_module_boundaries.rs",
     "archive": "docs/evidence/string-slot-byte-helper-v1/tests__hir_module_boundaries.rs.before.txt",
     "before_sha256": "d6e8ad51661a3f8727e9f654bd7e7f2687ffa6fa13fd9c66900217def541c1cc",
-    "after_sha256": "d9149e4de775720f16fd1f70603f953bc45f215b7534f16106e58d3f136b0b74",
+    "after_sha256": "adabe5869e41ae5caf037eccc2f50e324eda6ef82c0199109a9588ca296cf6f3",
     "inverse": [
+      {
+        "after": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact",
+        "before": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact"
+      },
       {
         "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact",
         "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact"
@@ -67,8 +71,12 @@
     "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
     "archive": "docs/evidence/string-slot-byte-helper-v1/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt",
     "before_sha256": "70b707a2915c51abb76a72aeb084835c943c8a969c906a1b12eb287e7fa6beca",
-    "after_sha256": "0a07bac8b9c0a51619952ca365ec06204c8ec0731f76d6b698c565ff8bcd88aa",
+    "after_sha256": "021fd0f516093caeb0db9627a98c33f685da8bb40894f73d5b94e2595d79570f",
     "inverse": [
+      {
+        "after": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp",
+        "before": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp"
+      },
       {
         "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp",
         "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../../../../src/cleanup_plan/replay/exp"
@@ -83,8 +91,12 @@
     "path": "src/source_reflows/semantic_receivers.rs",
     "archive": "docs/evidence/string-slot-byte-helper-v1/src__source_reflows__semantic_receivers.rs.before.txt",
     "before_sha256": "361eed66147b91cae6e0f4fe4f0f3446575f918424a23ed27374b51424199c2f",
-    "after_sha256": "a354a8476c045fcb176ce6babbbb6174236f49efa3f3deae24de7eb4c445d8e9",
+    "after_sha256": "d0d1b7e116b320f80ddd501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5",
     "inverse": [
+      {
+        "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[path = \"semantic_receivers/status_inline.rs\"]\nmod status_inline;\n",
+        "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
+      },
       {
         "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[test]\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/public-wire-receipts-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(proofs.len(), 6);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &proofs {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
         "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"

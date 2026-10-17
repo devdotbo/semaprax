@@ -156,6 +156,10 @@
       {
         "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f",
         "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f"
+      },
+      {
+        "after": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f",
+        "before": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f"
       }
     ]
   }

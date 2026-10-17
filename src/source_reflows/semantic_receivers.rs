@@ -1488,3 +1488,6 @@ fn public_wire_receipts_preserve_complete_sources_and_every_original_assertion()
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
 }
+
+#[path = "semantic_receivers/status_inline.rs"]
+mod status_inline;

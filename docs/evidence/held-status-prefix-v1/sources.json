@@ -3,8 +3,12 @@
     "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
     "archive": "docs/evidence/held-status-prefix-v1/src__cleanup_plan__replay__expression_facts__receiving__directory__status_prefix.rs.before.txt",
     "before_sha256": "914e1a78079f871cb37462414b1991cde6722e78b7af39cb7979e11f16f767e9",
-    "after_sha256": "aff3b6e7d30470659a80db529b48a8acbb2931b02a7ea813c6d34844f474d20d",
+    "after_sha256": "bcc0e1db38bd8bc567620c61e147cb8f0a9db553a6fb4e941e2648a8e1e5b83f",
     "inverse": [
+      {
+        "after": "e(Box::new(frozen));\n        Ok(())\n    }\n}\n\nmod reused_cursor;\n\nmod inline;\n",
+        "before": "e(Box::new(frozen));\n        Ok(())\n    }\n}\n\nmod reused_cursor;\n"
+      },
       {
         "after": "rectory.lookup = Some(Box::new(frozen));\n        Ok(())\n    }\n}\n\nmod reused_cursor;\n",
         "before": "rectory.lookup = Some(Box::new(frozen));\n        Ok(())\n    }\n}\n"
@@ -87,8 +91,16 @@
     "path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
     "archive": "docs/evidence/held-status-prefix-v1/src__cleanup_plan__replay__expression_facts__receiving__retained.rs.before.txt",
     "before_sha256": "ef8c174c36906e2ee19b02bbef87c1a53284014cda80153387401d7a1d5d744e",
-    "after_sha256": "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2",
+    "after_sha256": "d518e48ef9895ea86db8f50a0c958efce6c977e23ab7665cfe3997664c98648e",
     "inverse": [
+      {
+        "after": ": ClassifierLedger::capture(),\n        ids: Some(ids),\n    })\n}\n\nmod inline_status;\n",
+        "before": ": ClassifierLedger::capture(),\n        ids: Some(ids),\n    })\n}\n"
+      },
+      {
+        "after": "ClassifierLedger::capture(),\n            ids: None,\n        });\n    }\n    budget.reserve_bytes(\n        function,\n        3 * std::mem::size_of::<bool>(),\n        \"status receiver selection\",\n    )?;\n    budget.charge(function, 3, \"status receiver selection\")?;\n    if function.cleanup_plan.status_sources.len() >= 256\n        && matches!(budget.payer, AllocationPayer::ActiveBuilder)\n        && !budget.selected()\n    {\n        return inline_status::validate(function, facts, budget);\n    }\n    if function.cleanup_plan.status_sources.len() >= 3 {\n ",
+        "before": "ClassifierLedger::capture(),\n            ids: None,\n        });\n    }\n    if function.cleanup_plan.status_sources.len() >= 3 {\n "
+      },
       {
         "after": "roducer\",\n                ));\n            }\n        }\n    }\n    prefix_owner.freeze(function, budget)?;\n    budget.reserve_bytes(function, CONTROL_BYTES, \"retained st",
         "before": "roducer\",\n                ));\n            }\n        }\n    }\n    drop(prefix_owner);\n    budget.reserve_bytes(function, CONTROL_BYTES, \"retained st"
@@ -107,8 +119,12 @@
     "path": "src/source_reflows/semantic_receivers.rs",
     "archive": "docs/evidence/held-status-prefix-v1/src__source_reflows__semantic_receivers.rs.before.txt",
     "before_sha256": "68c95445cf0a8e9202822098149f74890cfc8807ab352ec071824e8705f4d28f",
-    "after_sha256": "a354a8476c045fcb176ce6babbbb6174236f49efa3f3deae24de7eb4c445d8e9",
+    "after_sha256": "d0d1b7e116b320f80ddd501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5",
     "inverse": [
+      {
+        "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[path = \"semantic_receivers/status_inline.rs\"]\nmod status_inline;\n",
+        "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
+      },
       {
         "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[test]\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/public-wire-receipts-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(proofs.len(), 6);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &proofs {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
         "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
@@ -247,8 +263,12 @@
     "path": "docs/evidence/source-reader-followups-20261016/sources.json",
     "archive": "docs/evidence/held-status-prefix-v1/docs__evidence__source-reader-followups-20261016__sources.json.before.txt",
     "before_sha256": "3aca5ac6d30b933278a067096341874ce9d0dbec75a38e6de18e56810b94f9c8",
-    "after_sha256": "25138dfe7ce35cbff2a710ec1776fec0169940fdb30d9c85bbf1f7a80bc40a82",
+    "after_sha256": "0f22281a51dd2de58a7fc7e5b0e7437c2c55b4651033672d8fd9ad3afcf3761d",
     "inverse": [
+      {
+        "after": "atch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\"\n      },\n      {\n        \"new\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\\n#[path = \\\"semantic_receivers/status_inline.rs\\\"]\\nmod status_inline;\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).",
+        "before": "atch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current))."
+      },
       {
         "after": "ld\": \"ssert_eq!(current.replace(new, old), before);\\n        }\\n    }\\n}\\n\"\n      },\n      {\n        \"new\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\\n#[test]\\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\\n    let root = Path::new(env!(\\\"CARGO_MANIFEST_DIR\\\"));\\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\\n        &std::fs::read_to_string(root.join(\\\"docs/evidence/public-wire-receipts-v1/sources.json\\\"))\\n            .unwrap(),\\n    )\\n    .unwrap();\\n    assert_eq!(proofs.len(), 6);\\n    let mut paths = std::collections::BTreeSet::new();\\n    for proof in &proofs {\\n        let path = proof[\\\"path\\\"].as_str().unwrap();\\n        assert!(paths.insert(path));\\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\\n        let before = invert(proof, &current);\\n        assert_eq!(\\n            before,\\n            std::fs::read_to_string(root.join(proof[\\\"archive\\\"].as_str().unwrap())).unwrap()\\n        );\\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \\\"\\\\n\\\"))).is_err());\\n        let mut forged = proof.clone();\\n        forged[\\\"before_sha256\\\"] = serde_json::Value::String(\\\"0\\\".repeat(64));\\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\"\n      }\n    ]\n  },\n  {\n    \"path\": \"src/workspace_gr",
         "before": "ld\": \"ssert_eq!(current.replace(new, old), before);\\n        }\\n    }\\n}\\n\"\n      }\n    ]\n  },\n  {\n    \"path\": \"src/workspace_gr"
@@ -335,8 +355,32 @@
     "path": "docs/evidence/ordinary-replay-setup-v1/sources.json",
     "archive": "docs/evidence/held-status-prefix-v1/docs__evidence__ordinary-replay-setup-v1__sources.json.before.txt",
     "before_sha256": "c02c1d3090d3eb0aa0a8696701709c25b2896f318ebc54e543d50e302af8af6f",
-    "after_sha256": "4d921184b57d1a35fc65c1a1f29d059d5790d6e4b23324d058b15b24854d8800",
+    "after_sha256": "8b34ee9add724e9197e0addd70c8b71d55f37e6c36b9282c41f94e383dac7bae",
     "inverse": [
+      {
+        "after": "c7e5b0e7437c2c55b4651033672d8fd9ad3afcf3761d\",\n    \"inverse\": [\n      {\n        \"after\": \"atch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\",\\n        \\\"old\\\": \\\"::catch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\"\\n      },\\n      {\\n        \\\"new\\\": \\\"::catch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\\n#[path = \\\\\\\"semantic_receivers/status_inline.rs\\\\\\\"]\\\\nmod status_inline;\\\\n\\\",\\n        \\\"old\\\": \\\"::catch_unwind(|| invert(&forged, &current)).\",\n        \"before\": \"atch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\",\\n        \\\"old\\\": \\\"::catch_unwind(|| invert(&forged, &current)).\"\n      },\n      {\n        \"after\": \"ld\\\": \\\"ssert_eq!(current.replace(new,",
+        "before": "c7e5b0e7437c2c55b4651033672d8fd9ad3afcf3761d\",\n    \"inverse\": [\n      {\n        \"after\": \"ld\\\": \\\"ssert_eq!(current.replace(new,"
+      },
+      {
+        "after": "bb6c53f4e51d7958ed4e5be69d1c8e32f0e8f739\",\n    \"after_sha256\": \"0f22281a51dd2de58a7fc7e5b0e7437c2c55b4651033672d8fd9ad3afcf3761d\",\n    \"inverse\": [\n      {\n        \"after\": \"ld\\\": \\\"ssert_eq!(",
+        "before": "bb6c53f4e51d7958ed4e5be69d1c8e32f0e8f739\",\n    \"after_sha256\": \"25138dfe7ce35cbff2a710ec1776fec0169940fdb30d9c85bbf1f7a80bc40a82\",\n    \"inverse\": [\n      {\n        \"after\": \"ld\\\": \\\"ssert_eq!("
+      },
+      {
+        "after": "6b6e3620aee3675532b725d92c953799ad600fea656a\",\n    \"inverse\": [\n      {\n        \"after\": \"),\\\\n\\\",\\n        \\\"before\\\": \\\"\\\"\\n      }\\n    ],\\n    \\\"after_sha256\\\": \\\"2bd99dc5fd267e671b02a9e6c0034d86792854091094c7a947aaf015aa077f5a\\\"\\n  },\\n  {\\n    \\\"path\\\": \\\"src/source_verify/declaration.rs\\\",\\n    \\\"\",\n        \"before\": \"),\\\\n\\\",\\n        \\\"before\\\": \\\"\\\"\\n      }\\n    ],\\n    \\\"after_sha256\\\": \\\"da72498c6f63a37e488c75df9fe31fe2301c12114e5db0d496bc6d4072f6e06d\\\"\\n  },\\n  {\\n    \\\"path\\\": \\\"src/source_verify/declaration.rs\\\",\\n    \\\"\"\n      },\n      {\n        \"after\": \"mantic_graph__source_inventory.rs.before.txt\\\",\\n    \\\"inverse\\\": [\\n      {\\n        \\\"after\\\": \\\"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_f\\\",\\n        \\\"before\\\": \\\"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../../src/cleanup_plan/replay/expression_f\\\"\\n      },\\n      {\\n        \\\"after\\\": \\\"/expression_facts/receiving/directory/\",\n        \"before\": \"mantic_graph__source_inventory.rs.before.txt\\\",\\n    \\\"inverse\\\": [\\n      {\\n        \\\"after\\\": \\\"/expression_facts/receiving/directory/\"\n      },\n      {\n        \"after\": \" \\\"tests__hir_module_boundaries.rs.before.txt\\\",\\n    \\\"inverse\\\": [\\n      {\\n        \\\"after\\\": \\\"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_fact\\\",\\n        \\\"before\\\": \\\"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\\\\\"),\\\\n        include_str!(\\\\\\\"../src/cleanup_plan/replay/expression_fact\\\"\\n      },\\n      {\\n        \\\"after\\\": \\\"/expression_facts/receiving/directory/\",\n        \"before\": \" \\\"tests__hir_module_boundaries.rs.before.txt\\\",\\n    \\\"inverse\\\": [\\n      {\\n        \\\"after\\\": \\\"/expression_facts/receiving/directory/\"\n      },\n      {\n        \"after\": \" \\\"path\\\": \\\"tests/hir_module_boundaries.rs\\\",\\n    \\\"after_sha256\\\": \\\"adabe5869e41ae5caf037eccc2f50e324eda6ef82c0199109a9588ca296cf6f3\\\",\\n    \\\"before_sha256\\\": \\\"444261bea247a81d21553b5c52d19dbad5b3f3c\",\n        \"before\": \" \\\"path\\\": \\\"tests/hir_module_boundaries.rs\\\",\\n    \\\"after_sha256\\\": \\\"d9149e4de775720f16fd1f70603f953bc45f215b7534f16106e58d3f136b0b74\\\",\\n    \\\"before_sha256\\\": \\\"444261bea247a81d21553b5c52d19dbad5b3f3c\"\n      },\n      {\n        \"after\": \"),\\\\n\\\",\\n        \\\"before\\\": \\\"\\\"\\n  ",
+        "before": "6b6e3620aee3675532b725d92c953799ad600fea656a\",\n    \"inverse\": [\n      {\n        \"after\": \"),\\\\n\\\",\\n        \\\"before\\\": \\\"\\\"\\n  "
+      },
+      {
+        "after": "beeebe9832a22519aabe009cd37cec9d43b5221\",\n    \"after_sha256\": \"66b022ebafb65512e0946b6e3620aee3675532b725d92c953799ad600fea656a\",\n    \"inverse\": [\n      {\n        \"after\": \"),\\\\n\\\",\\n        ",
+        "before": "beeebe9832a22519aabe009cd37cec9d43b5221\",\n    \"after_sha256\": \"6a21fd55bb64168e18ea4baf33ea74615ddcf0d6eff0735a0dfcf4ce51cb75e0\",\n    \"inverse\": [\n      {\n        \"after\": \"),\\\\n\\\",\\n        "
+      },
+      {
+        "after": "501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5\",\n    \"inverse\": [\n      {\n        \"after\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\\n#[path = \\\"semantic_receivers/status_inline.rs\\\"]\\nmod status_inline;\\n\",\n        \"before\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\"\n      },\n      {\n        \"after\": \"::catch_unwind(|| invert(&forged, &cur",
+        "before": "501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5\",\n    \"inverse\": [\n      {\n        \"after\": \"::catch_unwind(|| invert(&forged, &cur"
+      },
+      {
+        "after": "5d40a534b2f3c66a10ba7b16af9dd08eb8012607\",\n    \"after_sha256\": \"d0d1b7e116b320f80ddd501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5\",\n    \"inverse\": [\n      {\n        \"after\": \"::catch_unwind(|| ",
+        "before": "5d40a534b2f3c66a10ba7b16af9dd08eb8012607\",\n    \"after_sha256\": \"a354a8476c045fcb176ce6babbbb6174236f49efa3f3deae24de7eb4c445d8e9\",\n    \"inverse\": [\n      {\n        \"after\": \"::catch_unwind(|| "
+      },
       {
         "after": "10ec1776fec0169940fdb30d9c85bbf1f7a80bc40a82\",\n    \"inverse\": [\n      {\n        \"after\": \"ld\\\": \\\"ssert_eq!(current.replace(new, old), before);\\\\n        }\\\\n    }\\\\n}\\\\n\\\"\\n      },\\n      {\\n        \\\"new\\\": \\\"::catch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\\n#[test]\\\\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\\\\n    let root = Path::new(env!(\\\\\\\"CARGO_MANIFEST_DIR\\\\\\\"));\\\\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\\\\n        &std::fs::read_to_string(root.join(\\\\\\\"docs/evidence/public-wire-receipts-v1/sources.json\\\\\\\"))\\\\n            .unwrap(),\\\\n    )\\\\n    .unwrap();\\\\n    assert_eq!(proofs.len(), 6);\\\\n    let mut paths = std::collections::BTreeSet::new();\\\\n    for proof in &proofs {\\\\n        let path = proof[\\\\\\\"path\\\\\\\"].as_str().unwrap();\\\\n        assert!(paths.insert(path));\\\\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\\\\n        let before = invert(proof, &current);\\\\n        assert_eq!(\\\\n            before,\\\\n            std::fs::read_to_string(root.join(proof[\\\\\\\"archive\\\\\\\"].as_str().unwrap())).unwrap()\\\\n        );\\\\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \\\\\\\"\\\\\\\\n\\\\\\\"))).is_err());\\\\n        let mut forged = proof.clone();\\\\n        forged[\\\\\\\"before_sha256\\\\\\\"] = serde_json::Value::String(\\\\\\\"0\\\\\\\".repeat(64));\\\\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\",\\n        \\\"old\\\": \\\"::catch_unwind(|| invert(&forged, &current)).is_err());\\\\n    }\\\\n}\\\\n\\\"\\n      }\\n    ]\\n  },\\n  {\\n    \\\"path\\\": \\\"src/workspace_gr\",\n        \"before\": \"ld\\\": \\\"ssert_eq!(current.replace(new, old), before);\\\\n        }\\\\n    }\\\\n}\\\\n\\\"\\n      }\\n    ]\\n  },\\n  {\\n    \\\"path\\\": \\\"src/workspace_gr\"\n      },\n      {\n        \"after\": \"       \\\"old\\\": \\\"    _ => panic!(\\\\\\\"",
         "before": "10ec1776fec0169940fdb30d9c85bbf1f7a80bc40a82\",\n    \"inverse\": [\n      {\n        \"after\": \"       \\\"old\\\": \\\"    _ => panic!(\\\\\\\""

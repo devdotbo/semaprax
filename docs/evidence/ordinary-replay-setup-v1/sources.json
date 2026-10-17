@@ -303,8 +303,12 @@
     "path": "src/source_reflows/semantic_receivers.rs",
     "archive": "src__source_reflows__semantic_receivers.rs.before.txt",
     "before_sha256": "b5bc349c44ec11c094484d7b5d40a534b2f3c66a10ba7b16af9dd08eb8012607",
-    "after_sha256": "a354a8476c045fcb176ce6babbbb6174236f49efa3f3deae24de7eb4c445d8e9",
+    "after_sha256": "d0d1b7e116b320f80ddd501dc7361e26a85fcb5bd5aa4ab1f6ba65d783ee85d5",
     "inverse": [
+      {
+        "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[path = \"semantic_receivers/status_inline.rs\"]\nmod status_inline;\n",
+        "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
+      },
       {
         "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[test]\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/public-wire-receipts-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(proofs.len(), 6);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &proofs {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
         "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
@@ -519,8 +523,24 @@
     "path": "docs/evidence/receiver-source-custody-v1/inverse.json",
     "archive": "docs__evidence__receiver-source-custody-v1__inverse.json.before.txt",
     "before_sha256": "b73fb7b3dc1b3d2dbcce17ac6beeebe9832a22519aabe009cd37cec9d43b5221",
-    "after_sha256": "6a21fd55bb64168e18ea4baf33ea74615ddcf0d6eff0735a0dfcf4ce51cb75e0",
+    "after_sha256": "66b022ebafb65512e0946b6e3620aee3675532b725d92c953799ad600fea656a",
     "inverse": [
+      {
+        "after": "),\\n\",\n        \"before\": \"\"\n      }\n    ],\n    \"after_sha256\": \"2bd99dc5fd267e671b02a9e6c0034d86792854091094c7a947aaf015aa077f5a\"\n  },\n  {\n    \"path\": \"src/source_verify/declaration.rs\",\n    \"",
+        "before": "),\\n\",\n        \"before\": \"\"\n      }\n    ],\n    \"after_sha256\": \"da72498c6f63a37e488c75df9fe31fe2301c12114e5db0d496bc6d4072f6e06d\"\n  },\n  {\n    \"path\": \"src/source_verify/declaration.rs\",\n    \""
+      },
+      {
+        "after": "mantic_graph__source_inventory.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_f\",\n        \"before\": \"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\"),\\n        include_str!(\\\"../../src/cleanup_plan/replay/expression_f\"\n      },\n      {\n        \"after\": \"/expression_facts/receiving/directory/",
+        "before": "mantic_graph__source_inventory.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"/expression_facts/receiving/directory/"
+      },
+      {
+        "after": " \"tests__hir_module_boundaries.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_fact\",\n        \"before\": \"cts/receiving/directory/status_prefix/reused_cursor/tests.rs\\\"),\\n        include_str!(\\\"../src/cleanup_plan/replay/expression_fact\"\n      },\n      {\n        \"after\": \"/expression_facts/receiving/directory/",
+        "before": " \"tests__hir_module_boundaries.rs.before.txt\",\n    \"inverse\": [\n      {\n        \"after\": \"/expression_facts/receiving/directory/"
+      },
+      {
+        "after": " \"path\": \"tests/hir_module_boundaries.rs\",\n    \"after_sha256\": \"adabe5869e41ae5caf037eccc2f50e324eda6ef82c0199109a9588ca296cf6f3\",\n    \"before_sha256\": \"444261bea247a81d21553b5c52d19dbad5b3f3c",
+        "before": " \"path\": \"tests/hir_module_boundaries.rs\",\n    \"after_sha256\": \"d9149e4de775720f16fd1f70603f953bc45f215b7534f16106e58d3f136b0b74\",\n    \"before_sha256\": \"444261bea247a81d21553b5c52d19dbad5b3f3c"
+      },
       {
         "after": "),\\n\",\n        \"before\": \"\"\n      }\n    ],\n    \"after_sha256\": \"da72498c6f63a37e488c75df9fe31fe2301c12114e5db0d496bc6d4072f6e06d\"\n  },\n  {\n    \"path\": \"src/source_verify/declaration.rs\",\n    \"",
         "before": "),\\n\",\n        \"before\": \"\"\n      }\n    ],\n    \"after_sha256\": \"75534a389c06ec3f4e28e6504303bf155b51062b46e5a76e2c80a255a5e56aa9\"\n  },\n  {\n    \"path\": \"src/source_verify/declaration.rs\",\n    \""
@@ -743,8 +763,12 @@
     "path": "docs/evidence/source-reader-followups-20261016/sources.json",
     "archive": "docs__evidence__source-reader-followups-20261016__sources.json.before.txt",
     "before_sha256": "9da9213d17c06aeeb501a3a0bb6c53f4e51d7958ed4e5be69d1c8e32f0e8f739",
-    "after_sha256": "25138dfe7ce35cbff2a710ec1776fec0169940fdb30d9c85bbf1f7a80bc40a82",
+    "after_sha256": "0f22281a51dd2de58a7fc7e5b0e7437c2c55b4651033672d8fd9ad3afcf3761d",
     "inverse": [
+      {
+        "after": "atch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\"\n      },\n      {\n        \"new\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\\n#[path = \\\"semantic_receivers/status_inline.rs\\\"]\\nmod status_inline;\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).",
+        "before": "atch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current))."
+      },
       {
         "after": "ld\": \"ssert_eq!(current.replace(new, old), before);\\n        }\\n    }\\n}\\n\"\n      },\n      {\n        \"new\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\\n#[test]\\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\\n    let root = Path::new(env!(\\\"CARGO_MANIFEST_DIR\\\"));\\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\\n        &std::fs::read_to_string(root.join(\\\"docs/evidence/public-wire-receipts-v1/sources.json\\\"))\\n            .unwrap(),\\n    )\\n    .unwrap();\\n    assert_eq!(proofs.len(), 6);\\n    let mut paths = std::collections::BTreeSet::new();\\n    for proof in &proofs {\\n        let path = proof[\\\"path\\\"].as_str().unwrap();\\n        assert!(paths.insert(path));\\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\\n        let before = invert(proof, &current);\\n        assert_eq!(\\n            before,\\n            std::fs::read_to_string(root.join(proof[\\\"archive\\\"].as_str().unwrap())).unwrap()\\n        );\\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \\\"\\\\n\\\"))).is_err());\\n        let mut forged = proof.clone();\\n        forged[\\\"before_sha256\\\"] = serde_json::Value::String(\\\"0\\\".repeat(64));\\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\",\n        \"old\": \"::catch_unwind(|| invert(&forged, &current)).is_err());\\n    }\\n}\\n\"\n      }\n    ]\n  },\n  {\n    \"path\": \"src/workspace_gr",
         "before": "ld\": \"ssert_eq!(current.replace(new, old), before);\\n        }\\n    }\\n}\\n\"\n      }\n    ]\n  },\n  {\n    \"path\": \"src/workspace_gr"

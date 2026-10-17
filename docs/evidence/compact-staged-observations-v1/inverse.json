@@ -221,10 +221,14 @@
   },
   {
     "path": "tests/hir_module_boundaries.rs",
-    "after_sha256": "d9149e4de775720f16fd1f70603f953bc45f215b7534f16106e58d3f136b0b74",
+    "after_sha256": "adabe5869e41ae5caf037eccc2f50e324eda6ef82c0199109a9588ca296cf6f3",
     "before_sha256": "0fe29b4e9a4c1aea7e6ff38c608e4bc3f8b82c4c3c3a4484f35cf7f2490842bb",
     "archive": "tests__hir_module_boundaries.rs.before.txt",
     "inverse": [
+      {
+        "after": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact",
+        "before": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact"
+      },
       {
         "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact",
         "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_fact"
@@ -289,10 +293,14 @@
   },
   {
     "path": "tests/workspace/semantic_graph/source_inventory.rs",
-    "after_sha256": "da72498c6f63a37e488c75df9fe31fe2301c12114e5db0d496bc6d4072f6e06d",
+    "after_sha256": "2bd99dc5fd267e671b02a9e6c0034d86792854091094c7a947aaf015aa077f5a",
     "before_sha256": "401c904b0941c4dc7e4677936366d23375d7503944692061ee024f9278d40cb1",
     "archive": "tests__workspace__semantic_graph__source_inventory.rs.before.txt",
     "inverse": [
+      {
+        "after": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f",
+        "before": "cts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f"
+      },
       {
         "after": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f",
         "before": "/expression_facts/receiving/directory/status_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_f"
