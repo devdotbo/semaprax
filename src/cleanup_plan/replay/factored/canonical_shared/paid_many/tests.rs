@@ -214,9 +214,27 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
                 let nonempty_exits = logical.states.iter().filter(|(_, id)| {
                     logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
                 }).count();
+                let exits = logical.states.len();
+                let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();
+                assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
+                let removed_backing = if nonempty_exits > 0 { size_of::<usize>() } else { 0 };
+                let old_removed = exits * super::super::empty_signature::BRANCH_CONTROLS
+                    + nonempty_exits * (super::super::intern_arena::SignatureQuery::EXIT_CONTROLS + size_of::<[usize; 2]>())
+                    + misses * (super::super::intern_arena::SignatureQuery::MISS_CONTROLS + size_of::<[&usize; 2]>())
+                    + removed_backing;
+                let new_added = if logical.scratch_paid { Canonicalizer::BORROWED_EXIT_LOCAL } else { 0 }
+                    + if exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
+                    + exits * Canonicalizer::BORROWED_EXIT_WARM;
                 assert_eq!(tuples[0].2, tuples[1].2);
-                assert_eq!(tuples[0].1, tuples[1].1 + nonempty_exits * size_of::<Result<(), Diagnostic>>());
-                assert_eq!(tuples[0].3.allocated, tuples[1].3.allocated);
+                assert_eq!(tuples[0].1 + new_added, tuples[1].1 + old_removed,
+                    "exact source-role equation; no constructor delta because both observers pay the same current envelope");
+                assert_eq!(tuples[0].3.allocated, tuples[1].3.allocated + removed_backing);
+                assert_eq!(tuples[0].3.freed, tuples[1].3.freed + removed_backing);
+                assert_eq!(tuples[0].3.allocations, tuples[1].3.allocations + usize::from(nonempty_exits > 0));
+                assert_eq!(tuples[0].3.reallocations, tuples[1].3.reallocations);
+                assert!(tuples[1].3.highwater <= tuples[0].3.highwater
+                    && tuples[0].3.highwater <= tuples[1].3.highwater + removed_backing,
+                    "only the single persistent child-ID allocation was removed");
             }
         }
     }

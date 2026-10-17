@@ -87,11 +87,32 @@ fn selected_tree_fallback_has_exact_immediate_small_bills_work_and_whole_drop() 
             let nonempty_exits = logical.states.iter().filter(|(_, id)| {
                 logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
             }).count();
+            let exits = logical.states.len();
+            let misses = logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count();
+            assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
+            let removed_backing = if nonempty_exits > 0 { std::mem::size_of::<usize>() } else { 0 };
+            let old_removed = exits * empty_signature::BRANCH_CONTROLS
+                + nonempty_exits * (intern_arena::SignatureQuery::EXIT_CONTROLS + std::mem::size_of::<[usize; 2]>())
+                + misses * (intern_arena::SignatureQuery::MISS_CONTROLS + std::mem::size_of::<[&usize; 2]>())
+                + removed_backing;
+            let new_added = if logical.scratch_paid { Canonicalizer::BORROWED_EXIT_LOCAL } else { 0 }
+                + if exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
+                + exits * Canonicalizer::BORROWED_EXIT_WARM;
             assert_eq!(current.result, old.result, "same real small producer and all six error fields");
             assert_eq!(current.work, old.work);
-            assert_eq!(old.paid, current.paid + nonempty_exits * std::mem::size_of::<Result<(), Diagnostic>>(),
-                "one physically absent forwarding Result per completed nonempty Exit");
-            assert_eq!(heap, old_heap, "same actual fallback allocations and release");
+            assert_eq!(old.paid + new_added, current.paid + old_removed,
+                "exact source-role equation; this direct entry forms no constructor fee request");
+            if nonempty_exits == 0 {
+                assert_eq!(heap, old_heap, "no child-ID allocation existed to remove");
+            } else {
+                assert_eq!(old_heap.allocations, heap.allocations + 1);
+                assert_eq!(old_heap.allocated, heap.allocated + removed_backing);
+                assert_eq!(old_heap.freed, heap.freed + removed_backing);
+                assert_eq!(old_heap.reallocations, heap.reallocations);
+                assert!(heap.highwater <= old_heap.highwater && old_heap.highwater <= heap.highwater + removed_backing,
+                    "source-tight peak range for one removed persistent allocation");
+            }
+            eprintln!("selected-small composition width={width} weight={weight} old={old:?}/{old_heap:?} current={current:?}/{heap:?}");
             settled(heap); settled(old_heap);
             for (route, full) in [(0, &current), (2, &old)] {
                 for limit in [0, full.paid - 1, full.paid] {
