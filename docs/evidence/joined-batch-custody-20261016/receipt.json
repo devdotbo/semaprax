@@ -1,6 +1,6 @@
 {
   "status": "PASS_JOINED_SOURCE_AND_EXPLICIT_BOUNDARIES_ONLY",
-  "source_commit": "b0394d73680019573f6c6bad9d7127cede258d3d",
+  "source_commit": "ddad53d1ae9b7dadd12f7b05be4732196749508f",
   "domain_counts": {
     "Previous16c": 383,
     "Maina3": 30,
@@ -343,7 +343,7 @@
   "completed_authority_generations": 1,
   "pre856_generation_interrupted_before_output": true,
   "source_proof_sha256": "87caeb0823cd6e52fbd87fe4488f36ae514174897b2f73c5d84ca3c550daa315",
-  "authority_proof_sha256": "b34978dbdd52b50e8984798d95fed4f451c0c311c2157065aecacd0774dd549e",
+  "authority_proof_sha256": "681387bdd6fe1e84a082dcc16a5efa5a28302cf3353eafd2e955ea4b9197ba47",
   "guard_sha256": {
     "tests/hir_module_boundaries.rs": "5090d08b52cb9650af5fc2c2a28739a9783c3d43c7a0f25037ce032b04f51137",
     "tests/workspace/semantic_graph/source_inventory.rs": "aa4e1844d2e867c519bd24fdb560535c9f07b7daa790e343c1b4b04e978d0989",

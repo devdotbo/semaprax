@@ -281,8 +281,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
-    "sha256": "63a11caa2c4ba2d3e5b3f72045f572ef63490d879724514074a013d9b8bf2fdb",
-    "lines": 265
+    "sha256": "c0f445022ebd5ec1ac69bf16dd2f8f88029ae80032047f221cc0c2ac6d2afff4",
+    "lines": 334
   },
   {
     "source": "src/cleanup_plan/replay/path_array/main44/before.rs",
@@ -491,8 +491,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
-    "sha256": "f97d5f7a46fafb7bb72cc22c8a50b4b277c9e80596c50619dfb9ff94716db525",
-    "lines": 299
+    "sha256": "06d8eb03297f3e9daf1d66c15fb46024005edce6f35d2286f9c547103d907e49",
+    "lines": 379
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs",
@@ -571,7 +571,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "3cc2ef2632d4f1fade61d45ef344fa44fd5ea92958b5a1fd6305c3a84dfb832d",
+    "sha256": "ea76a4e97506217eb9c18ab39b01ef592391694180d90829bce5c0dbd51aea74",
     "lines": 1099
   },
   {
