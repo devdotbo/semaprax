@@ -12,7 +12,7 @@ occurrence in its root macro and one in its owned-core macro. Every other old
 registration is unchanged. Unknown and duplicate new inputs remain forbidden.
 
 `guard_payload.py` authenticates the complete original algorithm and current
-allowed table, applies four reversible acquisition substitutions in memory,
+allowed table, applies five reversible acquisition substitutions in memory,
 and retains the original recipe verifier. The public MAIN043 bootstrap admits
 this exact helper by length and SHA before substituting its two original
 extension acquisitions. It authenticates the complete current carrier before
