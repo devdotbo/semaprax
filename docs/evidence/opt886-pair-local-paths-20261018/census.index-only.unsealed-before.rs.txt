@@ -1,0 +1,93 @@
+//! Diagnostic-only fixed storage. No compiler payment, work or verdict authority.
+use super::*;
+use std::cell::{Cell, RefCell};
+#[derive(Clone, Copy, Debug)]
+pub(super) struct Row {
+    pub invocation: usize,
+    pub old: bool,
+    pub function: [u8; 256],
+    pub function_len: usize,
+    pub payer: &'static str,
+    pub selected: bool,
+    pub pairs: usize,
+    pub rounds: usize,
+    pub complete: bool,
+    pub ended: bool,
+    pub unwound: bool,
+    pub overflow: bool,
+    pub truncated: bool,
+}
+const EMPTY: Row = Row { invocation: 0, old: false, function: [0; 256], function_len: 0,
+    payer: "", selected: false, pairs: 0, rounds: 0, complete: false, ended: false,
+    unwound: false, overflow: false, truncated: false };
+struct Trace { enabled: bool, count: usize, rows: [Row; 128] }
+thread_local! {
+    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, rows: [EMPTY; 128] }) };
+    static LOST: Cell<usize> = const { Cell::new(0) };
+}
+fn lost() { LOST.with(|n| n.set(n.get().saturating_add(1))); }
+pub(super) fn reset() {
+    LOST.with(|n| n.set(0));
+    TRACE.with(|t| { if let Ok(mut t) = t.try_borrow_mut() { t.enabled = true; t.count = 0; } else { lost(); } });
+}
+pub(super) struct Guard { index: Option<usize> }
+pub(super) fn begin(function: &ResolvedFunction, budget: &ReplayBudget, old: bool) -> Guard {
+    let index = TRACE.with(|t| {
+        let Ok(mut t) = t.try_borrow_mut() else { lost(); return None; };
+        if !t.enabled { return None; }
+        if t.count == t.rows.len() { lost(); return None; }
+        let index = t.count;
+        t.count += 1;
+        let mut row = EMPTY;
+        row.invocation = index;
+        row.old = old;
+        let id = function.id.as_str().as_bytes();
+        row.function_len = id.len().min(row.function.len());
+        row.truncated = id.len() > row.function.len();
+        row.function[..row.function_len].copy_from_slice(&id[..row.function_len]);
+        row.payer = match budget.payer {
+            AllocationPayer::LegacyUnobserved => "unobserved",
+            AllocationPayer::ActiveBuilder => "active-builder",
+            AllocationPayer::SelectedReservation => "selected-reservation",
+            AllocationPayer::Oracle(_) => "oracle",
+        };
+        row.selected = budget.admission == allocation::AdmissionMode::SelectedRetained;
+        t.rows[index] = row;
+        Some(index)
+    });
+    Guard { index }
+}
+impl Guard {
+    fn update(&self, action: impl FnOnce(&mut Row)) {
+        let Some(index) = self.index else { return; };
+        TRACE.with(|t| {
+            if let Ok(mut t) = t.try_borrow_mut() {
+                if t.enabled { action(&mut t.rows[index]); }
+            } else { lost(); }
+        });
+    }
+    pub(super) fn pair(&self) {
+        self.update(|r| match r.pairs.checked_add(1) { Some(n) => r.pairs = n, None => r.overflow = true });
+    }
+    pub(super) fn round(&self) {
+        self.update(|r| match r.rounds.checked_add(1) { Some(n) => r.rounds = n, None => r.overflow = true });
+    }
+    pub(super) fn success(&self) { self.update(|r| r.complete = !r.truncated && !r.overflow); }
+}
+impl Drop for Guard {
+    fn drop(&mut self) {
+        self.update(|r| { r.ended = true; r.unwound = std::thread::panicking(); });
+    }
+}
+// Called only after the original result/fixture/owner Drop and observed budget.
+// Allocation here cannot affect a compiler outcome or frontier.
+pub(super) fn finish() -> (Vec<Row>, usize) {
+    let mut rows = TRACE.with(|t| {
+        let Ok(mut t) = t.try_borrow_mut() else { lost(); return Vec::new(); };
+        t.enabled = false;
+        t.rows[..t.count].to_vec()
+    });
+    let lost = LOST.with(Cell::get);
+    if lost != 0 { for row in &mut rows { row.complete = false; } }
+    (rows, lost)
+}
