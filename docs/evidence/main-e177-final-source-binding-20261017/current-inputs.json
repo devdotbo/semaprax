@@ -793,9 +793,9 @@
       "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
       "compiled": true,
       "current": {
-        "length": 16860,
-        "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
-        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2.txt"
+        "archive": "docs/evidence/current339-source-custody-repair-20261017/next-big-current.whole.rs.txt",
+        "length": 18389,
+        "sha256": "8e0c754cdf2cc8890fac140ba7f7a76c7387a4d247ed66a328e640922cdd1b73"
       },
       "views": [
         {
@@ -803,6 +803,12 @@
           "length": 16397,
           "sha256": "6e59808e53c27ac7d60543c44d70b356f735bec892bca02947a391883ff12c01",
           "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/6e59808e53c27ac7d60543c44d70b356f735bec892bca02947a391883ff12c01.txt"
+        },
+        {
+          "name": "whole886-next-big",
+          "length": 16860,
+          "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
+          "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2.txt"
         }
       ]
     },
@@ -1763,6 +1769,23 @@
           "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d.txt"
         }
       ]
+    },
+    {
+      "source": "tests/native/string_settlement/codec_allocation/codec808_frontier.rs",
+      "compiled": true,
+      "current": {
+        "archive": "docs/evidence/current339-source-custody-repair-20261017/codec808-current.whole.rs.txt",
+        "length": 7154,
+        "sha256": "e9fe6869382db9e86c8ddd2a4ee4d71d63783ccb6817724d813b192bd72d54e0"
+      },
+      "views": [
+        {
+          "name": "whole-root42-current-codec808",
+          "archive": "docs/evidence/current339-source-custody-repair-20261017/codec808-root42.whole.rs.txt",
+          "length": 7068,
+          "sha256": "39837794268d365be877d508bbec1210ab7469de5185758f22209088ef75cae2"
+        }
+      ]
     }
   ],
   "current_stage": {
@@ -1788,5 +1811,10 @@
     "earned76_checkpoint": "7df356dad83653f30f3610a1ede238289607baa4",
     "source_input_baseline": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
     "pending_strict210": false
+  },
+  "immediate_before": {
+    "archive": "docs/evidence/current339-source-custody-repair-20261017/final98-current-inputs.whole-before.json",
+    "length": 82953,
+    "sha256": "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52"
   }
 }

@@ -1,0 +1,65 @@
+{
+  "all99_current_and_whole_view_tuples_mechanically_authenticated": true,
+  "base_head": "886b75626e7935323f2dd37f38e2884abf87fa43",
+  "checks": [
+    "whole3source inverse and actual886 Git before images",
+    "full old98 structured inverse",
+    "all99 current/archive byte length+SHA",
+    "projection current ordered actual45parts vs actualuncaught eb3e tuple",
+    "git diff --check"
+  ],
+  "families": [
+    {
+      "cause": "older54 membership returned before consulting complete outer98 membership; caught hostile panics preceding final uncaught length failure are preserved",
+      "owners": [
+        65,
+        66,
+        67,
+        69,
+        70,
+        71,
+        73,
+        75
+      ],
+      "repair": "closed final file/value selection before older membership"
+    },
+    {
+      "cause": "same older-membership route plus one missing codec808 exact ROOT42 source stage",
+      "owners": [
+        92
+      ],
+      "repair": "one codec current/prior row and compiled arm; full old98 reconstructed exactly; updated next-big source current plus whole886 prior retained"
+    },
+    {
+      "cause": "observer record_components/imports/prelude/HIR fields add90 bytes to complete projection join",
+      "owners": [
+        76
+      ],
+      "repair": "exact current45-part ordered join and complete old48a4 endpoint; carrier and all44 source tuples held before scoped historical view; current purity input unaffected"
+    },
+    {
+      "cause": "semantic_batch previous requests closed stages behind same next-big membership routing",
+      "evidence": "all15 semantic source rows requested current-stage tuples present in older54 or final99; no old packet edits",
+      "owners": [
+        173
+      ]
+    }
+  ],
+  "new_exact_selectors": [
+    "source_reflows_merge::next_big_batch_inputs::final_only_membership_precedes_the_complete_older_table_without_accepting_foreign_values",
+    "source_reflows_merge::final_ready_inputs::observer_projection_stage_keeps_whole_current_and_prior_and_refuses_foreign_joins"
+  ],
+  "new_physical_rust_modules": 0,
+  "new_table_count": 99,
+  "new_table_rows": 1,
+  "old42_old54_old98_c883_proofs_and_caps_not_retargeted": true,
+  "old98_complete_inverse": true,
+  "remaining_before_execution": "finite source-guard/helper/three-bootstrap seals and applicable174/F6/241 metadata must be composed once at future combined freeze; not executed here",
+  "runtime_or_compiler_claim": false,
+  "rust_sources": [
+    "src/source_reflows_merge/next_big_batch_inputs.rs",
+    "src/source_reflows_merge/final_ready_inputs.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "status": "SOURCE_ONLY_REPAIR_NOT_COMPILED_OR_EXECUTED"
+}

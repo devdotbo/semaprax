@@ -1,0 +1,12 @@
+{
+  "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
+  "before_sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
+  "after_sha256": "8e0c754cdf2cc8890fac140ba7f7a76c7387a4d247ed66a328e640922cdd1b73",
+  "inverse_remove_exact_once": [
+    "    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::file(path,length,expected) { return Some(value); }\n",
+    "    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,supplied);\n    let supplied=outer.as_str();\n"
+  ],
+  "no_old_table_or_assertion_edits": true,
+  "runtime_unmeasured": true,
+  "additive_test_body": "\n#[test]\nfn final_only_membership_precedes_the_complete_older_table_without_accepting_foreign_values() {\n    let source=\"docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv\";\n    let expected=\"fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb\";\n    let previous=include_str!(\"../../docs/evidence/main-e177-final-source-binding-20261017/views/fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb.txt\");\n    let current=include_str!(\"../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv\");\n    assert_eq!(previous.lines().count(),90);\n    assert_ne!(current,previous);\n    assert!(!packet()[\"rows\"].as_array().unwrap().iter().any(|row|row[\"source\"]==source));\n    let path=Path::new(env!(\"CARGO_MANIFEST_DIR\")).join(source);\n    assert_eq!(file(&path,previous.len(),expected).as_deref(),Some(previous));\n    assert_eq!(value(source,expected,current),previous);\n    assert_eq!(value(source,expected,previous),previous);\n    for foreign in [String::new(),format!(\"{current} \"),format!(\"{current}{current}\"),\"foreign\".to_owned()] {\n        assert_eq!(value(source,expected,&foreign),foreign);\n    }\n    assert!(file(&path,previous.len()+1,expected).is_none());\n    assert!(file(&path,previous.len(),&\"0\".repeat(64)).is_none());\n}\n"
+}

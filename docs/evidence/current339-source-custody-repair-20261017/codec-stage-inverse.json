@@ -1,0 +1,29 @@
+{
+  "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+  "before_sha256": "670f5428569e4cb158c667ec0afd72d204e2eb7e530f093b582a716e05865259",
+  "after_sha256": "49d75a4611d30ca868f57f9ddb67f0a7a388b615733f29db8608aa23b0b9c220",
+  "packet_source": "docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json",
+  "before_packet_sha256": "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52",
+  "after_packet_sha256": "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71",
+  "inverse": [
+    {
+      "after": "assert_eq!(data.len(), 84171);",
+      "before": "assert_eq!(data.len(), 82953);"
+    },
+    {
+      "after": "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71",
+      "before": "996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52"
+    },
+    {
+      "after": "    assert_eq!(packet[\"rows\"].as_array().unwrap().len(), 99);\n    let before=read_view(&packet[\"immediate_before\"]);\n    let mut restored=packet.clone();\n    let added=restored[\"rows\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(added[\"source\"],\"tests/native/string_settlement/codec_allocation/codec808_frontier.rs\");\n    let route=restored[\"rows\"].as_array_mut().unwrap().iter_mut().find(|row|row[\"source\"]==\"src/source_reflows_merge/next_big_batch_inputs.rs\").unwrap();\n    let mut previous=route[\"views\"].as_array_mut().unwrap().pop().unwrap();\n    assert_eq!(previous[\"name\"],\"whole886-next-big\");\n    previous.as_object_mut().unwrap().remove(\"name\");route[\"current\"]=previous;\n    restored.as_object_mut().unwrap().remove(\"immediate_before\");\n    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),\"complete original98 source table retained\");",
+      "before": "    assert_eq!(packet[\"rows\"].as_array().unwrap().len(), 98);"
+    },
+    {
+      "after": "fn compiled(source: &str) -> Option<&'static str> {\n    match source {\n        \"tests/native/string_settlement/codec_allocation/codec808_frontier.rs\" => Some(include_str!(\"../../tests/native/string_settlement/codec_allocation/codec808_frontier.rs\")),\n",
+      "before": "fn compiled(source: &str) -> Option<&'static str> {\n    match source {\n"
+    }
+  ],
+  "whole_old98_order_and_rows_retained": true,
+  "no_old42_truth_changed": true,
+  "finite_guard_metadata_successor_pending_combined_freeze": true
+}

@@ -1,0 +1,480 @@
+{
+  "c883": {
+    "old_table_sha256": "83ac5f029587334507d16b67b075e1382b7cfa3df0ae4e704e1fe7fc3c6c019d",
+    "changed_physical_rows": [
+      {
+        "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "requested_whole_stage": {
+          "length": 156404,
+          "sha256": "bdf614306dd818a9d66a794edf46008c3306ffa2fabcb3acbf4b03060d7db316"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv",
+        "requested_whole_stage": {
+          "length": 5150,
+          "sha256": "fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan.rs",
+        "requested_whole_stage": {
+          "length": 33704,
+          "sha256": "13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay.rs",
+        "requested_whole_stage": {
+          "length": 325774,
+          "sha256": "b4995d99cca72389c384fab3cc3b8d79e092634e9562fc1dea0ca544761719c8"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/branch_clone.rs",
+        "requested_whole_stage": {
+          "length": 16985,
+          "sha256": "59a609682f8a1ef9d6db0ad89301206b937e20dab3debac052ed85628db45816"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+        "requested_whole_stage": {
+          "length": 31717,
+          "sha256": "cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+        "requested_whole_stage": {
+          "length": 20800,
+          "sha256": "77eaa20915336fa5076884d3f87ba267c47dec665c57de0d3919765f8380a0d8"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+        "requested_whole_stage": {
+          "length": 37219,
+          "sha256": "b4e8e91622e62eb9795fb6b8495c6a54cce68cba5d1a56566438cc05592ceea0"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "requested_whole_stage": {
+          "length": 36291,
+          "sha256": "ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/factored.rs",
+        "requested_whole_stage": {
+          "length": 45631,
+          "sha256": "525a1ecd04c23876bcdb3c959592d68710079dc8b602659fb2650f07467b0693"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/skeleton_work.rs",
+        "requested_whole_stage": {
+          "length": 47594,
+          "sha256": "2532173c152df743989e4afd5fc84ae4b3dd32bf45b0a72fe09039a832887c4b"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/source_reflows/semantic_receivers.rs",
+        "requested_whole_stage": {
+          "length": 30307,
+          "sha256": "05451fc41e67572e493f670e887ff9360f8d0ead8c2a0994cd0f9812beaee547"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/workspace_graph/expected_projection/held_projection.rs",
+        "requested_whole_stage": {
+          "length": 21539,
+          "sha256": "51c2e34bbc8906757ae0b781e3988b732177da0bba8c05b011c378792d54c356"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/workspace_graph/tests/builder_limits.rs",
+        "requested_whole_stage": {
+          "length": 36981,
+          "sha256": "f342819e37b0d60ba64bb502cb06ab120f00170be29ee8860294234db60121b4"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/workspace_graph/type_proof_tests.rs",
+        "requested_whole_stage": {
+          "length": 52672,
+          "sha256": "96f67d2f15a416adff470656f1eb697d87ab8ce05bbddbc349efce178d611309"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/hir_module_boundaries.rs",
+        "requested_whole_stage": {
+          "length": 98174,
+          "sha256": "5090d08b52cb9650af5fc2c2a28739a9783c3d43c7a0f25037ce032b04f51137"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/wasm/scalar_browser_ci_contract.rs",
+        "requested_whole_stage": {
+          "length": 10197,
+          "sha256": "64c26c09b6346b47463e95ca9e50ae6c59cd635112608582fc122ec7ed3d6dd5"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/workspace/semantic_graph.rs",
+        "requested_whole_stage": {
+          "length": 57300,
+          "sha256": "b768071aad66268faf5b01a8bc773580b004d30883d62046f4187842fa9ace73"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/workspace/semantic_graph/source_inventory.rs",
+        "requested_whole_stage": {
+          "length": 96961,
+          "sha256": "ec2e0fc045c11e2f81cfe29e91c00c46cba741cca2ab3939b455d765fbd67011"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+        "requested_whole_stage": {
+          "length": 8728,
+          "sha256": "d039555eb377e21ff99cd74941b44af0eaf31015eb2242c1db08f3fc36272b9d"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      }
+    ],
+    "all_requested_stages_preserved": true
+  },
+  "root42": {
+    "old_table_sha256": "27ec261cbc4f2b00a6ff0be7084f8c1a8c76e42523043b180f49701f8540abd2",
+    "changed_physical_rows": [
+      {
+        "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "requested_whole_stage": {
+          "length": 157441,
+          "sha256": "369a29b5860f644b33b82e8e968ab66225faf70cfb930757aff04ba591824d4e",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/369a29b5860f644b33b82e8e968ab66225faf70cfb930757aff04ba591824d4e.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan.rs",
+        "requested_whole_stage": {
+          "length": 33704,
+          "sha256": "13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/13e6348ce65faeccf92fc10bb0136e1aa1fc61e16cab73c649f173ef831c9f8b.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay.rs",
+        "requested_whole_stage": {
+          "length": 326295,
+          "sha256": "add44f92c19bb698ebec165c74554f4d606cd38885e6230e1e882556eb068848",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/add44f92c19bb698ebec165c74554f4d606cd38885e6230e1e882556eb068848.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/branch_clone.rs",
+        "requested_whole_stage": {
+          "length": 17063,
+          "sha256": "dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274",
+          "archive": "docs/evidence/compile4-exact-source-successor-20261017/current/dbedf701561e84f3bad64dca84478115c28884fb3ff12b9aa5b34b3ed4ae5274.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+        "requested_whole_stage": {
+          "length": 31717,
+          "sha256": "cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+        "requested_whole_stage": {
+          "length": 20800,
+          "sha256": "77eaa20915336fa5076884d3f87ba267c47dec665c57de0d3919765f8380a0d8",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/77eaa20915336fa5076884d3f87ba267c47dec665c57de0d3919765f8380a0d8.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+        "requested_whole_stage": {
+          "length": 37266,
+          "sha256": "a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b",
+          "archive": "docs/evidence/compile4-exact-source-successor-20261017/current/a3aec4ec0190ac665d563ec9c231e4120c073b0e30e1647ad760a92a35e2e44b.txt"
+        },
+        "acquisition_tables": [
+          "final98",
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "requested_whole_stage": {
+          "length": 36291,
+          "sha256": "ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/factored.rs",
+        "requested_whole_stage": {
+          "length": 45985,
+          "sha256": "aefc6b83feccaab7f919718135f285bba22243c4e726adccef37ca72cfd7a73b",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/aefc6b83feccaab7f919718135f285bba22243c4e726adccef37ca72cfd7a73b.txt"
+        },
+        "acquisition_tables": [
+          "final98",
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+        "requested_whole_stage": {
+          "length": 65056,
+          "sha256": "91f0f7c964ba8a94b91f8da9a6aaa73017b49e3adf49bde5828645128015dbca",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/91f0f7c964ba8a94b91f8da9a6aaa73017b49e3adf49bde5828645128015dbca.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+        "requested_whole_stage": {
+          "length": 9293,
+          "sha256": "59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+        "requested_whole_stage": {
+          "length": 44200,
+          "sha256": "6d70cfe62b35c0ab8617b86aada00de55c3bd8aade98578d4ac994e8a1a9b86a",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/6d70cfe62b35c0ab8617b86aada00de55c3bd8aade98578d4ac994e8a1a9b86a.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/owned_suffix.rs",
+        "requested_whole_stage": {
+          "length": 17895,
+          "sha256": "4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/4a6e8f3c107e0ca3c8eff1d78418ab3787acafc50d445f46bd5f496ef492a6e0.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/owned_suffix/tests.rs",
+        "requested_whole_stage": {
+          "length": 16740,
+          "sha256": "fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/fa6695fa3d741c3a96ee5e69f45dac1e5ad2a28080baf9b47f43bac2612f2977.txt"
+        },
+        "acquisition_tables": [
+          "final98"
+        ]
+      },
+      {
+        "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+        "requested_whole_stage": {
+          "length": 31873,
+          "sha256": "f972a395e082188f2e05fb98624c80e04070aa0f106731230920c288120e65e3",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/f972a395e082188f2e05fb98624c80e04070aa0f106731230920c288120e65e3.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/source_reflows/semantic_receivers.rs",
+        "requested_whole_stage": {
+          "length": 36956,
+          "sha256": "10d00d2724897708edf0bcb0164dcea49fe61743af6f18dfcb6a81eaec24383c",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/10d00d2724897708edf0bcb0164dcea49fe61743af6f18dfcb6a81eaec24383c.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/source_reflows_merge.rs",
+        "requested_whole_stage": {
+          "length": 46507,
+          "sha256": "57c0fc50ab6d03eb94094b8f47e8946f5f4a011a1d9a387083eab6bdb41d8168",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/57c0fc50ab6d03eb94094b8f47e8946f5f4a011a1d9a387083eab6bdb41d8168.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "src/workspace_graph/tests/builder_limits.rs",
+        "requested_whole_stage": {
+          "length": 36981,
+          "sha256": "f342819e37b0d60ba64bb502cb06ab120f00170be29ee8860294234db60121b4",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/f342819e37b0d60ba64bb502cb06ab120f00170be29ee8860294234db60121b4.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/hir_module_boundaries.rs",
+        "requested_whole_stage": {
+          "length": 99079,
+          "sha256": "7dade8fc55a0ea5f4a16bc57d1ac8ce43ed200694a39ea6e3d33038228c8b8c1",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/7dade8fc55a0ea5f4a16bc57d1ac8ce43ed200694a39ea6e3d33038228c8b8c1.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/native/string_settlement/codec_allocation/codec808_frontier.rs",
+        "requested_whole_stage": {
+          "length": 7068,
+          "sha256": "39837794268d365be877d508bbec1210ab7469de5185758f22209088ef75cae2",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/39837794268d365be877d508bbec1210ab7469de5185758f22209088ef75cae2.txt"
+        },
+        "acquisition_tables": []
+      },
+      {
+        "source": "tests/workspace/semantic_graph.rs",
+        "requested_whole_stage": {
+          "length": 57426,
+          "sha256": "eba36d8815d2fd4f0e94995357e42c96085fdce1005519bca65feb4d693b5b79",
+          "archive": "docs/evidence/earned-managed-pin42-source-coupling-20261017/after-owners/tests__workspace__semantic_graph.rs.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/workspace/semantic_graph/source_inventory.rs",
+        "requested_whole_stage": {
+          "length": 96877,
+          "sha256": "4dbeb81d84db0f80bb51ccc8fc1a25d2d71e49759ddeeccdc84c4d1748b27e11",
+          "archive": "docs/evidence/workspace21-final-bindings-20261017/current/4dbeb81d84db0f80bb51ccc8fc1a25d2d71e49759ddeeccdc84c4d1748b27e11.txt"
+        },
+        "acquisition_tables": [
+          "older54"
+        ]
+      },
+      {
+        "source": "tests/workspace/semantic_graph/source_inventory_controls.rs",
+        "requested_whole_stage": {
+          "length": 13153,
+          "sha256": "041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d",
+          "archive": "docs/evidence/accepted-whole-source-ingress-20261017/blobs/041318692c94bce2b09485903ba91dba25f75d71a7b9727db0611184e059a13d.txt"
+        },
+        "acquisition_tables": [
+          "final98",
+          "older54"
+        ]
+      },
+      {
+        "source": "src/workspace_graph/type_proof_tests.rs",
+        "requested_whole_stage": {
+          "length": 52672,
+          "sha256": "53dff12c17b2f8733dbe19b3404585b7f4d6d58ff5a17d55a27ff64ce76b8d4b",
+          "archive": "docs/evidence/earned-managed-pin42-source-coupling-20261017/after-owners/src__workspace_graph__type_proof_tests.rs.txt"
+        },
+        "acquisition_tables": [
+          "final98",
+          "older54"
+        ]
+      }
+    ],
+    "all_requested_stages_preserved": false
+  }
+}

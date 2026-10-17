@@ -141,6 +141,7 @@ fn actual(row: &serde_json::Value) -> String {
     assert_eq!(value,read_view(current),"complete actual archive");value
 }
 pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {
+    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::file(path,length,expected) { return Some(value); }
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));let relative=path.strip_prefix(root).ok()?;
     if !relative.components().all(|p|matches!(p,std::path::Component::Normal(_))) { return None; }
     let source=relative.to_str()?;let packet=packet();let row=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)?;
@@ -148,6 +149,8 @@ pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {
     actual(row);Some(read_view(prior))
 }
 pub(crate) fn value(source: &str,expected: &str,supplied: &str) -> String {
+    let outer=crate::source_reflows_merge::main_e177_final_inputs::value(source,expected,supplied);
+    let supplied=outer.as_str();
     let packet=packet();let Some(row)=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)else{return supplied.to_owned()};
     let Some(prior)=row["views"].as_array().unwrap().iter().find(|v|v["sha256"]==expected)else{return supplied.to_owned()};
     let current=actual(row);let previous=read_view(prior);
@@ -174,4 +177,24 @@ fn complete_current_and_parent_views_refuse_foreign_truncated_duplicate_and_wron
     }
     assert!(file(&root.join("foreign"),0,"foreign").is_none());
     assert!(file(&root.join("src/../Cargo.toml"),0,"foreign").is_none());
+}
+
+#[test]
+fn final_only_membership_precedes_the_complete_older_table_without_accepting_foreign_values() {
+    let source="docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv";
+    let expected="fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb";
+    let previous=include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb.txt");
+    let current=include_str!("../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv");
+    assert_eq!(previous.lines().count(),90);
+    assert_ne!(current,previous);
+    assert!(!packet()["rows"].as_array().unwrap().iter().any(|row|row["source"]==source));
+    let path=Path::new(env!("CARGO_MANIFEST_DIR")).join(source);
+    assert_eq!(file(&path,previous.len(),expected).as_deref(),Some(previous));
+    assert_eq!(value(source,expected,current),previous);
+    assert_eq!(value(source,expected,previous),previous);
+    for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),"foreign".to_owned()] {
+        assert_eq!(value(source,expected,&foreign),foreign);
+    }
+    assert!(file(&path,previous.len()+1,expected).is_none());
+    assert!(file(&path,previous.len(),&"0".repeat(64)).is_none());
 }
