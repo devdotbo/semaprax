@@ -110,6 +110,7 @@ fn emit_hir_c_with_receiving(
     >,
     allocation: Option<&checked_allocation::Projection<'_, '_>>,
 ) -> Result<String, Diagnostic> {
+    let ordinary_validation;
     if let Some(projection) = allocation {
         if partition.is_some()
             || selected.is_some()
@@ -121,6 +122,7 @@ fn emit_hir_c_with_receiving(
             ));
         }
         projection.revalidate()?;
+        ordinary_validation = None;
     } else if let Some(projection) = partition {
         if output_profile != NativeOutputProfile::SelectedPartition
             || !std::ptr::eq(program, projection.owner().program())
@@ -130,6 +132,7 @@ fn emit_hir_c_with_receiving(
             ));
         }
         projection.owner().revalidate_compiler()?;
+        ordinary_validation = None;
     } else {
         if matches!(
             output_profile,
@@ -139,11 +142,12 @@ fn emit_hir_c_with_receiving(
                 "native emission requires its exact sealed source projection",
             ));
         }
-        hir::validate(program)?;
+        ordinary_validation = Some(native_resource::OrdinaryValidatedProgram::validate(
+            program,
+        )?);
     }
     // This remains the authoritative complete program. The selected view
     // intentionally omits ordinary main and cannot pass public HIR validation.
-    let authoritative_program = program;
     if (output_profile == NativeOutputProfile::SelectedFinalUtf8) != selected.is_some() {
         return Err(backend_error(
             "selected native profile requires an independently derived certificate",
@@ -175,7 +179,9 @@ fn emit_hir_c_with_receiving(
     } else if let Some(projection) = partition {
         native_resource::build_partition_resource_abi(projection.owner())?
     } else {
-        native_resource::build_resource_abi(authoritative_program)?
+        native_resource::build_ordinary_validated_resource_abi(
+            ordinary_validation.expect("ordinary receiving validated the authoritative program"),
+        )?
     };
     let record_layouts = AggregateLayoutCache::build(program, AggregateTarget::Native64)?;
     let variant_layouts = VariantLayoutCache::build(program, VariantTarget::Native64)?;
@@ -467,3 +473,10 @@ fn emit_hir_c_with_receiving(
     }
     Ok(output.into_string())
 }
+
+#[cfg(test)]
+#[path = "emission_before.rs"]
+mod before;
+#[cfg(test)]
+#[path = "validation_reuse_tests.rs"]
+mod validation_reuse_tests;
