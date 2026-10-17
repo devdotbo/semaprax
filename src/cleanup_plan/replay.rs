@@ -109,10 +109,10 @@ use crate::prelude;
 mod factored;
 mod leaf_index;
 use leaf_index::Leaves;
+mod owned_suffix;
 mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
-mod owned_suffix;
 mod typed_storage;
 use compact_stage::CopySource;
 use path_summary::{

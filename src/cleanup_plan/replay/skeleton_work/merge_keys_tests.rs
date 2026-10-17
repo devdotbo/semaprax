@@ -251,14 +251,14 @@ fn storage_run(
             } else {
                 work.merged_call_states(states)
             }
-            .map(|states| drop(states))
+            .map(drop)
         } else {
             if before {
                 work.before_merged_paths(paths)
             } else {
                 work.merged_paths(paths)
             }
-            .map(|paths| drop(paths))
+            .map(drop)
         };
         drop(work.dag_scratch.take());
         drop(work.ordinary_scratch.take());
