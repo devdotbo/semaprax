@@ -11,7 +11,13 @@ const PACKET: &str = include_str!(concat!(
     "/docs/evidence/ordinary-hir-prefix-877-v1/source-inverse.json"
 ));
 fn restore(current: &str, row: &serde_json::Value) -> String {
-    let composed = crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(row["path"].as_str().unwrap(), current, "opt877");
+    // Acquire the exact full after-image named by THIS immutable inverse before
+    // entering older semantic/census stages. A missing stage remains unchanged
+    // and is refused by the original full digest checks below.
+    let acquired_after = crate::source_reflows_merge::next_big_batch_inputs::value(
+        row["path"].as_str().unwrap(), row["after_sha256"].as_str().unwrap(), current,
+    );
+    let composed = crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(row["path"].as_str().unwrap(), &acquired_after, "opt877");
     let current = composed.as_str();
     let acquired = census_checkpoint(row["path"].as_str().unwrap(), current);
     let current = acquired.as_str();

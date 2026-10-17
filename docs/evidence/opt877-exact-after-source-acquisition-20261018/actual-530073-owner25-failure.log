@@ -1,0 +1,37 @@
+
+running 1 test
+test cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift ... 
+thread 'cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift' (31163602) panicked at src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs:97:5:
+assertion `left == right` failed
+  left: 324478
+ right: Number(322178)
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift' (31163602) panicked at src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs:97:5:
+assertion `left == right` failed
+  left: 324476
+ right: Number(322178)
+
+thread 'cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift' (31163602) panicked at src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs:18:5:
+assertion `left == right` failed
+  left: "7125983718c032d76547906eb5d2c27d6fee90067392f05fe49faa42be7cba54"
+ right: String("51b66c2403ffe480a245f1d485ab31206601abfc47b66489b7212448bd69a2cf")
+
+thread 'cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift' (31163602) panicked at src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs:18:5:
+assertion `left == right` failed
+  left: "74ec793ea8fd45c8e09e75206d2b4d6d23e3605be09c18fb0c685175e1927789"
+ right: String("51b66c2403ffe480a245f1d485ab31206601abfc47b66489b7212448bd69a2cf")
+
+thread 'cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift' (31163602) panicked at src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs:18:5:
+assertion `left == right` failed
+  left: "8404df1d42d0df22546e6cc55865ee440d2a2cf0c39afecec58aa6d3b385f510"
+ right: String("d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7")
+FAILED
+
+failures:
+
+failures:
+    cleanup_plan::replay::skeleton_work::enumerated_prefix::source_custody::six_complete_predecessors_and_four_created_sources_keep_exact_bytes_and_refuse_drift
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 10063 filtered out; finished in 13.61s
+
