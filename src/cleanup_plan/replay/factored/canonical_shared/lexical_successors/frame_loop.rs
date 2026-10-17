@@ -1,5 +1,8 @@
 //! The actual retained canonical frame-loop method, not a forwarding adapter.
 use super::super::*;
+#[cfg(test)]
+mod before_borrowed_single;
+mod borrowed_single;
 
 impl Canonicalizer<'_> {
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn id_inner_into(
@@ -38,7 +41,8 @@ impl Canonicalizer<'_> {
                 function,
                 2 * std::mem::size_of::<SmallWeighted>()
                     + 2 * std::mem::size_of::<SharedWeighted>()
-                    + std::mem::size_of::<Result<(), Diagnostic>>(),
+                    + std::mem::size_of::<Result<(), Diagnostic>>()
+                    + borrowed_single::LOCAL_CONTROLS,
                 "factored direct root enum receiving",
             ));
         }
@@ -51,6 +55,9 @@ impl Canonicalizer<'_> {
         let root = Rc::new(shared);
         let root_copy = attempt!(share_weighted(function, budget, &root));
         self.frames.push(CanonicalFrame::Enter(root_copy));
+        // The original direct-root admission above prepaid both bool values.
+        // This one primitive frame belongs to this nonrecursive activation.
+        let mut exit_admission_paid = false;
         while let Some(frame) = self.frames.pop() {
             attempt!(budget.charge(function, 1, "factored canonical frame"));
             match frame {
@@ -110,23 +117,26 @@ impl Canonicalizer<'_> {
                         self.frames.push(CanonicalFrame::Enter(child));
                     }
                 }
-                CanonicalFrame::Exit(state, accepted, successors) => {
+                CanonicalFrame::Exit(state, accepted, mut successors) => {
                     self.open.retain(|entry| entry != &state);
                     attempt!(budget.charge(
                         function,
                         successors.len(),
                         "factored canonical signature construction",
                     ));
-                    // The old signature-work debit above remains first. Acquire
-                    // the actual new branch receivers before evaluating the guard.
-                    if budget.pays_allocations() {
-                        attempt!(budget.reserve_bytes(
-                            function,
-                            empty_signature::BRANCH_CONTROLS,
-                            "canonical empty signature branch receiving",
-                        ));
-                    }
-                    if successors.is_empty() {
+                    // One real primitive admission replaces the old separate
+                    // branch/query/miss positive calls on the singleton route.
+                    // Every compound query/iterator/move role remains fresh.
+                    #[cfg(test)]
+                    borrowed_single::note(budget, exit_admission_paid);
+                    attempt!(budget.reserve_bytes(
+                        function,
+                        if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },
+                        "canonical lexical exit receiving",
+                    ));
+                    exit_admission_paid = true;
+                    match successors.len() {
+                    0 => {
                         if budget.pays_allocations() {
                             attempt!(budget.reserve_bytes(
                                 function,
@@ -174,6 +184,55 @@ impl Canonicalizer<'_> {
                         }
                         self.states.insert_prepaid(state, id);
                         continue;
+                    }
+                    1 => {
+                        // One original iterator.next, without an Index or slice
+                        // helper. Its temporary iterator ends before remove(0).
+                        let Some((label, child)) = successors.iter().next() else {
+                            unreachable!("one successor was matched");
+                        };
+                        let Some(child_id) = self.states.get(child) else {
+                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
+                            receiving.ready = true;
+                            return;
+                        };
+                        let query = borrowed_single::OneQuery { accepted, label, child: child_id };
+                        let id = match self.ids.get(&query) {
+                            Some(id) => {
+                                #[cfg(test)]
+                                arena_tests::signature_lookup(true);
+                                *id
+                            }
+                            None => {
+                                #[cfg(test)]
+                                arena_tests::signature_lookup(false);
+                                attempt!(budget.reserve_array::<(Label, usize)>(
+                                    function, 1, "factored canonical signature vector",
+                                ));
+                                let mut key = Vec::with_capacity(1);
+                                {
+                                    let (label, _child) = successors.remove(0);
+                                    key.push((label, *child_id));
+                                }
+                                // Same owned Vec input slots as the original
+                                // into_iter hand-off; release its buffer before
+                                // either arena can acquire backing, as before.
+                                drop(successors);
+                                let key = (accepted, key);
+                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                                let id = self.ids.len();
+                                self.ids.insert_prepaid(key, id);
+                                id
+                            }
+                        };
+                        self.child_ids.clear();
+                        if !self.states.contains_key(&state) {
+                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                        }
+                        self.states.insert_prepaid(state, id);
+                        continue;
+                    }
+                    _ => {}
                     }
                     attempt!(budget.reserve_bytes(
                         function,

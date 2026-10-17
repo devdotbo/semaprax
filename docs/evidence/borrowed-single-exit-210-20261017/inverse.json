@@ -1,0 +1,45 @@
+{
+  "file": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+  "before_sha256": "6574f2145c08dda98817759625ae7ed0100784501f1a80ae31b6aca600617560",
+  "after_sha256": "b023816343528d8601d0d4d85b9db9bcd69141d974329c43958ccc53416b39fa",
+  "old_branch": "                    // The old signature-work debit above remains first. Acquire\n                    // the actual new branch receivers before evaluating the guard.\n                    if budget.pays_allocations() {\n                        attempt!(budget.reserve_bytes(\n                            function,\n                            empty_signature::BRANCH_CONTROLS,\n                            \"canonical empty signature branch receiving\",\n                        ));\n                    }\n                    if successors.is_empty() {\n",
+  "new_branch": "                    // One real primitive admission replaces the old separate\n                    // branch/query/miss positive calls on the singleton route.\n                    // Every compound query/iterator/move role remains fresh.\n                    #[cfg(test)]\n                    borrowed_single::note(budget, exit_admission_paid);\n                    attempt!(budget.reserve_bytes(\n                        function,\n                        if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },\n                        \"canonical lexical exit receiving\",\n                    ));\n                    exit_admission_paid = true;\n                    match successors.len() {\n                    0 => {\n",
+  "one_arm": "                    1 => {\n                        // One original iterator.next, without an Index or slice\n                        // helper. Its temporary iterator ends before remove(0).\n                        let Some((label, child)) = successors.iter().next() else {\n                            unreachable!(\"one successor was matched\");\n                        };\n                        let Some(child_id) = self.states.get(child) else {\n                            receiving.refusal = Some(replay_error(function, \"cleanup CFG contains a cycle\"));\n                            receiving.ready = true;\n                            return;\n                        };\n                        let query = borrowed_single::OneQuery { accepted, label, child: child_id };\n                        let id = match self.ids.get(&query) {\n                            Some(id) => {\n                                #[cfg(test)]\n                                arena_tests::signature_lookup(true);\n                                *id\n                            }\n                            None => {\n                                #[cfg(test)]\n                                arena_tests::signature_lookup(false);\n                                attempt!(budget.reserve_array::<(Label, usize)>(\n                                    function, 1, \"factored canonical signature vector\",\n                                ));\n                                let mut key = Vec::with_capacity(1);\n                                {\n                                    let (label, _child) = successors.remove(0);\n                                    key.push((label, *child_id));\n                                }\n                                // Same owned Vec input slots as the original\n                                // into_iter hand-off; release its buffer before\n                                // either arena can acquire backing, as before.\n                                drop(successors);\n                                let key = (accepted, key);\n                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);\n                                let id = self.ids.len();\n                                self.ids.insert_prepaid(key, id);\n                                id\n                            }\n                        };\n                        self.child_ids.clear();\n                        if !self.states.contains_key(&state) {\n                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);\n                        }\n                        self.states.insert_prepaid(state, id);\n                        continue;\n                    }\n                    _ => {}\n                    }\n",
+  "status": "SOURCE_ONLY_NO_EXECUTABLE_QUALIFICATION",
+  "exact_whole_inverse": true,
+  "shared_query_api_tariffs_exact": true,
+  "root_self_constructor_exact": true,
+  "original_strict210_test_exact": true,
+  "before_method_wrapper_exact_except_named_adapter": true,
+  "base": "b7425f236863f37e5a8cd16d66996e7296f8ecfa",
+  "new_rust_modules": [
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs"
+  ],
+  "parse_only_rustfmt": true,
+  "cargo_tests_builds_binders_executed": false,
+  "conditional_host": {
+    "old_removed": 2414,
+    "primitive": 352,
+    "fresh": 294,
+    "per_use_selection": 20,
+    "local": 2,
+    "exits": 3,
+    "new_added": 1296,
+    "source_difference": 1118,
+    "observed_width1_regression": 1109,
+    "margin": 9
+  },
+  "before_namespace_glue": {
+    "old": "use super::super::*;",
+    "new": "use super::super::super::*;"
+  },
+  "explicit_miss_buffer_drop": true,
+  "new_selectors": [
+    "cleanup_plan::replay::factored::canonical_shared::receiving_layer_tests::borrowed_single_complete_immediate_method_keeps_unique_and_duplicate_hits_and_reports_full_drop",
+    "cleanup_plan::replay::factored::canonical_shared::receiving_layer_tests::borrowed_single_real_two_label_general_route_keeps_full_old_maps_and_reports_conservative_overhead",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::frame_loop::borrowed_single::tests::literal_one_query_matches_complete_owned_order_including_empty_and_longer_signatures",
+    "cleanup_plan::replay::factored::canonical_shared::lexical_successors::frame_loop::borrowed_single::tests::one_atomic_exit_site_pays_full_cold_and_warm_primitive_and_preserves_six_field_frontiers"
+  ]
+}
