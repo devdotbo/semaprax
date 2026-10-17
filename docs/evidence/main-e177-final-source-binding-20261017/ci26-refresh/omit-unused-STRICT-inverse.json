@@ -1,0 +1,15 @@
+{
+  "before_sha256": "3e455cbc62f6cf3f097aca5e9d4992e6b564f5fa6866ba421db3827088c8b129",
+  "after_sha256": "35a43dc7bab679d64ff86b268504e32ed047476e45dae5a1681808de21cc824a",
+  "whole_before": "prepare-with-unused-STRICT.whole-before.py.txt",
+  "edits": [
+    {
+      "before": "wb=held(W);strict=ast.literal_eval(next(n.value for n in ast.parse(wb).body if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='STRICT'for t in n.targets)));oldstrict=copy.deepcopy(strict);changed=[]\nfor p in out:\n if p in strict:assert strict[p]==(len(held(p)),H(held(p)));strict[p]=(len(out[p]),H(out[p]));changed.append(p)\nassert anchor not in strict;strict[anchor]=(len(old),H(old));assert all(len(out[p])<=262144 for p in changed);out[W]=assign(wb,'STRICT',strict)\n# Every prior channel remains in place; only existing affected dependency pins change plus one small whole-table anchor.\nassert list(strict)[:-1]==list(oldstrict) and set(strict)-set(oldstrict)=={anchor}\nfor p in set(strict)&set(oldstrict)-set(changed):assert strict[p]==oldstrict[p]\n",
+      "after": "# Original executed successor174 and frozen174-preparation remain immutable prior-head evidence.\nheld(W);held(S+'frozen174-preparation.json')\n"
+    },
+    {
+      "before": "changed_STRICT=changed,STRICT_added=[anchor]",
+      "after": "changed_STRICT=[],STRICT_added=[],historical_174_wrapper_preserved=True"
+    }
+  ]
+}

@@ -1,0 +1,7 @@
+{
+  "before_sha256": "c4fa070a3fd1f29cd4e87d2b83040f32a57ebad5afcd50fdbda2b5e97d3b3d07",
+  "after_sha256": "e4b9da02027e39f58e6a9f2aac9454b81d3eae44f46ce3a530feed479a92058f",
+  "before": "assert m['classes']==old['classes']and m['chunks']==old['chunks']and m['closure_only']==old['closure_only'];assert m['classes'][SUBJECT]['role']=='test-only';full[name]=m",
+  "after": "assert m['classes']==old['classes']and m['chunks']==old['chunks']and m['closure_only']==old['closure_only']\n if SUBJECT in m['sources']:assert m['classes'][SUBJECT]['role']=='test-only'\n else:assert SUBJECT not in m['classes']\n full[name]=m",
+  "whole_before": "role-helper-c4fa.whole-before.py.txt"
+}

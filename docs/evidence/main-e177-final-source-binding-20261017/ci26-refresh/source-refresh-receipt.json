@@ -1,0 +1,180 @@
+{
+  "status": "PREPARED_SOURCE_ONLY_NOT_APPLIED",
+  "source_head": "745d52567722e71e23f9dc302ea65f41843540fa",
+  "current_rows": 98,
+  "unchanged_rows": 97,
+  "compiled_false_preserved": true,
+  "Python_channels_unchanged": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay/branch_clone/direct.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/selected_labels.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/isolated_paths.rs",
+    "src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs",
+    "src/source_reflows/main99f_controllers.rs",
+    "src/source_reflows/main_f247_controllers.rs",
+    "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows_merge/next_big_batch_inputs.rs",
+    "src/workspace_graph/tests/core_attempt_trace.rs",
+    "src/workspace_graph/type_proof_tests.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_3e66.rs",
+    "tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs",
+    "tests/workspace/semantic_graph.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+    "src/cleanup_plan/replay/factored/oracle_hook.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "src/cleanup_plan.rs",
+    "src/cleanup_plan/replay/factored.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/owned_suffix.rs",
+    "src/cleanup_plan/replay/owned_suffix/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs",
+    "src/workspace_graph/expected_projection/held_projection.rs",
+    "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+    "src/workspace_graph/tests/builder_limits.rs",
+    "tests/workspace/semantic_graph/source_inventory_controls.rs"
+  ],
+  "whole_prior_table_anchor": "docs/evidence/main-e177-final-source-binding-20261017/views/de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7.txt",
+  "changed_STRICT": [],
+  "STRICT_added": [],
+  "historical_174_wrapper_preserved": true,
+  "prior_174_actual_head": "f71d7a308aa2dbbf5b21c456b399a5cffec48aac",
+  "prior_FINAL6_actual_head": "a4fba2df26877b5f7e1caa2f2d478c9d9df50545",
+  "physical_binders_not_executed": true,
+  "role_refresh_required": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "files": [
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before": {
+        "length": 2253,
+        "sha256": "5a2e520b593ebb6a5fb24941c48c847b77fd69ac450497d2d362fc6d52d2e6a5"
+      },
+      "after": {
+        "length": 2253,
+        "sha256": "eb672022d63e8d74c1697d20313e94496663bfd02e40d82014034eafad6c17e6"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before": {
+        "length": 4404,
+        "sha256": "c1d1c5ae31ed2cca7a801b00dfffe045bda9d9e63c74bbca1f311f2a49c44475"
+      },
+      "after": {
+        "length": 4404,
+        "sha256": "31b9761bcf18898af250aa962c390e6806cf2ea70a1eb39d6343f88609a4e6d3"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json",
+      "before": {
+        "length": 80681,
+        "sha256": "de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7"
+      },
+      "after": {
+        "length": 81430,
+        "sha256": "3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current/10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5.txt",
+      "before": null,
+      "after": {
+        "length": 575213,
+        "sha256": "10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before": {
+        "length": 31018,
+        "sha256": "204ac50f546f16d3bb50194b44e22f8d7cb43b6e26acdfd82aceca470e79a5c9"
+      },
+      "after": {
+        "length": 31018,
+        "sha256": "4e3f0780784b4327633d3e52051028b906a346724a96ab3327854f955009767b"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7.txt",
+      "before": null,
+      "after": {
+        "length": 80681,
+        "sha256": "de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before": {
+        "length": 2766,
+        "sha256": "6a380fc79457231db88495f958653d4df130a83ee7588968597cfeffc419b8c8"
+      },
+      "after": {
+        "length": 2766,
+        "sha256": "1e2d712de39bf937cfac54a02b58de840d64d8f3ea0e66ef534c05db77851f61"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before": {
+        "length": 24328,
+        "sha256": "8a7cae110cf160a144ebfaf7dcf3419dc74682db7e30ff4893dfa3731700e09b"
+      },
+      "after": {
+        "length": 24628,
+        "sha256": "4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164"
+      },
+      "inverse": "restore complete before; remove only if previously absent"
+    }
+  ]
+}
