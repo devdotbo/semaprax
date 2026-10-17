@@ -4412,6 +4412,18 @@ ordinary HIR/cleanup replay. Record-match results use the same transfer before
 settlement across verifier, HIR, interpreter, C11, and Wasm. No target repairs
 the canonical plan.
 
+`codegen/native_resource.rs` owns a private ordinary validation receipt containing
+one shared `ResolvedProgram` reference. Ordinary native emission constructs it
+at its complete HIR validation boundary and consumes it at resource ABI
+construction, over the same immutable authoritative program rather than an
+emission view. Raw builders still validate independently; selected fused,
+partition and checked-allocation owners retain their own replay routes. The
+receipt retains no allocated backing or publication authority. Its pointer-sized
+carrier replaces the preceding authoritative-program reference across that
+interval. The complete previous receiving function remains test-only in
+`codegen/native_emit/emission_before.rs`; invocation-count, byte-debit, diagnostic
+and carrier-layout controls are authored, with execution qualification pending.
+
 The Project v8 empty-export route admits checked internal libraries in either
 manifest layout while leaving descriptor and public-package routes absent.
 Nonempty exports retain their original admission rules. `std/io` owns the

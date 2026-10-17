@@ -212,3 +212,31 @@ fn identifier_registration_rejects_collisions() {
     assert_eq!(diagnostic.code, "SPX-B104");
     assert!(diagnostic.message.contains("identifier collision"));
 }
+
+#[test]
+fn ordinary_receipt_preserves_complete_resource_scaffold() {
+    let program = resolve(&source("Token", "FileHost", "finalize"));
+    let expected = build_resource_abi(&program).unwrap();
+    let receipt = OrdinaryValidatedProgram::validate(&program).unwrap();
+    assert_eq!(
+        build_ordinary_validated_resource_abi(receipt).unwrap(),
+        expected
+    );
+}
+
+#[test]
+fn ordinary_receipt_cannot_carry_validation_across_mutation() {
+    let mut program = resolve(&source("Token", "FileHost", "finalize"));
+    let receipt = OrdinaryValidatedProgram::validate(&program).unwrap();
+    build_ordinary_validated_resource_abi(receipt).unwrap();
+    // Mutation is possible only after the borrow's last use. A new receipt
+    // must rerun ordinary validation; the previous success has no cache entry.
+    program.entrypoint = DeclarationId::new("missing.entry");
+    let expected = hir::validate(&program).unwrap_err();
+    assert_eq!(build_resource_abi(&program).unwrap_err(), expected);
+    let actual = match OrdinaryValidatedProgram::validate(&program) {
+        Ok(_) => panic!("mutated program received an ordinary validation receipt"),
+        Err(error) => error,
+    };
+    assert_eq!(actual, expected);
+}
