@@ -1,0 +1,37 @@
+{
+  "status": "SOURCE_ONLY_NO_RUST_TEST_OR_QUALIFICATION",
+  "base": "72936084939be5d80de518aa6c261ab0c3cc8f36",
+  "incoming_main": "6d101efd8c255330a3fe5fb0c06e058c6f8c085f",
+  "controller_full_prefix_bytes": 1139,
+  "controller_full_prefix_sha256": "ff4bb7b94985ffa8577c54ec80973a4e243be77d02241f9116798455ec8019e2",
+  "controller_original_assertions_unchanged": true,
+  "new_helper_lines": 94,
+  "packet": {
+    "length": 6736,
+    "sha256": "c86d24d999c60102106e637ccdedfaa552da67101f678673b9ea1daf14980452"
+  },
+  "closed_dispatch": {
+    "sources": 7,
+    "before_archives": 7,
+    "whole_original_sources_json": 1,
+    "unknown_paths": "InvalidData; no raw filesystem fallback",
+    "std_surface": [
+      "collections",
+      "panic",
+      "fs::read_to_string"
+    ]
+  },
+  "acquisition": "Existing E177 nofollow/prelength/EOF/identity/SHA FD primitive; explicit narrower262144 cap before every call. Full actual+compiled+current archive authentication precedes immutable6d source selection. Packet itself held physically and compared to compiled bytes before parse.",
+  "all_current7_match_exact_immutable_Git_stage": "72936084939be5d80de518aa6c261ab0c3cc8f36",
+  "all_incoming7_and_before7_match_immutable_Git": "6d101efd8c255330a3fe5fb0c06e058c6f8c085f",
+  "max_subject_bytes": 161313,
+  "resealer": {
+    "path": "/Volumes/Semaprax/provenance/main6d-closed-controller-acquisition-20261017/reseal-current.py",
+    "sha256": "b34c52c799b16ae183269eee1366b915c5258c87f8e33179a65500d605bf6628",
+    "execution": "Not executed. Use only after all reviewed source/raw edits; preservewhole beforepacket/helper and changeonly seven current descriptors+two packetlength/twoSHA helperliterals. Existing immutable incoming/control/before descriptors unchanged. It records reviewed-working-stage tuples honestly."
+  },
+  "final_coupling": "Reseal7current onlyafter final raw joins and before final guard moduleSHA. Incoming child itself excluded from7subjects; no hash cycle. No new physical Rust module beyond already-registered status_inline child.",
+  "Cargo": false,
+  "Rust_bodies_executed": 0,
+  "unknown_path_negative": "Source inspection only; actual old controller negatives remain pending in final owning run."
+}
