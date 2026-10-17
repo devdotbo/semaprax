@@ -132,6 +132,8 @@ impl Canonicalizer<'_> {
                     ));
                     // The pattern reads the retained place: no extra len(),
                     // moved scrutinee local, query or helper return exists.
+                    // This paid place-pattern keeps the independent typed oracle; an if adds a boolean operand.
+                    #[allow(clippy::single_match)]
                     match exit_arity {
                         1 => {
                             #[cfg(test)]
@@ -148,6 +150,8 @@ impl Canonicalizer<'_> {
                             exit_admission_paid = true;
                             // One original iterator.next, without an Index or slice
                             // helper. Its temporary iterator ends before remove(0).
+                            // Retain the funded Iterator/Option representation; first() has a different receiver shape.
+                            #[allow(clippy::iter_next_slice)]
                             let Some((label, child)) = successors.iter().next() else {
                                 unreachable!("one successor was matched");
                             };
