@@ -785,6 +785,7 @@ Audience: all documentation readers.
 - [Owned String Transfer v1](OWNED-STRING-TRANSFER-V1.md)
 - [Public Project Scaffold Capsule v8: current authoring guidance](PROJECT-SCAFFOLD-V8.md)
 - [Borrowed cleanup replay call payloads v1](REPLAY-BORROWED-CALL-PAYLOADS-V1.md)
+- [Retained expression-fact lookup v1 — source only](RETAINED-EXPRESSION-FACT-LOOKUP-V1.md)
 - [Replay continuation storage v1](REPLAY-CONTINUATION-STORAGE-V1.md)
 - [Same-source replay constructor measurements v1](REPLAY-SAME-SOURCE-MEASUREMENT-V1.md)
 - [Scoped diagnostic recovery v1](SCOPED-DIAGNOSTIC-RECOVERY-V1.md)
