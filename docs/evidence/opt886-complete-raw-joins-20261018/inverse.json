@@ -1,0 +1,35 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "complete_children": [
+    "before_pair_scope/mod.rs",
+    "before_pair_scope/lexical_cursor.rs",
+    "pair_scope_census.rs",
+    "pair_scope_tests.rs"
+  ],
+  "rows": [
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "whole_before_sha256": "30a83a1b30100f234d7ac1216fead340f80b73e73f678f3e69cb0d2a7b04597c",
+      "after_sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "before": "include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\")",
+      "after": "include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\"), include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs\"), include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs\"), include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\"), include_str!(\"../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\")",
+      "lines": 915
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "whole_before_sha256": "7464e2054935de20c3a021eae82a8d78fa2b67275105e21231f20114890e4739",
+      "after_sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "before": "include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\")",
+      "after": "include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\"), include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs\"), include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs\"), include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\"), include_str!(\"../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\")",
+      "lines": 826
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "whole_before_sha256": "a43746987c4ed16568fa9517244b95cd6dab7a3103cbd96436a831a6f92c9d96",
+      "after_sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df",
+      "before": "include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\")",
+      "after": "include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\")",
+      "lines": 1500
+    }
+  ]
+}

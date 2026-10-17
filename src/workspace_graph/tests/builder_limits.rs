@@ -482,7 +482,31 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
 
     CORE_BUILD_ATTEMPTS.with(|attempts| attempts.set(0));
     crate::cleanup_plan::take_replay_work_refusal();
-    let built_result = observe_core_attempts(|| {
+    // Derive the complete retry plan from the same immutable inputs and
+    // versioned strict-smaller forecast selector used by the live builder.
+    // No observed mode list or replacement literal attempt count is authority.
+    let (mut planned_resolve, _, allow_uncached_peak, mut planned_mode) = actual_initial;
+    let maximum_mode = if allow_uncached_peak { 6 } else {
+        expected_projection::cached_exact::MODE
+    };
+    let mut expected_attempts = vec![(planned_mode, planned_resolve)];
+    while planned_mode < maximum_mode {
+        let (next, _) = if allow_uncached_peak {
+            expected_projection::next_retention_prebound_with_uncached_peak_with_registry(
+                &ordered_programs, &ordered_authored, planned_resolve,
+                &mut planned_mode, true, Some(&registry),
+            ).unwrap()
+        } else {
+            expected_projection::cached_exact::next_with_registry(
+                &ordered_programs, &ordered_authored, planned_resolve,
+                &mut planned_mode, expected_projection::cached_exact::Retention::Parsed,
+                Some(&registry),
+            ).unwrap()
+        };
+        planned_resolve = next;
+        expected_attempts.push((planned_mode, planned_resolve));
+    }
+    let (built_result, attempts) = super::core_attempt_trace::observe_typed(|| {
         build_owned_with_builder_limit(sources.clone(), MAX_BUILDER_BYTES)
     });
     if let Some(refusal) = crate::cleanup_plan::take_replay_work_refusal() {
@@ -493,7 +517,14 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
         eprintln!("identity-retry-work-refusal none");
     }
     let built = built_result.unwrap();
-    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), 2);
+    assert!(!attempts.lost, "complete fixed-capacity retry trace");
+    assert_eq!(attempts.len, expected_attempts.len());
+    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), expected_attempts.len());
+    for (index, &(mode, prebound)) in expected_attempts.iter().enumerate() {
+        let (actual_mode, actual_prebound, overflowed) = attempts.rows[index];
+        assert_eq!((actual_mode, actual_prebound), (mode, prebound));
+        assert_eq!(overflowed, index + 1 != expected_attempts.len());
+    }
     assert!(
         built.usage.builder_bytes >= original.0,
         "failed first phase is not refunded"
