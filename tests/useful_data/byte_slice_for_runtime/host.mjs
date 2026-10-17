@@ -3,7 +3,8 @@ import assert from 'node:assert/strict';
 import {readFile} from 'node:fs/promises';
 const bytes=await readFile(process.argv[2]),kind=process.argv[3],expected=BigInt(process.argv[4]);
 const catalog=/^catalog-(failure-)?(0|[1-9][0-9]*)$/.exec(kind);
-const failure=kind==='failure'||Boolean(catalog?.[1]);
+const viewFailure=kind==='view-failure';
+const failure=kind==='failure'||viewFailure||Boolean(catalog?.[1]);
 const expectedAllocated=kind==='success'?256+new TextEncoder().encode('SEMAPRAX').length:kind==='failure'?3:catalog?Number(catalog[2]):0;
 const module=await WebAssembly.compile(bytes);
 const names=['spx_add','spx_sub','spx_mul','spx_div','spx_rem','spx_neg','spx_contract_fail','spx_bytes_copy','spx_bytes_get','spx_bytes_drop','spx_bytes_as_slice'];
@@ -47,11 +48,11 @@ for(let run=0;run<4;run++){
       assert(failure);assert.equal(status,9,'requires status contract.v1/code1');
       assert.equal(++reports,1,'exactly one selected report');
       assert.equal(owners.size,0,'report follows complete non-result cleanup');
-      assert.equal(copies,1);assert.equal(drops,1);assert.equal(allocated,expectedAllocated);
+      assert.equal(copies,viewFailure?0:1);assert.equal(drops,viewFailure?0:1);assert.equal(allocated,expectedAllocated);
       throw Error('contract');
     },
     spx_bytes_copy:carrier=>{
-      assert(kind!=='view','view traversal called copy');
+      assert(kind!=='view'&&!viewFailure,'view traversal called copy');
       const source=read(carrier);assert(owners.size<16,'owner capacity');
       const value=Uint8Array.from(source),token=serial++;
       owners.set(token,value);copies++;allocated+=value.length;
