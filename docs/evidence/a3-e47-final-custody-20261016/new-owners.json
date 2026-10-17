@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "85f66702fde4728090774c3fe042a8b2b76c0bda08051c821eb309dbfdfbcaba",
-    "lines": 398
+    "sha256": "06026944189dfd21407f8a8f4270ea026dabe90955e1b934408c8502e3e1a412",
+    "lines": 415
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1226,7 +1226,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs",
-    "sha256": "797744a75fae1fff55a7a433b5982632a82e76458440ad4e882bc473da54617b",
+    "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc",
     "lines": 119
   },
   {
