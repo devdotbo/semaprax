@@ -1,0 +1,50 @@
+{
+  "before_sha256": "e4b9da02027e39f58e6a9f2aac9454b81d3eae44f46ce3a530feed479a92058f",
+  "after_sha256": "80006b907e219f16298fb0aa1003c0d1d956da3bca10f91d02334089911ffaf7",
+  "edits": [
+    {
+      "before": "Finite single existing test-helper refresh of current241",
+      "after": "Finite two existing test-source refresh of current241"
+    },
+    {
+      "before": "BASE='745d52567722e71e23f9dc302ea65f41843540fa'",
+      "after": "BASE='8c95f77750aaaba9eaa59da865eb65658900646c'"
+    },
+    {
+      "before": "ci26-refresh/",
+      "after": "ff303-refresh/"
+    },
+    {
+      "before": "oldsubject=G('show',BASE+':'+SUBJECT);subject=held(SUBJECT);assert H(oldsubject)=='8a7cae110cf160a144ebfaf7dcf3419dc74682db7e30ff4893dfa3731700e09b';assert H(subject)=='4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164'\nns={};exec(compile(parser,parserpath,'exec'),ns);ns.update(R=R,seen=set(),snapshots=[],IDX={})\n# The original per-file parser checks the changed helper, with no recursive registration delta.\nassert not re.search(r'\\bmod\\s+(?:r#)?\\w+\\s*[;{]',ns['mask'](oldsubject.decode()))\nassert not re.search(r'\\bmod\\s+(?:r#)?\\w+\\s*[;{]',ns['mask'](subject.decode()))\nns['parse'](R/SUBJECT,['source_reflows_merge','main_e177_final_inputs'],[],'lib','semaprax');assert not ns['snapshots'];assert all(v['source_path']==SUBJECT for v in ns['IDX'].values())\n",
+      "after": "TESTS='src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs'\nOLD={SUBJECT:G('show',BASE+':'+SUBJECT),TESTS:G('show','e4a2739d40214b7d6ffcc089e2de5ed3d4c2abca:'+TESTS)}\nCURRENT={p:held(p)for p in OLD}\nassert H(OLD[SUBJECT])=='4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164'and H(CURRENT[SUBJECT])=='c394f749295490b1c733192bb28dcb54b0eb8a2b7d07680ed4641defeeeaa94e'\nassert H(OLD[TESTS])=='047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99'and H(CURRENT[TESTS])=='e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45'\nns={};exec(compile(parser,parserpath,'exec'),ns);ns.update(R=R,seen=set(),snapshots=[],IDX={})\nfor path in OLD:\n assert not re.search(r'\\bmod\\s+(?:r#)?\\w+\\s*[;{]',ns['mask'](OLD[path].decode()))\n assert not re.search(r'\\bmod\\s+(?:r#)?\\w+\\s*[;{]',ns['mask'](CURRENT[path].decode()))\n ns['parse'](R/path,['finite_existing_test_source'],[],'lib','semaprax')\nassert not ns['snapshots'];assert all(v['source_path']in OLD for v in ns['IDX'].values())\n"
+    },
+    {
+      "before": "if source==SUBJECT:assert pin==dict(length=len(oldsubject),sha256=H(oldsubject));pin.update(length=len(subject),sha256=H(subject))",
+      "after": "if source in OLD:assert pin==dict(length=len(OLD[source]),sha256=H(OLD[source]));pin.update(length=len(CURRENT[source]),sha256=H(CURRENT[source]))"
+    },
+    {
+      "before": "if SUBJECT in m['sources']:assert m['classes'][SUBJECT]['role']=='test-only'\n else:assert SUBJECT not in m['classes']",
+      "after": "for path in OLD:\n  if path in m['sources']:assert m['classes'][path]['role']=='test-only'\n  else:assert path not in m['classes']"
+    },
+    {
+      "before": "if row['source']==SUBJECT:\n  assert row['sha256']==H(oldsubject)and row['lines']==len(oldsubject.splitlines());row.update(sha256=H(subject),lines=len(subject.splitlines()));count+=1",
+      "after": "if row['source']in OLD:\n  path=row['source'];assert row['sha256']==H(OLD[path])and row['lines']==len(OLD[path].splitlines());row.update(sha256=H(CURRENT[path]),lines=len(CURRENT[path].splitlines()));count+=1"
+    },
+    {
+      "before": "assert count==1",
+      "after": "assert count==2"
+    },
+    {
+      "before": "SINGLE_EXISTING_TEST_HELPER_CI26_DEPENDENCY_ONLY",
+      "after": "TWO_EXISTING_TEST_SOURCES_FF303_DEPENDENCY_ONLY"
+    },
+    {
+      "before": "SOURCE_ONLY_SINGLE_HELPER_ROLE241_REFRESH",
+      "after": "SOURCE_ONLY_TWO_EXISTING_TEST_SOURCES_ROLE241_REFRESH"
+    },
+    {
+      "before": "changed_sources=[SUBJECT]",
+      "after": "changed_sources=sorted(OLD)"
+    }
+  ]
+}

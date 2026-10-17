@@ -1,0 +1,74 @@
+"""Finite two existing test-source refresh of current241; no full-root parse or binder."""
+from pathlib import Path
+import argparse,ast,copy,hashlib,json,os,stat,subprocess,re
+p=argparse.ArgumentParser();p.add_argument('--repo',type=Path,required=True);p.add_argument('--expected-head',required=True);p.add_argument('--out',type=Path,required=True);p.add_argument('--write',action='store_true');a=p.parse_args();R=a.repo.resolve();O=a.out
+assert R==Path('/Volumes/Semaprax/worktrees/next-successor-final-source-coupling-20261017')
+BASE='8c95f77750aaaba9eaa59da865eb65658900646c';SUBJECT='src/source_reflows_merge/main_e177_final_inputs.rs';F='docs/evidence/a3-e47-final-custody-20261016/';B='docs/evidence/source-boundary-domains-20261016/';REL='docs/evidence/main-e177-final-source-binding-20261017/ff303-refresh/'
+G=lambda *v:subprocess.check_output(['git',*v],cwd=R);H=lambda b:hashlib.sha256(b).hexdigest();E=lambda v:(json.dumps(v,indent=2)+'\n').encode()
+assert re.fullmatch('[0-9a-f]{40}',a.expected_head)and G('rev-parse','HEAD').decode().strip()==a.expected_head and not G('status','--porcelain','--untracked-files=all').strip();assert not O.exists();O.mkdir(parents=True)
+SNAP={}
+def held(path,cap=16777216):
+ fd=os.open(R/path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC);ident=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+ try:
+  st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size<=cap
+  with os.fdopen(fd,'rb',closefd=False)as f:raw=f.read(st.st_size);assert len(raw)==st.st_size and not f.read(1)
+  assert ident(st)==ident(os.fstat(fd))==ident(os.lstat(R/path));assert raw==G('show',a.expected_head+':'+path)
+  if path in SNAP:assert SNAP[path]==raw
+  SNAP[path]=raw;return raw
+ finally:os.close(fd)
+parserpath='docs/evidence/production-source-authority-partition-20261016/original-module-parser-prefix.py';parser=held(parserpath);assert H(parser)=='87a903ce0f9927d3d90063fdd686b50b5302e2ac10cfea324918f7c030b28599'
+genpath=F+'generate-authority.py';gen=held(genpath);assert H(gen)=='0c4b31857cdb8a4f645d61c6f0d2453c33c6adddb8c6f26d9c37b56620841590';toolpath=B+'boundary_tools.py';tool=held(toolpath);assert tool==G('show',BASE+':'+toolpath)
+TESTS='src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs'
+OLD={SUBJECT:G('show',BASE+':'+SUBJECT),TESTS:G('show','e4a2739d40214b7d6ffcc089e2de5ed3d4c2abca:'+TESTS)}
+CURRENT={p:held(p)for p in OLD}
+assert H(OLD[SUBJECT])=='4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164'and H(CURRENT[SUBJECT])=='c394f749295490b1c733192bb28dcb54b0eb8a2b7d07680ed4641defeeeaa94e'
+assert H(OLD[TESTS])=='047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99'and H(CURRENT[TESTS])=='e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45'
+ns={};exec(compile(parser,parserpath,'exec'),ns);ns.update(R=R,seen=set(),snapshots=[],IDX={})
+for path in OLD:
+ assert not re.search(r'\bmod\s+(?:r#)?\w+\s*[;{]',ns['mask'](OLD[path].decode()))
+ assert not re.search(r'\bmod\s+(?:r#)?\w+\s*[;{]',ns['mask'](CURRENT[path].decode()))
+ ns['parse'](R/path,['finite_existing_test_source'],[],'lib','semaprax')
+assert not ns['snapshots'];assert all(v['source_path']in OLD for v in ns['IDX'].values())
+before={};full={}
+for name in ['hir','projection']:
+ path=F+name+'.json';raw=held(path);assert raw==G('show',BASE+':'+path);before[path]=raw;m=json.loads(raw);old=copy.deepcopy(m)
+ for source,pin in m['sources'].items():
+  b=held(source,9753094)
+  if source in OLD:assert pin==dict(length=len(OLD[source]),sha256=H(OLD[source]));pin.update(length=len(CURRENT[source]),sha256=H(CURRENT[source]))
+  else:assert pin==dict(length=len(b),sha256=H(b)),('unrelated source drift',source)
+ assert m['classes']==old['classes']and m['chunks']==old['chunks']and m['closure_only']==old['closure_only']
+ for path in OLD:
+  if path in m['sources']:assert m['classes'][path]['role']=='test-only'
+  else:assert path not in m['classes']
+ full[name]=m
+ownerspath=F+'new-owners.json';raw=held(ownerspath);assert raw==G('show',BASE+':'+ownerspath);before[ownerspath]=raw;owners=json.loads(raw);assert len(owners)==241;count=0
+for row in owners:
+ b=held(row['source'],9753094)
+ if row['source']in OLD:
+  path=row['source'];assert row['sha256']==H(OLD[path])and row['lines']==len(OLD[path].splitlines());row.update(sha256=H(CURRENT[path]),lines=len(CURRENT[path].splitlines()));count+=1
+ else:assert(row['sha256'],row['lines'])==(H(b),len(b.splitlines())),('unrelated owner drift',row['source'])
+assert count==2
+fd=O/'full';fd.mkdir()
+for name,m in full.items():(fd/(name+'.json')).write_text(json.dumps(m,separators=(',',':'))+'\n')
+ns_tool={'__file__':str(R/toolpath)};exec(compile(tool,toolpath,'exec'),ns_tool)
+text=gen.decode();prefix=text.split("for name,chunks in [('hir',hir_chunks),('projection',projection_chunks)]:",1)[0]
+manifest,proof=ns_tool['generated_scope'](R,fd,regenerated=(full,H(prefix.encode())));proof['negative_controls']=ns_tool['negative_checks'](R,fd,manifest);proof.update(status='SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS',registration_update='TWO_EXISTING_TEST_SOURCES_FF303_DEPENDENCY_ONLY',global_polluted_purity_result_not_claimed=True)
+outputs={F+n+'.json':(fd/(n+'.json')).read_bytes()for n in full};outputs[ownerspath]=E(owners);outputs[B+'current-domains.json']=E(manifest);outputs[B+'boundary-source-proof.json']=E(proof)
+for path in [B+'current-domains.json',B+'boundary-source-proof.json',F+'authority-source-proof.json']:
+ raw=held(path);assert raw==G('show',BASE+':'+path);before[path]=raw
+outputs[F+'authority-source-proof.json']=before[F+'authority-source-proof.json']
+records=[]
+for path,raw in before.items():
+ archive=REL+'role-whole-before/'+path.replace('/','__')+'.txt';q=O/'before'/path;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(raw);records.append(dict(path=path,before=dict(length=len(raw),sha256=H(raw),archive=archive),after=dict(length=len(outputs[path]),sha256=H(outputs[path])),inverse='restore complete before image'))
+for path,b in outputs.items():q=O/'outputs'/path;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+receipt=dict(status='SOURCE_ONLY_TWO_EXISTING_TEST_SOURCES_ROLE241_REFRESH',source_head=a.expected_head,whole_before_head=BASE,owners=241,changed_sources=sorted(OLD),new_modules=[],reclassified=[],all_classes_edges_chunks_unchanged=True,original_parser_sha256=H(parser),original_generator_sha256=H(gen),original_boundary_tools_sha256=H(tool),negative_controls=proof['negative_controls'],global_generic_purity_not_claimed=True,historical_authority_proof_preserved=True,whole_inverses=records,written=a.write,Cargo=False)
+(O/'receipt.json').write_bytes(E(receipt))
+assert G('rev-parse','HEAD').decode().strip()==a.expected_head and not G('status','--porcelain','--untracked-files=all').strip()
+for path,raw in list(SNAP.items()):assert held(path)==raw
+assert G('rev-parse','HEAD').decode().strip()==a.expected_head and not G('status','--porcelain','--untracked-files=all').strip()
+if a.write:
+ for row in records:
+  q=R/row['before']['archive'];q.parent.mkdir(parents=True,exist_ok=True);assert not q.exists();q.write_bytes(before[row['path']])
+ for path,b in outputs.items():(R/path).write_bytes(b)
+ (R/REL/'role-result.json').write_bytes(E(receipt))
+print(json.dumps(dict(status=receipt['status'],written=a.write,owners=241,negative_controls=proof['negative_controls'])))

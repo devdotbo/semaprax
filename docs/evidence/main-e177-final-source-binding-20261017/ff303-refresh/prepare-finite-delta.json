@@ -1,0 +1,54 @@
+{
+  "before_sha256": "35a43dc7bab679d64ff86b268504e32ed047476e45dae5a1681808de21cc824a",
+  "after_sha256": "f6449f89fc9d7f4727a9afcc795c695e29028b6711b6ded224be1fb963971678",
+  "edits": [
+    {
+      "before": "One CI26 CHANGELOG acquisition step",
+      "after": "One exact ff303 test import acquisition step"
+    },
+    {
+      "before": "row=next(r for r in m['rows']if r['source']=='CHANGELOG.md')",
+      "after": "row=next(r for r in m['rows']if r['source']=='src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs')"
+    },
+    {
+      "before": "assert len(old)==80681 and H(old)=='de9c72c5fba416e93d5fba422174cd0888c0bd6991fb2fc4367396c541bf92a7'",
+      "after": "assert len(old)==81430 and H(old)=='3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd'"
+    },
+    {
+      "before": "assert row['compiled']is False and prior['length']==575026",
+      "after": "assert row['compiled']is True and prior['length']==26134"
+    },
+    {
+      "before": "assert held(prior['archive'])==G('show','bd8f3068bd40c6631e099aaa808a91d54d364278:CHANGELOG.md')",
+      "after": "prior_source=held(prior['archive']);assert H(prior_source)==prior['sha256']"
+    },
+    {
+      "before": "current=held('CHANGELOG.md');assert len(current)==575213 and H(current)=='10ba1494d3dbade8bbf7bd8282bd38f0e502421a04e9ebf49bf66ac06cb370f5'",
+      "after": "current=held('src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs');assert len(current)==26190 and H(current)=='e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45'\nimport_line=b'use crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS;\\n';assert current.count(import_line)==1 and current.replace(import_line,b'',1)==prior_source"
+    },
+    {
+      "before": "name='whole-pre-CI26-current'",
+      "after": "name='whole-pre-ff303-import-current'"
+    },
+    {
+      "before": "r=next(r for r in check['rows']if r['source']=='CHANGELOG.md')",
+      "after": "r=next(r for r in check['rows']if r['source']=='src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs')"
+    },
+    {
+      "before": "b'assert_eq!(data.len(), 80681);'",
+      "after": "b'assert_eq!(data.len(), 81430);'"
+    },
+    {
+      "before": "cfg['modules'][F].update(pin(out[F]))",
+      "after": "cfg['modules'][F].update(pin(out[F]));cfg['modules']['src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs'].update(pin(current))"
+    },
+    {
+      "before": "compiled_false_preserved=True",
+      "after": "compiled_true_preserved=True"
+    },
+    {
+      "before": "role_refresh_required=[F]",
+      "after": "role_refresh_required=[F,'src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs']"
+    }
+  ]
+}
