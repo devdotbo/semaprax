@@ -1,0 +1,75 @@
+{
+  "base": "f47b4e2fa0fac40568d074ed4a16f5825a654bf7",
+  "change": "Rust 1.88 explicit path to the identical before_lexical_successors module; no receiver or runtime change",
+  "source": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
+  "before": {
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs": {
+      "length": 5514,
+      "sha256": "f9238cd935e1b869667fc7c0303c70ed9b84ef0d4664954fa1bd683d5f1484d4"
+    },
+    "docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json": {
+      "length": 84171,
+      "sha256": "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71"
+    },
+    "src/source_reflows_merge/main_e177_final_inputs.rs": {
+      "length": 32387,
+      "sha256": "4a2790fe7f5cea8760d1df22434b772595fd1d24f1b4e55eceaf37f63e8dac7c"
+    },
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py": {
+      "length": 31020,
+      "sha256": "2c5a1053ae02da6e267365f34d0753507d75fd958acd628500f3d5d48f53f0e7"
+    },
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": {
+      "length": 2253,
+      "sha256": "85640c14f5083a235a46017c48eadddaf69805f0e323747f28f0a3bb28142b7e"
+    },
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py": {
+      "length": 4404,
+      "sha256": "dad0dc2555dd846b398b4dd1e09a585fc4ba6e42b4cd7eb55b36072f3e62a998"
+    },
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py": {
+      "length": 2766,
+      "sha256": "b29c699206fadb046fc45fb484d32682d2c0cd056003a51de927627756b756b1"
+    },
+    "docs/evidence/a3-e47-final-custody-20261016/hir.json": {
+      "length": 2131842,
+      "sha256": "a6ba2d693dcc687f1fa0aead5ab5a1b4ab2a4ac3003a0aa376096e1643dff257"
+    },
+    "docs/evidence/a3-e47-final-custody-20261016/projection.json": {
+      "length": 2423839,
+      "sha256": "6f2f7bc72b518a8cb827a459b802b57c5529aaa147994003cbba5ab1fcba42d5"
+    },
+    "docs/evidence/a3-e47-final-custody-20261016/new-owners.json": {
+      "length": 44526,
+      "sha256": "5ec2a772805b07f8732167475240910649a553835f380ea706ef90ab81cb8cae"
+    }
+  },
+  "prior_packet": {
+    "length": 84171,
+    "sha256": "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71",
+    "archive": "docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"
+  },
+  "new_packet": {
+    "length": 68224,
+    "sha256": "f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469"
+  },
+  "predecessor_restoration_exact": true,
+  "roles": [
+    {
+      "domain": "hir",
+      "updated_pins": [
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
+        "src/source_reflows_merge/main_e177_final_inputs.rs"
+      ],
+      "all_roles_edges_chunks_unchanged": true
+    },
+    {
+      "domain": "projection",
+      "updated_pins": [
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs"
+      ],
+      "all_roles_edges_chunks_unchanged": true
+    }
+  ],
+  "full_CI_and_full_source_audit_not_claimed": true
+}

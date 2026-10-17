@@ -1,0 +1,17 @@
+{
+  "status": "PASS_SELECTED_SOURCE_CONTROLS",
+  "rust188_import_probe_passed": true,
+  "same_historical_module_selected_instead_of_current_module": true,
+  "current_and_complete_prior_source_authenticated": true,
+  "foreign_named_source_refused": true,
+  "wrong_length_and_digest_refused": true,
+  "original_predecessor_packet_archived_complete": true,
+  "probe_restriction": "Original packet(), predecessor packet(), held identity checks, source current/previous tuple selection and wrong-stage checks execute. The compiled-source dispatch is scoped to the changed source and panics on every other branch. No full-source suite, MSRV dependency or full-CI claim.",
+  "selected_probe_sha256": "a756fe5761302f69a2cef4c30b6bcc85eb6efe65d213afa22212d208151cc96b",
+  "selected_helper_sha256": "00bbc32bcb833198bd38dead252ba8f255d81a12ad29eaaea408d2e379ec14ee",
+  "selected_Rust_custody_compiler_peak_KiB": 168544,
+  "selected_Rust_run_peak_KiB": 5712,
+  "Rust188_import_compiler_peak_KiB": 139792,
+  "unchanged_200MiB_probe_limit": true,
+  "no_full_build_or_test_suite_claimed": true
+}

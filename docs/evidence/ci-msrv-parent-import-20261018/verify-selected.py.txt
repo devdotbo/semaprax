@@ -1,0 +1,61 @@
+from pathlib import Path
+import hashlib,importlib.util,json,re,os
+R=Path.cwd();O=Path('/Volumes/Semaprax/tmp/ci-38383508340/msrv-parent-import-f47');E=R/'docs/evidence/ci-msrv-parent-import-20261018'
+S='src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs'
+H=lambda b:hashlib.sha256(b).hexdigest()
+p=R/'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';spec=importlib.util.spec_from_file_location('current_guard',p);g=importlib.util.module_from_spec(spec);spec.loader.exec_module(g)
+packet=g.packet();assert len(packet['rows'])==99
+row=next(x for x in packet['rows']if x['source']==S);previous=row['views'][-1]
+old=(R/previous['archive']).read_bytes();new=(R/S).read_bytes();assert new.replace(b'use super::super::before_lexical_successors as canonical_shared;',b'use super as canonical_shared;')==old
+assert g.latest_source(S,len(old),H(old))==old
+assert g.latest_source(S,len(new),H(new))==new
+for length,digest in [(len(old)+1,H(old)),(len(old),'0'*64)]:
+ try:g.latest_source(S,length,digest)
+ except AssertionError:pass
+ else:raise AssertionError('foreign historical tuple admitted')
+try:g.latest_source('foreign/compare.rs',len(old),H(old))
+except AssertionError:pass
+else:raise AssertionError('foreign source admitted')
+raw=(R/'src/source_reflows_merge/main_e177_final_inputs.rs').read_text()
+raw=raw.split('// Independent complete785/885/886 side views.',1)[0]
+start=raw.index('fn compiled(');end=raw.index('fn read_view(',start)
+raw=raw[:start]+f'''fn compiled(source: &str) -> Option<&'static str> {{
+    assert_eq!(source, {json.dumps(S)}, "out-of-scope compiled probe branch");
+    Some(include_str!({json.dumps(str(R/S))}))
+}}
+'''+raw[end:]
+raw=re.sub(r'include_str!\("\.\./\.\./([^\"]+)"\)',lambda m:'include_str!('+json.dumps(str(R/m[1]))+')',raw)
+raw+='''
+pub fn run_selected_source_controls() {
+    let packet = packet();
+    let source = "@SOURCE@";
+    let row = packet["rows"].as_array().unwrap().iter().find(|row| row["source"] == source).unwrap();
+    let current = actual(row);
+    let prior = row["views"].as_array().unwrap().last().unwrap();
+    let old = read_view(prior);
+    let sha = prior["sha256"].as_str().unwrap();
+    let length = prior["length"].as_u64().unwrap() as usize;
+    let path = Path::new(env!("CARGO_MANIFEST_DIR")).join(source);
+    assert_eq!(file(&path, length, sha), Some(old.clone()));
+    assert_eq!(value(source, sha, &current), old);
+    assert_eq!(value(source, sha, &old), old);
+    for foreign in [String::new(), format!("{current} "), format!("{current}{current}"), current[..current.len()-1].to_owned(), "foreign".to_owned()] {
+        assert_eq!(value(source, sha, &foreign), foreign);
+    }
+    assert!(file(&path, length+1, sha).is_none());
+    assert!(file(&path, length, &"0".repeat(64)).is_none());
+    assert!(file(&Path::new(env!("CARGO_MANIFEST_DIR")).join("foreign"), 0, "foreign").is_none());
+}
+'''.replace('@SOURCE@',S)
+(O/'selected-helper.rs').write_text(raw)
+entry='''#[path = "@DIGEST@"] mod digest_hex;
+mod source_reflows_merge {
+pub mod next_big_batch_inputs { pub fn value_local(_: &str,_: &str,_: &str) -> String { panic!("out-of-scope delegating probe branch") } }
+#[path = "@HELPER@"] pub mod main_e177_final_inputs;
+}
+fn main() { source_reflows_merge::main_e177_final_inputs::run_selected_source_controls(); }
+'''.replace('@DIGEST@',str(R/'src/digest_hex.rs')).replace('@HELPER@',str(O/'selected-helper.rs'))
+(O/'selected-probe.rs').write_text(entry)
+result={'status':'PYTHON_SELECTED_SOURCE_CONTROLS_PASS_PENDING_RUST_EXECUTION','rust188_import_probe_passed':True,'same_historical_module_selected_instead_of_current_module':True,'current_and_complete_prior_source_authenticated':True,'foreign_named_source_refused':True,'wrong_length_and_digest_refused':True,'original_predecessor_packet_archived_complete':True,'probe_restriction':'Original packet(), predecessor packet(), held identity checks, source current/previous tuple selection and wrong-stage checks execute. The compiled-source dispatch is scoped to the changed source and panics on every other branch. No full-source suite, MSRV dependency or full-CI claim.','selected_probe_sha256':H((O/'selected-probe.rs').read_bytes()),'selected_helper_sha256':H(raw.encode())}
+(O/'python-controls.json').write_text(json.dumps(result,indent=2)+'\n')
+print('Python current/prior source and foreign tuple controls passed; staged bounded Rust source-custody probe.')

@@ -7,10 +7,26 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
+    assert_eq!(data.len(), 68224);
+    assert_eq!(digest(data.as_bytes()), "f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let mut restored = packet.clone();
+    let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs").unwrap();
+    let mut previous = row["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(previous["name"], "whole-f47-msrv-parent-import");
+    previous.as_object_mut().unwrap().remove("name");
+    row["current"] = previous;
+    assert_eq!(restored, packet_previous(), "complete predecessor table and all original controls retained");
+    packet
+}
+fn packet_previous() -> serde_json::Value {
+    let data = include_str!("../../docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt");
     assert_eq!(data.len(), 84171);
     assert_eq!(digest(data.as_bytes()), "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
+    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");

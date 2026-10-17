@@ -1,0 +1,130 @@
+from pathlib import Path
+import ast, copy, hashlib, json, re, subprocess
+
+R = Path.cwd()
+O = Path('/Volumes/Semaprax/tmp/ci-38383508340/msrv-parent-import-f47')
+E = 'docs/evidence/ci-msrv-parent-import-20261018'
+P = 'docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json'
+S = 'src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs'
+M = 'src/source_reflows_merge/main_e177_final_inputs.rs'
+Q = 'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py'
+H = lambda b: hashlib.sha256(b).hexdigest()
+before = {}
+def save(path):
+    b = (R / path).read_bytes()
+    q = O / 'before' / path
+    assert not q.exists(), path
+    q.parent.mkdir(parents=True, exist_ok=True)
+    q.write_bytes(b)
+    before[path] = {'length': len(b), 'sha256': H(b)}
+    return b
+def archive(raw):
+    path = E + '/whole/' + H(raw) + '.txt'
+    p = R / path
+    p.parent.mkdir(parents=True, exist_ok=True)
+    if p.exists(): assert p.read_bytes() == raw
+    else: p.write_bytes(raw)
+    return {'length': len(raw), 'sha256': H(raw), 'archive': path}
+
+assert subprocess.check_output(['git', 'rev-parse', 'HEAD'], text=True).strip() == 'f47b4e2fa0fac40568d074ed4a16f5825a654bf7'
+source = save(S)
+assert H(source) == 'f9238cd935e1b869667fc7c0303c70ed9b84ef0d4664954fa1bd683d5f1484d4'
+old = b'use super as canonical_shared;'
+new = b'use super::super::before_lexical_successors as canonical_shared;'
+assert source.count(old) == 1
+changed = source.replace(old, new)
+assert changed.replace(new, old) == source
+(R / S).write_bytes(changed)
+old_packet = save(P)
+old_packet_pin = archive(old_packet)
+packet = json.loads(old_packet)
+original = copy.deepcopy(packet)
+row = next(r for r in packet['rows'] if r['source'] == S)
+assert row['compiled'] is True and row['views'] == []
+assert row['current']['sha256'] == H(source)
+assert (R / row['current']['archive']).read_bytes() == source
+old_current = copy.deepcopy(row['current'])
+row['views'].append(dict(old_current, name='whole-f47-msrv-parent-import'))
+row['current'] = archive(changed)
+encoded = (json.dumps(packet, separators=(',', ':')) + '\n').encode()
+assert len(encoded) <= 262144
+restored = copy.deepcopy(packet)
+v = next(r for r in restored['rows'] if r['source'] == S)
+previous = v['views'].pop()
+assert previous.pop('name') == 'whole-f47-msrv-parent-import'
+v['current'] = previous
+assert restored == original
+(R / P).write_bytes(encoded)
+
+helper = save(M).decode()
+assert helper.count('fn packet() -> serde_json::Value {') == 1
+helper = helper.replace('fn packet() -> serde_json::Value {', 'fn packet_previous() -> serde_json::Value {', 1)
+start = helper.index('fn packet_previous()')
+end = helper.index('\nfn same_file(', start)
+block = helper[start:end]
+assert block.count(P) == 2
+block = block.replace(P, old_packet_pin['archive'])
+helper = helper[:start] + block + helper[end:]
+wrapper = '''fn packet() -> serde_json::Value {
+    let data = include_str!("../../@PACKET@");
+    assert_eq!(data.len(), @LENGTH@);
+    assert_eq!(digest(data.as_bytes()), "@SHA@");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held(&root.join("@PACKET@"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let mut restored = packet.clone();
+    let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "@SOURCE@").unwrap();
+    let mut previous = row["views"].as_array_mut().unwrap().pop().unwrap();
+    assert_eq!(previous["name"], "whole-f47-msrv-parent-import");
+    previous.as_object_mut().unwrap().remove("name");
+    row["current"] = previous;
+    assert_eq!(restored, packet_previous(), "complete predecessor table and all original controls retained");
+    packet
+}
+'''
+for a,b in {'@PACKET@':P,'@SOURCE@':S,'@LENGTH@':str(len(encoded)),'@SHA@':H(encoded)}.items(): wrapper=wrapper.replace(a,b)
+helper = helper[:start] + wrapper + helper[start:]
+(R / M).write_text(helper)
+
+guard = save(Q)
+lines = guard.decode().splitlines(keepends=True)
+assert lines[4].startswith('CONFIG = ')
+config = ast.literal_eval(lines[4][len('CONFIG = '):])
+prior_config = copy.deepcopy(config)
+config['packet'].update(length=len(encoded),sha256=H(encoded))
+config['rows'] = len(packet['rows'])
+lines[4] = 'CONFIG = ' + repr(config) + '\n'
+updated = ''.join(lines).encode()
+assert updated.splitlines()[5:] == guard.splitlines()[5:]
+(R / Q).write_bytes(updated)
+for path in ['docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+    raw = save(path)
+    assert H(guard).encode() in raw and str(len(guard)).encode() in raw
+    new_raw = raw.replace(H(guard).encode(),H(updated).encode()).replace(str(len(guard)).encode(),str(len(updated)).encode())
+    assert new_raw.replace(H(updated).encode(),H(guard).encode()).replace(str(len(updated)).encode(),str(len(guard)).encode()) == raw
+    (R / path).write_bytes(new_raw)
+
+# Existing source owners keep every role, edge, chunk, selector and row.
+# Inherited drift elsewhere is recorded, never described as a full audit pass.
+role_records=[]
+for name in ['hir','projection']:
+    path='docs/evidence/a3-e47-final-custody-20261016/'+name+'.json'
+    raw=save(path); roles=json.loads(raw); old_roles=copy.deepcopy(roles); changes=[]
+    for subject in [S,M]:
+        if subject in roles['sources']:
+            current=(R/subject).read_bytes()
+            roles['sources'][subject]={'length':len(current),'sha256':H(current)}
+            changes.append(subject)
+    assert roles['classes']==old_roles['classes'] and roles['chunks']==old_roles['chunks'] and roles['closure_only']==old_roles['closure_only']
+    (R/path).write_text(json.dumps(roles,separators=(',',':'))+'\n')
+    role_records.append({'domain':name,'updated_pins':changes,'all_roles_edges_chunks_unchanged':True})
+path='docs/evidence/a3-e47-final-custody-20261016/new-owners.json'
+owners=json.loads(save(path));assert len(owners)==241
+for row in owners:
+    if row['source'] in [S,M]:
+        b=(R/row['source']).read_bytes();row.update(sha256=H(b),lines=len(b.splitlines()))
+(R/path).write_text(json.dumps(owners,indent=2)+'\n')
+receipt={'base':'f47b4e2fa0fac40568d074ed4a16f5825a654bf7','change':'Rust 1.88 explicit path to the identical before_lexical_successors module; no receiver or runtime change','source':S,'before':before,'prior_packet':old_packet_pin,'new_packet':{'length':len(encoded),'sha256':H(encoded)},'predecessor_restoration_exact':True,'roles':role_records,'full_CI_and_full_source_audit_not_claimed':True}
+(O/'preparation.json').write_text(json.dumps(receipt,indent=2)+'\n')
+(R/E/'repair.json').write_text(json.dumps(receipt,indent=2)+'\n')
+print('Prepared explicit same-module import, complete predecessor table and unchanged historical controls; no full audit pass claimed.')

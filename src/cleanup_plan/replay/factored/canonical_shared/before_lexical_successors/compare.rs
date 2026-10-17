@@ -1,6 +1,6 @@
 //! Complete immediate shipping comparison caller.
 use super::super::super::*;
-use super as canonical_shared;
+use super::super::before_lexical_successors as canonical_shared;
 pub(in crate::cleanup_plan::replay::factored) fn compare_with_index_storage<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,
