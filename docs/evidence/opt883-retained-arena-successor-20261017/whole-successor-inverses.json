@@ -1,0 +1,196 @@
+{
+  "audit_predecessor": "fa77dde52",
+  "real_measured_baseline": "shipping88085ed, independently compiled before_lexical_cursor.rs UNCHANGED",
+  "rows": [
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "before_archive": "0.fa77.whole-before.txt",
+      "before_length": 15154,
+      "before_sha256": "fde9abcf6b1a5c7d5c9f23f7ea087a1e4c254acbb6b04d5967fe543bfe55a4a9",
+      "after_length": 15751,
+      "after_sha256": "47bbb8f39825c8551a781ea89da0e9bf4a2257a2920ded4b44f3933dc78a8285",
+      "exact_inverse": [
+        {
+          "new_line": 9,
+          "before": "struct ComparisonOwner {\n",
+          "after": "struct ComparisonOwner<'history> {\n    arena: &'history [Segment],\n    left_items: &'history [Rc<SkeletonObservation>],\n    right_items: &'history [Rc<SkeletonObservation>],\n    left_loaded: bool,\n    right_loaded: bool,\n"
+        },
+        {
+          "new_line": 95,
+          "before": "const OWNER_CONTROLS: usize = size_of::<ComparisonOwner>()\n    + lexical_cursor::PRIMITIVE_FRAMES\n",
+          "after": "const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()\n    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS\n"
+        },
+        {
+          "new_line": 125,
+          "before": "",
+          "after": "        arena: actual.arena.as_slice(),\n        left_items: &[], right_items: &[], left_loaded: false, right_loaded: false,\n"
+        },
+        {
+          "new_line": 180,
+          "before": "                paid!(budget, function, PREPARE_CALL + PATH_INDEX, \"ordinary plan history left cursor prepare\")?;\n",
+          "after": "                paid!(budget, function, PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET, \"ordinary plan history left cursor prepare\")?;\n"
+        },
+        {
+          "new_line": 182,
+          "before": "                paid!(budget, function, PREPARE_CALL + PATH_INDEX, \"ordinary plan history right cursor prepare\")?;\n",
+          "after": "                owner.left_items = &[]; owner.left_loaded = false;\n                paid!(budget, function, PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET, \"ordinary plan history right cursor prepare\")?;\n"
+        },
+        {
+          "new_line": 185,
+          "before": "",
+          "after": "                owner.right_items = &[]; owner.right_loaded = false;\n"
+        },
+        {
+          "new_line": 190,
+          "before": "                paid!(budget, function, 2 * lexical_cursor::ENTRY + 4 * PATH_INDEX + PAIR_MATCH, \"ordinary plan history paired cursor next\")?;\n                let left = lexical_plan_next!(owner, left_cursor, actual.paths[owner.left].history, actual.arena, function, budget, \"ordinary plan history paired cursor next\");\n                let right = lexical_plan_next!(owner, right_cursor, actual.paths[owner.right].history, actual.arena, function, budget, \"ordinary plan history paired cursor next\");\n",
+          "after": "                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH, \"ordinary plan history paired cursor next\")?;\n                let left = lexical_plan_next!(owner, left_cursor, left_items, left_loaded, actual.paths[owner.left].history, function, budget, \"ordinary plan history paired cursor next\");\n                let right = lexical_plan_next!(owner, right_cursor, right_items, right_loaded, actual.paths[owner.right].history, function, budget, \"ordinary plan history paired cursor next\");\n"
+        },
+        {
+          "new_line": 235,
+          "before": "            PREPARE_CALL,\n",
+          "after": "            PREPARE_CALL + lexical_cursor::RESET,\n"
+        },
+        {
+          "new_line": 239,
+          "before": "",
+          "after": "        owner.left_items = &[]; owner.left_loaded = false;\n"
+        },
+        {
+          "new_line": 252,
+          "before": "                    lexical_cursor::ENTRY + FLAT_MATCH,\n",
+          "after": "                    FLAT_MATCH,\n"
+        },
+        {
+          "new_line": 256,
+          "before": "                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, \"ordinary plan history HIR cursor next\"),\n",
+          "after": "                    lexical_plan_next!(owner, left_cursor, left_items, left_loaded, path.history, function, budget, \"ordinary plan history HIR cursor next\"),\n"
+        },
+        {
+          "new_line": 280,
+          "before": "                    lexical_cursor::ENTRY + SHARED_MATCH,\n",
+          "after": "                    SHARED_MATCH,\n"
+        },
+        {
+          "new_line": 289,
+          "before": "                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, \"ordinary plan history HIR cursor next\"),\n",
+          "after": "                    lexical_plan_next!(owner, left_cursor, left_items, left_loaded, path.history, function, budget, \"ordinary plan history HIR cursor next\"),\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "before_archive": "1.fa77.whole-before.txt",
+      "before_length": 5053,
+      "before_sha256": "5b1af446b91261ffc2b75016c21129716a89e182b73a890ace80906cc397bd78",
+      "after_length": 6009,
+      "after_sha256": "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
+      "exact_inverse": [
+        {
+          "new_line": 0,
+          "before": "//! Lexical forward cursor. No next callee or compound fallible return exists.\n",
+          "after": "//! Arena-backed immutable slices survive calls; no path-tail borrow survives a match.\n"
+        },
+        {
+          "new_line": 3,
+          "before": "// Narrow self-bootstrap bank for the two new reserve primitive sites at each\n// of four lexical expansions. This uses only the original comparator's\n// sequential primitive-slot contract: ZST success, one terminal Diagnostic,\n// no escaping/overlapping activation, stable function/budget places. It does\n// not cover work results or any get/Option/borrow/payload below. The distinct\n// forward work call is paid EVERY next; segment work EVERY segment test.\n// Whether that inherited primitive contract admits these newly introduced\n// payment sites remains an explicit independent-review obligation.\npub(super) const PRIMITIVE_FRAMES: usize = 8 * PAYMENT_HEADER;\n// Per next execution, before any lexical views are formed. These are actual\n// views/receivers, not the removed callee's formal references or Result.\npub(super) const ENTRY: usize = PAYMENT_HEADER // actual forward charge arguments/formals + return/receive\n    + size_of::<&mut Cursor>() // direct named owner field borrow; no index or formal\n    + size_of::<&History>() // borrowed history field, no forwarding formal\n    + 2 * size_of::<&Vec<Segment>>() + 2 * size_of::<&[Segment]>() // as_slice actual/formal, return/local\n    + 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>(); // links as_slice and return/local\n// Acquired on EVERY loop test, including the exhausted sentinel. No retained\n// Option or static bank exempts a recreated get/index/match payload. The\n// segment arm's possible slots are acquired before the condition; its original\n// segment work remains before every lookup. A false test honestly pays this\n// complete envelope and then constructs none of that arm's payloads.\npub(super) const SEGMENT: usize = PAYMENT_HEADER // actual segment charge, including both Result slots\n    + 4 * size_of::<&[usize]>() + 2 * size_of::<usize>() // two len calls/returns\n    + size_of::<bool>() // loop test\n    + 2 * size_of::<usize>() // left-to-right subtraction intermediates\n    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // link index actual/formal\n    + size_of::<&usize>() + size_of::<usize>() // index return and copied link\n    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() // segment index\n    + size_of::<&Segment>() + size_of::<&Vec<Rc<SkeletonObservation>>>() // return/field local\n    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // Vec deref actual/formal\n    + 3 * size_of::<&[Rc<SkeletonObservation>]>() // deref return, get actual/formal\n    + 2 * size_of::<usize>() // get index actual/formal\n    + 2 * size_of::<Option<&Rc<SkeletonObservation>>>() // get return and match receiver\n    + size_of::<&Rc<SkeletonObservation>>() // successful pattern binding\n    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref\n    + 2 * size_of::<Option<&SkeletonObservation>>() // yielded Some and caller binding\n    + 2 * size_of::<usize>(); // item increment / segment increment\npub(super) const TAIL: usize =\n    2 * size_of::<&Vec<Rc<SkeletonObservation>>>()\n    + 3 * size_of::<&[Rc<SkeletonObservation>]>()\n    + 2 * size_of::<usize>()\n    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>() // get return/local and consuming match\n    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>() + size_of::<bool>() // is_some\n    + size_of::<usize>() // item increment\n    + size_of::<&Rc<SkeletonObservation>>() // successful tail pattern\n",
+          "after": "// Exactly the accepted880 narrow primitive criterion: same function/budget,\n// sequential nonescaping nonrecursive ZST-success/one-terminal-Diagnostic slots.\n// Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.\n// Every payload below is separately paid on actual execution, never once.\npub(super) const PRIMITIVE_FRAMES: usize = 20 * PAYMENT_HEADER;\npub(super) const INITIALIZERS: usize =\n    2 * size_of::<&Vec<Segment>>() + 2 * size_of::<&[Segment]>() // arena as_slice/field initializer\n    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // two empty-slice initializers; fields in Owner\n    + 2 * size_of::<bool>();\npub(super) const RESET: usize = size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>();\n// A fresh lexical slice pattern; no get Option, index, callee/formal, compound\n// Result or items-view construction is hidden in a paid-once bank.\npub(super) const STEP: usize =\n    2 * size_of::<&Vec<usize>>() + size_of::<usize>() + size_of::<bool>() // unchanged len/condition\n    + 2 * size_of::<bool>() // loaded condition and negation\n    + size_of::<&Rc<SkeletonObservation>>() // head pattern\n    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // rest pattern and assignment copy\n    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref actual/formal/return\n    + 2 * size_of::<Option<&SkeletonObservation>>() // Some initializer and caller-received output\n    + size_of::<usize>(); // original item increment\n// Only entering a new immutable segment forms these views/index receivers.\npub(super) const LOAD: usize =\n    2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local\n    + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return\n    + 2 * size_of::<usize>() // subtraction intermediates\n    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // slice index actual/formal\n    + size_of::<&usize>() + size_of::<usize>() // returned reference and copied link\n    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() + size_of::<&Segment>()\n    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal\n    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy\n    + size_of::<bool>(); // loaded=true\n// The original exhausted-segment update and fresh tail remain honestly paid.\npub(super) const EMPTY: usize = 2 * size_of::<usize>() + size_of::<bool>(); // segment increment, item=0, loaded=false\npub(super) const TAIL: usize = size_of::<&History>()\n    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()\n    + 3 * size_of::<&[Rc<SkeletonObservation>]>() + 2 * size_of::<usize>()\n    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()\n    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>() + size_of::<bool>()\n    + size_of::<usize>() + size_of::<&Rc<SkeletonObservation>>()\n"
+        },
+        {
+          "new_line": 44,
+          "before": "",
+          "after": "// Exact shipping880 literal expression, solely a static counterfactual bound;\n// the actual independently compiled before producer and its tariff stay exact.\nconst SHIPPING_NEXT_CALL: usize = 2 * size_of::<&mut Cursor>()\n    + 2 * size_of::<&History>() + 2 * size_of::<&[Segment]>()\n    + 2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&mut ReplayBudget>()\n    + size_of::<Result<Option<&SkeletonObservation>, Diagnostic>>()\n    + size_of::<Option<&SkeletonObservation>>();\nconst _: () = assert!(STEP + EMPTY < SHIPPING_NEXT_CALL);\n// Conservative source-type opportunity for a pair with256 equal observations\n// each in one full immutable segment, followed by empty tails. This pays the\n// ENTIRE current owner (no old-owner fee credited), both transition/reset bills,\n// and full exhausted sentinel/tail envelopes. It is not an application result.\nconst _: () = assert!(2 * 256 * (SHIPPING_NEXT_CALL - STEP - EMPTY)\n    > OWNER_CONTROLS + 2 * LOAD + 2 * RESET + 4 * (STEP + EMPTY) + 2 * TAIL);\n"
+        },
+        {
+          "new_line": 60,
+          "before": "    ($owner:ident, $field:ident, $history:expr, $arena:expr,\n     $function:ident, $budget:ident, $phase:literal) => {{\n",
+          "after": "    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,\n     $history:expr, $function:ident, $budget:ident, $phase:literal) => {{\n"
+        },
+        {
+          "new_line": 63,
+          "before": "        let cursor = &mut $owner.$field;\n        let history = &$history;\n        let arena: &[Segment] = $arena.as_slice();\n        let links = cursor.links.as_slice();\n",
+          "after": ""
+        },
+        {
+          "new_line": 65,
+          "before": "                paid!($budget, $function, lexical_cursor::SEGMENT, $phase)?;\n                if cursor.segment >= links.len() { break; }\n",
+          "after": "                paid!($budget, $function, lexical_cursor::STEP + lexical_cursor::EMPTY, $phase)?;\n                if $owner.$cursor.segment >= $owner.$cursor.links.len() { break; }\n"
+        },
+        {
+          "new_line": 68,
+          "before": "                let link = links[links.len() - cursor.segment - 1];\n                let items = &arena[link].items;\n                if let Some(value) = items.get(cursor.item) {\n                    cursor.item += 1;\n                    break 'plan_yield Some::<&SkeletonObservation>(value.as_ref());\n",
+          "after": "                if !$owner.$loaded {\n                    paid!($budget, $function, lexical_cursor::LOAD, $phase)?;\n                    let links = $owner.$cursor.links.as_slice();\n                    let link = links[links.len() - $owner.$cursor.segment - 1];\n                    $owner.$items = $owner.arena[link].items.as_slice();\n                    $owner.$loaded = true;\n"
+        },
+        {
+          "new_line": 75,
+          "before": "                cursor.segment += 1;\n                cursor.item = 0;\n",
+          "after": "                match $owner.$items {\n                    [head, rest @ ..] => {\n                        $owner.$items = rest;\n                        $owner.$cursor.item += 1;\n                        break 'plan_yield Some::<&SkeletonObservation>(head.as_ref());\n                    }\n                    [] => {\n                        $owner.$cursor.segment += 1;\n                        $owner.$cursor.item = 0;\n                        $owner.$loaded = false;\n                    }\n                }\n"
+        },
+        {
+          "new_line": 89,
+          "before": "            let value = history.tail.get(cursor.item);\n            if value.is_some() { cursor.item += 1; }\n",
+          "after": "            let history = &$history;\n            let value = history.tail.get($owner.$cursor.item);\n            if value.is_some() { $owner.$cursor.item += 1; }\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+      "before_archive": "2.fa77.whole-before.txt",
+      "before_length": 31908,
+      "before_sha256": "531d70b45203327ed0032b4ac2bfc5613cd782165d7db328e1756ec4d0c2ee8d",
+      "after_length": 33690,
+      "after_sha256": "d579ce3e5d231d97df820df6e36a4355234463d67a343fcbde18da8830dc3d9c",
+      "exact_inverse": [
+        {
+          "new_line": 541,
+          "before": "",
+          "after": "\n#[test]\nfn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_old_padding() {\n    let program = super::super::tests::program();\n    let function = program.functions.iter().find(|f| f.id.as_str() == \"f\").unwrap();\n    // Comparator inputs are constructed before its measured boundary. These\n    // are private complete-value controls, not a fabricated admitted program.\n    let items = (0..256).map(|_| Rc::new(SkeletonObservation::Boolean {\n        expression: function.body.id.clone(), value: true,\n    })).collect::<Vec<_>>();\n    let expected = vec![SkeletonPath { observations: items.clone().into(),\n        terminal: SkeletonTerminal::Success }; 2];\n    let actual = || HistorySet {\n        arena: vec![Segment { previous: None, items: items.clone(), depth: 1 }],\n        paths: (0..2).map(|_| PlanPath { history: History { previous: Some(0), tail: Vec::new() },\n            terminal: SkeletonTerminal::Success }).collect(), max_depth: 1,\n    };\n    let (old, old_heap, old_paid) = observe_shaped_883(function, &expected,\n        actual(), true, MAX_REPLAY_WORK_UNITS);\n    let (current, heap, paid) = observe_shaped_883(function, &expected,\n        actual(), false, MAX_REPLAY_WORK_UNITS);\n    assert_eq!(current, old, \"full result and all original work; real immediate shipping baseline\");\n    assert!(current.result.is_ok());\n    assert!(paid < old_paid, \"only genuinely removed recurring receivers may earn a saving\");\n    assert_eq!(heap.allocated, old_heap.allocated, \"the retained slice view adds no heap backing\");\n    eprintln!(\"OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim\");\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md",
+      "before_archive": "3.fa77.whole-before.txt",
+      "before_length": 3115,
+      "before_sha256": "40b047659dbccfdb69f5b08e4af5db02e01c475d8b9e1897ed0bd13ea7be329b",
+      "after_length": 3518,
+      "after_sha256": "20ba68863938c45dbd218ea5a723367d4f01875509637791d60cc322797c23e0",
+      "exact_inverse": [
+        {
+          "new_line": 2,
+          "before": "Status: source-only OPT883 candidate. No compiler, runtime, physical improvement,\napplication fit or completion-row claim. Independent before-formation review and\nfocused qualification remain required.\n",
+          "after": "Status: uncompiled, unexecuted OPT883 source successor. The fd669/fa77 prototype\nwas correctly funded but statically overpaid. It remains immutable audit\nhistory and is never the old measurement baseline. The independently compiled\ncomplete shipping880 comparator at85ed is the sole immediate old baseline.\n"
+        },
+        {
+          "new_line": 7,
+          "before": "The invocation-local comparison owner uses two named PLAN cursor fields. Each\nnext operation executes its complete forward body lexically. It constructs no\nnext function actual/formal transport or fallible compound return. Both yielded\nOptions and all actual borrowed/get/index/match/comparison payloads remain paid.\nNo observation reference escapes its pair/final match or survives a path swap.\n",
+          "after": "The invocation owner retains an immutable arena slice and two remaining\nobservation slices borrowed ONLY from arena segments. Actual paths still use\nthe exact original heapsort/swaps. No tail or PlanPath reference persists in\nowner state, so path movement cannot invalidate the retained slices. Preparing\na new path resets its view only after the original preparation succeeds. Every\nsource, depth/link check, work request and left-before-right event is retained.\nNo unsafe code, permutation vector, new walk, source verdict or authority flag\nis introduced. The loaded bit records only whether that segment view exists.\n"
+        },
+        {
+          "new_line": 16,
+          "before": "The original forward-step and segment work requests execute in their original\norder. The left PLAN operation completes before the right; flat/shared HIR is\nread only after PLAN. Sorting, swap order, terminal/multiplicity comparison,\nmalformed preparation, all existing backing and shared-HIR preparation/next\npayments remain unchanged. Only ephemeral proof paths are sorted. Original N,\nwork allowances, sticky selection, payer routes and budgets are unchanged.\n",
+          "after": "A slice pattern on the actual retained view replaces per-observation get,\nindex and compound Result transport. Each execution prepays the real head/rest\nbindings, assignment, as_ref, yielded Option, original metadata query and scalar\nroles. Only entering a segment creates links/slice/index views; LOAD is acquired\nat that transition before their formation. Fresh tail get/Options/receivers are\npaid at exhaustion, and can regress. Empty-segment and exhausted sentinel\nupdates are paid on every loop test, including conservative unused envelopes.\nNo recurring compound/payload formation is exempted by retained owner storage.\n"
+        },
+        {
+          "new_line": 25,
+          "before": "A dynamic entry bank precedes each lexical cursor; dynamic segment banks cover\nevery loop test and payload, including the exhausted sentinel. Tail payloads\nhave their own dynamic bank. Possible segment slots are acquired before the\ncondition; the original segment work still precedes lookups. Tiny inputs can\npay more setup/sentinel bytes. Their actual totals require measurement.\n",
+          "after": "Twenty distinct new lexical primitive headers use exactly shipping880's narrow\ncriterion: four expansions each own forward/segment charge and STEP/LOAD/TAIL\nreserve sites, with stable function/budget places, sequential nonrecursive\nnonescaping ZST success and one terminal owned Diagnostic. It covers no Option,\nborrow, match, slice or arithmetic payload. This is an explicit correspondence\nto the accepted880 primitive bank, not a new blanket charging exception.\n"
+        },
+        {
+          "new_line": 32,
+          "before": "The eight new primitive payment slots currently use the predecessor's narrow\nlexical primitive-frame criterion: same invocation/function/budget, no overlap,\nrecursion or escape, ZST success and one terminal owned Diagnostic. Work-call\nheaders/Results are separately paid per entry/segment, not lent this credit.\nIndependent review must establish that this criterion covers the new payment\nsites before adoption. If not, a genuinely retained reserve destination/API is\nrequired; a paid-once flag or waived fresh Result would not satisfy this spec.\n",
+          "after": "Current typed constants assert that STEP+EMPTY is smaller than the literal real\nshipping NEXT_CALL and that a pair of256 equal observations in one immutable\nsegment has potential after paying the ENTIRE current owner, both load/reset\nbills and full sentinel/tail envelopes. No old owner charge is credited in this\nconservative inequality. This is a static opportunity, not measured savings,\nwhole-input admission, RSS improvement or promised application fit.\n"
+        },
+        {
+          "new_line": 39,
+          "before": "The complete immediate880 comparator with its original Cursor struct/methods,\nconstants, price expressions, sort body and dispatch condition is independently\ncompiled in comparison_owner/before_lexical_cursor.rs. Only namespace imports\nand its nested test-module declaration are adapted; complete root/caller and\nsource preimages/inverses are retained in opt883-lexical-plan-cursor-20261017.\nThe older before_comparison/before_hir_compare/flat controls remain unchanged.\nAll original owning tests are preserved as an exact prefix of the test module.\n",
+          "after": "Complete immediate880 Cursor/methods/constants/comparator remain independently\ncompiled. Original214 test lines and all original assertions are unchanged.\nThe earlier before_comparison/before_hir_compare/flat controls and source\npreimages remain. Additional controls compare flat/shared HIR, deep/empty/tail/\nmalformed histories, all original work cuts/status fields, real physical\nfrontiers/sticky/Drop and exact typed-Oracle caller admission. A new wide-pair\nowner measures against shipping880 with identical setup outside the boundary;\noriginal whole producer+comparison measurement owners remain mandatory.\n"
+        },
+        {
+          "new_line": 48,
+          "before": "New source-authored owners compare complete outputs/work/swap counts and all\nwork cuts/full Diagnostic fields, actual real receipt exact/short/zero/floor\nand sticky/Drop frontiers, and actual paid/allocated/peak/freed/live totals.\nAdditional immutable-HIR/deep/foreign composition and original codec/native/\ncatalog owners remain required at unchanged 67,108,864 bytes. Existing fixed\nphase8/9 attribution remains diagnostic-only; gross cells do not imply net\nsaving, whole deficit, RSS improvement or successful application admission.\n",
+          "after": "No caps, refund, payer reclassification, baseline padding or crosscheck bypass.\nAll original codec/native/catalog owners and quality gates remain required at\nunchanged67,108,864 bytes after one combined source freeze. Later refusal is\nprogress only. Relocated source must enter all raw inventories and finite\nwhole-source stages before qualification. No Cargo/tests/gates ran in this lane.\n"
+        }
+      ]
+    }
+  ]
+}

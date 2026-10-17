@@ -539,3 +539,30 @@ fn lexical_plan_cursor_typed_oracle_missing_foreign_and_restored_scope_keeps_amb
         assert_eq!(run(false), run(true), "typed same fixture, all six fields and exact real work");
     }
 }
+
+#[test]
+fn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_old_padding() {
+    let program = super::super::tests::program();
+    let function = program.functions.iter().find(|f| f.id.as_str() == "f").unwrap();
+    // Comparator inputs are constructed before its measured boundary. These
+    // are private complete-value controls, not a fabricated admitted program.
+    let items = (0..256).map(|_| Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(), value: true,
+    })).collect::<Vec<_>>();
+    let expected = vec![SkeletonPath { observations: items.clone().into(),
+        terminal: SkeletonTerminal::Success }; 2];
+    let actual = || HistorySet {
+        arena: vec![Segment { previous: None, items: items.clone(), depth: 1 }],
+        paths: (0..2).map(|_| PlanPath { history: History { previous: Some(0), tail: Vec::new() },
+            terminal: SkeletonTerminal::Success }).collect(), max_depth: 1,
+    };
+    let (old, old_heap, old_paid) = observe_shaped_883(function, &expected,
+        actual(), true, MAX_REPLAY_WORK_UNITS);
+    let (current, heap, paid) = observe_shaped_883(function, &expected,
+        actual(), false, MAX_REPLAY_WORK_UNITS);
+    assert_eq!(current, old, "full result and all original work; real immediate shipping baseline");
+    assert!(current.result.is_ok());
+    assert!(paid < old_paid, "only genuinely removed recurring receivers may earn a saving");
+    assert_eq!(heap.allocated, old_heap.allocated, "the retained slice view adds no heap backing");
+    eprintln!("OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim");
+}

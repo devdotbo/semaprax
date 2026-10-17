@@ -1,0 +1,39 @@
+{
+  "status": "SOURCE_ONLY_UNCOMPILED_UNEXECUTED_INDEPENDENT_REVIEW_REQUIRED",
+  "baseline": "shipping880at85ed",
+  "audit_predecessor": "fa77dde52; never measured baseline",
+  "sources": [
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "sha256": "47bbb8f39825c8551a781ea89da0e9bf4a2257a2920ded4b44f3933dc78a8285",
+      "lines": 307
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "sha256": "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
+      "lines": 99
+    },
+    {
+      "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+      "sha256": "d579ce3e5d231d97df820df6e36a4355234463d67a343fcbde18da8830dc3d9c",
+      "lines": 568
+    },
+    {
+      "path": "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md",
+      "sha256": "20ba68863938c45dbd218ea5a723367d4f01875509637791d60cc322797c23e0",
+      "lines": 53
+    }
+  ],
+  "inverse_sha256": "4321009aa1b7cd6b36fdd5a6649f270ed60dd884f52cebb82f9af50909145287",
+  "typed_symbolic_sha256": "049386754f975a9157d9ac31bdeda9d36548f01d05b1ebed6ab190d491c9b949",
+  "selectors_sha256": "38e6e794c2c853a0a1b48ed9cd7659d457b538e530de9d11b2ececb7da56bc51",
+  "original214_test_lines_exact": true,
+  "immediate880_control_unchanged": true,
+  "actual_path_swaps_unchanged": true,
+  "new_modules": [],
+  "existing_new_module_count_remains": 2,
+  "Cargo": false,
+  "tests": false,
+  "source_generation": false,
+  "fit_or_net_gain_claim": false
+}

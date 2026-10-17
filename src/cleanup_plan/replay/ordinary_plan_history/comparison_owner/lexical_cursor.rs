@@ -1,79 +1,95 @@
-//! Lexical forward cursor. No next callee or compound fallible return exists.
+//! Arena-backed immutable slices survive calls; no path-tail borrow survives a match.
 use super::*;
 
-// Narrow self-bootstrap bank for the two new reserve primitive sites at each
-// of four lexical expansions. This uses only the original comparator's
-// sequential primitive-slot contract: ZST success, one terminal Diagnostic,
-// no escaping/overlapping activation, stable function/budget places. It does
-// not cover work results or any get/Option/borrow/payload below. The distinct
-// forward work call is paid EVERY next; segment work EVERY segment test.
-// Whether that inherited primitive contract admits these newly introduced
-// payment sites remains an explicit independent-review obligation.
-pub(super) const PRIMITIVE_FRAMES: usize = 8 * PAYMENT_HEADER;
-// Per next execution, before any lexical views are formed. These are actual
-// views/receivers, not the removed callee's formal references or Result.
-pub(super) const ENTRY: usize = PAYMENT_HEADER // actual forward charge arguments/formals + return/receive
-    + size_of::<&mut Cursor>() // direct named owner field borrow; no index or formal
-    + size_of::<&History>() // borrowed history field, no forwarding formal
-    + 2 * size_of::<&Vec<Segment>>() + 2 * size_of::<&[Segment]>() // as_slice actual/formal, return/local
-    + 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>(); // links as_slice and return/local
-// Acquired on EVERY loop test, including the exhausted sentinel. No retained
-// Option or static bank exempts a recreated get/index/match payload. The
-// segment arm's possible slots are acquired before the condition; its original
-// segment work remains before every lookup. A false test honestly pays this
-// complete envelope and then constructs none of that arm's payloads.
-pub(super) const SEGMENT: usize = PAYMENT_HEADER // actual segment charge, including both Result slots
-    + 4 * size_of::<&[usize]>() + 2 * size_of::<usize>() // two len calls/returns
-    + size_of::<bool>() // loop test
-    + 2 * size_of::<usize>() // left-to-right subtraction intermediates
-    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // link index actual/formal
-    + size_of::<&usize>() + size_of::<usize>() // index return and copied link
-    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() // segment index
-    + size_of::<&Segment>() + size_of::<&Vec<Rc<SkeletonObservation>>>() // return/field local
-    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // Vec deref actual/formal
-    + 3 * size_of::<&[Rc<SkeletonObservation>]>() // deref return, get actual/formal
-    + 2 * size_of::<usize>() // get index actual/formal
-    + 2 * size_of::<Option<&Rc<SkeletonObservation>>>() // get return and match receiver
-    + size_of::<&Rc<SkeletonObservation>>() // successful pattern binding
-    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref
-    + 2 * size_of::<Option<&SkeletonObservation>>() // yielded Some and caller binding
-    + 2 * size_of::<usize>(); // item increment / segment increment
-pub(super) const TAIL: usize =
-    2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-    + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-    + 2 * size_of::<usize>()
-    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>() // get return/local and consuming match
-    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>() + size_of::<bool>() // is_some
-    + size_of::<usize>() // item increment
-    + size_of::<&Rc<SkeletonObservation>>() // successful tail pattern
+// Exactly the accepted880 narrow primitive criterion: same function/budget,
+// sequential nonescaping nonrecursive ZST-success/one-terminal-Diagnostic slots.
+// Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.
+// Every payload below is separately paid on actual execution, never once.
+pub(super) const PRIMITIVE_FRAMES: usize = 20 * PAYMENT_HEADER;
+pub(super) const INITIALIZERS: usize =
+    2 * size_of::<&Vec<Segment>>() + 2 * size_of::<&[Segment]>() // arena as_slice/field initializer
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // two empty-slice initializers; fields in Owner
+    + 2 * size_of::<bool>();
+pub(super) const RESET: usize = size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>();
+// A fresh lexical slice pattern; no get Option, index, callee/formal, compound
+// Result or items-view construction is hidden in a paid-once bank.
+pub(super) const STEP: usize =
+    2 * size_of::<&Vec<usize>>() + size_of::<usize>() + size_of::<bool>() // unchanged len/condition
+    + 2 * size_of::<bool>() // loaded condition and negation
+    + size_of::<&Rc<SkeletonObservation>>() // head pattern
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // rest pattern and assignment copy
+    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref actual/formal/return
+    + 2 * size_of::<Option<&SkeletonObservation>>() // Some initializer and caller-received output
+    + size_of::<usize>(); // original item increment
+// Only entering a new immutable segment forms these views/index receivers.
+pub(super) const LOAD: usize =
+    2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local
+    + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return
+    + 2 * size_of::<usize>() // subtraction intermediates
+    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // slice index actual/formal
+    + size_of::<&usize>() + size_of::<usize>() // returned reference and copied link
+    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() + size_of::<&Segment>()
+    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy
+    + size_of::<bool>(); // loaded=true
+// The original exhausted-segment update and fresh tail remain honestly paid.
+pub(super) const EMPTY: usize = 2 * size_of::<usize>() + size_of::<bool>(); // segment increment, item=0, loaded=false
+pub(super) const TAIL: usize = size_of::<&History>()
+    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+    + 3 * size_of::<&[Rc<SkeletonObservation>]>() + 2 * size_of::<usize>()
+    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
+    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>() + size_of::<bool>()
+    + size_of::<usize>() + size_of::<&Rc<SkeletonObservation>>()
     + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
     + 2 * size_of::<Option<&SkeletonObservation>>();
+// Exact shipping880 literal expression, solely a static counterfactual bound;
+// the actual independently compiled before producer and its tariff stay exact.
+const SHIPPING_NEXT_CALL: usize = 2 * size_of::<&mut Cursor>()
+    + 2 * size_of::<&History>() + 2 * size_of::<&[Segment]>()
+    + 2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&mut ReplayBudget>()
+    + size_of::<Result<Option<&SkeletonObservation>, Diagnostic>>()
+    + size_of::<Option<&SkeletonObservation>>();
+const _: () = assert!(STEP + EMPTY < SHIPPING_NEXT_CALL);
+// Conservative source-type opportunity for a pair with256 equal observations
+// each in one full immutable segment, followed by empty tails. This pays the
+// ENTIRE current owner (no old-owner fee credited), both transition/reset bills,
+// and full exhausted sentinel/tail envelopes. It is not an application result.
+const _: () = assert!(2 * 256 * (SHIPPING_NEXT_CALL - STEP - EMPTY)
+    > OWNER_CONTROLS + 2 * LOAD + 2 * RESET + 4 * (STEP + EMPTY) + 2 * TAIL);
 
 macro_rules! lexical_plan_next {
-    ($owner:ident, $field:ident, $history:expr, $arena:expr,
-     $function:ident, $budget:ident, $phase:literal) => {{
+    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,
+     $history:expr, $function:ident, $budget:ident, $phase:literal) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-        let cursor = &mut $owner.$field;
-        let history = &$history;
-        let arena: &[Segment] = $arena.as_slice();
-        let links = cursor.links.as_slice();
         'plan_yield: {
             loop {
-                paid!($budget, $function, lexical_cursor::SEGMENT, $phase)?;
-                if cursor.segment >= links.len() { break; }
+                paid!($budget, $function, lexical_cursor::STEP + lexical_cursor::EMPTY, $phase)?;
+                if $owner.$cursor.segment >= $owner.$cursor.links.len() { break; }
                 $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
-                let link = links[links.len() - cursor.segment - 1];
-                let items = &arena[link].items;
-                if let Some(value) = items.get(cursor.item) {
-                    cursor.item += 1;
-                    break 'plan_yield Some::<&SkeletonObservation>(value.as_ref());
+                if !$owner.$loaded {
+                    paid!($budget, $function, lexical_cursor::LOAD, $phase)?;
+                    let links = $owner.$cursor.links.as_slice();
+                    let link = links[links.len() - $owner.$cursor.segment - 1];
+                    $owner.$items = $owner.arena[link].items.as_slice();
+                    $owner.$loaded = true;
                 }
-                cursor.segment += 1;
-                cursor.item = 0;
+                match $owner.$items {
+                    [head, rest @ ..] => {
+                        $owner.$items = rest;
+                        $owner.$cursor.item += 1;
+                        break 'plan_yield Some::<&SkeletonObservation>(head.as_ref());
+                    }
+                    [] => {
+                        $owner.$cursor.segment += 1;
+                        $owner.$cursor.item = 0;
+                        $owner.$loaded = false;
+                    }
+                }
             }
             paid!($budget, $function, lexical_cursor::TAIL, $phase)?;
-            let value = history.tail.get(cursor.item);
-            if value.is_some() { cursor.item += 1; }
+            let history = &$history;
+            let value = history.tail.get($owner.$cursor.item);
+            if value.is_some() { $owner.$cursor.item += 1; }
             match value {
                 Some(value) => Some::<&SkeletonObservation>(value.as_ref()),
                 None => None,

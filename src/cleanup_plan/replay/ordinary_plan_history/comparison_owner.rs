@@ -7,7 +7,12 @@ mod before_lexical_cursor;
 
 #[derive(Clone, Copy)]
 enum Step { Build, Drain, Sift, PairPrepare, PairNext, Siblings, Root }
-struct ComparisonOwner {
+struct ComparisonOwner<'history> {
+    arena: &'history [Segment],
+    left_items: &'history [Rc<SkeletonObservation>],
+    right_items: &'history [Rc<SkeletonObservation>],
+    left_loaded: bool,
+    right_loaded: bool,
     left_cursor: Cursor,
     right_cursor: Cursor,
     step: Step,
@@ -88,8 +93,8 @@ const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,
 // iterator, IterMut::next or Option<&mut Cursor> initializer remains.
 // The first acquisition replaces the identical old compare-entry call and is
 // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
-const OWNER_CONTROLS: usize = size_of::<ComparisonOwner>()
-    + lexical_cursor::PRIMITIVE_FRAMES
+const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
+    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS
     + size_of::<HistorySet>() // retained original owning input header
     + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
     + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
@@ -118,6 +123,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
     }
     paid!(budget, function, OWNER_CONTROLS, "ordinary plan retained comparison owner")?;
     let mut owner = ComparisonOwner {
+        arena: actual.arena.as_slice(),
+        left_items: &[], right_items: &[], left_loaded: false, right_loaded: false,
         left_cursor: Cursor { links: Vec::new(), segment: 0, item: 0 },
         right_cursor: Cursor { links: Vec::new(), segment: 0, item: 0 },
         step: Step::Build, return_to: Step::Build, after_pair: Step::Root,
@@ -171,17 +178,19 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 owner.step = Step::PairPrepare;
             }
             Step::PairPrepare => {
-                paid!(budget, function, PREPARE_CALL + PATH_INDEX, "ordinary plan history left cursor prepare")?;
+                paid!(budget, function, PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET, "ordinary plan history left cursor prepare")?;
                 owner.left_cursor.prepare(&actual.paths[owner.left].history, &actual.arena, function, budget)?;
-                paid!(budget, function, PREPARE_CALL + PATH_INDEX, "ordinary plan history right cursor prepare")?;
+                owner.left_items = &[]; owner.left_loaded = false;
+                paid!(budget, function, PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET, "ordinary plan history right cursor prepare")?;
                 owner.right_cursor.prepare(&actual.paths[owner.right].history, &actual.arena, function, budget)?;
+                owner.right_items = &[]; owner.right_loaded = false;
                 owner.step = Step::PairNext;
             }
             Step::PairNext => {
                 budget.charge(function, 1, "ordinary plan history observation comparison")?;
-                paid!(budget, function, 2 * lexical_cursor::ENTRY + 4 * PATH_INDEX + PAIR_MATCH, "ordinary plan history paired cursor next")?;
-                let left = lexical_plan_next!(owner, left_cursor, actual.paths[owner.left].history, actual.arena, function, budget, "ordinary plan history paired cursor next");
-                let right = lexical_plan_next!(owner, right_cursor, actual.paths[owner.right].history, actual.arena, function, budget, "ordinary plan history paired cursor next");
+                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH, "ordinary plan history paired cursor next")?;
+                let left = lexical_plan_next!(owner, left_cursor, left_items, left_loaded, actual.paths[owner.left].history, function, budget, "ordinary plan history paired cursor next");
+                let right = lexical_plan_next!(owner, right_cursor, right_items, right_loaded, actual.paths[owner.right].history, function, budget, "ordinary plan history paired cursor next");
                 match (left, right) {
                     (Some(left), Some(right)) => {
                         owner.ordering = left.cmp(right);
@@ -224,10 +233,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
         paid!(
             budget,
             function,
-            PREPARE_CALL,
+            PREPARE_CALL + lexical_cursor::RESET,
             "ordinary plan history HIR cursor prepare"
         )?;
         owner.left_cursor.prepare(&path.history, &actual.arena, function, budget)?;
+        owner.left_items = &[]; owner.left_loaded = false;
         budget.reserve_bytes(
             function,
             skeleton_work::enumerated_prefix::HIR_QUERY_CONTROLS,
@@ -240,11 +250,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    lexical_cursor::ENTRY + FLAT_MATCH,
+                    FLAT_MATCH,
                     "ordinary plan history HIR cursor next"
                 )?;
                 match (
-                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, "ordinary plan history HIR cursor next"),
+                    lexical_plan_next!(owner, left_cursor, left_items, left_loaded, path.history, function, budget, "ordinary plan history HIR cursor next"),
                     flat.observations.get(index),
                 ) {
                     (Some(left), Some(right)) if left == right.as_ref() => {
@@ -268,7 +278,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    lexical_cursor::ENTRY + SHARED_MATCH,
+                    SHARED_MATCH,
                     "ordinary plan history HIR cursor next"
                 )?;
                 budget.reserve_bytes(
@@ -277,7 +287,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     "ordinary PLAN shared HIR cursor next receivers",
                 )?;
                 match (
-                    lexical_plan_next!(owner, left_cursor, path.history, actual.arena, function, budget, "ordinary plan history HIR cursor next"),
+                    lexical_plan_next!(owner, left_cursor, left_items, left_loaded, path.history, function, budget, "ordinary plan history HIR cursor next"),
                     hir.next(function, budget)?,
                 ) {
                     (Some(left), Some(right)) if left == right => {}
