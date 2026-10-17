@@ -36,8 +36,8 @@
   },
   {
     "source": "src/bounded_output/stage_debits/route_debits.rs",
-    "sha256": "27b655cac5b48a48efc2b58a276759c33d15e83fac6af5a0575c6d911ec6ba22",
-    "lines": 594
+    "sha256": "4949cec4e9d4740093b5c9f6bd209e49570f12dc965445a7c7fbcde6ef165721",
+    "lines": 778
   },
   {
     "source": "src/cleanup/inventory_builder/typed.rs",
@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "f8f52cac5c5d33405d3a6be4dac319de608855149729d1e5d02466116458cccc",
-    "lines": 351
+    "sha256": "85f66702fde4728090774c3fe042a8b2b76c0bda08051c821eb309dbfdfbcaba",
+    "lines": 398
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1156,7 +1156,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
-    "sha256": "f9238cd935e1b869667fc7c0303c70ed9b84ef0d4664954fa1bd683d5f1484d4",
+    "sha256": "02703b3d4ac3b9fe79508f701dd618a6f6daaa0678a0e1b64dc4d40c33c3958f",
     "lines": 89
   },
   {
