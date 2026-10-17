@@ -1,5 +1,7 @@
 # Changelog
 
+- Retain the paid status insertion index for authenticated ordinary membership queries, requiring full-key equality and preserving original caps, fallback receivers, and complete source controls.
+
 - Audit the complete private-layout module for projection purity while preserving every broader source input and rejecting missing owned or external module files.
 
 - Reduce ordinary retained status-directory comparison work with a funded private insertion index; retain complete-key AVL results, existing caps and refusal controls.

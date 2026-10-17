@@ -536,11 +536,11 @@ impl<'hir> HeldPrefix<'_, 'hir> {
 }
 
 // Private construction coordinates; the held AVL retains every complete key.
-struct IndexNode {
-    byte: usize,
-    mask: u16,
-    zero: usize,
-    one: usize,
+pub(super) struct IndexNode {
+    pub(super) byte: usize,
+    pub(super) mask: u16,
+    pub(super) zero: usize,
+    pub(super) one: usize,
 }
 #[derive(Clone, Copy)]
 struct IndexStep {
@@ -947,5 +947,75 @@ impl<'hir> HeldPrefix<'_, 'hir> {
         budget.charge(function, 1, phase)?;
         self.prefix = prefix;
         Ok(true)
+    }
+}
+
+// Published only after every source row and producer has passed the original
+// receiving checks. Keys remain immutable in the owning AVL directory.
+pub(super) struct FrozenStatusIndex {
+    pub(super) nodes: Vec<IndexNode>,
+    pub(super) root: usize,
+    pub(super) function: *const ResolvedFunction,
+    pub(super) budget: *const ReplayBudget,
+    pub(super) ledger: ClassifierLedger,
+    pub(super) keys: usize,
+    pub(super) len: usize,
+    pub(super) failed: Cell<bool>,
+}
+impl HeldPrefix<'_, '_> {
+    pub(in crate::cleanup_plan::replay::expression_facts::receiving) fn freeze(
+        self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        if self.owner.first.get().is_some()
+            || !std::ptr::eq(self.owner.function, function)
+            || !std::ptr::eq(self.owner.budget, budget)
+            || !std::ptr::eq(self.owner.directory, self.directory)
+            || !self.owner.ledger.current()
+        {
+            return Err(Diagnostic::io("SPX-H006", String::new()));
+        }
+        self.directory.authenticate(function, budget)?;
+        // Complete consumed/receiving builder, fixed publication controls,
+        // initialized snapshot and separately allocated Box backing and pointer.
+        budget.reserve_bytes(
+            function,
+            2 * size_of::<Self>()
+                + 2 * size_of::<FrozenStatusIndex>()
+                + size_of::<Result<(), Diagnostic>>()
+                + 2 * size_of::<Option<Box<FrozenStatusIndex>>>()
+                + size_of::<(&ResolvedFunction, &mut ReplayBudget)>(),
+            self.directory.phase,
+        )?;
+        budget.charge(function, 24, self.directory.phase)?;
+        if self.owner.next.get() != function.cleanup_plan.status_sources.len()
+            || self.directory.nodes.len() != function.cleanup_plan.status_sources.len()
+        {
+            return Err(replay_error(
+                function,
+                "status index publication requires every current row",
+            ));
+        }
+        // Retention requires an actual ACTIVE invocation. The unobserved,
+        // leased oracle and selected physical routes retain their old lookup.
+        if !matches!(budget.payer, AllocationPayer::ActiveBuilder) {
+            return Ok(());
+        }
+        let Some(index) = self.index else {
+            return Ok(());
+        };
+        let frozen = FrozenStatusIndex {
+            nodes: index.nodes,
+            root: index.root.expect("complete nonempty status index"),
+            function,
+            budget,
+            ledger: ClassifierLedger::capture(),
+            keys: self.directory.nodes.as_ptr() as usize,
+            len: self.directory.nodes.len(),
+            failed: Cell::new(false),
+        };
+        self.directory.lookup = Some(Box::new(frozen));
+        Ok(())
     }
 }

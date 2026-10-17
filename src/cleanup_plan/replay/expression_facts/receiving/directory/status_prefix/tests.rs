@@ -1069,3 +1069,278 @@ fn held_status_index_cannot_reuse_cached_coordinates_in_foreign_or_restored_invo
     assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= paid);
     assert_eq!(allocation.allocated, allocation.freed);
 }
+
+fn membership_function(count: usize) -> ResolvedFunction {
+    let names: Vec<String> = (0..count)
+        .map(|i| format!("{}opaque{:06}:\0tail", "x".repeat(80), (i * 37) % count))
+        .collect();
+    let keys: Vec<(&str, StatusLane)> = names
+        .iter()
+        .map(|name| (name.as_str(), StatusLane::OperationFailure))
+        .collect();
+    function(&keys)
+}
+fn membership_directory<'hir>(
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+    frozen: bool,
+) -> Result<Directory<&'hir StatusSourceId>, Diagnostic> {
+    let mut directory = Directory::new(function, budget, "cleanup status identity directory")?;
+    let mut held = directory.held_prefix(function, budget)?;
+    for source in &function.cleanup_plan.status_sources {
+        assert!(held.insert(function, &source.id, budget)?);
+    }
+    if frozen {
+        held.freeze(function, budget)?;
+    } else {
+        drop(held);
+    }
+    Ok(directory)
+}
+
+#[test]
+fn frozen_membership_keeps_full_byte_lane_equality_and_allocates_nothing() {
+    let mut names: Vec<(String, StatusLane)> =
+        ["", "\0", "a", "a\0", "aa", "aé", "a界", "a\u{10ffff}"]
+            .into_iter()
+            .flat_map(|s| {
+                [
+                    StatusLane::OwnerAdmission,
+                    StatusLane::OperationFailure,
+                    StatusLane::AllocationFailure,
+                    StatusLane::ContractFalse,
+                ]
+                .into_iter()
+                .map(move |lane| (s.to_owned(), lane))
+            })
+            .collect();
+    for i in 0..256 {
+        names.push((format!("tail-{i:04}"), StatusLane::OperationFailure));
+    }
+    let keys: Vec<(&str, StatusLane)> = names.iter().map(|(s, l)| (s.as_str(), *l)).collect();
+    let function = function(&keys);
+    let (_, overflow, _, refusal) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+        let mut budget = ReplayBudget::new();
+        let old = membership_directory(&function, &mut budget, false).unwrap();
+        let current = membership_directory(&function, &mut budget, true).unwrap();
+        same_tree(&old, &current);
+        assert!(current.lookup.is_some());
+        for source in &function.cleanup_plan.status_sources {
+            let key = &source.id;
+            let (found, allocation) =
+                measure(|| current.contains(&function, &key, &mut budget).unwrap());
+            assert!(found && old.contains(&function, &key, &mut budget).unwrap());
+            assert_eq!(
+                (
+                    allocation.allocations,
+                    allocation.allocated,
+                    allocation.live
+                ),
+                (0, 0, 0)
+            );
+            assert!(!allocation.invalid);
+        }
+        for name in [
+            "",
+            "a",
+            "a\0x",
+            "aéx",
+            "a界x",
+            "aa\0",
+            "tail-0256",
+            "foreign",
+        ] {
+            for lane in [
+                StatusLane::OwnerAdmission,
+                StatusLane::OperationFailure,
+                StatusLane::AllocationFailure,
+                StatusLane::ContractFalse,
+            ] {
+                let query = StatusSourceId {
+                    expression: ExpressionId::from_owned(name.to_owned()),
+                    lane,
+                };
+                assert_eq!(
+                    current.contains(&function, &&query, &mut budget).unwrap(),
+                    old.contains(&function, &&query, &mut budget).unwrap()
+                );
+            }
+        }
+    });
+    assert!(!overflow && refusal.is_none());
+}
+
+#[test]
+fn frozen_membership_reuses_the_index_within_the_same_original_work_ceiling() {
+    let function = membership_function(3960);
+    let run = |frozen| {
+        with_limit_usage_refusal(64 * 1024 * 1024, || -> Result<usize, Diagnostic> {
+            let mut budget = ReplayBudget::new();
+            let directory = membership_directory(&function, &mut budget, frozen)?;
+            for _ in 0..12 {
+                for source in &function.cleanup_plan.status_sources {
+                    assert!(directory.contains(&function, &&source.id, &mut budget)?);
+                }
+            }
+            Ok(MAX_REPLAY_WORK_UNITS - budget.remaining)
+        })
+    };
+    let original = run(false);
+    assert!(original.0.is_err() && !original.1);
+    assert!(original
+        .0
+        .unwrap_err()
+        .message
+        .contains("work budget exhausted"));
+    let current = run(true);
+    assert!(!current.1 && current.3.is_none());
+    assert!(current.0.unwrap() <= MAX_REPLAY_WORK_UNITS);
+}
+
+#[test]
+fn frozen_membership_exact_short_zero_floor_and_drop_remain_on_the_original_ledger() {
+    let function = membership_function(256);
+    let run = |limit, floor| {
+        with_limit_usage_refusal(limit, || -> Result<(), Diagnostic> {
+            if floor != 0 {
+                assert!(crate::bounded_output::set_active_floor(floor));
+            }
+            let mut budget = ReplayBudget::new();
+            let directory = membership_directory(&function, &mut budget, true)?;
+            assert!(directory.contains(
+                &function,
+                &&function.cleanup_plan.status_sources[0].id,
+                &mut budget
+            )?);
+            drop(directory);
+            Ok(())
+        })
+    };
+    let mut low = 0;
+    let mut high = 8 * 1024 * 1024;
+    assert!(run(high, 0).0.is_ok());
+    while low < high {
+        let mid = low + (high - low) / 2;
+        if run(mid, 0).0.is_ok() {
+            high = mid;
+        } else {
+            low = mid + 1;
+        }
+    }
+    let exact = run(low, 0);
+    assert!(exact.0.is_ok() && !exact.1 && exact.3.is_none());
+    for (limit, floor) in [(low - 1, 0), (0, 0), (low + 36, 37)] {
+        let short = run(limit, floor);
+        assert!(short.0.is_err() && short.1 && short.3.is_some());
+    }
+    let floor = run(low + 37, 37);
+    assert!(floor.0.is_ok() && !floor.1 && floor.3.is_none());
+}
+
+#[test]
+fn frozen_membership_rejects_foreign_and_restored_owners_before_cached_keys_or_foreign_debits() {
+    let function = membership_function(256);
+    let wrong = membership_function(256);
+    for mode in 0..3 {
+        let (_, overflow, _, refusal) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+            let mut budget = ReplayBudget::new();
+            let directory = membership_directory(&function, &mut budget, true).unwrap();
+            let key = &function.cleanup_plan.status_sources[0].id;
+            let before = crate::bounded_output::active_remaining();
+            match mode {
+                0 => {
+                    assert!(directory.contains(&wrong, &key, &mut budget).is_err());
+                }
+                1 => {
+                    let mut other = ReplayBudget::new();
+                    let work = other.remaining;
+                    assert!(directory.contains(&function, &key, &mut other).is_err());
+                    assert_eq!(other.remaining, work);
+                }
+                _ => {
+                    let (_, child_overflow, child_debit, child_refusal) =
+                        with_limit_usage_refusal(0, || {
+                            assert!(directory.contains(&function, &key, &mut budget).is_err());
+                        });
+                    assert!(!child_overflow && child_debit == 0 && child_refusal.is_none());
+                }
+            }
+            assert_eq!(crate::bounded_output::active_remaining(), before);
+            assert!(directory.contains(&function, &key, &mut budget).is_err());
+            assert_eq!(crate::bounded_output::active_remaining(), before);
+        });
+        if mode == 2 {
+            // ClassifierLedger deliberately marks its held parent refused when
+            // the current invocation changes. It does not debit the child.
+            assert!(overflow);
+            assert_eq!(refusal.unwrap().requested, 0);
+        } else {
+            assert!(!overflow && refusal.is_none());
+        }
+    }
+}
+
+#[test]
+fn frozen_membership_is_sealed_and_incomplete_builders_cannot_publish_it() {
+    let function = membership_function(256);
+    let (_, overflow, _, refusal) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+        let mut budget = ReplayBudget::new();
+        let mut directory = membership_directory(&function, &mut budget, true).unwrap();
+        let key = &function.cleanup_plan.status_sources[0].id;
+        assert!(directory.insert(&function, key, &mut budget).is_err());
+        assert!(directory.contains(&function, &key, &mut budget).is_err());
+        let mut incomplete =
+            Directory::new(&function, &mut budget, "cleanup status identity directory").unwrap();
+        let mut held = incomplete.held_prefix(&function, &mut budget).unwrap();
+        assert!(held.insert(&function, key, &mut budget).unwrap());
+        assert!(held.freeze(&function, &mut budget).is_err());
+        assert!(incomplete.lookup.is_none());
+    });
+    assert!(!overflow && refusal.is_none());
+}
+
+#[test]
+fn frozen_membership_unobserved_payer_keeps_the_original_lookup_path() {
+    let function = membership_function(256);
+    let mut budget = ReplayBudget::unobserved();
+    let directory = membership_directory(&function, &mut budget, true).unwrap();
+    assert!(directory.lookup.is_none());
+    for source in &function.cleanup_plan.status_sources {
+        assert!(directory
+            .contains(&function, &&source.id, &mut budget)
+            .unwrap());
+    }
+}
+
+#[test]
+fn frozen_membership_keeps_the_complete_old_comparison_fee_after_early_mismatch() {
+    let function = membership_function(256);
+    let length = function.cleanup_plan.status_sources[0]
+        .id
+        .expression
+        .as_str()
+        .len();
+    let short = StatusSourceId {
+        expression: ExpressionId::from_owned("y".to_owned()),
+        lane: StatusLane::OperationFailure,
+    };
+    let long = StatusSourceId {
+        expression: ExpressionId::from_owned(format!("y{}", "\0".repeat(length))),
+        lane: StatusLane::OperationFailure,
+    };
+    let (_, overflow, _, refusal) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+        let mut budget = ReplayBudget::new();
+        let directory = membership_directory(&function, &mut budget, true).unwrap();
+        // All stored spellings have one fixed length and differ only in their
+        // decimal suffix. Both missing keys take the same all-zero suffix path,
+        // but the long key must still pay the complete old min-length request.
+        let before = budget.remaining;
+        assert!(!directory.contains(&function, &&short, &mut budget).unwrap());
+        let short_work = before - budget.remaining;
+        let before = budget.remaining;
+        assert!(!directory.contains(&function, &&long, &mut budget).unwrap());
+        let long_work = before - budget.remaining;
+        assert_eq!(long_work - short_work, length - 1);
+    });
+    assert!(!overflow && refusal.is_none());
+}

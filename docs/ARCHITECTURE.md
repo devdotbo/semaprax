@@ -98,6 +98,14 @@ shape and expression children preserve complete validation before publication;
 `schema/paid_summary` selects it only with the existing builder-like ReplayBudget.
 Complete original inventory/schema receivers remain independent compatibility
 and parity controls. Other schema probes retain their existing owners.
+`cleanup_plan/replay/expression_facts/receiving/directory/status_prefix` owns
+ordinary status insertion and optional immutable membership lookup storage.
+After every current row and producer passes validation, an active-builder
+receiver retains its paid bit index alongside the complete AVL keys. Each query
+authenticates the exact function, replay budget, invocation and immutable key
+backing before reading the index, then decides membership by full-key ordering.
+Publication seals mutation; rejected owners stay rejected. Other payers retain
+the original lookup. The index grants no verification or source authority.
 `hir/canonical_loan_storage/caller/shared` owns immutable lookup publication
 inside the existing captured preparation owner. Active compatibility validators
 and nested closures share exact-program storage; unobserved compatibility owns
