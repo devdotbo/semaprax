@@ -237,6 +237,9 @@ impl<'a> Canonicalizer<'a> {
         }
         let closed = alias.as_deref().unwrap_or(&closed);
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
+        if budget.pays_allocations() {
+            return labels::successors(function, budget, self.automaton, closed, accepted);
+        }
         let mut successors = BTreeMap::<Label, targets::Targets>::new();
         for (node, weight) in closed {
             let moves = &self.automaton.nodes[*node].moves;
@@ -420,29 +423,7 @@ mod targets {
                     };
                     *slot = sum;
                 }
-                Self::Paid(targets) => {
-                    budget.reserve_bytes(function, 0, "factored target authentication")?;
-                    // Binary search performs at most floor(log2(len)) + 2 probes.
-                    let comparisons = (usize::BITS - targets.len().leading_zeros()) as usize + 1;
-                    budget.charge(function, comparisons, "factored target search")?;
-                    match targets.binary_search_by_key(&child, |(node, _)| *node) {
-                        Ok(index) => {
-                            let Some(sum) = targets[index].1.checked_add(weight) else {
-                                return Ok(false);
-                            };
-                            targets[index].1 = sum;
-                        }
-                        Err(index) => {
-                            budget.charge(
-                                function,
-                                targets.len() - index + 1,
-                                "factored target insertion and shifts",
-                            )?;
-                            budget.reserve_vec(function, targets, 1, "factored target weights")?;
-                            targets.insert(index, (child, weight));
-                        }
-                    }
-                }
+                Self::Paid(targets) => return add_paid(targets, function, budget, child, weight),
             }
             Ok(true)
         }
@@ -457,5 +438,190 @@ mod targets {
                 Self::Paid(targets) => own_weighted(function, budget, targets),
             }
         }
+    }
+    // Shared by the tagged compatibility carrier and the all-paid directory.
+    pub(super) fn add_paid(
+        targets: &mut Weighted,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        child: usize,
+        weight: u64,
+    ) -> Result<bool, Diagnostic> {
+        budget.reserve_bytes(function, 0, "factored target authentication")?;
+        // Binary search performs at most floor(log2(len)) + 2 probes.
+        let comparisons = (usize::BITS - targets.len().leading_zeros()) as usize + 1;
+        budget.charge(function, comparisons, "factored target search")?;
+        match targets.binary_search_by_key(&child, |(node, _)| *node) {
+            Ok(index) => {
+                let Some(sum) = targets[index].1.checked_add(weight) else {
+                    return Ok(false);
+                };
+                targets[index].1 = sum;
+            }
+            Err(index) => {
+                budget.charge(
+                    function,
+                    targets.len() - index + 1,
+                    "factored target insertion and shifts",
+                )?;
+                budget.reserve_vec(function, targets, 1, "factored target weights")?;
+                targets.insert(index, (child, weight));
+            }
+        }
+        Ok(true)
+    }
+}
+
+// The outer label directory uses sorted paid backing, just like its targets.
+// The complete unobserved tree receiver above retains its original work calls.
+mod labels {
+    use super::*;
+
+    struct Directory<'a> {
+        keys: Vec<&'a Label>,
+        values: Vec<Weighted>,
+    }
+
+    impl<'a> Directory<'a> {
+        fn new(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Result<Self, Diagnostic> {
+            budget.reserve_bytes(
+                function,
+                std::mem::size_of::<Self>(),
+                "factored label directory headers",
+            )?;
+            Ok(Self {
+                keys: Vec::new(),
+                values: Vec::new(),
+            })
+        }
+
+        fn key(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+            label: &'a Label,
+        ) -> Result<(), Diagnostic> {
+            budget.reserve_bytes(function, 0, "factored label directory authentication")?;
+            let comparisons = (usize::BITS - self.keys.len().leading_zeros()) as usize + 1;
+            budget.charge(
+                function,
+                comparisons,
+                "factored successor label census search",
+            )?;
+            if let Err(index) = self.keys.binary_search_by(|key| (*key).cmp(label)) {
+                budget.charge(
+                    function,
+                    self.keys.len() - index + 1,
+                    "factored successor label census shifts",
+                )?;
+                budget.reserve_vec(
+                    function,
+                    &mut self.keys,
+                    1,
+                    "factored successor borrowed labels",
+                )?;
+                self.keys.insert(index, label);
+            }
+            Ok(())
+        }
+
+        fn prepare(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+        ) -> Result<(), Diagnostic> {
+            budget.charge(
+                function,
+                self.keys.len(),
+                "factored successor target headers",
+            )?;
+            budget.reserve_array::<Weighted>(
+                function,
+                self.keys.len(),
+                "factored successor target table",
+            )?;
+            self.values = Vec::with_capacity(self.keys.len());
+            for _ in &self.keys {
+                self.values.push(Vec::new());
+            }
+            Ok(())
+        }
+
+        fn add(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+            label: &Label,
+            child: usize,
+            weight: u64,
+        ) -> Result<bool, Diagnostic> {
+            budget.reserve_bytes(function, 0, "factored label target authentication")?;
+            let comparisons = (usize::BITS - self.keys.len().leading_zeros()) as usize + 1;
+            budget.charge(function, comparisons, "factored successor label search")?;
+            let index = self
+                .keys
+                .binary_search_by(|key| (*key).cmp(label))
+                .map_err(|_| {
+                    budget.budget_refusal(function, "immutable successor label census changed", "")
+                })?;
+            targets::add_paid(&mut self.values[index], function, budget, child, weight)
+        }
+
+        fn finish(
+            self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+        ) -> Result<Vec<(Label, SharedWeighted)>, Diagnostic> {
+            budget.reserve_array::<(Label, SharedWeighted)>(
+                function,
+                self.keys.len(),
+                "factored successor vector",
+            )?;
+            let mut result = Vec::with_capacity(self.keys.len());
+            for (label, weights) in self.keys.into_iter().zip(self.values) {
+                // Label owns only an Rc observation or a Copy terminal. Its
+                // complete output slot is paid; this clone creates no backing.
+                result.push((label.clone(), own_weighted(function, budget, weights)?));
+            }
+            Ok(result)
+        }
+    }
+
+    type Successors = (u64, Vec<(Label, SharedWeighted)>);
+
+    pub(super) fn successors(
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        automaton: &Automaton,
+        closed: &BTreeMap<usize, u64>,
+        accepted: u64,
+    ) -> Result<Option<Successors>, Diagnostic> {
+        let mut labels = Directory::new(function, budget)?;
+        for node in closed.keys() {
+            let moves = &automaton.nodes[*node].moves;
+            budget.charge(
+                function,
+                moves.len().saturating_add(1),
+                "factored successor label census",
+            )?;
+            for (label, _) in moves {
+                labels.key(function, budget, label)?;
+            }
+        }
+        labels.prepare(function, budget)?;
+        for (node, weight) in closed {
+            let moves = &automaton.nodes[*node].moves;
+            budget.charge(
+                function,
+                moves.len().saturating_add(1),
+                "factored skeleton subset construction",
+            )?;
+            for (label, child) in moves {
+                if !labels.add(function, budget, label, *child, *weight)? {
+                    return Ok(None);
+                }
+            }
+        }
+        Ok(Some((accepted, labels.finish(function, budget)?)))
     }
 }

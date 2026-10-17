@@ -1,5 +1,7 @@
 # Changelog
 
+- Build paid canonical successor labels from borrowed keys and an exact target table, preserving weighted language comparison, legacy work and complete historical source proofs.
+
 - Make the funded production census diagnostic constants available outside tests and scope its test imports precisely.
 
 - Fund complete ordinary replay setup through its existing byte account, preserving legacy work, all finite physical controls and complete historical source proofs.
