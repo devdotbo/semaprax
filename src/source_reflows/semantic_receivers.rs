@@ -54,6 +54,21 @@ fn ordinary_helpers() -> &'static [serde_json::Value] {
     })
 }
 
+// Separate semantic custody for the later held status-prefix receiver.
+fn held_status() -> &'static [serde_json::Value] {
+    static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
+    RECORDS.get_or_init(|| {
+        serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/held-status-prefix-v1/views.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    })
+}
+
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
         let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
@@ -98,6 +113,9 @@ fn invert(proof: &serde_json::Value, current: &str) -> String {
 }
 
 pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
+    if let Some(proof) = held_status().iter().find(|proof| proof["path"] == path) {
+        return Some(invert(proof, current));
+    }
     if let Some(proof) = ordinary_setup()
         .iter()
         .chain(ordinary_helpers())
@@ -118,6 +136,7 @@ pub(super) fn contains(path: &str) -> bool {
         .chain(followups())
         .chain(ordinary_setup())
         .chain(ordinary_helpers())
+        .chain(held_status())
         .any(|proof| proof["path"] == path)
 }
 
@@ -316,4 +335,80 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
             Some(original.as_str())
         );
     }
+}
+
+#[test]
+fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held_status().len(), 3);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in held_status() {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        assert!(!proofs()
+            .iter()
+            .chain(followups())
+            .chain(ordinary_setup())
+            .chain(ordinary_helpers())
+            .any(|old| old["path"] == path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        if let Some(format) = records().iter().find(|old| old["path"] == path) {
+            assert_eq!(proof["before_sha256"], format["after_sha256"]);
+            assert_eq!(digest(&restore(format, &before)), format["before_sha256"]);
+        }
+        assert_eq!(predecessor(path, &current), Some(before));
+        assert!(contains(path));
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+    let whole: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/held-status-prefix-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(whole.len(), 6);
+    for proof in &whole {
+        let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+    }
+    let proof = held_status()
+        .iter()
+        .find(|p| p["path"] == "src/cleanup_plan/replay/expression_facts/receiving/retained.rs")
+        .unwrap();
+    let before = std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap();
+    let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+    let guard="    if budget.pays_allocations() && function.cleanup_plan.status_sources.len() >= 3 {\n        return validate_status_sources_held_prefix(function, facts, budget);\n    }\n";
+    assert_eq!(current.matches(guard).count(), 1);
+    assert!(current.replacen(guard, "", 1).starts_with(&before));
+    let start = before.find("fn validate_status_sources_retained").unwrap();
+    let end = start + before[start..].find("\n// The retained key proof").unwrap();
+    let expected = before[start..end]
+        .replace(
+            "fn validate_status_sources_retained",
+            "fn validate_status_sources_held_prefix",
+        )
+        .replace(
+            "let prefix_owner = directory::StatusInsertionOwner::new(function, &ids, budget)?;",
+            "let mut prefix_owner = ids.held_prefix(function, budget)?;",
+        )
+        .replace(
+            "ids.insert_certified(function, &source.id, budget, &prefix_owner)?",
+            "prefix_owner.insert(function, &source.id, budget)?",
+        );
+    let start = current
+        .find("fn validate_status_sources_held_prefix")
+        .unwrap();
+    assert_eq!(current[start..].trim_end(), expected.trim_end());
 }
