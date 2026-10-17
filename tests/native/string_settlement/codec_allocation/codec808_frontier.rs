@@ -148,6 +148,7 @@ fn exact_original_fixture_prefix() {
 #[test]
 fn primitive_string_codec_actual_preparation_reports_existing_first_operation_without_replacing_failure()
  {
+    let _successor_application = crate::cleanup_plan::SuccessorAppCensus::codec808();
     exact_original_fixture_prefix(); let _route_observation = crate::bounded_output::stage_debits::route_debits::observe();
     take_completed();
     take_last_completed();

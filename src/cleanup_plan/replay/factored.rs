@@ -1106,6 +1106,8 @@ mod continuation_receiver;
 
 #[cfg(test)]
 pub(crate) use canonical_shared::app_census::Scope as EpsilonAppCensus;
+#[cfg(test)]
+pub(crate) use canonical_shared::lexical_successors::census::Scope as SuccessorAppCensus;
 
 #[cfg(test)]
 mod moderate_tests;

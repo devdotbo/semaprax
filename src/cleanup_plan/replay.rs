@@ -7844,7 +7844,7 @@ mod live_oracle;
 pub(crate) use live_oracle::with_financed_test_oracles;
 
 #[cfg(test)]
-pub(crate) use factored::EpsilonAppCensus;
+pub(crate) use factored::{EpsilonAppCensus, SuccessorAppCensus};
 
 mod selected_type_drop;
 

@@ -98,3 +98,30 @@ owning raw inventories and finite source acquisitions at a later combined
 source freeze; this candidate deliberately does not run or retarget binders.
 Scoped rustfmt preserves literal contents and keeps all modules <=1500 lines.
 The source checkpoint alone does not implement the completion matrix's gate.
+
+## Outer application diagnostic successor
+
+A separately retained source successor adds test-only `SuccessorAppCensus`
+scopes as the first local in the existing codec808 preparation and catalog
+normalizer owners, before fixture/source/ledger construction. Their Drop emits
+fixed counters only after later locals and unwind cleanup. The codec owner
+continues to resume its original panic; no status or refusal is replaced.
+
+The outer scope is independent of the original hostile single-function/budget
+observer. Actual current and complete-before `id_with_receiving` entry guards
+bind function address, budget address, diagnostic serial and current HIR/PLAN
+phase. This records identity, not authority: all real Memo/ClosureReceiving
+checks and their order remain unchanged. The guard resets invocation state and
+settles pending bank refusals before a later pair can enter. Fixed aggregate
+cells distinguish attempted/acquired entries, attempted/acquired primitive
+banks, requested/acquired bytes and refused entries. HIR, PLAN and other cells
+remain separate. A refused cold request is not an acquired M bank.
+
+The new copy-only TLS state never reads a ledger, allocates an event buffer,
+spends replay work, changes payer selection or enters production compilation.
+Nested observation, foreign/missing identity, unexpected pending ownership,
+serial overflow and checked counter overflow mark the report incomplete/lost.
+Such a report cannot establish savings. A complete failed-prefix report is
+still a failed-prefix measurement, not full-path N or fit. The successful-path
+(N-M)P-A-NR equation must not be applied to failed attempted entries as if all
+banks were acquired. Actual application execution remains pending.

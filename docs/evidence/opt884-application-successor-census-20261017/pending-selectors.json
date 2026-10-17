@@ -1,0 +1,31 @@
+{
+  "status": "UNREGISTERED_UNEXECUTED",
+  "checks": [
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::application_census_keeps_attempted_acquired_and_refused_pairs_separate_in_all_cells",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::application_census_nested_foreign_and_serial_overflow_are_incomplete_not_authority",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::application_census_counter_overflow_invalidates_fixed_report",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "workspace_graph::tests::codec808_frontier::primitive_string_codec_actual_preparation_reports_existing_first_operation_without_replacing_failure",
+      "source": "tests/native/string_settlement/codec_allocation/codec808_frontier.rs"
+    },
+    {
+      "role": "lib",
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "source": "src/workspace_graph/tests/builder_limits.rs"
+    }
+  ],
+  "original_nine_884_owners_retained": true
+}

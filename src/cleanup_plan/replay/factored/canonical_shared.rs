@@ -1266,6 +1266,8 @@ impl<'a> Canonicalizer<'a> {
         receiving: &mut closure_receiving::ClosureReceiving,
     ) -> Result<Option<usize>, Diagnostic> {
         #[cfg(test)]
+        let _successor_invocation = lexical_successors::census::invocation(false, function, budget);
+        #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::ReplayFactoredCanonical,
         );
