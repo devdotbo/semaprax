@@ -199,33 +199,46 @@ pub(crate) fn file(path: &Path,length: usize,expected: &str) -> Option<String> {
     actual(row);Some(read_view(prior))
 }
 pub(crate) fn value(source: &str,expected: &str,supplied: &str) -> String {
-    let packet=packet();let Some(row)=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)else{return supplied.to_owned()};
+    let packet=packet();let Some(row)=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)else{return crate::source_reflows_merge::next_big_batch_inputs::value_local(source,expected,supplied)};
     let Some(prior)=row["views"].as_array().unwrap().iter().find(|v|v["sha256"]==expected)else{return supplied.to_owned()};
     let current=actual(row);let previous=read_view(prior);
     if supplied==current || supplied==previous {previous}else{supplied.to_owned()}
 }
 #[test]
 fn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wrong_stages() {
-    let packet=packet();let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut seen=std::collections::BTreeSet::new();
+    let packet = packet();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut seen = std::collections::BTreeSet::new();
     for row in packet["rows"].as_array().unwrap() {
-        let source=row["source"].as_str().unwrap();assert!(seen.insert(source));let current=actual(row);
+        let source = row["source"].as_str().unwrap();
+        assert!(seen.insert(source));
+        let current = actual(row);
         for prior in row["views"].as_array().unwrap() {
-            let expected=prior["sha256"].as_str().unwrap();let length=prior["length"].as_u64().unwrap()as usize;let previous=read_view(prior);
-            assert_eq!(file(&root.join(source),length,expected),Some(previous.clone()));
-            assert_eq!(value(source,expected,&current),previous);
-            assert_eq!(value(source,expected,&previous),previous);
-            for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
-                assert_eq!(value(source,expected,&foreign),foreign);
+            let expected = prior["sha256"].as_str().unwrap();
+            let length = prior["length"].as_u64().unwrap() as usize;
+            let previous = read_view(prior);
+            assert_eq!(
+                file(&root.join(source), length, expected),
+                Some(previous.clone())
+            );
+            assert_eq!(value(source, expected, &current), previous);
+            assert_eq!(value(source, expected, &previous), previous);
+            for foreign in [
+                String::new(),
+                format!("{current} "),
+                format!("{current}{current}"),
+                current[..current.len() - 1].to_owned(),
+                "foreign".to_owned(),
+            ] {
+                assert_eq!(value(source, expected, &foreign), foreign);
             }
-            assert!(file(&root.join(source),length+1,expected).is_none());
-            assert!(file(&root.join(source),length,&"0".repeat(64)).is_none());
+            assert!(file(&root.join(source), length + 1, expected).is_none());
+            assert!(file(&root.join(source), length, &"0".repeat(64)).is_none());
         }
     }
-    assert!(file(&root.join("foreign"),0,"foreign").is_none());
-    assert!(file(&root.join("src/../Cargo.toml"),0,"foreign").is_none());
+    assert!(file(&root.join("foreign"), 0, "foreign").is_none());
+    assert!(file(&root.join("src/../Cargo.toml"), 0, "foreign").is_none());
 }
-
 // Independent complete785/885/886 side views. These never feed a current raw audit.
 fn combined_side_packet() -> serde_json::Value {
     let data=include_str!("../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json");
@@ -295,4 +308,13 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
     }
     assert_eq!(combined_side_value("unlisted","whole785","unchanged"),"unchanged");
     assert!(combined_side_file(&root.join("unlisted"),0,"unlisted").is_none());
+}
+
+// Nondelegating entry for the older owner's compiled-channel normalization.
+// Membership is tested before calling the public delegating route.
+pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    let current=packet();
+    if current["rows"].as_array().unwrap().iter().any(|row| row["source"]==source) {
+        value(source,expected,supplied)
+    } else { supplied.to_owned() }
 }

@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "670f5428569e4cb158c667ec0afd72d204e2eb7e530f093b582a716e05865259",
-    "lines": 216
+    "sha256": "872976f03fb8c86ffe6f3f9aec975f588bad411f143d0c61a29adf329651d72b",
+    "lines": 355
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1076,8 +1076,8 @@
   },
   {
     "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
-    "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
-    "lines": 177
+    "sha256": "e643fb593928867511c68c86580b47b85a943535d692303474c3a7b38d3aa887",
+    "lines": 342
   },
   {
     "source": "src/workspace_graph/tests/core_attempt_trace.rs",

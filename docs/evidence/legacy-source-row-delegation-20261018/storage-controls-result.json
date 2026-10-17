@@ -1,0 +1,22 @@
+{
+  "status": "PASS",
+  "scope": "Unchanged original verifier compared against SSD-backed immutable UTF-8 representation on a complete production/test registration fixture; no actual repository metadata or guard is weakened.",
+  "controls": [
+    "identical-complete-raw-bytes",
+    "identical-complete-production-bytes",
+    "identical-role-sets",
+    "unicode-and-byte-offsets",
+    "NUL-CRLF-order-and-multiplicity",
+    "immutable-concatenation-and-length",
+    "original-production-reclassification-refusal",
+    "original-unclassified-child-refusal",
+    "original-missing-class-refusal",
+    "original-complete-registration-byte-refusal",
+    "original-source-drift-refusal",
+    "snapshot-retains-acquired-bytes",
+    "tampered-cache-refused"
+  ],
+  "original_verifier_prefix_sha256": "b02eca2b0f07e13c6478f511c2c0a9e2e865ca3f518626e19fe0f78a3eb50912",
+  "storage_implementation_sha256": "653cf683557b582baa60790b78f00ee51c65e48f2bbea75818a888a437749a26",
+  "cache_root_is_external_SSD": true
+}

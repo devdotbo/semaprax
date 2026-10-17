@@ -7696,3 +7696,4 @@ are authored. Qualification is pending; Catalog corpus and limits are unchanged.
   unchanged strict paid gate and all wider-case controls. Qualification pending.
 
 - Private OPT847 retained-wrapper rename source tranche: lend provider payloads through paid stable presentation cells, verifier/HIR receivers and typed specialization refusal; invariant and unsupported shapes retain owning production. Focused compile/runtime qualification and independent frozen-engine execution remain pending.
+- Fix missing-row delegation in the layered CI source reader, retaining the complete frozen legacy inventory and rejecting altered inputs.

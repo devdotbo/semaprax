@@ -137,7 +137,7 @@ fn actual(row: &serde_json::Value) -> String {
         .unwrap_or_else(|| held(&root.join(source),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap()).unwrap());
     if row["compiled"].as_bool().unwrap() {
         let compiled=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,current["sha256"].as_str().unwrap(),compiled(source).unwrap());
-        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(source,current["sha256"].as_str().unwrap(),&compiled);
+        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value_direct(source,current["sha256"].as_str().unwrap(),&compiled);
         assert_eq!(value,compiled,"complete actual compiled source");
     }
     assert_eq!(value,read_view(current),"complete actual archive");value
@@ -161,26 +161,66 @@ pub(crate) fn value(source: &str,expected: &str,supplied: &str) -> String {
     let supplied=crate::source_reflows_merge::main_e177_final_inputs::value(source,row["current"]["sha256"].as_str().unwrap(),supplied);
     if supplied==current || supplied==previous {previous}else{supplied.to_owned()}
 }
+pub(crate) fn value_local(source: &str,expected: &str,supplied: &str) -> String {
+    let side=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(source,expected,supplied);
+    let supplied=side.as_str();
+    let packet=packet();let Some(row)=packet["rows"].as_array().unwrap().iter().find(|r|r["source"]==source)else{return supplied.to_owned()};
+    let Some(prior)=row["views"].as_array().unwrap().iter().find(|v|v["sha256"]==expected)else{return supplied.to_owned()};
+    let current=actual(row);let previous=read_view(prior);
+    let supplied=crate::source_reflows_merge::main_e177_final_inputs::value_direct(source,row["current"]["sha256"].as_str().unwrap(),supplied);
+    if supplied==current || supplied==previous {previous}else{supplied.to_owned()}
+}
 #[test]
 fn complete_current_and_parent_views_refuse_foreign_truncated_duplicate_and_wrong_stages() {
-    let packet=packet();let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let mut seen=std::collections::BTreeSet::new();
+    let packet = packet();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut seen = std::collections::BTreeSet::new();
     for row in packet["rows"].as_array().unwrap() {
-        let source=row["source"].as_str().unwrap();assert!(seen.insert(source));let current=actual(row);
+        let source = row["source"].as_str().unwrap();
+        assert!(seen.insert(source));
+        let current = actual(row);
         for prior in row["views"].as_array().unwrap() {
-            let expected=prior["sha256"].as_str().unwrap();let length=prior["length"].as_u64().unwrap()as usize;let previous=read_view(prior);
-            assert_eq!(file(&root.join(source),length,expected),Some(previous.clone()));
-            assert_eq!(value(source,expected,&current),previous);
-            assert_eq!(value(source,expected,&previous),previous);
-            for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
-                assert_eq!(value(source,expected,&foreign),foreign);
+            let expected = prior["sha256"].as_str().unwrap();
+            let length = prior["length"].as_u64().unwrap() as usize;
+            let previous = read_view(prior);
+            assert_eq!(
+                file(&root.join(source), length, expected),
+                Some(previous.clone())
+            );
+            assert_eq!(value(source, expected, &current), previous);
+            assert_eq!(value(source, expected, &previous), previous);
+            for foreign in [
+                String::new(),
+                format!("{current} "),
+                format!("{current}{current}"),
+                current[..current.len() - 1].to_owned(),
+                "foreign".to_owned(),
+            ] {
+                assert_eq!(value(source, expected, &foreign), foreign);
             }
-            assert!(file(&root.join(source),length+1,expected).is_none());
-            assert!(file(&root.join(source),length,&"0".repeat(64)).is_none());
+            assert!(file(&root.join(source), length + 1, expected).is_none());
+            assert!(file(&root.join(source), length, &"0".repeat(64)).is_none());
         }
     }
-    assert!(file(&root.join("foreign"),0,"foreign").is_none());
-    assert!(file(&root.join("src/../Cargo.toml"),0,"foreign").is_none());
+    assert!(file(&root.join("foreign"), 0, "foreign").is_none());
+    assert!(file(&root.join("src/../Cargo.toml"), 0, "foreign").is_none());
+
+    // The newest packet deliberately has no legacy row. Its previous owner
+    // must still authenticate and return the complete frozen 90-row view.
+    {
+        let source = "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv";
+        let expected = "fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb";
+        let physical =
+            include_str!("../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv");
+        let previous = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb.txt");
+        assert_eq!(value(source, expected, physical), previous);
+        assert_eq!(previous.lines().count(), 90);
+        for invalid in [format!("{physical}\n"), format!("!{physical}")] {
+            assert_eq!(value(source, expected, &invalid), invalid);
+        }
+        assert_eq!(value("foreign/source.tsv", expected, physical), physical);
+        assert_eq!(value(source, &"0".repeat(64), physical), physical);
+    }
 }
 
 #[test]
