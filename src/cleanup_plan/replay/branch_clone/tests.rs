@@ -360,3 +360,130 @@ fn joined_generic_three_edge_transfer_keeps_complete_paths_and_original_work() {
     assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
     assert!(allocation.allocated<=paid);
 }
+
+#[derive(Debug, Eq, PartialEq)]
+struct ProbeFailure {
+    code: &'static str,
+    severity: crate::diagnostic::Severity,
+    message: ([u8; 1024], usize),
+    span: Option<crate::ast::Span>,
+    path: Option<([u8; 1024], usize)>,
+    help: Option<([u8; 1024], usize)>,
+}
+fn probe_text(value: &str) -> ([u8; 1024], usize) {
+    assert!(value.len() <= 1024);
+    let mut bytes = [0; 1024];
+    bytes[..value.len()].copy_from_slice(value.as_bytes());
+    (bytes, value.len())
+}
+fn probe_failure(error: &Diagnostic) -> ProbeFailure {
+    ProbeFailure {
+        code: error.code, severity: error.severity,
+        message: probe_text(&error.message), span: error.span,
+        path: error.path.as_deref().map(probe_text),
+        help: error.help.as_deref().map(probe_text),
+    }
+}
+#[derive(Debug, Eq, PartialEq)]
+struct ProbeOutcome {
+    failure: Option<ProbeFailure>,
+    ordinary_work: usize,
+    skeleton_work: usize,
+}
+fn observe_generic_probe(function: &ResolvedFunction, limit: usize, floor: usize)
+    -> ((ProbeOutcome, crate::test_allocation_observer::Metrics), bool, usize,
+        Option<crate::bounded_output::ReservationRefusal>, Option<(&'static str,u32)>)
+{
+    let (result,refused,paid,first,site)=crate::bounded_output::with_limit_usage_refusal_site(limit,||measure(||{
+        assert!(crate::bounded_output::set_active_floor(floor));
+        let mut budget=ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+        let result=plan_skeleton_paths(function,&mut budget);
+        let failure=match result {
+            Ok(paths)=>{drop(paths);None}
+            Err(error)=>{
+                let first=probe_failure(&error);
+                let paid=crate::bounded_output::active_remaining();
+                let work=(budget.remaining,budget.skeleton_remaining);
+                assert!(budget.reserve_bytes(function,0,"generic probe sticky zero").is_err());
+                assert_eq!(crate::bounded_output::active_remaining(),paid);
+                assert_eq!((budget.remaining,budget.skeleton_remaining),work);
+                assert_eq!(probe_failure(&error),first);
+                drop(error);Some(first)
+            }
+        };
+        let result=ProbeOutcome {failure,ordinary_work:budget.remaining,skeleton_work:budget.skeleton_remaining};
+        drop(budget);crate::bounded_output::clear_active_floor();result
+    }));
+    assert!(!result.1.invalid && result.1.live==0 && result.1.allocated==result.1.freed);
+    assert!(result.1.allocated<=paid);
+    (result,refused,paid,first,site.map(|location|(location.file(),location.line())))
+}
+
+#[test]
+fn real_generic_probe_receiving_frontier_exact_short_zero_floor_is_sticky_and_drops_completely() {
+    let mut source=String::from("module physical_prefix; @id(\"f\") fn f(x:i64)->i64 {");
+    for index in 0..48 {
+        let value=if index==0 {"x".to_owned()}else{format!("x{}",index-1)};
+        source.push_str(&format!("let x{index}={value}+1;"));
+    }
+    source.push_str("x47} @id(\"main\") fn main()->i64 {f(0)}");
+    let checked=crate::check(&source,"physical-prefix.spx").unwrap();
+    let mut program=crate::hir::resolve(&checked).unwrap();
+    let function=program.functions.iter_mut().find(|function|function.id.as_str()=="f").unwrap();
+    let last=function.cleanup_plan.blocks.iter().rposition(|block|
+        matches!(&block.terminator,CleanupTerminator::Branch(edges) if edges.len()==2)).unwrap();
+    // A finite synthetic plan control keeps all preceding status observations
+    // on one Goto path. Its only Branch is the real three-edge caller under test.
+    for (index,block) in function.cleanup_plan.blocks.iter_mut().enumerate() {
+        if index!=last {
+            if let CleanupTerminator::Branch(edges)=&block.terminator {
+                block.terminator=CleanupTerminator::Goto(edges[0]);
+            }
+        }
+    }
+    let CleanupTerminator::Branch(edges)=&function.cleanup_plan.blocks[last].terminator else {unreachable!()};
+    let mut edge=function.cleanup_plan.edges[edges[edges.len()-1].0 as usize].clone();
+    let id=EdgeId(u32::try_from(function.cleanup_plan.edges.len()).unwrap());
+    edge.id=id;function.cleanup_plan.edges.push(edge);
+    let CleanupTerminator::Branch(edges)=&mut function.cleanup_plan.blocks[last].terminator else {unreachable!()};
+    edges.push(id);
+    let before=GENERIC_TAKES.with(Cell::get);
+    let (success,refused,_,first,_)=observe_generic_probe(function,usize::MAX,0);
+    assert!(success.0.failure.is_none() && !refused && first.is_none());
+    assert!(GENERIC_TAKES.with(Cell::get)>before);
+    let target_line=u32::try_from(include_str!("../../replay.rs").lines()
+        .position(|line|line.contains("budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,")).unwrap()+1).unwrap();
+    // Walk actual reservation receipts, never an old bill or guessed offset.
+    // Each rerun admits precisely the preceding refused request. The first
+    // target receipt therefore identifies this new caller's real prepayment.
+    let mut limit=0;
+    let mut found=None;
+    for _ in 0..100_000 {
+        let (outcome,refused,paid,first,site)=observe_generic_probe(function,limit,0);
+        assert!(refused && outcome.0.failure.is_some());
+        let first=first.unwrap();
+        if first.requested==TAKE_CALL_CONTROLS
+            && site.is_some_and(|(path,line)|path.ends_with("cleanup_plan/replay.rs") && line==target_line) {
+            found=Some(paid);break;
+        }
+        let next=paid.checked_add(first.requested).unwrap();
+        assert!(next>limit,"actual reservation staircase must advance");limit=next;
+    }
+    let prefix=found.expect("the real three-edge caller must expose its receiving frontier");
+    let end=prefix.checked_add(TAKE_CALL_CONTROLS).unwrap();
+    let (exact,_,paid,_,_)=observe_generic_probe(function,end,0);
+    assert!(paid>=end,"the exact real request is admitted before any later refusal");
+    drop(exact);
+    for (limit,floor,remaining) in [(prefix,0,0),(end-1,0,TAKE_CALL_CONTROLS-1),(end,1,TAKE_CALL_CONTROLS)] {
+        let (first,refused,paid,receipt,site)=observe_generic_probe(function,limit,floor);
+        assert!(refused && first.0.failure.is_some());
+        assert_eq!(paid,prefix);
+        let receipt=receipt.unwrap();
+        assert_eq!((receipt.requested,receipt.remaining,receipt.floor),(TAKE_CALL_CONTROLS,remaining,floor));
+        assert!(site.is_some_and(|(path,line)|path.ends_with("cleanup_plan/replay.rs") && line==target_line));
+        let (again,again_refused,again_paid,again_receipt,again_site)=observe_generic_probe(function,limit,floor);
+        assert_eq!(again.0,first.0,"all six Diagnostic fields and both sticky work accounts");
+        assert_eq!(again.1,first.1,"actual allocation count, cumulative bytes, peak and whole Drop");
+        assert_eq!((again_refused,again_paid,again_receipt,again_site),(refused,paid,Some(receipt),site));
+    }
+}

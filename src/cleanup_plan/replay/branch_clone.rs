@@ -142,7 +142,7 @@ pub(super) const TAKE_CALL_CONTROLS: usize = TAKE_BYTES
     + size_of::<&Vec<EdgeId>>() // total edge len receiver
     + 2 * size_of::<&ReplayBudget>() // selected() actual/formal receiver
     + 4 * size_of::<&AllocationPayer>() // two PartialEq actuals and two formals
-    + 14 * size_of::<&Vec<std::rc::Rc<SkeletonObservation>>>() // seven len/capacity actual/formal pairs
+    + 16 * size_of::<&Vec<std::rc::Rc<SkeletonObservation>>>() // eight len/capacity actual/formal pairs
     + 2 * size_of::<&Vec<crate::cleanup_plan::CleanupBlock>>() // block Vec dereference actual/formal
     + 2 * size_of::<&[crate::cleanup_plan::CleanupBlock]>() // get actual/formal
     + 2 * size_of::<&Vec<crate::cleanup_plan::CleanupTransition>>() // transition len actual/formal
