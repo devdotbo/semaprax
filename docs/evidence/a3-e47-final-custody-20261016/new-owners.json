@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "4717d11a99d33bb453e9db1bf29279482ccf4175aaf06f39a12ece7d7567f164",
-    "lines": 214
+    "sha256": "c394f749295490b1c733192bb28dcb54b0eb8a2b7d07680ed4641defeeeaa94e",
+    "lines": 215
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1191,8 +1191,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
-    "sha256": "047f6f9e5473116d7ca8c5a791652e743456b3dd681dc614ec05fdf0a66f6a99",
-    "lines": 654
+    "sha256": "e9f347ed4f0ba6ad7f87ca0d925cbdf51dbcab3d0948b9189f84cf6074d29f45",
+    "lines": 655
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
