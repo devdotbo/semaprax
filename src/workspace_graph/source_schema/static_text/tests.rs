@@ -642,8 +642,18 @@ mod missing_lexical_authority {
 
     #[test]
     fn uninstantiated_static_lexical_template_cannot_skip_the_actual_census_guard() {
-        let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";let mut at=0;while at<2 {at=at+1;if at==1 {continue;};0};value} @id(\"app.main\") fn main()->i64 {0}";
-        let mut build = build(source);
+        let malformed_source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";let mut at=0;while at<2 {at=at+1;if at==1 {continue;};0};value} @id(\"app.main\") fn main()->i64 {0}";
+        let error = crate::parse(malformed_source, "writer.spx").unwrap_err();
+        assert_eq!(error.code, "SPX-P201");
+        assert_eq!(error.message, "expected an expression");
+        assert_eq!(error.path.as_deref(), Some("writer.spx"));
+        assert!(error.help.is_none());
+        let span = error.span.unwrap();
+        assert_eq!((span.start, span.end), (135, 136));
+        assert_eq!(malformed_source.matches(";0};value}").count(), 1);
+        let source = malformed_source.replacen(";0};value}", ";0}value}", 1);
+        assert_ne!(source, malformed_source);
+        let mut build = build(&source);
         assert!(!writer(&build).function_templates.is_empty());
         assert!(writer(&build).function_instances.is_empty());
         writer_mut(&mut build).static_text.as_mut().unwrap().lexical = None;
