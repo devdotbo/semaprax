@@ -203,7 +203,7 @@ mod tests {
             match field {
                 0 => foreign.code = "SPX-T999",
                 1 => foreign.severity = crate::diagnostic::Severity::Warning,
-                2 => foreign.message.push_str(" foreign"),
+                2 => foreign.message.to_mut().push_str(" foreign"),
                 3 => foreign.path = Some("foreign.spx".to_owned()),
                 4 => foreign.span = None,
                 5 => foreign.help = Some("foreign help".to_owned()),
