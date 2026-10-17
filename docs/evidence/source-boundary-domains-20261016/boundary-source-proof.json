@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1149,
-      "current_boundary_production": 413,
-      "outside_production_still_fully_authenticated": 83,
-      "full_role_production": 496,
-      "full_role_test_only": 879,
-      "full_raw_sha256": "b20185d02969fe4d759c83f7f3d167ef78290e93cd25dc3d4aa8d8ea2a5e8063",
-      "boundary_production_sha256": "feed30e1e4efb7f8d9cb24cbde50102b13a231c41fb5789f5f8d8ce85cbdab9d",
+      "current_boundary_members": 1158,
+      "current_boundary_production": 416,
+      "outside_production_still_fully_authenticated": 84,
+      "full_role_production": 500,
+      "full_role_test_only": 886,
+      "full_raw_sha256": "470967b3372eb16ac1a51e718bf2c07469cb44de57bb87e9e088304c3dc5f286",
+      "boundary_production_sha256": "2911fbb9e54c98ecc503dca07fc249c8072b2e0ebe0b3e2749962f3ecdde3434",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -33,11 +33,11 @@
       "original_roots": 179,
       "current_boundary_members": 196,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 544,
-      "full_role_production": 617,
-      "full_role_test_only": 943,
-      "full_raw_sha256": "af2bfcff854378c7fa8c7afe093235d4e3e1dc25949b5c37ff6e69097bec1ab6",
-      "boundary_production_sha256": "120645f17a96b36199dadbe054892e371b445a776adcee5641a624758c5dfece",
+      "outside_production_still_fully_authenticated": 548,
+      "full_role_production": 621,
+      "full_role_test_only": 950,
+      "full_raw_sha256": "a602e502a81120055ad1c63d7fc2580a6a657c94fb0b3710aa461eaf332e2d53",
+      "boundary_production_sha256": "8c3c84a79e79fde1321b31c995c23a4ad648c3856eb0dfb03589b88d680891d0",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -65,6 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "ONLY_NINE_CLOSED_SOURCE_HASHES_AND_EXACT_EDGE_OFFSETS_NO_ROLE_CHUNK_DECLARATION_OR_REGISTRATION_CHANGE",
+  "registration_update": "FINITE_230_OLD_EDGE_REMAP_AND_ELEVEN_ACTUAL_CHILDREN",
   "global_polluted_purity_result_not_claimed": true
 }

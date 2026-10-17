@@ -1250,6 +1250,8 @@
         "src/cleanup_plan/replay/factored/canonical_shared/before_held_retained.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_index.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs",
@@ -1292,6 +1294,13 @@
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/before_alias.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/before_index.rs",
@@ -2289,6 +2298,9 @@
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/ordered_alias.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/paid_many.rs",
@@ -2652,6 +2664,7 @@
         "src/cleanup_plan/replay/ordinary_inventory/storage.rs",
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_status.rs",
         "src/cleanup_plan/replay/ordinary_status/allocation.rs",
@@ -2704,9 +2717,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "cc43809c1b973d026c07026f144a81433bb168b0e965e4c2a83aaf3ffb618569",
-      "full_raw_sha256": "b20185d02969fe4d759c83f7f3d167ef78290e93cd25dc3d4aa8d8ea2a5e8063",
-      "full_authenticated_production_sha256": "548d87e63b60dbc49ab5ae28e96aa221bef0e12d17394680d7d6c356f7cd1b32"
+      "full_manifest_sha256": "11f69438c7cc49a0ec8bf1419f0e359c2454d3ce03e9bca96e940c327820b0a7",
+      "full_raw_sha256": "470967b3372eb16ac1a51e718bf2c07469cb44de57bb87e9e088304c3dc5f286",
+      "full_authenticated_production_sha256": "0e158ea1cff67b1c8493795728bce102aa95d58df39926fcf8362b31123c0ac5"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3218,6 +3231,9 @@
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/ordered_alias.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/paid_many.rs",
@@ -3257,6 +3273,7 @@
         "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_renewals.rs",
         "src/cleanup_plan/replay/ordinary_status.rs",
@@ -3711,9 +3728,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "7c43c04698928840fa19839009b24fc560b7e84d2cdb16bcf1bf9580884c187c",
-      "full_raw_sha256": "af2bfcff854378c7fa8c7afe093235d4e3e1dc25949b5c37ff6e69097bec1ab6",
-      "full_authenticated_production_sha256": "ff9bc546e5c92b2e7c638a642df87e40b154538599aeee55ced513df097cf47c"
+      "full_manifest_sha256": "6b4ea8539988703de0b8e9548b5db1edfa204efa9cd5099e47132e20fa7f4464",
+      "full_raw_sha256": "a602e502a81120055ad1c63d7fc2580a6a657c94fb0b3710aa461eaf332e2d53",
+      "full_authenticated_production_sha256": "fe8648ba29b907e6ace1776d2b4ee23c4bc5f120c4e54a61da9cc03e084a9e49"
     }
   }
 }
