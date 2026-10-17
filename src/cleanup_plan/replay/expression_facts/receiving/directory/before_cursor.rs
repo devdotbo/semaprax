@@ -609,6 +609,7 @@ impl<K: KeyWork> Directory<K> {
 }
 
 mod status_prefix;
+#[allow(unused_imports)] // Retained complete historical re-export; qualification uses its original producer.
 pub(super) use status_prefix::Owner as StatusInsertionOwner;
 
 #[cfg(test)]

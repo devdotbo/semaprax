@@ -819,6 +819,7 @@ fn comparison_report_end(budget: &ReplayBudget) {
     });
 }
 
+#[allow(unused_imports)] // Preserve the complete independently compiled historical receiver imports.
 use crate::cleanup_plan::replay::*;
 fn comparison_report_old_receiver<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,

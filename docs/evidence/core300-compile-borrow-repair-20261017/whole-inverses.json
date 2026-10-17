@@ -1,0 +1,54 @@
+{
+  "base": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+  "status": "SOURCE_ONLY_NO_EXECUTION",
+  "rows": [
+    {
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
+      "before_length": 18798,
+      "before_sha256": "8db7099863e022516f2d00ef96cc2b8b349d92cf850518d5d97cd2e393efb21c",
+      "after_length": 18799,
+      "after_sha256": "cb728c0ddeb15d888796dd7a7d396c4fa98efc0f5b5f0c7cd99ccea7bf718be7",
+      "before": "        current, expected,\n        \"only the two complete finalizer arms change in the entire canonical source\"",
+      "after": "        current, &expected,\n        \"only the two complete finalizer arms change in the entire canonical source\"",
+      "reason": "Borrow both String operands without changing equality or failure message."
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+      "before_length": 39654,
+      "before_sha256": "b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458",
+      "after_length": 39631,
+      "after_sha256": "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938",
+      "before": "use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};",
+      "after": "use super::{ExpressionId, StatusProducer, StatusSource};",
+      "reason": "Remove only unused import; no runtime price/branch/body change."
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+      "before_length": 20342,
+      "before_sha256": "250e582f1fcb5fa762b65ea05bbed980bf34e233c51d7f0004c9e8e45460d87a",
+      "after_length": 20452,
+      "after_sha256": "770bc0dce160bbcf8cc6fbb3055545d26af4e7cbae029c1435349eed96c54efe",
+      "before": "pub(super) use status_prefix::Owner as StatusInsertionOwner;",
+      "after": "#[allow(unused_imports)] // Retained complete historical re-export; qualification uses its original producer.\npub(super) use status_prefix::Owner as StatusInsertionOwner;",
+      "reason": "Scope warning suppression to exact historical re-export; retain old item verbatim."
+    },
+    {
+      "path": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+      "before_length": 45618,
+      "before_sha256": "1d5f944822d4b1c425fb818015530b06230e1d1e38d1a298bcfd607d2ae3c36d",
+      "after_length": 45720,
+      "after_sha256": "e9024cb5b3c27f63fc9c16a471d579203e2fe069732fc94216d80599c30afc6f",
+      "before": "use crate::cleanup_plan::replay::*;\nfn comparison_report_old_receiver",
+      "after": "#[allow(unused_imports)] // Preserve the complete independently compiled historical receiver imports.\nuse crate::cleanup_plan::replay::*;\nfn comparison_report_old_receiver",
+      "reason": "Scope warning suppression to exact historical whole-receiver import; retain old body."
+    }
+  ],
+  "diagnostic_input": {
+    "path": "/Volumes/Semaprax/lane-prompts/semantic-focused300-a6c92a197-20261017/compiler-errors-and-warnings.json",
+    "length": 19728,
+    "sha256": "61511bcccb1668276e538498d69e80221ce4a11cc11077a8b4838d16bb13d096",
+    "separate_unresolved_names": "set_active_usage_floor_for_test and clear_active_usage_floor_for_test in paid_route_tests are separate guide repair scope, not addressed by this four-file patch."
+  },
+  "assertion_contract": "Only expected String is borrowed, preserving exact content equality/current historical source guard, selected message and all assertions. No fee, cap, work, branch, owner, Drop or baseline changed.",
+  "source_binding_followup": "Four current-source hashes change; normal existing finite coupling by parent after all semantic fixes, never retarget historical source snapshots. No new Rust modules."
+}

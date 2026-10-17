@@ -232,7 +232,7 @@ fn lexical_finish_complete_before_sources_and_old_publication_paths_are_preserve
         expected = expected.replacen(&old, &new, 1);
     }
     assert_eq!(
-        current, expected,
+        current, &expected,
         "only the two complete finalizer arms change in the entire canonical source"
     );
     let start = before.find("fn own_weighted(").unwrap();

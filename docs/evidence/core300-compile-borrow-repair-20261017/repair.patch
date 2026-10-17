@@ -1,0 +1,42 @@
+--- a/src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs
++++ b/src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs
+@@ -232,7 +232,7 @@
+         expected = expected.replacen(&old, &new, 1);
+     }
+     assert_eq!(
+-        current, expected,
++        current, &expected,
+         "only the two complete finalizer arms change in the entire canonical source"
+     );
+     let start = before.find("fn own_weighted(").unwrap();
+--- a/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs
++++ b/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs
+@@ -6,7 +6,7 @@
+ use crate::bounded_output::classifier_string::ClassifierLedger;
+ use crate::cleanup_plan::replay::replay_error;
+ #[cfg(test)]
+-use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};
++use super::{ExpressionId, StatusProducer, StatusSource};
+ use std::cell::Cell;
+ use std::mem::size_of;
+ 
+--- a/src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs
++++ b/src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs
+@@ -609,6 +609,7 @@
+ }
+ 
+ mod status_prefix;
++#[allow(unused_imports)] // Retained complete historical re-export; qualification uses its original producer.
+ pub(super) use status_prefix::Owner as StatusInsertionOwner;
+ 
+ #[cfg(test)]
+--- a/src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs
++++ b/src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs
+@@ -819,6 +819,7 @@
+     });
+ }
+ 
++#[allow(unused_imports)] // Preserve the complete independently compiled historical receiver imports.
+ use crate::cleanup_plan::replay::*;
+ fn comparison_report_old_receiver<'hir>(
+     program: &'hir dyn crate::cleanup::ReplayContext,

@@ -6,7 +6,7 @@ use super::{
 use crate::bounded_output::classifier_string::ClassifierLedger;
 use crate::cleanup_plan::replay::replay_error;
 #[cfg(test)]
-use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};
+use super::{ExpressionId, StatusProducer, StatusSource};
 use std::cell::Cell;
 use std::mem::size_of;
 

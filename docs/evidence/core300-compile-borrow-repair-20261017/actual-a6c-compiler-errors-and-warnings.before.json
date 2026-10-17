@@ -1,0 +1,429 @@
+[
+  {
+    "rendered": "error[E0425]: cannot find function `set_active_usage_floor_for_test` in module `crate::bounded_output`\n  --> src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs:42:40\n   |\n42 |                 crate::bounded_output::set_active_usage_floor_for_test(\n   |                                        ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::bounded_output`\n\n",
+    "$message_type": "diagnostic",
+    "children": [],
+    "level": "error",
+    "message": "cannot find function `set_active_usage_floor_for_test` in module `crate::bounded_output`",
+    "spans": [
+      {
+        "byte_end": 1926,
+        "byte_start": 1895,
+        "column_end": 71,
+        "column_start": 40,
+        "expansion": null,
+        "file_name": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+        "is_primary": true,
+        "label": "not found in `crate::bounded_output`",
+        "line_end": 42,
+        "line_start": 42,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 71,
+            "highlight_start": 40,
+            "text": "                crate::bounded_output::set_active_usage_floor_for_test("
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "E0425",
+      "explanation": "An unresolved name was used.\n\nErroneous code examples:\n\n```compile_fail,E0425\nsomething_that_doesnt_exist::foo;\n// error: unresolved name `something_that_doesnt_exist::foo`\n\n// or:\n\ntrait Foo {\n    fn bar() {\n        Self; // error: unresolved name `Self`\n    }\n}\n\n// or:\n\nlet x = unknown_variable;  // error: unresolved name `unknown_variable`\n```\n\nPlease verify that the name wasn't misspelled and ensure that the\nidentifier being referred to is valid for the given situation. Example:\n\n```\nenum something_that_does_exist {\n    Foo,\n}\n```\n\nOr:\n\n```\nmod something_that_does_exist {\n    pub static foo : i32 = 0i32;\n}\n\nsomething_that_does_exist::foo; // ok!\n```\n\nOr:\n\n```\nlet unknown_variable = 12u32;\nlet x = unknown_variable; // ok!\n```\n\nIf the item is not defined in the current module, it must be imported using a\n`use` statement, like so:\n\n```\n# mod foo { pub fn bar() {} }\n# fn main() {\nuse foo::bar;\nbar();\n# }\n```\n\nIf the item you are importing is not defined in some super-module of the\ncurrent module, then it must also be declared as public (e.g., `pub fn`).\n"
+    }
+  },
+  {
+    "rendered": "error[E0425]: cannot find function `clear_active_usage_floor_for_test` in module `crate::bounded_output`\n  --> src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs:57:32\n   |\n57 |         crate::bounded_output::clear_active_usage_floor_for_test();\n   |                                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ not found in `crate::bounded_output`\n\n",
+    "$message_type": "diagnostic",
+    "children": [],
+    "level": "error",
+    "message": "cannot find function `clear_active_usage_floor_for_test` in module `crate::bounded_output`",
+    "spans": [
+      {
+        "byte_end": 2820,
+        "byte_start": 2787,
+        "column_end": 65,
+        "column_start": 32,
+        "expansion": null,
+        "file_name": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+        "is_primary": true,
+        "label": "not found in `crate::bounded_output`",
+        "line_end": 57,
+        "line_start": 57,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 65,
+            "highlight_start": 32,
+            "text": "        crate::bounded_output::clear_active_usage_floor_for_test();"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "E0425",
+      "explanation": "An unresolved name was used.\n\nErroneous code examples:\n\n```compile_fail,E0425\nsomething_that_doesnt_exist::foo;\n// error: unresolved name `something_that_doesnt_exist::foo`\n\n// or:\n\ntrait Foo {\n    fn bar() {\n        Self; // error: unresolved name `Self`\n    }\n}\n\n// or:\n\nlet x = unknown_variable;  // error: unresolved name `unknown_variable`\n```\n\nPlease verify that the name wasn't misspelled and ensure that the\nidentifier being referred to is valid for the given situation. Example:\n\n```\nenum something_that_does_exist {\n    Foo,\n}\n```\n\nOr:\n\n```\nmod something_that_does_exist {\n    pub static foo : i32 = 0i32;\n}\n\nsomething_that_does_exist::foo; // ok!\n```\n\nOr:\n\n```\nlet unknown_variable = 12u32;\nlet x = unknown_variable; // ok!\n```\n\nIf the item is not defined in the current module, it must be imported using a\n`use` statement, like so:\n\n```\n# mod foo { pub fn bar() {} }\n# fn main() {\nuse foo::bar;\nbar();\n# }\n```\n\nIf the item you are importing is not defined in some super-module of the\ncurrent module, then it must also be declared as public (e.g., `pub fn`).\n"
+    }
+  },
+  {
+    "rendered": "warning: unused import: `MAX_REPLAY_WORK_UNITS`\n --> src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs:9:57\n  |\n9 | use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};\n  |                                                         ^^^^^^^^^^^^^^^^^^^^^\n  |\n  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default\n\n",
+    "$message_type": "diagnostic",
+    "children": [
+      {
+        "children": [],
+        "code": null,
+        "level": "note",
+        "message": "`#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default",
+        "rendered": null,
+        "spans": []
+      },
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "remove the unused import",
+        "rendered": null,
+        "spans": [
+          {
+            "byte_end": 462,
+            "byte_start": 439,
+            "column_end": 78,
+            "column_start": 55,
+            "expansion": null,
+            "file_name": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+            "is_primary": true,
+            "label": null,
+            "line_end": 9,
+            "line_start": 9,
+            "suggested_replacement": "",
+            "suggestion_applicability": "MachineApplicable",
+            "text": [
+              {
+                "highlight_end": 78,
+                "highlight_start": 55,
+                "text": "use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};"
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "level": "warning",
+    "message": "unused import: `MAX_REPLAY_WORK_UNITS`",
+    "spans": [
+      {
+        "byte_end": 462,
+        "byte_start": 441,
+        "column_end": 78,
+        "column_start": 57,
+        "expansion": null,
+        "file_name": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+        "is_primary": true,
+        "label": null,
+        "line_end": 9,
+        "line_start": 9,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 78,
+            "highlight_start": 57,
+            "text": "use super::{ExpressionId, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "unused_imports",
+      "explanation": null
+    }
+  },
+  {
+    "rendered": "warning: unused import: `status_prefix::Owner as StatusInsertionOwner`\n   --> src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs:612:16\n    |\n612 | pub(super) use status_prefix::Owner as StatusInsertionOwner;\n    |                ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+    "$message_type": "diagnostic",
+    "children": [
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "remove the whole `use` item",
+        "rendered": null,
+        "spans": [
+          {
+            "byte_end": 20309,
+            "byte_start": 20248,
+            "column_end": 1,
+            "column_start": 1,
+            "expansion": null,
+            "file_name": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+            "is_primary": true,
+            "label": null,
+            "line_end": 613,
+            "line_start": 612,
+            "suggested_replacement": "",
+            "suggestion_applicability": "MachineApplicable",
+            "text": [
+              {
+                "highlight_end": 61,
+                "highlight_start": 1,
+                "text": "pub(super) use status_prefix::Owner as StatusInsertionOwner;"
+              },
+              {
+                "highlight_end": 1,
+                "highlight_start": 1,
+                "text": ""
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "level": "warning",
+    "message": "unused import: `status_prefix::Owner as StatusInsertionOwner`",
+    "spans": [
+      {
+        "byte_end": 20307,
+        "byte_start": 20263,
+        "column_end": 60,
+        "column_start": 16,
+        "expansion": null,
+        "file_name": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+        "is_primary": true,
+        "label": null,
+        "line_end": 612,
+        "line_start": 612,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 60,
+            "highlight_start": 16,
+            "text": "pub(super) use status_prefix::Owner as StatusInsertionOwner;"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "unused_imports",
+      "explanation": null
+    }
+  },
+  {
+    "rendered": "warning: unused import: `crate::cleanup_plan::replay::*`\n   --> src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs:822:5\n    |\n822 | use crate::cleanup_plan::replay::*;\n    |     ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^\n\n",
+    "$message_type": "diagnostic",
+    "children": [
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "remove the whole `use` item",
+        "rendered": null,
+        "spans": [
+          {
+            "byte_end": 33852,
+            "byte_start": 33816,
+            "column_end": 1,
+            "column_start": 1,
+            "expansion": null,
+            "file_name": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+            "is_primary": true,
+            "label": null,
+            "line_end": 823,
+            "line_start": 822,
+            "suggested_replacement": "",
+            "suggestion_applicability": "MachineApplicable",
+            "text": [
+              {
+                "highlight_end": 36,
+                "highlight_start": 1,
+                "text": "use crate::cleanup_plan::replay::*;"
+              },
+              {
+                "highlight_end": 1,
+                "highlight_start": 1,
+                "text": "fn comparison_report_old_receiver<'hir>("
+              }
+            ]
+          }
+        ]
+      }
+    ],
+    "level": "warning",
+    "message": "unused import: `crate::cleanup_plan::replay::*`",
+    "spans": [
+      {
+        "byte_end": 33850,
+        "byte_start": 33820,
+        "column_end": 35,
+        "column_start": 5,
+        "expansion": null,
+        "file_name": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+        "is_primary": true,
+        "label": null,
+        "line_end": 822,
+        "line_start": 822,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": [
+          {
+            "highlight_end": 35,
+            "highlight_start": 5,
+            "text": "use crate::cleanup_plan::replay::*;"
+          }
+        ]
+      }
+    ],
+    "code": {
+      "code": "unused_imports",
+      "explanation": null
+    }
+  },
+  {
+    "rendered": "error[E0277]: can't compare `&std::string::String` with `std::string::String`\n   --> src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs:234:5\n    |\n234 | /     assert_eq!(\n235 | |         current, expected,\n236 | |         \"only the two complete finalizer arms change in the entire canonical source\"\n237 | |     );\n    | |_____^ no implementation for `&std::string::String == std::string::String`\n    |\n    = help: the trait `PartialEq<std::string::String>` is not implemented for `&std::string::String`\nhelp: the trait `PartialEq` is implemented for `std::string::String`\n   --> /rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/string.rs:350:9\n\n",
+    "$message_type": "diagnostic",
+    "children": [
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "the trait `PartialEq<std::string::String>` is not implemented for `&std::string::String`",
+        "rendered": null,
+        "spans": []
+      },
+      {
+        "children": [],
+        "code": null,
+        "level": "help",
+        "message": "the trait `PartialEq` is implemented for `std::string::String`",
+        "rendered": null,
+        "spans": [
+          {
+            "byte_end": 11170,
+            "byte_start": 11161,
+            "column_end": 19,
+            "column_start": 10,
+            "expansion": {
+              "def_site_span": {
+                "byte_end": 10195,
+                "byte_start": 10176,
+                "column_end": 20,
+                "column_start": 1,
+                "expansion": null,
+                "file_name": "/rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/cmp.rs",
+                "is_primary": false,
+                "label": null,
+                "line_end": 273,
+                "line_start": 273,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": []
+              },
+              "macro_decl_name": "#[derive(PartialEq)]",
+              "span": {
+                "byte_end": 11170,
+                "byte_start": 11161,
+                "column_end": 19,
+                "column_start": 10,
+                "expansion": null,
+                "file_name": "/rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/string.rs",
+                "is_primary": false,
+                "label": null,
+                "line_end": 350,
+                "line_start": 350,
+                "suggested_replacement": null,
+                "suggestion_applicability": null,
+                "text": []
+              }
+            },
+            "file_name": "/rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/alloc/src/string.rs",
+            "is_primary": true,
+            "label": null,
+            "line_end": 350,
+            "line_start": 350,
+            "suggested_replacement": null,
+            "suggestion_applicability": null,
+            "text": []
+          }
+        ]
+      }
+    ],
+    "level": "error",
+    "message": "can't compare `&std::string::String` with `std::string::String`",
+    "spans": [
+      {
+        "byte_end": 2102,
+        "byte_start": 2100,
+        "column_end": 34,
+        "column_start": 32,
+        "expansion": {
+          "def_site_span": {
+            "byte_end": 1316,
+            "byte_start": 1294,
+            "column_end": 23,
+            "column_start": 1,
+            "expansion": null,
+            "file_name": "/rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/macros/mod.rs",
+            "is_primary": false,
+            "label": null,
+            "line_end": 42,
+            "line_start": 42,
+            "suggested_replacement": null,
+            "suggestion_applicability": null,
+            "text": []
+          },
+          "macro_decl_name": "assert_eq!",
+          "span": {
+            "byte_end": 11005,
+            "byte_start": 10876,
+            "column_end": 6,
+            "column_start": 5,
+            "expansion": null,
+            "file_name": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
+            "is_primary": false,
+            "label": null,
+            "line_end": 237,
+            "line_start": 234,
+            "suggested_replacement": null,
+            "suggestion_applicability": null,
+            "text": [
+              {
+                "highlight_end": 16,
+                "highlight_start": 5,
+                "text": "    assert_eq!("
+              },
+              {
+                "highlight_end": 27,
+                "highlight_start": 1,
+                "text": "        current, expected,"
+              },
+              {
+                "highlight_end": 85,
+                "highlight_start": 1,
+                "text": "        \"only the two complete finalizer arms change in the entire canonical source\""
+              },
+              {
+                "highlight_end": 6,
+                "highlight_start": 1,
+                "text": "    );"
+              }
+            ]
+          }
+        },
+        "file_name": "/rustc/8bab26f4f68e0e26f0bb7960be334d5b520ea452/library/core/src/macros/mod.rs",
+        "is_primary": true,
+        "label": "no implementation for `&std::string::String == std::string::String`",
+        "line_end": 59,
+        "line_start": 59,
+        "suggested_replacement": null,
+        "suggestion_applicability": null,
+        "text": []
+      }
+    ],
+    "code": {
+      "code": "E0277",
+      "explanation": "You tried to use a type which doesn't implement some trait in a place which\nexpected that trait.\n\nErroneous code example:\n\n```compile_fail,E0277\n// here we declare the Foo trait with a bar method\ntrait Foo {\n    fn bar(&self);\n}\n\n// we now declare a function which takes an object implementing the Foo trait\nfn some_func<T: Foo>(foo: T) {\n    foo.bar();\n}\n\nfn main() {\n    // we now call the method with the i32 type, which doesn't implement\n    // the Foo trait\n    some_func(5i32); // error: the trait bound `i32 : Foo` is not satisfied\n}\n```\n\nIn order to fix this error, verify that the type you're using does implement\nthe trait. Example:\n\n```\ntrait Foo {\n    fn bar(&self);\n}\n\n// we implement the trait on the i32 type\nimpl Foo for i32 {\n    fn bar(&self) {}\n}\n\nfn some_func<T: Foo>(foo: T) {\n    foo.bar(); // we can now use this method since i32 implements the\n               // Foo trait\n}\n\nfn main() {\n    some_func(5i32); // ok!\n}\n```\n\nOr in a generic context, an erroneous code example would look like:\n\n```compile_fail,E0277\nfn some_func<T>(foo: T) {\n    println!(\"{:?}\", foo); // error: the trait `core::fmt::Debug` is not\n                           //        implemented for the type `T`\n}\n\nfn main() {\n    // We now call the method with the i32 type,\n    // which *does* implement the Debug trait.\n    some_func(5i32);\n}\n```\n\nNote that the error here is in the definition of the generic function. Although\nwe only call it with a parameter that does implement `Debug`, the compiler\nstill rejects the function. It must work with all possible input types. In\norder to make this example compile, we need to restrict the generic type we're\naccepting:\n\n```\nuse std::fmt;\n\n// Restrict the input type to types that implement Debug.\nfn some_func<T: fmt::Debug>(foo: T) {\n    println!(\"{:?}\", foo);\n}\n\nfn main() {\n    // Calling the method is still fine, as i32 implements Debug.\n    some_func(5i32);\n\n    // This would fail to compile now:\n    // struct WithoutDebug;\n    // some_func(WithoutDebug);\n}\n```\n\nRust only looks at the signature of the called function, as such it must\nalready specify all requirements that will be used for every type parameter.\n"
+    }
+  }
+]
