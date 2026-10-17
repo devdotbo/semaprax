@@ -1,5 +1,7 @@
 # Changelog
 
+- Bind primitive String-vector fixture byte arrays to named owners before borrowing, preserving every original value, output limit, backend and rejection assertion.
+
 - Transfer already funded final-branch observation backing when a bounded terminal-chain probe proves it can hold every remaining observation, preserving original clone work, fallback receivers and source controls.
 
 - Admit strictly checked primitive String-slot reads in nonallocating byte-helper proofs, avoid temporary type owners during slot inspection, and retain generic declaration-bound receipts at the rejected-storage frontier.

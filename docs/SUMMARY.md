@@ -1164,3 +1164,5 @@ Audience: all documentation readers.
 - [String-slot byte helpers and declaration-bound diagnostics](evidence/string-slot-byte-helper-v1/README.md)
 
 - [Final branch prefix transfer](evidence/last-branch-prefix-v1/README.md)
+
+- [Named byte owners in String-vector fixtures](evidence/string-fixture-owners-v1/README.md)
