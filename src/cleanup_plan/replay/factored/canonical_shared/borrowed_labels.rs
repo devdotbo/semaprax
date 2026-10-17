@@ -259,17 +259,16 @@ pub(super) fn ordinary_successors(
     // The general replay budget intentionally permits multiple functions.
     // This direct selected compatibility receiver instead authenticates the
     // exact setup anchor before querying its payer or spending logical work.
-    if matches!(&budget.payer, AllocationPayer::SelectedReservation) {
-        if budget.refusal_spent || budget.physical.as_deref().is_none_or(|physical| {
+    if matches!(&budget.payer, AllocationPayer::SelectedReservation)
+        && (budget.refusal_spent || budget.physical.as_deref().is_none_or(|physical| {
             physical.direct_anchor.as_ref().is_none_or(|anchor| {
                 !anchor.ledger.current() || anchor.function != std::ptr::from_ref(function)
             })
-        }) {
+        })) {
             budget.refusal_spent = true;
             budget.physical.as_deref_mut().expect("selected reservation payer").reject();
             return Err(Diagnostic::io("SPX-H006", String::new()));
         }
-    }
     // These zero calls retain sticky/function/ledger authentication even for a
     // singleton sink. A paid refusal is final and never selects the old route.
     budget.reserve_bytes(function, 0, "factored direct singleton authentication")?;

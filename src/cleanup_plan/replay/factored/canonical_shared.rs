@@ -304,9 +304,8 @@ impl<'a> Canonicalizer<'a> {
     ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
         // Identity/sticky preflight precedes every invocation payment. Cold
         // activation and all original payment order remain in the old body.
-        if self.closures.preflight(function, budget) {
-            if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
-        } else if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
+        self.closures.preflight(function, budget);
+        if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
         if budget.pays_allocations() {
             budget.reserve_bytes(
                 function,
