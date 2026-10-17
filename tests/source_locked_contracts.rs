@@ -40,6 +40,76 @@ const COVERAGE: &str = include_str!("source-locked-coverage.tsv");
 
 const ACKNOWLEDGED: &[(&str, &str, &str)] = &[
     (
+        "tests/documentation/held_auth_sources.rs",
+        "src/cleanup_plan/replay/allocation/oracle.rs",
+        "checks the fixed owner path membership in three audit unions and nonempty owner bytes; production bodies are scanned by those complete unions",
+    ),
+    (
+        "tests/documentation/held_auth_sources.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared.rs",
+        "checks the fixed owner path membership in three audit unions and nonempty owner bytes; production bodies are scanned by those complete unions",
+    ),
+    (
+        "tests/documentation/held_auth_sources.rs",
+        "src/cleanup_plan/replay/physical_budget.rs",
+        "checks the fixed owner path membership in three audit unions and nonempty owner bytes; production bodies are scanned by those complete unions",
+    ),
+    (
+        "tests/documentation/held_auth_sources.rs",
+        "src/cleanup_plan/replay/physical_storage.rs",
+        "checks the fixed owner path membership in three audit unions and nonempty owner bytes; production bodies are scanned by those complete unions",
+    ),
+    (
+        "tests/support/production_source_inventory_original.rs",
+        "crates/semaprax-toolchain/tests/cli_help_surface_v1.rs",
+        "literal identifies an allowed Cargo test root in registration_is_test_only; actual source and contiguous registration edges are authenticated from the full authority manifest",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "src/codegen/native_emit/expression/vec_ops.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "src/codegen/native_vec.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "src/wasm/aggregate.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "src/wasm/aggregate/vec_owned_leaf.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "tests/cleanup_backends/owned_leaf_collections.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/support/record_copy_field_update.rs",
+        "tests/owned_data/owned_leaf_vec.rs",
+        "assert_backend_sources authenticates a complete historical root inverse; the field-update child implementations and tests are independently authenticated by the immutable packet children",
+    ),
+    (
+        "tests/wasm/scalar_browser_ci_contract/browser_custody.rs",
+        "tests/wasm/scalar_browser_ci_contract.rs",
+        "authenticates exact whole-file historical browser harness predecessors and each inverse; does not scan their child module bodies",
+    ),
+    (
+        "tests/workspace/semantic_graph.rs",
+        "src/ast/program_source/decl_slices.rs",
+        "current_projection_facade_input binds the complete root and its root-private projected method to exact digests; it does not inspect child module bodies",
+    ),
+    (
+        "tests/workspace/semantic_graph.rs",
+        "src/workspace_graph/expected_projection/private_layout.rs",
+        "source_inventory_controls::verify recursively joins every actual owned module and explicit path, then checks exact ordered union bytes and complete owned projection",
+    ),
+    (
         "tests/hir_module_boundaries.rs",
         "src/hir.rs",
         "binds the root's own macro/`mod` ordering, not resolver bodies",

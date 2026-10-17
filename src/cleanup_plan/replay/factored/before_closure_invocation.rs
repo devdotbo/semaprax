@@ -1,6 +1,6 @@
 //! Complete 7800 caller; the canonical receiver is independently compiled.
-use super::*;
 use super::canonical_shared::before_closure_receiver as canonical_shared;
+use super::*;
 pub(super) fn compare_with_index_storage<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,
@@ -59,4 +59,3 @@ pub(super) fn compare_with_index_storage<'hir>(
     };
     Ok(Some(hir == plan))
 }
-

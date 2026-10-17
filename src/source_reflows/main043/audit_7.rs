@@ -1,7 +1,8 @@
 #[test]
 fn selected_session_complete_source_inverses_and_old_layout_definitions_stay_bound() {
     selected_session_layout_mirror_is_derived_from_complete_historical_definitions();
-    let rows:serde_json::Value=serde_json::from_str(super::metadata(super::Fixture::Selected)).unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Selected)).unwrap();
     let files = [
         ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/selected-session-static-refusal-781/original/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt"))),
         ("src/cleanup_plan/replay/live_oracle/source_custody/b.rs",include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/b.rs")),include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/selected-session-static-refusal-781/original/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt"))),
@@ -45,8 +46,14 @@ fn selected_session_layout_mirror_is_derived_from_complete_historical_definition
         source.chars().filter(|c| !c.is_whitespace()).collect()
     }
     let atom=include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/selected-session-static-refusal-781/original/src__cleanup_plan__replay__semantic_refusal.rs.before.txt"));
-    let error=include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/selected-session-static-refusal-781/original/errors.rs.before.txt"));
-    let mirror = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"));
+    let error = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/selected-session-static-refusal-781/original/errors.rs.before.txt"
+    ));
+    let mirror = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/selected_entry/tests/session_errors.rs"
+    ));
     assert_eq!(
         compact(body(atom, "enum Atom {")),
         compact(body(mirror, "enum Atom {"))

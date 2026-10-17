@@ -11,7 +11,13 @@ static PROOF_RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
 fn followups() -> &'static [serde_json::Value] {
     static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
     RECORDS.get_or_init(|| {
-        serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/source-reader-followups-20261016/allocation.json")).unwrap())
+        serde_json::from_str(
+            &main99f_read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/source-reader-followups-20261016/allocation.json"),
+            )
+            .unwrap(),
+        )
         .unwrap()
     })
 }
@@ -112,8 +118,22 @@ fn exit_region_matches() -> &'static [serde_json::Value] {
 
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
-        let mut original: Vec<serde_json::Value> = serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/receiver-source-custody-v1/inverse.json")).unwrap()).unwrap();
-        let additional: Vec<serde_json::Value> = serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/live-source-audit-custody-v1/inverse.json")).unwrap()).unwrap();
+        let mut original: Vec<serde_json::Value> = serde_json::from_str(
+            &main99f_read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/receiver-source-custody-v1/inverse.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
+        let additional: Vec<serde_json::Value> = serde_json::from_str(
+            &main99f_read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/live-source-audit-custody-v1/inverse.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
         assert_eq!(original.len(), 12);
         assert_eq!(additional.len(), 2);
         original.extend(additional);
@@ -235,8 +255,7 @@ fn ordinary_setup_complete_sources_and_original_legacy_constructor_remain_exact(
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/ordinary-replay-setup-v1");
     let rows: Vec<serde_json::Value> =
-        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(rows.len(), 34);
     let mut paths = std::collections::BTreeSet::new();
     for row in &rows {
@@ -306,7 +325,14 @@ fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
         }
         let current = main99f_read(root.join(path)).unwrap();
         let restored = invert(proof, &current);
-        let source_audits: Vec<serde_json::Value> = serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/live-source-audit-custody-v1/inverse.json")).unwrap()).unwrap();
+        let source_audits: Vec<serde_json::Value> = serde_json::from_str(
+            &main99f_read(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/live-source-audit-custody-v1/inverse.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap();
         let archive_root = if source_audits.iter().any(|audit| audit["path"] == path) {
             "docs/evidence/live-source-audit-custody-v1"
         } else {
@@ -369,11 +395,9 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/source-reader-followups-20261016");
     let records: serde_json::Value =
-        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap()).unwrap();
     for record in records.as_array().unwrap() {
-        let original =
-            main99f_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
+        let original = main99f_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
         assert_eq!(digest(&original), record["sha256"]);
         let current = main99f_read(root.join(record["path"].as_str().unwrap())).unwrap();
         let restore = |source: &str| -> Option<String> {
@@ -431,8 +455,7 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/held-status-prefix-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/held-status-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 6);
@@ -451,8 +474,16 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         .unwrap();
     let before = main99f_read(root.join(proof["archive"].as_str().unwrap())).unwrap();
     let current = main99f_read(root.join(proof["path"].as_str().unwrap())).unwrap();
-    for bad in [String::new(), format!("{current}\n"), format!("{current}{current}"), current[..current.len()-1].to_owned()] {
-        assert!(std::panic::catch_unwind(|| crate::source_reflows_merge::main99f_inputs::held_status_before_freeze(&bad)).is_err());
+    for bad in [
+        String::new(),
+        format!("{current}\n"),
+        format!("{current}{current}"),
+        current[..current.len() - 1].to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| {
+            crate::source_reflows_merge::main99f_inputs::held_status_before_freeze(&bad)
+        })
+        .is_err());
     }
     let current = crate::source_reflows_merge::main99f_inputs::held_status_before_freeze(&current);
     // Reconstruct the authenticated predecessor dispatch before applying the
@@ -517,10 +548,7 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/held-continuation-growth-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/held-continuation-growth-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -539,13 +567,11 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     };
     let old_tests = before_file("src/cleanup_plan/replay/continuation_storage/tests.rs");
     let current_tests =
-        main99f_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs"))
-            .unwrap();
+        main99f_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs")).unwrap();
     assert!(current_tests.starts_with(&old_tests));
     let old_storage = before_file("src/cleanup_plan/replay/continuation_storage.rs");
     let current_storage =
-        main99f_read(root.join("src/cleanup_plan/replay/continuation_storage.rs"))
-            .unwrap();
+        main99f_read(root.join("src/cleanup_plan/replay/continuation_storage.rs")).unwrap();
     let fixed = old_storage.find("pub(super) fn fresh").unwrap();
     let fixed_end = fixed
         + old_storage[fixed..]
@@ -559,9 +585,8 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     );
     let machine_types = old_storage.find("pub(super) type OwnedStep").unwrap();
     assert!(current_storage.contains(&old_storage[machine_types..]));
-    let mut machine = before_last_branch_root(
-        &main99f_read(root.join("src/cleanup_plan/replay.rs")).unwrap(),
-    );
+    let mut machine =
+        before_last_branch_root(&main99f_read(root.join("src/cleanup_plan/replay.rs")).unwrap());
     let standalone = "if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?\n            }";
     assert_eq!(machine.matches(standalone).count(), 1);
     machine = machine.replacen(
@@ -629,10 +654,8 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -691,8 +714,7 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
 fn ordinary_replay_routes_keep_complete_predecessors_and_existing_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let records: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(records.len(), 6);
@@ -758,8 +780,7 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     let evidence = root.join("docs/evidence/borrowed-exit-region-match-v1");
     let sources: Vec<serde_json::Value> =
-        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(sources.len(), 7);
     for proof in sources {
         let current = main99f_read(root.join(proof["path"].as_str().unwrap())).unwrap();
@@ -770,12 +791,10 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     for manifest in ["new-files.json", "retained-sources.json"] {
         let records: Vec<serde_json::Value> =
-            serde_json::from_str(&main99f_read(evidence.join(manifest)).unwrap())
-                .unwrap();
+            serde_json::from_str(&main99f_read(evidence.join(manifest)).unwrap()).unwrap();
         assert_eq!(records.len(), 2);
         for record in records {
-            let current =
-                main99f_read(root.join(record["path"].as_str().unwrap())).unwrap();
+            let current = main99f_read(root.join(record["path"].as_str().unwrap())).unwrap();
             let current = if record["path"] == "src/cleanup_plan/replay.rs" {
                 before_last_branch_root(&current)
             } else {
@@ -792,8 +811,7 @@ fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() 
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/string-slot-byte-helper-v1");
     let sources: Vec<serde_json::Value> =
-        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main99f_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(sources.len(), 9);
     let mut paths = std::collections::BTreeSet::new();
     for proof in &sources {
@@ -817,8 +835,7 @@ fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() 
         }
     }
     let new_files: Vec<serde_json::Value> =
-        serde_json::from_str(&main99f_read(evidence.join("new-files.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main99f_read(evidence.join("new-files.json")).unwrap()).unwrap();
     assert_eq!(new_files.len(), 1);
     for file in new_files {
         let current = main99f_read(root.join(file["path"].as_str().unwrap())).unwrap();
@@ -847,8 +864,7 @@ fn before_last_branch_root(current: &str) -> String {
 fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 4);
@@ -870,8 +886,7 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
             assert!(current.starts_with(&before));
         }
     }
-    let helper =
-        main99f_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
+    let helper = main99f_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
     let proof = sources
         .iter()
         .find(|proof| proof["path"] == "src/cleanup_plan/replay/branch_clone.rs")
@@ -887,8 +902,7 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
 fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/plan-branch-capacity-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/plan-branch-capacity-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 5);
@@ -922,8 +936,7 @@ fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
 fn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/replay-work-refusal-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/replay-work-refusal-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 4);
@@ -948,8 +961,7 @@ fn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions(
 fn held_status_index_keeps_complete_predecessor_receivers_and_assertions() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/status-identity-index-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/status-identity-index-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 3);
@@ -974,8 +986,7 @@ fn held_status_index_keeps_complete_predecessor_receivers_and_assertions() {
 fn projection_audit_scope_preserves_complete_sources_and_all_historical_receivers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/projection-audit-scope-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/projection-audit-scope-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 5);
@@ -1043,8 +1054,7 @@ fn projection_audit_scope_preserves_complete_sources_and_all_historical_receiver
 fn historical_pin_capture_chains_restore_every_original_source() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/legacy-pin-chain-repair-v1");
-    let before =
-        main99f_read(evidence.join("semantic_receivers.rs.before.txt")).unwrap();
+    let before = main99f_read(evidence.join("semantic_receivers.rs.before.txt")).unwrap();
     assert_eq!(
         digest(&before),
         "6af473f412874b7c2e09e4e1effa1f18357f74cf8e31b7cab4a16bd85b4a947d"
@@ -1128,10 +1138,7 @@ fn historical_pin_capture_chains_restore_every_original_source() {
 fn status_membership_index_preserves_complete_predecessors_and_all_original_controllers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/status-membership-index-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/status-membership-index-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 5);
@@ -1156,10 +1163,7 @@ fn status_membership_index_preserves_complete_predecessors_and_all_original_cont
 fn replay_operation_totals_preserve_complete_predecessors_and_production_text() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/replay-operation-totals-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/replay-operation-totals-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 10);
@@ -1179,8 +1183,7 @@ fn replay_operation_totals_preserve_complete_predecessors_and_production_text() 
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let guards: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/replay-operation-totals-v1/guards.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/replay-operation-totals-v1/guards.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(guards.len(), 8);
@@ -1207,14 +1210,15 @@ fn replay_operation_totals_preserve_complete_predecessors_and_production_text() 
 /// The original source-work assertion still reads its complete prior input.
 /// The separate custody control below authenticates all current changed files.
 pub(crate) fn helper_digest_capture_predecessor(current: &str) -> String {
-    let authenticated = crate::source_reflows_merge::main99f_inputs::expected("src/workspace_graph/static_text/scalar_helpers.rs", current);
+    let authenticated = crate::source_reflows_merge::main99f_inputs::expected(
+        "src/workspace_graph/static_text/scalar_helpers.rs",
+        current,
+    );
     let current = authenticated.as_str();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/optional-helper-digest-work-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/optional-helper-digest-work-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     let proof = proofs
@@ -1233,10 +1237,8 @@ pub(crate) fn helper_digest_capture_predecessor(current: &str) -> String {
 fn optional_helper_digest_preserves_complete_predecessors_and_all_old_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/optional-helper-digest-work-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/optional-helper-digest-work-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 6);
@@ -1270,10 +1272,7 @@ fn optional_helper_digest_preserves_complete_predecessors_and_all_old_controls()
 fn isolated_lexical_path_reuse_preserves_complete_merger_and_all_prior_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(
-            root.join("docs/evidence/isolated-skeleton-paths-v1/sources.json"),
-        )
-        .unwrap(),
+        &main99f_read(root.join("docs/evidence/isolated-skeleton-paths-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 7);
@@ -1361,8 +1360,7 @@ fn isolated_lexical_path_reuse_preserves_complete_merger_and_all_prior_controls(
 fn core_attempt_receipts_preserve_all_original_retry_and_source_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/core-attempt-receipts-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/core-attempt-receipts-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 5);
@@ -1407,8 +1405,7 @@ fn core_attempt_receipts_preserve_all_original_retry_and_source_controls() {
 fn tail_merger_helper_name_preserves_both_complete_reference_bodies_and_all_assertions() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main99f_read(root.join("docs/evidence/tail-merge-helper-name-v1/sources.json"))
-            .unwrap(),
+        &main99f_read(root.join("docs/evidence/tail-merge-helper-name-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 3);
@@ -1443,7 +1440,15 @@ fn tail_merger_helper_name_preserves_both_complete_reference_bodies_and_all_asse
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 fn records() -> &'static [serde_json::Value] {
     RECORDS
-        .get_or_init(|| serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/source_reflows.json")).unwrap()).unwrap())
+        .get_or_init(|| {
+            serde_json::from_str(
+                &main99f_read(
+                    Path::new(env!("CARGO_MANIFEST_DIR")).join("src/source_reflows.json"),
+                )
+                .unwrap(),
+            )
+            .unwrap()
+        })
         .as_array()
         .unwrap()
 }
@@ -1478,4 +1483,3 @@ fn restore(record: &serde_json::Value, current: &str) -> String {
     );
     restored
 }
-

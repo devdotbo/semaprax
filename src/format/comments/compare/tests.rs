@@ -13,7 +13,10 @@ fn comparison_fixture(source: &str, module_only: bool) -> (crate::ast::Program, 
     // source modules. Preserve their exact corpus bytes and parser refusal.
     let refusal = crate::parse_with_comments(source, path).unwrap_err();
     assert_eq!(refusal.code, "SPX-P101");
-    assert_eq!(refusal.message, "a module must declare at least one function");
+    assert_eq!(
+        refusal.message,
+        "a module must declare at least one function"
+    );
     let anchored = format!("{source}\n@id(\"compare.fixture.anchor\") fn main()->i64 {{ 0 }}\n");
     let (mut program, comments) = crate::parse_with_comments(&anchored, path).unwrap();
     assert_eq!(program.functions.len(), 1);

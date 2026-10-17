@@ -2,7 +2,7 @@
 //! The old Diagnostic receiver remains independent in selected.rs.
 use super::child_refusal::Refusal;
 use super::{HelperSites, RenewalBindings};
-use crate::cleanup_plan::{ReplayPhysicalReservation, replay_btree_node_upper};
+use crate::cleanup_plan::{replay_btree_node_upper, ReplayPhysicalReservation};
 use crate::hir::{
     ExpressionId, ResolvedBinding, ResolvedExprKind, ResolvedFunction, ResolvedStatement, ValueId,
 };

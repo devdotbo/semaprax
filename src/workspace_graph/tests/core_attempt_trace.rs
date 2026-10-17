@@ -30,7 +30,9 @@ pub(in crate::workspace_graph) fn record(
             if trace.len < trace.rows.len() {
                 trace.rows[trace.len] = (mode, prebound, overflowed);
                 trace.len += 1;
-            } else { trace.lost = true; }
+            } else {
+                trace.lost = true;
+            }
             slot.set(Some(trace));
         }
     });
@@ -51,15 +53,23 @@ thread_local! {
 pub(in crate::workspace_graph) fn observe_typed<T>(run: impl FnOnce() -> T) -> (T, Attempts) {
     struct Restore(Option<Attempts>);
     impl Drop for Restore {
-        fn drop(&mut self) { TYPED.with(|trace| trace.set(self.0)); }
+        fn drop(&mut self) {
+            TYPED.with(|trace| trace.set(self.0));
+        }
     }
     let mut previous = TYPED.with(Cell::get);
     let nested = previous.is_some();
-    if let Some(ref mut outer) = previous { outer.lost = true; }
+    if let Some(ref mut outer) = previous {
+        outer.lost = true;
+    }
     let _restore = Restore(previous);
-    TYPED.with(|trace| trace.set(Some(Attempts {
-        rows: [(0, 0, false); 8], len: 0, lost: nested,
-    })));
+    TYPED.with(|trace| {
+        trace.set(Some(Attempts {
+            rows: [(0, 0, false); 8],
+            len: 0,
+            lost: nested,
+        }))
+    });
     let result = observe(run);
     let trace = TYPED.with(Cell::get).unwrap();
     (result, trace)
@@ -119,7 +129,9 @@ fn unwind_restores_each_original_observer_scope() {
 fn typed_attempts_refuse_loss_reentry_and_restore_after_unwind() {
     assert!(TYPED.with(Cell::get).is_none());
     let (_, outer) = observe_typed(|| {
-        for _ in 0..9 { record(1, 3, 4, true, &(), &(), &()); }
+        for _ in 0..9 {
+            record(1, 3, 4, true, &(), &(), &());
+        }
     });
     assert_eq!(outer.len, 8);
     assert!(outer.lost);

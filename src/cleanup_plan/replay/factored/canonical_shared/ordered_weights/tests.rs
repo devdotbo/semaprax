@@ -153,29 +153,29 @@ fn ordered_arena_each_growth_zero_exact_short_keeps_actual_allocation_separate_a
     // Every prefix covers the initial arena and each geometric growth boundary.
     for count in 1..=keys.len() {
         let full = observe(&function, &keys[..count], usize::MAX);
-        assert!(full.0.0 && !full.1 && full.3.is_none());
-        assert!(!full.0.1.invalid && full.0.1.live == 0);
-        assert_eq!(full.0.1.allocated, full.0.1.freed);
-        assert!(full.0.1.allocated <= full.2 && full.0.1.highwater <= full.2);
+        assert!(full.0 .0 && !full.1 && full.3.is_none());
+        assert!(!full.0 .1.invalid && full.0 .1.live == 0);
+        assert_eq!(full.0 .1.allocated, full.0 .1.freed);
+        assert!(full.0 .1.allocated <= full.2 && full.0 .1.highwater <= full.2);
         for bytes in [0, full.2 - 1, full.2] {
             let actual = observe(&function, &keys[..count], bytes);
-            assert_eq!(actual.0.0, bytes == full.2);
+            assert_eq!(actual.0 .0, bytes == full.2);
             assert_eq!(actual.1, bytes < full.2);
             assert_eq!(actual.3.is_some(), bytes < full.2);
-            assert!(!actual.0.1.invalid && actual.0.1.live == 0);
-            assert_eq!(actual.0.1.allocated, actual.0.1.freed);
+            assert!(!actual.0 .1.invalid && actual.0 .1.live == 0);
+            assert_eq!(actual.0 .1.allocated, actual.0 .1.freed);
             if bytes == 0 {
-                assert_eq!(actual.0.1.allocated, 0);
+                assert_eq!(actual.0 .1.allocated, 0);
             }
         }
     }
     let sparse = observe(&function, &[0, usize::MAX], usize::MAX);
     let dense = observe(&function, &[0, 1], usize::MAX);
     assert_eq!(sparse.2, dense.2);
-    assert_eq!(sparse.0.1.allocated, dense.0.1.allocated);
+    assert_eq!(sparse.0 .1.allocated, dense.0 .1.allocated);
     eprintln!(
         "ordered sparse arena reservation={} allocation={:?}",
-        sparse.2, sparse.0.1
+        sparse.2, sparse.0 .1
     );
 }
 
@@ -288,11 +288,9 @@ fn ordered_growth_receiving_and_initializers_are_paid_then_warm_insertion_constr
         assert_eq!(weights.root, root);
         assert_eq!(weights.nodes[0].height, left_height);
         assert_eq!(weights.nodes[1].parent, second_parent);
-        assert!(
-            weights.iter().eq([(0, 7), (usize::MAX, 11)]
-                .iter()
-                .map(|(key, weight)| (key, weight)))
-        );
+        assert!(weights.iter().eq([(0, 7), (usize::MAX, 11)]
+            .iter()
+            .map(|(key, weight)| (key, weight))));
         if result.is_err() {
             drop(result);
             assert_eq!(weights.nodes.len(), capacity);
@@ -301,11 +299,9 @@ fn ordered_growth_receiving_and_initializers_are_paid_then_warm_insertion_constr
             }
             assert!(weights.grow(&function, &mut budget).is_err());
             assert_eq!(weights.root, root);
-            assert!(
-                weights.iter().eq([(0, 7), (usize::MAX, 11)]
-                    .iter()
-                    .map(|(key, weight)| (key, weight)))
-            );
+            assert!(weights.iter().eq([(0, 7), (usize::MAX, 11)]
+                .iter()
+                .map(|(key, weight)| (key, weight))));
         }
         invariant(&weights);
     }

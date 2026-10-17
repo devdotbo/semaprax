@@ -159,7 +159,12 @@ impl Receipt {
     /// Borrowed test observation only; this grants no replay or payer authority.
     /// The full Copy reason is retained, rather than reducing it to a code/string.
     #[cfg(test)]
-    pub(crate) fn borrowed_child_receipt(&self) -> Option<(&ExpressionId, crate::cleanup_plan::renewal_profile::child_refusal::Refusal)> {
+    pub(crate) fn borrowed_child_receipt(
+        &self,
+    ) -> Option<(
+        &ExpressionId,
+        crate::cleanup_plan::renewal_profile::child_refusal::Refusal,
+    )> {
         match &self.atom {
             Atom::SelectedChild(reason) => Some((&self.source, *reason)),
             _ => None,
@@ -169,12 +174,23 @@ impl Receipt {
     /// Both the new renderer and complete independent old renderer see the exact
     /// saved atom/source, and return all six fields for the actual-caller oracle.
     #[cfg(test)]
-    pub(crate) fn child_legacy_pair(&self, function: &ResolvedFunction) -> (Diagnostic, Diagnostic) {
+    pub(crate) fn child_legacy_pair(
+        &self,
+        function: &ResolvedFunction,
+    ) -> (Diagnostic, Diagnostic) {
         let make = || {
-            let Atom::SelectedChild(reason) = &self.atom else { panic!("exact selected-child atom"); };
-            Self { source: self.source.clone(), atom: Atom::SelectedChild(*reason) }
+            let Atom::SelectedChild(reason) = &self.atom else {
+                panic!("exact selected-child atom");
+            };
+            Self {
+                source: self.source.clone(),
+                atom: Atom::SelectedChild(*reason),
+            }
         };
-        (make().legacy(function), tests::complete_original_legacy(make(), function))
+        (
+            make().legacy(function),
+            tests::complete_original_legacy(make(), function),
+        )
     }
     #[cfg(test)]
     pub(super) fn source(&self) -> &ExpressionId {

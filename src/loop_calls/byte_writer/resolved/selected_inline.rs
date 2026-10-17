@@ -1,9 +1,9 @@
 //! Exact helper census/proof twins carrying only finite error data.
 //! Legacy Diagnostic producers remain independently compiled in parent files.
-use super::super::{DEPTH, HelperBindings, WORK, assignment_with_target};
-use super::{CENSUS_DEPTH, CensusCursor, ProofCursor, prove_with_frames};
-use crate::cleanup_plan::ReplayPhysicalReservation;
+use super::super::{assignment_with_target, HelperBindings, DEPTH, WORK};
+use super::{prove_with_frames, CensusCursor, ProofCursor, CENSUS_DEPTH};
 use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
+use crate::cleanup_plan::ReplayPhysicalReservation;
 use crate::hir::{
     OwnershipMode, ResolvedBinding, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedType,
 };

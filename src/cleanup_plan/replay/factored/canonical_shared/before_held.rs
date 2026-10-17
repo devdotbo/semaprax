@@ -3,10 +3,9 @@
 //! vectors. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::super::{
-    Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget, ResolvedFunction, Weighted,
-    physical_clone, replay_error,
+    physical_clone, replay_error, Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget,
+    ResolvedFunction, Weighted,
 };
-
 
 use super::{app_census, ordered_alias, ordered_weights, successor_targets, tests};
 #[allow(dead_code)]
@@ -662,10 +661,11 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
-
-
-
 impl Canonicalizer<'_> {
-    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
-    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
+        &self.states
+    }
 }

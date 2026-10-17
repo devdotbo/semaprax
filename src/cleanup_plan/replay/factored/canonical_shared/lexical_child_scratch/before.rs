@@ -27,16 +27,28 @@ impl Canonicalizer<'_> {
         }
         // Existing received owner place: no copied tag, bool or reference.
         // scratch_paid=true makes cold_dead_node false by its own definition.
-        if let Self { scratch_paid: false, .. } = self {
-        if budget.pays_allocations() {
-            budget.reserve_bytes(function, Self::COLD_ROOT_CONTROLS, "factored cold terminal root predicate")?;
-        }
-        if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
+        if let Self {
+            scratch_paid: false,
+            ..
+        } = self
+        {
             if budget.pays_allocations() {
-                budget.reserve_bytes(function, Self::COLD_RESULT_CONTROLS, "factored cold terminal result receiving")?;
+                budget.reserve_bytes(
+                    function,
+                    Self::COLD_ROOT_CONTROLS,
+                    "factored cold terminal root predicate",
+                )?;
             }
-            return self.cold_dead_id(function, root, budget);
-        }
+            if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
+                if budget.pays_allocations() {
+                    budget.reserve_bytes(
+                        function,
+                        Self::COLD_RESULT_CONTROLS,
+                        "factored cold terminal result receiving",
+                    )?;
+                }
+                return self.cold_dead_id(function, root, budget);
+            }
         }
         if budget.pays_allocations() {
             budget.reserve_bytes(
@@ -219,14 +231,16 @@ impl Canonicalizer<'_> {
                     // the actual new branch receivers before evaluating the guard.
                     if budget.pays_allocations() {
                         attempt!(budget.reserve_bytes(
-                            function, empty_signature::BRANCH_CONTROLS,
+                            function,
+                            empty_signature::BRANCH_CONTROLS,
                             "canonical empty signature branch receiving",
                         ));
                     }
                     if successors.is_empty() {
                         if budget.pays_allocations() {
                             attempt!(budget.reserve_bytes(
-                                function, empty_signature::EMPTY_CONTROLS,
+                                function,
+                                empty_signature::EMPTY_CONTROLS,
                                 "canonical empty signature receiving",
                             ));
                         }
@@ -234,7 +248,9 @@ impl Canonicalizer<'_> {
                         // Retain the original key-vector zero authentication;
                         // no child directory, borrowed query or Zip exists here.
                         attempt!(budget.reserve_array::<(Label, usize)>(
-                            function, 0, "factored canonical signature vector",
+                            function,
+                            0,
+                            "factored canonical signature vector",
                         ));
                         let key = (accepted, Vec::new());
                         let id = match self.ids.get(&key) {
@@ -246,7 +262,12 @@ impl Canonicalizer<'_> {
                             None => {
                                 #[cfg(test)]
                                 arena_tests::signature_lookup(false);
-                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                                intern_arena::prepare_insert!(
+                                    self.ids,
+                                    intern_arena::Signature,
+                                    function,
+                                    budget
+                                );
                                 let id = self.ids.len();
                                 self.ids.insert_prepaid(key, id);
                                 id
@@ -254,37 +275,50 @@ impl Canonicalizer<'_> {
                         };
                         self.child_ids.clear();
                         if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                            intern_arena::prepare_insert!(
+                                self.states,
+                                SharedWeighted,
+                                function,
+                                budget
+                            );
                         }
                         self.states.insert_prepaid(state, id);
                         continue;
                     }
                     attempt!(budget.reserve_bytes(
-                        function, intern_arena::SignatureQuery::EXIT_CONTROLS,
+                        function,
+                        intern_arena::SignatureQuery::EXIT_CONTROLS,
                         "canonical borrowed signature receiving",
                     ));
                     // Retained scalar scratch contains only the child IDs for
                     // this frame; the epsilon cursor keeps its original shape.
                     self.child_ids.clear();
                     attempt!(budget.reserve_vec(
-                        function, &mut self.child_ids, successors.len(),
+                        function,
+                        &mut self.child_ids,
+                        successors.len(),
                         "canonical ordered child identity scratch",
                     ));
                     attempt!(budget.reserve_array::<[usize; 2]>(
-                        function, successors.len(), "canonical child identity receiving",
+                        function,
+                        successors.len(),
+                        "canonical child identity receiving",
                     ));
                     // Resolve every ID before signature comparison can stop at
                     // its first mismatch. This preserves the original failure order.
                     for (_, child) in &successors {
                         let Some(id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
+                            receiving.refusal =
+                                Some(replay_error(function, "cleanup CFG contains a cycle"));
                             receiving.ready = true;
                             return;
                         };
                         self.child_ids.push(*id);
                     }
                     let query = intern_arena::SignatureQuery {
-                        accepted, successors: &successors, children: &self.child_ids,
+                        accepted,
+                        successors: &successors,
+                        children: &self.child_ids,
                     };
                     let id = match self.ids.get(&query) {
                         Some(id) => {
@@ -296,24 +330,35 @@ impl Canonicalizer<'_> {
                             #[cfg(test)]
                             arena_tests::signature_lookup(false);
                             attempt!(budget.reserve_array::<(Label, usize)>(
-                                function, successors.len(), "factored canonical signature vector",
+                                function,
+                                successors.len(),
+                                "factored canonical signature vector",
                             ));
                             // Every ID is already resolved. Move each original
                             // label with its borrowed ID, without an owned
                             // scalar cursor or repeated index/increment operands.
                             attempt!(budget.reserve_bytes(
-                                function, intern_arena::SignatureQuery::MISS_CONTROLS,
+                                function,
+                                intern_arena::SignatureQuery::MISS_CONTROLS,
                                 "canonical signature miss iterator receiving",
                             ));
                             attempt!(budget.reserve_array::<[&usize; 2]>(
-                                function, successors.len(), "canonical signature miss borrowed IDs",
+                                function,
+                                successors.len(),
+                                "canonical signature miss borrowed IDs",
                             ));
                             let mut key = Vec::with_capacity(successors.len());
-                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids) {
+                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids)
+                            {
                                 key.push((label, *id));
                             }
                             let key = (accepted, key);
-                            intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                            intern_arena::prepare_insert!(
+                                self.ids,
+                                intern_arena::Signature,
+                                function,
+                                budget
+                            );
                             let id = self.ids.len();
                             self.ids.insert_prepaid(key, id);
                             id
@@ -321,7 +366,12 @@ impl Canonicalizer<'_> {
                     };
                     self.child_ids.clear();
                     if !self.states.contains_key(&state) {
-                        intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                        intern_arena::prepare_insert!(
+                            self.states,
+                            SharedWeighted,
+                            function,
+                            budget
+                        );
                     }
                     self.states.insert_prepaid(state, id);
                 }

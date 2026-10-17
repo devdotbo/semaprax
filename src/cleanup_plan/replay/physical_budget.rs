@@ -1,7 +1,7 @@
 //! Selected physical allocation requests; ordinary replay keeps its exact route.
 use super::*;
-mod setup;
 pub(in crate::cleanup_plan::replay) mod authentication;
+mod setup;
 pub(crate) use setup::{SetupFailure, SetupReason};
 
 impl ReplayBudget {
@@ -112,7 +112,10 @@ impl ReplayBudget {
     #[cfg(test)]
     #[track_caller]
     pub(super) fn reserve_bytes(
-        &mut self, function: &ResolvedFunction, bytes: usize, phase: &str,
+        &mut self,
+        function: &ResolvedFunction,
+        bytes: usize,
+        phase: &str,
     ) -> Result<(), Diagnostic> {
         let ticket = super::merge_census::before(self, function, bytes, phase);
         let result = self.reserve_bytes_without_merge_census(function, bytes, phase);

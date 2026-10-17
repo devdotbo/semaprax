@@ -60,7 +60,6 @@ pub(in crate::cleanup_plan::replay) fn sequence_skeleton_paths(
     Ok(combined)
 }
 
-
 pub(in crate::cleanup_plan::replay) fn plan_skeleton_paths(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
@@ -480,4 +479,3 @@ pub(in crate::cleanup_plan::replay) fn plan_skeleton_paths(
     }
     Ok(paths)
 }
-

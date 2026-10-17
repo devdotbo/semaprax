@@ -143,10 +143,7 @@ use function @id("alias.current.value") from alias.current as current;
         );
         let manifest = ProjectManifest::parse(&owned_manifest).unwrap();
         let sources = vec![
-            SemanticWorkspaceSource::new(
-                "src/app.spx".to_owned(),
-                canonical(APP, "src/app.spx"),
-            ),
+            SemanticWorkspaceSource::new("src/app.spx".to_owned(), canonical(APP, "src/app.spx")),
             SemanticWorkspaceSource::new(
                 "src/provider.spx".to_owned(),
                 canonical(APP_PROVIDER, "src/provider.spx"),

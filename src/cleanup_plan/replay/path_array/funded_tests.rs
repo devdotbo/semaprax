@@ -110,7 +110,8 @@ fn funded_capacity_exact_short_zero_and_first_output_work_frontier() {
                 // Bind the real array payer only after caller input exists.
                 *work.budget = ReplayBudget::new();
                 let result = (|| {
-                    work.budget.reserve_skeleton(function, count + output_work)?;
+                    work.budget
+                        .reserve_skeleton(function, count + output_work)?;
                     let mut input = Vec::new();
                     for _ in 0..count {
                         work.push_expr_path(&mut input, empty_expr_path(), "seed")?;

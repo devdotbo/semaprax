@@ -2,8 +2,8 @@
 use super::super::selected_context::paid::refusal;
 use super::paid_children::{self, collections, flat_records, row_loan, string_transfer};
 use super::{
-    DEPTH, Frame, OwnershipMode, ReplayBudget, ResolvedExprKind, ResolvedFunction,
-    ResolvedMatchPattern, ResolvedType, expression_facts,
+    expression_facts, Frame, OwnershipMode, ReplayBudget, ResolvedExprKind, ResolvedFunction,
+    ResolvedMatchPattern, ResolvedType, DEPTH,
 };
 pub(in super::super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,

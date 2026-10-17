@@ -1,7 +1,7 @@
 fn source_archives() {
     use sha2::{Digest, Sha256};
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::Receiving))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Receiving)).unwrap();
     let sources = [
         ("src/cleanup_plan/replay/expression_facts/receiving.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/receiving-transitive-results-816/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt")), "631abde22c4c2ff48d35b75d1f1e5475819d6ee20ed4bb5c83c531b057675ecd"),
         ("src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/receiving-transitive-results-816/src__cleanup_plan__replay__expression_facts__receiving__regions_entry.rs.before.txt")), "327237ebc01755438f25ff967fc327a3ffb4f9d6be2a2a54bad6a36803b7095b"),
@@ -35,4 +35,6 @@ fn source_archives() {
 }
 
 #[test]
-fn complete_original_owner_is_executed() { source_archives(); }
+fn complete_original_owner_is_executed() {
+    source_archives();
+}

@@ -1000,7 +1000,6 @@ fn checked_function_reuse_keeps_prior_carriers_and_saved_costs_with_old_new_pari
     }
 }
 
-
 /// The inference target is selected from the same source/index by the ordinary
 /// call resolver. Reusing its exact held identity removes reconstruction only;
 /// the full argument inference and instance constructor remain the same.
@@ -1073,7 +1072,8 @@ fn inference_and_call_signature_keep_complete_old_results_and_index_backing_thro
     // arguments; the inner result supplies the outer generic argument.
     assert_eq!(GENERIC.matches("identity<i64>(alpha())").count(), 1);
     let nested_source = GENERIC.replace("identity<i64>(alpha())", "identity(identity(alpha()))");
-    let nested_program = crate::check(&nested_source, "resolver-held-nested-inference.spx").unwrap();
+    let nested_program =
+        crate::check(&nested_source, "resolver-held-nested-inference.spx").unwrap();
     let (nested_old, nested_current) = pair(|| paid_owned(&nested_program));
     // Includes the complete ResolvedProgram, all work fields, and the ordered
     // original identity-payer requests, under the saved allocation policy.

@@ -28,8 +28,7 @@ pub(crate) use resolved::checked_absent_with_work_reservation;
 pub(crate) use resolved::checked_bindings_funded;
 pub(crate) use resolved::checked_bindings_funded_with_work;
 pub(crate) use resolved::{
-    bindings, checked_bindings,
-    nonallocating as resolved_nonallocating,
+    bindings, checked_bindings, nonallocating as resolved_nonallocating,
     nonallocating_with_cursor as resolved_nonallocating_with_cursor, ProofCursor,
 };
 pub(crate) use source::nonallocating as source_nonallocating;

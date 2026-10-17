@@ -57,11 +57,9 @@ impl<const N: usize> ApplicationFiles for Files<N> {
                 .zip(&self.names)
                 .map(|((_, bytes), name)| hold_matching(directory, OsStr::new(name), bytes))
                 .collect::<Result<Vec<_>, _>>()?;
-            let mut scan = platform::prepare_inventory_entries_exact(
-                self.names.each_ref().map(OsStr::new),
-                N,
-            )
-            .map_err(map_invalid)?;
+            let mut scan =
+                platform::prepare_inventory_entries_exact(self.names.each_ref().map(OsStr::new), N)
+                    .map_err(map_invalid)?;
             let references: [&platform::HeldRegularFile; N] = std::array::from_fn(|i| &held[i]);
             platform::inventory_entries_exact_prepared(&mut scan, directory, references, [])
                 .map_err(map_changed)
@@ -97,9 +95,8 @@ fn prepare<const N: usize>(
             .expect("validated source path")
             .to_owned()
     });
-    let inventory =
-        platform::prepare_owned_discard_inventory(names.each_ref().map(OsStr::new))
-            .map_err(map_invalid)?;
+    let inventory = platform::prepare_owned_discard_inventory(names.each_ref().map(OsStr::new))
+        .map_err(map_invalid)?;
     Ok(Box::new(Files { names, inventory }))
 }
 

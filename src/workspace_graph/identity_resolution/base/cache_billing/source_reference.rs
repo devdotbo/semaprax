@@ -31,7 +31,10 @@ fn restore(current: &str) -> String {
     let merged = crate::source_reflows_merge::main_current_input("src/workspace_graph.rs", current);
     let main7f8 = main7f8_inputs::cache_fit_input(&merged);
     let restored_main7f8 = restore_cache_attempt_fit(&main7f8);
-    assert_eq!(restored_main7f8, merged, "both complete root reconstruction paths");
+    assert_eq!(
+        restored_main7f8, merged,
+        "both complete root reconstruction paths"
+    );
     let current = merged.as_str();
     assert_eq!(
         digest(current),
@@ -200,10 +203,14 @@ pub(in crate::workspace_graph) fn historical_inline_inventory(current: &str) -> 
         current,
     );
     let main7f8 = main7f8_inputs::provider_inventory_input(
-        "tests/workspace/semantic_graph/source_inventory.rs", current,
+        "tests/workspace/semantic_graph/source_inventory.rs",
+        current,
     );
-    assert_eq!(historical_provider_inventory(&main7f8), merged,
-        "both complete historical inventory reconstruction paths");
+    assert_eq!(
+        historical_provider_inventory(&main7f8),
+        merged,
+        "both complete historical inventory reconstruction paths"
+    );
     let current = merged.as_str();
     assert_eq!(
         digest(current),
@@ -289,11 +296,13 @@ pub(in crate::workspace_graph) fn historical_provider_inventory(current: &str) -
     original
 }
 
-
 pub(in crate::workspace_graph) fn main7f8_provider_checkpoint(path: &str, current: &str) -> String {
     main7f8_inputs::provider_checkpoint(path, current)
 }
-pub(in crate::workspace_graph) fn main7f8_provider_inventory_input(path: &str, current: &str) -> String {
+pub(in crate::workspace_graph) fn main7f8_provider_inventory_input(
+    path: &str,
+    current: &str,
+) -> String {
     main7f8_inputs::provider_inventory_input(path, current)
 }
 

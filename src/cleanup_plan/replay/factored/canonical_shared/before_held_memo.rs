@@ -155,7 +155,6 @@ impl<T> Memo<T> {
     }
 }
 
-
 #[path = "before_held_retained.rs"]
 mod retained;
 pub(in crate::cleanup_plan::replay::factored::canonical_shared) use retained::RetainedMemo;

@@ -1,10 +1,12 @@
-use super::*;
 use super::before785::top_level_declaration;
+use super::*;
 pub(super) fn reconstruct_workspace_declaration_facts_with_authority(
     modules: &[(String, ResolvedModuleInput)],
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    authority: Option<&expected_projection::private_layout::authority::invocation::scratch::ScratchInvocation<'_>>,
+    authority: Option<
+        &expected_projection::private_layout::authority::invocation::scratch::ScratchInvocation<'_>,
+    >,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
     let expected = expected_declaration_facts(programs)?;
     let resolved_record_iterator = modules
@@ -27,7 +29,10 @@ pub(super) fn reconstruct_workspace_declaration_facts_with_authority(
             programs,
             module_uses_record_iterator,
         )?;
-        let private = expected_projection::private_layout::authority::invocation::scratch::Current::derive(authority, source, programs, authored)?;
+        let private =
+            expected_projection::private_layout::authority::invocation::scratch::Current::derive(
+                authority, source, programs, authored,
+            )?;
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));
@@ -171,4 +176,3 @@ pub(super) fn reconstruct_workspace_declaration_facts_with_authority(
     }
     Ok(facts)
 }
-

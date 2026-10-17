@@ -201,7 +201,11 @@ fn owned_record_template_execution<'a>(
         for arguments in super::super::monomorphize::resolved_owned_record_substitutions(
             template.type_parameters.len(),
         ) {
-            if !crate::hir::ids::instance_match::instance_matches!(instance_id, &template.id, &arguments) {
+            if !crate::hir::ids::instance_match::instance_matches!(
+                instance_id,
+                &template.id,
+                &arguments
+            ) {
                 continue;
             }
             let return_type =
@@ -498,7 +502,11 @@ pub(super) fn is_forwarded_call(
                     type_arguments,
                 )
                 && instance.as_ref().is_some_and(|instance| {
-                    crate::hir::ids::instance_match::instance_matches!(instance, callee, type_arguments)
+                    crate::hir::ids::instance_match::instance_matches!(
+                        instance,
+                        callee,
+                        type_arguments
+                    )
                 })
         })
 }
@@ -573,7 +581,9 @@ pub(super) fn proof_return_type(
         .iter()
         .find(|template| template.id == *callee)
         .ok_or_else(|| hir_error(format!("function `{callee}` is not indexed")))?;
-    if instance.is_none_or(|instance| !crate::hir::ids::instance_match::instance_matches!(instance, callee, arguments)) {
+    if instance.is_none_or(|instance| {
+        !crate::hir::ids::instance_match::instance_matches!(instance, callee, arguments)
+    }) {
         return Err(hir_error("proof generic call identity is inconsistent"));
     }
     substitute_type(&template.return_type, &template.id, arguments)
@@ -590,7 +600,9 @@ pub(super) fn proof_signature(
         .iter()
         .find(|template| template.id == *callee)
         .ok_or_else(|| hir_error(format!("resolved callee `{callee}` is not indexed")))?;
-    if instance.is_none_or(|instance| !crate::hir::ids::instance_match::instance_matches!(instance, callee, arguments)) {
+    if instance.is_none_or(|instance| {
+        !crate::hir::ids::instance_match::instance_matches!(instance, callee, arguments)
+    }) {
         return Err(hir_error("proof generic call identity is inconsistent"));
     }
     let params = template

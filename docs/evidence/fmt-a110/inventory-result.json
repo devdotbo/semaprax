@@ -1,0 +1,7 @@
+{
+  "status": "PASS_ACTUAL_CURRENT_MACRO_BYTES_AND_FOUR_ORIGINAL_HOSTILE_TESTS",
+  "ordered_inputs": 969,
+  "compile_peak_KiB": 125680,
+  "run_peak_KiB": 29888,
+  "scope": "Actual unchanged verifier/functions and four original hostile/fixture test bodies. The unrelated current_union legacy-delegation module is omitted only from this standalone probe; original repository test untouched. Actual closed grammar expansion supplies969literal paths, and all owning source bytes are checked against the live complete inventory."
+}

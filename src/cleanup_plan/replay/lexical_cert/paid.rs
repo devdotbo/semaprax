@@ -14,8 +14,8 @@ use crate::cleanup_plan::replay::selected_context::child::{
     ArrayReceiving, CloneReceiving, Permit, VecReceiving,
 };
 type Error = crate::cleanup_plan::replay::expression_facts::errors::EngineError;
-pub(in crate::cleanup_plan::replay) mod storage;
 pub(in crate::cleanup_plan::replay) mod chains;
+pub(in crate::cleanup_plan::replay) mod storage;
 macro_rules! required {
     ($permit:ident,$value:expr,$reason:ident) => {
         match $value {
@@ -333,7 +333,13 @@ pub(in crate::cleanup_plan::replay) fn authenticate(
                 };
                 if target != &certificate.target
                     || !route_ok
-                    || !crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(permit,function,exit.from,lp.region,budget.selected())
+                    || !crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(
+                        permit,
+                        function,
+                        exit.from,
+                        lp.region,
+                        budget.selected()
+                    )
                 {
                     return Err(permit.refuse(Refusal::Certificate(
                         CertificateRefusal::LoopBreakExitDisagreesWithItsLoopJoin,
@@ -881,8 +887,20 @@ fn validate_normal_ends(
         }
         for edge in &plan.edges {
             if domains[edge.from.0 as usize].is_none()
-                && crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(permit,function,edge.from,region.id,budget.selected())
-                && !crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(permit,function,edge.to,region.id,budget.selected())
+                && crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(
+                    permit,
+                    function,
+                    edge.from,
+                    region.id,
+                    budget.selected()
+                )
+                && !crate::cleanup_plan::replay::lexical_cert::paid::chains::contains!(
+                    permit,
+                    function,
+                    edge.to,
+                    region.id,
+                    budget.selected()
+                )
                 && !lexical_edges.contains(&edge.id)
             {
                 return Err(permit.refuse(Refusal::Certificate(

@@ -22,11 +22,11 @@ static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 
 // Semantic successors have their own named, whole-file custody proof. Keep
 // those edits separate from the original formatting/lint repair registry.
-#[path = "source_reflows/semantic_receivers.rs"]
-mod semantic_receivers;
 #[cfg(test)]
 #[path = "source_reflows/incoming67107_semantic_receivers.rs"]
 mod incoming67107_semantic_receivers;
+#[path = "source_reflows/semantic_receivers.rs"]
+mod semantic_receivers;
 #[cfg(test)]
 #[path = "source_reflows/semantic_receivers_mainb80.rs"]
 mod semantic_receivers_mainb80;
@@ -270,7 +270,7 @@ pub(crate) mod main_f247_controllers;
 #[path = "source_reflows/main99f_controllers.rs"]
 mod main99f_controllers;
 
-#[path = "source_reflows/main_e177_support.rs"]
-mod main_e177_support;
 #[path = "source_reflows/main_e177_controllers.rs"]
 mod main_e177_controllers;
+#[path = "source_reflows/main_e177_support.rs"]
+mod main_e177_support;

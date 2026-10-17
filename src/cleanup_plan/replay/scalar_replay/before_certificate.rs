@@ -1,7 +1,7 @@
 //! Complete immediate836 driver, independent of new certificate/precision route.
 use super::*;
-pub(in crate::cleanup_plan::replay) mod records;
 mod paid_nodes;
+pub(in crate::cleanup_plan::replay) mod records;
 pub(in crate::cleanup_plan::replay) fn validate_paid(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

@@ -1,8 +1,7 @@
 //! Content-ordered merge lookup with no cloned ownership or continuation keys.
 use super::*;
 
-pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize =
-    std::mem::size_of::<Vec<usize>>()
+pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize = std::mem::size_of::<Vec<usize>>()
     + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
     + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>()
     // Subsequent per-input acquisition call, before its count/Result forms.
@@ -10,7 +9,10 @@ pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize =
     + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
     + 2 * std::mem::size_of::<usize>();
 
-pub(in crate::cleanup_plan::replay) fn compare_paths(left: &ExprSkeletonPath, right: &ExprSkeletonPath) -> std::cmp::Ordering {
+pub(in crate::cleanup_plan::replay) fn compare_paths(
+    left: &ExprSkeletonPath,
+    right: &ExprSkeletonPath,
+) -> std::cmp::Ordering {
     use std::cmp::Ordering::Equal;
     match left.owned_source.cmp(&right.owned_source) {
         Equal => match left.failed.cmp(&right.failed) {
@@ -57,39 +59,40 @@ impl SkeletonWork<'_, '_> {
             }
             // The retained owner removes the closure/compound Result entirely.
             // Original materialization work was charged before any new scratch.
-            super::merge_search::search!(self, search, order,
-                super::merge_search::PATH_INDEX, super::merge_search::PATH_COMPARE,
-                compare_paths(&groups[search.group].0, &path));
+            super::merge_search::search!(
+                self,
+                search,
+                order,
+                super::merge_search::PATH_INDEX,
+                super::merge_search::PATH_COMPARE,
+                compare_paths(&groups[search.group].0, &path)
+            );
             if search.found {
-                    let index = order[search.position];
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut groups[index].1,
-                        1,
-                        "factored merge members",
-                    )?;
-                    groups[index].1.push(path.observations);
+                let index = order[search.position];
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut groups[index].1,
+                    1,
+                    "factored merge members",
+                )?;
+                groups[index].1.push(path.observations);
             } else {
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut order,
-                        1,
-                        "factored borrowed merge indices",
-                    )?;
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut groups,
-                        1,
-                        "factored merge groups",
-                    )?;
-                    self.budget.reserve_array::<Observations>(
-                        self.function,
-                        1,
-                        "factored first merge member",
-                    )?;
-                    let observations = std::mem::take(&mut path.observations);
-                    order.insert(search.position, groups.len());
-                    groups.push((path, vec![observations]));
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut order,
+                    1,
+                    "factored borrowed merge indices",
+                )?;
+                self.budget
+                    .reserve_vec(self.function, &mut groups, 1, "factored merge groups")?;
+                self.budget.reserve_array::<Observations>(
+                    self.function,
+                    1,
+                    "factored first merge member",
+                )?;
+                let observations = std::mem::take(&mut path.observations);
+                order.insert(search.position, groups.len());
+                groups.push((path, vec![observations]));
             }
         }
         self.budget.reserve_array::<ExprSkeletonPath>(
@@ -168,42 +171,47 @@ impl SkeletonWork<'_, '_> {
             }
             // The retained owner removes the closure/compound Result entirely.
             // Original materialization work was charged before any new scratch.
-            super::merge_search::search!(self, search, order,
-                super::merge_search::CALL_INDEX, super::merge_search::CALL_COMPARE,
+            super::merge_search::search!(
+                self,
+                search,
+                order,
+                super::merge_search::CALL_INDEX,
+                super::merge_search::CALL_COMPARE,
                 match compare_paths(&groups[search.group].0 .0, &path) {
                     std::cmp::Ordering::Equal => groups[search.group].0 .1.cmp(&commits),
                     other => other,
-                });
+                }
+            );
             if search.found {
-                    let index = order[search.position];
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut groups[index].1,
-                        1,
-                        "factored call merge members",
-                    )?;
-                    groups[index].1.push(path.observations);
+                let index = order[search.position];
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut groups[index].1,
+                    1,
+                    "factored call merge members",
+                )?;
+                groups[index].1.push(path.observations);
             } else {
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut order,
-                        1,
-                        "factored borrowed merge indices",
-                    )?;
-                    self.budget.reserve_vec(
-                        self.function,
-                        &mut groups,
-                        1,
-                        "factored call merge groups",
-                    )?;
-                    self.budget.reserve_array::<Observations>(
-                        self.function,
-                        1,
-                        "factored first call member",
-                    )?;
-                    let observations = std::mem::take(&mut path.observations);
-                    order.insert(search.position, groups.len());
-                    groups.push(((path, commits), vec![observations]));
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut order,
+                    1,
+                    "factored borrowed merge indices",
+                )?;
+                self.budget.reserve_vec(
+                    self.function,
+                    &mut groups,
+                    1,
+                    "factored call merge groups",
+                )?;
+                self.budget.reserve_array::<Observations>(
+                    self.function,
+                    1,
+                    "factored first call member",
+                )?;
+                let observations = std::mem::take(&mut path.observations);
+                order.insert(search.position, groups.len());
+                groups.push(((path, commits), vec![observations]));
             }
         }
         self.budget.reserve_array::<CallSkeletonState>(

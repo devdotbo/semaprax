@@ -1,10 +1,10 @@
 #[path = "tests/core_attempt_trace.rs"]
 mod core_attempt_trace;
 pub(super) use core_attempt_trace::record as record_core_attempt;
-#[path = "../../tests/native/string_settlement/codec_allocation/codec808_frontier.rs"]
-mod codec808_frontier;
 #[path = "tests/cache_stage_debits.rs"]
 mod cache_stage_debits;
+#[path = "../../tests/native/string_settlement/codec_allocation/codec808_frontier.rs"]
+mod codec808_frontier;
 use super::*;
 #[path = "tests/builder_limits.rs"]
 mod builder_limits;

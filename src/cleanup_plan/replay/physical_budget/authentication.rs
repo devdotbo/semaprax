@@ -14,9 +14,8 @@ impl ReplayBudget {
             AllocationPayer::LegacyUnobserved => return,
             AllocationPayer::ActiveBuilder => {
                 if self.refusal_spent || crate::bounded_output::active_refused() {
-                    *refusal = Some(self.budget_refusal(
-                        function, "ordinary builder already failed", "",
-                    ));
+                    *refusal =
+                        Some(self.budget_refusal(function, "ordinary builder already failed", ""));
                     return;
                 }
                 if crate::bounded_output::reserve_active_required(0) {
@@ -24,7 +23,10 @@ impl ReplayBudget {
                 }
             }
             AllocationPayer::SelectedReservation => {
-                if self.physical.as_deref_mut().expect("selected reservation payer")
+                if self
+                    .physical
+                    .as_deref_mut()
+                    .expect("selected reservation payer")
                     .authenticate_zero()
                 {
                     return;
@@ -33,9 +35,8 @@ impl ReplayBudget {
             #[cfg(test)]
             AllocationPayer::Oracle(lease) => {
                 if self.refusal_spent || lease.refused_zero() {
-                    *refusal = Some(self.budget_refusal(
-                        function, "ordinary builder already failed", "",
-                    ));
+                    *refusal =
+                        Some(self.budget_refusal(function, "ordinary builder already failed", ""));
                     return;
                 }
                 if lease.authenticate_zero() {
@@ -44,7 +45,9 @@ impl ReplayBudget {
             }
         }
         *refusal = Some(self.budget_refusal(
-            function, "cleanup replay physical reservation exhausted during ", phase,
+            function,
+            "cleanup replay physical reservation exhausted during ",
+            phase,
         ));
     }
 }

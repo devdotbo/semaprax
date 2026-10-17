@@ -1,0 +1,64 @@
+from pathlib import Path
+import subprocess,json,hashlib,copy,base64
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';O.mkdir(exist_ok=True);G=str(S/'plan-prefix-multiset/git-low-memory');E='docs/evidence/fmt-a110';P='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json';M='src/source_reflows_merge/main_e177_final_inputs.rs';H=lambda b:hashlib.sha256(b).hexdigest()
+assert subprocess.check_output([G,'rev-parse','HEAD'],text=True).strip()=='a110ea82e2f3eec797b4fd44b98836927f7218e1'
+def archive(raw):
+ # The new archive filename encodes all32 SHA256 bytes reversibly.
+ # Existing archive paths and full hexadecimal digest fields remain unchanged.
+ name=base64.urlsafe_b64encode(bytes.fromhex(H(raw))).decode().rstrip('=')
+ p=E+'/'+name+'.txt';q=O/'planned-images'/p;q.parent.mkdir(parents=True,exist_ok=True)
+ if q.exists():assert q.read_bytes()==raw
+ else:q.write_bytes(raw)
+ return {'length':len(raw),'sha256':H(raw),'archive':p}
+old_raw=(R/P).read_bytes();(O/'whole-before-current-inputs.json').write_bytes(old_raw);old=json.loads(old_raw);j=copy.deepcopy(old);rows={x['source']:x for x in j['rows']};new_paths=set(json.loads((S/'reconcile-after-d88/preparation.json').read_bytes())['new_paths']);records=[]
+changed=[]
+selected=json.loads((S/'reconcile-after-d88/format-current.json').read_bytes())['records']+[{'path':'tests/support/production_source_inventory.rs'}]+[{'path':x['path']}for x in json.loads((S/'reconcile-after-a110/prepared.json').read_bytes())['records']if x['path'].startswith(('src/','tests/','crates/'))and x['path'].endswith('.rs')]
+for p in sorted({x['path']for x in selected}):
+ record={'path':p}
+ p=record['path'];actual=(R/p).read_bytes()
+ if p==M:continue
+ if p in new_paths:before=None
+ else:before=subprocess.check_output([G,'show','HEAD:'+p])
+ if before!=actual:changed.append((p,before,actual))
+def same(pin,raw):return pin.get('length')==len(raw)and pin.get('sha256')==H(raw)
+def add_view(row,pin,name,byte_tuple_only=False):
+ keys=['length','sha256']if byte_tuple_only else['length','sha256','archive']
+ if any(all(view[k]==pin[k]for k in keys)for view in row['views']):return
+ row['views'].append(dict(pin,name=name))
+for p,before,actual in changed:
+ if p not in rows:
+  row={'source':p,'compiled':False,'current':{},'views':[]};j['rows'].append(row);rows[p]=row
+ else:
+  row=rows[p]
+  if not same(row['current'],actual):add_view(row,row['current'],'whole-canonical-before-a110-format')
+ if before is not None and before!=actual:add_view(row,archive(before),'before-a110-format',byte_tuple_only=True)
+ if not same(row['current'],actual):row['current']=archive(actual)
+ records.append({'path':p,'before_sha256':None if before is None else H(before),'current_sha256':H(actual)})
+# Incoming semantic changes may already have moved a canonical row's physical
+# source. Preserve its complete old current record while binding actual bytes.
+for row in j['rows']:
+ actual=(R/row['source']).read_bytes()
+ if not same(row['current'],actual):
+  add_view(row,row['current'],'whole-canonical-before-a110-format');row['current']=archive(actual)
+splits=json.loads((S/'format-26eeb-hosted/splits.json').read_bytes());splits.append(json.loads((S/'source-union-8c95/native-leaf-split.json').read_bytes()))
+for split in splits:
+ parent=split['path'];child=split['new_path'];assert parent in rows and child in rows
+ # A shortened root cannot authenticate its complete predecessor unless its
+ # actual same-scope compiled child is authenticated before historical replay.
+ rows[child]['compiled']=True
+ parent_row=rows[parent];parent_row.setdefault('fragments',[]).append(copy.deepcopy(rows[child]))
+table='docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv'
+if table not in rows:
+ row={'source':table,'compiled':False,'current':archive((R/table).read_bytes()),'views':[]};j['rows'].append(row);rows[table]=row
+ original=subprocess.check_output([G,'show','HEAD:'+table]);add_view(row,archive(original),'before-a110-format')
+else:
+ row=rows[table];original=subprocess.check_output([G,'show','HEAD:'+table]);add_view(row,archive(original),'before-a110-format');row['current']=archive((R/table).read_bytes())
+for before in old['rows']:
+ after=rows[before['source']];assert after['compiled']==before['compiled'];assert after['views'][:len(before['views'])]==before['views']
+ restored=copy.deepcopy(after);restored['current']=before['current'];restored['views']=before['views'];restored.pop('fragments',None);assert restored==before
+ for pin in [before['current'],*before['views']]:
+  if pin is before['current']and after['current']==pin:continue
+  assert any(all(v[k]==pin[k]for k in ['length','sha256','archive'])for v in after['views'])
+assert M not in rows and len(rows)==len(j['rows'])
+encoded=(json.dumps(j,separators=(',',':'))+'\n').encode();(O/'candidate-current-inputs.json').write_bytes(encoded);result={'status':'CANDIDATE_NOT_APPLIED','base':'a110ea82e2f3eec797b4fd44b98836927f7218e1','old_rows':len(old['rows']),'new_rows':len(j['rows']),'packet_length':len(encoded),'packet_original_cap':262144,'within_original_packet_cap':len(encoded)<=262144,'changed_live_sources':records,'same_scope_fragment_dependencies':len(splits),'all_original_fields_and_prior_views_retained':True,'all_complete_before_images_preserved':True}
+(O/'candidate-receipt.json').write_text(json.dumps(result,indent=2)+'\n');print('Candidate',len(j['rows']),'rows;',len(encoded),'bytes; cap262144; fragment dependency edges',len(splits),flush=True);assert len(encoded)<=262144

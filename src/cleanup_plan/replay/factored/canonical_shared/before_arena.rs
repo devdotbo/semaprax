@@ -8,8 +8,10 @@ use super::{
     ResolvedFunction, Weighted,
 };
 
-use super::{closure_receiving, empty_closure, before_terminal_leaf_empty_memo as empty_memo, inline_weighted,
-    ordered_alias, ordered_weights, successor_targets};
+use super::{
+    before_terminal_leaf_empty_memo as empty_memo, closure_receiving, empty_closure,
+    inline_weighted, ordered_alias, ordered_weights, successor_targets,
+};
 use inline_weighted::SmallWeighted;
 
 // Invoked only after preflight proved an unbound, nonfailed Memo. This is the
@@ -1281,9 +1283,12 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
-
 // Test-only observation; the complete old producer above is unchanged.
 impl Canonicalizer<'_> {
-    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
-    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
+        &self.states
+    }
 }

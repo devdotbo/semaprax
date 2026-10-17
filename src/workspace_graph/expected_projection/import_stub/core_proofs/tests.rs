@@ -565,7 +565,8 @@ fn complete_original_receivers_and_all_literal_source_inverses_remain_byte_exact
             other => panic!("unregistered complete source {other}"),
         };
         let current = crate::source_reflows_merge::constructor_complete_input(
-            row["file"].as_str().unwrap(), current,
+            row["file"].as_str().unwrap(),
+            current,
         );
         let current = current.as_str();
         assert_eq!(

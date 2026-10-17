@@ -1,71 +1,144 @@
 //! Closed current-byte authentication before the complete incoming99f view.
-use sha2::{Digest,Sha256};
+use sha2::{Digest, Sha256};
 use std::path::Path;
 struct LowerHex<T>(T);
 impl<T: AsRef<[u8]>> std::fmt::LowerHex for LowerHex<T> {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in self.0.as_ref() { write!(output,"{byte:02x}")?; } Ok(())
+        for byte in self.0.as_ref() {
+            write!(output, "{byte:02x}")?;
+        }
+        Ok(())
     }
 }
 const MAIN99F_CAP: usize = 9_730_253;
-fn main99f_body(reader: &mut impl std::io::Read, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN99F_CAP { return Err("bound"); }
+fn main99f_body(
+    reader: &mut impl std::io::Read,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN99F_CAP {
+        return Err("bound");
+    }
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length).map_err(|_| "allocation")?;
     bytes.resize(length, 0);
     reader.read_exact(&mut bytes).map_err(|_| "truncated")?;
     let mut extra = [0u8; 1];
-    if reader.read(&mut extra).map_err(|_| "read")? != 0 { return Err("extra"); }
-    if main99f_digest(&bytes) != expected { return Err("digest"); }
+    if reader.read(&mut extra).map_err(|_| "read")? != 0 {
+        return Err("extra");
+    }
+    if main99f_digest(&bytes) != expected {
+        return Err("digest");
+    }
     String::from_utf8(bytes).map_err(|_| "utf8")
 }
 fn main99f_digest(bytes: &[u8]) -> String {
     format!("{:x}", LowerHex(Sha256::digest(bytes)))
 }
 fn main99f_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
-    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
+    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
+    {
+        return false;
+    }
     #[cfg(unix)]
-    { use std::os::unix::fs::MetadataExt; if a.dev() != b.dev() || a.ino() != b.ino() || a.ctime() != b.ctime() || a.ctime_nsec() != b.ctime_nsec() { return false; } }
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.dev() != b.dev()
+            || a.ino() != b.ino()
+            || a.ctime() != b.ctime()
+            || a.ctime_nsec() != b.ctime_nsec()
+        {
+            return false;
+        }
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::MetadataExt; if a.file_attributes() & 0x400 != 0 || b.file_attributes() & 0x400 != 0 || a.creation_time() != b.creation_time() || a.last_write_time() != b.last_write_time() { return false; } }
+    {
+        use std::os::windows::fs::MetadataExt;
+        if a.file_attributes() & 0x400 != 0
+            || b.file_attributes() & 0x400 != 0
+            || a.creation_time() != b.creation_time()
+            || a.last_write_time() != b.last_write_time()
+        {
+            return false;
+        }
+    }
     true
 }
-pub(crate) fn main99f_file_raw(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN99F_CAP { return Err("bound"); }
+pub(crate) fn main99f_file_raw(
+    path: &::std::path::Path,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN99F_CAP {
+        return Err("bound");
+    }
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
-    if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
-    let mut options = std::fs::OpenOptions::new(); options.read(true);
+    if path_before.file_type().is_symlink() || !path_before.is_file() {
+        return Err("length-or-nonregular");
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
     #[cfg(unix)]
-    { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK); }
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::OpenOptionsExt; options.custom_flags(0x0020_0000); }
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000);
+    }
     #[cfg(not(any(unix, windows)))]
-    { return Err("platform"); }
+    {
+        return Err("platform");
+    }
     let mut file = options.open(path).map_err(|_| "open")?;
     let metadata = file.metadata().map_err(|_| "metadata")?;
-    if !main99f_same_file(&path_before, &metadata) || metadata.len() != u64::try_from(length).map_err(|_| "bound")? {
+    if !main99f_same_file(&path_before, &metadata)
+        || metadata.len() != u64::try_from(length).map_err(|_| "bound")?
+    {
         return Err("length-or-nonregular");
     }
     // The one opened no-follow regular handle is checked before any buffer.
     let value = main99f_body(&mut file, length, expected)?;
     let after = file.metadata().map_err(|_| "metadata")?;
     let path_after = std::fs::symlink_metadata(path).map_err(|_| "metadata")?;
-    if path_after.file_type().is_symlink() || !main99f_same_file(&metadata, &after) || !main99f_same_file(&after, &path_after) { return Err("metadata-drift"); }
+    if path_after.file_type().is_symlink()
+        || !main99f_same_file(&metadata, &after)
+        || !main99f_same_file(&after, &path_after)
+    {
+        return Err("metadata-drift");
+    }
     Ok(value)
 }
 
-
-fn digest(bytes: &[u8]) -> String { format!("{:x}", LowerHex(Sha256::digest(bytes))) }
+fn digest(bytes: &[u8]) -> String {
+    format!("{:x}", LowerHex(Sha256::digest(bytes)))
+}
 fn packet() -> serde_json::Value {
-    let data=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json"));
+    let data = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json"
+    ));
     assert_eq!(data.len(), 228105); // MAIN99F_PACKET_LENGTH
-    assert_eq!(digest(data.as_bytes()), "7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9"); // MAIN99F_PACKET_SHA
-    let held=main99f_file_raw(&Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json"),
-        data.len(), &digest(data.as_bytes())).unwrap();
-    assert_eq!(held,data,"whole actual and compiled MAIN99F namespace");
-    let packet:serde_json::Value=serde_json::from_str(data).unwrap();
-    assert_eq!(packet["schema"],"semaprax.main99f-whole-source-acquisition.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(),454);
+    assert_eq!(
+        digest(data.as_bytes()),
+        "7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9"
+    ); // MAIN99F_PACKET_SHA
+    let held = main99f_file_raw(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json"),
+        data.len(),
+        &digest(data.as_bytes()),
+    )
+    .unwrap();
+    assert_eq!(held, data, "whole actual and compiled MAIN99F namespace");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(
+        packet["schema"],
+        "semaprax.main99f-whole-source-acquisition.v1"
+    );
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 454);
     packet
 }
 fn compiled(path: &str) -> Option<&'static str> {
@@ -247,26 +320,59 @@ fn compiled(path: &str) -> Option<&'static str> {
         _ => None,
     }
 }
-fn acquire(path: &Path) -> std::io::Result<(String,String)> {
-    let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let relative=path.strip_prefix(root).expect("confined MAIN99F source");
-    assert!(relative.components().all(|part|matches!(part,std::path::Component::Normal(_))));
-    let relative=relative.to_str().unwrap();let packet=packet();let rows=packet["rows"].as_array().unwrap();
-    assert_eq!(rows.iter().filter(|row|row["path"]==relative).count(),1);
-    let row=rows.iter().find(|row|row["path"]==relative).unwrap();
-    let read=|path:&Path,len,sha|main99f_file_raw(path,len,sha).map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message));
-    let actual=if let Some(prior)=crate::source_reflows_merge::main_e177_final_inputs::file(path,row["current_length"].as_u64().unwrap()as usize,row["current_sha256"].as_str().unwrap()) {prior}else{read(path,row["current_length"].as_u64().unwrap()as usize,row["current_sha256"].as_str().unwrap())?};
-    if let Some(compiled)=compiled(relative) {
-        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(relative,row["current_sha256"].as_str().unwrap(),compiled);
-        assert_eq!(actual,compiled,"whole current compiled MAIN99F input");
+fn acquire(path: &Path) -> std::io::Result<(String, String)> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path.strip_prefix(root).expect("confined MAIN99F source");
+    assert!(relative
+        .components()
+        .all(|part| matches!(part, std::path::Component::Normal(_))));
+    let relative = relative.to_str().unwrap();
+    let packet = packet();
+    let rows = packet["rows"].as_array().unwrap();
+    assert_eq!(rows.iter().filter(|row| row["path"] == relative).count(), 1);
+    let row = rows.iter().find(|row| row["path"] == relative).unwrap();
+    let read = |path: &Path, len, sha| {
+        main99f_file_raw(path, len, sha)
+            .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))
+    };
+    let actual = if let Some(prior) = crate::source_reflows_merge::main_e177_final_inputs::file(
+        path,
+        row["current_length"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    ) {
+        prior
+    } else {
+        read(
+            path,
+            row["current_length"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        )?
+    };
+    if let Some(compiled) = compiled(relative) {
+        let compiled = crate::source_reflows_merge::main_e177_final_inputs::value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            compiled,
+        );
+        assert_eq!(actual, compiled, "whole current compiled MAIN99F input");
     }
-    let incoming=read(&root.join(row["main_archive"].as_str().unwrap()),row["main_length"].as_u64().unwrap()as usize,row["main_sha256"].as_str().unwrap())?;
-    Ok((actual,incoming))
+    let incoming = read(
+        &root.join(row["main_archive"].as_str().unwrap()),
+        row["main_length"].as_u64().unwrap() as usize,
+        row["main_sha256"].as_str().unwrap(),
+    )?;
+    Ok((actual, incoming))
 }
-pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {acquire(path.as_ref()).map(|(_,incoming)|incoming)}
-pub(crate) fn expected(path: &str,supplied: &str) -> String {
-    let (actual,incoming)=acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
-    assert!(supplied==actual || supplied==incoming,"foreign MAIN99F supplied source");incoming
+pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {
+    acquire(path.as_ref()).map(|(_, incoming)| incoming)
+}
+pub(crate) fn expected(path: &str, supplied: &str) -> String {
+    let (actual, incoming) = acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
+    assert!(
+        supplied == actual || supplied == incoming,
+        "foreign MAIN99F supplied source"
+    );
+    incoming
 }
 
 // Named whole pre-c883 validator input only for the original historical
@@ -275,11 +381,29 @@ pub(crate) fn held_status_before_freeze(supplied: &str) -> String {
     let source = "src/cleanup_plan/replay/expression_facts/receiving/retained.rs";
     let incoming = expected(source, supplied);
     assert_eq!(incoming.len(), 36226);
-    assert_eq!(digest(incoming.as_bytes()), "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2");
+    assert_eq!(
+        digest(incoming.as_bytes()),
+        "48b037671d03602a57db8499280e92ff88ab16978a5ca4bbb146a5ee8530d0a2"
+    );
     let previous = include_str!("../../docs/evidence/core300-historical-acquisition-repair-20261017/held-status-before-freeze.rs.txt");
     assert_eq!(previous.len(), 36206);
-    assert_eq!(digest(previous.as_bytes()), "7739c1324f612967d28bb4eb6fb87cdaa5354d743b4435d396d6f148c1354b31");
-    assert_eq!(incoming.matches("    prefix_owner.freeze(function, budget)?;").count(), 1);
-    assert_eq!(incoming.replacen("    prefix_owner.freeze(function, budget)?;", "    drop(prefix_owner);", 1), previous);
+    assert_eq!(
+        digest(previous.as_bytes()),
+        "7739c1324f612967d28bb4eb6fb87cdaa5354d743b4435d396d6f148c1354b31"
+    );
+    assert_eq!(
+        incoming
+            .matches("    prefix_owner.freeze(function, budget)?;")
+            .count(),
+        1
+    );
+    assert_eq!(
+        incoming.replacen(
+            "    prefix_owner.freeze(function, budget)?;",
+            "    drop(prefix_owner);",
+            1
+        ),
+        previous
+    );
     previous.to_owned()
 }

@@ -1,0 +1,40 @@
+from pathlib import Path
+import sys,json,hashlib,gc,ast,copy,re
+R=Path.cwd();s=Path('/Volumes/Semaprax/tmp/ci-38383508340');o=s/'format-role-generation-a110';source=R/'docs/evidence/a3-e47-final-custody-20261016/generate-authority.py';text=source.read_text();anchor="for name,chunks in [('hir',hir_chunks),('projection',projection_chunks)]:";prefix=text.split(anchor,1)[0];cut=prefix.index('inv=inventory_transport(');rest=prefix.index('needed={');sys.argv=[str(source),'--repo',str(R),'--out',str(o/'original')];ns={'__file__':str(source)};exec(compile(prefix[:cut],str(source),'exec'),ns);print('Original registration parser captured',len(ns['files']),'files;',len(ns['ns']['IDX']),'test selectors',flush=True);ns['ns']['IDX'].clear();gc.collect()
+# The finite live inventory grammar accepts the complete actual legacy macro
+# prelude and literal string-keyed arms. No raw Rust source is normalized.
+expr_source=(s/'source-union-8c95/expand-inventory.py').read_text().split("segments=expand(",1)[0];expr_ns={};exec(compile(expr_source,'actual-closed-inventory-grammar','exec'),expr_ns);JOIN=ns['JOIN']
+for p in ['tests/hir_module_boundaries.rs','tests/workspace/semantic_graph/source_inventory.rs']:assert(R/p).read_text().count(JOIN)==1
+hir=(R/'tests/hir_module_boundaries.rs').read_text();tokens=list(expr_ns['ns']['tokens'](hir));starts=[i for i,x in enumerate(tokens[:-2])if x[0]=='let'and tokens[i+1][0]=='validation_raw'];assert len(starts)==1;i=starts[0]+2;assert tokens[i][0]=='=';a=tokens[i+1][1];stack=[];j=i+1
+while True:
+ token=tokens[j][0]
+ if token==';'and not stack:break
+ if token in ['(','[','{']:stack.append(token)
+ elif token in [')',']','}']:assert stack.pop()=={')':'(',']':'[','}':'{'}[token]
+ j+=1
+expr_ns['caller']=R/'tests';hir_chunks=expr_ns['expand'](expr_ns['Expression'](hir[a:tokens[j][1]]).parse());tree=ast.parse(prefix);part_node=next(n for n in tree.body if isinstance(n,ast.Assign)and any(isinstance(x,ast.Name)and x.id=='projection_parts'for x in n.targets));exec(compile(ast.Module(body=[part_node],type_ignores=[]),str(source),'exec'),ns);parts=ns['projection_parts'];projection=[];expr_ns['caller']=R/'tests/workspace'
+for i,(name,key)in enumerate(parts):
+ if i:projection.append(dict(literal='\n'))
+ projection+=expr_ns['expand'](expr_ns['Expression'](name+'!('+key+')').parse())
+ns.update(hir_chunks=hir_chunks,projection_chunks=projection);print('Exact live inventory expansions:',len(hir_chunks),'HIR;',len(projection),'projection pieces',flush=True);exec(compile(prefix[rest:],str(source),'exec'),ns)
+splits=json.loads((s/'format-26eeb-hosted/splits.json').read_text());splits.append(json.loads((s/'source-union-8c95/native-leaf-split.json').read_text()));corrections=[]
+for name in ['hir','projection']:
+ m=ns['manifest'](ns[name+'_chunks']);before_roles={p:v['role']for p,v in m['classes'].items()};added=[]
+ # A data include must never eclipse a real compiled include of the same file.
+ # Preserve every original data chain and append each actual compiler edge.
+ for row in splits:
+  parent=row['path'];child=row['new_path']
+  if parent not in m['classes']:continue
+  t=(R/parent).read_text();marker='include!("'+Path(child).name+'");';assert t.count(marker)==1;start=t.index(marker);edge=dict(parent=parent,start=len(t[:start].encode()),text=marker.removesuffix(';'),attributes=[],child=child);assert child in m['classes']
+  for chain in m['classes'][parent]['chains']:
+   current=copy.deepcopy(chain);current['edges'].append(edge)
+   if current not in m['classes'][child]['chains']:m['classes'][child]['chains'].append(current);added.append(dict(parent=parent,child=child,root=current['root']))
+  closed=[]
+  for chain in m['classes'][child]['chains']:
+   is_test=chain['kind']=='test'
+   for e in chain['edges']:is_test|=any(re.fullmatch(r'#\[\s*cfg\s*\(\s*test\s*\)\s*\]',a)is not None for a in e['attributes'])
+   closed.append(is_test)
+  m['classes'][child]['role']='test-only'if all(closed)else'production'
+  assert m['classes'][parent]['role']=='test-only'or m['classes'][child]['role']=='production','Compiled production body misclassified as test data'
+ corrected=[p for p in before_roles if before_roles[p]!=m['classes'][p]['role']];assert all(p in [x['new_path']for x in splits]for p in corrected);raw=(json.dumps(m,separators=(',',':'))+'\n').encode();(o/(name+'-current.json')).write_bytes(raw);corrections.append(dict(domain=name,appended_actual_compiled_include_chains=added,corrected_data_shadowing_roles=corrected,sources=len(m['sources']),classes=len(m['classes']),sha256=hashlib.sha256(raw).hexdigest()));print('Current',name,'sources',len(m['sources']),'classes',len(m['classes']),'compiled-edge corrections',len(added),'production restorations',corrected,flush=True);del m,raw;gc.collect()
+(o/'generation-receipt.json').write_text(json.dumps(dict(status='GENERATED_SOURCE_ONLY_PENDING_ORIGINAL_VERIFIER',original_generator_prefix_sha256=hashlib.sha256(prefix.encode()).hexdigest(),original_registration_parser_unchanged=True,live_inventory_source_sha256=hashlib.sha256((R/'tests/workspace/semantic_graph/source_inventory.rs').read_bytes()).hexdigest(),all_raw_source_bytes_unchanged_by_generation=True,inventory_extension='Closed literal grammar admits the actual legacy prelude, preserves literal arm keys, and expands complete actual inventory expressions. Every original registration parser/manifest predicate runs unchanged.',compiled_includes='Actual literal include edges supplement data-only chains so production code cannot be mislabeled as test data.',domains=corrections),indent=2)+'\n')

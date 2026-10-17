@@ -1,0 +1,32 @@
+from pathlib import Path
+import ast,copy,json,hashlib,subprocess
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';G=str(S/'plan-prefix-multiset/git-low-memory');P='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json';Q='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';H=lambda b:hashlib.sha256(b).hexdigest()
+raw=(R/Q).read_bytes();tree=ast.parse(raw.decode());node=next(n for n in tree.body if isinstance(n,ast.Assign)and any(isinstance(x,ast.Name)and x.id=='CONFIG'for x in n.targets));old=ast.literal_eval(node.value);config=copy.deepcopy(old);packet_raw=(O/'candidate-current-inputs.json').read_bytes();packet=json.loads(packet_raw);assert len(packet_raw)<=262144;config['packet'].update(length=len(packet_raw),sha256=H(packet_raw));config['rows']=len(packet['rows'])
+def pin(source):
+ b=(R/source).read_bytes();assert len(b)<=262144;return {'path':source,'length':len(b),'sha256':H(b)}
+for name in config['modules']:config['modules'][name].update(pin(name))
+splits=json.loads((S/'format-26eeb-hosted/splits.json').read_bytes());splits.append(json.loads((S/'source-union-8c95/native-leaf-split.json').read_bytes()))
+for row in splits:
+ child=row['new_path'];assert child not in old['modules'];config['modules'][child]=pin(child)
+for source,entry in config['carriers'].items():
+ entry.update({k:v for k,v in pin(source).items()if k!='path'})
+ text=(R/source).read_text()
+ for required in config['modules']:assert text.count('include_str!("'+entry['base']+required+'")')==1,(source,required)
+t=config['table'];old_list=(R/t['prior']['archive']).read_text().splitlines()
+for insertion in t['insertions']:
+ assert insertion['path']not in old_list;old_list.insert(insertion['at'],insertion['path'])
+head_table=subprocess.check_output([G,'show','HEAD:'+t['path']]);assert ('\n'.join(old_list)+'\n').encode()==head_table
+current=(R/t['path']).read_bytes();paths=current.decode().splitlines();i=0;added=[]
+for at,path in enumerate(paths):
+ if i<len(old_list)and path==old_list[i]:i+=1
+ else:added.append({'at':at,'path':path})
+assert i==len(old_list)and len(paths)==len(set(paths));t['insertions']+=added;t.update(length=len(current),sha256=H(current),rows=len(paths))
+closed=config['closed_prior_sources']
+for row in packet['rows']:
+ if row['source']not in closed:closed.append(row['source'])
+assert closed[:len(old['closed_prior_sources'])]==old['closed_prior_sources']
+for k,v in old.items():
+ if k not in ['packet','rows','modules','carriers','table','closed_prior_sources']:assert config[k]==v
+encoded=(json.dumps(config,separators=(',',':'))+'\n').encode();assert len(encoded)<=262144;(O/'candidate-guard-config.json').write_bytes(encoded)
+receipt={'status':'CANDIDATE_NOT_APPLIED_REFRESH_AFTER_FINAL_HEADER','path':'docs/evidence/fmt-a110/guard-config.json','length':len(encoded),'sha256':H(encoded),'original_module_witnesses':len(old['modules']),'current_module_witnesses':len(config['modules']),'actual_carriers_verified_with_original_max_one_literal_predicate':len(config['carriers']),'old_table_rows':len(old_list),'current_table_rows':len(paths),'old_insertions_preserved':len(old['table']['insertions']),'new_insertions':len(added),'old_closed_source_prefix_preserved':True,'all_other_original_config_fields_equal':True,'original_packet_cap_unchanged':262144,'source_cap_unchanged':9753094,'storage_plan':'Use this exact bounded/hash/identity-checked external JSON for CONFIG. Move CONFIG initialization after the existing bounded() definition; retain all original function bodies/predicates. This keeps the authenticated Python program below its original65536-byte bound while retaining all configuration rows. The program pins the exact data tuple and uses the unchanged262144-byte acquisition bound.'}
+(O/'candidate-guard-config-receipt.json').write_text(json.dumps(receipt,indent=2)+'\n');print('Guard configuration:',len(encoded),'bytes; max-one witness',len(config['modules']),'modules x',len(config['carriers']),'carriers; table',len(paths),'rows; original fields and bounds retained.',flush=True)

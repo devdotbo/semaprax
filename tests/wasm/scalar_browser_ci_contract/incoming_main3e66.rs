@@ -1,8 +1,8 @@
 //! Whole-wire bridge from complete hosted 3e66 captures; later-head CI is required.
 use super::digest_without_checked_value_cursor_budget;
+use super::main99f_inputs::read as main99f_read;
 use sha2::{Digest, Sha256};
 use std::path::Path;
-use super::main99f_inputs::read as main99f_read;
 #[path = "before_3e66.rs"]
 mod before_3e66;
 const CURRENT:[&str;2]=[
@@ -65,7 +65,11 @@ fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
         "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
         "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
     ];
-    let runner = &main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs")).unwrap();
+    let runner = &main99f_read(
+        Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"),
+    )
+    .unwrap();
     for (captured, expected) in CURRENT.into_iter().zip(original) {
         let graph = captured.strip_suffix('\n').unwrap();
         assert_eq!(digest(graph), expected);
@@ -148,7 +152,13 @@ fn restore_source(proof: &serde_json::Value, current: &str) -> String {
 fn all_current_sources_and_three_complete_predecessors_are_authenticated() {
     authenticate_captures();
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let proofs: Vec<serde_json::Value> = serde_json::from_str(&main99f_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/browser-graph-pins-3e66c0116/sources.json")).unwrap())
+    let proofs: Vec<serde_json::Value> = serde_json::from_str(
+        &main99f_read(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("docs/evidence/browser-graph-pins-3e66c0116/sources.json"),
+        )
+        .unwrap(),
+    )
     .unwrap();
     assert_eq!(proofs.len(), 3);
     let mut paths = std::collections::BTreeSet::new();
@@ -171,7 +181,7 @@ fn all_current_sources_and_three_complete_predecessors_are_authenticated() {
 }
 
 fn authenticate_captures() {
-    for (compiled,path) in CURRENT.into_iter().zip([
+    for (compiled, path) in CURRENT.into_iter().zip([
         "docs/evidence/browser-graph-pins-3e66c0116/current-hosted-calculator-baseline.json",
         "docs/evidence/browser-graph-pins-3e66c0116/current-hosted-calculator-renamed.json",
     ]) {

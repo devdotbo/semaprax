@@ -32,8 +32,16 @@ const INPUTS: &[(&str, &str, &str)] = &[
 fn every_current_source_has_the_exact_complete_incoming_main44_preimage() {
     for (path, current, original) in INPUTS {
         let restored = crate::source_reflows_merge::main44_input(path, current);
-        assert_eq!(restored.as_str(), *original, "complete Main44 source domain: {path}");
+        assert_eq!(
+            restored.as_str(),
+            *original,
+            "complete Main44 source domain: {path}"
+        );
         let changed = format!("{current} ");
-        assert!(std::panic::catch_unwind(|| crate::source_reflows_merge::main44_input(path, &changed)).is_err(), "physical source drift: {path}");
+        assert!(
+            std::panic::catch_unwind(|| crate::source_reflows_merge::main44_input(path, &changed))
+                .is_err(),
+            "physical source drift: {path}"
+        );
     }
 }

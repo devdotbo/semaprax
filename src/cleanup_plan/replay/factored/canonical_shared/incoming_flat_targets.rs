@@ -1,88 +1,87 @@
 //! Complete incoming flat target receiver; test-only, not shipping storage.
 
-    use super::*;
-    type SharedWeighted = Rc<Weighted>;
-    use super::before_inline_weighted::{own_weighted, weighted_successor};
+use super::*;
+type SharedWeighted = Rc<Weighted>;
+use super::before_inline_weighted::{own_weighted, weighted_successor};
 
-    pub(super) enum Targets {
-        Legacy(BTreeMap<usize, u64>),
-        Paid(Weighted),
+pub(super) enum Targets {
+    Legacy(BTreeMap<usize, u64>),
+    Paid(Weighted),
+}
+
+impl Targets {
+    pub(super) fn new(paid: bool) -> Self {
+        if paid {
+            Self::Paid(Vec::new())
+        } else {
+            Self::Legacy(BTreeMap::new())
+        }
     }
 
-    impl Targets {
-        pub(super) fn new(paid: bool) -> Self {
-            if paid {
-                Self::Paid(Vec::new())
-            } else {
-                Self::Legacy(BTreeMap::new())
+    /// False retains the original checked route-multiplicity overflow verdict.
+    pub(super) fn add(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        child: usize,
+        weight: u64,
+    ) -> Result<bool, Diagnostic> {
+        match self {
+            Self::Legacy(targets) => {
+                if !targets.contains_key(&child) {
+                    budget.reserve_btree_node::<usize, u64>(
+                        function,
+                        "factored successor target node",
+                    )?;
+                }
+                let slot = targets.entry(child).or_insert(0);
+                let Some(sum) = slot.checked_add(weight) else {
+                    return Ok(false);
+                };
+                *slot = sum;
             }
-        }
-
-        /// False retains the original checked route-multiplicity overflow verdict.
-        pub(super) fn add(
-            &mut self,
-            function: &ResolvedFunction,
-            budget: &mut ReplayBudget,
-            child: usize,
-            weight: u64,
-        ) -> Result<bool, Diagnostic> {
-            match self {
-                Self::Legacy(targets) => {
-                    if !targets.contains_key(&child) {
-                        budget.reserve_btree_node::<usize, u64>(
+            Self::Paid(targets) => {
+                budget.reserve_bytes(function, 0, "factored target authentication")?;
+                // Binary search performs at most floor(log2(len)) + 2 probes.
+                let comparisons = (usize::BITS - targets.len().leading_zeros()) as usize + 1;
+                budget.charge(function, comparisons, "factored target search")?;
+                match targets.binary_search_by_key(&child, |(node, _)| *node) {
+                    Ok(index) => {
+                        let Some(sum) = targets[index].1.checked_add(weight) else {
+                            return Ok(false);
+                        };
+                        targets[index].1 = sum;
+                    }
+                    Err(index) => {
+                        budget.charge(
                             function,
-                            "factored successor target node",
+                            targets.len() - index + 1,
+                            "factored target insertion and shifts",
                         )?;
-                    }
-                    let slot = targets.entry(child).or_insert(0);
-                    let Some(sum) = slot.checked_add(weight) else {
-                        return Ok(false);
-                    };
-                    *slot = sum;
-                }
-                Self::Paid(targets) => {
-                    budget.reserve_bytes(function, 0, "factored target authentication")?;
-                    // Binary search performs at most floor(log2(len)) + 2 probes.
-                    let comparisons = (usize::BITS - targets.len().leading_zeros()) as usize + 1;
-                    budget.charge(function, comparisons, "factored target search")?;
-                    match targets.binary_search_by_key(&child, |(node, _)| *node) {
-                        Ok(index) => {
-                            let Some(sum) = targets[index].1.checked_add(weight) else {
-                                return Ok(false);
-                            };
-                            targets[index].1 = sum;
-                        }
-                        Err(index) => {
-                            budget.charge(
-                                function,
-                                targets.len() - index + 1,
-                                "factored target insertion and shifts",
-                            )?;
-                            budget.reserve_vec(function, targets, 1, "factored target weights")?;
-                            targets.insert(index, (child, weight));
-                        }
+                        budget.reserve_vec(function, targets, 1, "factored target weights")?;
+                        targets.insert(index, (child, weight));
                     }
                 }
             }
-            Ok(true)
         }
+        Ok(true)
+    }
 
-        pub(super) fn share(
-            self,
-            function: &ResolvedFunction,
-            budget: &mut ReplayBudget,
-        ) -> Result<SharedWeighted, Diagnostic> {
-            match self {
-                Self::Legacy(targets) => weighted_successor(function, budget, targets),
-                Self::Paid(targets) => own_weighted(function, budget, targets),
-            }
+    pub(super) fn share(
+        self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<SharedWeighted, Diagnostic> {
+        match self {
+            Self::Legacy(targets) => weighted_successor(function, budget, targets),
+            Self::Paid(targets) => own_weighted(function, budget, targets),
         }
     }
+}
 
 const JOINED_LENGTH: usize = 116861;
 const JOINED_SHA256: &str = "10d30cbdc8f8f8b655ad1c02cf3eb615ef5e5ee3edc761ee25e633d520144abc";
-const JOINED_PATH: &str =
-    "docs/evidence/mainbe8-flat-targets-joined-20261017/joined-inputs.json";
+const JOINED_PATH: &str = "docs/evidence/mainbe8-flat-targets-joined-20261017/joined-inputs.json";
 fn joined_digest(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
@@ -147,7 +146,10 @@ pub(super) fn incoming_input(path: &str, current: &str) -> String {
 #[path = "../../../../workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs"]
 mod callback_reader;
 const CALLBACK_PREFIX: &str = "docs/evidence/c874-factored-callback-input-20261017";
-const CALLBACK_DATA: &str = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/c874-factored-callback-input-20261017/inputs.json"));
+const CALLBACK_DATA: &str = include_str!(concat!(
+    env!("CARGO_MANIFEST_DIR"),
+    "/docs/evidence/c874-factored-callback-input-20261017/inputs.json"
+));
 fn callback_rows() -> serde_json::Value {
     assert_eq!(CALLBACK_DATA.len(), CALLBACK_LENGTH);
     assert_eq!(joined_digest(CALLBACK_DATA.as_bytes()), CALLBACK_SHA);
@@ -156,23 +158,47 @@ fn callback_rows() -> serde_json::Value {
     rows
 }
 fn callback_archive(row: &serde_json::Value) -> String {
-    callback_reader::read(&std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(CALLBACK_PREFIX).join(row["archive"].as_str().unwrap()),
-        usize::try_from(row["length"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap(), 2_097_152).expect("complete fixed callback input archive")
+    callback_reader::read(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(CALLBACK_PREFIX)
+            .join(row["archive"].as_str().unwrap()),
+        usize::try_from(row["length"].as_u64().unwrap()).unwrap(),
+        row["sha256"].as_str().unwrap(),
+        2_097_152,
+    )
+    .expect("complete fixed callback input archive")
 }
 fn relocated_callback_input(rows: &serde_json::Value, path: &str, current: &str) -> String {
     assert_eq!(rows, &callback_rows(), "whole fixed callback domain");
     let rows = rows.as_array().unwrap();
-    assert_eq!(rows.iter().filter(|r| r["path"] == path).count(), 1, "one closed callback subject");
+    assert_eq!(
+        rows.iter().filter(|r| r["path"] == path).count(),
+        1,
+        "one closed callback subject"
+    );
     let row = rows.iter().find(|r| r["path"] == path).unwrap();
     let stage = callback_archive(&row["stage"]);
     let joined = callback_archive(&row["joined"]);
-    assert!(current == stage || current == joined, "complete admitted callback stage");
+    assert!(
+        current == stage || current == joined,
+        "complete admitted callback stage"
+    );
     joined
 }
 
-fn relocated_callback_result(rows: &serde_json::Value, path: &str, current: &str, result: &str) -> String {
+fn relocated_callback_result(
+    rows: &serde_json::Value,
+    path: &str,
+    current: &str,
+    result: &str,
+) -> String {
     assert_eq!(rows, &callback_rows(), "whole fixed callback output domain");
-    let row = rows.as_array().unwrap().iter().find(|r| r["path"] == path).unwrap();
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == path)
+        .unwrap();
     let original = callback_archive(&row["joined_result"]);
     assert_eq!(result, original, "complete original callback result");
     let stage = callback_archive(&row["stage"]);
@@ -200,20 +226,36 @@ fn complete_relocated_callback_inputs_preserve_original_joined_receiver_and_refu
         assert_ne!(stage, joined);
         assert_eq!(relocated_callback_input(&rows, path, &stage), joined);
         assert_eq!(relocated_callback_input(&rows, path, &joined), joined);
-        let original = old_rows.as_array().unwrap().iter().find(|r| r["path"] == path).unwrap();
+        let original = old_rows
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|r| r["path"] == path)
+            .unwrap();
         assert_eq!(joined_digest(joined.as_bytes()), original["current_sha256"]);
         let result = joined_checked(&old, path, &joined).unwrap();
         let ours_after = callback_archive(&row["ours_after"]);
         assert_eq!(incoming_input(path, &stage), ours_after);
         assert_eq!(incoming_input(path, &joined), result);
-        assert_eq!(joined_digest(result.as_bytes()), original["incoming_sha256"]);
-        for bad in [String::new(), stage[..stage.len()-1].to_owned(), format!("{stage} "), format!("{stage}{stage}"), result] {
+        assert_eq!(
+            joined_digest(result.as_bytes()),
+            original["incoming_sha256"]
+        );
+        for bad in [
+            String::new(),
+            stage[..stage.len() - 1].to_owned(),
+            format!("{stage} "),
+            format!("{stage}{stage}"),
+            result,
+        ] {
             assert!(std::panic::catch_unwind(|| incoming_input(path, &bad)).is_err());
         }
         assert!(std::panic::catch_unwind(|| incoming_input("foreign", &stage)).is_err());
         let mut forged = rows.clone();
         forged[0]["stage"]["sha256"] = serde_json::Value::String("0".repeat(64));
-        assert!(std::panic::catch_unwind(|| relocated_callback_input(&forged, path, &stage)).is_err());
+        assert!(
+            std::panic::catch_unwind(|| relocated_callback_input(&forged, path, &stage)).is_err()
+        );
     }
 }
 const CALLBACK_LENGTH: usize = 2889;

@@ -1,14 +1,55 @@
 //! Fixed complete incoming Main44 metadata and exact source views; test authority only.
 #[derive(Clone, Copy)]
-pub(crate) enum Fixture { Compact7, Receivers12 }
-pub(super) struct Spec { pub(super) path: &'static str, pub(super) length: usize, pub(super) sha256: [u8;32] }
-impl Fixture { pub(super) fn spec(self) -> Spec { match self {
-Self::Compact7 => Spec { path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/compact-inverse7.json"), length: 64689, sha256: [153, 168, 166, 192, 186, 118, 148, 200, 38, 143, 84, 161, 14, 105, 173, 157, 112, 255, 173, 144, 219, 53, 74, 198, 11, 128, 210, 106, 69, 174, 111, 128] },
-Self::Receivers12 => Spec { path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/receiver-inverse12.json"), length: 91294, sha256: [117, 72, 249, 231, 212, 41, 231, 239, 143, 178, 92, 66, 45, 155, 38, 20, 208, 136, 104, 26, 99, 66, 163, 225, 25, 87, 73, 56, 29, 75, 222, 18] },
-}}}
+pub(crate) enum Fixture {
+    Compact7,
+    Receivers12,
+}
+pub(super) struct Spec {
+    pub(super) path: &'static str,
+    pub(super) length: usize,
+    pub(super) sha256: [u8; 32],
+}
+impl Fixture {
+    pub(super) fn spec(self) -> Spec {
+        match self {
+            Self::Compact7 => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/main44-independent-custody-20261016/compact-inverse7.json"
+                ),
+                length: 64689,
+                sha256: [
+                    153, 168, 166, 192, 186, 118, 148, 200, 38, 143, 84, 161, 14, 105, 173, 157,
+                    112, 255, 173, 144, 219, 53, 74, 198, 11, 128, 210, 106, 69, 174, 111, 128,
+                ],
+            },
+            Self::Receivers12 => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/main44-independent-custody-20261016/receiver-inverse12.json"
+                ),
+                length: 91294,
+                sha256: [
+                    117, 72, 249, 231, 212, 41, 231, 239, 143, 178, 92, 66, 45, 155, 38, 20, 208,
+                    136, 104, 26, 99, 66, 163, 225, 25, 87, 73, 56, 29, 75, 222, 18,
+                ],
+            },
+        }
+    }
+}
 pub(super) fn input_spec() -> Spec {
     // MAIN44_INPUT_SPEC
-    Spec { path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/current-to-main44.json"), length: 2475967, sha256: [17, 166, 197, 8, 165, 188, 199, 145, 238, 70, 80, 56, 250, 161, 135, 87, 222, 41, 20, 69, 106, 215, 193, 87, 226, 47, 233, 72, 68, 135, 177, 143] }
+    Spec {
+        path: concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main44-independent-custody-20261016/current-to-main44.json"
+        ),
+        length: 2475967,
+        sha256: [
+            17, 166, 197, 8, 165, 188, 199, 145, 238, 70, 80, 56, 250, 161, 135, 87, 222, 41, 20,
+            69, 106, 215, 193, 87, 226, 47, 233, 72, 68, 135, 177, 143,
+        ],
+    }
 }
 pub(super) fn input(source: &str, current: &str) -> String {
     const KEYS: &[&str] = &[
@@ -38,8 +79,9 @@ pub(super) fn input(source: &str, current: &str) -> String {
         "src/source_verify/declaration.rs",
         "tests/hir_module_boundaries.rs",
         "tests/workspace/semantic_graph/source_inventory.rs",
-
     ];
-    if KEYS.binary_search(&source).is_err() { return current.to_owned(); }
+    if KEYS.binary_search(&source).is_err() {
+        return current.to_owned();
+    }
     super::project(&super::runtime_json::main44_input(), source, current)
 }

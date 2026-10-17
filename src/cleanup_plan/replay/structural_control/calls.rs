@@ -274,7 +274,7 @@ pub(super) fn validate<'a, E: Policy>(
     #[cfg(test)]
     let signature = match &held {
         Some((_, call)) => {
-            use schema::borrowed::{Call, operands::Builtin};
+            use schema::borrowed::{operands::Builtin, Call};
             match call {
                 Call::User(target) => Signature::Function(target),
                 Call::Builtin(Builtin::FromU8) => {

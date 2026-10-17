@@ -1,12 +1,12 @@
 //! Status-only insertion over the exact held immutable key set. No lookup authority.
 use super::{
-    AllocationPayer, Diagnostic, Directory, NIL, Node, Ordering, Probe, ReplayBudget,
-    ResolvedFunction, StatusLane, StatusSourceId, VISIT_UNITS, overflow,
+    overflow, AllocationPayer, Diagnostic, Directory, Node, Ordering, Probe, ReplayBudget,
+    ResolvedFunction, StatusLane, StatusSourceId, NIL, VISIT_UNITS,
 };
-use crate::bounded_output::classifier_string::ClassifierLedger;
-use crate::cleanup_plan::replay::replay_error;
 #[cfg(test)]
 use super::{ExpressionId, StatusProducer, StatusSource};
+use crate::bounded_output::classifier_string::ClassifierLedger;
+use crate::cleanup_plan::replay::replay_error;
 use std::cell::Cell;
 use std::mem::size_of;
 

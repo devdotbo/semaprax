@@ -1,10 +1,10 @@
 //! Owned caller suffix retention with borrowed representative metadata.
 use super::*;
+#[cfg(test)]
+mod before;
 mod sequence_vector;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod before;
 
 struct Frame {
     // Field order is intentional on every preparation refusal.
@@ -33,9 +33,8 @@ pub(super) const QUERY: usize = std::mem::size_of::<Result<(), Diagnostic>>()
 // received, then stored observation carriers. Acquired before moving inputs.
 pub(super) const ROW_CLONE_CONTROLS: usize =
     2 * std::mem::size_of::<(&mut SkeletonWork<'static, 'static>, &Observations, &str)>()
-    + 2 * std::mem::size_of::<Result<Observations, Diagnostic>>()
-    + std::mem::size_of::<Observations>()
-    ; // SearchComputation is physically absent from the new lexical search.
+        + 2 * std::mem::size_of::<Result<Observations, Diagnostic>>()
+        + std::mem::size_of::<Observations>(); // SearchComputation is physically absent from the new lexical search.
 
 pub(super) const CONTROLS: usize = 2 * std::mem::size_of::<Vec<Observations>>()
     + 2 * std::mem::size_of::<std::vec::IntoIter<Observations>>()
@@ -176,34 +175,39 @@ fn rows(
             groups.push((index, vec![observations]));
             continue;
         }
-        skeleton_work::merge_search::search!(work, search, order,
-            skeleton_work::merge_search::ROW_INDEX, skeleton_work::merge_search::PATH_COMPARE,
-            skeleton_work::merge_keys::compare_paths(&originals[groups[search.group].0], path));
+        skeleton_work::merge_search::search!(
+            work,
+            search,
+            order,
+            skeleton_work::merge_search::ROW_INDEX,
+            skeleton_work::merge_search::PATH_COMPARE,
+            skeleton_work::merge_keys::compare_paths(&originals[groups[search.group].0], path)
+        );
         if search.found {
-                let group = order[search.position];
-                work.budget.reserve_vec(
-                    work.function,
-                    &mut groups[group].1,
-                    1,
-                    "factored merge members",
-                )?;
-                groups[group].1.push(observations);
+            let group = order[search.position];
+            work.budget.reserve_vec(
+                work.function,
+                &mut groups[group].1,
+                1,
+                "factored merge members",
+            )?;
+            groups[group].1.push(observations);
         } else {
-                work.budget.reserve_vec(
-                    work.function,
-                    &mut order,
-                    1,
-                    "factored borrowed merge indices",
-                )?;
-                work.budget
-                    .reserve_vec(work.function, &mut groups, 1, "factored merge groups")?;
-                work.budget.reserve_array::<Observations>(
-                    work.function,
-                    1,
-                    "factored first merge member",
-                )?;
-                order.insert(search.position, groups.len());
-                groups.push((index, vec![observations]));
+            work.budget.reserve_vec(
+                work.function,
+                &mut order,
+                1,
+                "factored borrowed merge indices",
+            )?;
+            work.budget
+                .reserve_vec(work.function, &mut groups, 1, "factored merge groups")?;
+            work.budget.reserve_array::<Observations>(
+                work.function,
+                1,
+                "factored first merge member",
+            )?;
+            order.insert(search.position, groups.len());
+            groups.push((index, vec![observations]));
         }
     }
     work.budget.reserve_array::<(usize, Observations)>(

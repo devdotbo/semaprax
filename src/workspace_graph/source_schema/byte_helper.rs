@@ -123,31 +123,32 @@ pub(super) fn schema(
 // payment frames and the single terminal report. Each actual member acquires
 // its fresh callback/borrow payload BEFORE constructing it; no future member
 // payload is prepaid, retained by assumption, or credited from an old fee.
-const STATIC_LEXICAL_PAYMENT: usize = 2 * std::mem::size_of::<usize>()
-    + 2 * std::mem::size_of::<Result<(), Vec<Diagnostic>>>();
-const STATIC_LEXICAL_MEMBER: usize =
-    2 * std::mem::size_of::<(&mut bool, &hir::ResolvedExpr)>()
-        + 2 * std::mem::size_of::<&mut bool>()
-        + 8 * std::mem::size_of::<bool>()
-        + 2 * std::mem::size_of::<&Option<Box<crate::workspace_graph::static_text::Inventory>>>()
-        + 2 * std::mem::size_of::<Option<&crate::workspace_graph::static_text::Inventory>>()
-        + std::mem::size_of::<&crate::workspace_graph::static_text::Inventory>()
-        + 2 * std::mem::size_of::<&Option<Box<crate::workspace_graph::static_text::primitive::Inventory>>>();
-const STATIC_LEXICAL_TEMPLATE_GATE: usize =
-    2 * std::mem::size_of::<&Option<Box<crate::workspace_graph::static_text::Inventory>>>()
-        + 4 * std::mem::size_of::<bool>();
-const STATIC_LEXICAL_TERMINAL_REPORT: usize =
-    2 * std::mem::size_of::<crate::cleanup_plan::SelectedReplayReportForm>()
-        + 2 * std::mem::size_of::<Vec<Diagnostic>>()
-        + 2 * std::mem::size_of::<(&str, &str)>()
-        + 2 * std::mem::size_of::<Diagnostic>()
-        + 2 * std::mem::size_of::<String>()
-        + 2 * std::mem::size_of::<std::borrow::Cow<'static, str>>()
-        + std::mem::size_of::<Diagnostic>()
-        + b"retained static UTF-8 source-site authority disagrees".len();
-const STATIC_LEXICAL_CENSUS_CONTROLS: usize =
-    std::mem::size_of::<proofs::Walk<'static>>()
-        + 3 * STATIC_LEXICAL_PAYMENT + STATIC_LEXICAL_TERMINAL_REPORT;
+const STATIC_LEXICAL_PAYMENT: usize =
+    2 * std::mem::size_of::<usize>() + 2 * std::mem::size_of::<Result<(), Vec<Diagnostic>>>();
+const STATIC_LEXICAL_MEMBER: usize = 2 * std::mem::size_of::<(&mut bool, &hir::ResolvedExpr)>()
+    + 2 * std::mem::size_of::<&mut bool>()
+    + 8 * std::mem::size_of::<bool>()
+    + 2 * std::mem::size_of::<&Option<Box<crate::workspace_graph::static_text::Inventory>>>()
+    + 2 * std::mem::size_of::<Option<&crate::workspace_graph::static_text::Inventory>>()
+    + std::mem::size_of::<&crate::workspace_graph::static_text::Inventory>()
+    + 2 * std::mem::size_of::<
+        &Option<Box<crate::workspace_graph::static_text::primitive::Inventory>>,
+    >();
+const STATIC_LEXICAL_TEMPLATE_GATE: usize = 2 * std::mem::size_of::<
+    &Option<Box<crate::workspace_graph::static_text::Inventory>>,
+>() + 4 * std::mem::size_of::<bool>();
+const STATIC_LEXICAL_TERMINAL_REPORT: usize = 2 * std::mem::size_of::<
+    crate::cleanup_plan::SelectedReplayReportForm,
+>() + 2 * std::mem::size_of::<Vec<Diagnostic>>()
+    + 2 * std::mem::size_of::<(&str, &str)>()
+    + 2 * std::mem::size_of::<Diagnostic>()
+    + 2 * std::mem::size_of::<String>()
+    + 2 * std::mem::size_of::<std::borrow::Cow<'static, str>>()
+    + std::mem::size_of::<Diagnostic>()
+    + b"retained static UTF-8 source-site authority disagrees".len();
+const STATIC_LEXICAL_CENSUS_CONTROLS: usize = std::mem::size_of::<proofs::Walk<'static>>()
+    + 3 * STATIC_LEXICAL_PAYMENT
+    + STATIC_LEXICAL_TERMINAL_REPORT;
 
 pub(super) fn schema_with_proofs<'a>(
     module: &'a WorkspaceResolvedModule,
@@ -185,7 +186,9 @@ pub(super) fn schema_with_proofs<'a>(
                 .chain(std::iter::once(&function.body))
                 .chain(&function.ensures),
             &mut census_work,
-            &mut |expression| lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. }),
+            &mut |expression| {
+                lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. })
+            },
             &mut census_stack,
         )
         .ok_or_else(fail)?;
@@ -316,7 +319,9 @@ pub(super) fn schema_with_proofs<'a>(
                     .chain(std::iter::once(&template.body))
                     .chain(&template.ensures),
                 &mut census_work,
-                &mut |expression| lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. }),
+                &mut |expression| {
+                    lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. })
+                },
                 &mut census_stack,
             )
             .ok_or_else(fail)?;
@@ -507,14 +512,35 @@ pub(super) fn before_static_guard_schema_with_proofs<'a>(
 #[test]
 fn static_lexical_guard_retains_the_complete_old_helper_and_funded_callback_capture() {
     let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-lexical-authority-guard-20261018/before/src/workspace_graph/source_schema/byte_helper.rs"));
-    let start = before.find("pub(super) fn schema_with_proofs<'a>(").unwrap();
-    let expected = before[start..].trim_end().replacen("pub(super) fn schema_with_proofs<", "pub(super) fn before_static_guard_schema_with_proofs<", 1);
+    let start = before
+        .find("pub(super) fn schema_with_proofs<'a>(")
+        .unwrap();
+    let expected = before[start..].trim_end().replacen(
+        "pub(super) fn schema_with_proofs<",
+        "pub(super) fn before_static_guard_schema_with_proofs<",
+        1,
+    );
     let current = include_str!("byte_helper.rs");
-    let start = current.find("pub(super) fn before_static_guard_schema_with_proofs<'a>(").unwrap();
+    let start = current
+        .find("pub(super) fn before_static_guard_schema_with_proofs<'a>(")
+        .unwrap();
     let end = current[start..].find("\n#[test]").unwrap() + start;
-    assert_eq!(current[start..end].trim_end(), expected, "complete genuine old producer and original reservation, no new bank in baseline");
+    assert_eq!(
+        current[start..end].trim_end(),
+        expected,
+        "complete genuine old producer and original reservation, no new bank in baseline"
+    );
     let mut lexical = false;
-    let capture = |expression: &hir::ResolvedExpr| lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. });
-    assert_eq!(std::mem::size_of_val(&capture), std::mem::size_of::<&mut bool>(), "exact borrowed callback capture ABI on the pinned compiler");
-    assert_eq!(super::static_text::REPORT.message(), "retained static UTF-8 source-site authority disagrees");
+    let capture = |expression: &hir::ResolvedExpr| {
+        lexical |= matches!(expression.kind, ResolvedExprKind::LexicalExit { .. })
+    };
+    assert_eq!(
+        std::mem::size_of_val(&capture),
+        std::mem::size_of::<&mut bool>(),
+        "exact borrowed callback capture ABI on the pinned compiler"
+    );
+    assert_eq!(
+        super::static_text::REPORT.message(),
+        "retained static UTF-8 source-site authority disagrees"
+    );
 }

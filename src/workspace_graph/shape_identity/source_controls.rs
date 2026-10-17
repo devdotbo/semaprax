@@ -15,8 +15,10 @@ fn digest(text: &str) -> String {
 }
 
 fn restore(source: &str, current: &str) -> String {
-    let acquired=crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(source,"whole785",current);
-    let current=acquired.as_str();
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+        source, "whole785", current,
+    );
+    let current = acquired.as_str();
     let record: serde_json::Value = serde_json::from_str(INVERSES).unwrap();
     let rows = record["files"].as_array().unwrap();
     let row = rows

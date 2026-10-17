@@ -164,29 +164,79 @@ pub(crate) fn source_owner(domain: &str, source: &str, current: &str) -> String 
 // This named bridge is only for the original historical facade assertion.
 // The owning test audits the complete current projection before calling it.
 fn projection344_stage(supplied: &str) -> String {
-    let root=std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let data=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json");
-    assert_eq!(data.len(),9752);
-    assert_eq!(digest(data),"ab922dd2f58ea4dc32b7e5ddfbae934a8353b7fe9eefbb2927414cbbdf7e4b3b");
-    let read=|path: &str,length: usize,sha: &str| reader::read(&root.join(path),length,sha,2_097_152).unwrap();
-    assert_eq!(read("docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json",data.len(),&digest(data)),data);
-    let row: serde_json::Value=serde_json::from_str(data).unwrap();
-    assert_eq!(row["schema"],"semaprax.current339.projection344-whole-stage.v1");
-    let carrier=&row["carrier"];
-    let carrier_path=root.join(carrier["source"].as_str().unwrap());
-    let carrier_length=carrier["length"].as_u64().unwrap()as usize;let carrier_sha=carrier["sha256"].as_str().unwrap();
-    let carrier=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(&carrier_path,carrier_length,carrier_sha)
-        .unwrap_or_else(||read(carrier["source"].as_str().unwrap(),carrier_length,carrier_sha));
-    assert_eq!(carrier.len(),carrier_length);assert_eq!(digest(&carrier),carrier_sha);
-    let mut actual=String::new();
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let data = include_str!(
+        "../../docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json"
+    );
+    assert_eq!(data.len(), 9752);
+    assert_eq!(
+        digest(data),
+        "ab922dd2f58ea4dc32b7e5ddfbae934a8353b7fe9eefbb2927414cbbdf7e4b3b"
+    );
+    let read = |path: &str, length: usize, sha: &str| {
+        reader::read(&root.join(path), length, sha, 2_097_152).unwrap()
+    };
+    assert_eq!(
+        read(
+            "docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json",
+            data.len(),
+            &digest(data)
+        ),
+        data
+    );
+    let row: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(
+        row["schema"],
+        "semaprax.current339.projection344-whole-stage.v1"
+    );
+    let carrier = &row["carrier"];
+    let carrier_path = root.join(carrier["source"].as_str().unwrap());
+    let carrier_length = carrier["length"].as_u64().unwrap() as usize;
+    let carrier_sha = carrier["sha256"].as_str().unwrap();
+    let carrier = crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(
+        &carrier_path,
+        carrier_length,
+        carrier_sha,
+    )
+    .unwrap_or_else(|| {
+        read(
+            carrier["source"].as_str().unwrap(),
+            carrier_length,
+            carrier_sha,
+        )
+    });
+    assert_eq!(carrier.len(), carrier_length);
+    assert_eq!(digest(&carrier), carrier_sha);
+    let mut actual = String::new();
     for part in row["parts"].as_array().unwrap() {
-        if let Some(literal)=part["literal"].as_str() { actual.push_str(literal); }
-        else { actual.push_str(&read(part["source"].as_str().unwrap(),part["length"].as_u64().unwrap()as usize,part["sha256"].as_str().unwrap())); }
+        if let Some(literal) = part["literal"].as_str() {
+            actual.push_str(literal);
+        } else {
+            actual.push_str(&read(
+                part["source"].as_str().unwrap(),
+                part["length"].as_u64().unwrap() as usize,
+                part["sha256"].as_str().unwrap(),
+            ));
+        }
     }
-    let image=|name: &str| {let view=&row[name];read(view["archive"].as_str().unwrap(),view["length"].as_u64().unwrap()as usize,view["sha256"].as_str().unwrap())};
-    let current=image("current");let previous=image("prior");
-    assert_eq!(actual,current,"every current projection source and literal in owning macro order");
-    assert!(supplied==current || supplied==previous,"foreign historical projection input");
+    let image = |name: &str| {
+        let view = &row[name];
+        read(
+            view["archive"].as_str().unwrap(),
+            view["length"].as_u64().unwrap() as usize,
+            view["sha256"].as_str().unwrap(),
+        )
+    };
+    let current = image("current");
+    let previous = image("prior");
+    assert_eq!(
+        actual, current,
+        "every current projection source and literal in owning macro order"
+    );
+    assert!(
+        supplied == current || supplied == previous,
+        "foreign historical projection input"
+    );
     previous
 }
 
@@ -222,9 +272,13 @@ pub(crate) fn controls() {
         let projected = project(&rows, domain, current);
         let through_owner = match domain {
             Domain::Owner99 => source_owner("source-followups", domain.source(), current),
-            Domain::Canonical344 => current344_input(domain.source(), include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/factored/canonical_shared.rs"
-            ))),
+            Domain::Canonical344 => current344_input(
+                domain.source(),
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/factored/canonical_shared.rs"
+                )),
+            ),
             Domain::Projection344 => current344_input(domain.source(), current),
         };
         assert_eq!(through_owner, projected);
@@ -251,8 +305,14 @@ pub(crate) fn controls() {
 fn canonical870_stage(current: &str) -> String {
     let outer = super::main67107_inputs::project("canonical870", current);
     let current = outer.as_str();
-    let data = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt870-current-stage-custody-20261017/raw-to-stage.json"));
-    assert_eq!(digest(data), "6523645c1445ceffafe43ff87118f3f2d6f94686a39b444ff6f87cedf7460bc0");
+    let data = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt870-current-stage-custody-20261017/raw-to-stage.json"
+    ));
+    assert_eq!(
+        digest(data),
+        "6523645c1445ceffafe43ff87118f3f2d6f94686a39b444ff6f87cedf7460bc0"
+    );
     let row: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(row["schema"], "semaprax.canonical870-stage.v1");
     assert_eq!(row["source"], Domain::Canonical344.source());
@@ -260,23 +320,60 @@ fn canonical870_stage(current: &str) -> String {
     assert_eq!(digest(current), row["raw_sha256"], "complete live870 root");
     let inverse = row["inverse"].as_array().unwrap();
     assert!(!inverse.is_empty() && inverse.len() <= 64);
-    let stage = lines(current, &row["inverse"], "start", "end", "current", "previous");
+    let stage = lines(
+        current,
+        &row["inverse"],
+        "start",
+        "end",
+        "current",
+        "previous",
+    );
     assert_eq!(stage.len() as u64, row["stage_length"].as_u64().unwrap());
-    assert_eq!(digest(&stage), row["stage_sha256"], "complete immutable51 stage");
+    assert_eq!(
+        digest(&stage),
+        row["stage_sha256"],
+        "complete immutable51 stage"
+    );
     stage
 }
 
 #[test]
 fn canonical870_raw_endpoint_preserves_full51_stage_and_rejects_other_domains() {
-    let raw = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/factored/canonical_shared.rs"));
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt870-current-stage-custody-20261017/canonical51.stage.rs.txt"));
+    let raw = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/factored/canonical_shared.rs"
+    ));
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt870-current-stage-custody-20261017/canonical51.stage.rs.txt"
+    ));
     assert_eq!(canonical870_stage(raw), old);
     let rows = records();
-    let row = rows.as_array().unwrap().iter().find(|row| row["domain"] == "canonical344").unwrap();
-    assert_eq!(row["current"], old, "binder must retain the immutable stage domain");
-    assert_eq!(current344_input(Domain::Canonical344.source(), raw), project(&rows, Domain::Canonical344, old));
-    for wrong in [String::new(), format!("{raw} "), format!("{raw}{raw}"), old.to_owned()] {
-        assert!(std::panic::catch_unwind(|| current344_input(Domain::Canonical344.source(), &wrong)).is_err());
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["domain"] == "canonical344")
+        .unwrap();
+    assert_eq!(
+        row["current"], old,
+        "binder must retain the immutable stage domain"
+    );
+    assert_eq!(
+        current344_input(Domain::Canonical344.source(), raw),
+        project(&rows, Domain::Canonical344, old)
+    );
+    for wrong in [
+        String::new(),
+        format!("{raw} "),
+        format!("{raw}{raw}"),
+        old.to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| current344_input(
+            Domain::Canonical344.source(),
+            &wrong
+        ))
+        .is_err());
     }
 }
 
@@ -284,12 +381,21 @@ fn canonical870_raw_endpoint_preserves_full51_stage_and_rejects_other_domains() 
 fn observer_projection_stage_keeps_whole_current_and_prior_and_refuses_foreign_joins() {
     let current=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-current.whole.txt");
     let previous=include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-prior.whole.txt");
-    assert_ne!(current,previous);
-    assert_eq!(projection344_stage(current),previous);
-    assert_eq!(projection344_stage(previous),previous);
-    let rows=records();
-    assert_eq!(current344_input("expected_projection::root_join",current),project(&rows,Domain::Projection344,previous));
-    for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
-        assert!(std::panic::catch_unwind(||projection344_stage(&foreign)).is_err());
+    assert_ne!(current, previous);
+    assert_eq!(projection344_stage(current), previous);
+    assert_eq!(projection344_stage(previous), previous);
+    let rows = records();
+    assert_eq!(
+        current344_input("expected_projection::root_join", current),
+        project(&rows, Domain::Projection344, previous)
+    );
+    for foreign in [
+        String::new(),
+        format!("{current} "),
+        format!("{current}{current}"),
+        current[..current.len() - 1].to_owned(),
+        "foreign".to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| projection344_stage(&foreign)).is_err());
     }
 }

@@ -151,7 +151,10 @@ fn clone_and_push_keep_capacity_contents_work_and_drop_with_less_backing() {
 #[test]
 fn whole_original_enumerator_and_clone_push_helpers_remain_byte_exact() {
     use sha2::{Digest, Sha256};
-    let root = compact_stage::source_custody_main8a::before_root(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay.rs")));
+    let root = compact_stage::source_custody_main8a::before_root(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay.rs"
+    )));
     let packets = [
         (
             include_str!(concat!(

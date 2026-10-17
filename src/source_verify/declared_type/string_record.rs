@@ -42,7 +42,9 @@ pub(in crate::source_verify) fn reject(
 ) -> bool {
     // A complete existing declaration refusal already owns this shape error.
     // Other roles, parameters and body checks continue through their owners.
-    if crate::source_verify::declaration::record_shape::origin(program, types, ty, diagnostics).is_some() {
+    if crate::source_verify::declaration::record_shape::origin(program, types, ty, diagnostics)
+        .is_some()
+    {
         return true;
     }
     if runtime_admitted(ty, types) {

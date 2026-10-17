@@ -115,10 +115,15 @@ impl<T> Memo<T> {
             false
         }
     }
-    pub(super) fn unpublished(&self) -> bool { self.chunks.is_empty() }
+    pub(super) fn unpublished(&self) -> bool {
+        self.chunks.is_empty()
+    }
     #[cfg(test)]
     pub(super) fn payload_chunks(&self) -> usize {
-        self.chunks.iter().filter(|chunk| chunk.values.is_some()).count()
+        self.chunks
+            .iter()
+            .filter(|chunk| chunk.values.is_some())
+            .count()
     }
     pub(super) fn failed(&self) -> bool {
         self.failed
@@ -139,7 +144,11 @@ impl<T> Memo<T> {
         }
         match self.chunks.get(*key / WIDTH) {
             Some(chunk) => {
-                if chunk.values.as_ref().is_some_and(|values| values[*key % WIDTH].is_some()) {
+                if chunk
+                    .values
+                    .as_ref()
+                    .is_some_and(|values| values[*key % WIDTH].is_some())
+                {
                     2
                 } else if chunk.empty & (1_u8 << (*key % WIDTH)) != 0 {
                     1
@@ -196,16 +205,25 @@ impl<T> Memo<T> {
             )?;
             // One actual inline slot initializer; receiving directory backing
             // is separately retained by reserve_vec above.
-            budget.reserve_array::<Chunk<T>>(function, additional, "factored closure memo slot initializer")?;
-            self.chunks.resize_with(required, || Chunk { values: None, empty: 0 });
+            budget.reserve_array::<Chunk<T>>(
+                function,
+                additional,
+                "factored closure memo slot initializer",
+            )?;
+            self.chunks.resize_with(required, || Chunk {
+                values: None,
+                empty: 0,
+            });
         }
         if self.chunks[index].values.is_none() {
             if budget.pays_allocations() {
                 // Full array initializer and heap array, Box local and Some
                 // initializer. No payload backing exists for empty-only slots.
-                budget.reserve_bytes(function,
+                budget.reserve_bytes(
+                    function,
                     2 * size_of::<[Option<T>; WIDTH]>() + 2 * size_of::<Box<[Option<T>; WIDTH]>>(),
-                    "factored closure memo payload promotion")?;
+                    "factored closure memo payload promotion",
+                )?;
             }
             let values = Box::new(std::array::from_fn(|_| None));
             self.chunks[index].values = Some(values);
@@ -232,8 +250,15 @@ impl<T> Memo<T> {
             )?;
             // One actual inline slot initializer; receiving directory backing
             // is separately retained by reserve_vec above.
-            budget.reserve_array::<Chunk<T>>(function, additional, "factored closure memo slot initializer")?;
-            self.chunks.resize_with(required, || Chunk { values: None, empty: 0 });
+            budget.reserve_array::<Chunk<T>>(
+                function,
+                additional,
+                "factored closure memo slot initializer",
+            )?;
+            self.chunks.resize_with(required, || Chunk {
+                values: None,
+                empty: 0,
+            });
         }
         // The original empty bits survive later paid payload promotion.
         // Only unpublished keys reach this producer, exactly as before.

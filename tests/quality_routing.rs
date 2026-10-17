@@ -814,6 +814,7 @@ impl Repository {
                 concat!(
                     include_str!("../src/cli/help/authoring.rs"),
                     include_str!("../src/cli/help/authoring/discovery.rs"),
+                    include_str!("../src/cli/help/authoring/tasks.rs"),
                 ),
                 "\n",
                 include_str!("../src/cli/help/diagnostic_index.rs"),

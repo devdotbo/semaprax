@@ -48,8 +48,7 @@ fn before_last_branch_root(current: &str) -> String {
 fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json"))
-            .unwrap(),
+        &main_c883_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 4);
@@ -71,8 +70,7 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
             assert!(current.starts_with(&before));
         }
     }
-    let helper =
-        main_c883_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
+    let helper = main_c883_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
     let proof = sources
         .iter()
         .find(|proof| proof["path"] == "src/cleanup_plan/replay/branch_clone.rs")
@@ -88,8 +86,7 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
 fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(root.join("docs/evidence/plan-branch-capacity-v1/sources.json"))
-            .unwrap(),
+        &main_c883_read(root.join("docs/evidence/plan-branch-capacity-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 5);
@@ -123,8 +120,7 @@ fn plan_branch_capacity_preserves_complete_sources_and_all_existing_controls() {
 fn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(root.join("docs/evidence/replay-work-refusal-v1/sources.json"))
-            .unwrap(),
+        &main_c883_read(root.join("docs/evidence/replay-work-refusal-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 4);
@@ -149,8 +145,7 @@ fn replay_work_refusal_capture_retains_all_complete_predecessors_and_assertions(
 fn held_status_index_keeps_complete_predecessor_receivers_and_assertions() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(root.join("docs/evidence/status-identity-index-v1/sources.json"))
-            .unwrap(),
+        &main_c883_read(root.join("docs/evidence/status-identity-index-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 3);
@@ -175,8 +170,7 @@ fn held_status_index_keeps_complete_predecessor_receivers_and_assertions() {
 fn projection_audit_scope_preserves_complete_sources_and_all_historical_receivers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(root.join("docs/evidence/projection-audit-scope-v1/sources.json"))
-            .unwrap(),
+        &main_c883_read(root.join("docs/evidence/projection-audit-scope-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 5);
@@ -244,8 +238,7 @@ fn projection_audit_scope_preserves_complete_sources_and_all_historical_receiver
 fn historical_pin_capture_chains_restore_every_original_source() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/legacy-pin-chain-repair-v1");
-    let before =
-        main_c883_read(evidence.join("semantic_receivers.rs.before.txt")).unwrap();
+    let before = main_c883_read(evidence.join("semantic_receivers.rs.before.txt")).unwrap();
     assert_eq!(
         digest(&before),
         "6af473f412874b7c2e09e4e1effa1f18357f74cf8e31b7cab4a16bd85b4a947d"
@@ -329,10 +322,8 @@ fn historical_pin_capture_chains_restore_every_original_source() {
 fn status_membership_index_preserves_complete_predecessors_and_all_original_controllers() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let proofs: Vec<serde_json::Value> = serde_json::from_str(
-        &main_c883_read(
-            root.join("docs/evidence/status-membership-index-v1/sources.json"),
-        )
-        .unwrap(),
+        &main_c883_read(root.join("docs/evidence/status-membership-index-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     assert_eq!(proofs.len(), 5);
@@ -360,7 +351,14 @@ fn main_c883_root_ingress_retains_the_complete_last_branch_predecessor() {
     let before = before_last_branch_root(&current);
     let sources: Vec<serde_json::Value> = serde_json::from_str(
         &main_c883_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json")).unwrap(),
-    ).unwrap();
-    let proof = sources.iter().find(|proof| proof["path"] == "src/cleanup_plan/replay.rs").unwrap();
-    assert_eq!(before, main_c883_read(root.join(proof["archive"].as_str().unwrap())).unwrap());
+    )
+    .unwrap();
+    let proof = sources
+        .iter()
+        .find(|proof| proof["path"] == "src/cleanup_plan/replay.rs")
+        .unwrap();
+    assert_eq!(
+        before,
+        main_c883_read(root.join(proof["archive"].as_str().unwrap())).unwrap()
+    );
 }

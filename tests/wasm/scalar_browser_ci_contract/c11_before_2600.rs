@@ -138,7 +138,9 @@ fn complete_prior_browser_contract_has_only_registration_and_call_adapter_change
         ),
         "ea17287522800683e8b257ecdf379866d26bf891dc2b4b34e49c5ee82f206de3"
     );
-    let current = include_str!("../../../docs/evidence/main65-private-merge-20261016/main-browser-parent.rs.txt");
+    let current = include_str!(
+        "../../../docs/evidence/main65-private-merge-20261016/main-browser-parent.rs.txt"
+    );
     let changes = [
         ("#[path = \"scalar_browser_ci_contract/historical_builder.rs\"]\nmod historical_builder;\n\n", ""),
         ("previous_digests.push(historical_builder::digest(revision.semantic_graph()));", "previous_digests.push(digest_without_checked_value_cursor_budget(\n                    revision.semantic_graph(),\n                ));"),

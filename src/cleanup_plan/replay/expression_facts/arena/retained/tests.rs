@@ -238,8 +238,10 @@ pub(in crate::cleanup_plan::replay::expression_facts) fn before_885_source(
         );
         *current = current.replacen(new, old, 1);
     }
-    let acquired=crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(source,"whole885",current);
-    let current=acquired.as_str();
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+        source, "whole885", current,
+    );
+    let current = acquired.as_str();
     let mut restored = current.to_owned();
     let expected = match source {
         "src/cleanup_plan/replay/expression_facts/arena.rs" => {

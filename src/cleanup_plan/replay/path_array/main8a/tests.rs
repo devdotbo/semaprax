@@ -251,7 +251,13 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         "/docs/evidence/minimum-path-array-v1/functions.json"
     )))
     .unwrap();
-    let root = crate::source_reflows_merge::main8a_input("src/cleanup_plan/replay.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay.rs")));
+    let root = crate::source_reflows_merge::main8a_input(
+        "src/cleanup_plan/replay.rs",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay.rs"
+        )),
+    );
     let compiled = include_str!("before.rs");
     for record in records.as_array().unwrap() {
         let name = record["name"].as_str().unwrap();
@@ -279,7 +285,10 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         if name == "sequence_skeleton_paths" {
             // Compose the later independently frozen prefix-transfer receiver;
             // keep this complete predecessor and every original assertion.
-            let intermediate = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/sequence_prefix/main8a/before.rs"));
+            let intermediate = include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay/sequence_prefix/main8a/before.rs"
+            ));
             assert!(intermediate.contains(&current.replacen(
                 "fn sequence_skeleton_paths(",
                 "pub(super) fn sequence_skeleton_paths(",

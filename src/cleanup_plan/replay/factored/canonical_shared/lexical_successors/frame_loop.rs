@@ -1,9 +1,9 @@
 //! The actual retained canonical frame-loop method, not a forwarding adapter.
 use super::super::*;
 #[cfg(test)]
-mod before_borrowed_single;
-#[cfg(test)]
 mod before_arity_dispatch;
+#[cfg(test)]
+mod before_borrowed_single;
 mod borrowed_single;
 
 impl Canonicalizer<'_> {
@@ -133,62 +133,83 @@ impl Canonicalizer<'_> {
                     // The pattern reads the retained place: no extra len(),
                     // moved scrutinee local, query or helper return exists.
                     match exit_arity {
-                    1 => {
-                        #[cfg(test)]
-                        borrowed_single::note(budget, exit_admission_paid);
-                        attempt!(budget.reserve_bytes(
-                            function,
-                            if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },
-                            "canonical lexical exit receiving",
-                        ));
-                        exit_admission_paid = true;
-                        // One original iterator.next, without an Index or slice
-                        // helper. Its temporary iterator ends before remove(0).
-                        let Some((label, child)) = successors.iter().next() else {
-                            unreachable!("one successor was matched");
-                        };
-                        let Some(child_id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
-                            receiving.ready = true;
-                            return;
-                        };
-                        let query = borrowed_single::OneQuery { accepted, label, child: child_id };
-                        let id = match self.ids.get(&query) {
-                            Some(id) => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(true);
-                                *id
-                            }
-                            None => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(false);
-                                attempt!(budget.reserve_array::<(Label, usize)>(
-                                    function, 1, "factored canonical signature vector",
-                                ));
-                                let mut key = Vec::with_capacity(1);
-                                {
-                                    let (label, _child) = successors.remove(0);
-                                    key.push((label, *child_id));
+                        1 => {
+                            #[cfg(test)]
+                            borrowed_single::note(budget, exit_admission_paid);
+                            attempt!(budget.reserve_bytes(
+                                function,
+                                if exit_admission_paid {
+                                    borrowed_single::WARM
+                                } else {
+                                    borrowed_single::COLD
+                                },
+                                "canonical lexical exit receiving",
+                            ));
+                            exit_admission_paid = true;
+                            // One original iterator.next, without an Index or slice
+                            // helper. Its temporary iterator ends before remove(0).
+                            let Some((label, child)) = successors.iter().next() else {
+                                unreachable!("one successor was matched");
+                            };
+                            let Some(child_id) = self.states.get(child) else {
+                                receiving.refusal =
+                                    Some(replay_error(function, "cleanup CFG contains a cycle"));
+                                receiving.ready = true;
+                                return;
+                            };
+                            let query = borrowed_single::OneQuery {
+                                accepted,
+                                label,
+                                child: child_id,
+                            };
+                            let id = match self.ids.get(&query) {
+                                Some(id) => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(true);
+                                    *id
                                 }
-                                // Same owned Vec input slots as the original
-                                // into_iter hand-off; release its buffer before
-                                // either arena can acquire backing, as before.
-                                drop(successors);
-                                let key = (accepted, key);
-                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
-                                let id = self.ids.len();
-                                self.ids.insert_prepaid(key, id);
-                                id
+                                None => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(false);
+                                    attempt!(budget.reserve_array::<(Label, usize)>(
+                                        function,
+                                        1,
+                                        "factored canonical signature vector",
+                                    ));
+                                    let mut key = Vec::with_capacity(1);
+                                    {
+                                        let (label, _child) = successors.remove(0);
+                                        key.push((label, *child_id));
+                                    }
+                                    // Same owned Vec input slots as the original
+                                    // into_iter hand-off; release its buffer before
+                                    // either arena can acquire backing, as before.
+                                    drop(successors);
+                                    let key = (accepted, key);
+                                    intern_arena::prepare_insert!(
+                                        self.ids,
+                                        intern_arena::Signature,
+                                        function,
+                                        budget
+                                    );
+                                    let id = self.ids.len();
+                                    self.ids.insert_prepaid(key, id);
+                                    id
+                                }
+                            };
+                            self.child_ids.clear();
+                            if !self.states.contains_key(&state) {
+                                intern_arena::prepare_insert!(
+                                    self.states,
+                                    SharedWeighted,
+                                    function,
+                                    budget
+                                );
                             }
-                        };
-                        self.child_ids.clear();
-                        if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                            self.states.insert_prepaid(state, id);
+                            continue;
                         }
-                        self.states.insert_prepaid(state, id);
-                        continue;
-                    }
-                    _ => {}
+                        _ => {}
                     }
                     // Empty/general routes retain their complete original
                     // admission, predicate, query/scratch/miss and Drop order.

@@ -20,10 +20,19 @@ fn fixture(decisions: usize, owned: bool) -> ResolvedProgram {
     let diagnostic = &diagnostics[0];
     assert_eq!(diagnostic.code, "SPX-T105");
     assert_eq!(diagnostic.severity, crate::diagnostic::Severity::Error);
-    assert_eq!(diagnostic.message, "executable module must define `fn main() -> i64`");
+    assert_eq!(
+        diagnostic.message,
+        "executable module must define `fn main() -> i64`"
+    );
     assert_eq!(diagnostic.path.as_deref(), Some("moderate-paths.spx"));
     let start = source.find("fn paths").unwrap();
-    assert_eq!(diagnostic.span.as_ref().map(|span| (span.start, span.end, span.line, span.column)), Some((start, source.len(), 1, start + 1)));
+    assert_eq!(
+        diagnostic
+            .span
+            .as_ref()
+            .map(|span| (span.start, span.end, span.line, span.column)),
+        Some((start, source.len(), 1, start + 1))
+    );
     assert_eq!(diagnostic.help.as_deref(), Some("a module without `fn main() -> i64` is a library module: check it through the project that owns it with `semaprax check <project-dir>`, or add `main` to run this file alone"));
     let source = format!("{source}\n@id(\"moderate.main\") fn main()->i64 {{0}}");
     crate::hir::resolve(&crate::check(&source, "moderate-paths.spx").unwrap()).unwrap()
@@ -267,7 +276,11 @@ fn joined_checked(data: &str, path: &str, current: &str) -> Option<String> {
 }
 fn joined_input(path: &str, current: &str) -> String {
     let checkpoint = joined_checkpoint_input(path, current);
-    crate::source_reflows_merge::main7f8_source_inputs::moderate_452_input("moderate-original", path, &checkpoint)
+    crate::source_reflows_merge::main7f8_source_inputs::moderate_452_input(
+        "moderate-original",
+        path,
+        &checkpoint,
+    )
 }
 fn joined_checkpoint_input(path: &str, current: &str) -> String {
     joined_checked(&joined_data(), path, current)

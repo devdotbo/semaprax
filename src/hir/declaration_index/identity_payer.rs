@@ -759,8 +759,9 @@ impl DeclarationIndex {
         // top above prepays the actual local key String and both map nodes;
         // text below separately prepays the canonical name, including its own
         // length. No canonical key is inserted into the local namespace.
-        payer.bytes(
-            std::mem::size_of::<[&str; 6]>()
+        payer
+            .bytes(
+                std::mem::size_of::<[&str; 6]>()
                 + std::mem::size_of::<[&DeclarationId; 3]>()
                 + std::mem::size_of::<[IdentityOrigin; 2]>()
                 + std::mem::size_of::<[bool; 2]>()
@@ -770,12 +771,14 @@ impl DeclarationIndex {
                 // for payload selection and the separate local-key name call.
                 + std::mem::size_of::<[&crate::ast::Function; 2]>()
                 + std::mem::size_of::<[&crate::ast::program_source::FunctionRef<'_>; 4]>(),
-        ).map_err(IdentityIndexError::Identity)?;
-        let name = payer.text(if function.payload().type_parameters.is_empty() {
-            function.name()
-        } else {
-            function.declaration_name()
-        })
+            )
+            .map_err(IdentityIndexError::Identity)?;
+        let name = payer
+            .text(if function.payload().type_parameters.is_empty() {
+                function.name()
+            } else {
+                function.declaration_name()
+            })
             .map_err(IdentityIndexError::Identity)?;
         let identity_origin = if super::record_invariants::is_synthesized(function.name()) {
             IdentityOrigin::CompilerOwned
@@ -784,11 +787,18 @@ impl DeclarationIndex {
         } else {
             IdentityOrigin::Automatic
         };
-        self.functions_by_name.insert(function.name().to_owned(), owner.clone());
-        self.declarations.insert(owner.clone(), Declaration {
-            id: owner.clone(), name, kind: DeclarationKind::Function,
-            identity_origin, owner: None,
-        });
+        self.functions_by_name
+            .insert(function.name().to_owned(), owner.clone());
+        self.declarations.insert(
+            owner.clone(),
+            Declaration {
+                id: owner.clone(),
+                name,
+                kind: DeclarationKind::Function,
+                identity_origin,
+                owner: None,
+            },
+        );
         let mut parameters = payer
             .vec::<ResolvedTypeParameterDeclaration>(function.payload().type_parameters.len())
             .map_err(IdentityIndexError::Identity)?;

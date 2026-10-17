@@ -8,7 +8,8 @@ const DATA: &str = include_str!(concat!(
 ));
 const DATA_LENGTH: usize = 230623;
 const DATA_SHA256: [u8; 32] = [
-    82, 230, 195, 37, 70, 229, 47, 60, 175, 27, 76, 223, 170, 76, 12, 252, 162, 136, 44, 204, 57, 205, 121, 60, 185, 202, 42, 194, 202, 52, 247, 141
+    82, 230, 195, 37, 70, 229, 47, 60, 175, 27, 76, 223, 170, 76, 12, 252, 162, 136, 44, 204, 57,
+    205, 121, 60, 185, 202, 42, 194, 202, 52, 247, 141,
 ];
 
 fn assert_digest(source: &str, expected: &serde_json::Value) {
@@ -85,12 +86,48 @@ mod tests {
                     "/tests/native/string_settlement/codec_allocation/string_vectors.rs"
                 )),
             ),
-            ("src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"))),
-            ("src/hir/function_value/funded.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/function_value/funded.rs"))),
-            ("tests/native/string_settlement/codec_allocation.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/native/string_settlement/codec_allocation.rs"))),
-            ("src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs"))),
-            ("src/cleanup_plan/replay/factored/canonical_shared.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/factored/canonical_shared.rs"))),
-            ("src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs"))),
+            (
+                "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"
+                )),
+            ),
+            (
+                "src/hir/function_value/funded.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/hir/function_value/funded.rs"
+                )),
+            ),
+            (
+                "tests/native/string_settlement/codec_allocation.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/tests/native/string_settlement/codec_allocation.rs"
+                )),
+            ),
+            (
+                "src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs"
+                )),
+            ),
+            (
+                "src/cleanup_plan/replay/factored/canonical_shared.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/factored/canonical_shared.rs"
+                )),
+            ),
+            (
+                "src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs"
+                )),
+            ),
         ];
         for (source, current) in sources {
             refuses_drift(source, current);

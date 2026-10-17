@@ -24,8 +24,10 @@
 //! * Bottom-up hash-consing of the weighted subset construction assigns two
 //!   states the same id exactly when they accept every sequence the same
 //!   number of times, so equal roots prove equal path multisets.
-use super::skeleton_work::{ObservationDag, ObservationDagKind}; #[cfg(test)] use crate::bounded_output::stage_debits::route_debits as debit_routes;
+use super::skeleton_work::{ObservationDag, ObservationDagKind};
 use super::*;
+#[cfg(test)]
+use crate::bounded_output::stage_debits::route_debits as debit_routes;
 use std::rc::Rc;
 #[cfg(test)]
 mod before_closure_invocation;
@@ -231,11 +233,19 @@ fn compare_with_index_storage<'hir>(
         // The exact reconstructed automaton is unchanged. An Oracle account
         // pays the full general label order; it grants no borrowed-helper lease.
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
+        };
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "oracle plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -247,11 +257,19 @@ fn compare_with_index_storage<'hir>(
     if let Some(lease) = program.borrowed_helper_lease(function) {
         lease.validate(program, function, budget)?;
         let mut canonical =
-            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
+            borrowed_canonical::BorrowedCanonicalizer::new(function, &automaton, sink, budget)?;
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed HIR weighted root")?;
         let Some(hir) = canonical.id(function, vec![(hir_root, 1)], budget)? else {
             return Ok(None);
-        }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
+        };
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "borrowed plan weighted root")?;
         let Some(plan) = canonical.id(function, vec![(plan_root, 1)], budget)? else {
             return Ok(None);
@@ -260,19 +278,36 @@ fn compare_with_index_storage<'hir>(
     }
 
     budget.reserve_bytes(
-        function, canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
+        function,
+        canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
         "canonical ordered dictionary owner receiving",
     )?;
     let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
     if budget.pays_allocations() {
-        budget.reserve_bytes(function, canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
-            "factored cold terminal node predicate")?;
+        budget.reserve_bytes(
+            function,
+            canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
+            "factored cold terminal node predicate",
+        )?;
     }
-    if canonical.cold_dead_node(hir_root) { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
+    if canonical.cold_dead_node(hir_root) {
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
         budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
-        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else { return Ok(None); }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
+        let Some(hir) = canonical.id_for_comparison(function, vec![(hir_root, 1)], budget)? else {
+            return Ok(None);
+        };
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+        #[cfg(test)]
+        let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
         budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
-        let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)? else { return Ok(None); };
+        let Some(plan) = canonical.id_for_comparison(function, vec![(plan_root, 1)], budget)?
+        else {
+            return Ok(None);
+        };
         return Ok(Some(hir == plan));
     }
     if budget.pays_allocations() {
@@ -283,13 +318,21 @@ fn compare_with_index_storage<'hir>(
         )?;
     }
     let mut receiving =
-        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
+        canonical_shared::closure_receiving::ClosureReceiving::from_prepaid(function, budget);
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalHIR);
+    #[cfg(test)]
+    let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
     let Some(hir) =
         canonical.id_with_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?
     else {
         return Ok(None);
-    }; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN); #[cfg(test)] let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
+    };
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::CanonicalPLAN);
+    #[cfg(test)]
+    let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
     let Some(plan) =
         canonical.id_with_receiving(function, vec![(plan_root, 1)], budget, &mut receiving)?
@@ -330,7 +373,9 @@ fn build_comparison<'hir>(
     budget.skeleton_remaining = std::mem::take(&mut budget.remaining);
     budget.lent_skeleton = true;
     let result = (|| {
-        budget.merge_paths = true; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FactoredHIR);
+        budget.merge_paths = true;
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::FactoredHIR);
         let hir_paths = hir_skeleton_paths_with_index_storage(
             program,
             function,
@@ -347,7 +392,8 @@ fn build_comparison<'hir>(
             hir_paths.as_ref().map(|paths| paths.as_slice()).ok(),
         );
         let hir_paths = hir_paths?;
- #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HIRAutomaton);
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::HIRAutomaton);
         let mut automaton = Automaton::default();
         let sink = automaton.node(function, budget)?;
         let success = automaton.end(function, budget, sink, SkeletonTerminal::Success)?;
@@ -371,7 +417,9 @@ fn build_comparison<'hir>(
             automaton.epsilon(function, budget, end, terminal)?;
         }
         #[cfg(test)]
-        instrumentation::phase(function, budget, "HIR automaton", None); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PLANAutomaton);
+        instrumentation::phase(function, budget, "HIR automaton", None);
+        #[cfg(test)]
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::PLANAutomaton);
         let plan_root = automaton.add_plan(function, success, failure, latch, budget)?;
         #[cfg(test)]
         instrumentation::phase(function, budget, "plan automaton", None);
@@ -949,15 +997,20 @@ enum CanonicalFrame {
 /// Test builds compare the factored verdict with the enumerating one on every
 /// function small enough to enumerate.
 #[cfg(test)]
-fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) { let _debit_route = debit_routes::route(debit_routes::Route::UnoptedCrosscheck); let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
+fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedFunction) {
+    let _debit_route = debit_routes::route(debit_routes::Route::UnoptedCrosscheck);
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-    let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| { let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
-        let mut plan = plan_skeleton_paths(function, &mut enumerating)?; let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+    let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+        let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
+        let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
         hir.sort();
         plan.sort();
         Ok(hir == plan)
-    }); let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+    });
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if let Ok(true) = enumerated {
         let mut factored = ReplayBudget::with_skeleton_limit(0);
         let verdict = compare(program, function, &mut factored);

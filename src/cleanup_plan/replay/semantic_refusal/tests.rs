@@ -65,7 +65,10 @@ fn sealed_atoms_keep_saved_detailed_text_and_allocate_no_identity_payload() {
 }
 
 // Complete independent original adapter, including every owning message arm.
-pub(super) fn complete_original_legacy(receipt: Receipt, function: &ResolvedFunction) -> Diagnostic {
+pub(super) fn complete_original_legacy(
+    receipt: Receipt,
+    function: &ResolvedFunction,
+) -> Diagnostic {
     let message = match receipt.atom {
         Atom::SelectedCall(kind) => kind.detail().to_owned(),
         Atom::UnknownCallCallee(callee) => format!("call commit has unknown callee `{callee}`"),
@@ -140,8 +143,16 @@ fn every_atom_matches_complete_original_diagnostic_under_finite_account_through_
         |id| Atom::RepeatedCallFlag(id, LivenessFlagId(17)),
         Atom::RepeatedVariantEpoch,
         Atom::MismatchedFailure,
-        |_| Atom::SelectedChild(crate::cleanup_plan::renewal_profile::child_refusal::Refusal::LexicalDepth),
-        |_| Atom::SelectedChild(crate::cleanup_plan::renewal_profile::child_refusal::Refusal::RenewalWork),
+        |_| {
+            Atom::SelectedChild(
+                crate::cleanup_plan::renewal_profile::child_refusal::Refusal::LexicalDepth,
+            )
+        },
+        |_| {
+            Atom::SelectedChild(
+                crate::cleanup_plan::renewal_profile::child_refusal::Refusal::RenewalWork,
+            )
+        },
     ];
     for make in constructors {
         let old = complete_original_legacy(
@@ -176,11 +187,10 @@ fn every_atom_matches_complete_original_diagnostic_under_finite_account_through_
     }
 }
 
-
 #[test]
 fn raw_child_oracle_exact_short_zero_and_foreign_subject_keep_prepaid_bound() {
     use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
-    use crate::cleanup_plan::replay::allocation::{OracleScope, enter};
+    use crate::cleanup_plan::replay::allocation::{enter, OracleScope};
     let program = crate::hir::resolve(
         &crate::check(
             "module refusal.raw; @id(\"main\") fn main()->i64 {1}",

@@ -571,12 +571,12 @@ mod tests {
                 })
                 .expect("actual branch");
             if wrong_owner {
-                function.cleanup_plan.edges[pair.1.0 as usize].from = BlockId(u32::MAX);
+                function.cleanup_plan.edges[pair.1 .0 as usize].from = BlockId(u32::MAX);
             } else {
-                let condition = function.cleanup_plan.edges[pair.1.0 as usize]
+                let condition = function.cleanup_plan.edges[pair.1 .0 as usize]
                     .condition
                     .clone();
-                function.cleanup_plan.edges[pair.2.0 as usize].condition = condition;
+                function.cleanup_plan.edges[pair.2 .0 as usize].condition = condition;
             }
             assert!(run(&forged, usize::MAX).is_err());
         }

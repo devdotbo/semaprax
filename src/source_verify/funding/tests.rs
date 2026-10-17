@@ -52,7 +52,6 @@ fn sealed_abort_handoff_allocates_nothing_after_the_first_refusal() {
     );
 }
 
-
 #[test]
 fn storage_frontier_entry_is_prepaid_at_exact_and_one_short_without_drop_debt() {
     let identity = IdentityReservation::setup_bytes().unwrap();
@@ -80,7 +79,9 @@ fn storage_frontier_entry_is_prepaid_at_exact_and_one_short_without_drop_debt() 
         assert_eq!(success, admitted);
         assert!(refused);
         assert!(used <= limit);
-        if admitted { assert_eq!(used, exact); }
+        if admitted {
+            assert_eq!(used, exact);
+        }
         assert!(!physical.invalid);
         assert_eq!(physical.live, 0);
         assert_eq!(physical.allocated, physical.freed);

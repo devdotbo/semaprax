@@ -52,8 +52,7 @@ pub(super) fn selected_schema_with_index(
         CLEANUP_PLAN_SCHEMA_V12
     } else if crate::hir::iterator_loop::function_contains(function) {
         CLEANUP_PLAN_SCHEMA_V11
-    } else if inventory.has_iterator
-    {
+    } else if inventory.has_iterator {
         CLEANUP_PLAN_SCHEMA_V10
     } else if has_nested_record_update {
         CLEANUP_PLAN_SCHEMA_V9

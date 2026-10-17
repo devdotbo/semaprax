@@ -3,7 +3,8 @@
 //! inventories continue to include the current modules and their new children.
 use super::*;
 
-const PROOFS: &str = include_str!("../../docs/evidence/main-b80-receiver-source-custody-20261016/inverse.json");
+const PROOFS: &str =
+    include_str!("../../docs/evidence/main-b80-receiver-source-custody-20261016/inverse.json");
 static PROOF_RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 
 fn proofs() -> &'static [serde_json::Value] {

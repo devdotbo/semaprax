@@ -1,7 +1,7 @@
 //! A known next push can acquire its existing growth capacity at clone time.
 //! This removes the intermediate clone backing; future capacity stays the same.
+use super::super::compact_stage::before::{lexical_skeleton, SkeletonObservation, SkeletonPath};
 use super::super::*;
-use super::super::compact_stage::before::{SkeletonObservation, SkeletonPath, lexical_skeleton};
 use super::before as branch_clone;
 
 #[track_caller]
@@ -35,7 +35,6 @@ pub(in crate::cleanup_plan::replay) fn for_push<T: Clone + ClonePayload>(
     result.extend(values.iter().cloned());
     Ok(result)
 }
-
 
 pub(super) fn plan_skeleton_paths(
     function: &ResolvedFunction,
@@ -455,12 +454,29 @@ pub(super) fn plan_skeleton_paths(
     Ok(paths)
 }
 pub(super) fn main_replay_input(current: &str) -> String {
-    let compile_fixed = crate::source_reflows_merge::compile_fixture_input("src/cleanup_plan/replay.rs", current);
+    let compile_fixed =
+        crate::source_reflows_merge::compile_fixture_input("src/cleanup_plan/replay.rs", current);
     let current = compile_fixed.as_str();
     use sha2::{Digest, Sha256};
-    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), CURRENT_REPLAY_SHA);
-    let original = std::fs::read_to_string(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/branch-clone-funded-next-20261016/main-replay.before.rs.txt")).expect("immutable complete Main replay input");
-    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))), MAIN_REPLAY_SHA);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        CURRENT_REPLAY_SHA
+    );
+    let original = std::fs::read_to_string(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/branch-clone-funded-next-20261016/main-replay.before.rs.txt"
+    ))
+    .expect("immutable complete Main replay input");
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
+        MAIN_REPLAY_SHA
+    );
     original
 }
 const CURRENT_REPLAY_SHA: &str = "5996c732aceb53c6f4ae7a8924ea020584328b2d86638446bbd3f365e925d503";

@@ -313,7 +313,7 @@ fn every_same_host_success_receiving_layout_matches_complete_prior_atom_and_erro
 #[test]
 fn original_lookup_work_and_every_added_control_byte_have_independent_exact_boundaries() {
     use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
-    use crate::cleanup_plan::replay::selected_context::{Context, child};
+    use crate::cleanup_plan::replay::selected_context::{child, Context};
     fn child_controls<T>() -> usize {
         std::mem::size_of::<(
             child::Deferred,

@@ -64,8 +64,7 @@ macro_rules! after_work {
         if matches!(
             &$work.budget.payer,
             &$crate::cleanup_plan::replay::allocation::AllocationPayer::ActiveBuilder
-        )
-            && !$work.budget.selected()
+        ) && !$work.budget.selected()
             && $work.budget.skeleton_remaining >= 1
             && $work.budget.skeleton_spent < usize::MAX
             && ($prefix).prefix.is_none()
@@ -112,9 +111,13 @@ macro_rules! after_work {
                 $work
                     .budget
                     .reserve_bytes($work.function, 0, "ordinary flat suffix")?;
-                $work.budget.reserve_array::<std::rc::Rc<
-                                    $crate::cleanup_plan::replay::SkeletonObservation,
-                                >>($work.function, target, "ordinary flat suffix")?;
+                type FusionObservation =
+                    std::rc::Rc<$crate::cleanup_plan::replay::SkeletonObservation>;
+                $work.budget.reserve_array::<FusionObservation>(
+                    $work.function,
+                    target,
+                    "ordinary flat suffix",
+                )?;
                 let mut items = Vec::new();
                 items.try_reserve_exact(target).map_err(|_| {
                     $work.budget.budget_refusal(

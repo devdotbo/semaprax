@@ -241,8 +241,7 @@ fn ordinary_setup_complete_sources_and_original_legacy_constructor_remain_exact(
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/ordinary-replay-setup-v1");
     let rows: Vec<serde_json::Value> =
-        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(rows.len(), 34);
     let mut paths = std::collections::BTreeSet::new();
     for row in &rows {
@@ -375,11 +374,9 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/source-reader-followups-20261016");
     let records: serde_json::Value =
-        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap()).unwrap();
     for record in records.as_array().unwrap() {
-        let original =
-            main21_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
+        let original = main21_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
         assert_eq!(digest(&original), record["sha256"]);
         let current = main21_read(root.join(record["path"].as_str().unwrap())).unwrap();
         let restore = |source: &str| -> Option<String> {
@@ -437,8 +434,7 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main21_read(root.join("docs/evidence/held-status-prefix-v1/sources.json"))
-            .unwrap(),
+        &main21_read(root.join("docs/evidence/held-status-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 6);
@@ -519,10 +515,7 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main21_read(
-            root.join("docs/evidence/held-continuation-growth-v1/sources.json"),
-        )
-        .unwrap(),
+        &main21_read(root.join("docs/evidence/held-continuation-growth-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -541,13 +534,11 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     };
     let old_tests = before_file("src/cleanup_plan/replay/continuation_storage/tests.rs");
     let current_tests =
-        main21_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs"))
-            .unwrap();
+        main21_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs")).unwrap();
     assert!(current_tests.starts_with(&old_tests));
     let old_storage = before_file("src/cleanup_plan/replay/continuation_storage.rs");
     let current_storage =
-        main21_read(root.join("src/cleanup_plan/replay/continuation_storage.rs"))
-            .unwrap();
+        main21_read(root.join("src/cleanup_plan/replay/continuation_storage.rs")).unwrap();
     let fixed = old_storage.find("pub(super) fn fresh").unwrap();
     let fixed_end = fixed
         + old_storage[fixed..]
@@ -629,10 +620,8 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main21_read(
-            root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"),
-        )
-        .unwrap(),
+        &main21_read(root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -691,8 +680,7 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
 fn ordinary_replay_routes_keep_complete_predecessors_and_existing_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let records: Vec<serde_json::Value> = serde_json::from_str(
-        &main21_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json"))
-            .unwrap(),
+        &main21_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(records.len(), 6);
@@ -758,8 +746,7 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     let evidence = root.join("docs/evidence/borrowed-exit-region-match-v1");
     let sources: Vec<serde_json::Value> =
-        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main21_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(sources.len(), 7);
     for proof in sources {
         let current = main21_read(root.join(proof["path"].as_str().unwrap())).unwrap();
@@ -770,83 +757,119 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     for manifest in ["new-files.json", "retained-sources.json"] {
         let records: Vec<serde_json::Value> =
-            serde_json::from_str(&main21_read(evidence.join(manifest)).unwrap())
-                .unwrap();
+            serde_json::from_str(&main21_read(evidence.join(manifest)).unwrap()).unwrap();
         assert_eq!(records.len(), 2);
         for record in records {
-            let current =
-                main21_read(root.join(record["path"].as_str().unwrap())).unwrap();
+            let current = main21_read(root.join(record["path"].as_str().unwrap())).unwrap();
             assert_eq!(digest(&current), record["sha256"]);
             assert_ne!(digest(&(current + "\n")), record["sha256"]);
         }
     }
 }
 
-const MAIN21_MANIFEST: &str = "docs/evidence/main21-exit-region-integration-20261017/input-domains.json";
+const MAIN21_MANIFEST: &str =
+    "docs/evidence/main21-exit-region-integration-20261017/input-domains.json";
 const MAIN21_MANIFEST_LEN: usize = 77210;
-const MAIN21_MANIFEST_SHA: &str = "44687cd637b9ea867c84f6afccea40259a24b48231da21a2e76ed5ac4e9e740b";
+const MAIN21_MANIFEST_SHA: &str =
+    "44687cd637b9ea867c84f6afccea40259a24b48231da21a2e76ed5ac4e9e740b";
 const MAIN21_CAP: usize = 9_382_389; // Exact largest whole incoming MAIN21 fixture; old cap unchanged.
 fn main21_manifest() -> serde_json::Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let text = main21_file(
-        &root.join(MAIN21_MANIFEST), MAIN21_MANIFEST_LEN, MAIN21_MANIFEST_SHA).unwrap();
+        &root.join(MAIN21_MANIFEST),
+        MAIN21_MANIFEST_LEN,
+        MAIN21_MANIFEST_SHA,
+    )
+    .unwrap();
     serde_json::from_str(&text).unwrap()
 }
 fn main21_checked(path: &Path, length: usize, sha: &str) -> String {
-    if let Some(staged) = super::incoming_main090::legacy_checked(path,length,sha) { return staged; }
+    if let Some(staged) = super::incoming_main090::legacy_checked(path, length, sha) {
+        return staged;
+    }
     assert!(length <= MAIN21_CAP);
-    main21_file(path,length,sha).unwrap()
+    main21_file(path, length, sha).unwrap()
 }
-fn main21_row<'a>(manifest: &'a serde_json::Value, domain: &str, path: &str) -> Option<&'a serde_json::Value> {
-    manifest[domain].as_array().unwrap().iter().find(|r| r["path"] == path)
+fn main21_row<'a>(
+    manifest: &'a serde_json::Value,
+    domain: &str,
+    path: &str,
+) -> Option<&'a serde_json::Value> {
+    manifest[domain]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == path)
 }
 fn main21_entry(entry: &serde_json::Value, current: &str) -> String {
-    let staged = super::incoming_main090::legacy_expected(entry,current);
+    let staged = super::incoming_main090::legacy_expected(entry, current);
     let current = staged.as_str();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     // Every staged value is authenticated against actual physical current input.
-    let raw = main21_checked(&root.join(entry["path"].as_str().unwrap()),
-        entry["current_len"].as_u64().unwrap() as usize,entry["current_sha256"].as_str().unwrap());
-    let before = main21_checked(&root.join(entry["archive"].as_str().unwrap()),
-        entry["view_len"].as_u64().unwrap() as usize,entry["view_sha256"].as_str().unwrap());
+    let raw = main21_checked(
+        &root.join(entry["path"].as_str().unwrap()),
+        entry["current_len"].as_u64().unwrap() as usize,
+        entry["current_sha256"].as_str().unwrap(),
+    );
+    let before = main21_checked(
+        &root.join(entry["archive"].as_str().unwrap()),
+        entry["view_len"].as_u64().unwrap() as usize,
+        entry["view_sha256"].as_str().unwrap(),
+    );
     assert!(current == raw || current == before, "foreign MAIN21 stage");
     before
 }
 fn main21_project(path: &str, current: &str) -> String {
     let manifest = main21_manifest();
-    match main21_row(&manifest,"main",path) {
-        Some(row) => main21_entry(row,current), None => current.to_owned(),
+    match main21_row(&manifest, "main", path) {
+        Some(row) => main21_entry(row, current),
+        None => current.to_owned(),
     }
 }
 fn main21_read(path: impl AsRef<Path>) -> std::io::Result<String> {
     let path = path.as_ref();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let logical = path.strip_prefix(root).ok().and_then(|p| p.to_str())
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput,"foreign MAIN21 read root"))?;
+    let logical = path
+        .strip_prefix(root)
+        .ok()
+        .and_then(|p| p.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(std::io::ErrorKind::InvalidInput, "foreign MAIN21 read root")
+        })?;
     let manifest = main21_manifest();
-    if let Some(row) = main21_row(&manifest,"main",logical) {
-        let raw = main21_checked(path,row["current_len"].as_u64().unwrap() as usize,
-            row["current_sha256"].as_str().unwrap());
-        return Ok(main21_entry(row,&raw));
+    if let Some(row) = main21_row(&manifest, "main", logical) {
+        let raw = main21_checked(
+            path,
+            row["current_len"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        );
+        return Ok(main21_entry(row, &raw));
     }
-    Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"unknown MAIN21 read subject"))
+    Err(std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        "unknown MAIN21 read subject",
+    ))
 }
 pub(in crate::source_reflows) fn ours_input(path: &str, current: &str) -> String {
     let manifest = main21_manifest();
-    match main21_row(&manifest,"ours",path) {
-        Some(row) => main21_entry(row,current), None => current.to_owned(),
+    match main21_row(&manifest, "ours", path) {
+        Some(row) => main21_entry(row, current),
+        None => current.to_owned(),
     }
 }
-pub(in crate::source_reflows) fn ours_expected_input(proof: &serde_json::Value, current: &str) -> String {
+pub(in crate::source_reflows) fn ours_expected_input(
+    proof: &serde_json::Value,
+    current: &str,
+) -> String {
     let manifest = main21_manifest();
     let path = proof["path"].as_str().unwrap();
-    match main21_row(&manifest,"ours",path) {
-        Some(row) if proof["after_sha256"] == row["view_sha256"] => main21_entry(row,current),
+    match main21_row(&manifest, "ours", path) {
+        Some(row) if proof["after_sha256"] == row["view_sha256"] => main21_entry(row, current),
         _ => current.to_owned(), // Preserve an already selected older MAIN domain.
     }
 }
 pub(super) fn ours_contains(path: &str) -> bool {
-    main21_row(&main21_manifest(),"ours",path).is_some()
+    main21_row(&main21_manifest(), "ours", path).is_some()
 }
 fn records() -> &'static [serde_json::Value] {
     static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
@@ -886,56 +909,110 @@ fn restore(record: &serde_json::Value, current: &str) -> String {
     restored
 }
 
-fn main21_body(reader: &mut impl std::io::Read, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN21_CAP { return Err("bound"); }
+fn main21_body(
+    reader: &mut impl std::io::Read,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN21_CAP {
+        return Err("bound");
+    }
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length).map_err(|_| "allocation")?;
     bytes.resize(length, 0);
     reader.read_exact(&mut bytes).map_err(|_| "truncated")?;
     let mut extra = [0u8; 1];
-    if reader.read(&mut extra).map_err(|_| "read")? != 0 { return Err("extra"); }
-    if digest_bytes(&bytes) != expected { return Err("digest"); }
+    if reader.read(&mut extra).map_err(|_| "read")? != 0 {
+        return Err("extra");
+    }
+    if digest_bytes(&bytes) != expected {
+        return Err("digest");
+    }
     String::from_utf8(bytes).map_err(|_| "utf8")
 }
 fn digest_bytes(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn main21_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
-    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
+    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
+    {
+        return false;
+    }
     #[cfg(unix)]
-    { use std::os::unix::fs::MetadataExt; if a.dev() != b.dev() || a.ino() != b.ino() || a.ctime() != b.ctime() || a.ctime_nsec() != b.ctime_nsec() { return false; } }
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.dev() != b.dev()
+            || a.ino() != b.ino()
+            || a.ctime() != b.ctime()
+            || a.ctime_nsec() != b.ctime_nsec()
+        {
+            return false;
+        }
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::MetadataExt; if a.file_attributes() & 0x400 != 0 || b.file_attributes() & 0x400 != 0 || a.creation_time() != b.creation_time() || a.last_write_time() != b.last_write_time() { return false; } }
+    {
+        use std::os::windows::fs::MetadataExt;
+        if a.file_attributes() & 0x400 != 0
+            || b.file_attributes() & 0x400 != 0
+            || a.creation_time() != b.creation_time()
+            || a.last_write_time() != b.last_write_time()
+        {
+            return false;
+        }
+    }
     true
 }
 fn main21_file(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN21_CAP { return Err("bound"); }
+    if length > MAIN21_CAP {
+        return Err("bound");
+    }
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
-    if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
-    let mut options = std::fs::OpenOptions::new(); options.read(true);
+    if path_before.file_type().is_symlink() || !path_before.is_file() {
+        return Err("length-or-nonregular");
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
     #[cfg(unix)]
-    { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK); }
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::OpenOptionsExt; options.custom_flags(0x0020_0000); }
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000);
+    }
     #[cfg(not(any(unix, windows)))]
-    { return Err("platform"); }
+    {
+        return Err("platform");
+    }
     let mut file = options.open(path).map_err(|_| "open")?;
     let metadata = file.metadata().map_err(|_| "metadata")?;
-    if !main21_same_file(&path_before, &metadata) || metadata.len() != u64::try_from(length).map_err(|_| "bound")? {
+    if !main21_same_file(&path_before, &metadata)
+        || metadata.len() != u64::try_from(length).map_err(|_| "bound")?
+    {
         return Err("length-or-nonregular");
     }
     // The one opened no-follow regular handle is checked before any buffer.
     let value = main21_body(&mut file, length, expected)?;
     let after = file.metadata().map_err(|_| "metadata")?;
     let path_after = std::fs::symlink_metadata(path).map_err(|_| "metadata")?;
-    if path_after.file_type().is_symlink() || !main21_same_file(&metadata, &after) || !main21_same_file(&after, &path_after) { return Err("metadata-drift"); }
+    if path_after.file_type().is_symlink()
+        || !main21_same_file(&metadata, &after)
+        || !main21_same_file(&after, &path_after)
+    {
+        return Err("metadata-drift");
+    }
     Ok(value)
 }
 
 #[test]
 fn joined_main21_domains_preserve_full_current_inputs_and_refuse_foreign_stages() {
     let manifest = main21_manifest();
-    assert_eq!(manifest["schema"], "semaprax.main21-complete-source-domains.v1");
+    assert_eq!(
+        manifest["schema"],
+        "semaprax.main21-complete-source-domains.v1"
+    );
     assert_eq!(manifest["main"].as_array().unwrap().len(), 148);
     assert_eq!(manifest["ours"].as_array().unwrap().len(), 9);
     for domain in ["main", "ours"] {
@@ -944,26 +1021,52 @@ fn joined_main21_domains_preserve_full_current_inputs_and_refuse_foreign_stages(
             let path = entry["path"].as_str().unwrap();
             assert!(paths.insert(path));
             let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-            let raw = main21_checked(&root.join(path),entry["current_len"].as_u64().unwrap() as usize,
-                entry["current_sha256"].as_str().unwrap());
-            let view = main21_entry(entry,&raw);
-            assert_eq!(main21_entry(entry,&view),view);
-            assert!(std::panic::catch_unwind(|| main21_entry(entry,&(raw.clone()+"\n"))).is_err());
+            let raw = main21_checked(
+                &root.join(path),
+                entry["current_len"].as_u64().unwrap() as usize,
+                entry["current_sha256"].as_str().unwrap(),
+            );
+            let view = main21_entry(entry, &raw);
+            assert_eq!(main21_entry(entry, &view), view);
+            assert!(
+                std::panic::catch_unwind(|| main21_entry(entry, &(raw.clone() + "\n"))).is_err()
+            );
             let mut forged = entry.clone();
             forged["view_sha256"] = serde_json::Value::String("0".repeat(64));
-            assert!(std::panic::catch_unwind(|| main21_entry(&forged,&raw)).is_err());
+            assert!(std::panic::catch_unwind(|| main21_entry(&forged, &raw)).is_err());
         }
     }
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(main21_read(root.join("foreign-main21-subject.rs")).is_err());
     assert!(main21_read(Path::new("/foreign-main21-subject.rs")).is_err());
     let older = serde_json::json!({"path":"src/source_reflows/semantic_receivers.rs", "after_sha256":"older-MAIN34d-domain"});
-    assert_eq!(ours_expected_input(&older,"already staged MAIN34d"),"already staged MAIN34d");
-    assert_eq!(MAIN21_CAP,9_382_389);
-    assert_eq!(main21_body(&mut &b"abc"[..],3,&digest_bytes(b"abc")).unwrap(),"abc");
-    assert_eq!(main21_body(&mut &b"ab"[..],3,&digest_bytes(b"abc")).unwrap_err(),"truncated");
-    assert_eq!(main21_body(&mut &b"abcd"[..],3,&digest_bytes(b"abc")).unwrap_err(),"extra");
-    assert_eq!(main21_body(&mut &b"abc"[..],3,&"0".repeat(64)).unwrap_err(),"digest");
-    assert_eq!(main21_body(&mut &b"\xff"[..],1,&digest_bytes(b"\xff")).unwrap_err(),"utf8");
-    assert_eq!(main21_body(&mut &b""[..],MAIN21_CAP+1,&"0".repeat(64)).unwrap_err(),"bound");
+    assert_eq!(
+        ours_expected_input(&older, "already staged MAIN34d"),
+        "already staged MAIN34d"
+    );
+    assert_eq!(MAIN21_CAP, 9_382_389);
+    assert_eq!(
+        main21_body(&mut &b"abc"[..], 3, &digest_bytes(b"abc")).unwrap(),
+        "abc"
+    );
+    assert_eq!(
+        main21_body(&mut &b"ab"[..], 3, &digest_bytes(b"abc")).unwrap_err(),
+        "truncated"
+    );
+    assert_eq!(
+        main21_body(&mut &b"abcd"[..], 3, &digest_bytes(b"abc")).unwrap_err(),
+        "extra"
+    );
+    assert_eq!(
+        main21_body(&mut &b"abc"[..], 3, &"0".repeat(64)).unwrap_err(),
+        "digest"
+    );
+    assert_eq!(
+        main21_body(&mut &b"\xff"[..], 1, &digest_bytes(b"\xff")).unwrap_err(),
+        "utf8"
+    );
+    assert_eq!(
+        main21_body(&mut &b""[..], MAIN21_CAP + 1, &"0".repeat(64)).unwrap_err(),
+        "bound"
+    );
 }

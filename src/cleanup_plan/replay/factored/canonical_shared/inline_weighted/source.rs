@@ -1,11 +1,18 @@
 //! Full immediate-source and old-receiver custody; no production authority.
 use sha2::{Digest, Sha256};
 fn hex(source: &str) -> String {
-    format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes())))
+    format!(
+        "{:x}",
+        crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+    )
 }
 #[test]
 fn inline_weighted_complete_source_inverses_and_immediate_receiver_are_exact() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/inline-weighted-successor-842/source-inverses.json"))).unwrap();
+    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/inline-weighted-successor-842/source-inverses.json"
+    )))
+    .unwrap();
     let sources = [
         ("src/cleanup_plan/replay/factored/canonical_shared.rs", include_str!("../../canonical_shared.rs")),
         ("src/cleanup_plan/replay/factored/canonical_shared/tests.rs", include_str!("../tests.rs")),
@@ -25,15 +32,26 @@ fn inline_weighted_complete_source_inverses_and_immediate_receiver_are_exact() {
     for (path, current) in sources {
         let projected = crate::source_reflows_merge::assembly_view("842", path, current);
         let current = projected.as_str();
-        let matching: Vec<_> = rows.as_array().unwrap().iter().filter(|row| row["source"] == path).collect();
+        let matching: Vec<_> = rows
+            .as_array()
+            .unwrap()
+            .iter()
+            .filter(|row| row["source"] == path)
+            .collect();
         assert_eq!(matching.len(), 1);
         let row = matching[0];
         assert_eq!(hex(current), row["current_sha256"]);
         let edits = row["edits"].as_array().unwrap();
         assert_eq!(edits.len(), 1);
         assert_eq!(current, edits[0]["new"].as_str().unwrap());
-        assert_eq!(hex(edits[0]["old"].as_str().unwrap()), row["original_sha256"]);
-        assert_eq!(current.replacen(current, edits[0]["old"].as_str().unwrap(), 1), edits[0]["old"].as_str().unwrap());
+        assert_eq!(
+            hex(edits[0]["old"].as_str().unwrap()),
+            row["original_sha256"]
+        );
+        assert_eq!(
+            current.replacen(current, edits[0]["old"].as_str().unwrap(), 1),
+            edits[0]["old"].as_str().unwrap()
+        );
     }
     let old = include_str!("../../../../../../docs/evidence/inline-weighted-successor-842/canonical_shared.rs.before.txt");
     let start = old.find("type SharedWeighted").unwrap();
@@ -55,7 +73,12 @@ fn inline_weighted_complete_source_inverses_and_immediate_receiver_are_exact() {
 }
 #[test]
 fn inline_weighted_every_new_owner_remains_in_all_three_full_source_audits() {
-    let owners = ["before_inline_weighted.rs", "inline_weighted.rs", "inline_weighted/tests.rs", "inline_weighted/source.rs"];
+    let owners = [
+        "before_inline_weighted.rs",
+        "inline_weighted.rs",
+        "inline_weighted/tests.rs",
+        "inline_weighted/source.rs",
+    ];
     let audits = [
         (include_str!("../../../../../../tests/hir_module_boundaries.rs"), "../"),
         (include_str!("../../../../../../tests/workspace/semantic_graph/source_inventory.rs"), "../../"),

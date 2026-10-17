@@ -110,8 +110,8 @@ mod before;
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod tests;
 
-pub(in crate::cleanup_plan::replay) mod optimized;
 #[cfg(test)]
 mod immediate;
+pub(in crate::cleanup_plan::replay) mod optimized;
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod optimized_tests;

@@ -225,10 +225,13 @@ fn complete_paid_drop_and_exact_short_zero_sticky_controls() {
 #[test]
 fn complete_previous_receiver_is_source_bound_except_for_the_new_minimum() {
     use sha2::{Digest, Sha256};
-    let previous = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/path_array/sequence/before.rs"))
-        .split_once("pub(super) fn sequence_skeleton_paths(")
-        .unwrap()
-        .1;
+    let previous = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/path_array/sequence/before.rs"
+    ))
+    .split_once("pub(super) fn sequence_skeleton_paths(")
+    .unwrap()
+    .1;
     let previous = format!("fn sequence_skeleton_paths({previous}");
     let previous = previous.trim_end();
     assert_eq!(
@@ -238,7 +241,10 @@ fn complete_previous_receiver_is_source_bound_except_for_the_new_minimum() {
         ),
         "fd54e2c120585d772809e8d0cc8f1c9ea4fda1aff898239c27cd05a9556ccae7"
     );
-    let source = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"));
+    let source = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"
+    ));
     let current = source
         .split_once("fn sequence_skeleton_paths(")
         .unwrap()

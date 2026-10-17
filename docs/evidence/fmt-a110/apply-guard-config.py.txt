@@ -1,0 +1,33 @@
+from pathlib import Path
+import ast,json,hashlib,copy
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';Q='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';H=lambda b:hashlib.sha256(b).hexdigest()
+raw=(R/Q).read_bytes();(O/'whole-before-guard.py').write_bytes(raw);config_raw=(O/'candidate-guard-config.json').read_bytes();receipt=json.loads((O/'candidate-guard-config-receipt.json').read_bytes());assert(len(config_raw),H(config_raw))==(receipt['length'],receipt['sha256']);assert len(config_raw)<=262144
+path='docs/evidence/fmt-a110/guard-config.json';dest=R/path;dest.parent.mkdir(parents=True,exist_ok=True);assert not dest.exists();dest.write_bytes(config_raw)
+text=raw.decode();tree=ast.parse(text);node=next(n for n in tree.body if isinstance(n,ast.Assign)and any(isinstance(x,ast.Name)and x.id=='CONFIG'for x in n.targets));old=ast.literal_eval(node.value);new=json.loads(config_raw)
+for key,value in old.items():
+ if key not in ['packet','rows','modules','carriers','table','closed_prior_sources']:assert new[key]==value
+lines=text.splitlines(keepends=True);del lines[node.lineno-1:node.end_lineno];text=''.join(lines)
+loader=f'''_CONFIG_PATH=R/{path!r}
+_CONFIG_LENGTH={len(config_raw)}
+_CONFIG_SHA256={H(config_raw)!r}
+_CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
+CONFIG=json.loads(_CONFIG_RAW)
+def _configuration_current():
+ assert bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)==_CONFIG_RAW
+
+'''
+assert text.count('def read(pin):')==1;text=text.replace('def read(pin):',loader+'def read(pin):',1)
+old_read="def read(pin):return bounded(R/pin['archive'],pin['length'],pin['sha256'])";new_read="def read(pin):\n _configuration_current()\n return bounded(R/pin['archive'],pin['length'],pin['sha256'])";assert text.count(old_read)==1;text=text.replace(old_read,new_read,1)
+assert text.count('def packet():\n')==1;text=text.replace('def packet():\n','def packet():\n _configuration_current()\n',1)
+marker=" if(length,digest)==(p['length'],p['sha256']):return actual";assert text.count(marker)==1
+checks=""" for child in row.get('fragments',[]):
+  assert not child.get('fragments')and child['compiled']is True
+  pin=child['current'];value=bounded(R/child['source'],pin['length'],pin['sha256']);assert value==read(pin)
+"""
+text=text.replace(marker,checks+marker,1);updated=text.encode();assert len(updated)<=65536;compile(updated,Q,'exec');(R/Q).write_bytes(updated)
+records=[]
+for name in ['docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ p=R/name;before=p.read_bytes();q=O/'bootstrap-before'/name;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(before);assert H(raw).encode()in before and str(len(raw)).encode()in before,name
+ after=before.replace(H(raw).encode(),H(updated).encode()).replace(str(len(raw)).encode(),str(len(updated)).encode());assert after.replace(H(updated).encode(),H(raw).encode()).replace(str(len(updated)).encode(),str(len(raw)).encode())==before
+ compile(after,name,'exec');p.write_bytes(after);records.append({'path':name,'before_sha256':H(before),'after_sha256':H(after),'exact_program_pin_replacement_inverse':True})
+result={'status':'APPLIED_PENDING_FULL_VERIFICATION','old_guard':{'length':len(raw),'sha256':H(raw)},'guard':{'length':len(updated),'sha256':H(updated)},'external_CONFIG':{'path':path,'length':len(config_raw),'sha256':H(config_raw)},'original_program_cap_unchanged':65536,'original_bounded_input_cap_unchanged':262144,'every_original_config_field_retained_except_justified_current_pin_extensions':True,'CONFIG_reauthenticated_on_every_packet_and_archive_read':True,'compiled_fragment_physical_archive_checks_before_prior_root_replay':True,'bootstraps':records};(O/'guard-application.json').write_text(json.dumps(result,indent=2)+'\n');print('Applied fully authenticated CONFIG data',len(config_raw),'bytes; program',len(updated),'bytes (original65536 cap); every old predicate retained, three bootstrap inverses exact.',flush=True)

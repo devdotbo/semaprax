@@ -239,16 +239,26 @@ mod current_union {
         let legacy = crate::source_reflows_merge::next_big_batch_inputs::value(
             "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv",
             "fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb",
-            include_str!("../../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv"));
+            include_str!("../../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv"),
+        );
         let current = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-projection-inputs.tsv");
-        let owned = include_str!("../../../docs/evidence/main-c883-next-source-merge-20261017/current-owned-inputs.tsv");
+        let owned = include_str!(
+            "../../../docs/evidence/main-c883-next-source-merge-20261017/current-owned-inputs.tsv"
+        );
         let current: Vec<_> = current.lines().collect();
         assert_eq!(legacy.lines().count(), 90);
         for input in legacy.lines() {
-            assert!(current.contains(&input), "frozen legacy source omitted: {input}");
+            assert!(
+                current.contains(&input),
+                "frozen legacy source omitted: {input}"
+            );
         }
         for input in owned.lines() {
-            assert_eq!(current.iter().filter(|path| **path == input).count(), 1, "current owned source missing or duplicated: {input}");
+            assert_eq!(
+                current.iter().filter(|path| **path == input).count(),
+                1,
+                "current owned source missing or duplicated: {input}"
+            );
         }
     }
 }

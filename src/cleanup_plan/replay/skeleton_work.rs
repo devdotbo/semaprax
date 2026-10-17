@@ -6,20 +6,20 @@
 //! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
 mod dag_storage;
+pub(super) mod enumerated_prefix;
 #[cfg(test)]
 mod isolated_paths;
 pub(super) mod merge_keys;
-pub(super) mod merge_search;
-#[cfg(test)]
-mod merge_keys_before;
 #[cfg(test)]
 pub(super) mod merge_keys_878;
 #[cfg(test)]
+mod merge_keys_before;
+#[cfg(test)]
 pub(super) mod merge_keys_tests;
+pub(super) mod merge_search;
 #[cfg(test)]
 mod oracle_entry;
 mod ordinary_dag;
-pub(super) mod enumerated_prefix;
 pub(super) mod prefix_fusion;
 
 #[cfg(test)]
@@ -245,7 +245,11 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
                     FundedError<Diagnostic>,
                 >,
             >()
-            + 2 * std::mem::size_of::<(&mut ReplayBudget, &ResolvedFunction, &crate::bounded_output::classifier_string::ClassifierLedger)>()
+            + 2 * std::mem::size_of::<(
+                &mut ReplayBudget,
+                &ResolvedFunction,
+                &crate::bounded_output::classifier_string::ClassifierLedger,
+            )>()
             + std::mem::size_of::<crate::bounded_output::classifier_string::ClassifierLedger>()
             + 10 * std::mem::size_of::<&mut dyn FnMut(usize) -> Result<(), Diagnostic>>();
         budget.reserve_array::<u8>(
@@ -256,8 +260,11 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
         let ledger = crate::bounded_output::classifier_string::ClassifierLedger::capture();
         let mut reserve = |bytes| {
             if !ledger.current() {
-                return Err(budget.budget_refusal(function,
-                    "ordinary replay setup payer is outside its current invocation", ""));
+                return Err(budget.budget_refusal(
+                    function,
+                    "ordinary replay setup payer is outside its current invocation",
+                    "",
+                ));
             }
             budget.reserve_bytes(function, bytes, "ordinary skeleton constructor inventory")
         };
@@ -922,7 +929,10 @@ impl Ord for Observations {
 }
 
 impl SkeletonWork<'_, '_> {
-    pub(in crate::cleanup_plan::replay) fn lexical_merge_normal(&self, path: &ExprSkeletonPath) -> bool {
+    pub(in crate::cleanup_plan::replay) fn lexical_merge_normal(
+        &self,
+        path: &ExprSkeletonPath,
+    ) -> bool {
         self.function.cleanup_plan.lexical_control.is_none()
             || (self.active_copy_region.is_some()
                 && !path.failed
@@ -930,8 +940,6 @@ impl SkeletonWork<'_, '_> {
                 && path.owned_source.is_none()
                 && path.continuation == lexical_skeleton::Continuation::Normal)
     }
-
-
 }
 
 #[cfg(test)]
@@ -1169,24 +1177,39 @@ mod ordinary_entry {
     }
 }
 
-
 #[cfg(test)]
 mod incoming_constructor_control {
     use super::*;
     #[test]
     fn main_complete_prepared_receiver_matches_joined_actual_inventories() {
-        let program = crate::hir::resolve(&crate::check("module joined.setup; @id(\"main\") fn main()->i64 {return 0;}", "joined-setup.spx").unwrap()).unwrap();
+        let program = crate::hir::resolve(
+            &crate::check(
+                "module joined.setup; @id(\"main\") fn main()->i64 {return 0;}",
+                "joined-setup.spx",
+            )
+            .unwrap(),
+        )
+        .unwrap();
         let function = &program.functions[0];
         crate::bounded_output::with_limit_usage_refusal(usize::MAX, || {
             let mut old_budget = ReplayBudget::new();
-            let before = SkeletonWork::ordinary_with_index(&program, function, &mut old_budget, None).unwrap();
+            let before =
+                SkeletonWork::ordinary_with_index(&program, function, &mut old_budget, None)
+                    .unwrap();
             let mut current_budget = ReplayBudget::new();
-            let current = SkeletonWork::with_index(&program, function, &mut current_budget, None).unwrap();
+            let current =
+                SkeletonWork::with_index(&program, function, &mut current_budget, None).unwrap();
             assert_eq!(current.string_owner_moves, before.string_owner_moves);
-            assert_eq!(current.string_condition_reads, before.string_condition_reads);
+            assert_eq!(
+                current.string_condition_reads,
+                before.string_condition_reads
+            );
             assert_eq!(current.owner, before.owner);
             crate::hir::function_value::walk(function, |expression| {
-                assert_eq!(current.renewal_bindings.get(&expression.id), before.renewal_bindings.get(&expression.id));
+                assert_eq!(
+                    current.renewal_bindings.get(&expression.id),
+                    before.renewal_bindings.get(&expression.id)
+                );
             });
         });
     }

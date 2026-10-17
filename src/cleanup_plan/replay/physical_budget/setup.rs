@@ -120,5 +120,4 @@ impl ReplayBudget {
             ..Self::new()
         })
     }
-
 }

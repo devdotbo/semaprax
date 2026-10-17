@@ -1,9 +1,8 @@
 //! Paid selected-local static refusals; arbitrary child Diagnostics stay explicit.
 use super::super::selected_context::paid::refusal;
 use super::{
-    DEPTH, Frame, OwnershipMode, ReplayBudget, ResolvedExprKind, ResolvedFunction,
-    ResolvedMatchPattern, ResolvedType, collections, expression_facts, flat_records, row_loan,
-    string_transfer,
+    collections, expression_facts, flat_records, row_loan, string_transfer, Frame, OwnershipMode,
+    ReplayBudget, ResolvedExprKind, ResolvedFunction, ResolvedMatchPattern, ResolvedType, DEPTH,
 };
 pub(in super::super) fn validate(
     program: &dyn crate::cleanup::ReplayContext,

@@ -1,7 +1,7 @@
 //! Same-ledger per-call receiving for the closed reference-coverage family.
 use super::{
-    CleanupTerminator, CleanupTransition, EdgeCondition, ExitContinuation, ReplayBudget,
-    ResolvedFunction, StatusSourceId, expression_facts,
+    expression_facts, CleanupTerminator, CleanupTransition, EdgeCondition, ExitContinuation,
+    ReplayBudget, ResolvedFunction, StatusSourceId,
 };
 use crate::cleanup_plan::renewal_profile::child_refusal::{ReferenceCoverage, Refusal};
 use crate::cleanup_plan::replay::selected_context::child::{ArrayReceiving, NodeReceiving, Permit};

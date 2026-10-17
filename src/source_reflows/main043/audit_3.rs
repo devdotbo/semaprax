@@ -1,17 +1,26 @@
 #[test]
 fn complete_original_and_all_source_audit_receivers_are_byte_exact() {
     use sha2::{Digest, Sha256};
-    let packet: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::Lifecycle))
-    .unwrap();
+    let packet: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Lifecycle)).unwrap();
     let inputs=[
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/validation/function_scope/lifecycle/completed.rs")),
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/hir_module_boundaries.rs")),
         include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),
     ];
     let originals = [
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lifecycle-inline-active-path/completed.rs.before.txt")),
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lifecycle-inline-active-path/hir_module_boundaries.rs.before.txt")),
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lifecycle-inline-active-path/interop_source_inventory.rs.before.txt")),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/lifecycle-inline-active-path/completed.rs.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/lifecycle-inline-active-path/hir_module_boundaries.rs.before.txt"
+        )),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/lifecycle-inline-active-path/interop_source_inventory.rs.before.txt"
+        )),
     ];
     let rows = packet.as_array().unwrap();
     assert_eq!(rows.len(), inputs.len());
@@ -32,10 +41,19 @@ fn complete_original_and_all_source_audit_receivers_are_byte_exact() {
         assert_eq!(restored, original);
     }
     assert_eq!(
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/validation/function_scope/lifecycle/completed/before_inline.rs")).to_owned() + "\n#[cfg(test)]\nmod tests;\n",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/hir/validation/function_scope/lifecycle/completed/before_inline.rs"
+        ))
+        .to_owned()
+            + "\n#[cfg(test)]\nmod tests;\n",
         originals[0]
     );
-    let mut legacy = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/validation/function_scope/lifecycle.rs")).to_owned();
+    let mut legacy = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/hir/validation/function_scope/lifecycle.rs"
+    ))
+    .to_owned();
     for (current, original) in [
         (
             "#[cfg(test)]\npub(super) fn extend_funded(",
@@ -47,7 +65,10 @@ fn complete_original_and_all_source_audit_receivers_are_byte_exact() {
         legacy = legacy.replacen(current, original, 1);
     }
 
-    let binding: serde_json::Value = serde_json::from_str(include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lifecycle-inline-active-path/source-binding.json")))
+    let binding: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/lifecycle-inline-active-path/source-binding.json"
+    )))
     .unwrap();
     assert_eq!(
         format!(

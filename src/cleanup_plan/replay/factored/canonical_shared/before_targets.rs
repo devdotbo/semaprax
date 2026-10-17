@@ -3,11 +3,10 @@
 //! vectors. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::super::{
-    Automaton, BTreeMap, BTreeSet, Diagnostic, Label, Rc, ReplayBudget, ResolvedFunction,
-    Weighted, physical_clone, replay_error,
+    physical_clone, replay_error, Automaton, BTreeMap, BTreeSet, Diagnostic, Label, Rc,
+    ReplayBudget, ResolvedFunction, Weighted,
 };
 use super::{epsilon_alias, memo, tests};
-
 
 type SharedWeighted = Rc<Weighted>;
 
@@ -165,7 +164,8 @@ impl<'a> Receiver<'a> {
                 physical_clone::rc_backing_bytes::<BTreeMap<usize, u64>>(),
                 "factored closure shared header",
             )?;
-            self.closures.insert(function, node, budget, || Rc::new(closure))?;
+            self.closures
+                .insert(function, node, budget, || Rc::new(closure))?;
         }
         Ok(self.closures.get(&root).cloned())
     }
@@ -346,8 +346,11 @@ impl<'a> Receiver<'a> {
     }
 }
 
-
 impl Receiver<'_> {
-    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
-    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
+        &self.states
+    }
 }

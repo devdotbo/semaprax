@@ -175,8 +175,8 @@ pub(super) const LEXICAL_FINISH_RECEIVING: usize = size_of::<Weighted>()
     + 2 * size_of::<super::SharedWeighted>()
     + 2 * size_of::<Result<(), Diagnostic>>()
     + 2 * size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>();
-pub(super) const LEXICAL_FINISH_TOTAL: usize = LEXICAL_FINISH_RECEIVING
-    + super::physical_clone::rc_backing_bytes::<super::SmallWeighted>();
+pub(super) const LEXICAL_FINISH_TOTAL: usize =
+    LEXICAL_FINISH_RECEIVING + super::physical_clone::rc_backing_bytes::<super::SmallWeighted>();
 
 macro_rules! finish {
     ($function:ident, $budget:ident, $targets:ident) => {

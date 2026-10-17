@@ -71,7 +71,10 @@ fn initial_receiving_precedes_raw_entry_and_preserves_complete_inventory_through
                 });
                 // Console initialization is reporting, outside the complete
                 // producer-and-budget Drop observation.
-                eprintln!("inventory initial receiving {} old={old} charged={charged} work={work_units}", function.id);
+                eprintln!(
+                    "inventory initial receiving {} old={old} charged={charged} work={work_units}",
+                    function.id
+                );
                 assert!(!observed.invalid && observed.live == 0);
                 assert_eq!(observed.allocated, observed.freed);
             }

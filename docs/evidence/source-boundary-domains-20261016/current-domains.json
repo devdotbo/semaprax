@@ -1054,6 +1054,8 @@
         "tests/wasm/scalar_browser_ci_contract/next_actual.rs"
       ],
       "current_members": [
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
         "docs/evidence/compact-staged-hostile-owner-852-20261016/before/oracle-order-tests.rs",
         "docs/evidence/format-hygiene-scratch-v1/expression_statement.before.rs.txt",
         "docs/evidence/receiver-source-custody-v1/src__hir__expr_nodes.rs.before.txt",
@@ -1240,6 +1242,7 @@
         "src/cleanup_plan/replay/factored/canonical_shared/app_census.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/arena_source.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_alias.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs",
@@ -1259,6 +1262,7 @@
         "src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs",
@@ -1270,7 +1274,9 @@
         "src/cleanup_plan/replay/factored/canonical_shared/before_scratch_memo.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs",
@@ -1280,6 +1286,7 @@
         "src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels/lexical_finish.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/closure_receiving.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/closure_receiving/source.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/closure_receiving/tests.rs",
@@ -1405,7 +1412,9 @@
         "src/cleanup_plan/replay/live_oracle.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+        "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+        "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody/current_view.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody/presence.rs",
         "src/cleanup_plan/replay/live_oracle/source_custody/presence_tests.rs",
@@ -2103,6 +2112,7 @@
         "src/source_reflows_merge/main043_custody.rs",
         "src/source_reflows_merge/main44_custody.rs",
         "src/source_reflows_merge/main67107_inputs.rs",
+        "src/source_reflows_merge/main67107_inputs_tail.rs",
         "src/source_reflows_merge/main7f8_presence.rs",
         "src/source_reflows_merge/main7f8_source_inputs.rs",
         "src/source_reflows_merge/main8a_custody.rs",
@@ -2303,6 +2313,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs",
         "src/cleanup_plan/replay/factored/canonical_shared.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/closure_receiving.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_closure.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
@@ -2729,9 +2740,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "5c3e15f663b9ef3538ab2be4c33315c7af4776e08dda4bd54b20aae0486347b0",
-      "full_raw_sha256": "10c4a97ae27d742aca8d178f75350846112d911362ddc7ba1864f4b6e14479e5",
-      "full_authenticated_production_sha256": "91c9231b46d34f86f5d2f84089699e692d8350fca7a571d6525c7c73111c665b"
+      "full_manifest_sha256": "f8169b223ec17d9e96fd0db2346312620f2e021c5327f49baecc3cb17d0ec5d0",
+      "full_raw_sha256": "d863b06f1fc902fd6a6f4f0adf980163791ef661995a8f20d4fa84e4a6cdf1bf",
+      "full_authenticated_production_sha256": "ca9ff7e073d1c751d814e188f8ab57c353b871c912931b15bcc2a1961fab4010"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -2918,6 +2929,8 @@
         "tests/wasm/scalar_browser_ci_contract/main_c451_before_2600.rs"
       ],
       "current_members": [
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
         "docs/evidence/receiver-source-custody-v1/src__hir__expr_nodes.rs.before.txt",
         "src/ast/program_source.rs",
         "src/ast/program_source/checked_key.rs",
@@ -3238,6 +3251,7 @@
         "src/cleanup_plan/replay/factored.rs",
         "src/cleanup_plan/replay/factored/canonical_shared.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/closure_receiving.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_closure.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
@@ -3595,6 +3609,7 @@
         "src/hir/resolve_program/initial_loan_plans.rs",
         "src/hir/resolve_program/initial_loan_plans/staging.rs",
         "src/hir/resolve_program/reuse_lowered.rs",
+        "src/hir/resolve_program_methods.rs",
         "src/hir/resolve_statement.rs",
         "src/hir/resolve_stdin_stream.rs",
         "src/hir/resolve_variant_or.rs",
@@ -3742,9 +3757,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "34dabf75601055be4bdf38da1da42d43af9fd388af280cb4ac12514f1384e780",
-      "full_raw_sha256": "de9e1d36f6e8a90c74647c720a6dd0615f1375bfd6b74084f8a6cc76d90e0641",
-      "full_authenticated_production_sha256": "35cf6d40fc1277dcec1773a6fc5025d9247e8d798c1a0861cd3d55c780d62a26"
+      "full_manifest_sha256": "006a2c1d99f3240d1370d7fefdacc3f249a239930bac3f31e0db793d49e5ba56",
+      "full_raw_sha256": "0f27d2248d2ee570c8c37583da13778d274bdae13149fda23477dc71dd36c316",
+      "full_authenticated_production_sha256": "21c08e35ba12e5a5cedd01819f2739ef3da18115f803dd85764517c71ab91223"
     }
   }
 }

@@ -1,5 +1,5 @@
-use super::super::*;
 use super::super::compact_stage::before::SkeletonPath;
+use super::super::*;
 use super::before;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
@@ -338,7 +338,8 @@ pub(super) fn assert_complete_old_sources() {
         1,
     ));
     let compiled = crate::source_reflows_merge::main_b80_prior_input(
-        "src/cleanup_plan/replay/final_output/before.rs", include_str!("before.rs"),
+        "src/cleanup_plan/replay/final_output/before.rs",
+        include_str!("before.rs"),
     );
     assert_eq!(compiled, expected);
     let historical = include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
@@ -347,7 +348,8 @@ pub(super) fn assert_complete_old_sources() {
         "        super::super::plan_skeleton_paths(function, budget)",
         "        // Historical inline-fusion claim: the subsequent final-output transfer\n        // has its own complete shipping observer in final_output::tests.\n        super::super::final_output::before::plan_skeleton_paths(function, budget)");
     let compiled = crate::source_reflows_merge::main_b80_prior_input(
-        "src/cleanup_plan/replay/branch_clone/inline_tests.rs", include_str!("../branch_clone/inline_tests.rs"),
+        "src/cleanup_plan/replay/branch_clone/inline_tests.rs",
+        include_str!("../branch_clone/inline_tests.rs"),
     );
     assert_eq!(compiled, expected);
 }

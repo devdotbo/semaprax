@@ -1,0 +1,92 @@
+[
+  {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "new_path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+    "kind": "verbatim complete impl at the same module scope and physical directory",
+    "before_sha256": "166920400a513e5307bb1b07c47ef35015b6ad44ed9e7fda2e6eac73595ce5c2",
+    "moved_sha256": "724da2c71cfa1a796b17a97c750ee7c2411e555c5856b0c1d0c877b4aac53bf1",
+    "moved_bytes": 60496,
+    "root_lines": 198,
+    "new_lines": 1348
+  },
+  {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "new_path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+    "kind": "verbatim complete impl at the same module scope and physical directory",
+    "before_sha256": "118994933da915f535362aadcae2431afe3d8ab2245c9712f5dd5142d2d82176",
+    "moved_sha256": "8a555ccf890e99becaed2e28c472e9a95283f286f8baf1e70de62945194d56c3",
+    "moved_bytes": 59860,
+    "root_lines": 183,
+    "new_lines": 1338
+  },
+  {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "new_path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+    "kind": "verbatim complete impl at the same module scope and physical directory",
+    "before_sha256": "69d17babef96655688a3a7c6db068cc94c92b0ec00dc4fa7b7abc67af1c0e20b",
+    "moved_sha256": "f7c0fab74c99d5550a69ce55f3728c680cfa3993f82fd8156f23114b958c73e3",
+    "moved_bytes": 60615,
+    "root_lines": 182,
+    "new_lines": 1360
+  },
+  {
+    "path": "src/hir/resolve_program.rs",
+    "new_path": "src/hir/resolve_program_methods.rs",
+    "kind": "verbatim complete impl at the same module scope and physical directory",
+    "before_sha256": "cc21b47007d74cae8db4c6e6be1fdf946984a00661073a4f0c96ba4889e29ed6",
+    "moved_sha256": "917368467259c41d42cb205ae678b1def02d532c0862bfb62e97ffe549f521bd",
+    "moved_bytes": 62284,
+    "root_lines": 41,
+    "new_lines": 1466
+  },
+  {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "new_path": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+    "kind": "verbatim complete trailing items at the same scope and directory",
+    "before_sha256": "39b56f44cb846b677b289c4235eb2e448b0fce30407811448638f2fe1c38b51e",
+    "moved_sha256": "270378414a216fbc1ffa511471e1931a612c48ae34adb48d0a3fd35963980e0a",
+    "moved_bytes": 14862,
+    "root_lines": 1455,
+    "new_lines": 329
+  },
+  {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "new_path": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+    "kind": "verbatim complete trailing items at the same scope and directory",
+    "before_sha256": "dd40d2c49c238e52393764e9ade4536838ed943907db98593dc9f32bc760cb49",
+    "moved_sha256": "ddf8ea40570c11ac55fd260ef5df7a460091abb60d0a7f3f2508687c8a19e3a5",
+    "moved_bytes": 14811,
+    "root_lines": 1338,
+    "new_lines": 336
+  },
+  {
+    "path": "src/source_reflows_merge/main67107_inputs.rs",
+    "new_path": "src/source_reflows_merge/main67107_inputs_tail.rs",
+    "kind": "verbatim complete trailing source-controller items at the same scope and directory",
+    "before_sha256": "7248cc86214e62fa87f015b144bb00df5b0e5bdfc1ccaf3d8d6b64f9b5b836d4",
+    "moved_sha256": "6bfe04c69b4809cc3faf40d6e5fdf6a8575bf5d7f9294131c33986468bdfebcd",
+    "moved_bytes": 59095,
+    "root_lines": 1173,
+    "new_lines": 1239
+  },
+  {
+    "path": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "new_path": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+    "kind": "complete independent source-check blocks retained verbatim in a helper called by the original test",
+    "before_sha256": "871efb8bab2c580a99afa1ed72e3a4fa10816a4beb83af8c65ce917a2dc58ba1",
+    "moved_sha256": "809cecfc4121ef56ab80bd03b426803d681f126b3692b3c3266d8b5426ed629e",
+    "moved_bytes": 30931,
+    "root_lines": 796,
+    "new_lines": 820
+  },
+  {
+    "path": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "new_path": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+    "kind": "complete independent source-check blocks retained verbatim in a helper called by the original test",
+    "before_sha256": "5c2179092c2e1ae3383bc2f51b3447ea04fe355e9291e69264f39422ca7b28de",
+    "moved_sha256": "8bdf68c094082406be35d403464f4ed5cf6600bdc65e80a28a8e5e9c6d4f45c3",
+    "moved_bytes": 45787,
+    "root_lines": 838,
+    "new_lines": 789
+  }
+]

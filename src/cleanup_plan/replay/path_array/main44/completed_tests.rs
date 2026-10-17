@@ -183,15 +183,21 @@ fn complete_finished_predecessor_is_compiled_and_source_bound() {
         ),
         record["sha256"]
     );
-    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/path_array/final_before.rs"));
+    let before = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/path_array/final_before.rs"
+    ));
     assert_eq!(before.split_once("pub(super) ").unwrap().1, body);
     let old = "    let mut completed = Vec::new();\n    for path in paths {";
     let new = "    let mut completed = Vec::new();\n    path_array::completed_minimum(\n        &mut completed,\n        paths.len(),\n        &mut work,\n        \"completed HIR skeleton capacity\",\n    )?;\n    for path in paths {";
     assert_eq!(body.matches(old).count(), 1);
     assert_eq!(
-        include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"))
-            .matches(&body.replacen(old, new, 1))
-            .count(),
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"
+        ))
+        .matches(&body.replacen(old, new, 1))
+        .count(),
         1
     );
 }

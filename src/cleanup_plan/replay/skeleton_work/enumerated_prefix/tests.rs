@@ -692,7 +692,6 @@ fn whole_frozen_sequence_and_plan_comparator_run_independently_in_original_scope
     });
 }
 
-
 // Observation-only transport: keep every field byte, not an owning refusal
 // String beyond measure(). This fixture's prepaid refusal text is bounded by
 // its short function IDs plus the existing 512-byte refusal backing contract.
@@ -705,9 +704,15 @@ struct DiagnosticText {
 impl DiagnosticText {
     fn capture(value: &str) -> Self {
         let mut bytes = [0; 1024];
-        assert!(value.len() <= bytes.len(), "complete fixture Diagnostic must fit reporting storage");
+        assert!(
+            value.len() <= bytes.len(),
+            "complete fixture Diagnostic must fit reporting storage"
+        );
         bytes[..value.len()].copy_from_slice(value.as_bytes());
-        Self { bytes, len: value.len() }
+        Self {
+            bytes,
+            len: value.len(),
+        }
     }
 }
 #[derive(Debug, Eq, PartialEq)]
@@ -749,18 +754,24 @@ fn oracle_entry_still_refuses_missing_and_same_id_foreign_invocation_without_act
                 None
             };
             let mut budget = ReplayBudget::with_skeleton_limit_oracle(usize::MAX, scope.lease());
-            let error = SkeletonWork::with_index(&program, function, &mut budget, None).err().unwrap();
+            let error = SkeletonWork::with_index(&program, function, &mut budget, None)
+                .err()
+                .unwrap();
             assert_eq!(error, Diagnostic::io("SPX-H006", String::new()));
             assert!(budget.refusal_spent);
             assert_eq!((budget.remaining, budget.skeleton_remaining), (0, 0));
             let selected = scope.receipt();
             assert_eq!((selected.charged, selected.work), (0, 0));
             assert!(selected.physical_failure.is_some());
-            let retry = budget.reserve_bytes(function, 0, "oracle invocation sticky retry").unwrap_err();
+            let retry = budget
+                .reserve_bytes(function, 0, "oracle invocation sticky retry")
+                .unwrap_err();
             assert_eq!(retry, error);
             let retried = scope.receipt();
-            assert_eq!((retried.charged, retried.work, retried.physical_failure),
-                (selected.charged, selected.work, selected.physical_failure));
+            assert_eq!(
+                (retried.charged, retried.work, retried.physical_failure),
+                (selected.charged, selected.work, selected.physical_failure)
+            );
             assert_eq!(crate::bounded_output::active_remaining(), active);
             drop((retry, error));
             drop(budget);
@@ -805,8 +816,15 @@ fn comparison_report_begin(budget: &ReplayBudget, immutable_plan: bool) {
     let before = comparison_checkpoint(budget);
     COMPARISON_BOUNDARY_REPORT.with(|slot| {
         let mut slot = slot.borrow_mut();
-        assert!(slot.is_none(), "one complete comparison receiver per report");
-        *slot = Some(ComparisonBoundaryReport { immutable_plan, before, after: None });
+        assert!(
+            slot.is_none(),
+            "one complete comparison receiver per report"
+        );
+        *slot = Some(ComparisonBoundaryReport {
+            immutable_plan,
+            before,
+            after: None,
+        });
     });
 }
 fn comparison_report_end(budget: &ReplayBudget) {
@@ -819,7 +837,8 @@ fn comparison_report_end(budget: &ReplayBudget) {
     });
 }
 
-#[allow(unused_imports)] // Preserve the complete independently compiled historical receiver imports.
+#[allow(unused_imports)]
+// Preserve the complete independently compiled historical receiver imports.
 use crate::cleanup_plan::replay::*;
 fn comparison_report_old_receiver<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
@@ -843,32 +862,34 @@ fn comparison_report_old_receiver<'hir>(
         hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
-            payer: AllocationPayer::ActiveBuilder,
-            ..
-        } = budget {
+        payer: AllocationPayer::ActiveBuilder,
+        ..
+    } = budget
+    {
+        budget.reserve_bytes(
+            function,
+            ordinary_plan_history::SELECT_CALL_CONTROLS,
+            "ordinary plan history selector call receivers",
+        )?;
+        if ordinary_plan_history::select(function, budget)? {
             budget.reserve_bytes(
                 function,
-                ordinary_plan_history::SELECT_CALL_CONTROLS,
-                "ordinary plan history selector call receivers",
+                ordinary_plan_history::PRODUCE_CALL_CONTROLS,
+                "ordinary plan history producer call receivers",
             )?;
-            if ordinary_plan_history::select(function, budget)? {
-                budget.reserve_bytes(
-                    function,
-                    ordinary_plan_history::PRODUCE_CALL_CONTROLS,
-                    "ordinary plan history producer call receivers",
-                )?;
-                let actual = ordinary_plan_history::produce(function, budget)?;
-                comparison_report_begin(budget, true);
-                expected.sort();
-                budget.reserve_bytes(
-                    function,
-                    ordinary_plan_history::COMPARE_CALL_CONTROLS,
-                    "ordinary plan history owned comparison call receivers",
-                )?;
-                let observed_result = ordinary_plan_history::compare(function, budget, actual, &expected);
-                comparison_report_end(budget);
-                return observed_result;
-            }
+            let actual = ordinary_plan_history::produce(function, budget)?;
+            comparison_report_begin(budget, true);
+            expected.sort();
+            budget.reserve_bytes(
+                function,
+                ordinary_plan_history::COMPARE_CALL_CONTROLS,
+                "ordinary plan history owned comparison call receivers",
+            )?;
+            let observed_result =
+                ordinary_plan_history::compare(function, budget, actual, &expected);
+            comparison_report_end(budget);
+            return observed_result;
+        }
     }
     let mut actual = plan_skeleton_paths(function, budget)?;
     comparison_report_begin(budget, false);
@@ -899,7 +920,9 @@ fn comparison_report_current_receiver<'hir>(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
-) -> Result<(), Diagnostic> { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if function.cleanup_plan.lexical_control.is_none()
         && factored::validate_with_index_storage(
             program,
@@ -910,9 +933,13 @@ fn comparison_report_current_receiver<'hir>(
         )?
     {
         return Ok(());
-    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
+    }
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let mut expected =
-        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
         payer: AllocationPayer::ActiveBuilder,
@@ -924,14 +951,18 @@ fn comparison_report_current_receiver<'hir>(
             ordinary_plan_history::SELECT_CALL_CONTROLS,
             "ordinary plan history selector call receivers",
         )?;
-        if ordinary_plan_history::select(function, budget)? { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
+        if ordinary_plan_history::select(function, budget)? {
+            #[cfg(test)]
+            let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
             budget.reserve_bytes(
                 function,
                 ordinary_plan_history::PRODUCE_CALL_CONTROLS,
                 "ordinary plan history producer call receivers",
             )?;
             let actual = ordinary_plan_history::produce(function, budget)?;
-                comparison_report_begin(budget, true); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+            comparison_report_begin(budget, true);
+            #[cfg(test)]
+            let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
             budget.reserve_bytes(
                 function,
                 skeleton_work::enumerated_prefix::ENTRY_CALL,
@@ -943,13 +974,18 @@ fn comparison_report_current_receiver<'hir>(
                 ordinary_plan_history::COMPARE_CALL_CONTROLS,
                 "ordinary plan history owned comparison call receivers",
             )?;
-            let observed_result = ordinary_plan_history::compare(function, budget, actual, &expected);
-                comparison_report_end(budget);
-                return observed_result;
+            let observed_result =
+                ordinary_plan_history::compare(function, budget, actual, &expected);
+            comparison_report_end(budget);
+            return observed_result;
         }
-    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+    }
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
     let mut actual = plan_skeleton_paths(function, budget)?;
-    comparison_report_begin(budget, false); #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+    comparison_report_begin(budget, false);
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
     if match budget {
         ReplayBudget {
             payer: AllocationPayer::ActiveBuilder,
@@ -1008,15 +1044,40 @@ fn complete_comparison_boundaries_report_real_old_current_work_paid_and_heap_aft
                 let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
                 let result = if old {
                     with_original(|| {
-                        if hooked { comparison_report_old_receiver(&program, function, &mut budget, None, None) }
-                        else { before::validate_typed_control_skeleton_with_index(&program, function, &mut budget, None, None) }
+                        if hooked {
+                            comparison_report_old_receiver(
+                                &program,
+                                function,
+                                &mut budget,
+                                None,
+                                None,
+                            )
+                        } else {
+                            before::validate_typed_control_skeleton_with_index(
+                                &program,
+                                function,
+                                &mut budget,
+                                None,
+                                None,
+                            )
+                        }
                     })
                 } else if hooked {
                     comparison_report_current_receiver(&program, function, &mut budget, None, None)
                 } else {
-                    validate_typed_control_skeleton_with_index(&program, function, &mut budget, None, None)
+                    validate_typed_control_skeleton_with_index(
+                        &program,
+                        function,
+                        &mut budget,
+                        None,
+                        None,
+                    )
                 };
-                let remaining = (budget.remaining, budget.skeleton_remaining, budget.skeleton_spent);
+                let remaining = (
+                    budget.remaining,
+                    budget.skeleton_remaining,
+                    budget.skeleton_spent,
+                );
                 drop(budget);
                 let status = result.map_err(DiagnosticFields::capture);
                 let after_drop = crate::test_allocation_observer::current_metrics();
@@ -1039,21 +1100,55 @@ fn complete_comparison_boundaries_report_real_old_current_work_paid_and_heap_aft
             assert!(no_report.is_none());
             let (hooked, outer_heap, hooked_paid, report) = run(ordinal, old, true);
             // Captures add no compiler work, physical debit or status change.
-            assert_eq!(hooked.0, plain.0, "all six fields if a first Diagnostic exists");
+            assert_eq!(
+                hooked.0, plain.0,
+                "all six fields if a first Diagnostic exists"
+            );
             assert_eq!(hooked.1, plain.1);
             assert_eq!(hooked_paid, plain_paid);
             let report = report.expect("fixture must reach a real comparison boundary");
             observed_routes[usize::from(report.immutable_plan)] = true;
             let end = report.after.unwrap();
-            let work = report.before.ordinary_remaining.checked_sub(end.ordinary_remaining).unwrap();
-            let skeleton = report.before.skeleton_remaining.checked_sub(end.skeleton_remaining).unwrap();
-            assert_eq!(end.skeleton_spent.checked_sub(report.before.skeleton_spent).unwrap(), skeleton);
-            let comparison_paid = report.before.physical_remaining.checked_sub(hooked.3).unwrap();
-            let allocated = hooked.2.allocated.checked_sub(report.before.heap.allocated).unwrap();
-            let freed = hooked.2.freed.checked_sub(report.before.heap.freed).unwrap();
-            assert_eq!(report.before.heap.live.checked_add(allocated).unwrap(), freed + hooked.2.live);
+            let work = report
+                .before
+                .ordinary_remaining
+                .checked_sub(end.ordinary_remaining)
+                .unwrap();
+            let skeleton = report
+                .before
+                .skeleton_remaining
+                .checked_sub(end.skeleton_remaining)
+                .unwrap();
+            assert_eq!(
+                end.skeleton_spent
+                    .checked_sub(report.before.skeleton_spent)
+                    .unwrap(),
+                skeleton
+            );
+            let comparison_paid = report
+                .before
+                .physical_remaining
+                .checked_sub(hooked.3)
+                .unwrap();
+            let allocated = hooked
+                .2
+                .allocated
+                .checked_sub(report.before.heap.allocated)
+                .unwrap();
+            let freed = hooked
+                .2
+                .freed
+                .checked_sub(report.before.heap.freed)
+                .unwrap();
+            assert_eq!(
+                report.before.heap.live.checked_add(allocated).unwrap(),
+                freed + hooked.2.live
+            );
             eprintln!("OPT877 comparison-boundary ordinal={ordinal} old={old} immutable_plan={} before={:?} after={end:?} ordinary_work={work} skeleton_work={skeleton} paid_through_drop={comparison_paid} allocated_through_drop={allocated} freed_through_drop={freed} live_after_drop={} outer_heap={outer_heap:?}; boundary includes sort/materialization/comparison and receiver Drop; setup excluded from deltas; outer highwater is not phase peak", report.immutable_plan, report.before, hooked.2.live);
         }
     }
-    assert!(observed_routes.into_iter().all(|seen| seen), "both real flat and immutable PLAN receiver boundaries required");
+    assert!(
+        observed_routes.into_iter().all(|seen| seen),
+        "both real flat and immutable PLAN receiver boundaries required"
+    );
 }

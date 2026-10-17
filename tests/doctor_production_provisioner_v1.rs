@@ -148,7 +148,18 @@ impl Sources {
                 ]
                 .join("\n"),
                 [
-                    read(repository, "src/cli/json_codec.rs"),
+                    [
+                        read(repository, "src/cli/json_codec.rs"),
+                        [
+                            read(repository, "src/cli/json_codec/retained_receipt.rs"),
+                            read(
+                                repository,
+                                "src/cli/json_codec/retained_receipt/stdout_seal.rs",
+                            ),
+                        ]
+                        .join("\n"),
+                    ]
+                    .join("\n"),
                     read(repository, "src/cli/json_codec/plan.rs"),
                     read(repository, "src/cli/json_codec/profile.rs"),
                     read(repository, "src/project/json_codec/plan_input.rs"),
@@ -184,7 +195,11 @@ impl Sources {
                 [
                     read(repository, "src/cli/help.rs"),
                     [
-                        read(repository, "src/cli/help/authoring.rs"),
+                        [
+                            read(repository, "src/cli/help/authoring.rs"),
+                            read(repository, "src/cli/help/authoring/tasks.rs"),
+                        ]
+                        .join("\n"),
                         read(repository, "src/cli/help/authoring/discovery.rs"),
                     ]
                     .join("\n"),

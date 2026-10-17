@@ -1,0 +1,41 @@
+{
+  "status": "APPLIED_PENDING_FULL_VERIFICATION",
+  "old_guard": {
+    "length": 39224,
+    "sha256": "60c8075bb6ca7d5d145982533def6356ebe7ef68a640ce3073ef7dd262f6dfef"
+  },
+  "guard": {
+    "length": 6011,
+    "sha256": "e540a09dad4ee5395eb509fe8492a55249b0125456025ce031a7d7be30b3ab9c"
+  },
+  "external_CONFIG": {
+    "path": "docs/evidence/fmt-a110/guard-config.json",
+    "length": 86480,
+    "sha256": "e6312f4af17854c28542cdaa42cf3e34d954d9be8a00dffe657cd425c408a24a"
+  },
+  "original_program_cap_unchanged": 65536,
+  "original_bounded_input_cap_unchanged": 262144,
+  "every_original_config_field_retained_except_justified_current_pin_extensions": true,
+  "CONFIG_reauthenticated_on_every_packet_and_archive_read": true,
+  "compiled_fragment_physical_archive_checks_before_prior_root_replay": true,
+  "bootstraps": [
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before_sha256": "db1c325f3cbbf05fe4335491e6aaf93d95ebffdf128f3ed50dbd2cb85d09000f",
+      "after_sha256": "ef7d6f22b2a9f9b13155fc0c74d73db937bc00d5a1b945f3d6a98d947854ae8d",
+      "exact_program_pin_replacement_inverse": true
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before_sha256": "df3f5aa05ef8d2065e12f26611353dead3dbd74585bbcae643f83aaaacd907c4",
+      "after_sha256": "dd6b0d19356a52498c0fe0580e4488d4cfb62479d0129ad7b549e88c79a4f0b6",
+      "exact_program_pin_replacement_inverse": true
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before_sha256": "38ab284a9db7b6a81f99e1705c7647757b790fac1f6a97c3690015ed401e51e8",
+      "after_sha256": "987c2bac0c9aecb64d738fd977e1d5f13f8e95dc564a76a1e572bc56df3308b5",
+      "exact_program_pin_replacement_inverse": true
+    }
+  ]
+}

@@ -32,7 +32,9 @@ fn entries() -> Vec<project::JsonCodecPlanEntry> {
 // Bundled dependency paths are semantic workspace identities, not files below
 // the fixture root. Independently read the exact compiler-bundled file mapping
 // (standard_dependencies.rs PACKAGES), before deriving any receipt.
-pub(super) fn paired_originals(root: &std::path::Path) -> std::collections::BTreeMap<String, String> {
+pub(super) fn paired_originals(
+    root: &std::path::Path,
+) -> std::collections::BTreeMap<String, String> {
     let mut originals = std::collections::BTreeMap::new();
     for path in [
         "src/schema.spx",

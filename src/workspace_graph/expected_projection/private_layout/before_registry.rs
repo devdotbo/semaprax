@@ -215,7 +215,6 @@ impl<'a> LayoutRegistry<'a> {
     }
 }
 
-
 #[cfg(test)]
 thread_local! {static DERIVATIONS: Cell<usize> = const {Cell::new(0)};}
 #[cfg(test)]

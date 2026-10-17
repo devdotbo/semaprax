@@ -3,10 +3,10 @@
 //! allocation, acquired from the same live payer before that allocation exists.
 #[cfg(test)]
 use super::{
-    CleanupPlace, CleanupTerminator, CleanupTransition, DeclarationId, EdgeCondition,
-    ExitContinuation, Observations, ResolvedProgram, SkeletonObservation, SkeletonPath,
-    SkeletonTerminal, StatusSourceId, VecDeque, lexical_cert, physical_clone, plan_skeleton_paths,
-    replay_error, skeleton_clone, skeleton_materializations, skeleton_push, skeleton_queue_push,
+    lexical_cert, physical_clone, plan_skeleton_paths, replay_error, skeleton_clone,
+    skeleton_materializations, skeleton_push, skeleton_queue_push, CleanupPlace, CleanupTerminator,
+    CleanupTransition, DeclarationId, EdgeCondition, ExitContinuation, Observations,
+    ResolvedProgram, SkeletonObservation, SkeletonPath, SkeletonTerminal, StatusSourceId, VecDeque,
 };
 use super::{
     Diagnostic, ExpressionId, ReplayBudget, ResolvedFunction, ResolvedType, StagedCopyResultSource,

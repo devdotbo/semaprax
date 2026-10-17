@@ -16,20 +16,23 @@ const COMPARE_CONTROLS: usize = 4 * std::mem::size_of::<&ExprSkeletonPath>()
 // cover BITS, leading_zeros actual/return and subtraction. Vec receiver borrows
 // cover len's actual/formal boundary. This tuple is control inventory only.
 pub(in crate::cleanup_plan::replay) type SearchComputation = (
-    [usize; 8], [u32; 4], &'static Vec<usize>, &'static Vec<usize>,
+    [usize; 8],
+    [u32; 4],
+    &'static Vec<usize>,
+    &'static Vec<usize>,
 );
 
 const SEARCH_BASE: usize = 2 * std::mem::size_of::<&[usize]>()
-        + 2 * std::mem::size_of::<&Vec<usize>>()
-        + 4 * std::mem::size_of::<&ExprSkeletonPath>()
-        + 2 * std::mem::size_of::<&Vec<(u32, CleanupPlace)>>()
-        + 2 * std::mem::size_of::<&Vec<(ExprSkeletonPath, Vec<Observations>)>>()
-        + 2 * std::mem::size_of::<&Vec<(CallSkeletonState, Vec<Observations>)>>()
-        + 2 * std::mem::size_of::<&Vec<(usize, Vec<Observations>)>>()
-        + 2 * std::mem::size_of::<&[ExprSkeletonPath]>()
-        + 2 * std::mem::size_of::<Result<usize, usize>>()
-        + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
-        + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>();
+    + 2 * std::mem::size_of::<&Vec<usize>>()
+    + 4 * std::mem::size_of::<&ExprSkeletonPath>()
+    + 2 * std::mem::size_of::<&Vec<(u32, CleanupPlace)>>()
+    + 2 * std::mem::size_of::<&Vec<(ExprSkeletonPath, Vec<Observations>)>>()
+    + 2 * std::mem::size_of::<&Vec<(CallSkeletonState, Vec<Observations>)>>()
+    + 2 * std::mem::size_of::<&Vec<(usize, Vec<Observations>)>>()
+    + 2 * std::mem::size_of::<&[ExprSkeletonPath]>()
+    + 2 * std::mem::size_of::<Result<usize, usize>>()
+    + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>();
 const SEARCH_CALLBACK: usize = COMPARE_CONTROLS
     + 4 * std::mem::size_of::<&Vec<(u32, CleanupPlace)>>()
     + 2 * std::mem::size_of::<std::cmp::Ordering>();
@@ -41,8 +44,7 @@ pub(in crate::cleanup_plan::replay) fn search_controls(len: usize) -> usize {
     SEARCH_BASE + callbacks * SEARCH_CALLBACK
 }
 
-pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize =
-    std::mem::size_of::<Vec<usize>>()
+pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize = std::mem::size_of::<Vec<usize>>()
     + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
     + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>()
     // Subsequent per-input acquisition call, before its count/Result forms.
@@ -50,7 +52,10 @@ pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize =
     + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
     + 2 * std::mem::size_of::<usize>();
 
-pub(in crate::cleanup_plan::replay) fn compare_paths(left: &ExprSkeletonPath, right: &ExprSkeletonPath) -> std::cmp::Ordering {
+pub(in crate::cleanup_plan::replay) fn compare_paths(
+    left: &ExprSkeletonPath,
+    right: &ExprSkeletonPath,
+) -> std::cmp::Ordering {
     use std::cmp::Ordering::Equal;
     match left.owned_source.cmp(&right.owned_source) {
         Equal => match left.failed.cmp(&right.failed) {
@@ -226,11 +231,9 @@ impl SkeletonWork<'_, '_> {
                 search_controls(order.len()),
                 "factored borrowed merge lookup",
             )?;
-            match order.binary_search_by(|index| {
-                match compare_paths(&groups[*index].0 .0, &path) {
-                    std::cmp::Ordering::Equal => groups[*index].0 .1.cmp(&commits),
-                    other => other,
-                }
+            match order.binary_search_by(|index| match compare_paths(&groups[*index].0 .0, &path) {
+                std::cmp::Ordering::Equal => groups[*index].0 .1.cmp(&commits),
+                other => other,
             }) {
                 Ok(position) => {
                     let index = order[position];

@@ -16,11 +16,11 @@ mod plan;
 mod plan_input;
 pub use plan_input::decode_json_codec_plan;
 mod profile_selector;
-pub use profile_selector::{parse_json_codec_profile, parse_json_codec_bound};
 pub use plan::{
     derive_json_codec_plan, verify_json_codec_plan, JsonCodecBundle, JsonCodecBundleSource,
     JsonCodecEntryReceipt, JsonCodecPlanEntry,
 };
+pub use profile_selector::{parse_json_codec_bound, parse_json_codec_profile};
 mod template;
 #[cfg(test)]
 mod tests;

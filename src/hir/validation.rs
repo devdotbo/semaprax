@@ -1263,7 +1263,9 @@ impl<'a> HirValidator<'a> {
         for instance in &self.program.function_instances {
             if !instance_ids.insert(instance.id.clone())
                 || !super::ids::instance_match::instance_matches!(
-                    &instance.id, &instance.template, &instance.type_arguments
+                    &instance.id,
+                    &instance.template,
+                    &instance.type_arguments
                 )
                 || instance.function.id != instance.template
                 || !generic_instance_arguments_are_admitted(

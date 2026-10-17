@@ -1,0 +1,35 @@
+{
+  "status": "PASS_SELECTED_ACTUAL_RUST_PACKET_AND_FRAGMENT_CONTROLS",
+  "compile_peak_KiB": 152064,
+  "run_peak_KiB": 12624,
+  "scope": {
+    "scope": "Actual complete current packet, every complete original predecessor packet/assertion and actual held/source/archive functions retained. Compiled dispatch is finite to all shortened parents and their ten actual fragments; every other compiled source and unknown delegated branch panics. All real original whole-table compiled anchors retained. Unrelated whole-source test body omitted from this small probe; no broader test/build qualification claimed.",
+    "parents": 10,
+    "compiled_fragments": 10,
+    "compiled_sources": [
+      "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+      "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+      "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "src/hir/resolve_program.rs",
+      "src/hir/resolve_program_methods.rs",
+      "src/source_reflows_merge/main67107_inputs.rs",
+      "src/source_reflows_merge/main67107_inputs_tail.rs"
+    ],
+    "helper_sha256": "b939c17bbc8b95574dd096627d684181f513f5258f359688694aa4c8bda27279",
+    "entry_sha256": "a2bca88085d18138bdf5eaf251cff28d138bcc3e81919a77c1c0014cd74d9306"
+  },
+  "no_full_build_or_hosted_test_claimed": true
+}

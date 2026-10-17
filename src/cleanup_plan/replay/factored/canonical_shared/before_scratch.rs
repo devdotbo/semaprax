@@ -504,8 +504,11 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
-
 impl Canonicalizer<'_> {
-    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
-    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
+        &self.states
+    }
 }

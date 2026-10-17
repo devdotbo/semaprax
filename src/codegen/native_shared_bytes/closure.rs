@@ -195,9 +195,7 @@ impl Consumer {
             | VecOp::SortOwned
             | VecOp::StrAt
             | VecOp::UniqueBy
-            | VecOp::UpdateField => {
-                Self::VecOwnedLeafOnly
-            }
+            | VecOp::UpdateField => Self::VecOwnedLeafOnly,
         }
     }
 }

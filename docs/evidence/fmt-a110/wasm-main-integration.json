@@ -1,0 +1,43 @@
+{
+  "base": "a110ea82e2f3eec797b4fd44b98836927f7218e1",
+  "head": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "incoming_paths": 15,
+  "preserved_complete_formatting_and_custody_work": true,
+  "only_live_change": "tests/wasm.rs",
+  "old_source_sha256": "3ae546b6266a5cf2e2f921076ccbca2d0feefea4f7a81bf3b4169396af8ae861",
+  "new_source_sha256": "d0890ba95c25637efd3a0ad04258a145c822d571065bc3cb1ee05f397f833952",
+  "actual_new_registration": {
+    "root": "tests/wasm.rs",
+    "kind": "test",
+    "package": "semaprax",
+    "edges": [
+      {
+        "parent": "tests/wasm.rs",
+        "start": 1737,
+        "text": "#[path = \"../src/source_reflows_merge/next_big_batch_inputs.rs\"]\npub(crate) mod next_big_batch_inputs;",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/next_big_batch_inputs.rs\"]"
+        ],
+        "child": "src/source_reflows_merge/next_big_batch_inputs.rs"
+      }
+    ]
+  },
+  "unchanged_original_one_root_parser_used": true,
+  "unchanged_original_manifest_definition_used": true,
+  "domains": [
+    {
+      "domain": "hir",
+      "before_sha256": "367d1e1a50a676b7e625a9620a6be3a96a3e719d891c7197b9bee3bd6238666a",
+      "after_sha256": "f8169b223ec17d9e96fd0db2346312620f2e021c5327f49baecc3cb17d0ec5d0",
+      "added_actual_parser_chains": 1,
+      "all_other_classes_roles_edges_chunks_and_sources_retained": true
+    },
+    {
+      "domain": "projection",
+      "before_sha256": "c5045ba0f55fd792f56a69ee72417db34ffbd983339030bc7fc4825794413d97",
+      "after_sha256": "006a2c1d99f3240d1370d7fefdacc3f249a239930bac3f31e0db793d49e5ba56",
+      "added_actual_parser_chains": 0,
+      "all_other_classes_roles_edges_chunks_and_sources_retained": true
+    }
+  ]
+}

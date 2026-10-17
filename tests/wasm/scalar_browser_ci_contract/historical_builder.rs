@@ -398,8 +398,12 @@ pub(super) fn current67b_drift_controls(graph: &str) {
 
 #[path = "next_actual.rs"]
 mod next_actual;
-pub(super) fn next_actual_digest(graph: &str) -> String { next_actual::digest(graph) }
-pub(super) fn next_actual_drift_controls(graph: &str) { next_actual::drift_controls(graph); }
+pub(super) fn next_actual_digest(graph: &str) -> String {
+    next_actual::digest(graph)
+}
+pub(super) fn next_actual_drift_controls(graph: &str) {
+    next_actual::drift_controls(graph);
+}
 
 // Independent incoming hosted524 receiver and all its older full-wire controls.
 #[path = "historical_main_7f8.rs"]
@@ -412,152 +416,182 @@ pub(super) fn main7f8_digest(graph: &str) -> String {
 #[path = "before_671.rs"]
 mod before_671;
 mod incoming_main671 {
-//! Whole-wire bridge from the hosted 67107c7c5 capture to every older control.
-use super::digest_without_checked_value_cursor_budget;
-use sha2::{Digest, Sha256};
+    //! Whole-wire bridge from the hosted 67107c7c5 capture to every older control.
+    use super::digest_without_checked_value_cursor_budget;
+    use sha2::{Digest, Sha256};
 
-use super::before_671;
+    use super::before_671;
 
-const CURRENT: [&str; 2] = [
+    const CURRENT: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-renamed.json"),
 ];
-const PREVIOUS: [&str; 2] = [
+    const PREVIOUS: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-renamed.json"),
 ];
 
-fn graph_digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(graph.matches(&field).count(), 1);
-    let payload = graph.replacen(&field, "", 1);
-    let mut hash = Sha256::new();
-    hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
-    hash.update((payload.len() as u64).to_le_bytes());
-    hash.update(payload.as_bytes());
-    format!(
-        "sha256:{:x}",
-        semaprax::digest_hex::LowerHex(hash.finalize())
-    )
-}
-
-pub(super) fn digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    assert_eq!(graph_digest(graph), parsed["graph_digest"]);
-    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_927_728);
-    let previous = PREVIOUS
-        .iter()
-        .map(|text| text.strip_suffix('\n').unwrap())
-        .find(|text| {
-            serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
-                == parsed["workspace_revision"]
-        })
-        .expect("exact retained baseline or renamed fixture");
-    let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
-    assert_eq!(graph_digest(previous), prior["graph_digest"]);
-    assert_eq!(prior["budget"]["used_builder_bytes"], 2_917_432);
-    let field = "\"used_builder_bytes\":2927728";
-    assert_eq!(graph.matches(field).count(), 1);
-    let restored = graph.replacen(field, "\"used_builder_bytes\":2917432", 1);
-    let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(restored.matches(&field).count(), 1);
-    let restored = restored.replacen(
-        &field,
-        &format!("\"graph_digest\":{}", prior["graph_digest"]),
-        1,
-    );
-    assert_eq!(restored, previous, "every prior hosted graph byte");
-    before_671::digest(&restored)
-}
-
-#[test]
-fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
-    let original = [
-        "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
-        "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
-    ];
-    let runner = include_str!("../../../docs/evidence/browser-current-both-retained-754f-20261017/main671-runner.before.mjs");
-    for (captured, expected) in CURRENT.into_iter().zip(original) {
-        let graph = captured.strip_suffix('\n').unwrap();
-        assert_eq!(digest(graph), expected);
-        assert!(runner.contains(&graph_digest(graph)));
-    }
-}
-
-#[test]
-fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
-    for captured in CURRENT {
-        let graph = captured.strip_suffix('\n').unwrap();
-        let field = "\"used_call_sites\":10";
-        assert_eq!(graph.matches(field).count(), 1);
-        let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+    fn graph_digest(graph: &str) -> String {
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-        let changed = changed.replacen(
-            &format!("\"graph_digest\":{}", parsed["graph_digest"]),
-            &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+        let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(graph.matches(&field).count(), 1);
+        let payload = graph.replacen(&field, "", 1);
+        let mut hash = Sha256::new();
+        hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
+        hash.update((payload.len() as u64).to_le_bytes());
+        hash.update(payload.as_bytes());
+        format!(
+            "sha256:{:x}",
+            semaprax::digest_hex::LowerHex(hash.finalize())
+        )
+    }
+
+    pub(super) fn digest(graph: &str) -> String {
+        let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+        assert_eq!(graph_digest(graph), parsed["graph_digest"]);
+        assert_eq!(parsed["budget"]["used_builder_bytes"], 2_927_728);
+        let previous = PREVIOUS
+            .iter()
+            .map(|text| text.strip_suffix('\n').unwrap())
+            .find(|text| {
+                serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
+                    == parsed["workspace_revision"]
+            })
+            .expect("exact retained baseline or renamed fixture");
+        let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
+        assert_eq!(graph_digest(previous), prior["graph_digest"]);
+        assert_eq!(prior["budget"]["used_builder_bytes"], 2_917_432);
+        let field = "\"used_builder_bytes\":2927728";
+        assert_eq!(graph.matches(field).count(), 1);
+        let restored = graph.replacen(field, "\"used_builder_bytes\":2917432", 1);
+        let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(restored.matches(&field).count(), 1);
+        let restored = restored.replacen(
+            &field,
+            &format!("\"graph_digest\":{}", prior["graph_digest"]),
             1,
         );
-        assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        assert_eq!(restored, previous, "every prior hosted graph byte");
+        before_671::digest(&restored)
     }
-}
 
-#[test]
-fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
-    let original = include_str!(
-        "../../../docs/evidence/browser-graph-pins-67107c7c5/historical_builder.before.rs.txt"
-    );
-    let runner = include_str!(
-        "../../../docs/evidence/browser-graph-pins-67107c7c5/test-fixtures.before.mjs"
-    );
-    for (source, expected) in [
-        (
-            original,
-            "8651f7dd678016d5ce6d617e249a8cd566fffdb65652e2f1ddf9a9724dbcb747",
-        ),
-        (
-            runner,
-            "439aac5c76fc97e037bf2e30273c99d842357c64925babbffd7b2007edd486ec",
-        ),
-    ] {
-        assert_eq!(
-            format!(
-                "{:x}",
-                semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
-            ),
-            expected
-        );
+    #[test]
+    fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
+        let original = [
+            "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
+            "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
+        ];
+        let runner = include_str!("../../../docs/evidence/browser-current-both-retained-754f-20261017/main671-runner.before.mjs");
+        for (captured, expected) in CURRENT.into_iter().zip(original) {
+            let graph = captured.strip_suffix('\n').unwrap();
+            assert_eq!(digest(graph), expected);
+            assert!(runner.contains(&graph_digest(graph)));
+        }
     }
-    let current = include_str!("before_671.rs");
-    let new = concat!(
+
+    #[test]
+    fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
+        for captured in CURRENT {
+            let graph = captured.strip_suffix('\n').unwrap();
+            let field = "\"used_call_sites\":10";
+            assert_eq!(graph.matches(field).count(), 1);
+            let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+            let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+            let changed = changed.replacen(
+                &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+                &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+                1,
+            );
+            assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        }
+    }
+
+    #[test]
+    fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
+        let original = include_str!(
+            "../../../docs/evidence/browser-graph-pins-67107c7c5/historical_builder.before.rs.txt"
+        );
+        let runner = include_str!(
+            "../../../docs/evidence/browser-graph-pins-67107c7c5/test-fixtures.before.mjs"
+        );
+        for (source, expected) in [
+            (
+                original,
+                "8651f7dd678016d5ce6d617e249a8cd566fffdb65652e2f1ddf9a9724dbcb747",
+            ),
+            (
+                runner,
+                "439aac5c76fc97e037bf2e30273c99d842357c64925babbffd7b2007edd486ec",
+            ),
+        ] {
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+                ),
+                expected
+            );
+        }
+        let current = include_str!("before_671.rs");
+        let new = concat!(
         "include_str!(\n",
         "        \"../../../docs/evidence/browser-graph-pins-67107c7c5/test-fixtures.before.mjs\"\n",
         "    )"
     );
-    let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
-    assert_eq!(current.matches(new).count(), 1);
-    assert_eq!(current.replacen(new, old, 1), original);
-}
+        let old =
+            "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
+        assert_eq!(current.matches(new).count(), 1);
+        assert_eq!(current.replacen(new, old, 1), original);
+    }
 }
 
 // Current raw-pin admission followed by BOTH complete retained browser trees.
 // No particular future builder bill is assumed: only the actual self-bound
 // bill/digest may differ from either independent complete predecessor.
 fn current_browser_with_runner(graph: &str, role: &str, runner: &str) -> String {
-    let index = match role { "baseline" => 0, "renamed" => 1, _ => panic!("foreign browser fixture role") };
+    let index = match role {
+        "baseline" => 0,
+        "renamed" => 1,
+        _ => panic!("foreign browser fixture role"),
+    };
     let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    assert_eq!(graph_digest(graph), parsed["graph_digest"], "complete actual browser self digest");
+    assert_eq!(
+        graph_digest(graph),
+        parsed["graph_digest"],
+        "complete actual browser self digest"
+    );
     // Existing Workspace Semantic Graph production maximum (workspace_graph.rs).
     let bill = parsed["budget"]["used_builder_bytes"].as_u64().unwrap();
-    assert!(bill > 0 && bill <= 67_108_864, "actual browser bill stays within the unchanged production cap");
+    assert!(
+        bill > 0 && bill <= 67_108_864,
+        "actual browser bill stays within the unchanged production cap"
+    );
     let marker = format!("name: \"project-{role}\",");
-    assert_eq!(runner.matches(&marker).count(), 1, "one raw shipping fixture role");
-    let record = runner.split_once(&marker).unwrap().1.split_once("\n  },").unwrap().0;
-    for (pin, field) in [("project_revision", "project_revision"), ("workspace_revision", "workspace_revision"), ("project_graph_digest", "graph_digest")] {
+    assert_eq!(
+        runner.matches(&marker).count(),
+        1,
+        "one raw shipping fixture role"
+    );
+    let record = runner
+        .split_once(&marker)
+        .unwrap()
+        .1
+        .split_once("\n  },")
+        .unwrap()
+        .0;
+    for (pin, field) in [
+        ("project_revision", "project_revision"),
+        ("workspace_revision", "workspace_revision"),
+        ("project_graph_digest", "graph_digest"),
+    ] {
         let value = parsed[field].as_str().unwrap();
         assert!(value.starts_with("sha256:") && value.len() == 71);
         let expected = format!("{pin}: \"{value}\"");
-        assert_eq!(record.matches(&expected).count(), 1, "actual graph must match its raw shipping role pin");
+        assert_eq!(
+            record.matches(&expected).count(),
+            1,
+            "actual graph must match its raw shipping role pin"
+        );
         assert_eq!(record.matches(&format!("{pin}:")).count(), 1);
     }
     let main671 = [
@@ -571,14 +605,32 @@ fn current_browser_with_runner(graph: &str, role: &str, runner: &str) -> String 
     let restore = |previous: &str| {
         let previous = previous.strip_suffix('\n').unwrap();
         let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
-        assert_eq!(graph_digest(previous), prior["graph_digest"], "independent complete predecessor self digest");
+        assert_eq!(
+            graph_digest(previous),
+            prior["graph_digest"],
+            "independent complete predecessor self digest"
+        );
         let current_field = format!("\"used_builder_bytes\":{bill}");
         assert_eq!(graph.matches(&current_field).count(), 1);
-        let restored = graph.replacen(&current_field, &format!("\"used_builder_bytes\":{}", prior["budget"]["used_builder_bytes"].as_u64().unwrap()), 1);
+        let restored = graph.replacen(
+            &current_field,
+            &format!(
+                "\"used_builder_bytes\":{}",
+                prior["budget"]["used_builder_bytes"].as_u64().unwrap()
+            ),
+            1,
+        );
         let digest_field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
         assert_eq!(restored.matches(&digest_field).count(), 1);
-        let restored = restored.replacen(&digest_field, &format!("\"graph_digest\":{}", prior["graph_digest"]), 1);
-        assert_eq!(restored, previous, "only the actual bill and independently verified digest may differ");
+        let restored = restored.replacen(
+            &digest_field,
+            &format!("\"graph_digest\":{}", prior["graph_digest"]),
+            1,
+        );
+        assert_eq!(
+            restored, previous,
+            "only the actual bill and independently verified digest may differ"
+        );
         restored
     };
     let main = restore(main671[index]);
@@ -591,15 +643,25 @@ fn current_browser_with_runner(graph: &str, role: &str, runner: &str) -> String 
     let main_result = incoming_main671::digest(&main);
     let ours_result = next_actual_digest(&ours);
     next_actual_drift_controls(&ours);
-    assert_eq!(main_result, ours_result, "both complete retained browser trees");
-    assert_eq!(main21_result, main_result, "complete incoming MAIN21abc browser tree");
+    assert_eq!(
+        main_result, ours_result,
+        "both complete retained browser trees"
+    );
+    assert_eq!(
+        main21_result, main_result,
+        "complete incoming MAIN21abc browser tree"
+    );
     main_result
 }
 mod retained_current_entry {
-use super::current_browser_with_runner;
-pub(super) fn current_browser_digest(graph: &str, role: &str) -> String {
-    current_browser_with_runner(graph, role, include_str!("../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"))
-}
+    use super::current_browser_with_runner;
+    pub(super) fn current_browser_digest(graph: &str, role: &str) -> String {
+        current_browser_with_runner(
+            graph,
+            role,
+            include_str!("../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"),
+        )
+    }
 }
 pub(super) fn current_browser_drift_controls(graph: &str, role: &str) {
     for (before, after) in [("\"used_call_sites\":10", "\"used_call_sites\":11")] {
@@ -607,8 +669,15 @@ pub(super) fn current_browser_drift_controls(graph: &str, role: &str) {
         let changed = graph.replacen(before, after, 1);
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
         let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
-        let changed = changed.replacen(&field, &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)), 1);
-        assert!(std::panic::catch_unwind(|| current_browser_digest(&changed, role)).is_err(), "rehashed drift must refuse current raw pins");
+        let changed = changed.replacen(
+            &field,
+            &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+            1,
+        );
+        assert!(
+            std::panic::catch_unwind(|| current_browser_digest(&changed, role)).is_err(),
+            "rehashed drift must refuse current raw pins"
+        );
     }
 }
 #[test]
@@ -616,37 +685,78 @@ fn current_browser_bridge_keeps_both_complete_trees_and_refuses_rehashed_foreign
     // Explicit historical control for the new bridge algorithm. The separate
     // live producer owner admits actual current graphs against the RAW runner.
     let runner = include_str!("../../../docs/evidence/browser-current-both-retained-754f-20261017/main671-runner.before.mjs");
-    assert_eq!(format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(runner.as_bytes()))), "11cfaa78b2fb7df873e2d2f6b5b66c9a06ac33cdb5448cf12bb5ce6a1f216b47");
+    assert_eq!(
+        format!(
+            "{:x}",
+            semaprax::digest_hex::LowerHex(Sha256::digest(runner.as_bytes()))
+        ),
+        "11cfaa78b2fb7df873e2d2f6b5b66c9a06ac33cdb5448cf12bb5ce6a1f216b47"
+    );
     for (index, role) in ["baseline", "renamed"].into_iter().enumerate() {
         let graph = [
             include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-baseline.json"),
             include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-renamed.json"),
         ][index].strip_suffix('\n').unwrap();
-        let expected = ["sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8", "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba"][index];
+        let expected = [
+            "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
+            "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
+        ][index];
         assert_eq!(current_browser_with_runner(graph, role, runner), expected);
-        for wrong in ["foreign", if role == "baseline" { "renamed" } else { "baseline" }] {
-            assert!(std::panic::catch_unwind(|| current_browser_with_runner(graph, wrong, runner)).is_err());
+        for wrong in [
+            "foreign",
+            if role == "baseline" {
+                "renamed"
+            } else {
+                "baseline"
+            },
+        ] {
+            assert!(
+                std::panic::catch_unwind(|| current_browser_with_runner(graph, wrong, runner))
+                    .is_err()
+            );
         }
         let field = "\"used_call_sites\":10";
         assert_eq!(graph.matches(field).count(), 1);
         let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
-        assert!(std::panic::catch_unwind(|| current_browser_with_runner(&changed, role, runner)).is_err());
+        assert!(
+            std::panic::catch_unwind(|| current_browser_with_runner(&changed, role, runner))
+                .is_err()
+        );
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
         let old_digest = parsed["graph_digest"].as_str().unwrap();
         let new_digest = graph_digest(&changed);
-        let changed = changed.replacen(&format!("\"graph_digest\":{}", parsed["graph_digest"]), &format!("\"graph_digest\":\"{new_digest}\""), 1);
+        let changed = changed.replacen(
+            &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+            &format!("\"graph_digest\":\"{new_digest}\""),
+            1,
+        );
         for invalid in ["0", "67108865", "true"] {
             let field = "\"used_builder_bytes\":2927728";
             assert_eq!(graph.matches(field).count(), 1);
-            let invalid_graph = graph.replacen(field, &format!("\"used_builder_bytes\":{invalid}"), 1);
+            let invalid_graph =
+                graph.replacen(field, &format!("\"used_builder_bytes\":{invalid}"), 1);
             let invalid_digest = graph_digest(&invalid_graph);
-            let invalid_graph = invalid_graph.replacen(&format!("\"graph_digest\":{}", parsed["graph_digest"]), &format!("\"graph_digest\":\"{invalid_digest}\""), 1);
+            let invalid_graph = invalid_graph.replacen(
+                &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+                &format!("\"graph_digest\":\"{invalid_digest}\""),
+                1,
+            );
             let forged_runner = runner.replacen(old_digest, &invalid_digest, 1);
-            assert!(std::panic::catch_unwind(|| current_browser_with_runner(&invalid_graph, role, &forged_runner)).is_err());
+            assert!(std::panic::catch_unwind(|| current_browser_with_runner(
+                &invalid_graph,
+                role,
+                &forged_runner
+            ))
+            .is_err());
         }
         // Even forging the role's raw pin cannot authorize any other byte drift.
         let forged_runner = runner.replacen(old_digest, &new_digest, 1);
-        assert!(std::panic::catch_unwind(|| current_browser_with_runner(&changed, role, &forged_runner)).is_err());
+        assert!(std::panic::catch_unwind(|| current_browser_with_runner(
+            &changed,
+            role,
+            &forged_runner
+        ))
+        .is_err());
     }
 }
 
@@ -655,164 +765,193 @@ fn current_browser_bridge_keeps_both_complete_trees_and_refuses_rehashed_foreign
 #[path = "before_7d34.rs"]
 mod before_7d34;
 mod incoming_main7d34 {
-//! Whole-wire bridge from the hosted 7d34f1269 capture to every older control.
-use super::digest_without_checked_value_cursor_budget;
-use sha2::{Digest, Sha256};
+    //! Whole-wire bridge from the hosted 7d34f1269 capture to every older control.
+    use super::digest_without_checked_value_cursor_budget;
+    use sha2::{Digest, Sha256};
 
-use super::before_7d34;
+    use super::before_7d34;
 
-const CURRENT: [&str; 2] = [
+    const CURRENT: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-renamed.json"),
 ];
-const PREVIOUS: [&str; 2] = [
+    const PREVIOUS: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-renamed.json"),
 ];
 
-fn graph_digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(graph.matches(&field).count(), 1);
-    let payload = graph.replacen(&field, "", 1);
-    let mut hash = Sha256::new();
-    hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
-    hash.update((payload.len() as u64).to_le_bytes());
-    hash.update(payload.as_bytes());
-    format!(
-        "sha256:{:x}",
-        semaprax::digest_hex::LowerHex(hash.finalize())
-    )
-}
-
-pub(super) fn digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    assert_eq!(graph_digest(graph), parsed["graph_digest"]);
-    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_696_104);
-    let previous = PREVIOUS
-        .iter()
-        .map(|text| text.strip_suffix('\n').unwrap())
-        .find(|text| {
-            serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
-                == parsed["workspace_revision"]
-        })
-        .expect("exact retained baseline or renamed fixture");
-    let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
-    assert_eq!(graph_digest(previous), prior["graph_digest"]);
-    assert_eq!(prior["budget"]["used_builder_bytes"], 2_927_728);
-    let field = "\"used_builder_bytes\":2696104";
-    assert_eq!(graph.matches(field).count(), 1);
-    let restored = graph.replacen(field, "\"used_builder_bytes\":2927728", 1);
-    let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(restored.matches(&field).count(), 1);
-    let restored = restored.replacen(
-        &field,
-        &format!("\"graph_digest\":{}", prior["graph_digest"]),
-        1,
-    );
-    assert_eq!(restored, previous, "every prior hosted graph byte");
-    before_7d34::digest(&restored)
-}
-
-#[test]
-fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
-    let original = [
-        "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
-        "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
-    ];
-    let runner = include_str!("../../../docs/evidence/main-d285-browser-integration-20261017/main7d34-runner.before.mjs");
-    for (captured, expected) in CURRENT.into_iter().zip(original) {
-        let graph = captured.strip_suffix('\n').unwrap();
-        assert_eq!(digest(graph), expected);
-        assert!(runner.contains(&graph_digest(graph)));
-    }
-}
-
-#[test]
-fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
-    for captured in CURRENT {
-        let graph = captured.strip_suffix('\n').unwrap();
-        let field = "\"used_call_sites\":10";
-        assert_eq!(graph.matches(field).count(), 1);
-        let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+    fn graph_digest(graph: &str) -> String {
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-        let changed = changed.replacen(
-            &format!("\"graph_digest\":{}", parsed["graph_digest"]),
-            &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+        let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(graph.matches(&field).count(), 1);
+        let payload = graph.replacen(&field, "", 1);
+        let mut hash = Sha256::new();
+        hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
+        hash.update((payload.len() as u64).to_le_bytes());
+        hash.update(payload.as_bytes());
+        format!(
+            "sha256:{:x}",
+            semaprax::digest_hex::LowerHex(hash.finalize())
+        )
+    }
+
+    pub(super) fn digest(graph: &str) -> String {
+        let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+        assert_eq!(graph_digest(graph), parsed["graph_digest"]);
+        assert_eq!(parsed["budget"]["used_builder_bytes"], 2_696_104);
+        let previous = PREVIOUS
+            .iter()
+            .map(|text| text.strip_suffix('\n').unwrap())
+            .find(|text| {
+                serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
+                    == parsed["workspace_revision"]
+            })
+            .expect("exact retained baseline or renamed fixture");
+        let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
+        assert_eq!(graph_digest(previous), prior["graph_digest"]);
+        assert_eq!(prior["budget"]["used_builder_bytes"], 2_927_728);
+        let field = "\"used_builder_bytes\":2696104";
+        assert_eq!(graph.matches(field).count(), 1);
+        let restored = graph.replacen(field, "\"used_builder_bytes\":2927728", 1);
+        let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(restored.matches(&field).count(), 1);
+        let restored = restored.replacen(
+            &field,
+            &format!("\"graph_digest\":{}", prior["graph_digest"]),
             1,
         );
-        assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        assert_eq!(restored, previous, "every prior hosted graph byte");
+        before_7d34::digest(&restored)
     }
-}
 
-#[test]
-fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
-    let original = include_str!(
-        "../../../docs/evidence/browser-graph-pins-7d34f1269/historical_builder.before.rs.txt"
-    );
-    let runner = include_str!(
-        "../../../docs/evidence/browser-graph-pins-7d34f1269/test-fixtures.before.mjs"
-    );
-    for (source, expected) in [
-        (
-            original,
-            "3a53776194bf754a6516972c06d4cd24833df53ab02eea027dd5d1ba32f0cb63",
-        ),
-        (
-            runner,
-            "11cfaa78b2fb7df873e2d2f6b5b66c9a06ac33cdb5448cf12bb5ce6a1f216b47",
-        ),
-    ] {
-        assert_eq!(
-            format!(
-                "{:x}",
-                semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
-            ),
-            expected
-        );
+    #[test]
+    fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
+        let original = [
+            "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
+            "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
+        ];
+        let runner = include_str!("../../../docs/evidence/main-d285-browser-integration-20261017/main7d34-runner.before.mjs");
+        for (captured, expected) in CURRENT.into_iter().zip(original) {
+            let graph = captured.strip_suffix('\n').unwrap();
+            assert_eq!(digest(graph), expected);
+            assert!(runner.contains(&graph_digest(graph)));
+        }
     }
-    let current = include_str!("before_7d34.rs");
-    let new = concat!(
+
+    #[test]
+    fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
+        for captured in CURRENT {
+            let graph = captured.strip_suffix('\n').unwrap();
+            let field = "\"used_call_sites\":10";
+            assert_eq!(graph.matches(field).count(), 1);
+            let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+            let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+            let changed = changed.replacen(
+                &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+                &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+                1,
+            );
+            assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        }
+    }
+
+    #[test]
+    fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
+        let original = include_str!(
+            "../../../docs/evidence/browser-graph-pins-7d34f1269/historical_builder.before.rs.txt"
+        );
+        let runner = include_str!(
+            "../../../docs/evidence/browser-graph-pins-7d34f1269/test-fixtures.before.mjs"
+        );
+        for (source, expected) in [
+            (
+                original,
+                "3a53776194bf754a6516972c06d4cd24833df53ab02eea027dd5d1ba32f0cb63",
+            ),
+            (
+                runner,
+                "11cfaa78b2fb7df873e2d2f6b5b66c9a06ac33cdb5448cf12bb5ce6a1f216b47",
+            ),
+        ] {
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+                ),
+                expected
+            );
+        }
+        let current = include_str!("before_7d34.rs");
+        let new = concat!(
         "include_str!(\n",
         "        \"../../../docs/evidence/browser-graph-pins-7d34f1269/test-fixtures.before.mjs\"\n",
         "    )"
     );
-    let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
-    assert_eq!(current.matches(new).count(), 1);
-    assert_eq!(current.replacen(new, old, 1), original);
-}
+        let old =
+            "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
+        assert_eq!(current.matches(new).count(), 1);
+        assert_eq!(current.replacen(new, old, 1), original);
+    }
 }
 
 fn current_browser_all_with_runner(graph: &str, role: &str, runner: &str) -> String {
     // The unchanged full old bridge authenticates self-digest, original cap,
     // actual raw role pins and both complete 671/next_actual predecessor trees.
     let expected = current_browser_with_runner(graph, role, runner);
-    let index = match role { "baseline" => 0, "renamed" => 1, _ => unreachable!() };
+    let index = match role {
+        "baseline" => 0,
+        "renamed" => 1,
+        _ => unreachable!(),
+    };
     let previous = [
         include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-baseline.json"),
         include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-renamed.json"),
     ][index].strip_suffix('\n').unwrap();
     let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
     let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
-    assert_eq!(graph_digest(previous), prior["graph_digest"], "complete MAIN7d34 self digest");
+    assert_eq!(
+        graph_digest(previous),
+        prior["graph_digest"],
+        "complete MAIN7d34 self digest"
+    );
     let bill = parsed["budget"]["used_builder_bytes"].as_u64().unwrap();
     let bill_field = format!("\"used_builder_bytes\":{bill}");
     assert_eq!(graph.matches(&bill_field).count(), 1);
-    let restored = graph.replacen(&bill_field,
-        &format!("\"used_builder_bytes\":{}", prior["budget"]["used_builder_bytes"].as_u64().unwrap()), 1);
+    let restored = graph.replacen(
+        &bill_field,
+        &format!(
+            "\"used_builder_bytes\":{}",
+            prior["budget"]["used_builder_bytes"].as_u64().unwrap()
+        ),
+        1,
+    );
     let digest_field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
     assert_eq!(restored.matches(&digest_field).count(), 1);
-    let restored = restored.replacen(&digest_field, &format!("\"graph_digest\":{}", prior["graph_digest"]), 1);
-    assert_eq!(restored, previous, "every complete independent MAIN7d34 byte");
-    assert_eq!(incoming_main7d34::digest(&restored), expected, "all complete browser receiver trees");
+    let restored = restored.replacen(
+        &digest_field,
+        &format!("\"graph_digest\":{}", prior["graph_digest"]),
+        1,
+    );
+    assert_eq!(
+        restored, previous,
+        "every complete independent MAIN7d34 byte"
+    );
+    assert_eq!(
+        incoming_main7d34::digest(&restored),
+        expected,
+        "all complete browser receiver trees"
+    );
     expected
 }
 
 pub(super) fn current_browser_digest(graph: &str, role: &str) -> String {
     // Preserve the complete previous entry point and its raw shipping acquisition.
     let expected = retained_current_entry::current_browser_digest(graph, role);
-    let current = current_browser_all_with_runner(graph, role,
-        include_str!("../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"));
+    let current = current_browser_all_with_runner(
+        graph,
+        role,
+        include_str!("../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"),
+    );
     assert_eq!(current, expected);
     current
 }
@@ -820,26 +959,52 @@ pub(super) fn current_browser_digest(graph: &str, role: &str) -> String {
 #[test]
 fn main7d34_browser_bridge_preserves_three_complete_trees_and_raw_role_refusals() {
     // Historical MAIN7d34 capture control, not a current integration producer.
-    let runner = include_str!("../../../docs/evidence/main-d285-browser-integration-20261017/main7d34-runner.before.mjs");
+    let runner = include_str!(
+        "../../../docs/evidence/main-d285-browser-integration-20261017/main7d34-runner.before.mjs"
+    );
     for (index, role) in ["baseline", "renamed"].into_iter().enumerate() {
         let graph = [
             include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-baseline.json"),
             include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-renamed.json"),
         ][index].strip_suffix('\n').unwrap();
-        let expected = ["sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8", "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba"][index];
-        assert_eq!(current_browser_all_with_runner(graph, role, runner), expected);
-        for wrong in ["foreign", if role == "baseline" { "renamed" } else { "baseline" }] {
-            assert!(std::panic::catch_unwind(|| current_browser_all_with_runner(graph, wrong, runner)).is_err());
+        let expected = [
+            "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
+            "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
+        ][index];
+        assert_eq!(
+            current_browser_all_with_runner(graph, role, runner),
+            expected
+        );
+        for wrong in [
+            "foreign",
+            if role == "baseline" {
+                "renamed"
+            } else {
+                "baseline"
+            },
+        ] {
+            assert!(std::panic::catch_unwind(|| current_browser_all_with_runner(
+                graph, wrong, runner
+            ))
+            .is_err());
         }
         let before = "\"used_call_sites\":10";
         assert_eq!(graph.matches(before).count(), 1);
         let changed = graph.replacen(before, "\"used_call_sites\":11", 1);
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
         let digest = graph_digest(&changed);
-        let changed = changed.replacen(&format!("\"graph_digest\":{}", parsed["graph_digest"]),
-            &format!("\"graph_digest\":\"{digest}\""), 1);
+        let changed = changed.replacen(
+            &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+            &format!("\"graph_digest\":\"{digest}\""),
+            1,
+        );
         let forged_runner = runner.replacen(parsed["graph_digest"].as_str().unwrap(), &digest, 1);
-        assert!(std::panic::catch_unwind(|| current_browser_all_with_runner(&changed, role, &forged_runner)).is_err());
+        assert!(std::panic::catch_unwind(|| current_browser_all_with_runner(
+            &changed,
+            role,
+            &forged_runner
+        ))
+        .is_err());
     }
 }
 
@@ -847,131 +1012,133 @@ fn main7d34_browser_bridge_preserves_three_complete_trees_and_raw_role_refusals(
 #[path = "before_21abc.rs"]
 mod before_21abc;
 mod incoming_main21abc {
-//! Whole-wire bridge from the hosted 21abcda9b capture to every older control.
-use super::digest_without_checked_value_cursor_budget;
-use sha2::{Digest, Sha256};
+    //! Whole-wire bridge from the hosted 21abcda9b capture to every older control.
+    use super::digest_without_checked_value_cursor_budget;
+    use sha2::{Digest, Sha256};
 
-use super::before_21abc;
+    use super::before_21abc;
 
-const CURRENT: [&str; 2] = [
+    const CURRENT: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-21abcda9b/current-hosted-calculator-renamed.json"),
 ];
-const PREVIOUS: [&str; 2] = [
+    const PREVIOUS: [&str; 2] = [
     include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-baseline.json"),
     include_str!("../../../docs/evidence/browser-graph-pins-7d34f1269/current-hosted-calculator-renamed.json"),
 ];
 
-fn graph_digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(graph.matches(&field).count(), 1);
-    let payload = graph.replacen(&field, "", 1);
-    let mut hash = Sha256::new();
-    hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
-    hash.update((payload.len() as u64).to_le_bytes());
-    hash.update(payload.as_bytes());
-    format!(
-        "sha256:{:x}",
-        semaprax::digest_hex::LowerHex(hash.finalize())
-    )
-}
-
-pub(super) fn digest(graph: &str) -> String {
-    let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-    assert_eq!(graph_digest(graph), parsed["graph_digest"]);
-    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_691_397);
-    let previous = PREVIOUS
-        .iter()
-        .map(|text| text.strip_suffix('\n').unwrap())
-        .find(|text| {
-            serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
-                == parsed["workspace_revision"]
-        })
-        .expect("exact retained baseline or renamed fixture");
-    let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
-    assert_eq!(graph_digest(previous), prior["graph_digest"]);
-    assert_eq!(prior["budget"]["used_builder_bytes"], 2_696_104);
-    let field = "\"used_builder_bytes\":2691397";
-    assert_eq!(graph.matches(field).count(), 1);
-    let restored = graph.replacen(field, "\"used_builder_bytes\":2696104", 1);
-    let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
-    assert_eq!(restored.matches(&field).count(), 1);
-    let restored = restored.replacen(
-        &field,
-        &format!("\"graph_digest\":{}", prior["graph_digest"]),
-        1,
-    );
-    assert_eq!(restored, previous, "every prior hosted graph byte");
-    before_21abc::digest(&restored)
-}
-
-#[test]
-fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
-    let original = [
-        "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
-        "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
-    ];
-    let runner = include_str!("../../../docs/evidence/main09013-integration-20261017/main09013-runner.before.mjs");
-    for (captured, expected) in CURRENT.into_iter().zip(original) {
-        let graph = captured.strip_suffix('\n').unwrap();
-        assert_eq!(digest(graph), expected);
-        assert!(runner.contains(&graph_digest(graph)));
-    }
-}
-
-#[test]
-fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
-    for captured in CURRENT {
-        let graph = captured.strip_suffix('\n').unwrap();
-        let field = "\"used_call_sites\":10";
-        assert_eq!(graph.matches(field).count(), 1);
-        let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+    fn graph_digest(graph: &str) -> String {
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
-        let changed = changed.replacen(
-            &format!("\"graph_digest\":{}", parsed["graph_digest"]),
-            &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+        let field = format!(",\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(graph.matches(&field).count(), 1);
+        let payload = graph.replacen(&field, "", 1);
+        let mut hash = Sha256::new();
+        hash.update(b"semaprax.project-semantic-graph.artifact-digest.v1\0");
+        hash.update((payload.len() as u64).to_le_bytes());
+        hash.update(payload.as_bytes());
+        format!(
+            "sha256:{:x}",
+            semaprax::digest_hex::LowerHex(hash.finalize())
+        )
+    }
+
+    pub(super) fn digest(graph: &str) -> String {
+        let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+        assert_eq!(graph_digest(graph), parsed["graph_digest"]);
+        assert_eq!(parsed["budget"]["used_builder_bytes"], 2_691_397);
+        let previous = PREVIOUS
+            .iter()
+            .map(|text| text.strip_suffix('\n').unwrap())
+            .find(|text| {
+                serde_json::from_str::<serde_json::Value>(text).unwrap()["workspace_revision"]
+                    == parsed["workspace_revision"]
+            })
+            .expect("exact retained baseline or renamed fixture");
+        let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
+        assert_eq!(graph_digest(previous), prior["graph_digest"]);
+        assert_eq!(prior["budget"]["used_builder_bytes"], 2_696_104);
+        let field = "\"used_builder_bytes\":2691397";
+        assert_eq!(graph.matches(field).count(), 1);
+        let restored = graph.replacen(field, "\"used_builder_bytes\":2696104", 1);
+        let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
+        assert_eq!(restored.matches(&field).count(), 1);
+        let restored = restored.replacen(
+            &field,
+            &format!("\"graph_digest\":{}", prior["graph_digest"]),
             1,
         );
-        assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        assert_eq!(restored, previous, "every prior hosted graph byte");
+        before_21abc::digest(&restored)
     }
-}
 
-#[test]
-fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
-    let original = include_str!(
-        "../../../docs/evidence/browser-graph-pins-21abcda9b/historical_builder.before.rs.txt"
-    );
-    let runner = include_str!(
-        "../../../docs/evidence/browser-graph-pins-21abcda9b/test-fixtures.before.mjs"
-    );
-    for (source, expected) in [
-        (
-            original,
-            "d9e93e7afe98de8aa1d593ea5c8a80acbe08458929205a5f84f1608a8b86e704",
-        ),
-        (
-            runner,
-            "b6339f8ce8c4641fb6ca65590f75deb9cb7cbed486c63a88b4be00e5b41c6283",
-        ),
-    ] {
-        assert_eq!(
-            format!(
-                "{:x}",
-                semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
-            ),
-            expected
+    #[test]
+    fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
+        let original = [
+            "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
+            "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
+        ];
+        let runner = include_str!(
+            "../../../docs/evidence/main09013-integration-20261017/main09013-runner.before.mjs"
         );
+        for (captured, expected) in CURRENT.into_iter().zip(original) {
+            let graph = captured.strip_suffix('\n').unwrap();
+            assert_eq!(digest(graph), expected);
+            assert!(runner.contains(&graph_digest(graph)));
+        }
     }
-    let current = include_str!("before_21abc.rs");
-    let new = concat!(
+
+    #[test]
+    fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
+        for captured in CURRENT {
+            let graph = captured.strip_suffix('\n').unwrap();
+            let field = "\"used_call_sites\":10";
+            assert_eq!(graph.matches(field).count(), 1);
+            let changed = graph.replacen(field, "\"used_call_sites\":11", 1);
+            let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
+            let changed = changed.replacen(
+                &format!("\"graph_digest\":{}", parsed["graph_digest"]),
+                &format!("\"graph_digest\":\"{}\"", graph_digest(&changed)),
+                1,
+            );
+            assert!(std::panic::catch_unwind(|| digest(&changed)).is_err());
+        }
+    }
+
+    #[test]
+    fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
+        let original = include_str!(
+            "../../../docs/evidence/browser-graph-pins-21abcda9b/historical_builder.before.rs.txt"
+        );
+        let runner = include_str!(
+            "../../../docs/evidence/browser-graph-pins-21abcda9b/test-fixtures.before.mjs"
+        );
+        for (source, expected) in [
+            (
+                original,
+                "d9e93e7afe98de8aa1d593ea5c8a80acbe08458929205a5f84f1608a8b86e704",
+            ),
+            (
+                runner,
+                "b6339f8ce8c4641fb6ca65590f75deb9cb7cbed486c63a88b4be00e5b41c6283",
+            ),
+        ] {
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    semaprax::digest_hex::LowerHex(Sha256::digest(source.as_bytes()))
+                ),
+                expected
+            );
+        }
+        let current = include_str!("before_21abc.rs");
+        let new = concat!(
         "include_str!(\n",
         "        \"../../../docs/evidence/browser-graph-pins-21abcda9b/test-fixtures.before.mjs\"\n",
         "    )"
     );
-    let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
-    assert_eq!(current.matches(new).count(), 1);
-    assert_eq!(current.replacen(new, old, 1), original);
-}
-
+        let old =
+            "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
+        assert_eq!(current.matches(new).count(), 1);
+        assert_eq!(current.replacen(new, old, 1), original);
+    }
 }

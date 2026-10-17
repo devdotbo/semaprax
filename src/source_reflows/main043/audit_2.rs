@@ -1,7 +1,7 @@
 #[test]
 fn legacy_nominal_complete_original_sources_and_semantic_constructor_stay_exact() {
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::LegacyNominal))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::LegacyNominal)).unwrap();
     let files=[
         ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/legacy-nominal-sharing-827/original/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt"))),
         ("src/cleanup_plan/replay/live_oracle/source_custody/b.rs",include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/live_oracle/source_custody/b.rs")),include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/legacy-nominal-sharing-827/original/src__cleanup_plan__replay__live_oracle__source_custody__b.rs.before.txt"))),
@@ -33,13 +33,19 @@ fn legacy_nominal_complete_original_sources_and_semantic_constructor_stay_exact(
         }
         assert_eq!(restored, old, "{path}");
     }
-    let current = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/declaration_index/identity_payer.rs"));
+    let current = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/hir/declaration_index/identity_payer.rs"
+    ));
     let old=include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/legacy-nominal-sharing-827/original/src__hir__declaration_index__identity_payer.rs.before.txt"));
     assert_eq!(
         current.split_once("    fn build_nominal_index").unwrap().1,
         old.split_once("    fn build_nominal_index").unwrap().1
     );
-    let current = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/hir/nominal_payload.rs"));
+    let current = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/hir/nominal_payload.rs"
+    ));
     let old=include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/legacy-nominal-sharing-827/original/src__hir__nominal_payload.rs.before.txt"));
     fn section<'a>(text: &'a str, start: &str, end: &str) -> &'a str {
         let rest = text.split_once(start).unwrap().1;

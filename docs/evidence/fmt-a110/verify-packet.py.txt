@@ -1,0 +1,67 @@
+from pathlib import Path
+import importlib.util,json,hashlib,os,stat,tempfile,copy
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';Q=R/'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';H=lambda b:hashlib.sha256(b).hexdigest();spec=importlib.util.spec_from_file_location('current_guard',Q);g=importlib.util.module_from_spec(spec);spec.loader.exec_module(g);g._AUTHENTICATED_PROGRAM=Q.read_bytes();j=g.packet();assert len(j['rows'])==433
+def held(path,length,digest):
+ assert 0<=length<=9753094
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+ identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+ try:
+  before=os.fstat(fd);assert stat.S_ISREG(before.st_mode)and before.st_size==length
+  with os.fdopen(fd,'rb',closefd=False)as stream:raw=stream.read(length+1)
+  assert len(raw)==length and H(raw)==digest;assert identity(before)==identity(os.fstat(fd))==identity(os.lstat(path));return raw
+ finally:os.close(fd)
+views=0;supported=0;oversize=0;refusals=0;replayed=0
+for index,row in enumerate(j['rows']):
+ source=row['source'];p=row['current'];actual=held(R/source,p['length'],p['sha256']);assert actual==held(R/p['archive'],p['length'],p['sha256'])
+ if p['length']<=262144:assert g.bounded(R/source,p['length'],p['sha256'])==actual;supported+=1
+ else:
+  try:g.bounded(R/source,p['length'],p['sha256'])
+  except AssertionError:oversize+=1
+  else:raise AssertionError('Python acquisition bound enlarged')
+ for prior in row['views']:
+  previous=held(R/prior['archive'],prior['length'],prior['sha256']);views+=1
+  if p['length']<=262144 and prior['length']<=262144:assert g.latest_source(source,prior['length'],prior['sha256'])==previous;replayed+=1
+ for length,digest in [(p['length']+1,p['sha256']),(p['length'],'0'*64)]:
+  try:g.bounded(R/source,length,digest)
+  except(AssertionError,OSError):refusals+=1
+  else:raise AssertionError(('wrong current source tuple accepted',source))
+ if(index+1)%100==0:print('Verified',index+1,'of',len(j['rows']),'complete current source/archive rows',flush=True)
+before=json.loads((O/'whole-before-current-inputs.json').read_bytes());restored=copy.deepcopy(j)
+for old,after in zip(before['rows'],restored['rows']):
+ assert after['source']==old['source']and after['views'][:len(old['views'])]==old['views'];after['current']=old['current'];after['views']=old['views'];after.pop('fragments',None);assert after==old
+restored['rows']=restored['rows'][:len(before['rows'])];assert restored==before
+try:g.latest_source('foreign/fixture.rs',0,'0'*64)
+except AssertionError:pass
+else:raise AssertionError('foreign named source admitted')
+config_controls=0;fragment_controls=0
+with tempfile.TemporaryDirectory(prefix='current-source-controls-',dir=S/'tmp')as directory:
+ root=Path(directory);saved=g._CONFIG_PATH;good=g._CONFIG_RAW;path=root/'config.json';path.write_bytes(good);g._CONFIG_PATH=path;g._configuration_current()
+ for bad in [good+b' ',bytes([good[0]^1])+good[1:]]:
+  path.write_bytes(bad)
+  try:g._configuration_current()
+  except(AssertionError,OSError):config_controls+=1
+  else:raise AssertionError('loaded CONFIG ignored subsequent physical tamper')
+ path.unlink();target=root/'target.json';target.write_bytes(good);path.symlink_to(target)
+ try:g._configuration_current()
+ except(AssertionError,OSError):config_controls+=1
+ else:raise AssertionError('CONFIG symlink admitted')
+ path.unlink();os.mkfifo(path)
+ try:g._configuration_current()
+ except(AssertionError,OSError):config_controls+=1
+ else:raise AssertionError('CONFIG nonregular input admitted')
+ g._CONFIG_PATH=saved
+ class ChildOverride:
+  def __init__(self,source,path):self.source=source;self.path=path
+  def __truediv__(self,name):return self.path if name==self.source else R/name
+ for row in j['rows']:
+  for child in row.get('fragments',[]):
+   assert child.get('fragments')is None and child['compiled']is True
+   prior=next(x for x in row['views']if x['length']<=262144);expected=held(R/prior['archive'],prior['length'],prior['sha256']);assert g.latest_source(row['source'],prior['length'],prior['sha256'])==expected
+   raw=(R/child['source']).read_bytes();bad=root/'child.rs';bad.write_bytes(bytes([raw[0]^1])+raw[1:]);g.R=ChildOverride(child['source'],bad)
+   try:g.latest_source(row['source'],prior['length'],prior['sha256'])
+   except(AssertionError,OSError):fragment_controls+=1
+   else:raise AssertionError(('shortened parent ignored tampered compiled child',row['source'],child['source']))
+   finally:g.R=R
+assert config_controls==4 and fragment_controls==10
+g.public_previous()
+result={'status':'PASS_SOURCE_ONLY_COMPLETE_PACKET_CONFIG_AND_FRAGMENT_CONTROLS','current_rows':len(j['rows']),'original_rows_and_all_original_fields_retained':len(before['rows']),'complete_prior_views':views,'actual_Python_supported_current_rows':supported,'actual_Python_oversize_refusals':oversize,'actual_Python_named_prior_replays':replayed,'wrong_length_or_digest_refusals':refusals,'foreign_named_source_refused':True,'post_load_CONFIG_tamper_symlink_and_nonregular_refusals':config_controls,'each_compiled_fragment_tamper_blocks_parent_historical_view':fragment_controls,'complete_public_bootstrap_predecessor_reconstructed':True,'Rust_source_cap_unchanged':9753094,'Python_input_cap_unchanged':262144,'Python_program_cap_unchanged':65536,'scope':'Physical/source-only authenticity. Compiled-source equality must also be exercised by the owning Rust routes; no full Rust, hosted CI, production support or broader Python source-size support is inferred.'};(O/'packet-verification.json').write_text(json.dumps(result,indent=2)+'\n');print(json.dumps(result),flush=True)

@@ -1,8 +1,10 @@
 //! Complete039b canonical producer body, independently executable.
-use super::{physical_clone,replay_error,Automaton,BTreeMap,Diagnostic,Label,Rc,
-    ReplayBudget,ResolvedFunction,Weighted,app_census,tests,arena_tests,closure_receiving,
-    empty_closure,ordered_alias,ordered_weights,successor_targets,inline_weighted,intern_arena,
-    before_terminal_leaf_empty_memo as empty_memo,empty_signature};
+use super::{
+    app_census, arena_tests, before_terminal_leaf_empty_memo as empty_memo, closure_receiving,
+    empty_closure, empty_signature, inline_weighted, intern_arena, ordered_alias, ordered_weights,
+    physical_clone, replay_error, successor_targets, tests, Automaton, BTreeMap, Diagnostic, Label,
+    Rc, ReplayBudget, ResolvedFunction, Weighted,
+};
 use inline_weighted::SmallWeighted;
 // Invoked only after preflight proved an unbound, nonfailed Memo. This is the
 // original cold activation body at its caller: no authenticate Result or
@@ -1238,14 +1240,16 @@ impl<'a> Canonicalizer<'a> {
                     // the actual new branch receivers before evaluating the guard.
                     if budget.pays_allocations() {
                         attempt!(budget.reserve_bytes(
-                            function, empty_signature::BRANCH_CONTROLS,
+                            function,
+                            empty_signature::BRANCH_CONTROLS,
                             "canonical empty signature branch receiving",
                         ));
                     }
                     if successors.is_empty() {
                         if budget.pays_allocations() {
                             attempt!(budget.reserve_bytes(
-                                function, empty_signature::EMPTY_CONTROLS,
+                                function,
+                                empty_signature::EMPTY_CONTROLS,
                                 "canonical empty signature receiving",
                             ));
                         }
@@ -1253,7 +1257,9 @@ impl<'a> Canonicalizer<'a> {
                         // Retain the original key-vector zero authentication;
                         // no child directory, borrowed query or Zip exists here.
                         attempt!(budget.reserve_array::<(Label, usize)>(
-                            function, 0, "factored canonical signature vector",
+                            function,
+                            0,
+                            "factored canonical signature vector",
                         ));
                         let key = (accepted, Vec::new());
                         let id = match self.ids.get(&key) {
@@ -1265,7 +1271,12 @@ impl<'a> Canonicalizer<'a> {
                             None => {
                                 #[cfg(test)]
                                 arena_tests::signature_lookup(false);
-                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                                intern_arena::prepare_insert!(
+                                    self.ids,
+                                    intern_arena::Signature,
+                                    function,
+                                    budget
+                                );
                                 let id = self.ids.len();
                                 self.ids.insert_prepaid(key, id);
                                 id
@@ -1273,37 +1284,50 @@ impl<'a> Canonicalizer<'a> {
                         };
                         self.child_ids.clear();
                         if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                            intern_arena::prepare_insert!(
+                                self.states,
+                                SharedWeighted,
+                                function,
+                                budget
+                            );
                         }
                         self.states.insert_prepaid(state, id);
                         continue;
                     }
                     attempt!(budget.reserve_bytes(
-                        function, intern_arena::SignatureQuery::EXIT_CONTROLS,
+                        function,
+                        intern_arena::SignatureQuery::EXIT_CONTROLS,
                         "canonical borrowed signature receiving",
                     ));
                     // Retained scalar scratch contains only the child IDs for
                     // this frame; the epsilon cursor keeps its original shape.
                     self.child_ids.clear();
                     attempt!(budget.reserve_vec(
-                        function, &mut self.child_ids, successors.len(),
+                        function,
+                        &mut self.child_ids,
+                        successors.len(),
                         "canonical ordered child identity scratch",
                     ));
                     attempt!(budget.reserve_array::<[usize; 2]>(
-                        function, successors.len(), "canonical child identity receiving",
+                        function,
+                        successors.len(),
+                        "canonical child identity receiving",
                     ));
                     // Resolve every ID before signature comparison can stop at
                     // its first mismatch. This preserves the original failure order.
                     for (_, child) in &successors {
                         let Some(id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
+                            receiving.refusal =
+                                Some(replay_error(function, "cleanup CFG contains a cycle"));
                             receiving.ready = true;
                             return;
                         };
                         self.child_ids.push(*id);
                     }
                     let query = intern_arena::SignatureQuery {
-                        accepted, successors: &successors, children: &self.child_ids,
+                        accepted,
+                        successors: &successors,
+                        children: &self.child_ids,
                     };
                     let id = match self.ids.get(&query) {
                         Some(id) => {
@@ -1315,24 +1339,35 @@ impl<'a> Canonicalizer<'a> {
                             #[cfg(test)]
                             arena_tests::signature_lookup(false);
                             attempt!(budget.reserve_array::<(Label, usize)>(
-                                function, successors.len(), "factored canonical signature vector",
+                                function,
+                                successors.len(),
+                                "factored canonical signature vector",
                             ));
                             // Every ID is already resolved. Move each original
                             // label with its borrowed ID, without an owned
                             // scalar cursor or repeated index/increment operands.
                             attempt!(budget.reserve_bytes(
-                                function, intern_arena::SignatureQuery::MISS_CONTROLS,
+                                function,
+                                intern_arena::SignatureQuery::MISS_CONTROLS,
                                 "canonical signature miss iterator receiving",
                             ));
                             attempt!(budget.reserve_array::<[&usize; 2]>(
-                                function, successors.len(), "canonical signature miss borrowed IDs",
+                                function,
+                                successors.len(),
+                                "canonical signature miss borrowed IDs",
                             ));
                             let mut key = Vec::with_capacity(successors.len());
-                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids) {
+                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids)
+                            {
                                 key.push((label, *id));
                             }
                             let key = (accepted, key);
-                            intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                            intern_arena::prepare_insert!(
+                                self.ids,
+                                intern_arena::Signature,
+                                function,
+                                budget
+                            );
                             let id = self.ids.len();
                             self.ids.insert_prepaid(key, id);
                             id
@@ -1340,7 +1375,12 @@ impl<'a> Canonicalizer<'a> {
                     };
                     self.child_ids.clear();
                     if !self.states.contains_key(&state) {
-                        intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                        intern_arena::prepare_insert!(
+                            self.states,
+                            SharedWeighted,
+                            function,
+                            budget
+                        );
                     }
                     self.states.insert_prepaid(state, id);
                 }
@@ -1355,7 +1395,15 @@ impl<'a> Canonicalizer<'a> {
 }
 
 impl Canonicalizer<'_> {
-    pub(super) fn scratch_was_acquired(&self) -> bool { self.scratch_paid }
-    pub(super) fn state_entries(&self) -> impl Iterator<Item=(&SharedWeighted,&usize)> { self.states.iter() }
-    pub(super) fn signature_entries(&self) -> impl Iterator<Item=(&intern_arena::Signature,&usize)> { self.ids.iter() }
+    pub(super) fn scratch_was_acquired(&self) -> bool {
+        self.scratch_paid
+    }
+    pub(super) fn state_entries(&self) -> impl Iterator<Item = (&SharedWeighted, &usize)> {
+        self.states.iter()
+    }
+    pub(super) fn signature_entries(
+        &self,
+    ) -> impl Iterator<Item = (&intern_arena::Signature, &usize)> {
+        self.ids.iter()
+    }
 }

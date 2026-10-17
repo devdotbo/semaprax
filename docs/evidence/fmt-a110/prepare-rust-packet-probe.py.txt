@@ -1,0 +1,55 @@
+from pathlib import Path
+import json,re,hashlib
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';j=json.loads((R/'docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json').read_bytes());parents=[row for row in j['rows']if row.get('fragments')];sources=sorted({row['source']for row in parents}|{child['source']for row in parents for child in row['fragments']});assert sum(len(row['fragments'])for row in parents)==10
+raw=(R/'src/source_reflows_merge/main_e177_final_inputs.rs').read_text();marker='#[test]\nfn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wrong_stages()';assert raw.count(marker)==1;raw=raw.split(marker,1)[0]
+start=raw.index('fn compiled(');end=raw.index('\nfn read_view(',start);original=raw[start:end];arms=[]
+for source in sources:
+ arms.append(json.dumps(source)+' => Some(include_str!('+json.dumps(str(R/source))+')),')
+compiled='fn compiled(source: &str) -> Option<&\'static str> { match source {\n'+'\n'.join(arms)+'\n_ => panic!("out-of-scope compiled-source branch in bounded probe"),\n} }\n'
+raw=raw[:start]+compiled+raw[end:];raw=re.sub(r'include_str!\(\s*"\.\./\.\./([^\"]+)"\s*\)',lambda m:'include_str!('+json.dumps(str(R/m[1]))+')',raw)
+run='''
+pub fn run() {
+    let packet = packet();
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut parents = 0;
+    let mut fragments = 0;
+    for row in packet["rows"].as_array().unwrap().iter().filter(|row| row.get("fragments").is_some()) {
+        let source = row["source"].as_str().unwrap();
+        let current = actual(row);
+        assert_eq!(compiled(source), Some(current.as_str()));
+        parents += 1;
+        for child in row["fragments"].as_array().unwrap() {
+            let physical = actual(child);
+            assert_eq!(compiled(child["source"].as_str().unwrap()), Some(physical.as_str()));
+            fragments += 1;
+        }
+        for previous in row["views"].as_array().unwrap() {
+            let old = read_view(previous);
+            let expected = previous["sha256"].as_str().unwrap();
+            let length = previous["length"].as_u64().unwrap() as usize;
+            assert_eq!(file(&root.join(source),length,expected),Some(old.clone()));
+            assert_eq!(value(source,expected,&current),old);
+            assert_eq!(value(source,expected,&old),old);
+            for foreign in [String::new(),format!("{current} "),format!("{current}{current}"),current[..current.len()-1].to_owned(),"foreign".to_owned()] {
+                assert_eq!(value(source,expected,&foreign),foreign);
+            }
+            assert!(file(&root.join(source),length+1,expected).is_none());
+            assert!(file(&root.join(source),length,&"0".repeat(64)).is_none());
+        }
+    }
+    assert_eq!(parents, @PARENTS@);
+    assert_eq!(fragments, 10);
+    assert!(file(&root.join("foreign"),0,"foreign").is_none());
+    println!("Complete actual packet/predecessor controls, {} shortened parents and all{} actual compiled fragments passed",parents,fragments);
+}
+'''.replace('@PARENTS@',str(len(parents)));raw+=run
+(O/'rust-packet-selected.rs').write_text(raw)
+entry='''#![allow(dead_code,unused_imports)]
+#[path="@DIGEST@"] mod digest_hex;
+mod source_reflows_merge {
+pub mod next_big_batch_inputs { pub fn value_local(_: &str,_: &str,_: &str) -> String { panic!("out-of-scope delegation branch in bounded probe") } }
+#[path="@HELPER@"] pub mod main_e177_final_inputs;
+}
+fn main() { source_reflows_merge::main_e177_final_inputs::run(); }
+'''.replace('@DIGEST@',str(R/'src/digest_hex.rs')).replace('@HELPER@',str(O/'rust-packet-selected.rs'));(O/'rust-packet-probe.rs').write_text(entry)
+(O/'rust-packet-probe-scope.json').write_text(json.dumps({'scope':'Actual complete current packet, every complete original predecessor packet/assertion and actual held/source/archive functions retained. Compiled dispatch is finite to all shortened parents and their ten actual fragments; every other compiled source and unknown delegated branch panics. All real original whole-table compiled anchors retained. Unrelated whole-source test body omitted from this small probe; no broader test/build qualification claimed.','parents':len(parents),'compiled_fragments':10,'compiled_sources':sources,'helper_sha256':hashlib.sha256(raw.encode()).hexdigest(),'entry_sha256':hashlib.sha256(entry.encode()).hexdigest()},indent=2)+'\n');print('Staged actual complete current and historical packet controls; selected',len(parents),'parents and10real compiled fragments.',flush=True)

@@ -3,7 +3,9 @@
 //! inventories continue to include the current modules and their new children.
 use super::*;
 
-const PROOFS: &str = include_str!("../../docs/evidence/main67107-production-composition-20261017/receiver-main12.json");
+const PROOFS: &str = include_str!(
+    "../../docs/evidence/main67107-production-composition-20261017/receiver-main12.json"
+);
 const LIVE_AUDITS: &str =
     include_str!("../../docs/evidence/live-source-audit-custody-v1/inverse.json");
 static PROOF_RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
@@ -101,7 +103,9 @@ pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> Strin
 
 fn receiver_input(path: &str, current: &str) -> String {
     let domain = match path {
-        "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs" => "liveSessionMAIN",
+        "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs" => {
+            "liveSessionMAIN"
+        }
         "src/hir/nominal_payload/legacy/source_tests.rs" => "liveNominalMAIN",
         _ => return current.to_owned(),
     };
@@ -303,7 +307,9 @@ fn followup_input(path: &str, current: &str) -> String {
     let domain = match path {
         "src/source_reflows/semantic_receivers.rs" => "followupReceiverMAIN",
         "src/workspace_graph/identity_resolution.rs" => "followupIdentityMAIN",
-        "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs" => "followupCoreMAIN",
+        "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs" => {
+            "followupCoreMAIN"
+        }
         _ => panic!("foreign MAIN followup source"),
     };
     crate::source_reflows_merge::main67107_inputs::project(domain, current)
@@ -349,18 +355,31 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
 // complete current and MAIN inputs; no source, authority, or production text is
 // changed. Whole source payloads remain bounded runtime files, not large embeds.
 const MAIN34D_MANIFEST_LEN: usize = 51371;
-const MAIN34D_MANIFEST_SHA: &str = "d9d9e7168cea74f3f860e02ae631fd3bec90bb9dbf88b121e0edcf21f582288d";
+const MAIN34D_MANIFEST_SHA: &str =
+    "d9d9e7168cea74f3f860e02ae631fd3bec90bb9dbf88b121e0edcf21f582288d";
 // Separate NEWMAIN-only admitted source-proof input: held-status sources.json.
 // The unrelated runtime_json335 cap remains exactly5,081,115 and is untouched.
 const MAIN34D_CAP: usize = 9_317_546;
 fn main34d_manifest() -> serde_json::Value {
-    let text = main34d_file(&Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/main34d-three-source-domains-20261017/input-manifest.json"), MAIN34D_MANIFEST_LEN, MAIN34D_MANIFEST_SHA).expect("complete closed MAIN input manifest");
+    let text = main34d_file(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/main34d-three-source-domains-20261017/input-manifest.json"),
+        MAIN34D_MANIFEST_LEN,
+        MAIN34D_MANIFEST_SHA,
+    )
+    .expect("complete closed MAIN input manifest");
     let value: serde_json::Value = serde_json::from_str(&text).unwrap();
     assert_eq!(value["schema"], "semaprax.main34d-three-source-domains.v1");
-    assert_eq!(value["main_head"], "34d53510a3374537874c89a0e46be4d68ad9fe61");
+    assert_eq!(
+        value["main_head"],
+        "34d53510a3374537874c89a0e46be4d68ad9fe61"
+    );
     let domains = value["domains"].as_array().unwrap();
     assert_eq!(domains.len(), 3);
-    for (row, name) in domains.iter().zip(["held-status", "held-continuation", "receiving-lookup"]) {
+    for (row, name) in domains
+        .iter()
+        .zip(["held-status", "held-continuation", "receiving-lookup"])
+    {
         assert_eq!(row["name"], name);
         let mut unique = std::collections::BTreeSet::new();
         for path in row["reads"].as_array().unwrap() {
@@ -374,56 +393,128 @@ fn main34d_manifest() -> serde_json::Value {
     }
     value
 }
-fn main34d_body(reader: &mut impl std::io::Read, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN34D_CAP { return Err("bound"); }
+fn main34d_body(
+    reader: &mut impl std::io::Read,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN34D_CAP {
+        return Err("bound");
+    }
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length).map_err(|_| "allocation")?;
     bytes.resize(length, 0);
     reader.read_exact(&mut bytes).map_err(|_| "truncated")?;
     let mut extra = [0u8; 1];
-    if reader.read(&mut extra).map_err(|_| "read")? != 0 { return Err("extra"); }
-    if digest_bytes(&bytes) != expected { return Err("digest"); }
+    if reader.read(&mut extra).map_err(|_| "read")? != 0 {
+        return Err("extra");
+    }
+    if digest_bytes(&bytes) != expected {
+        return Err("digest");
+    }
     String::from_utf8(bytes).map_err(|_| "utf8")
 }
 fn digest_bytes(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn main34d_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
-    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
+    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
+    {
+        return false;
+    }
     #[cfg(unix)]
-    { use std::os::unix::fs::MetadataExt; if a.dev() != b.dev() || a.ino() != b.ino() || a.ctime() != b.ctime() || a.ctime_nsec() != b.ctime_nsec() { return false; } }
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.dev() != b.dev()
+            || a.ino() != b.ino()
+            || a.ctime() != b.ctime()
+            || a.ctime_nsec() != b.ctime_nsec()
+        {
+            return false;
+        }
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::MetadataExt; if a.file_attributes() & 0x400 != 0 || b.file_attributes() & 0x400 != 0 || a.creation_time() != b.creation_time() || a.last_write_time() != b.last_write_time() { return false; } }
+    {
+        use std::os::windows::fs::MetadataExt;
+        if a.file_attributes() & 0x400 != 0
+            || b.file_attributes() & 0x400 != 0
+            || a.creation_time() != b.creation_time()
+            || a.last_write_time() != b.last_write_time()
+        {
+            return false;
+        }
+    }
     true
 }
 fn main34d_file(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN34D_CAP { return Err("bound"); }
+    if length > MAIN34D_CAP {
+        return Err("bound");
+    }
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
-    if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
-    let mut options = std::fs::OpenOptions::new(); options.read(true);
+    if path_before.file_type().is_symlink() || !path_before.is_file() {
+        return Err("length-or-nonregular");
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
     #[cfg(unix)]
-    { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK); }
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::OpenOptionsExt; options.custom_flags(0x0020_0000); }
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000);
+    }
     #[cfg(not(any(unix, windows)))]
-    { return Err("platform"); }
+    {
+        return Err("platform");
+    }
     let mut file = options.open(path).map_err(|_| "open")?;
     let metadata = file.metadata().map_err(|_| "metadata")?;
-    if !main34d_same_file(&path_before, &metadata) || metadata.len() != u64::try_from(length).map_err(|_| "bound")? {
+    if !main34d_same_file(&path_before, &metadata)
+        || metadata.len() != u64::try_from(length).map_err(|_| "bound")?
+    {
         return Err("length-or-nonregular");
     }
     // The one opened no-follow regular handle is checked before any buffer.
     let value = main34d_body(&mut file, length, expected)?;
     let after = file.metadata().map_err(|_| "metadata")?;
     let path_after = std::fs::symlink_metadata(path).map_err(|_| "metadata")?;
-    if path_after.file_type().is_symlink() || !main34d_same_file(&metadata, &after) || !main34d_same_file(&after, &path_after) { return Err("metadata-drift"); }
+    if path_after.file_type().is_symlink()
+        || !main34d_same_file(&metadata, &after)
+        || !main34d_same_file(&after, &path_after)
+    {
+        return Err("metadata-drift");
+    }
     Ok(value)
 }
-fn main34d_entry<'a>(manifest: &'a serde_json::Value, domain: &str, path: &str) -> &'a serde_json::Value {
-    let domains: Vec<_> = manifest["domains"].as_array().unwrap().iter().filter(|row| row["name"] == domain).collect();
+fn main34d_entry<'a>(
+    manifest: &'a serde_json::Value,
+    domain: &str,
+    path: &str,
+) -> &'a serde_json::Value {
+    let domains: Vec<_> = manifest["domains"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|row| row["name"] == domain)
+        .collect();
     assert_eq!(domains.len(), 1, "foreign MAIN domain");
-    assert!(domains[0]["reads"].as_array().unwrap().iter().any(|value| value == path), "foreign MAIN source");
-    let entries: Vec<_> = manifest["inputs"].as_array().unwrap().iter().filter(|entry| entry["path"] == path).collect();
+    assert!(
+        domains[0]["reads"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|value| value == path),
+        "foreign MAIN source"
+    );
+    let entries: Vec<_> = manifest["inputs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["path"] == path)
+        .collect();
     assert_eq!(entries.len(), 1, "missing or duplicate MAIN input");
     entries[0]
 }
@@ -442,7 +533,8 @@ fn main34d_project_entry(entry: &serde_json::Value, current: &str) -> String {
         &Path::new(env!("CARGO_MANIFEST_DIR")).join(archive),
         usize::try_from(entry["main_len"].as_u64().unwrap()).unwrap(),
         entry["main_sha256"].as_str().unwrap(),
-    ).expect("whole immutable MAIN input");
+    )
+    .expect("whole immutable MAIN input");
     assert_eq!(digest(&result), entry["main_sha256"]);
     result
 }
@@ -452,11 +544,18 @@ pub(super) fn main34d_project(domain: &str, path: &str, current: &str) -> String
 }
 pub(super) fn main34d_read(domain: &str, path: &Path) -> std::io::Result<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let relative = path.strip_prefix(root).expect("MAIN source must be repository local");
+    let relative = path
+        .strip_prefix(root)
+        .expect("MAIN source must be repository local");
     let relative = relative.to_str().unwrap();
     let manifest = main34d_manifest();
     let entry = main34d_entry(&manifest, domain, relative);
-    let current = main34d_file(path, usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(), entry["current_sha256"].as_str().unwrap()).expect("complete current raw MAIN input");
+    let current = main34d_file(
+        path,
+        usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(),
+        entry["current_sha256"].as_str().unwrap(),
+    )
+    .expect("complete current raw MAIN input");
     Ok(main34d_project_entry(entry, &current))
 }
 pub(super) fn main34d_proofs() -> Vec<serde_json::Value> {
@@ -465,7 +564,12 @@ pub(super) fn main34d_proofs() -> Vec<serde_json::Value> {
     let mut result = Vec::new();
     for (name, count) in [("main_receiver_proofs", 12), ("main_live_audits", 2)] {
         let row = &manifest[name];
-        let text = main34d_file(&root.join(row["archive"].as_str().unwrap()), usize::try_from(row["len"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap()).unwrap();
+        let text = main34d_file(
+            &root.join(row["archive"].as_str().unwrap()),
+            usize::try_from(row["len"].as_u64().unwrap()).unwrap(),
+            row["sha256"].as_str().unwrap(),
+        )
+        .unwrap();
         let values: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap();
         assert_eq!(values.len(), count);
         result.extend(values);
@@ -473,14 +577,29 @@ pub(super) fn main34d_proofs() -> Vec<serde_json::Value> {
     result
 }
 pub(super) fn main34d_predecessor(path: &str, current: &str) -> Option<String> {
-    for directory in ["held-status-prefix-v1", "held-continuation-growth-v1", "paid-expression-lookup-state-v1"] {
+    for directory in [
+        "held-status-prefix-v1",
+        "held-continuation-growth-v1",
+        "paid-expression-lookup-state-v1",
+    ] {
         let relative = format!("docs/evidence/{directory}/views.json");
         let manifest = main34d_manifest();
-        let domain = match directory { "held-status-prefix-v1" => "held-status", "held-continuation-growth-v1" => "held-continuation", _ => "receiving-lookup" };
+        let domain = match directory {
+            "held-status-prefix-v1" => "held-status",
+            "held-continuation-growth-v1" => "held-continuation",
+            _ => "receiving-lookup",
+        };
         let entry = main34d_entry(&manifest, domain, &relative);
-        let text = main34d_file(&Path::new(env!("CARGO_MANIFEST_DIR")).join(entry["main_archive"].as_str().unwrap()), usize::try_from(entry["main_len"].as_u64().unwrap()).unwrap(), entry["main_sha256"].as_str().unwrap()).unwrap();
+        let text = main34d_file(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(entry["main_archive"].as_str().unwrap()),
+            usize::try_from(entry["main_len"].as_u64().unwrap()).unwrap(),
+            entry["main_sha256"].as_str().unwrap(),
+        )
+        .unwrap();
         let rows: Vec<serde_json::Value> = serde_json::from_str(&text).unwrap();
-        if let Some(proof) = rows.iter().find(|row| row["path"] == path) { return Some(invert_ordinary(proof, current)); }
+        if let Some(proof) = rows.iter().find(|row| row["path"] == path) {
+            return Some(invert_ordinary(proof, current));
+        }
     }
     None
 }
@@ -493,23 +612,57 @@ fn complete_main34d_inputs_keep_all_domains_and_refuse_wrong_source_and_bounded_
         for path in domain["reads"].as_array().unwrap() {
             let path = path.as_str().unwrap();
             let value = main34d_read(domain["name"].as_str().unwrap(), &root.join(path)).unwrap();
-            assert_eq!(digest(&value), main34d_entry(&manifest, domain["name"].as_str().unwrap(), path)["main_sha256"]);
+            assert_eq!(
+                digest(&value),
+                main34d_entry(&manifest, domain["name"].as_str().unwrap(), path)["main_sha256"]
+            );
         }
     }
-    assert!(std::panic::catch_unwind(|| main34d_entry(&manifest, "foreign", "src/cleanup_plan/replay.rs")).is_err());
-    assert!(std::panic::catch_unwind(|| main34d_entry(&manifest, "held-status", "src/foreign.rs")).is_err());
+    assert!(std::panic::catch_unwind(|| main34d_entry(
+        &manifest,
+        "foreign",
+        "src/cleanup_plan/replay.rs"
+    ))
+    .is_err());
+    assert!(
+        std::panic::catch_unwind(|| main34d_entry(&manifest, "held-status", "src/foreign.rs"))
+            .is_err()
+    );
     let domains = manifest["domains"].as_array().unwrap();
-    let exclusive = domains[0]["reads"].as_array().unwrap().iter().find(|path| !domains[1]["reads"].as_array().unwrap().contains(path)).unwrap().as_str().unwrap();
-    assert!(std::panic::catch_unwind(|| main34d_entry(&manifest, "held-continuation", exclusive)).is_err());
+    let exclusive = domains[0]["reads"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|path| !domains[1]["reads"].as_array().unwrap().contains(path))
+        .unwrap()
+        .as_str()
+        .unwrap();
+    assert!(
+        std::panic::catch_unwind(|| main34d_entry(&manifest, "held-continuation", exclusive))
+            .is_err()
+    );
     let mut duplicate = manifest.clone();
     let first = duplicate["inputs"][0].clone();
     duplicate["inputs"].as_array_mut().unwrap().push(first);
     let path = manifest["inputs"][0]["path"].as_str().unwrap();
-    let domain = manifest["domains"].as_array().unwrap().iter().find(|row| row["reads"].as_array().unwrap().iter().any(|value| value == path)).unwrap()["name"].as_str().unwrap();
+    let domain = manifest["domains"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| {
+            row["reads"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .any(|value| value == path)
+        })
+        .unwrap()["name"]
+        .as_str()
+        .unwrap();
     assert!(std::panic::catch_unwind(|| main34d_entry(&duplicate, domain, path)).is_err());
     let entry = main34d_entry(&manifest, domain, path);
     let raw = std::fs::read_to_string(root.join(path)).unwrap();
-    for changed in [raw.clone() + "\n", raw[..raw.len()-1].to_owned()] {
+    for changed in [raw.clone() + "\n", raw[..raw.len() - 1].to_owned()] {
         assert!(std::panic::catch_unwind(|| main34d_project_entry(entry, &changed)).is_err());
     }
     for entry in manifest["inputs"].as_array().unwrap() {
@@ -520,66 +673,144 @@ fn complete_main34d_inputs_keep_all_domains_and_refuse_wrong_source_and_bounded_
             assert!(std::panic::catch_unwind(|| main34d_project_entry(entry, &old)).is_err());
         }
         for field in ["current_sha256", "main_sha256"] {
-            let mut forged = entry.clone(); forged[field] = serde_json::json!("0".repeat(64));
+            let mut forged = entry.clone();
+            forged[field] = serde_json::json!("0".repeat(64));
             assert!(std::panic::catch_unwind(|| main34d_project_entry(&forged, &raw)).is_err());
         }
-        let mut forged = entry.clone(); forged["whole_source_inverse"][0]["at"] = serde_json::json!(1);
+        let mut forged = entry.clone();
+        forged["whole_source_inverse"][0]["at"] = serde_json::json!(1);
         assert!(std::panic::catch_unwind(|| main34d_project_entry(&forged, &raw)).is_err());
     }
     let bytes = b"complete\n";
     let hash = digest_bytes(bytes);
-    assert_eq!(main34d_body(&mut std::io::Cursor::new(bytes), bytes.len(), &hash), Ok("complete\n".to_owned()));
-    assert_eq!(main34d_body(&mut std::io::Cursor::new(bytes), bytes.len()+1, &hash), Err("truncated"));
-    assert_eq!(main34d_body(&mut std::io::Cursor::new(bytes), bytes.len()-1, &hash), Err("extra"));
-    assert_eq!(main34d_body(&mut std::io::Cursor::new(bytes), bytes.len(), &"0".repeat(64)), Err("digest"));
-    assert_eq!(main34d_body(&mut std::io::Cursor::new([255u8]), 1, &digest_bytes(&[255])), Err("utf8"));
-    assert_eq!(main34d_body(&mut std::io::Cursor::new(bytes), MAIN34D_CAP+1, &hash), Err("bound"));
-    let directory = std::env::temp_dir().join(format!("main34d-reader-{}-{}", std::process::id(), std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_nanos()));
+    assert_eq!(
+        main34d_body(&mut std::io::Cursor::new(bytes), bytes.len(), &hash),
+        Ok("complete\n".to_owned())
+    );
+    assert_eq!(
+        main34d_body(&mut std::io::Cursor::new(bytes), bytes.len() + 1, &hash),
+        Err("truncated")
+    );
+    assert_eq!(
+        main34d_body(&mut std::io::Cursor::new(bytes), bytes.len() - 1, &hash),
+        Err("extra")
+    );
+    assert_eq!(
+        main34d_body(
+            &mut std::io::Cursor::new(bytes),
+            bytes.len(),
+            &"0".repeat(64)
+        ),
+        Err("digest")
+    );
+    assert_eq!(
+        main34d_body(&mut std::io::Cursor::new([255u8]), 1, &digest_bytes(&[255])),
+        Err("utf8")
+    );
+    assert_eq!(
+        main34d_body(&mut std::io::Cursor::new(bytes), MAIN34D_CAP + 1, &hash),
+        Err("bound")
+    );
+    let directory = std::env::temp_dir().join(format!(
+        "main34d-reader-{}-{}",
+        std::process::id(),
+        std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .unwrap()
+            .as_nanos()
+    ));
     std::fs::create_dir(&directory).unwrap();
     struct Remove(std::path::PathBuf);
-    impl Drop for Remove { fn drop(&mut self) { let _ = std::fs::remove_dir_all(&self.0); } }
+    impl Drop for Remove {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
     let _remove = Remove(directory.clone());
     let file = directory.join("regular");
     std::fs::write(&file, bytes).unwrap();
-    assert_eq!(main34d_file(&file, bytes.len(), &hash), Ok("complete\n".to_owned()));
-    for length in [bytes.len()-1, bytes.len()+1] {
-        assert_eq!(main34d_file(&file, length, &hash), Err("length-or-nonregular"));
+    assert_eq!(
+        main34d_file(&file, bytes.len(), &hash),
+        Ok("complete\n".to_owned())
+    );
+    for length in [bytes.len() - 1, bytes.len() + 1] {
+        assert_eq!(
+            main34d_file(&file, length, &hash),
+            Err("length-or-nonregular")
+        );
     }
-    assert_eq!(main34d_file(&file, MAIN34D_CAP+1, &hash), Err("bound"));
+    assert_eq!(main34d_file(&file, MAIN34D_CAP + 1, &hash), Err("bound"));
     std::fs::write(&file, b"Complete\n").unwrap();
     assert_eq!(main34d_file(&file, bytes.len(), &hash), Err("digest"));
     std::fs::write(&file, b"complete\r\n").unwrap();
-    assert_eq!(main34d_file(&file, bytes.len(), &hash), Err("length-or-nonregular"));
-    #[cfg(unix)] {
-        let link = directory.join("link"); std::os::unix::fs::symlink(&file, &link).unwrap();
-        assert_eq!(main34d_file(&link, bytes.len()+1, &digest_bytes(b"complete\r\n")), Err("length-or-nonregular"));
+    assert_eq!(
+        main34d_file(&file, bytes.len(), &hash),
+        Err("length-or-nonregular")
+    );
+    #[cfg(unix)]
+    {
+        let link = directory.join("link");
+        std::os::unix::fs::symlink(&file, &link).unwrap();
+        assert_eq!(
+            main34d_file(&link, bytes.len() + 1, &digest_bytes(b"complete\r\n")),
+            Err("length-or-nonregular")
+        );
     }
-    assert_eq!(main34d_file(root, 0, &digest_bytes(&[])), Err("length-or-nonregular"));
-    assert_eq!(main34d_file(&root.join("docs/evidence/main34d-three-source-domains-20261017/NEVER_EXISTS"), 0, &digest_bytes(&[])), Err("missing"));
+    assert_eq!(
+        main34d_file(root, 0, &digest_bytes(&[])),
+        Err("length-or-nonregular")
+    );
+    assert_eq!(
+        main34d_file(
+            &root.join("docs/evidence/main34d-three-source-domains-20261017/NEVER_EXISTS"),
+            0,
+            &digest_bytes(&[])
+        ),
+        Err("missing")
+    );
 }
 
 // Independent latest MAIN ordinary-routes domain, never a retarget of MAIN34d.
 const MAINBCC_MANIFEST_LEN: usize = 12232;
-const MAINBCC_MANIFEST_SHA: &str = "3b66d32488e373f260b8f37b4046c6929e3f22a7c6c01834e66951a1b29141ee";
+const MAINBCC_MANIFEST_SHA: &str =
+    "3b66d32488e373f260b8f37b4046c6929e3f22a7c6c01834e66951a1b29141ee";
 const MAINBCC_CAP: usize = 1_048_576;
 fn mainbcc_manifest() -> serde_json::Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(MAINBCC_MANIFEST_LEN <= MAINBCC_CAP);
-    let text = main34d_file(&root.join("docs/evidence/mainbcc-ordinary-source-domain-20261017/input-manifest.json"), MAINBCC_MANIFEST_LEN, MAINBCC_MANIFEST_SHA).unwrap();
+    let text = main34d_file(
+        &root.join("docs/evidence/mainbcc-ordinary-source-domain-20261017/input-manifest.json"),
+        MAINBCC_MANIFEST_LEN,
+        MAINBCC_MANIFEST_SHA,
+    )
+    .unwrap();
     let value: serde_json::Value = serde_json::from_str(&text).unwrap();
-    assert_eq!(value["schema"], "semaprax.mainbcc-ordinary-source-domain.v1");
-    assert_eq!(value["main_head"], "bccbe9696eca892045b0603ad663234062df15f4");
+    assert_eq!(
+        value["schema"],
+        "semaprax.mainbcc-ordinary-source-domain.v1"
+    );
+    assert_eq!(
+        value["main_head"],
+        "bccbe9696eca892045b0603ad663234062df15f4"
+    );
     let entries = value["inputs"].as_array().unwrap();
     assert_eq!(entries.len(), 13);
     let mut paths = std::collections::BTreeSet::new();
     for entry in entries {
         assert!(paths.insert(entry["path"].as_str().unwrap()));
-        for field in ["current_len", "main_len"] { assert!(entry[field].as_u64().unwrap() <= MAINBCC_CAP as u64); }
+        for field in ["current_len", "main_len"] {
+            assert!(entry[field].as_u64().unwrap() <= MAINBCC_CAP as u64);
+        }
     }
     value
 }
 fn mainbcc_entry<'a>(manifest: &'a serde_json::Value, path: &str) -> &'a serde_json::Value {
-    let entries: Vec<_> = manifest["inputs"].as_array().unwrap().iter().filter(|entry| entry["path"] == path).collect();
+    let entries: Vec<_> = manifest["inputs"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .filter(|entry| entry["path"] == path)
+        .collect();
     assert_eq!(entries.len(), 1, "foreign, missing or duplicate BCC source");
     entries[0]
 }
@@ -588,7 +819,12 @@ pub(super) fn mainbcc_read(path: &Path) -> std::io::Result<String> {
     let relative = path.strip_prefix(root).unwrap().to_str().unwrap();
     let manifest = mainbcc_manifest();
     let entry = mainbcc_entry(&manifest, relative);
-    let raw = main34d_file(path, usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(), entry["current_sha256"].as_str().unwrap()).unwrap();
+    let raw = main34d_file(
+        path,
+        usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(),
+        entry["current_sha256"].as_str().unwrap(),
+    )
+    .unwrap();
     Ok(main34d_project_entry(entry, &raw))
 }
 pub(super) fn mainbcc_invert(proof: &serde_json::Value, current: &str) -> String {
@@ -620,7 +856,8 @@ pub(super) fn mainbcc_invert(proof: &serde_json::Value, current: &str) -> String
 fn complete_mainbcc_routes_keep_all_six_rows_and_refuse_foreign_inputs() {
     let manifest = mainbcc_manifest();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let table = mainbcc_read(&root.join("docs/evidence/ordinary-replay-routes-v1/sources.json")).unwrap();
+    let table =
+        mainbcc_read(&root.join("docs/evidence/ordinary-replay-routes-v1/sources.json")).unwrap();
     let rows: Vec<serde_json::Value> = serde_json::from_str(&table).unwrap();
     assert_eq!(rows.len(), 6);
     for entry in manifest["inputs"].as_array().unwrap() {

@@ -1,0 +1,16 @@
+[
+  {
+    "gate": "source_locked_contracts",
+    "passed": true,
+    "peak_KiB": 4544,
+    "actual_source_unchanged_from_existing_standalone_binary": true,
+    "runtime_reads_current_same_SSD_checkout": true
+  },
+  {
+    "gate": "module_size",
+    "passed": true,
+    "peak_KiB": 5760,
+    "actual_source_unchanged_from_existing_standalone_binary": true,
+    "runtime_reads_current_same_SSD_checkout": true
+  }
+]

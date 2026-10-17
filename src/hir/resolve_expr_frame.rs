@@ -12,7 +12,6 @@ use std::rc::Rc;
 
 use crate::ast::{BinaryOp, Expr, Span, Statement, Type, UnaryOp};
 
-use super::Scope;
 #[cfg(test)]
 use super::capacity_probe::{
     resolved_expr_owned_capacity, resolved_field_initializer_owned_capacity,
@@ -28,6 +27,7 @@ use super::nodes::{
     DeclarationKind, ResolvedBinding, ResolvedHostCommandOperation, ResolvedMatchMode, ResolvedType,
 };
 use super::resolve_expr::path_arena::{PathId, Seg, Step};
+use super::Scope;
 
 pub(super) enum Frame<'expr> {
     FinishVecConstructor {

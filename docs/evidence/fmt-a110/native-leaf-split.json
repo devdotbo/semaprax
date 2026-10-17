@@ -1,0 +1,13 @@
+{
+  "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+  "new_path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+  "before_sha256": "afb1c1a3847eb6429a8b150128868b0d0a03ae9ef28062eb966a4e7a2881df39",
+  "moved_sha256": "842979bf706a0ce014e74436eefbc722ccbef7e605f5aaeba3893dca7e55781f",
+  "scope": "Complete adjacent macro items moved verbatim at the same module scope and physical directory",
+  "before_file": "/Volumes/Semaprax/tmp/ci-38383508340/source-union-8c95/native-formatted-before-split.txt",
+  "registration_inverse": {
+    "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/moderate_tests/before.rs\"), include_str!(\"../../../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs\"))",
+    "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/moderate_tests/before.rs\")"
+  },
+  "whole_expansion_verified": true
+}

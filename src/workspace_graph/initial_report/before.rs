@@ -112,7 +112,9 @@ pub(super) fn build_owned_inner(
             if let Some(frontend) = frontend.as_deref_mut() {
                 frontend.canonicalized();
             }
-            canonical.bytes.expect("canonical byte count checked before source equality")
+            canonical
+                .bytes
+                .expect("canonical byte count checked before source equality")
         };
         canonical_bytes = checked_usage(
             canonical_bytes,
@@ -222,7 +224,10 @@ pub(super) fn build_owned_inner(
                 );
                 constructor_failure::attempt::run(active_builder_limit(), || {
                     constructor_failure::attempt::reserve(layouts.receipt())?;
-                    staged!(CorePrebound, constructor_failure::attempt::reserve(resolve_builder_bytes))?;
+                    staged!(
+                        CorePrebound,
+                        constructor_failure::attempt::reserve(resolve_builder_bytes)
+                    )?;
                     let custody = custody::SourceCustody::plan(
                         &sources,
                         &programs,
@@ -414,7 +419,6 @@ pub(super) fn build_owned_inner(
     build.current_sources = Some(owners);
     Ok((build, sources))
 }
-
 
 // The exact original terminal Vec producer, independently callable after a
 // real failed attempt. The whole original Err site remains in the body above.

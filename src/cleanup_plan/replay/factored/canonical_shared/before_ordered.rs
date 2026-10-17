@@ -7,8 +7,8 @@ use super::super::{
     ResolvedFunction, Weighted,
 };
 
-use super::{app_census, epsilon_alias, successor_targets, tests};
 use super::before_held::memo;
+use super::{app_census, epsilon_alias, successor_targets, tests};
 
 type SharedWeighted = Rc<Weighted>;
 
@@ -611,8 +611,11 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
-
 impl Canonicalizer<'_> {
-    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
-    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
+    pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
+        &self.states
+    }
 }

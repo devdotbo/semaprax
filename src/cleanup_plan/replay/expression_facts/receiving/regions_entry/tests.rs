@@ -518,23 +518,36 @@ fn region_entry_original_input(source: &str, current: &str) -> String {
     use sha2::{Digest, Sha256};
     // Acquire the complete exact pre-885 source before the unchanged older
     // runtime-view/hash/registration authorities below. No assertion is waived.
-    let before_885 = crate::cleanup_plan::replay::expression_facts::arena::retained::tests::before_885_source(source, current);
+    let before_885 =
+        crate::cleanup_plan::replay::expression_facts::arena::retained::tests::before_885_source(
+            source, current,
+        );
     let current = before_885.as_str();
     let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"
     )))
     .unwrap();
-    let row = rows.as_array().unwrap().iter().find(|row| row["source"] == source)
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["source"] == source)
         .expect("complete named region-entry input");
     assert_eq!(
-        format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
         row["current_sha256"].as_str().unwrap()
     );
     assert_eq!(current, row["edits"][0]["new"].as_str().unwrap());
     let original = row["edits"][0]["old"].as_str().unwrap();
     assert_eq!(
-        format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
         row["original_sha256"].as_str().unwrap()
     );
     original.to_owned()

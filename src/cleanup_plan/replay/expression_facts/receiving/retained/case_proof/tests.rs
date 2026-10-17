@@ -1,8 +1,8 @@
 //! Whole old/current receiver, diagnostics and last Drop stay inside the observer.
 use super::super::{
-    DeclarationId, Diagnostic, ExpressionId, Facts, MAX_REPLAY_WORK_UNITS, ReplayBudget,
-    ResolvedFunction, ResolvedProgram, StatusLane, StatusProducer, capacity, errors,
-    physical_storage, validate_status_sources_certified, validate_status_sources_retained,
+    capacity, errors, physical_storage, validate_status_sources_certified,
+    validate_status_sources_retained, DeclarationId, Diagnostic, ExpressionId, Facts, ReplayBudget,
+    ResolvedFunction, ResolvedProgram, StatusLane, StatusProducer, MAX_REPLAY_WORK_UNITS,
 };
 use super::StatusCases;
 use crate::bounded_output::with_limit_usage_refusal;

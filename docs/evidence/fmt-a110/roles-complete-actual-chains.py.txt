@@ -1,0 +1,31 @@
+from pathlib import Path
+import json,copy,hashlib
+R=Path.cwd();O=Path('/Volumes/Semaprax/tmp/ci-38383508340/format-role-generation-a110');H=lambda b:hashlib.sha256(b).hexdigest();records=[]
+allowed_parents={'crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs','src/source_reflows_merge/main67107_inputs_tail.rs'}
+def endpoint(chain):
+ current=chain['root']
+ for edge in chain['edges']:
+  if current!=edge['parent']:return None
+  raw=(R/current).read_bytes();text=edge['text'].encode();assert raw[edge['start']:edge['start']+len(text)]==text
+  current=edge['child']
+ return current
+for name in ['hir','projection']:
+ original=(O/(name+'-current.json')).read_bytes();m=json.loads(original);changes=[];coalesced=0
+ for source,row in m['classes'].items():
+  for index,chain in enumerate(row['chains']):
+   if endpoint(chain)==source:continue
+   edges=copy.deepcopy(chain['edges']);assert edges and edges[0]['parent']in allowed_parents;assert chain['root']=='tests/hir_module_boundaries.rs'
+   parent=edges[0]['parent'];candidates=[candidate for candidate in m['classes'][parent]['chains']if all(candidate[k]==chain[k]for k in ['root','kind','package'])and endpoint(candidate)==parent]
+   assert len(candidates)==1,(source,parent,len(candidates));prefix=copy.deepcopy(candidates[0]['edges']);assert prefix
+   chain['edges']=prefix+edges;assert chain['edges'][-len(edges):]==edges and endpoint(chain)==source
+   changes.append({'source':source,'original_chain_index':index,'root':chain['root'],'original_edges':edges,'actual_prefix_edges':prefix,'complete_chain_edges':copy.deepcopy(chain['edges']),'every_original_edge_retained_as_exact_suffix':True})
+  unique=[]
+  for chain in row['chains']:
+   if chain not in unique:unique.append(chain)
+   else:coalesced+=1
+  row['chains']=unique
+ assert len(changes)==3
+ for source,row in m['classes'].items():
+  assert all(endpoint(chain)==source for chain in row['chains'])
+ raw=(json.dumps(m,separators=(',',':'))+'\n').encode();(O/(name+'-complete.json')).write_bytes(raw);records.append({'domain':name,'original_generated_sha256':H(original),'completed_sha256':H(raw),'actual_acquisition_prefix_extensions':changes,'only_identical_complete_paths_coalesced':coalesced,'all_original_sources_roles_chunks_and_closure_members_retained':True});print(name,'completed',len(changes),'actual chains; identical complete paths coalesced',coalesced,flush=True)
+(O/'complete-chain-receipt.json').write_text(json.dumps({'status':'SOURCE_ONLY_GENERATOR_EXTENSION_PENDING_ORIGINAL_VERIFIER','reason':'The unchanged generator loses an inherited include_str acquisition when a newly extracted include! file itself acquires source data. Preserve every original edge and prepend its single actual same-root parent acquisition. No verifier predicate or actual source bytes change.','domains':records},indent=2)+'\n')

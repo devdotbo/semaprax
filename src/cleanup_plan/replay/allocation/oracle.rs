@@ -244,18 +244,23 @@ impl OracleLease {
 
     pub(in crate::cleanup_plan::replay) fn authenticate_zero(self) -> bool {
         ACCOUNT.with(|account| {
-            let Some(mut state) = account.get() else { return false; };
+            let Some(mut state) = account.get() else {
+                return false;
+            };
             if state.epoch != self.epoch {
                 return false;
             }
             // Preserve charge(0)'s attempt count even on sticky retries, and
             // its exact first receipt when the counter itself cannot advance.
             let Some(ordinal) = state.receipt.calls.checked_add(1) else {
-                state.receipt.first_refusal.get_or_insert(OracleFirstRefusal {
-                    requested: 0,
-                    remaining: state.receipt.allowance - state.receipt.charged,
-                    ordinal: state.receipt.calls,
-                });
+                state
+                    .receipt
+                    .first_refusal
+                    .get_or_insert(OracleFirstRefusal {
+                        requested: 0,
+                        remaining: state.receipt.allowance - state.receipt.charged,
+                        ordinal: state.receipt.calls,
+                    });
                 account.set(Some(state));
                 return false;
             };

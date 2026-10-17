@@ -709,7 +709,10 @@ pub(super) fn transition_observation_historical(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
     transition: &CleanupTransition,
-) -> Result<Option<crate::cleanup_plan::replay::compact_stage::before::SkeletonObservation>, Diagnostic> {
+) -> Result<
+    Option<crate::cleanup_plan::replay::compact_stage::before::SkeletonObservation>,
+    Diagnostic,
+> {
     use crate::cleanup_plan::replay::compact_stage::before::SkeletonObservation;
     reserve_transition_observation(function, budget, transition)?;
     Ok(Some(match transition {

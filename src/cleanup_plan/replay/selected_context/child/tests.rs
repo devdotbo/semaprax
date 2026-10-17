@@ -1,10 +1,10 @@
 //! Actual typed child receiver and complete independent old producer controls.
 use super::{Permit, Refusal};
 use crate::cleanup_plan::replay::{
-    ReplayBudget, expression_facts, primitive_fixture, replay_error, selected_context,
-    semantic_refusal,
+    expression_facts, primitive_fixture, replay_error, selected_context, semantic_refusal,
+    ReplayBudget,
 };
-use crate::cleanup_plan::{ReplayPhysicalReservation, renewal_profile};
+use crate::cleanup_plan::{renewal_profile, ReplayPhysicalReservation};
 use crate::diagnostic::Diagnostic;
 use crate::hir::{ResolvedExprKind, ResolvedFunction, ResolvedProgram};
 use crate::test_allocation_observer::measure;
@@ -293,11 +293,9 @@ fn complete_old_helper_proof_and_collection_probe_keep_all_fields_and_drop() {
 
                     // Exact held statement identities, not only counts.
                     for (id, binding) in old.borrowed_entries() {
-                        assert!(
-                            current
-                                .get_exact(id)
-                                .is_some_and(|current| std::ptr::eq(current, binding))
-                        );
+                        assert!(current
+                            .get_exact(id)
+                            .is_some_and(|current| std::ptr::eq(current, binding)));
                     }
                     drop(current);
                     drop(old);

@@ -1,7 +1,7 @@
 fn complete_source_archives() {
     use sha2::{Digest, Sha256};
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::ExitDirectory))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::ExitDirectory)).unwrap();
     let sources = [
         ("src/cleanup_plan/replay.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/exit-status-directory-reuse/src__cleanup_plan__replay.rs.before.txt")), "2a4db37f10435075809a43d112073b686710d55f4f5f43e0f553686a63504796"),
         ("src/cleanup_plan/replay/expression_facts/receiving.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/exit-status-directory-reuse/src__cleanup_plan__replay__expression_facts__receiving.rs.before.txt")), "2e8e01a0d509c00cc39953fa8358d7533c862ea1367c9eba6fe7fcb8c0179762"),
@@ -36,4 +36,6 @@ fn complete_source_archives() {
 }
 
 #[test]
-fn complete_original_owner_is_executed() { complete_source_archives(); }
+fn complete_original_owner_is_executed() {
+    complete_source_archives();
+}

@@ -1,0 +1,101 @@
+from pathlib import Path
+import json,hashlib,base64,subprocess,shutil
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-custody-a110';G=str(S/'plan-prefix-multiset/git-low-memory');P='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json';M='src/source_reflows_merge/main_e177_final_inputs.rs';E='docs/evidence/fmt-a110';H=lambda b:hashlib.sha256(b).hexdigest()
+assert subprocess.check_output([G,'rev-parse','HEAD'],text=True).strip()=='a110ea82e2f3eec797b4fd44b98836927f7218e1'
+raw=(R/P).read_bytes();assert raw==(O/'whole-before-current-inputs.json').read_bytes();current=(O/'candidate-current-inputs.json').read_bytes();j=json.loads(current);old=json.loads(raw);assert len(old['rows'])==124 and len(current)<=262144
+receipt=json.loads((O/'candidate-receipt.json').read_bytes());assert receipt['all_original_fields_and_prior_views_retained']and receipt['same_scope_fragment_dependencies']==10
+def install(path,data):
+ p=R/path;p.parent.mkdir(parents=True,exist_ok=True)
+ if p.exists():assert p.read_bytes()==data,('immutable archive conflict',path)
+ else:p.write_bytes(data)
+archives={}
+def collect(x):
+ if isinstance(x,dict):
+  if 'archive'in x and str(x['archive']).startswith(E+'/'):archives[x['archive']]=x
+  for value in x.values():collect(value)
+ elif isinstance(x,list):
+  for value in x:collect(value)
+collect(j)
+for path,pin in archives.items():
+ data=(O/'planned-images'/path).read_bytes();assert(len(data),H(data))==(pin['length'],pin['sha256']);install(path,data)
+prior_path=E+'/packet-'+base64.urlsafe_b64encode(bytes.fromhex(H(raw))).decode().rstrip('=')+'.json.txt';install(prior_path,raw)
+helper=(R/M).read_text();(O/'whole-before-main-helper.rs').write_text(helper)
+start=helper.index('fn packet() -> serde_json::Value {');end=helper.index('\nfn packet_remote_d88(',start);block=helper[start:end];assert block.count(P)==2;old_block=block;block=block.replace('fn packet() -> serde_json::Value {','fn packet_a110() -> serde_json::Value {',1).replace(P,prior_path)
+assert block.replace('fn packet_a110() -> serde_json::Value {','fn packet() -> serde_json::Value {',1).replace(prior_path,P)==old_block
+wrapper='''fn packet() -> serde_json::Value {
+    let data = include_str!("../../@PACKET@");
+    assert_eq!(data.len(), @LENGTH@);
+    assert_eq!(digest(data.as_bytes()), "@SHA@");
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(held(&root.join("@PACKET@"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
+    assert_eq!(packet["source_cap"].as_u64(), Some(SOURCE_CAP as u64));
+    let rows = packet["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), @ROWS@);
+    let mut seen = std::collections::BTreeSet::new();
+    let mut fragment_edges = 0;
+    for row in rows {
+        assert!(seen.insert(row["source"].as_str().unwrap()));
+        if let Some(children) = row.get("fragments") {
+            for child in children.as_array().unwrap() {
+                assert!(child.get("fragments").is_none(), "fragment dependencies are leaves");
+                assert_eq!(child["compiled"], true);
+                assert_eq!(rows.iter().find(|candidate| candidate["source"] == child["source"]).unwrap(), child);
+                fragment_edges += 1;
+            }
+        }
+    }
+    assert_eq!(fragment_edges, 10);
+    // Replay every complete previous table and its original checks unchanged.
+    let previous = packet_a110();
+    let old_rows = previous["rows"].as_array().unwrap();
+    assert!(rows.len() >= old_rows.len());
+    for (before, after) in old_rows.iter().zip(rows) {
+        assert_eq!(after["source"], before["source"], "original source order");
+        let views = after["views"].as_array().unwrap();
+        let old_views = before["views"].as_array().unwrap();
+        assert!(views.len() >= old_views.len());
+        assert_eq!(&views[..old_views.len()], old_views.as_slice(), "all original view fields and order");
+        if after["current"] != before["current"] {
+            assert!(views.iter().any(|view| {
+                let mut view = view.clone();
+                view.as_object_mut().unwrap().remove("name");
+                view == before["current"]
+            }), "complete previous current record must remain replayable");
+        }
+        let mut restored = after.clone();
+        restored["current"] = before["current"].clone();
+        restored["views"] = before["views"].clone();
+        restored.as_object_mut().unwrap().remove("fragments");
+        assert_eq!(&restored, before, "all other original row fields");
+    }
+    let mut restored = packet.clone();
+    restored["rows"] = previous["rows"].clone();
+    assert_eq!(restored, previous, "all original packet fields and whole-table anchors");
+    packet
+}
+'''
+for a,b in {'@PACKET@':P,'@LENGTH@':str(len(current)),'@SHA@':H(current),'@ROWS@':str(len(j['rows']))}.items():wrapper=wrapper.replace(a,b)
+helper=helper[:start]+wrapper+block+helper[end:]
+start=helper.index('fn compiled(');end=helper.index('\nfn read_view(',start);compiled=helper[start:end];at=compiled.index('match source {')+len('match source {');children=sorted({child['source']for row in j['rows']for child in row.get('fragments',[])})
+assert len(children)==10
+arms=[]
+for child in children:
+ assert json.dumps(child)not in compiled
+ arms.append('        '+json.dumps(child)+' => Some(include_str!("../../'+child+'")),')
+compiled=compiled[:at]+'\n'+'\n'.join(arms)+compiled[at:];helper=helper[:start]+compiled+helper[end:]
+start=helper.index('fn actual(');end=helper.index('\npub(crate) fn file(',start);actual=helper[start:end];tail='\n    value\n}';assert actual.count(tail)==1
+checks='''
+    if let Some(children) = row.get("fragments") {
+        for child in children.as_array().unwrap() {
+            assert!(child.get("fragments").is_none());
+            // Authenticate actual same-scope compiled bytes before returning
+            // the shortened parent's complete historical source view.
+            actual(child);
+        }
+    }
+'''
+actual=actual.replace(tail,checks+tail);helper=helper[:start]+actual+helper[end:]
+(R/M).write_text(helper);(R/P).write_bytes(current)
+(O/'packet-application.json').write_text(json.dumps({'base':'a110ea82e2f3eec797b4fd44b98836927f7218e1','old_rows':124,'new_rows':len(j['rows']),'packet_length':len(current),'packet_sha256':H(current),'complete_prior_packet':{'archive':prior_path,'length':len(raw),'sha256':H(raw)},'old_packet_function_body_retained_with_only_name_and_archive_path_change':True,'all_original_predecessor_functions_anchors_and_tests_retained':True,'compiled_same_scope_fragment_arms':children,'fragment_parent_checks_before_historical_publication':True,'installed_only_referenced_complete_archives':len(archives),'pending_guard_config_and_full_verification':True},indent=2)+'\n');print('Applied complete current packet',len(j['rows']),'rows;',len(current),'bytes; all124 original rows and every old table assertion retained.',flush=True)

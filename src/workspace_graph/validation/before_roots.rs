@@ -15,8 +15,8 @@ use crate::hir;
 
 use crate::workspace_graph::shape_identity::before785::top_level_declaration;
 use crate::workspace_graph::{
-    graph_error, prelude_binding, reserve_builder_structure,
-    AuthoredDeclaration, ResolvedModuleInput, WorkspaceDeclarationFact,
+    graph_error, prelude_binding, reserve_builder_structure, AuthoredDeclaration,
+    ResolvedModuleInput, WorkspaceDeclarationFact,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]

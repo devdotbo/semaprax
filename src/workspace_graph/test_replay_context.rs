@@ -89,12 +89,15 @@ impl SourceRecordReplayFixture {
         apply: impl FnOnce(&dyn crate::cleanup::ReplayContext) -> T,
     ) -> T {
         let module = self.module();
-        let roots = module.functions.iter()
+        let roots = module
+            .functions
+            .iter()
             .map(|function| function.id.as_str().to_owned())
             .collect::<Vec<_>>();
-        let program = self.0.linked_owned_data_api_program_with_roots(
-            &module.module, &roots,
-        ).unwrap();
+        let program = self
+            .0
+            .linked_owned_data_api_program_with_roots(&module.module, &roots)
+            .unwrap();
         apply(&program)
     }
     pub(crate) fn with_context<T>(

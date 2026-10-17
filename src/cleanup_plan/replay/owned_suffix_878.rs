@@ -28,8 +28,7 @@ pub(super) const QUERY: usize = std::mem::size_of::<Result<(), Diagnostic>>()
 
 // Per original suffix: actual/formal clone helper arguments and returned,
 // received, then stored observation carriers. Acquired before moving inputs.
-pub(super) const ROW_CLONE_CONTROLS: usize =
-    2 * std::mem::size_of::<(&mut SkeletonWork<'static, 'static>, &Observations, &str)>()
+pub(super) const ROW_CLONE_CONTROLS: usize = 2 * std::mem::size_of::<(&mut SkeletonWork<'static, 'static>, &Observations, &str)>()
     + 2 * std::mem::size_of::<Result<Observations, Diagnostic>>()
     + std::mem::size_of::<Observations>()
     // Same pre-query computation owner as merge_keys: per original suffix,

@@ -810,8 +810,10 @@ fn composed_current_lexical_successor_adds_the_exact_later_arity_places_to_the_o
             // (including the non-unit terminal) forms exactly one activation.
             let activations = usize::from(length != 0 || weight != 1);
             let later = activations * Canonicalizer::BORROWED_EXIT_LOCAL;
-            assert_eq!(Canonicalizer::BORROWED_EXIT_LOCAL,
-                2 * size_of::<usize>() + 4 * size_of::<bool>());
+            assert_eq!(
+                Canonicalizer::BORROWED_EXIT_LOCAL,
+                2 * size_of::<usize>() + 4 * size_of::<bool>()
+            );
             let overhead = a + n * PER_USE_SELECTION + later;
             let gross = (n - m) * PRIMITIVE_FRAMES;
             assert_eq!(
@@ -831,16 +833,41 @@ fn matched_884_keeps_the_whole_original_equation_and_observer_with_only_route_gl
     let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lexical-successor-matched-884-20261018/before/src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"));
     let current = include_str!("tests.rs");
     let marker = "#[test]\nfn actual_lexical_successor_reports_full_old_current_tuples_and_typed_break_even_without_credit()";
-    let old = before[before.find(marker).unwrap()..].split("\nfn primitive(").next().unwrap();
-    let actual = current[current.find(marker).unwrap()..].split("\nfn primitive(").next().unwrap();
-    assert_eq!(actual, old.replace("let old = observe(", "let old = observe_matched(").replace("let current = observe(", "let current = observe_matched("));
+    let old = before[before.find(marker).unwrap()..]
+        .split("\nfn primitive(")
+        .next()
+        .unwrap();
+    let actual = current[current.find(marker).unwrap()..]
+        .split("\nfn primitive(")
+        .next()
+        .unwrap();
+    assert_eq!(
+        actual,
+        old.replace("let old = observe(", "let old = observe_matched(")
+            .replace("let current = observe(", "let current = observe_matched(")
+    );
     let root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/lexical-successor-matched-884-20261018/historical-9debb-canonical_shared.rs.txt"));
     let start = root.find("    pub(super) fn id(").unwrap();
-    let end = root[start..].find("    #[cfg(test)]\n    fn successors(").unwrap() + start;
-    let expected = root[start..end].trim_end().replace("pub(super) fn id(", "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(").replace("self.id_with_receiving(", "self.before_borrowed_single_id_with_receiving(");
+    let end = root[start..]
+        .find("    #[cfg(test)]\n    fn successors(")
+        .unwrap()
+        + start;
+    let expected = root[start..end]
+        .trim_end()
+        .replace(
+            "pub(super) fn id(",
+            "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(",
+        )
+        .replace(
+            "self.id_with_receiving(",
+            "self.before_borrowed_single_id_with_receiving(",
+        );
     let frame = include_str!("frame_loop/before_borrowed_single.rs");
     let start = frame.find("    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn matched_884_id(").unwrap();
-    assert_eq!(frame[start..].trim_end().strip_suffix("\n}").unwrap(), expected);
+    assert_eq!(
+        frame[start..].trim_end().strip_suffix("\n}").unwrap(),
+        expected
+    );
 }
 
 #[test]
@@ -850,9 +877,21 @@ fn whole_884_observer_keeps_the_old_type_id_and_only_routes_the_current_type_to_
     let end = before[start..].find("\n#[test]").unwrap() + start;
     let expected = before[start..end].replacen("fn observe(", "fn observe_matched(", 1);
     let split = expected.find("                } else {").unwrap();
-    let expected = format!("{}{}", &expected[..split], expected[split..].replacen("c.id(f, vec![(root, weight)], &mut b)", "c.matched_884_id(f, vec![(root, weight)], &mut b)", 1));
+    let expected = format!(
+        "{}{}",
+        &expected[..split],
+        expected[split..].replacen(
+            "c.id(f, vec![(root, weight)], &mut b)",
+            "c.matched_884_id(f, vec![(root, weight)], &mut b)",
+            1
+        )
+    );
     let current = include_str!("tests.rs");
     let start = current.find("fn observe_matched(").unwrap();
     let end = current[start..].find("\n#[test]").unwrap() + start;
-    assert_eq!(&current[start..end], expected, "both complete original observer arms; old and current types remain independently compiled");
+    assert_eq!(
+        &current[start..end],
+        expected,
+        "both complete original observer arms; old and current types remain independently compiled"
+    );
 }

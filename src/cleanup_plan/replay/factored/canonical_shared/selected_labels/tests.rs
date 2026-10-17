@@ -4,9 +4,8 @@ use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 
 fn fixture() -> ResolvedFunction {
-    super::super::super::lexical_plan_tests::fixture(
-        super::super::super::lexical_plan_tests::WHILE,
-    ).1
+    super::super::super::lexical_plan_tests::fixture(super::super::super::lexical_plan_tests::WHILE)
+        .1
 }
 fn graph(function: &ResolvedFunction, case: usize) -> (Automaton, usize, usize) {
     use super::super::super::super::{SkeletonObservation, SkeletonTerminal};
@@ -14,8 +13,12 @@ fn graph(function: &ResolvedFunction, case: usize) -> (Automaton, usize, usize) 
     let mut graph = Automaton::default();
     let sink = graph.node(function, &mut setup).unwrap();
     let root = graph.node(function, &mut setup).unwrap();
-    let first = graph.end(function, &mut setup, sink, SkeletonTerminal::Failure).unwrap();
-    let second = graph.end(function, &mut setup, sink, SkeletonTerminal::LoopLatch).unwrap();
+    let first = graph
+        .end(function, &mut setup, sink, SkeletonTerminal::Failure)
+        .unwrap();
+    let second = graph
+        .end(function, &mut setup, sink, SkeletonTerminal::LoopLatch)
+        .unwrap();
     let a = Label::End(SkeletonTerminal::Success);
     let b = Label::End(SkeletonTerminal::Failure);
     let c = Label::End(SkeletonTerminal::LoopLatch);
@@ -23,19 +26,31 @@ fn graph(function: &ResolvedFunction, case: usize) -> (Automaton, usize, usize) 
         0 => vec![],
         1 => vec![(a.clone(), first), (a, first)],
         2 => vec![(a.clone(), first), (a, second)],
-        3 => vec![(b.clone(), second), (a.clone(), first), (b, second), (c, first), (a, second)],
+        3 => vec![
+            (b.clone(), second),
+            (a.clone(), first),
+            (b, second),
+            (c, first),
+            (a, second),
+        ],
         _ => {
             let left = Rc::new(SkeletonObservation::Boolean {
-                expression: function.body.id.clone(), value: true,
+                expression: function.body.id.clone(),
+                value: true,
             });
             let right = Rc::new((*left).clone());
             assert!(!Rc::ptr_eq(&left, &right));
             assert_eq!(left, right);
-            vec![(Label::Observation(left), first), (Label::Observation(right), first)]
+            vec![
+                (Label::Observation(left), first),
+                (Label::Observation(right), first),
+            ]
         }
     };
     for (label, child) in edges.drain(..) {
-        graph.movement(function, &mut setup, root, label, child).unwrap();
+        graph
+            .movement(function, &mut setup, root, label, child)
+            .unwrap();
     }
     (graph, sink, root)
 }
@@ -59,8 +74,10 @@ fn selected_inline_actual_parent_preserves_whole_ids_states_work_and_six_field_r
                     // Diagnostic derives equality over code/severity/message/
                     // span/path/help; retain every field, including ordering.
                     assert_eq!(actual, expected, "case={case} weight={weight} work={work}");
-                    assert_eq!((budget.remaining, budget.skeleton_remaining),
-                        (old_budget.remaining, old_budget.skeleton_remaining));
+                    assert_eq!(
+                        (budget.remaining, budget.skeleton_remaining),
+                        (old_budget.remaining, old_budget.skeleton_remaining)
+                    );
                     assert!(current.ids.iter().eq(old.signatures().iter()));
                     assert!(current.states.iter().eq(old.states().iter()));
                 });
@@ -69,12 +86,22 @@ fn selected_inline_actual_parent_preserves_whole_ids_states_work_and_six_field_r
     }
 }
 
-fn observe(function: &ResolvedFunction, graph: &Automaton, sink: usize, root: usize,
-    limit: usize, old: bool) -> (Result<usize, ()>, Metrics) {
+fn observe(
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    root: usize,
+    limit: usize,
+    old: bool,
+) -> (Result<usize, ()>, Metrics) {
     measure(|| {
         let mut budget = match ReplayBudget::with_physical(function, limit) {
             Ok(budget) => budget,
-            Err(error) => { assert_eq!(error.code, "SPX-H006"); drop(error); return Err(()); }
+            Err(error) => {
+                assert_eq!(error.code, "SPX-H006");
+                drop(error);
+                return Err(());
+            }
         };
         let result = (|| {
             budget.reserve_array::<(usize, u64)>(function, 1, "selected inline root")?;
@@ -90,9 +117,16 @@ fn observe(function: &ResolvedFunction, graph: &Automaton, sink: usize, root: us
         })();
         assert!(current_metrics().allocated <= budget.physical.as_ref().unwrap().charged());
         let stopped = current_metrics().allocated;
-        let result = result.map_err(|error| { assert_eq!(error.code, "SPX-H006"); drop(error); });
+        let result = result.map_err(|error| {
+            assert_eq!(error.code, "SPX-H006");
+            drop(error);
+        });
         drop(budget);
-        assert_eq!(current_metrics().allocated, stopped, "whole Drop allocates no backing");
+        assert_eq!(
+            current_metrics().allocated,
+            stopped,
+            "whole Drop allocates no backing"
+        );
         result
     })
 }
@@ -105,13 +139,20 @@ fn selected_inline_reports_current_old_actual_tuples_and_every_byte_cut_through_
         let (old, old_metrics) = observe(&function, &graph, sink, root, 1 << 25, true);
         let (current, metrics) = observe(&function, &graph, sink, root, 1 << 25, false);
         let exact = current.unwrap();
-        eprintln!("selected-inline-labels case={case} old={:?} current={:?}",
-            (old.unwrap(), old_metrics), (exact, metrics));
+        eprintln!(
+            "selected-inline-labels case={case} old={:?} current={:?}",
+            (old.unwrap(), old_metrics),
+            (exact, metrics)
+        );
         // No predicted charged-byte gain or historical tuple is an expectation.
         // The original strict widths0..4 owner remains unchanged and required.
         for limit in 0..=exact {
             let (result, metrics) = observe(&function, &graph, sink, root, limit, false);
-            assert_eq!(result.is_ok(), limit == exact, "case={case} limit={limit}/{exact}");
+            assert_eq!(
+                result.is_ok(),
+                limit == exact,
+                "case={case} limit={limit}/{exact}"
+            );
             assert!(!metrics.invalid && metrics.live == 0);
             assert_eq!(metrics.allocated, metrics.freed);
         }
@@ -132,23 +173,32 @@ fn selected_inline_warm_parent_rejects_foreign_function_budget_scope_and_restora
         with_limit_usage_refusal(1 << 26, || {
             let mut budget = ReplayBudget::with_physical(&function, 1 << 25).unwrap();
             let mut current = Canonicalizer::new(&graph, sink);
-            assert!(current.id(&function, vec![(root, 1)], &mut budget).unwrap().is_some());
+            assert!(current
+                .id(&function, vec![(root, 1)], &mut budget)
+                .unwrap()
+                .is_some());
             let work = budget.remaining;
             let charged = budget.physical.as_ref().unwrap().charged();
             // Root argument construction is the unchanged external test caller.
             let error = if kind == 0 {
-                current.id(&foreign_function, vec![(root, 1)], &mut budget).unwrap_err()
+                current
+                    .id(&foreign_function, vec![(root, 1)], &mut budget)
+                    .unwrap_err()
             } else if kind == 1 {
                 let mut foreign = ReplayBudget::with_physical(&function, 1 << 25).unwrap();
                 let foreign_work = foreign.remaining;
                 let foreign_paid = foreign.physical.as_ref().unwrap().charged();
-                let error = current.id(&function, vec![(root, 1)], &mut foreign).unwrap_err();
+                let error = current
+                    .id(&function, vec![(root, 1)], &mut foreign)
+                    .unwrap_err();
                 assert_eq!(foreign.remaining, foreign_work);
                 assert_eq!(foreign.physical.as_ref().unwrap().charged(), foreign_paid);
                 error
             } else {
                 let (error, refused, used, first) = with_limit_usage_refusal(0, || {
-                    current.id(&function, vec![(root, 1)], &mut budget).unwrap_err()
+                    current
+                        .id(&function, vec![(root, 1)], &mut budget)
+                        .unwrap_err()
                 });
                 assert!(!refused && used == 0 && first.is_none());
                 error
@@ -156,7 +206,9 @@ fn selected_inline_warm_parent_rejects_foreign_function_budget_scope_and_restora
             assert_eq!(error, Diagnostic::io("SPX-H006", String::new()));
             assert_eq!(budget.remaining, work);
             assert_eq!(budget.physical.as_ref().unwrap().charged(), charged);
-            let restored = current.id(&function, vec![(root, 1)], &mut budget).unwrap_err();
+            let restored = current
+                .id(&function, vec![(root, 1)], &mut budget)
+                .unwrap_err();
             assert_eq!(restored, error);
             assert_eq!(budget.remaining, work);
             assert_eq!(budget.physical.as_ref().unwrap().charged(), charged);
@@ -167,8 +219,13 @@ fn selected_inline_warm_parent_rejects_foreign_function_budget_scope_and_restora
 #[test]
 fn complete_before_receiver_is_source_exact_with_only_test_wiring() {
     let before = include_str!("canonical.before.txt");
-    let production = before.split("// Invoked only after preflight").nth(1).unwrap()
-        .split("\n#[cfg(test)]\nmod tests;").next().unwrap();
+    let production = before
+        .split("// Invoked only after preflight")
+        .nth(1)
+        .unwrap()
+        .split("\n#[cfg(test)]\nmod tests;")
+        .next()
+        .unwrap();
     let compiled = include_str!("../before_selected_labels.rs");
     let namespace = r##"//! Complete 67046 production receiver in an independent test namespace.
 //! Source-only: this new compilation unit has not been compiled or executed.
@@ -188,10 +245,19 @@ impl Canonicalizer<'_> {
 
 mod terminal_leaf;
 "##;
-    let restored = compiled.strip_prefix(namespace).unwrap().strip_suffix(adapters).unwrap();
-    assert_eq!(restored, format!("// Invoked only after preflight{production}"));
-    assert_eq!(include_str!("../before_selected_labels/terminal_leaf.rs"),
-        include_str!("../terminal_leaf.rs"));
+    let restored = compiled
+        .strip_prefix(namespace)
+        .unwrap()
+        .strip_suffix(adapters)
+        .unwrap();
+    assert_eq!(
+        restored,
+        format!("// Invoked only after preflight{production}")
+    );
+    assert_eq!(
+        include_str!("../before_selected_labels/terminal_leaf.rs"),
+        include_str!("../terminal_leaf.rs")
+    );
     let actual_current = include_str!("../../canonical_shared.rs");
     let current_owned = crate::source_reflows_merge::next_big_batch_inputs::value(
         "src/cleanup_plan/replay/factored/canonical_shared.rs",
@@ -203,9 +269,20 @@ mod terminal_leaf;
         .replacen("#[macro_use]\nmod selected_labels;\n#[cfg(test)]\nmod before_selected_labels;\n", "", 1)
         .replacen("AllocationPayer::SelectedReservation => {\n                    return selected_labels_successors!(function, budget, self.automaton, closed, accepted, true);\n                }", "AllocationPayer::SelectedReservation => {}", 1)
         .replacen("AllocationPayer::SelectedReservation => {\n                return selected_labels_successors!(function, budget, self.automaton, closed, accepted, false);\n            }", "AllocationPayer::SelectedReservation => {}", 1);
-    assert_eq!(restored_current, before, "complete parent inverse, no selection filter");
-    assert_eq!(current.matches("return selected_labels_successors!").count(), 2);
-    assert_eq!(current.matches("AllocationPayer::ActiveBuilder =>").count(), 2);
+    assert_eq!(
+        restored_current, before,
+        "complete parent inverse, no selection filter"
+    );
+    assert_eq!(
+        current
+            .matches("return selected_labels_successors!")
+            .count(),
+        2
+    );
+    assert_eq!(
+        current.matches("AllocationPayer::ActiveBuilder =>").count(),
+        2
+    );
     let selected = include_str!("../selected_labels.rs");
     assert!(!selected.contains("one_pass_successors("));
     assert!(selected.contains("if &*first == label"));
@@ -222,9 +299,16 @@ struct FieldText {
 }
 impl FieldText {
     fn capture(value: Option<&str>) -> Self {
-        let mut result = Self { present: value.is_some(), len: 0, bytes: [0; 1024] };
+        let mut result = Self {
+            present: value.is_some(),
+            len: 0,
+            bytes: [0; 1024],
+        };
         if let Some(value) = value {
-            assert!(value.len() <= result.bytes.len(), "diagnostic observation must remain lossless");
+            assert!(
+                value.len() <= result.bytes.len(),
+                "diagnostic observation must remain lossless"
+            );
             result.len = value.len();
             result.bytes[..value.len()].copy_from_slice(value.as_bytes());
         }
@@ -243,9 +327,11 @@ struct FullDiagnostic {
 impl FullDiagnostic {
     fn capture(error: &Diagnostic) -> Self {
         Self {
-            code: error.code, severity: error.severity,
+            code: error.code,
+            severity: error.severity,
             message: FieldText::capture(Some(error.message.as_ref())),
-            span: error.span, path: FieldText::capture(error.path.as_deref()),
+            span: error.span,
+            path: FieldText::capture(error.path.as_deref()),
             help: FieldText::capture(error.help.as_deref()),
         }
     }
@@ -256,8 +342,13 @@ struct FrontierOutcome {
     first: Option<FullDiagnostic>,
     physical_reason: Option<crate::cleanup_plan::replay::physical_storage::PhysicalRefusal>,
 }
-fn observe_full_frontier(function: &ResolvedFunction, graph: &Automaton,
-    sink: usize, root: usize, limit: usize) -> (FrontierOutcome, Metrics) {
+fn observe_full_frontier(
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    root: usize,
+    limit: usize,
+) -> (FrontierOutcome, Metrics) {
     let mut first = None;
     let mut physical_reason = None;
     let (result, metrics) = measure(|| {
@@ -293,16 +384,24 @@ fn observe_full_frontier(function: &ResolvedFunction, graph: &Automaton,
                 let ledger = crate::bounded_output::classifier_string::ClassifierLedger::capture();
                 let enclosing_first = ledger.first_refusal();
                 let allocated = current_metrics().allocated;
-                let retry = budget.reserve_bytes(function, 0, "selected inline sticky retry").unwrap_err();
+                let retry = budget
+                    .reserve_bytes(function, 0, "selected inline sticky retry")
+                    .unwrap_err();
                 let empty = Diagnostic::io("SPX-H006", String::new());
                 // First reporting text remains selected in its owning error;
                 // retry reports the precise stable empty six-field status.
                 assert_eq!(FullDiagnostic::capture(&error), selected);
-                assert_eq!(FullDiagnostic::capture(&retry), FullDiagnostic::capture(&empty));
+                assert_eq!(
+                    FullDiagnostic::capture(&retry),
+                    FullDiagnostic::capture(&empty)
+                );
                 assert_eq!(budget.physical.as_mut().unwrap().reserve(0), Err(reason));
                 assert_eq!(budget.physical.as_ref().unwrap().charged(), charged);
                 assert_eq!((budget.remaining, budget.skeleton_remaining), remaining);
-                assert_eq!(crate::bounded_output::active_remaining(), enclosing_remaining);
+                assert_eq!(
+                    crate::bounded_output::active_remaining(),
+                    enclosing_remaining
+                );
                 assert_eq!(ledger.first_refusal(), enclosing_first);
                 assert_eq!(current_metrics().allocated, allocated);
                 first = Some(selected);
@@ -316,13 +415,25 @@ fn observe_full_frontier(function: &ResolvedFunction, graph: &Automaton,
         };
         let stopped = current_metrics().allocated;
         drop(budget);
-        assert_eq!(current_metrics().allocated, stopped, "whole Drop allocates no backing");
+        assert_eq!(
+            current_metrics().allocated,
+            stopped,
+            "whole Drop allocates no backing"
+        );
         result
     });
-    (FrontierOutcome { result, first, physical_reason }, metrics)
+    (
+        FrontierOutcome {
+            result,
+            first,
+            physical_reason,
+        },
+        metrics,
+    )
 }
 #[test]
-fn selected_inline_every_actual_physical_frontier_retains_full_first_status_sticky_reason_and_drop() {
+fn selected_inline_every_actual_physical_frontier_retains_full_first_status_sticky_reason_and_drop()
+{
     let function = fixture();
     for case in 0..=4 {
         let (graph, sink, root) = graph(&function, case);
@@ -332,7 +443,8 @@ fn selected_inline_every_actual_physical_frontier_retains_full_first_status_stic
         assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
         for limit in 0..=exact {
             let (first, metrics) = observe_full_frontier(&function, &graph, sink, root, limit);
-            let (repeat, repeated_metrics) = observe_full_frontier(&function, &graph, sink, root, limit);
+            let (repeat, repeated_metrics) =
+                observe_full_frontier(&function, &graph, sink, root, limit);
             // Complete first-diagnostic values and the actual first physical
             // reason repeat exactly; no code-only or digest comparison is used.
             assert_eq!(first, repeat, "case={case} limit={limit}/{exact}");
