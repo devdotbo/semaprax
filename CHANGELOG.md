@@ -1,5 +1,7 @@
 # Changelog
 
+- Refresh browser pins from complete hosted 67107c7c5 graphs, preserving every prior byte except the exact builder bill and self-digest, with all historical controls retained.
+
 - Resolve the outer-label comparison test through the production target module and reproduce its nested module layout in focused validation.
 
 - Build paid canonical successor labels from borrowed keys and an exact target table, preserving weighted language comparison, legacy work and complete historical source proofs.

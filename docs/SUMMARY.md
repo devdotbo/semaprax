@@ -1153,3 +1153,4 @@ Audience: all documentation readers.
 - [Loan-plan entry stack phases](evidence/loan-plan-entry-stack-v1/README.md)
 - [Fund ordinary replay setup](evidence/ordinary-replay-setup-v1/README.md)
 - [Direct successor label storage](evidence/factored-flat-labels-v1/README.md)
+- [Hosted graph bill after paid replay setup](evidence/browser-graph-pins-67107c7c5/README.md)

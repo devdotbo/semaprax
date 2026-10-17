@@ -1,17 +1,17 @@
-//! Whole-wire bridge from the hosted 524a80bc9 capture to every older control.
+//! Whole-wire bridge from the hosted 67107c7c5 capture to every older control.
 use super::digest_without_checked_value_cursor_budget;
 use sha2::{Digest, Sha256};
 
-#[path = "before_524.rs"]
-mod before_524;
+#[path = "before_671.rs"]
+mod before_671;
 
 const CURRENT: [&str; 2] = [
-    include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-baseline.json"),
-    include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-renamed.json"),
+    include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-baseline.json"),
+    include_str!("../../../docs/evidence/browser-graph-pins-67107c7c5/current-hosted-calculator-renamed.json"),
 ];
 const PREVIOUS: [&str; 2] = [
-    include_str!("../../../docs/evidence/browser-graph-pins-75b314f70/current-hosted-calculator-baseline.json"),
-    include_str!("../../../docs/evidence/browser-graph-pins-75b314f70/current-hosted-calculator-renamed.json"),
+    include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-baseline.json"),
+    include_str!("../../../docs/evidence/browser-graph-pins-524a80bc9/current-hosted-calculator-renamed.json"),
 ];
 
 fn graph_digest(graph: &str) -> String {
@@ -32,7 +32,7 @@ fn graph_digest(graph: &str) -> String {
 pub(super) fn digest(graph: &str) -> String {
     let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
     assert_eq!(graph_digest(graph), parsed["graph_digest"]);
-    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_917_432);
+    assert_eq!(parsed["budget"]["used_builder_bytes"], 2_927_728);
     let previous = PREVIOUS
         .iter()
         .map(|text| text.strip_suffix('\n').unwrap())
@@ -43,10 +43,10 @@ pub(super) fn digest(graph: &str) -> String {
         .expect("exact retained baseline or renamed fixture");
     let prior: serde_json::Value = serde_json::from_str(previous).unwrap();
     assert_eq!(graph_digest(previous), prior["graph_digest"]);
-    assert_eq!(prior["budget"]["used_builder_bytes"], 2_954_152);
-    let field = "\"used_builder_bytes\":2917432";
+    assert_eq!(prior["budget"]["used_builder_bytes"], 2_917_432);
+    let field = "\"used_builder_bytes\":2927728";
     assert_eq!(graph.matches(field).count(), 1);
-    let restored = graph.replacen(field, "\"used_builder_bytes\":2954152", 1);
+    let restored = graph.replacen(field, "\"used_builder_bytes\":2917432", 1);
     let field = format!("\"graph_digest\":{}", parsed["graph_digest"]);
     assert_eq!(restored.matches(&field).count(), 1);
     let restored = restored.replacen(
@@ -55,7 +55,7 @@ pub(super) fn digest(graph: &str) -> String {
         1,
     );
     assert_eq!(restored, previous, "every prior hosted graph byte");
-    before_524::digest(&restored)
+    before_671::digest(&restored)
 }
 
 #[test]
@@ -92,19 +92,19 @@ fn a_rehashed_non_builder_change_still_fails_the_complete_bridge() {
 #[test]
 fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
     let original = include_str!(
-        "../../../docs/evidence/browser-graph-pins-524a80bc9/historical_builder.before.rs.txt"
+        "../../../docs/evidence/browser-graph-pins-67107c7c5/historical_builder.before.rs.txt"
     );
     let runner = include_str!(
-        "../../../docs/evidence/browser-graph-pins-524a80bc9/test-fixtures.before.mjs"
+        "../../../docs/evidence/browser-graph-pins-67107c7c5/test-fixtures.before.mjs"
     );
     for (source, expected) in [
         (
             original,
-            "68cae5ac5707224f8c30ef6f2c9f27c5b93eaed97f25b71dcf98a1c82a0a5c36",
+            "8651f7dd678016d5ce6d617e249a8cd566fffdb65652e2f1ddf9a9724dbcb747",
         ),
         (
             runner,
-            "f2beafbf9f15748b204f77c90219ed99708929e17b7428d069321f9948594b45",
+            "439aac5c76fc97e037bf2e30273c99d842357c64925babbffd7b2007edd486ec",
         ),
     ] {
         assert_eq!(
@@ -115,10 +115,10 @@ fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
             expected
         );
     }
-    let current = include_str!("before_524.rs");
+    let current = include_str!("before_671.rs");
     let new = concat!(
         "include_str!(\n",
-        "        \"../../../docs/evidence/browser-graph-pins-524a80bc9/test-fixtures.before.mjs\"\n",
+        "        \"../../../docs/evidence/browser-graph-pins-67107c7c5/test-fixtures.before.mjs\"\n",
         "    )"
     );
     let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
