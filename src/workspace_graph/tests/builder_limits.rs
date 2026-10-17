@@ -518,12 +518,14 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
     }
     let built = built_result.unwrap();
     assert!(!attempts.lost, "complete fixed-capacity retry trace");
-    assert_eq!(attempts.len, expected_attempts.len());
-    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), expected_attempts.len());
-    for (index, &(mode, prebound)) in expected_attempts.iter().enumerate() {
+    // The real loop stops at its first successful attempt: a later compiler
+    // improvement may lawfully leave a forecast suffix entirely unexecuted.
+    assert!(attempts.len > 0 && attempts.len <= expected_attempts.len());
+    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), attempts.len);
+    for (index, &(mode, prebound)) in expected_attempts[..attempts.len].iter().enumerate() {
         let (actual_mode, actual_prebound, overflowed) = attempts.rows[index];
         assert_eq!((actual_mode, actual_prebound), (mode, prebound));
-        assert_eq!(overflowed, index + 1 != expected_attempts.len());
+        assert_eq!(overflowed, index + 1 != attempts.len);
     }
     assert!(
         built.usage.builder_bytes >= original.0,

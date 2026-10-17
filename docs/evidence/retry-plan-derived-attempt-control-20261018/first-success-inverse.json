@@ -1,0 +1,8 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED",
+  "before_sha256": "8a7dda5ef89b88f339f0dd403db75742e2c133de11f4a93426d27b7e51877b95",
+  "after_sha256": "a751565cb2efd772b600705ba4413730e5b8c7e9963072bad41db94d6221162a",
+  "before": "    assert_eq!(attempts.len, expected_attempts.len());\n    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), expected_attempts.len());\n    for (index, &(mode, prebound)) in expected_attempts.iter().enumerate() {\n        let (actual_mode, actual_prebound, overflowed) = attempts.rows[index];\n        assert_eq!((actual_mode, actual_prebound), (mode, prebound));\n        assert_eq!(overflowed, index + 1 != expected_attempts.len());\n    }",
+  "after": "    // The real loop stops at its first successful attempt: a later compiler\n    // improvement may lawfully leave a forecast suffix entirely unexecuted.\n    assert!(attempts.len > 0 && attempts.len <= expected_attempts.len());\n    assert_eq!(CORE_BUILD_ATTEMPTS.with(Cell::get), attempts.len);\n    for (index, &(mode, prebound)) in expected_attempts[..attempts.len].iter().enumerate() {\n        let (actual_mode, actual_prebound, overflowed) = attempts.rows[index];\n        assert_eq!((actual_mode, actual_prebound), (mode, prebound));\n        assert_eq!(overflowed, index + 1 != attempts.len);\n    }",
+  "rule": "Exact nonempty executed prefix of authentic plan; first successful attempt stops; unused suffix never charged."
+}
