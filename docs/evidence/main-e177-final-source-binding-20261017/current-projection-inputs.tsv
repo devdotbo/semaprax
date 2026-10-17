@@ -27,6 +27,7 @@ src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs
+src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs
 src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs
@@ -57,6 +58,10 @@ src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs
 src/source_reflows/main99f_controllers.rs
 src/source_reflows_merge/main99f_inputs.rs
 src/source_reflows_merge/next_big_batch_inputs.rs
@@ -253,6 +258,9 @@ src/cleanup_plan/replay/ordinary_plan_history/before.rs
 src/cleanup_plan/replay/ordinary_plan_history/tests.rs
 src/cleanup_plan/replay/ordinary_plan_history/source_custody.rs
 src/cleanup_plan/replay/expression_facts/arena.rs
+src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs
+src/cleanup_plan/replay/expression_facts/arena/retained.rs
+src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs
 src/cleanup_plan/replay/expression_facts/errors.rs
 src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs
 src/cleanup_plan/replay/expression_facts/receiving/remaining.rs
@@ -396,6 +404,10 @@ src/loan_plan/paid_live/dense/tests.rs
 src/loan_plan/paid_plan/retained_before_dense.rs
 src/loan_plan/funded_flat/before_dense.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs

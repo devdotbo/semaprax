@@ -1,0 +1,135 @@
+"""Finite current99 source-overlay preparation; no checkout writes or binder execution."""
+from pathlib import Path
+import argparse,ast,copy,hashlib,json,re,subprocess,os,stat
+P=argparse.ArgumentParser();P.add_argument('--repo',type=Path,required=True);P.add_argument('--expected-head',required=True);P.add_argument('--out',type=Path,required=True);a=P.parse_args();R=a.repo.resolve();O=a.out;HEAD=a.expected_head
+G=lambda *x:subprocess.check_output(['git',*x],cwd=R);H=lambda b:hashlib.sha256(b).hexdigest();E=lambda v:(json.dumps(v,indent=2)+'\n').encode();git=lambda p:G('show',HEAD+':'+p)
+assert R==Path('/Volumes/Semaprax/worktrees/next-large-combined-20261017')and re.fullmatch('[0-9a-f]{40}',HEAD)
+assert G('rev-parse','HEAD').decode().strip()==HEAD and not G('status','--porcelain').strip()and not O.exists()
+BASE='886b75626e7935323f2dd37f38e2884abf87fa43';S='docs/evidence/main-e177-final-source-binding-20261017/';M=S+'current-inputs.json';HELPER='src/source_reflows_merge/main_e177_final_inputs.rs';GUARD=S+'guard_payload.py';SIDE='docs/evidence/next-large-side-source-composition-20261017/side-inputs.json'
+NEW={p for p in G('diff','--name-only','--diff-filter=A',BASE,HEAD,'--','src','tests','crates').decode().splitlines()if p.endswith('.rs')};assert len(NEW)==19
+approved=json.loads(Path('/Volumes/Semaprax/provenance/next-large-role241-new19-preparation-20261018/derivation.json').read_text());assert NEW==set(approved['new_physical_sources'])
+old=git(M);v=json.loads(old);assert len(v['rows'])==99;oldrows={r['source']for r in v['rows']};qb=git(GUARD);cfg=ast.literal_eval(next(n.value for n in ast.parse(qb).body if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='CONFIG'for t in n.targets)));assert cfg['rows']==98 and len(cfg['modules'])==57
+out={};before={};proof=[]
+def save(p,b):
+ if p not in before:
+  try:before[p]=git(p)
+  except subprocess.CalledProcessError:before[p]=None
+ out[p]=b
+
+def current(p):return out[p]if p in out else git(p)
+def image(b):
+ p=S+'views/'+H(b)+'.txt'
+ if(R/p).exists():assert git(p)==b
+ else:out[p]=b
+ return dict(length=len(b),sha256=H(b),archive=p)
+# Parse the exact current broad owning expression through unchanged literal grammar.
+orderpath=Path(__file__).with_name('ordered-inputs.py')
+fd=os.open(orderpath,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+try:
+ st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size<=262144
+ with os.fdopen(fd,'rb',closefd=False)as f:order_raw=f.read(st.st_size);assert len(order_raw)==st.st_size and not f.read(1)
+ assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(orderpath))
+ assert H(order_raw)=='68b017e36af9c66f241e811df2114bd26af5f82fcc74b1978f6a9d25c35b1029'
+finally:os.close(fd)
+namespace=dict(__name__='literal_order',__file__=str(orderpath));exec(compile(order_raw,str(orderpath),'exec'),namespace)
+table=cfg['table']['path'];oldtsv=git(table);oldlist=oldtsv.decode().splitlines();assert len(oldlist)==462
+rows,grammar_receipt=namespace['ordered_inputs'](R,git('tests/workspace/semantic_graph/source_inventory.rs').decode(),HEAD);assert len(rows)==len(set(rows))and [p for p in rows if p not in NEW]==oldlist
+insertions=[];work=oldlist.copy()
+for i,p in enumerate(rows):
+ if p not in oldlist:assert p in NEW;work.insert(i,p);insertions.append(dict(at=i,path=p))
+assert work==rows and len(insertions)==12 and len(rows)==474
+back=rows.copy()
+for x in reversed(insertions):assert back.pop(x['at'])==x['path']
+assert ('\n'.join(back)+'\n').encode()==oldtsv;save(table,('\n'.join(rows)+'\n').encode())
+# Every raw carrier retains all old include literals in order and all19 children once.
+for path,p in cfg['carriers'].items():
+ b=git(path);prior=G('show',BASE+':'+path);lit=lambda x:re.findall(rb'include_str!\(\s*"([^"\n]+)"',x);it=iter(lit(b));assert all(any(v==q for v in it)for q in lit(prior))
+ assert all(b.count(('include_str!("'+p['base']+n+'")').encode())==1 for n in NEW)
+ assert len(b.splitlines())<=1500
+REMOTE='7feba22efb492b2ec4e1115373e8acc16ded541d'
+assert G('merge-base','--is-ancestor',REMOTE,HEAD)==b''
+remote_raw=G('show',REMOTE+':'+M);remote=json.loads(remote_raw);assert len(remote['rows'])==98
+assert {r['source']for r in remote['rows']}<=oldrows
+side=json.loads(git(SIDE));assert len(side['rows'])==9
+for row in side['rows']:
+ assert git(row['source'])==git(row['current']['archive'])and(len(git(row['source'])),H(git(row['source'])))==(row['current']['length'],row['current']['sha256'])
+ for x in row['views']:
+  b=G('show',x['git_head']+':'+row['source']);assert b==git(x['archive'])and(len(b),H(b))==(x['length'],x['sha256'])
+domain=set()
+for p in ['docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json','docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json']:
+ domain|={r['path']for r in json.loads(git(p))['rows']}
+changed=set(G('diff','--name-only',BASE,HEAD).decode().splitlines());targets=oldrows|NEW|{r['source']for r in side['rows']}|(changed&domain);assert HELPER not in targets
+newanchors=[]
+for p,b in [(S+'views/'+H(old)+'.txt',old),(S+'views/'+H(remote_raw)+'.txt',remote_raw),(SIDE,git(SIDE))]:
+ view=image(b)
+ if not any(x['sha256']==H(b)and x['length']==len(b)for x in v['complete_old_table_anchors']):v['complete_old_table_anchors'].append(dict(path=p,**view));newanchors.append(p)
+for anchor in remote['complete_old_table_anchors']:
+ b=G('show',REMOTE+':'+anchor['archive']);assert(len(b),H(b))==(anchor['length'],anchor['sha256'])
+ same=[x for x in v['complete_old_table_anchors']if x['path']==anchor['path']]
+ if same:assert all((x['length'],x['sha256'])==(anchor['length'],anchor['sha256'])for x in same)
+ else:
+  assert git(anchor['path'])==b
+  v['complete_old_table_anchors'].append(copy.deepcopy(anchor));newanchors.append(anchor['path'])
+for source in sorted(targets):
+ raw=current(source);match=[r for r in v['rows']if r['source']==source]
+ if match:
+  r=match[0];prior=copy.deepcopy(r['current']);b=git(prior['archive']);assert(len(b),H(b))==(prior['length'],prior['sha256'])
+  if b!=raw:
+   if not any((x['length'],x['sha256'])==(prior['length'],prior['sha256'])for x in r['views']):r['views'].append(dict(name='whole-current99-before-next-large',**prior))
+   r['current']=image(raw)
+ else:
+  views=[]
+  if source not in NEW:views=[dict(name='whole886-before-next-large',**image(G('show',BASE+':'+source)))]
+  r=dict(source=source,compiled=source.endswith(('.rs','.js')),current=image(raw),views=views);v['rows'].append(r)
+ for remote_row in [x for x in remote['rows']if x['source']==source]:
+  for view in [dict(name='whole-remote7feba-current',**remote_row['current'])]+remote_row['views']:
+   b=G('show',REMOTE+':'+view['archive']);assert(len(b),H(b))==(view['length'],view['sha256'])
+   assert git(view['archive'])==b
+   if (view['length'],view['sha256'])!=(r['current']['length'],r['current']['sha256'])and not any((x['length'],x['sha256'])==(view['length'],view['sha256'])for x in r['views']):r['views'].append(copy.deepcopy(view))
+ for side_row in [x for x in side['rows']if x['source']==source]:
+  for view in side_row['views']:
+   if not any((x['length'],x['sha256'])==(view['length'],view['sha256'])for x in r['views']):r['views'].append(copy.deepcopy(view))
+v['whole_current99_before']=image(old)
+v['whole_remote7feba_before']=image(remote_raw)
+v['current_stage']=dict(kind='exact-committed-next-large-source',git_head=HEAD,whole_previous99_sha256=H(old),all_immutable_tables_preserved=True)
+packet=E(v);assert len(packet)<=262144;save(M,packet)
+s=git(HELPER).decode();edits=[]
+def edit(a,b):
+ global s
+ assert s.count(a)==1,(a,s.count(a));s=s.replace(a,b);edits.append(dict(before=a,after=b))
+anchor='        _ => None,\n    }\n}\nfn compiled('
+edit(anchor,''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in newanchors)+anchor)
+anchor='        _ => None,\n    }\n}\nfn read_view('
+edit(anchor,''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in sorted(targets-oldrows)if next(r for r in v['rows']if r['source']==p)['compiled'])+anchor)
+# Preserve the entire original99->98 structured inverse verbatim, scoped to
+# its authenticated complete old99 table rather than applying it to new rows.
+start=s.index('    let before=read_view(&packet["immediate_before"]);')
+end=s.index('    for anchor in packet["complete_old_table_anchors"]',start)
+old_inverse=s[start:end]
+edit(old_inverse,'    {\n    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();\n'+old_inverse+'    }\n')
+edit('assert_eq!(data.len(), '+str(len(old))+');' ,'assert_eq!(data.len(), '+str(len(packet))+');');edit('assert_eq!(digest(data.as_bytes()), "'+H(old)+'");','assert_eq!(digest(data.as_bytes()), "'+H(packet)+'");');edit('assert_eq!(packet["rows"].as_array().unwrap().len(), 99);','assert_eq!(packet["rows"].as_array().unwrap().len(), '+str(len(targets))+');')
+back=s
+for x in reversed(edits):assert back.count(x['after'])==1;back=back.replace(x['after'],x['before'])
+assert back.encode()==git(HELPER);save(HELPER,s.encode())
+cfg['packet'].update(length=len(packet),sha256=H(packet));cfg['rows']=len(targets)
+for p in sorted(set(cfg['modules'])|NEW):cfg['modules'][p]=dict(path=p,length=len(current(p)),sha256=H(current(p)))
+for p in cfg['carriers']:cfg['carriers'][p].update(length=len(current(p)),sha256=H(current(p)))
+cfg['table'].update(length=len(current(table)),sha256=H(current(table)),rows=len(rows));cfg['table']['insertions']+=insertions
+for p in sorted(targets-oldrows):
+ row=next(r for r in v['rows']if r['source']==p)
+ for x in [row['current']]+row['views']:
+  b=current(x['archive']);assert len(b)==x['length']<=262144 and H(b)==x['sha256']
+ if p not in cfg['closed_prior_sources']:cfg['closed_prior_sources'].append(p)
+node=next(n for n in ast.parse(qb).body if isinstance(n,ast.Assign)and any(isinstance(t,ast.Name)and t.id=='CONFIG'for t in n.targets));lines=qb.decode().splitlines(True);oldcfg=''.join(lines[node.lineno-1:node.end_lineno]);q=qb.decode();assert q.count(oldcfg)==1;nq=q.replace(oldcfg,'CONFIG='+repr(cfg)+'\n').encode();ast.parse(nq);save(GUARD,nq)
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ b=git(p);assert b.count(H(qb).encode())==1;b=b.replace(H(qb).encode(),H(nq).encode());prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';a0=(prefix+str(len(qb))).encode();z=(prefix+str(len(nq))).encode();assert b.count(a0)==1;b=b.replace(a0,z);ast.parse(b);save(p,b)
+physical={r['path']for r in json.loads(git('docs/evidence/main09013-source-namespaces-v1/input-domains.json'))['physical']};six={r['path']for r in json.loads(git('docs/evidence/ordinary-plan-final-ingress-20261017/current-inputs.json'))};delta={p for p in changed|set(out)if p.endswith('.rs')and p.startswith(('src/','tests/','crates/'))}
+assert G('rev-parse','HEAD').decode().strip()==HEAD and not G('status','--porcelain').strip();O.mkdir(parents=True)
+records=[]
+for p,b in sorted(out.items()):
+ q=O/'candidate'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+ if p in before and before[p]is not None:z=O/'whole-before'/p;z.parent.mkdir(parents=True,exist_ok=True);z.write_bytes(before[p])
+ records.append(dict(path=p,length=len(b),sha256=H(b),before_sha256=None if before.get(p)is None else H(before[p])))
+(O/'report.json').write_bytes(E(dict(status='SOURCE_ONLY_PREPARED_UNAPPLIED_NO_ADMISSION',source_head=HEAD,old_rows=99,current_rows=len(targets),new_modules=sorted(NEW),raw_required_modules=len(cfg['modules']),ordered_rows=len(rows),ordered_insertions=insertions,literal_grammar_transport=grammar_receipt,helper_inverse=edits,old99_complete_anchor=H(old),remote98_complete_anchor=H(remote_raw),remote_delegation_bodies_unchanged=True,small_cap_unchanged=262144,source_cap_unchanged=9753094,physical174_changed=sorted(delta&physical),FINAL6_changed=sorted(delta&six),files=records)))
+print(str(O/'report.json'))

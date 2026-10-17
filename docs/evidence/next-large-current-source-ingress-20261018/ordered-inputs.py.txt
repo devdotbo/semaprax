@@ -1,0 +1,49 @@
+"""Bounded existing literal Expr grammar; no module enumeration or file body reads."""
+import ast,re,json,os,stat,hashlib,subprocess
+from pathlib import Path
+def ordered_inputs(R, source, expected_head):
+ H=lambda b:hashlib.sha256(b).hexdigest()
+ def held_program(path,expected):
+  fd=os.open(R/path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+  identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+  try:
+   st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size<=262144
+   with os.fdopen(fd,'rb',closefd=False)as f:b=f.read(st.st_size);assert len(b)==st.st_size and not f.read(1)
+   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(R/path))
+   assert H(b)==expected
+   assert b==subprocess.check_output(['git','show',expected_head+':'+path],cwd=R)
+   return b.decode()
+  finally:os.close(fd)
+ assert subprocess.check_output(['git','rev-parse','HEAD'],cwd=R).decode().strip()==expected_head
+ parser=held_program('docs/evidence/production-source-authority-partition-20261016/original-module-parser-prefix.py','87a903ce0f9927d3d90063fdd686b50b5302e2ac10cfea324918f7c030b28599')
+ gen=held_program('docs/evidence/a3-e47-final-custody-20261016/generate-authority.py','0c4b31857cdb8a4f645d61c6f0d2453c33c6adddb8c6f26d9c37b56620841590')
+ ns=dict(re=re,json=json,R=R,Path=Path)
+ for program,names in [(parser,{'mask'}),(gen,{'close','Expr'})]:
+  tree=ast.parse(program);nodes=[n for n in tree.body if isinstance(n,(ast.FunctionDef,ast.ClassDef))and n.name in names]
+  assert {n.name for n in nodes}==names
+  exec(compile(ast.Module(body=nodes,type_ignores=[]),'<unchanged-literal-grammar>','exec'),ns)
+ JOIN='macro_rules! audit_source_join { ($($piece:expr),* $(,)?) => {{ let pieces: &[&str] = &[$(&$piece),*]; pieces.concat() }}; }'
+ assert source.count(JOIN)==1
+ edits=[dict(at=source.index(JOIN),before=JOIN,after='')]+[dict(at=m.start(),before=m[0],after='concat!')for m in re.finditer(re.escape('audit_source_join!'),source)]
+ edits.sort(key=lambda x:x['at']);inv=source
+ for e in reversed(edits):assert inv[e['at']:e['at']+len(e['before'])]==e['before'];inv=inv[:e['at']]+e['after']+inv[e['at']+len(e['before']):]
+ delta=0
+ for e in edits:e['after_at']=e['at']+delta;delta+=len(e['after'])-len(e['before'])
+ restored=inv
+ for e in reversed(edits):
+  at=e['after_at'];assert restored[at:at+len(e['after'])]==e['after'];restored=restored[:at]+e['before']+restored[at+len(e['after']):]
+ assert restored==source
+ grammar_receipt=dict(source_length=len(source.encode()),source_sha256=H(source.encode()),temporary_grammar_length=len(inv.encode()),temporary_grammar_sha256=H(inv.encode()),exact_inverse=True,finite_edits=edits,actual_source_bytes_unchanged=True,parser_sha256=H(parser.encode()),generator_sha256=H(gen.encode()))
+ im=ns['mask'](inv);macros={}
+ for t in re.finditer(r'macro_rules!\s+(\w+)\s*\{',im):
+  end=ns['close'](im,t.end()-1,'{','}');body=inv[t.end():end-1];bm=ns['mask'](body);arms={}
+  for v in re.finditer(r'\(([^)]*)\)\s*=>\s*\{',bm):arms[v[1].strip()]=body[v.end():ns['close'](bm,v.end()-1,'{','}')-1]
+  if t[1]=='semantic_graph_legacy_main_source':
+   literal=re.findall(r'\("([^"\n]+)"\)\s*=>\s*\{\s*(include_str!\("[^"\n]+"\))\s*\}',body)
+   assert len(literal)==len({x[0]for x in literal})==10
+   arms={json.dumps(key):expression for key,expression in literal}
+  macros[t[1]]=arms
+ ns['macros']=macros
+ chunks=ns['Expr'](macros['semantic_graph_private_layout_source_inventory'][''],R/'tests/workspace').expr()
+ assert all(set(x)=={'path'}for x in chunks),'table is complete source rows, not masked literals'
+ return [x['path']for x in chunks],grammar_receipt

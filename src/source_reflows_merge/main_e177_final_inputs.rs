@@ -7,14 +7,16 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 84171);
-    assert_eq!(digest(data.as_bytes()), "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71");
+    assert_eq!(data.len(), 109477);
+    assert_eq!(digest(data.as_bytes()), "3740fb709bdfb10aeb16a6159312f12b8752d2c910ac7ea6aae727ff01847d09");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 99);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 123);
+    {
+    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
     let before=read_view(&packet["immediate_before"]);
     let mut restored=packet.clone();
     let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
@@ -25,6 +27,7 @@ fn packet() -> serde_json::Value {
     previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
     restored.as_object_mut().unwrap().remove("immediate_before");
     assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
+    }
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -78,6 +81,10 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         "docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json" => Some(include_str!("../../docs/evidence/semantic162-compile-source-ingress-20261017/inputs.json")),
         "docs/evidence/next-semantic-source-views-20261017/inputs.json" => Some(include_str!("../../docs/evidence/next-semantic-source-views-20261017/inputs.json")),
         "docs/evidence/main-e177-final-source-binding-20261017/views/bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/bc66e360cefb55655815018153316bca517702bc32791462f2dfb9ca70b90d41.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/2e4b3b5441418b7e21a1424445e19bb4473d15f196ab3a897ca920417dce730f.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/2e4b3b5441418b7e21a1424445e19bb4473d15f196ab3a897ca920417dce730f.txt")),
+        "docs/evidence/next-large-side-source-composition-20261017/side-inputs.json" => Some(include_str!("../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json")),
+        "docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/996aa3de35097ef764384db3b8fbaffa57bb500fb18368280a20dac9c3ff5f52.txt")),
         _ => None,
     }
 }
@@ -178,6 +185,30 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs" => Some(include_str!("../../src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs")),
         "src/workspace_graph/tests/builder_limits.rs" => Some(include_str!("../../src/workspace_graph/tests/builder_limits.rs")),
         "tests/workspace/semantic_graph/source_inventory_controls.rs" => Some(include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/retained.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs")),
+        "src/source_reflows_merge/main_c883_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main_c883_inputs.rs")),
+        "src/workspace_graph/shape_identity/before785.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/before785.rs")),
+        "src/workspace_graph/shape_identity/before_caller785.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/before_caller785.rs")),
+        "src/workspace_graph/shape_identity/before_validation785.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/before_validation785.rs")),
+        "src/workspace_graph/shape_identity/source_controls.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/source_controls.rs")),
+        "src/workspace_graph/shape_identity/tests.rs" => Some(include_str!("../../src/workspace_graph/shape_identity/tests.rs")),
         _ => None,
     }
 }
