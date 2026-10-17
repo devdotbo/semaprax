@@ -1,0 +1,68 @@
+{
+  "status": "SOURCE_ONLY_EXACT_REQUIRED_HISTORY_INPUTS_NOT_APPLIED",
+  "observed_source_head": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "current_observed_at_git": "530073a528dcd226bb9260627da189a1fffcf8a8",
+      "current530": {
+        "length": 18466,
+        "sha256": "a79372220ba07fc7833a46c0bf5346e0ab29c3734292264ed583873782a85da9",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/current530/a79372220ba07fc7833a46c0bf5346e0ab29c3734292264ed583873782a85da9.txt"
+      },
+      "required_whole_prior": {
+        "name": "earned42/FUTURE57-current",
+        "git_head": "b795b33950763d55a8f5ddb63bc9d65d178eee51",
+        "length": 12421,
+        "sha256": "3abb525e65e38f0312e1d30d31848ed1152e367adf3b106132ce8ab3ae54b576",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/priors/3abb525e65e38f0312e1d30d31848ed1152e367adf3b106132ce8ab3ae54b576.txt"
+      },
+      "final_current_must_be_acquired_from_next_actual_frozen_source": true,
+      "compiled_channel_required": true,
+      "Python_closed_channel_maximum": 262144
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+      "current_observed_at_git": "530073a528dcd226bb9260627da189a1fffcf8a8",
+      "current530": {
+        "length": 26441,
+        "sha256": "95d45a14e412d803c8f84baed597b5f9c9d20b6fd8e3b79075174079fe47a4d9",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/current530/95d45a14e412d803c8f84baed597b5f9c9d20b6fd8e3b79075174079fe47a4d9.txt"
+      },
+      "required_whole_prior": {
+        "name": "original115-helper",
+        "git_head": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae",
+        "length": 12301,
+        "sha256": "969a66f6a53585c67165c9b7eba481cc8528bf93e7e8e9a797b47c99352199a7",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/priors/969a66f6a53585c67165c9b7eba481cc8528bf93e7e8e9a797b47c99352199a7.txt"
+      },
+      "final_current_must_be_acquired_from_next_actual_frozen_source": true,
+      "compiled_channel_required": true,
+      "Python_closed_channel_maximum": 262144
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/compact_nodes/tests.rs",
+      "current_observed_at_git": "530073a528dcd226bb9260627da189a1fffcf8a8",
+      "current530": {
+        "length": 25295,
+        "sha256": "b126aeb95d27f2fdaab9ba926633c316c2beaa89ca315cf28dec715d6ea0a875",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/current530/b126aeb95d27f2fdaab9ba926633c316c2beaa89ca315cf28dec715d6ea0a875.txt"
+      },
+      "required_whole_prior": {
+        "name": "original115-helper",
+        "git_head": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae",
+        "length": 25284,
+        "sha256": "c9066310ce58bf633f75a755068949e8a0b4ff88713ac5043c238d3f205e8931",
+        "archive": "docs/evidence/source-required-closed-history-stages-20261018/priors/c9066310ce58bf633f75a755068949e8a0b4ff88713ac5043c238d3f205e8931.txt"
+      },
+      "final_current_must_be_acquired_from_next_actual_frozen_source": true,
+      "compiled_channel_required": true,
+      "Python_closed_channel_maximum": 262144
+    }
+  ],
+  "new_Rust_modules": 0,
+  "new_stage_rows_required": 3,
+  "old_tables_and_assertions_must_remain_immutable": true,
+  "next_coupling_must_preserve_current530_before_future_semantic_edits": true,
+  "Cargo": false
+}
