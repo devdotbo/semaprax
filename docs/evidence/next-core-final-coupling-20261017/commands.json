@@ -1,0 +1,87 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "repo": "/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang",
+  "stages": [
+    {
+      "name": "174",
+      "argv": [
+        "python3",
+        "docs/evidence/next-core-final-coupling-20261017/frozen174/bind-next.py",
+        "--root",
+        "ROOT",
+        "--expected-head",
+        "EXACT_SOURCE_HEAD"
+      ],
+      "write": true
+    },
+    {
+      "name": "FINAL6",
+      "argv": [
+        "python3",
+        "docs/evidence/ordinary-plan-final-ingress-20261017/bind-current-inputs.py",
+        "--repo",
+        "ROOT",
+        "--expected-head",
+        "EXACT_POST174_HEAD",
+        "--write"
+      ]
+    },
+    {
+      "name": "FINAL6qualifier75",
+      "argv": [
+        "python3",
+        "docs/evidence/accepted-final6-source-binding-20261017/check-source.py"
+      ]
+    },
+    {
+      "name": "roles",
+      "argv": [
+        "python3",
+        "docs/evidence/next-core-final-coupling-20261017/refresh-role-metadata.py",
+        "--repo",
+        "ROOT",
+        "--expected-head",
+        "EXACT_POSTFINAL6_HEAD",
+        "--out",
+        "FRESH_SSD",
+        "--write"
+      ]
+    },
+    {
+      "name": "postbind73",
+      "argv": [
+        "python3",
+        "docs/evidence/next-core-final-coupling-20261017/check-postbind.py",
+        "--repo",
+        "ROOT",
+        "--expected-head",
+        "EXACT_POSTROLE_CLEAN_HEAD",
+        "--out",
+        "FRESH_RECEIPT"
+      ]
+    }
+  ],
+  "tools": {
+    "docs/evidence/next-core-final-coupling-20261017/frozen174/bind-next.py": {
+      "length": 67587,
+      "sha256": "f62086bbcb0b301f6867c7a9a0330ec481b945b2d4e652d2f98916cc1987fc9c"
+    },
+    "docs/evidence/ordinary-plan-final-ingress-20261017/bind-current-inputs.py": {
+      "length": 9387,
+      "sha256": "cb1a3b7568fa0490b7fabf826d3f4389d64d786ea1b62ea7aa0c242c0ea45562"
+    },
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": {
+      "length": 2253,
+      "sha256": "ce23de1ff0b03a6a81cec52ddd99e426a42f5513be6f33d9e5dca46247fde22e"
+    },
+    "docs/evidence/next-core-final-coupling-20261017/refresh-role-metadata.py": {
+      "length": 17734,
+      "sha256": "7e0008856194bee4414ce877772171c02539d08b4a77d48057c48ab609105d2b"
+    },
+    "docs/evidence/next-core-final-coupling-20261017/check-postbind.py": {
+      "length": 3649,
+      "sha256": "cc0a4d8266f8614a909a8c6f4d05379b33a2a296994f8808dd929ec90c5703b2"
+    }
+  },
+  "note": "Commit174 output before FINAL6. Commit FINAL6 output before role refresh. Commit role output before clean read-only postbind checker. Frozen verify_checkpoint.py remains historical and is not relabeled current. Existing strict58 and actual original174 binder checks are the current source qualification."
+}

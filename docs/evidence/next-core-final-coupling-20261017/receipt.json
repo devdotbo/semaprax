@@ -1,0 +1,32 @@
+{
+  "status": "SOURCE_ONLY_STRICT58_PASS_NO_RUST_EXECUTION",
+  "semantic_head": "566bf724d583f2d00040e9336404d6d6f902bd38",
+  "source_rows": 73,
+  "required_modules": 46,
+  "physical_new_modules": 10,
+  "ordered_table_rows": 451,
+  "strict_hostile_controls": 58,
+  "source_packet_length": 66970,
+  "source_packet_sha256": "87c71ed6b1f4ba3cd27830ec41485cef5c50c84023157f61dc8e4a9bb3fa502a",
+  "strict_guard_length": 24986,
+  "strict_guard_sha256": "816155ad156f43d17e1b2a4e32a228b454f9cf5a4f0c599779fd33e3fa50da17",
+  "whole_before_and_finite_inverse_rows": 14,
+  "runtime_qualification": false,
+  "Cargo": false,
+  "ROOT_writes": false,
+  "binding_order": [
+    "Parent promotes source checkpoint",
+    "deterministic ignored Graft refresh",
+    "ONE frozen174 successor --root ROOT --expected-head sourcecheckpoint (one-shot mutation, no --write flag), commit output",
+    "unchanged FINAL6 binder --expected-head post174 --write,75 qualifier,commit",
+    "accepted finite230role refresh --expected-head postFINAL6 --write,commit",
+    "check-postbind.py --expected-head finalclean --out fresh",
+    "fresh actual300 source registration and owning six-build/eight-role qualification"
+  ],
+  "immutable_old_tables": [
+    "afa54",
+    "MAIN99f454",
+    "all frozen predecessor generations"
+  ],
+  "production_883_included": false
+}

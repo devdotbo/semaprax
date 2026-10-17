@@ -1,0 +1,27 @@
+{
+  "status": "SOURCE_ONLY_PENDING_CONTROLS",
+  "head": "566bf724d583f2d00040e9336404d6d6f902bd38",
+  "rows": 73,
+  "packet_length": 66970,
+  "packet_sha256": "87c71ed6b1f4ba3cd27830ec41485cef5c50c84023157f61dc8e4a9bb3fa502a",
+  "guard_length": 24986,
+  "guard_sha256": "816155ad156f43d17e1b2a4e32a228b454f9cf5a4f0c599779fd33e3fa50da17",
+  "new_modules": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs"
+  ],
+  "actual_required_modules": 46,
+  "table_rows": 451,
+  "complete_old49_retained": true,
+  "old54_454_tables_unchanged": true,
+  "closed_python_acquisitions": 45,
+  "strict_cap_unchanged": 262144
+}

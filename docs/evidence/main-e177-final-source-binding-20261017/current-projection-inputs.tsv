@@ -22,6 +22,11 @@ src/source_verify/iterative/while_rules/before_nested.rs
 src/cleanup_plan/replay/branch_clone.rs
 src/cleanup_plan/replay/branch_clone/tests.rs
 src/cleanup_plan/replay/factored/canonical_shared.rs
+src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs
+src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs
+src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs
+src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs
+src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs
@@ -388,6 +393,11 @@ src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs
 src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs
+src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs
+src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs
+src/source_reflows/semantic_receivers/status_inline.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/component_before_prefix.rs
 src/workspace_graph/expected_projection/private_layout.rs

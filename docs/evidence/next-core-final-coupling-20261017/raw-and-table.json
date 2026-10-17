@@ -1,0 +1,102 @@
+{
+  "head": "566bf724d583f2d00040e9336404d6d6f902bd38",
+  "base": "0f9fb3766f0413694e4a12447538f7c7bb99627f",
+  "new_modules": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs"
+  ],
+  "carriers": [
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "before_sha256": "9b2f73579d34411552276ff3e6f538433c1b0df200b1c2f051f20a60689c9f25",
+      "added": [
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
+      ],
+      "base": "../",
+      "after_sha256": "fa08554873fa7fb49ed7ec5680cb3d09e482903cbc3bbfed9c9d85eae3bc8e49"
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before_sha256": "4354e48bd6c2c42234fdcfedd96bd5ba351182deedbc46acde2ccbe18876810e",
+      "added": [
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
+      ],
+      "base": "../../",
+      "after_sha256": "0a441a45fbb033af2a02afd42b9e62d0a204773d96a9391d37df4eefb3f2353d"
+    },
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before_sha256": "fafd95186f39b8466964c77c0b3549cf9d4020134c8f693e930a597e2a9e084a",
+      "added": [
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
+      ],
+      "base": "../../../../../",
+      "after_sha256": "965d9c0abea40a0e806074877222428a814a127b4719bf695126d00828b8eb53"
+    }
+  ],
+  "old_table_rows": 441,
+  "rows": 451,
+  "insertions": [
+    {
+      "at": 24,
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs"
+    },
+    {
+      "at": 25,
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs"
+    },
+    {
+      "at": 26,
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs"
+    },
+    {
+      "at": 27,
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs"
+    },
+    {
+      "at": 28,
+      "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
+    },
+    {
+      "at": 395,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs"
+    },
+    {
+      "at": 396,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs"
+    },
+    {
+      "at": 397,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs"
+    },
+    {
+      "at": 398,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs"
+    },
+    {
+      "at": 399,
+      "path": "src/source_reflows/semantic_receivers/status_inline.rs"
+    }
+  ],
+  "prior441": "docs/evidence/next-core-final-coupling-20261017/prior441.whole.tsv.txt"
+}

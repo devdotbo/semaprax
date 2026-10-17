@@ -1,0 +1,174 @@
+{
+  "head": "566bf724d583f2d00040e9336404d6d6f902bd38",
+  "changes": [
+    {
+      "source": "CHANGELOG.md",
+      "before": [
+        574015,
+        "9bc5dbe60dc1ddd282f192fdaedd0f0ce284a84b407e2dde297a1ee385887ce0"
+      ],
+      "after": [
+        574472,
+        "90cfc8ca63fedd70552b5346ae8cd68cc5b93ddecd49e56a5bb7371a6dcbce12"
+      ]
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": [
+        160762,
+        "c340acc8567b6efbfadb7df3936f95b4ec17e10012f3d9cd2fabf4bc497c950e"
+      ],
+      "after": [
+        161846,
+        "965d9c0abea40a0e806074877222428a814a127b4719bf695126d00828b8eb53"
+      ]
+    },
+    {
+      "source": "docs/ARCHITECTURE.md",
+      "before": [
+        388681,
+        "3ca3e1a73ba5f279793deb366ce88f2d1b019028c4b0a1bfd0d3c2d95fef843a"
+      ],
+      "after": [
+        389273,
+        "a708ade97a282ba6f23096d95143b8584627fda4af24b905040bd77da5c36032"
+      ]
+    },
+    {
+      "source": "docs/SUMMARY.md",
+      "before": [
+        87233,
+        "6d3cb4124a8f36fc3ffa9a20df90269f9aca9938e7196074b4847066b1c16470"
+      ],
+      "after": [
+        87327,
+        "bd841eeed499d0fc2c520ca9879be8263b67cc5887aa279f8328fcb7e0a9b020"
+      ]
+    },
+    {
+      "source": "docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv",
+      "before": [
+        5150,
+        "fb307a41c4702828798accb2a7abf4fa0fb78da7d0d1782fe6f5fb2135ba7ddb"
+      ],
+      "after": [
+        5676,
+        "525254695bb6e275900e616941700ee75a22f7432118baae8f0f21ce5199dbdd"
+      ]
+    },
+    {
+      "source": "docs/evidence/public-wire-receipts-v1/sources.json",
+      "before": [
+        6392,
+        "907bc25a220f117da4f7101c7fdb65372b7feb467bbf7f55f4b8a0359628c130"
+      ],
+      "after": [
+        6658,
+        "6f0cff995e1cf62ed992c843c45a13a46d1dde825df86437a5fccda3558a6278"
+      ]
+    },
+    {
+      "source": "docs/evidence/status-cursor-reuse-v1/sources.json",
+      "before": [
+        8951,
+        "043d027e6852715a81b6ad9a765ee39b8ce760eb7c9c7e7ea73e29882292c235"
+      ],
+      "after": [
+        11834,
+        "9220b5bdc2734de0f723793fc12bb72339134d60748e5b4a62562fdd2bc991f6"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+      "before": [
+        31717,
+        "cd9a1c11b0ad8f0194d13e74ed78211161fb75faf859f555a3e05dc13f10ac05"
+      ],
+      "after": [
+        31514,
+        "62b9e0c3a9b13808363506de6505e5380d276af65069f99fdc62ee52023ac79a"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+      "before": [
+        39641,
+        "943332a49bf82522b22bad1982b82cebfd6626f9f4e7f4cfe50d0ce9c595bcf2"
+      ],
+      "after": [
+        39654,
+        "b48d87f5fefc85c1f9f0d70cf1d7d6446ee1f8a9ce1536a15f6ff9a159871458"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "before": [
+        36291,
+        "ecff19f81e1a41f7e1c7331c7277fafa3b40a1670f200a76427e7ffd60e4ec0d"
+      ],
+      "after": [
+        36733,
+        "1161e0a666820d35bf0365ecf4b7f871cf463693a413db14871e3a0349a3a74e"
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "before": [
+        65386,
+        "92728f9f1f6e4ce861de0ed8e5ad4ec095550a924338a9168cba8bb812bd2783"
+      ],
+      "after": [
+        65279,
+        "2fff3a253c6ec2d020346026985dd3a6f5bd61497b78ed8b20862ba0cfed6201"
+      ]
+    },
+    {
+      "source": "src/source_reflows/semantic_receivers.rs",
+      "before": [
+        37053,
+        "58cd8a8d2dcb03fcb88f32537ebd5c5d9b6ac1dd1ed60a6fe75b1336bfaf14a4"
+      ],
+      "after": [
+        37121,
+        "8b00af61a5f21c12aa5979f900f428993d70fad597e03e6303c5b1851b9cbaf2"
+      ]
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "before": [
+        102020,
+        "93f5c57978ccc93da4b59e6d43184febe23d33945a936af5513e8f8b11fd2e5f"
+      ],
+      "after": [
+        103016,
+        "fa08554873fa7fb49ed7ec5680cb3d09e482903cbc3bbfed9c9d85eae3bc8e49"
+      ]
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": [
+        99890,
+        "76c00ed5e7e9bfd636a0ef3b4e7955cb094a97719030528b78cd10ef55c8518f"
+      ],
+      "after": [
+        100916,
+        "0a441a45fbb033af2a02afd42b9e62d0a204773d96a9391d37df4eefb3f2353d"
+      ]
+    }
+  ],
+  "helper_edits": [
+    {
+      "before": "assert_eq!(data.len(), 237694); // MAIN_E177_PACKET_LENGTH",
+      "after": "assert_eq!(data.len(), 237696); // MAIN_E177_PACKET_LENGTH",
+      "count": 1
+    },
+    {
+      "before": "77863eae5848b0a166e6d71393ecec786d4992bc4163b3f644766d901a18dc29",
+      "after": "e3e0fb6b53e594d8f236d9256ddb30c528b757836723eb158e4ae0dfaeacabf2",
+      "count": 1
+    }
+  ],
+  "all_incoming_fields_order_unchanged": true,
+  "packet_length": 237696,
+  "packet_sha256": "e3e0fb6b53e594d8f236d9256ddb30c528b757836723eb158e4ae0dfaeacabf2"
+}

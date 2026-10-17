@@ -1,0 +1,26 @@
+{
+  "before_sha256": "527efe21b170e32de304fd9e92db8addc518029dce9a47f1c2c20a06c72fc6e5",
+  "after_sha256": "7e0008856194bee4414ce877772171c02539d08b4a77d48057c48ab609105d2b",
+  "edits": [
+    {
+      "before": "NEW={'src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs','src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs'} # Exact pending831/870 module union reported by its owner.",
+      "after": "NEW={'src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs', 'src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs', 'src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs', 'src/source_reflows/semantic_receivers/status_inline.rs', 'src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs', 'src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs', 'src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs', 'src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs', 'src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs'} # Exact ten-module CORE union, excluding experimental883.",
+      "count": 1
+    }
+  ],
+  "new_modules": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs"
+  ],
+  "source_semantic_checkpoint": "566bf724d583f2d00040e9336404d6d6f902bd38",
+  "source_only_prepared_not_executed": true,
+  "expected_execution": "Parent invokes only on clean post174/postFINAL6 ROOT HEAD via --repo ROOT --expected-head FULL --out FRESH --write; no source/parser execution now"
+}

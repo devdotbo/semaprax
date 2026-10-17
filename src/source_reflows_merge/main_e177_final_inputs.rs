@@ -7,14 +7,14 @@ fn digest(bytes: &[u8]) -> String {
 }
 fn packet() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json");
-    assert_eq!(data.len(), 33454);
-    assert_eq!(digest(data.as_bytes()), "c7ef5558171837e13132324c39d047d9dac2f0f210322fd0b104e2e843be3209");
+    assert_eq!(data.len(), 66970);
+    assert_eq!(digest(data.as_bytes()), "87c71ed6b1f4ba3cd27830ec41485cef5c50c84023157f61dc8e4a9bb3fa502a");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(), 49);
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 73);
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
         let path=anchor["path"].as_str().unwrap();
         let raw=held(&root.join(path),anchor["length"].as_u64().unwrap()as usize,anchor["sha256"].as_str().unwrap()).unwrap();
@@ -65,7 +65,6 @@ fn table_compiled(source: &str) -> Option<&'static str> {
 }
 fn compiled(source: &str) -> Option<&'static str> {
     match source {
-        "src/source_reflows_merge/main67107_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main67107_inputs.rs")),
         "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => Some(include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),
         "src/cleanup_plan/replay.rs" => Some(include_str!("../../src/cleanup_plan/replay.rs")),
         "src/cleanup_plan/replay/branch_clone/direct.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/direct.rs")),
@@ -101,6 +100,7 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/source_reflows/main_e177_support.rs" => Some(include_str!("../../src/source_reflows/main_e177_support.rs")),
         "src/source_reflows/main_f247_controllers.rs" => Some(include_str!("../../src/source_reflows/main_f247_controllers.rs")),
         "src/source_reflows_merge.rs" => Some(include_str!("../../src/source_reflows_merge.rs")),
+        "src/source_reflows_merge/main67107_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main67107_inputs.rs")),
         "src/source_reflows_merge/main99f_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main99f_inputs.rs")),
         "src/source_reflows_merge/main_e177_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_inputs.rs")),
         "src/source_reflows_merge/next_big_batch_inputs.rs" => Some(include_str!("../../src/source_reflows_merge/next_big_batch_inputs.rs")),
@@ -111,6 +111,29 @@ fn compiled(source: &str) -> Option<&'static str> {
         "tests/workspace/pin_capture.rs" => Some(include_str!("../../tests/workspace/pin_capture.rs")),
         "tests/workspace/semantic_graph.rs" => Some(include_str!("../../tests/workspace/semantic_graph.rs")),
         "tests/workspace/semantic_graph/source_inventory.rs" => Some(include_str!("../../tests/workspace/semantic_graph/source_inventory.rs")),
+        "src/cleanup_plan/replay/branch_clone/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs")),
+        "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs")),
+        "src/cleanup_plan/replay/factored/continuation_receiver.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/continuation_receiver.rs")),
+        "src/cleanup_plan/replay/factored/oracle_hook.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/oracle_hook.rs")),
+        "src/source_reflows/semantic_receivers.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers.rs")),
+        "src/source_reflows/semantic_receivers/status_inline.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers/status_inline.rs")),
         _ => None,
     }
 }
