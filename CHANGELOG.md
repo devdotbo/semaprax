@@ -1,3 +1,4 @@
+- Source-only #875 separates the unchanged unadmitted owned-Option residual fixture into an exact T218 control so the admitted owned/Result/scalar history corpus can reach both original comparison algorithms. Qualification is pending.
 - Source-only #859 restores independent body diagnostics after authenticated concrete-record shape refusals; other rejected-storage routes retain their prior early return. Focused qualification is pending.
 - Add a private ordinary PLAN history candidate with immutable numeric-link
   segments and prepaid forward comparison against the unchanged HIR multiset.
