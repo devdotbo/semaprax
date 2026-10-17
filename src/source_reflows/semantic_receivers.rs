@@ -84,6 +84,21 @@ fn held_continuations() -> &'static [serde_json::Value] {
     })
 }
 
+// Separate complete-input custody for the paid lookup comparison state.
+fn receiving_lookups() -> &'static [serde_json::Value] {
+    static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
+    RECORDS.get_or_init(|| {
+        serde_json::from_str(
+            &std::fs::read_to_string(
+                Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/paid-expression-lookup-state-v1/views.json"),
+            )
+            .unwrap(),
+        )
+        .unwrap()
+    })
+}
+
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
         let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
@@ -128,6 +143,12 @@ fn invert(proof: &serde_json::Value, current: &str) -> String {
 }
 
 pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
+    if let Some(proof) = receiving_lookups()
+        .iter()
+        .find(|proof| proof["path"] == path)
+    {
+        return Some(invert(proof, current));
+    }
     if let Some(proof) = held_continuations()
         .iter()
         .find(|proof| proof["path"] == path)
@@ -159,6 +180,7 @@ pub(super) fn contains(path: &str) -> bool {
         .chain(ordinary_helpers())
         .chain(held_status())
         .chain(held_continuations())
+        .chain(receiving_lookups())
         .any(|proof| proof["path"] == path)
 }
 
@@ -530,4 +552,97 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     assert_eq!(machine.matches(after).count(), 1);
     machine = machine.replacen(after, before, 1);
     assert_eq!(machine, before_file("src/cleanup_plan/replay.rs"));
+}
+
+#[test]
+fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(receiving_lookups().len(), 4);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in receiving_lookups() {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        assert!(!proofs()
+            .iter()
+            .chain(followups())
+            .chain(ordinary_setup())
+            .chain(ordinary_helpers())
+            .chain(held_status())
+            .chain(held_continuations())
+            .any(|old| old["path"] == path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(contains(path));
+        assert_eq!(predecessor(path, &current), Some(before));
+        if let Some(format) = records().iter().find(|old| old["path"] == path) {
+            assert_eq!(proof["before_sha256"], format["after_sha256"]);
+            let before = invert(proof, &current);
+            assert_eq!(digest(&restore(format, &before)), format["before_sha256"]);
+        }
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+    }
+    let whole: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(
+            root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(whole.len(), 10);
+    for proof in &whole {
+        let current = std::fs::read_to_string(root.join(proof["path"].as_str().unwrap())).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+    }
+    let before_file = |path: &str| {
+        let proof = whole.iter().find(|p| p["path"] == path).unwrap();
+        std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+    };
+    for path in [
+        "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
+    ] {
+        assert!(std::fs::read_to_string(root.join(path))
+            .unwrap()
+            .starts_with(&before_file(path)));
+    }
+    let path = "src/cleanup_plan/replay/expression_facts/arena.rs";
+    let current = std::fs::read_to_string(root.join(path)).unwrap();
+    let guard = "        if budget.payer == AllocationPayer::ActiveBuilder && !self.nodes.is_empty() {\n            prefix::find_receiving(self, function, key, budget)\n        } else {\n            prefix::find(self, function, key, budget)\n        }";
+    assert_eq!(current.matches(guard).count(), 1);
+    assert_eq!(
+        current.replacen(
+            guard,
+            "        prefix::find(self, function, key, budget)",
+            1
+        ),
+        before_file(path)
+    );
+    let path = "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs";
+    let current = std::fs::read_to_string(root.join(path)).unwrap();
+    assert_eq!(
+        current
+            .matches("let arena_now = ci_str!(\"../arena.rs\");")
+            .count(),
+        1
+    );
+    assert_eq!(
+        current.replacen(
+            "let arena_now = ci_str!(\"../arena.rs\");",
+            "let arena_now = include_str!(\"../arena.rs\");",
+            1
+        ),
+        before_file(path)
+    );
 }

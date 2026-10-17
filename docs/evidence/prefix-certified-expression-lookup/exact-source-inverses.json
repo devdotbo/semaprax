@@ -26,6 +26,10 @@
       {
         "after": "        )?;\n    }\n    Ok(facts)\n}\n\n#[cfg(test)]\n#[path = \"arena/cursor_tests.rs\"]\nmod cursor_tests;\n#[cfg(test)]\n#[path = \"arena/producer_before_cursor.rs\"]\nmod producer_before_cursor;\n\n#[cfg(test)]\n#[path = \"arena/before_cursor.rs\"]\nmod before_cursor;\n",
         "before": "        )?;\n    }\n    Ok(facts)\n}\n"
+      },
+      {
+        "after": " Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {\n        if budget.payer == AllocationPayer::ActiveBuilder && !self.nodes.is_empty() {\n            prefix::find_receiving(self, function, key, budget)\n        } else {\n            prefix::find(self, function, key, budget)\n        }\n    }\n}\n\nmod producer;\npub(super) fn build<'hir, P: errors::Pol",
+        "before": " Result<Option<&'a Option<CallFact<'a>>>, Diagnostic> {\n        prefix::find(self, function, key, budget)\n    }\n}\n\nmod producer;\npub(super) fn build<'hir, P: errors::Pol"
       }
     ]
   },

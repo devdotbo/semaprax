@@ -1,5 +1,7 @@
 # Changelog
 
+- Reuse one fully funded comparison state during ordinary expression-fact lookup, retaining complete byte ordering, original work events, legacy/selected/oracle routes and historical controls.
+
 - Grow authenticated invocation-held continuation buffers as reached, funding complete replacements and retaining the original depth bound, fixed legacy constructor, work events and historical controls.
 
 - Hold an authenticated exclusive status-directory prefix during paid construction, retaining original validation loops, work ceilings, physical controls and complete historical source proofs.
