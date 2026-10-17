@@ -80,9 +80,30 @@ fn selected_tree_fallback_has_exact_immediate_small_bills_work_and_whole_drop() 
         for weight in [1, 2, u64::MAX] {
             let (old, old_heap) = observe(&function, &graph, sink, root, weight, 1 << 26, 2, None);
             let (current, heap) = observe(&function, &graph, sink, root, weight, 1 << 26, 0, None);
-            assert_eq!(current, old, "same real small producer and all six error fields");
+            let mut logical_budget = ReplayBudget::unobserved();
+            let mut logical = Canonicalizer::new(&graph, sink);
+            assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(),
+                *current.result.as_ref().unwrap());
+            let nonempty_exits = logical.states.iter().filter(|(_, id)| {
+                logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
+            }).count();
+            assert_eq!(current.result, old.result, "same real small producer and all six error fields");
+            assert_eq!(current.work, old.work);
+            assert_eq!(old.paid, current.paid + nonempty_exits * std::mem::size_of::<Result<(), Diagnostic>>(),
+                "one physically absent forwarding Result per completed nonempty Exit");
             assert_eq!(heap, old_heap, "same actual fallback allocations and release");
             settled(heap); settled(old_heap);
+            for (route, full) in [(0, &current), (2, &old)] {
+                for limit in [0, full.paid - 1, full.paid] {
+                    let (actual, physical) = observe(&function, &graph, sink, root, weight, limit, route, None);
+                    let (again, repeated_physical) = observe(&function, &graph, sink, root, weight, limit, route, None);
+                    assert_eq!(actual, again, "complete six fields, exact receipt and work at each own frontier");
+                    assert_eq!(physical, repeated_physical);
+                    assert_eq!(actual.result.is_ok(), limit == full.paid);
+                    if limit == full.paid { assert_eq!(&actual, full); }
+                    settled(physical); settled(repeated_physical);
+                }
+            }
         }
     }
 }
