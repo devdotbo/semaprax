@@ -141,8 +141,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
-    "sha256": "499e2e20b836ab7adf9b095ae608e55482a411ae7e5d9bea34b3a560d77ccdf2",
-    "lines": 1385
+    "sha256": "988b68859a9b20957ee69832cb662fcd5a8e6957a7050fef1277f4d8f6d54356",
+    "lines": 1387
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs",
@@ -211,18 +211,18 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
-    "sha256": "65d09ccad2df6d6138fde916ceac9c8b48bd56ffc880a62543ce440f4b2064b8",
-    "lines": 392
+    "sha256": "8db7099863e022516f2d00ef96cc2b8b349d92cf850518d5d97cd2e393efb21c",
+    "lines": 399
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
-    "sha256": "38a6b60b2f2f734dd1f92037a9b0cde74432ce5fe2a64924b4b8d96e70baccc2",
-    "lines": 295
+    "sha256": "54fee23c22ec6d3b830f543c4f1cbb05e69f34be324fa8b48b6286e01464e432",
+    "lines": 324
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
-    "sha256": "f38734199734c035d4b6c0ffba0ee2de66820c4c5713526c6394e2a5340ae666",
-    "lines": 1064
+    "sha256": "a6480c8f6127aaa4fc7282cec875d1061aa00ffd7b1bc3b2f3e1f8f3ab0d0056",
+    "lines": 1065
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "dd8abce0a87b6434d55f76451d3ae3749979824cf3d80c5e612bc3645f682408",
+    "sha256": "381369b227d0d4233a33179f376b725a4f0a73675151596ce9e8db071497d8bf",
     "lines": 1099
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "c4afdeae4473e52e287730e2288cec925125513e81c51975d94993632ceed04f",
+    "sha256": "8baf66e4d2c7686de7b1fecad606e316c478e273ab89c28ce19f0d3c4c04c45b",
     "lines": 397
   },
   {
@@ -981,7 +981,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs",
-    "sha256": "50e4d6dc7bfd923acba894af0d8bb004c97ea56bb6c23164f80e33f2c78f8ea1",
+    "sha256": "c81b346c3460d9b465743e84041470f79dcc2fbd55cbc4fe746feaed404f53d9",
     "lines": 347
   },
   {
@@ -1066,18 +1066,18 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "0db38ae8756039b1e6242f838df0d11e630f1e76ca15c6939754b276005a54a3",
-    "lines": 160
+    "sha256": "84d7e8a2807ff2f99080de35982ba767d97ed005ee7bd215d9649fa088036048",
+    "lines": 183
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
-    "sha256": "70af76fae1c5ce92f37db4751627d343aad9d4901f750169903bd031572bc1ad",
+    "sha256": "ddb9414c06f4886c230d78abc81d29ba3987f93a8d1a90d43a9fb9d5e9d81e95",
     "lines": 272
   },
   {
     "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
-    "sha256": "4d42241052812d7b51d6d20db3881b3643decd0ebb37f52711d9345442b123a5",
-    "lines": 176
+    "sha256": "10185cd94bf79b218cddfaa2cec848c2729a78bc2892c216ea7e72b5091d02f2",
+    "lines": 177
   },
   {
     "source": "src/workspace_graph/tests/core_attempt_trace.rs",
@@ -1098,5 +1098,55 @@
     "source": "tests/workspace/pin_capture.rs",
     "sha256": "ee19d91ad30a9b959fe11a488a0138d60685fed409d6f29244fa981772934bbf",
     "lines": 103
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs",
+    "sha256": "cc531da41d635a15fae4d0f05448333769caee76eb9d37599482000ff5143e40",
+    "lines": 488
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs",
+    "sha256": "d573feb2a764863e240d9c7d5f7ffcf7160031e5beaf521b6d0a18ed0cff9f93",
+    "lines": 353
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+    "sha256": "7ee51c368414f6ed39114b6ba5850b6a98a650447f30c0e50f88c860c4ec0bae",
+    "lines": 126
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+    "sha256": "13b29a5cbffbd1a04b1206a8cc2f5dc7c1f52ef0e1e9325fd23c8ca871504c44",
+    "lines": 127
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "sha256": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+    "lines": 243
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs",
+    "sha256": "59f15d0dc91103a34a15dcd5ea7f475634951747e28454edee8c890f917b32dc",
+    "lines": 243
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "sha256": "1d75e09b1e50f9d208d3572d94c26c4b8a8c9314ba434b6bb50cca9625b389bf",
+    "lines": 1393
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs",
+    "sha256": "ca64a86b88fce36b84230e3e70a3c95b6020f5734c2c95bf7a0e38020fe9417a",
+    "lines": 108
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "sha256": "42b1d47b690d33be215f6f22da1abf491f8d2242bfa66ddf04a5185ebfb1634d",
+    "lines": 130
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers/status_inline.rs",
+    "sha256": "1f55a733a273a93a38eda94b112b4900eea5a0b5e448c56c5fbc846711e12cec",
+    "lines": 94
   }
 ]
