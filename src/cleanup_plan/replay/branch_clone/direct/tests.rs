@@ -89,12 +89,10 @@ fn observe(
                     target,
                 )?;
                 assert_eq!(copy.len(), values.len() + 1);
-                assert!(
-                    copy[..values.len()]
-                        .iter()
-                        .zip(values)
-                        .all(|(a, b)| Rc::ptr_eq(a, b))
-                );
+                assert!(copy[..values.len()]
+                    .iter()
+                    .zip(values)
+                    .all(|(a, b)| Rc::ptr_eq(a, b)));
                 assert!(Rc::ptr_eq(copy.last().unwrap(), &values[0]));
                 let capacity = copy.capacity();
                 drop(copy);
@@ -215,11 +213,11 @@ fn direct_generic_entry_prepays_result_and_arguments_with_exact_short_floor_stic
         for limit in [0, exact - 1, exact] {
             let first = observe(function, &values, target, limit, 0, 2);
             let again = observe(function, &values, target, limit, 0, 2);
-            assert_eq!(first.0.0, again.0.0);
-            assert_eq!(first.0.0, oracle(function, &values, expected, limit, 0, 2));
+            assert_eq!(first.0 .0, again.0 .0);
+            assert_eq!(first.0 .0, oracle(function, &values, expected, limit, 0, 2));
             assert_eq!(first.1, again.1);
             assert_eq!(first.2, again.2);
-            assert_eq!(first.0.0.result.is_ok(), limit == exact);
+            assert_eq!(first.0 .0.result.is_ok(), limit == exact);
         }
         let mut limit = 0;
         let mut complete = false;
@@ -227,7 +225,7 @@ fn direct_generic_entry_prepays_result_and_arguments_with_exact_short_floor_stic
         // Each receiver gets short/exact-admission/floor and full sticky/Drop checks.
         for _ in 0..10_000 {
             let step = observe(function, &values, target, limit, 0, 2);
-            if step.0.0.result.is_ok() {
+            if step.0 .0.result.is_ok() {
                 complete = true;
                 break;
             }
@@ -237,16 +235,16 @@ fn direct_generic_entry_prepays_result_and_arguments_with_exact_short_floor_stic
             assert!(end > limit);
             let short = observe(function, &values, target, end - 1, 0, 2);
             let repeat = observe(function, &values, target, end - 1, 0, 2);
-            assert_eq!(short.0.0, repeat.0.0);
+            assert_eq!(short.0 .0, repeat.0 .0);
             assert_eq!(
-                short.0.0,
+                short.0 .0,
                 oracle(function, &values, expected, end - 1, 0, 2)
             );
             assert_eq!(short.3, repeat.3);
-            assert!(short.0.0.result.is_err());
+            assert!(short.0 .0.result.is_err());
             let floored = observe(function, &values, target, end, 1, 2);
-            assert!(floored.1 && floored.0.0.result.is_err());
-            assert_eq!(floored.0.0, oracle(function, &values, expected, end, 1, 2));
+            assert!(floored.1 && floored.0 .0.result.is_err());
+            assert_eq!(floored.0 .0, oracle(function, &values, expected, end, 1, 2));
             let admitted = observe(function, &values, target, end, 0, 2);
             assert!(admitted.2 >= end);
             limit = end;
@@ -261,11 +259,11 @@ fn direct_generic_entry_prepays_result_and_arguments_with_exact_short_floor_stic
         for work in [0, 1] {
             let first = observe(function, &values, target, usize::MAX, 0, work);
             let again = observe(function, &values, target, usize::MAX, 0, work);
-            assert_eq!(first.0.0, again.0.0);
-            assert!(first.0.0.result.is_err());
-            assert_eq!(first.0.0.events, work);
+            assert_eq!(first.0 .0, again.0 .0);
+            assert!(first.0 .0.result.is_err());
+            assert_eq!(first.0 .0.events, work);
             assert_eq!(
-                first.0.0,
+                first.0 .0,
                 oracle(function, &values, expected, usize::MAX, 0, work)
             );
         }
@@ -352,8 +350,11 @@ fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
     // Keep the original tail-expression fixture as a negative: it has no
     // explicit return edge and cannot supply a FunctionReturn control target.
     let tail_program = program();
-    assert!(tail_program.functions[0].cleanup_plan.exits.iter().all(|exit|
-        !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
+    assert!(tail_program.functions[0]
+        .cleanup_plan
+        .exits
+        .iter()
+        .all(|exit| !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
     drop(tail_program);
     // Author a real return, then use its resolver-owned source and target.
     // The same 96 statements and both original branches remain in the body.
@@ -369,11 +370,17 @@ fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
     let compatibility = crate::check(&source, "direct879.spx").unwrap();
     let compatibility_canonical = crate::format::canonical(&compatibility);
     let compatibility_checked = crate::check(&compatibility_canonical, "direct879.spx").unwrap();
-    assert_eq!(crate::format::canonical(&compatibility_checked), compatibility_canonical);
+    assert_eq!(
+        crate::format::canonical(&compatibility_checked),
+        compatibility_canonical
+    );
     let compatibility = crate::hir::resolve(&compatibility_checked).unwrap();
     assert!(!crate::hir::lexical_exit::requires(&compatibility.functions[0]).unwrap());
-    assert!(compatibility.functions[0].cleanup_plan.exits.iter().all(|exit|
-        !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
+    assert!(compatibility.functions[0]
+        .cleanup_plan
+        .exits
+        .iter()
+        .all(|exit| !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
     drop(compatibility);
     // The actual source loop selects explicit lexical exits. It runs once;
     // the same 96 statements, return and both original branches remain.

@@ -1,0 +1,8 @@
+{
+  "source": "tests/support/production_source_inventory_original.rs",
+  "original_exact_sha256": "d51a124525e3d41469c1db223a0b4526faa3faff1c757b9526ca0b2233358e8c",
+  "restored_from_immutable_whole_archive": "docs/evidence/source-boundary-domains-20261016/production_source_inventory.before.rs.txt",
+  "format_skip_scope": "Only this separately hash-checked historical module registration; active helper and its predicates remain formatted and checked.",
+  "owning_helper": "tests/support/production_source_inventory.rs",
+  "reason": "Formatting immutable evidence changed 38 source bytes and correctly failed the unchanged original helper SHA256 guard. The original bytes must be retained."
+}

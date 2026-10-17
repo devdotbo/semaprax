@@ -6,9 +6,9 @@ use crate::ast::{ModuleUse, Program, Span};
 use crate::diagnostic::Diagnostic;
 
 use super::{
-    MAX_BUILDER_BYTES, MAX_CALLABLES, MAX_CALLS, MAX_CROSS_FILE_EDGES, MAX_DECLARATIONS,
-    MAX_DEPENDENCY_DEPTH, MAX_ENTRY_MODULE_BYTES, MAX_FILES, MAX_OUTPUT_BYTES,
-    MAX_TOTAL_SOURCE_BYTES, MAX_USES, WorkspaceResolvedModule,
+    WorkspaceResolvedModule, MAX_BUILDER_BYTES, MAX_CALLABLES, MAX_CALLS, MAX_CROSS_FILE_EDGES,
+    MAX_DECLARATIONS, MAX_DEPENDENCY_DEPTH, MAX_ENTRY_MODULE_BYTES, MAX_FILES, MAX_OUTPUT_BYTES,
+    MAX_TOTAL_SOURCE_BYTES, MAX_USES,
 };
 
 pub(super) const PROVIDER_MAIN_HELP: &str = "`entry` in semaprax.toml must name the module that declares `main`; every other listed source is a provider module and declares no `main`";

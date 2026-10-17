@@ -148,7 +148,10 @@ fn help_keeps_frozen_package_resolve_usage_and_current_cli_snapshot() {
     let mut stdout = String::from_utf8(output.stdout).unwrap();
     // Authenticate the COMPLETE current catalog before entering the unchanged
     // historical47-line inverse and every original whole-output pin below.
-    assert_eq!(stdout, include_str!("../../docs/evidence/sourceguard-input-domains-7a87/current-help-all.txt"));
+    assert_eq!(
+        stdout,
+        include_str!("../../docs/evidence/sourceguard-input-domains-7a87/current-help-all.txt")
+    );
     for (current_line, prior_line) in [
         ("semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N] [--native-timing]\n", "semaprax test [<dir>|semaprax.toml|--manifest-path path] [--json] --target native [--native-timeout-ms N] [--native-max-output-bytes N]\n"),
         ("semaprax test [<dir>|semaprax.toml|--manifest-path path] --target native-collection-record-pure.v1 [--json] [--native-timeout-ms N] [--native-max-output-bytes N]\n", ""),
@@ -161,7 +164,10 @@ fn help_keeps_frozen_package_resolve_usage_and_current_cli_snapshot() {
         assert_eq!(stdout.matches(current_line).count(), 1, "current admitted usage");
         stdout = stdout.replacen(current_line, prior_line, 1);
     }
-    assert_eq!(stdout, include_str!("../../docs/evidence/sourceguard-input-domains-7a87/frozen-help-input.txt"));
+    assert_eq!(
+        stdout,
+        include_str!("../../docs/evidence/sourceguard-input-domains-7a87/frozen-help-input.txt")
+    );
     for (current_line, restored) in RESTORED {
         assert_eq!(stdout.matches(current_line).count(), 1, "{current_line}");
         stdout = stdout.replacen(current_line, restored, 1);

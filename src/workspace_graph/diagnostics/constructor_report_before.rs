@@ -1,5 +1,8 @@
 //! Complete old report formatter bodies; only imports/visibility adapted.
-use super::{Diagnostic, graph_error, BuilderPhase, SequentialRefusal, BUILDER_PHASE, PRECHARGE_MODULES, PRECHARGE_BYTES, PRECHARGE_DOMINANT, PRECHARGE_PENDING, PRECHARGE_SEQUENTIAL};
+use super::{
+    graph_error, BuilderPhase, Diagnostic, SequentialRefusal, BUILDER_PHASE, PRECHARGE_BYTES,
+    PRECHARGE_DOMINANT, PRECHARGE_MODULES, PRECHARGE_PENDING, PRECHARGE_SEQUENTIAL,
+};
 use std::cell::Cell;
 pub(in crate::workspace_graph) fn limit_error(field: &'static str, maximum: usize) -> Diagnostic {
     let error = graph_error(

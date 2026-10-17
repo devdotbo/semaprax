@@ -2,10 +2,10 @@
 //! semantic diagnostics and upstream compiler preflight remain outside this
 //! storage protocol; no whole-validator funding claim follows.
 use super::before_plan as paid_plan;
-use crate::loan_plan::LOAN_PLAN_SCHEMA_V3;
 use super::storage::{classify, PlannerError};
 use super::*;
 use crate::bounded_output::cfg_reservation::CfgReservation;
+use crate::loan_plan::LOAN_PLAN_SCHEMA_V3;
 
 pub(super) fn build(
     program: &ResolvedProgram,

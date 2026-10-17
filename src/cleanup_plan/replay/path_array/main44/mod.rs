@@ -4,12 +4,14 @@
 use super::*;
 use crate::cleanup_plan::replay::path_array_main44 as path_array;
 use crate::cleanup_plan::replay::sequence_prefix_main8a::helper as sequence_prefix;
-#[path = "vector.rs"]
-mod sequence_vector;
 #[path = "current.rs"]
 mod current;
-use current::{sequence_skeleton_paths, append_expr_paths, split_status_paths, split_contract, hir_skeleton_paths_with_index_storage};
-
+#[path = "vector.rs"]
+mod sequence_vector;
+use current::{
+    append_expr_paths, hir_skeleton_paths_with_index_storage, sequence_skeleton_paths,
+    split_contract, split_status_paths,
+};
 
 fn receiving_bytes() -> usize {
     use std::mem::size_of;
@@ -127,16 +129,26 @@ pub(super) fn fixture_program() -> ResolvedProgram {
 pub(super) mod sequence;
 
 thread_local! { static ACTIVE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) }; }
-pub(in crate::cleanup_plan::replay) fn selected() -> bool { ACTIVE.with(std::cell::Cell::get) }
+pub(in crate::cleanup_plan::replay) fn selected() -> bool {
+    ACTIVE.with(std::cell::Cell::get)
+}
 pub(in crate::cleanup_plan::replay) use current::sequence_skeleton_paths as current_sequence;
 fn with_active<T>(run: impl FnOnce() -> T) -> T {
     struct Restore(bool);
-    impl Drop for Restore { fn drop(&mut self) { ACTIVE.with(|flag| flag.set(self.0)); } }
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            ACTIVE.with(|flag| flag.set(self.0));
+        }
+    }
     let _restore = Restore(ACTIVE.with(|flag| flag.replace(true)));
     run()
 }
 
-fn hir_skeleton_paths<'hir>(program: &'hir dyn crate::cleanup::ReplayContext, function: &'hir ResolvedFunction, budget: &mut ReplayBudget) -> Result<Vec<SkeletonPath>, Diagnostic> {
+fn hir_skeleton_paths<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    budget: &mut ReplayBudget,
+) -> Result<Vec<SkeletonPath>, Diagnostic> {
     current::hir_skeleton_paths_with_index_storage(program, function, budget, None, None)
 }
 

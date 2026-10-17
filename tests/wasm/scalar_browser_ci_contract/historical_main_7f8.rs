@@ -64,7 +64,8 @@ fn hosted_wires_keep_current_pins_and_every_complete_previous_receiver() {
         "sha256:489f02ed298c2d35433d6c9f811ccc26c50ce90117b3976a862b40aff11129b8",
         "sha256:ccb0ec81a00f3890ec2fe87af8d0f801970a1a397eeb55fe115e83dab02188ba",
     ];
-    let runner = include_str!("../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs");
+    let runner =
+        include_str!("../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs");
     for (captured, expected) in CURRENT.into_iter().zip(original) {
         let graph = captured.strip_suffix('\n').unwrap();
         assert_eq!(digest(graph), expected);
@@ -128,19 +129,35 @@ fn the_complete_old_bridge_changes_only_its_retained_runner_include() {
 
 #[test]
 fn whole_main7f8_receiver_and_runner_are_authenticated() {
-    let original = include_str!("../../../docs/evidence/main7f8-composition-20261017/historical-main7f8.before.rs.txt");
-    let runner = include_str!("../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs");
+    let original = include_str!(
+        "../../../docs/evidence/main7f8-composition-20261017/historical-main7f8.before.rs.txt"
+    );
+    let runner =
+        include_str!("../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs");
     for (text, expected) in [
-        (original, "8651f7dd678016d5ce6d617e249a8cd566fffdb65652e2f1ddf9a9724dbcb747"),
-        (runner, "439aac5c76fc97e037bf2e30273c99d842357c64925babbffd7b2007edd486ec"),
+        (
+            original,
+            "8651f7dd678016d5ce6d617e249a8cd566fffdb65652e2f1ddf9a9724dbcb747",
+        ),
+        (
+            runner,
+            "439aac5c76fc97e037bf2e30273c99d842357c64925babbffd7b2007edd486ec",
+        ),
     ] {
-        assert_eq!(format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(text.as_bytes()))), expected);
+        assert_eq!(
+            format!(
+                "{:x}",
+                semaprax::digest_hex::LowerHex(Sha256::digest(text.as_bytes()))
+            ),
+            expected
+        );
     }
     let current = include_str!("historical_main_7f8.rs");
     let marker = "\n#[test]\nfn whole_main7f8_receiver_and_runner_are_authenticated() {";
     let end = current.find(marker).unwrap();
     let retained = &current[..end];
-    let new = "include_str!(\"../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs\")";
+    let new =
+        "include_str!(\"../../../docs/evidence/main7f8-composition-20261017/runner-main7f8.mjs\")";
     let old = "include_str!(\"../../../platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs\")";
     assert_eq!(retained.matches(new).count(), 1);
     assert_eq!(retained.replacen(new, old, 1), original);

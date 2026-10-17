@@ -1,12 +1,12 @@
 //! Full ancestor freezes over every subtree, including nested lowered code.
 //! Only borrowed lookup rows are sorted. No traversal skips an inner body.
-use super::{
-    DeclarationIndex, Event, Failure, ResolvedExpr, ResolvedFunction, Row, Storage, Walker, index,
-};
 use super::super::{
-    ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement, ValueId, bare_place, receiver_shape,
+    bare_place, receiver_shape, ResolvedExprKind, ResolvedMatchPattern, ResolvedStatement, ValueId,
 };
 use super::intervals::{self, Freeze, Kind};
+use super::{
+    index, DeclarationIndex, Event, Failure, ResolvedExpr, ResolvedFunction, Row, Storage, Walker,
+};
 #[derive(Clone, Copy)]
 struct Receiver<'a> {
     expression: &'a ResolvedExpr,

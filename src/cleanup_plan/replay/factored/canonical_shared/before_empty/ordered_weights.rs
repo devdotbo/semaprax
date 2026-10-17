@@ -36,11 +36,13 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared) struct OrderedWe
 
 impl OrderedWeights {
     // Both real inline owner constructions include the scalar singleton slot.
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const CONTROLS: usize = 2 * size_of::<Self>();
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const CONTROLS: usize =
+        2 * size_of::<Self>();
     // Only growth invokes this Result-returning helper: return, positive payment,
     // reserve_vec and initializer payment Results. Every ordinary spare-slot
     // insert returns unit. Bounded integer capacity arithmetic makes no Option.
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const GROW_CONTROLS: usize = 4 * size_of::<Result<(), Diagnostic>>();
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const GROW_CONTROLS: usize =
+        4 * size_of::<Result<(), Diagnostic>>();
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn new() -> Self {
         Self {
             nodes: Vec::new(),
@@ -53,7 +55,9 @@ impl OrderedWeights {
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn len(&self) -> usize {
         self.used
     }
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn needs_capacity(&self) -> bool {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn needs_capacity(
+        &self,
+    ) -> bool {
         self.used != 0 && (self.nodes.is_empty() || self.used == self.nodes.len())
     }
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn grow(
@@ -121,7 +125,10 @@ impl OrderedWeights {
         }
         Ok(())
     }
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn get(&self, key: &usize) -> Option<&u64> {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn get(
+        &self,
+        key: &usize,
+    ) -> Option<&u64> {
         if self.used == 1 && self.nodes.is_empty() {
             return if self.first_key == *key {
                 Some(&self.first_weight)
@@ -143,7 +150,10 @@ impl OrderedWeights {
         }
         None
     }
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn get_mut(&mut self, key: &usize) -> Option<&mut u64> {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn get_mut(
+        &mut self,
+        key: &usize,
+    ) -> Option<&mut u64> {
         if self.used == 1 && self.nodes.is_empty() {
             return if self.first_key == *key {
                 Some(&mut self.first_weight)
@@ -167,7 +177,11 @@ impl OrderedWeights {
     /// The caller establishes absence and grows only if needs_capacity().
     /// This success path constructs no Result, Node, vector or heap carrier.
     /// It mutates the owner's paid inline slot or a real preinitialized node.
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn insert_prepaid(&mut self, key: usize, weight: u64) {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn insert_prepaid(
+        &mut self,
+        key: usize,
+        weight: u64,
+    ) {
         if self.used == 0 {
             self.first_key = key;
             self.first_weight = weight;
@@ -347,8 +361,11 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared) enum Closed {
 }
 #[cfg(test)]
 impl Closed {
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const CONTROLS: usize = 2 * size_of::<Self>() + size_of::<&OrderedWeights>();
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn weights(&self) -> &OrderedWeights {
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const CONTROLS: usize =
+        2 * size_of::<Self>() + size_of::<&OrderedWeights>();
+    pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn weights(
+        &self,
+    ) -> &OrderedWeights {
         match self {
             Self::Borrowed(weights) => weights,
             Self::Owned(weights) => weights,

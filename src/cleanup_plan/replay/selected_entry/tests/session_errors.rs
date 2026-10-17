@@ -1,8 +1,8 @@
 //! Selected-local error data only; no whole-engine funding or application claim.
 use super::{
-    Acquired, Diagnostic, ExpressionId, PhysicalReservation, ReplayContext, ReportForm,
-    ResolvedFunction, ResolvedProgram, Session, StorageId, expression_facts, primitive_fixture,
-    selected_context, semantic_refusal,
+    expression_facts, primitive_fixture, selected_context, semantic_refusal, Acquired, Diagnostic,
+    ExpressionId, PhysicalReservation, ReplayContext, ReportForm, ResolvedFunction,
+    ResolvedProgram, Session, StorageId,
 };
 use crate::cleanup_plan::LivenessFlagId;
 use crate::test_allocation_observer::{current_metrics, measure};
@@ -266,7 +266,7 @@ fn selected_session_publication_keeps_first_named_boundary_across_later_atom_kin
     reason = "complete independent historical enum layout, no constructors or runtime work"
 )]
 mod prior_layout {
-    use super::{Diagnostic, ExpressionId, LivenessFlagId, StorageId, expression_facts};
+    use super::{expression_facts, Diagnostic, ExpressionId, LivenessFlagId, StorageId};
     pub(super) enum Atom {
         RepeatedStatus(ExpressionId),
         UnknownStatus(ExpressionId),
@@ -382,7 +382,6 @@ fn selected_call_dynamic_receipt_keeps_the_same_session_report_and_ledger_throug
         assert!(!overflow);
     }
 }
-
 
 #[test]
 fn actual_raw_child_refusal_keeps_one_prepaid_session_report_and_ledger_through_drop() {

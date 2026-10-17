@@ -70,26 +70,22 @@ pub(crate) fn validate_latch_inline(
             let ResolvedExprKind::Block { statements, tail } = &body.kind else {
                 return Err(fail());
             };
-            let [
-                ResolvedStatement::Let {
-                    binding: item,
-                    mutable: false,
-                    value: read,
-                    ..
-                },
-                ResolvedStatement::Let {
-                    binding: discard,
-                    mutable: false,
-                    value: authored,
-                    ..
-                },
-                ResolvedStatement::Assign {
-                    binding: counter,
-                    field: None,
-                    value: advance,
-                    ..
-                },
-            ] = statements.as_slice()
+            let [ResolvedStatement::Let {
+                binding: item,
+                mutable: false,
+                value: read,
+                ..
+            }, ResolvedStatement::Let {
+                binding: discard,
+                mutable: false,
+                value: authored,
+                ..
+            }, ResolvedStatement::Assign {
+                binding: counter,
+                field: None,
+                value: advance,
+                ..
+            }] = statements.as_slice()
             else {
                 return Err(fail());
             };

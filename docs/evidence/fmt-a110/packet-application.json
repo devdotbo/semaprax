@@ -1,0 +1,29 @@
+{
+  "base": "a110ea82e2f3eec797b4fd44b98836927f7218e1",
+  "old_rows": 124,
+  "new_rows": 433,
+  "packet_length": 260977,
+  "packet_sha256": "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc",
+  "complete_prior_packet": {
+    "archive": "docs/evidence/fmt-a110/packet-wV4m7PTunyjrIa8VFcfB0eaqPxmD03tBMXOGHXLXakY.json.txt",
+    "length": 112949,
+    "sha256": "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46"
+  },
+  "old_packet_function_body_retained_with_only_name_and_archive_path_change": true,
+  "all_original_predecessor_functions_anchors_and_tests_retained": true,
+  "compiled_same_scope_fragment_arms": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+    "src/hir/resolve_program_methods.rs",
+    "src/source_reflows_merge/main67107_inputs_tail.rs"
+  ],
+  "fragment_parent_checks_before_historical_publication": true,
+  "installed_only_referenced_complete_archives": 690,
+  "pending_guard_config_and_full_verification": true
+}

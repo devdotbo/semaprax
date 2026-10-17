@@ -1,0 +1,102 @@
+[
+  {
+    "parent": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+    "compiled": true,
+    "current": {
+      "length": 4274,
+      "sha256": "842979bf706a0ce014e74436eefbc722ccbef7e605f5aaeba3893dca7e55781f",
+      "archive": "docs/evidence/fmt-a110/hCl5v3BqDOAU50Q27vvHIsy-9-YF9arro4k9yn5VeB8.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+    "compiled": true,
+    "current": {
+      "length": 59861,
+      "sha256": "83bdb4382be0baebd02f6e7d5fce48582488a2e27cb1d00d3192a46a9aafc4c9",
+      "archive": "docs/evidence/fmt-a110/g720OCvguuvQL259X85IWCSIouJ8sdANMZKkapqvxMk.txt"
+    }
+  },
+  {
+    "parent": "src/source_reflows_merge/main67107_inputs.rs",
+    "source": "src/source_reflows_merge/main67107_inputs_tail.rs",
+    "compiled": true,
+    "current": {
+      "length": 59095,
+      "sha256": "6bfe04c69b4809cc3faf40d6e5fdf6a8575bf5d7f9294131c33986468bdfebcd",
+      "archive": "docs/evidence/fmt-a110/a_4ExptICcw_r0DW5f32qFdb9df5KUExwzmGRovf680.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+    "compiled": true,
+    "current": {
+      "length": 14811,
+      "sha256": "ddf8ea40570c11ac55fd260ef5df7a460091abb60d0a7f3f2508687c8a19e3a5",
+      "archive": "docs/evidence/fmt-a110/3fjqQFcMEaxV_SYO9d96RgCRq7YNCn8_JQhofIoZ46U.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+    "compiled": true,
+    "current": {
+      "length": 60616,
+      "sha256": "7013834572f4d1cffe7794c5c424d57059fed3db14f19041a9cc339762cdef6d",
+      "archive": "docs/evidence/fmt-a110/cBODRXL00c_-d5TFxCTVcFn-09sU8ZBBqcwzl2LN720.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+    "compiled": true,
+    "current": {
+      "length": 14862,
+      "sha256": "270378414a216fbc1ffa511471e1931a612c48ae34adb48d0a3fd35963980e0a",
+      "archive": "docs/evidence/fmt-a110/JwN4QUohb7wf-lEUceGTGmEsSK40rbSNCj_TWWOYDgo.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+    "compiled": true,
+    "current": {
+      "length": 60497,
+      "sha256": "7530bd8e7bf14c99c625e5259f6b0c22f83df75b5ed53773355d35310356d60f",
+      "archive": "docs/evidence/fmt-a110/dTC9jnvxTJnGJeUln2sMIvg991te1TdzNV01MQNW1g8.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "source": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+    "compiled": true,
+    "current": {
+      "length": 30973,
+      "sha256": "20c5c864bc3eb84f4d832b1f67ea5898279950b5ac7ba06a7381a2adb4b50637",
+      "archive": "docs/evidence/fmt-a110/IMXIZLw-uE9NgysfZ-pYmCeZULWse6Bqc4GirbS1Bjc.txt"
+    }
+  },
+  {
+    "parent": "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "source": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+    "compiled": true,
+    "current": {
+      "length": 45829,
+      "sha256": "007cdd753efd8749cc7ca4f221569ab1ecd779a85590970bf459c51d34840011",
+      "archive": "docs/evidence/fmt-a110/AHzddT79h0nMfKTyIVaasezXeahVkJcL9FnFHTSEABE.txt"
+    }
+  },
+  {
+    "parent": "src/hir/resolve_program.rs",
+    "source": "src/hir/resolve_program_methods.rs",
+    "compiled": true,
+    "current": {
+      "length": 62285,
+      "sha256": "39a921a9c9dd0fe0327ab20b5afdbca14a3feae9868207ddef9d9ba1a4e518e9",
+      "archive": "docs/evidence/fmt-a110/OakhqcndD-AyerILWv28oUo_6umGggfd752boaTlGOk.txt"
+    }
+  }
+]

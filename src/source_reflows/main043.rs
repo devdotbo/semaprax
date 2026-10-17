@@ -1,28 +1,100 @@
 //! Independent Main043 predicates; raw owners and all table rows read RAW inputs.
+use crate::source_reflows_merge::Main043Fixture as Fixture;
+use sha2::{Digest, Sha256};
 use std::path::Path;
 use std::sync::OnceLock;
-use sha2::{Digest, Sha256};
-use crate::source_reflows_merge::Main043Fixture as Fixture;
 fn metadata(fixture: Fixture) -> &'static str {
     match fixture {
-        Fixture::ExitPrefix => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::ExitDirectory => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::LegacyNominal => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Lifecycle => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Prefix => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Receiving => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Edge => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Selected => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Status => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Formatting => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::Receivers => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::LiveAudits => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
-        Fixture::HistoricalCiExtras => { static VALUE: OnceLock<String> = OnceLock::new(); VALUE.get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture)).as_str() },
+        Fixture::ExitPrefix => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::ExitDirectory => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::LegacyNominal => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Lifecycle => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Prefix => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Receiving => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Edge => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Selected => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Status => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Formatting => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::Receivers => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::LiveAudits => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
+        Fixture::HistoricalCiExtras => {
+            static VALUE: OnceLock<String> = OnceLock::new();
+            VALUE
+                .get_or_init(|| crate::source_reflows_merge::main043_metadata(fixture))
+                .as_str()
+        }
     }
 }
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
-fn historical_ci_extra(source: &str, current: &str) -> String { crate::source_reflows_merge::main043_historical_ci_extra(source, current) }
-fn records() -> &'static [serde_json::Value] { RECORDS.get_or_init(|| serde_json::from_str(metadata(Fixture::Formatting)).unwrap()).as_array().unwrap() }
+fn historical_ci_extra(source: &str, current: &str) -> String {
+    crate::source_reflows_merge::main043_historical_ci_extra(source, current)
+}
+fn records() -> &'static [serde_json::Value] {
+    RECORDS
+        .get_or_init(|| serde_json::from_str(metadata(Fixture::Formatting)).unwrap())
+        .as_array()
+        .unwrap()
+}
 fn restore(record: &serde_json::Value, current: &str) -> String {
     let path = record["path"].as_str().unwrap();
     assert_eq!(

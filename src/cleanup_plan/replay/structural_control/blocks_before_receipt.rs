@@ -1,6 +1,6 @@
 //! Selected primitive block/edge replay. Legacy validation remains unchanged.
-use super::*;
 use super::calls_before_receipt as calls;
+use super::*;
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges(

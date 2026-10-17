@@ -348,11 +348,11 @@ mod receiving_status_scalar;
 #[path = "tests/receiving_certificate.rs"]
 mod receiving_certificate;
 
-#[path="tests/receiving_boundary.rs"]
+#[path = "tests/receiving_boundary.rs"]
 mod receiving_boundary;
 
-#[path="tests/receiving_type_drop.rs"]
+#[path = "tests/receiving_type_drop.rs"]
 mod receiving_type_drop;
 
-#[path="tests/receiving_path_boundary.rs"]
+#[path = "tests/receiving_path_boundary.rs"]
 mod receiving_path_boundary;

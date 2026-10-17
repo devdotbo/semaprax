@@ -197,9 +197,17 @@ fn complete_immediate_receiver_helpers_and_all_seven_original_controls_remain_ex
         )
         + "#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\npub(super) mod app_census;\n";
     assert_eq!(restored, include_str!("../../../../../docs/evidence/singleton-target-receiving-layers-831/complete-receiver-before.rs.txt"));
-    let controls = crate::source_reflows_merge::consumer_input("receiving831", "src/cleanup_plan/replay/factored/canonical_shared/singleton_target_tests.rs", include_str!("singleton_target_tests.rs"));
+    let controls = crate::source_reflows_merge::consumer_input(
+        "receiving831",
+        "src/cleanup_plan/replay/factored/canonical_shared/singleton_target_tests.rs",
+        include_str!("singleton_target_tests.rs"),
+    );
     assert_eq!(controls, include_str!("../../../../../docs/evidence/singleton-target-receiving-layers-831/complete-seven-controls-before.rs.txt"));
-    let helper_input = crate::source_reflows_merge::consumer_input("receiving831", "src/cleanup_plan/replay/factored/canonical_shared/successor_targets.rs", include_str!("successor_targets.rs"));
+    let helper_input = crate::source_reflows_merge::consumer_input(
+        "receiving831",
+        "src/cleanup_plan/replay/factored/canonical_shared/successor_targets.rs",
+        include_str!("successor_targets.rs"),
+    );
     let helpers = helper_input
         .replacen("#[cfg(test)]\nuse super::{", "use super::{", 1)
         .replacen("use std::collections::BTreeMap;\n#[cfg(test)]\nuse std::mem::size_of;", "use std::{collections::BTreeMap, mem::size_of};", 1)
@@ -275,141 +283,277 @@ fn branch_closed_full_current_sources_restore_every_immediate_e93f_byte() {
     }
 }
 
-
 // This reports the full immediate b742 method, not an inflated historical fee.
 fn borrowed_single_observe(
-    function: &ResolvedFunction, graph: &Automaton, sink: usize, roots: &[usize],
-    old: bool, limit: usize,
-) -> (Result<(usize, usize, usize, usize, usize, u64), ()>, Metrics) {
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    roots: &[usize],
+    old: bool,
+    limit: usize,
+) -> (
+    Result<(usize, usize, usize, usize, usize, u64), ()>,
+    Metrics,
+) {
     measure(|| {
         let mut budget = match ReplayBudget::with_physical(function, limit) {
             Ok(budget) => budget,
-            Err(error) => { assert_eq!(error.code, "SPX-H006"); return Err(()); }
+            Err(error) => {
+                assert_eq!(error.code, "SPX-H006");
+                return Err(());
+            }
         };
         let outcome = (|| {
-            budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "single signature complete owner")?;
+            budget.reserve_bytes(
+                function,
+                Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "single signature complete owner",
+            )?;
             let mut owner = Canonicalizer::new(graph, sink);
-            budget.reserve_bytes(function, super::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "single signature held receiver")?;
-            let mut receiving = super::closure_receiving::ClosureReceiving::from_prepaid(function, &budget);
+            budget.reserve_bytes(
+                function,
+                super::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "single signature held receiver",
+            )?;
+            let mut receiving =
+                super::closure_receiving::ClosureReceiving::from_prepaid(function, &budget);
             let initial = budget.remaining;
             let mut checksum = 0_u64;
             for root in roots {
                 budget.reserve_array::<(usize, u64)>(function, 1, "single signature root")?;
                 let id = if old {
-                    owner.before_borrowed_single_id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
+                    owner.before_borrowed_single_id_with_receiving(
+                        function,
+                        vec![(*root, 1)],
+                        &mut budget,
+                        &mut receiving,
+                    )
                 } else {
                     owner.id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
-                }?.expect("acyclic exact one-label graph");
+                }?
+                .expect("acyclic exact one-label graph");
                 checksum = checksum.wrapping_mul(31).wrapping_add(id as u64);
             }
-            Ok::<_, Diagnostic>((budget.physical.as_ref().unwrap().charged(), initial-budget.remaining,
-                owner.states.len(), owner.ids.len(), owner.child_ids.capacity(), checksum))
+            Ok::<_, Diagnostic>((
+                budget.physical.as_ref().unwrap().charged(),
+                initial - budget.remaining,
+                owner.states.len(),
+                owner.ids.len(),
+                owner.child_ids.capacity(),
+                checksum,
+            ))
         })();
         assert!(current_metrics().allocated <= budget.physical.as_ref().unwrap().charged());
         let stopped = current_metrics().allocated;
-        let outcome = outcome.map_err(|error| { assert_eq!(error.code, "SPX-H006"); });
+        let outcome = outcome.map_err(|error| {
+            assert_eq!(error.code, "SPX-H006");
+        });
         drop(budget);
-        assert_eq!(current_metrics().allocated, stopped, "complete singleton signature Drop allocates nothing");
+        assert_eq!(
+            current_metrics().allocated,
+            stopped,
+            "complete singleton signature Drop allocates nothing"
+        );
         outcome
     })
 }
 
 #[test]
-fn borrowed_single_complete_immediate_method_keeps_unique_and_duplicate_hits_and_reports_full_drop() {
+fn borrowed_single_complete_immediate_method_keeps_unique_and_duplicate_hits_and_reports_full_drop()
+{
     let function = fixture();
     for width in 1..=4 {
         let (graph, sink, root) = graph(&function, width, 2);
         let mut reports = Vec::new();
         for old in [true, false] {
-            let (result, heap) = borrowed_single_observe(&function, &graph, sink, &[root], old, 1 << 26);
+            let (result, heap) =
+                borrowed_single_observe(&function, &graph, sink, &[root], old, 1 << 26);
             let receipt = result.unwrap();
             assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
             assert!(heap.allocated <= receipt.0 && heap.highwater <= receipt.0);
-            assert_eq!(receipt.4 == 0, !old, "only the direct one-label path omits child-ID backing");
+            assert_eq!(
+                receipt.4 == 0,
+                !old,
+                "only the direct one-label path omits child-ID backing"
+            );
             reports.push((receipt, heap));
         }
-        assert_eq!((reports[0].0.1, reports[0].0.2, reports[0].0.3, reports[0].0.5),
-            (reports[1].0.1, reports[1].0.2, reports[1].0.3, reports[1].0.5));
+        assert_eq!(
+            (
+                reports[0].0 .1,
+                reports[0].0 .2,
+                reports[0].0 .3,
+                reports[0].0 .5
+            ),
+            (
+                reports[1].0 .1,
+                reports[1].0 .2,
+                reports[1].0 .3,
+                reports[1].0 .5
+            )
+        );
         eprintln!("borrowed-single unique width={width} immediate/current={reports:?}");
     }
     let mut setup = ReplayBudget::unobserved();
     let mut graph = Automaton::default();
     let sink = graph.node(&function, &mut setup).unwrap();
-    let first = graph.end(&function, &mut setup, sink, super::super::SkeletonTerminal::Success).unwrap();
-    let second = graph.end(&function, &mut setup, sink, super::super::SkeletonTerminal::Success).unwrap();
+    let first = graph
+        .end(
+            &function,
+            &mut setup,
+            sink,
+            super::super::SkeletonTerminal::Success,
+        )
+        .unwrap();
+    let second = graph
+        .end(
+            &function,
+            &mut setup,
+            sink,
+            super::super::SkeletonTerminal::Success,
+        )
+        .unwrap();
     let roots = [first, second, first, second];
     let mut reports = Vec::new();
     for old in [true, false] {
         let (result, heap) = borrowed_single_observe(&function, &graph, sink, &roots, old, 1 << 26);
         let exact = result.unwrap();
         assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
-        assert_eq!((exact.2, exact.3), (3, 2), "distinct completed states share one equal nonempty signature");
+        assert_eq!(
+            (exact.2, exact.3),
+            (3, 2),
+            "distinct completed states share one equal nonempty signature"
+        );
         for limit in [0, exact.0 - 1, exact.0] {
-            let (result, physical) = borrowed_single_observe(&function, &graph, sink, &roots, old, limit);
+            let (result, physical) =
+                borrowed_single_observe(&function, &graph, sink, &roots, old, limit);
             assert_eq!(result.is_ok(), limit == exact.0);
-            if let Ok(actual) = result { assert_eq!(actual, exact); }
-            assert!(!physical.invalid && physical.live == 0 && physical.allocated == physical.freed);
+            if let Ok(actual) = result {
+                assert_eq!(actual, exact);
+            }
+            assert!(
+                !physical.invalid && physical.live == 0 && physical.allocated == physical.freed
+            );
         }
         reports.push((exact, heap));
     }
-    assert_eq!((reports[0].0.1, reports[0].0.2, reports[0].0.3, reports[0].0.5),
-        (reports[1].0.1, reports[1].0.2, reports[1].0.3, reports[1].0.5));
+    assert_eq!(
+        (
+            reports[0].0 .1,
+            reports[0].0 .2,
+            reports[0].0 .3,
+            reports[0].0 .5
+        ),
+        (
+            reports[1].0 .1,
+            reports[1].0 .2,
+            reports[1].0 .3,
+            reports[1].0 .5
+        )
+    );
     eprintln!("borrowed-single duplicate and repeated hits immediate/current={reports:?}");
 }
 
-
 #[test]
-fn borrowed_single_real_two_label_general_route_keeps_full_old_maps_and_reports_conservative_overhead() {
+fn borrowed_single_real_two_label_general_route_keeps_full_old_maps_and_reports_conservative_overhead(
+) {
     let function = fixture();
     let mut setup = ReplayBudget::unobserved();
     let mut graph = Automaton::default();
     let sink = graph.node(&function, &mut setup).unwrap();
     let dead = graph.node(&function, &mut setup).unwrap();
     let root = graph.node(&function, &mut setup).unwrap();
-    graph.movement(&function, &mut setup, root,
-        Label::End(super::super::SkeletonTerminal::Success), sink).unwrap();
-    graph.movement(&function, &mut setup, root,
-        Label::End(super::super::SkeletonTerminal::Failure), dead).unwrap();
+    graph
+        .movement(
+            &function,
+            &mut setup,
+            root,
+            Label::End(super::super::SkeletonTerminal::Success),
+            sink,
+        )
+        .unwrap();
+    graph
+        .movement(
+            &function,
+            &mut setup,
+            root,
+            Label::End(super::super::SkeletonTerminal::Failure),
+            dead,
+        )
+        .unwrap();
     let mut old = Canonicalizer::new(&graph, sink);
     let mut current = Canonicalizer::new(&graph, sink);
     let mut a = ReplayBudget::unobserved();
     let mut b = ReplayBudget::unobserved();
     let mut old_receiving = super::closure_receiving::ClosureReceiving::from_prepaid(&function, &a);
     let mut receiving = super::closure_receiving::ClosureReceiving::from_prepaid(&function, &b);
-    assert_eq!(old.before_borrowed_single_id_with_receiving(&function, vec![(root, 1)], &mut a, &mut old_receiving),
-        current.id_with_receiving(&function, vec![(root, 1)], &mut b, &mut receiving));
-    assert_eq!((a.remaining, a.skeleton_remaining, a.skeleton_spent),
-        (b.remaining, b.skeleton_remaining, b.skeleton_spent));
+    assert_eq!(
+        old.before_borrowed_single_id_with_receiving(
+            &function,
+            vec![(root, 1)],
+            &mut a,
+            &mut old_receiving
+        ),
+        current.id_with_receiving(&function, vec![(root, 1)], &mut b, &mut receiving)
+    );
+    assert_eq!(
+        (a.remaining, a.skeleton_remaining, a.skeleton_spent),
+        (b.remaining, b.skeleton_remaining, b.skeleton_spent)
+    );
     assert!(old.states.iter().eq(current.states.iter()));
     assert!(old.ids.iter().eq(current.ids.iter()));
     assert_eq!(current.states.len(), 3);
     assert!(current.ids.iter().any(|((_, edges), _)| edges.len() == 2));
     let mut reports = Vec::new();
     for old in [true, false] {
-        let (result, heap) = borrowed_single_observe(&function, &graph, sink, &[root], old, 1 << 26);
+        let (result, heap) =
+            borrowed_single_observe(&function, &graph, sink, &[root], old, 1 << 26);
         let full = result.unwrap();
         for limit in [0, full.0 - 1, full.0] {
-            let (result, physical) = borrowed_single_observe(&function, &graph, sink, &[root], old, limit);
+            let (result, physical) =
+                borrowed_single_observe(&function, &graph, sink, &[root], old, limit);
             assert_eq!(result.is_ok(), limit == full.0);
-            if let Ok(actual) = result { assert_eq!(actual, full); }
-            assert!(!physical.invalid && physical.live == 0 && physical.allocated == physical.freed);
+            if let Ok(actual) = result {
+                assert_eq!(actual, full);
+            }
+            assert!(
+                !physical.invalid && physical.live == 0 && physical.allocated == physical.freed
+            );
         }
         reports.push((full, heap));
     }
-    assert_eq!((reports[0].0.1, reports[0].0.2, reports[0].0.3, reports[0].0.5),
-        (reports[1].0.1, reports[1].0.2, reports[1].0.3, reports[1].0.5));
-    assert_eq!(reports[0].1, reports[1].1, "this graph never takes a one-label Exit; backing and Drop are identical");
-    assert!(reports[1].0.0 > reports[0].0.0, "the complete general path exposes the new conservative Exit overhead");
+    assert_eq!(
+        (
+            reports[0].0 .1,
+            reports[0].0 .2,
+            reports[0].0 .3,
+            reports[0].0 .5
+        ),
+        (
+            reports[1].0 .1,
+            reports[1].0 .2,
+            reports[1].0 .3,
+            reports[1].0 .5
+        )
+    );
+    assert_eq!(
+        reports[0].1, reports[1].1,
+        "this graph never takes a one-label Exit; backing and Drop are identical"
+    );
+    assert!(
+        reports[1].0 .0 > reports[0].0 .0,
+        "the complete general path exposes the new conservative Exit overhead"
+    );
     eprintln!("borrowed-single actual two-label general immediate/current={reports:?}");
 }
-
 
 // Complete identical original arena corpus, including duplicate128 labels,
 // unique24 labels and empty-only shape. The original strict arena/210 owners
 // remain byte-exact; this is additional immediate886 composition coverage.
-fn arity_dispatch_corpus(function: &ResolvedFunction, shape: usize) -> (Automaton, usize, Vec<usize>) {
+fn arity_dispatch_corpus(
+    function: &ResolvedFunction,
+    shape: usize,
+) -> (Automaton, usize, Vec<usize>) {
     let mut budget = ReplayBudget::unobserved();
     let mut graph = Automaton::default();
     let sink = graph.node(function, &mut budget).unwrap();
@@ -441,78 +585,140 @@ fn arity_dispatch_corpus(function: &ResolvedFunction, shape: usize) -> (Automato
 }
 
 fn arity_dispatch_observe(
-    function: &ResolvedFunction, graph: &Automaton, sink: usize, roots: &[usize],
-    old: bool, limit: usize,
-) -> (Result<(usize, usize, usize, usize, usize, u64), ()>, Metrics) {
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    roots: &[usize],
+    old: bool,
+    limit: usize,
+) -> (
+    Result<(usize, usize, usize, usize, usize, u64), ()>,
+    Metrics,
+) {
     measure(|| {
         let mut budget = match ReplayBudget::with_physical(function, limit) {
             Ok(budget) => budget,
-            Err(error) => { assert_eq!(error.code, "SPX-H006"); return Err(()); }
+            Err(error) => {
+                assert_eq!(error.code, "SPX-H006");
+                return Err(());
+            }
         };
         let outcome = (|| {
-            budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "single signature complete owner")?;
+            budget.reserve_bytes(
+                function,
+                Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "single signature complete owner",
+            )?;
             let mut owner = Canonicalizer::new(graph, sink);
-            budget.reserve_bytes(function, super::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "single signature held receiver")?;
-            let mut receiving = super::closure_receiving::ClosureReceiving::from_prepaid(function, &budget);
+            budget.reserve_bytes(
+                function,
+                super::closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
+                "single signature held receiver",
+            )?;
+            let mut receiving =
+                super::closure_receiving::ClosureReceiving::from_prepaid(function, &budget);
             let initial = budget.remaining;
             let mut checksum = 0_u64;
             for root in roots {
                 budget.reserve_array::<(usize, u64)>(function, 1, "single signature root")?;
                 let id = if old {
-                    owner.before_arity_dispatch_id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
+                    owner.before_arity_dispatch_id_with_receiving(
+                        function,
+                        vec![(*root, 1)],
+                        &mut budget,
+                        &mut receiving,
+                    )
                 } else {
                     owner.id_with_receiving(function, vec![(*root, 1)], &mut budget, &mut receiving)
-                }?.expect("acyclic exact one-label graph");
+                }?
+                .expect("acyclic exact one-label graph");
                 checksum = checksum.wrapping_mul(31).wrapping_add(id as u64);
             }
-            Ok::<_, Diagnostic>((budget.physical.as_ref().unwrap().charged(), initial-budget.remaining,
-                owner.states.len(), owner.ids.len(), owner.child_ids.capacity(), checksum))
+            Ok::<_, Diagnostic>((
+                budget.physical.as_ref().unwrap().charged(),
+                initial - budget.remaining,
+                owner.states.len(),
+                owner.ids.len(),
+                owner.child_ids.capacity(),
+                checksum,
+            ))
         })();
         assert!(current_metrics().allocated <= budget.physical.as_ref().unwrap().charged());
         let stopped = current_metrics().allocated;
-        let outcome = outcome.map_err(|error| { assert_eq!(error.code, "SPX-H006"); });
+        let outcome = outcome.map_err(|error| {
+            assert_eq!(error.code, "SPX-H006");
+        });
         drop(budget);
-        assert_eq!(current_metrics().allocated, stopped, "complete singleton signature Drop allocates nothing");
+        assert_eq!(
+            current_metrics().allocated,
+            stopped,
+            "complete singleton signature Drop allocates nothing"
+        );
         outcome
     })
 }
 
 #[test]
-fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_exact_general_role_delta() {
+fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_exact_general_role_delta(
+) {
     let function = fixture();
     for shape in 0..3 {
         let (graph, sink, roots) = arity_dispatch_corpus(&function, shape);
         let mut reports = Vec::new();
         for old in [true, false] {
-            let (result, heap) = arity_dispatch_observe(&function, &graph, sink, &roots, old, 1 << 26);
+            let (result, heap) =
+                arity_dispatch_observe(&function, &graph, sink, &roots, old, 1 << 26);
             let full = result.unwrap();
             assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
             for limit in [0, full.0 - 1, full.0] {
-                let (cut, physical) = arity_dispatch_observe(&function, &graph, sink, &roots, old, limit);
+                let (cut, physical) =
+                    arity_dispatch_observe(&function, &graph, sink, &roots, old, limit);
                 assert_eq!(cut.is_ok(), limit == full.0);
-                if let Ok(actual) = cut { assert_eq!(actual, full); }
-                assert!(!physical.invalid && physical.live == 0 && physical.allocated == physical.freed);
+                if let Ok(actual) = cut {
+                    assert_eq!(actual, full);
+                }
+                assert!(
+                    !physical.invalid && physical.live == 0 && physical.allocated == physical.freed
+                );
             }
             reports.push((full, heap));
         }
-        assert_eq!((reports[0].0.1, reports[0].0.2, reports[0].0.3, reports[0].0.4, reports[0].0.5),
-            (reports[1].0.1, reports[1].0.2, reports[1].0.3, reports[1].0.4, reports[1].0.5));
-        assert_eq!(reports[0].1, reports[1].1, "dispatch removes no actual backing; full allocation/peak/Drop tuple is exact");
+        assert_eq!(
+            (
+                reports[0].0 .1,
+                reports[0].0 .2,
+                reports[0].0 .3,
+                reports[0].0 .4,
+                reports[0].0 .5
+            ),
+            (
+                reports[1].0 .1,
+                reports[1].0 .2,
+                reports[1].0 .3,
+                reports[1].0 .4,
+                reports[1].0 .5
+            )
+        );
+        assert_eq!(
+            reports[0].1, reports[1].1,
+            "dispatch removes no actual backing; full allocation/peak/Drop tuple is exact"
+        );
         // Independent graph/source counts: every root is distinct, no one-edge
         // signature exists, and each state publishes exactly one completed Exit.
         let mut logical = Canonicalizer::new(&graph, sink);
         let mut budget = ReplayBudget::unobserved();
         let mut held = super::closure_receiving::ClosureReceiving::from_prepaid(&function, &budget);
         for root in &roots {
-            logical.id_with_receiving(&function, vec![(*root, 1)], &mut budget, &mut held).unwrap();
+            logical
+                .id_with_receiving(&function, vec![(*root, 1)], &mut budget, &mut held)
+                .unwrap();
         }
         assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() != 1));
         let activations = roots.len();
         let exits = logical.states.len();
         assert!(exits >= activations);
-        let old_calls = activations * (Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_PRIMITIVE
+        let old_calls = activations
+            * (Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_PRIMITIVE
                 + Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_WARM)
             + (exits - activations) * Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_WARM
             + activations * Canonicalizer::BEFORE_ARITY_BORROWED_EXIT_LOCAL;
@@ -520,7 +726,10 @@ fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_ex
             + exits * super::empty_signature::BRANCH_CONTROLS;
         assert_eq!(reports[0].0.0 + current_calls, reports[1].0.0 + old_calls,
             "complete independently counted actual admission/retained-place equation, never measured subtraction");
-        assert!(reports[1].0.0 < reports[0].0.0, "all three actual complete corpora remove unused singleton admissions");
+        assert!(
+            reports[1].0 .0 < reports[0].0 .0,
+            "all three actual complete corpora remove unused singleton admissions"
+        );
         eprintln!("arity-dispatch shape={shape} complete886/current={reports:?} activations={activations} exits={exits}");
     }
 }

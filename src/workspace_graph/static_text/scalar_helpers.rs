@@ -258,8 +258,8 @@ fn pure_profile_checked<E>(
 // Each selected function prepays the later payment call's argument/formal and
 // returned/receiving Result slots through the already existing Inventory bank.
 // This static stride adds no fee-computation call or intermediate receiver.
-const DIGEST_PAYMENT_HEADER_BYTES: usize = 2 * std::mem::size_of::<usize>()
-    + 2 * std::mem::size_of::<Result<(), Vec<Diagnostic>>>();
+const DIGEST_PAYMENT_HEADER_BYTES: usize =
+    2 * std::mem::size_of::<usize>() + 2 * std::mem::size_of::<Result<(), Vec<Diagnostic>>>();
 const CAPTURE_FUNCTION_SLOT_BYTES: usize =
     std::mem::size_of::<Function>() + DIGEST_PAYMENT_HEADER_BYTES;
 // Separate from capture_digest's actual/formal references: the encoder call
@@ -271,8 +271,7 @@ const DIGEST_ENCODER_CALL_REFERENCES: usize =
 // Option<usize> slot below is its returned value; this second Option is the
 // caller's receiving/match slot. `remaining` has the separate usize slot.
 const DIGEST_CHECKED_SUB_ADDITIONAL: usize =
-    2 * std::mem::size_of::<(usize, usize)>()
-        + std::mem::size_of::<Option<usize>>();
+    2 * std::mem::size_of::<(usize, usize)>() + std::mem::size_of::<Option<usize>>();
 // Complete new caller/callee results, hash outcome, callback references and
 // local refusal state. No removed owner is credited against these frames.
 const DIGEST_RECEIVER_BYTES: usize = 2 * std::mem::size_of::<

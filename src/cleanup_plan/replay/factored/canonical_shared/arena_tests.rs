@@ -397,23 +397,42 @@ fn vec_borrowed_queries_and_zipped_misses_keep_full_old_key_order() {
             owner.id(&function, vec![(root, 1)], &mut budget).unwrap();
         }
         for (key, _) in owner.ids.iter() {
-            let successors: Vec<_> = key.1.iter().map(|(label, _)| {
-                (label.clone(), super::Rc::new(super::SmallWeighted::One([(sink, 1)])))
-            }).collect();
+            let successors: Vec<_> = key
+                .1
+                .iter()
+                .map(|(label, _)| {
+                    (
+                        label.clone(),
+                        super::Rc::new(super::SmallWeighted::One([(sink, 1)])),
+                    )
+                })
+                .collect();
             let children: Vec<_> = key.1.iter().map(|(_, id)| *id).collect();
             let previous = PreviousQuery {
-                accepted: key.0, successors: &successors, children: &children,
+                accepted: key.0,
+                successors: &successors,
+                children: &children,
             };
             assert_eq!(previous.accepted, key.0);
             assert_eq!(previous.successors.len(), previous.children.len());
-            let query = SignatureQuery { accepted: key.0, successors: &successors, children: &children };
+            let query = SignatureQuery {
+                accepted: key.0,
+                successors: &successors,
+                children: &children,
+            };
             for (stored, _) in owner.ids.iter() {
                 assert_eq!(query.compare(stored), key.cmp(stored));
             }
-            let expected: Vec<_> = successors.iter().enumerate()
-                .map(|(index, (label, _))| (label.clone(), children[index])).collect();
-            let actual: Vec<_> = successors.into_iter().zip(&children)
-                .map(|((label, _), id)| (label, *id)).collect();
+            let expected: Vec<_> = successors
+                .iter()
+                .enumerate()
+                .map(|(index, (label, _))| (label.clone(), children[index]))
+                .collect();
+            let actual: Vec<_> = successors
+                .into_iter()
+                .zip(&children)
+                .map(|((label, _), id)| (label, *id))
+                .collect();
             assert_eq!(actual, expected);
             assert_eq!(actual, key.1);
         }
@@ -432,7 +451,9 @@ impl Canonicalizer<'_> {
         // Identity/sticky preflight precedes every invocation payment. Cold
         // activation and all original payment order remain in the old body.
         self.closures.preflight(function, budget);
-        if self.closures.failed() { return Err(Diagnostic::io("SPX-H006", String::new())); }
+        if self.closures.failed() {
+            return Err(Diagnostic::io("SPX-H006", String::new()));
+        }
         if budget.pays_allocations() {
             budget.reserve_bytes(
                 function,
@@ -494,13 +515,33 @@ impl Canonicalizer<'_> {
             let accepted = closed.get(&self.sink).copied().unwrap_or(0);
             match &budget.payer {
                 AllocationPayer::ActiveBuilder => {
-                    budget.reserve_bytes(function, borrowed_labels::ordinary_receiving_before_selected_anchor(), "factored direct singleton call receivers")?;
-                    return borrowed_labels::ordinary_successors_before_selected_anchor(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(
+                        function,
+                        borrowed_labels::ordinary_receiving_before_selected_anchor(),
+                        "factored direct singleton call receivers",
+                    )?;
+                    return borrowed_labels::ordinary_successors_before_selected_anchor(
+                        function,
+                        budget,
+                        self.automaton,
+                        closed,
+                        accepted,
+                    );
                 }
                 AllocationPayer::LegacyUnobserved => {}
                 _ => {
-                    budget.reserve_bytes(function, borrowed_labels::receiving::<ordered_weights::OrderedWeights>(), "factored borrowed label call receivers")?;
-                    return borrowed_labels::successors(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(
+                        function,
+                        borrowed_labels::receiving::<ordered_weights::OrderedWeights>(),
+                        "factored borrowed label call receivers",
+                    )?;
+                    return borrowed_labels::successors(
+                        function,
+                        budget,
+                        self.automaton,
+                        closed,
+                        accepted,
+                    );
                 }
             }
             if budget.pays_allocations() {
@@ -568,18 +609,32 @@ impl Canonicalizer<'_> {
                                 weight: total,
                             } => {
                                 if budget.pays_allocations() {
-                                    budget.reserve_bytes(function, paid_many::PROMOTE_RECEIVING,
-                                        "factored composed promotion receivers")?;
+                                    budget.reserve_bytes(
+                                        function,
+                                        paid_many::PROMOTE_RECEIVING,
+                                        "factored composed promotion receivers",
+                                    )?;
                                 }
                                 #[cfg(test)]
-                                if budget.pays_allocations() { paid_many::note_branch(true); }
-                                *targets = paid_many::promote(function, budget, *first, *total, *child, *weight)?;
+                                if budget.pays_allocations() {
+                                    paid_many::note_branch(true);
+                                }
+                                *targets = paid_many::promote(
+                                    function, budget, *first, *total, *child, *weight,
+                                )?;
                             }
                             paid_many::Targets::PaidMany(_) => {
-                                budget.reserve_bytes(function, paid_many::ADD_RECEIVING,
-                                    "factored composed flat add receivers")?;
-                                let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat arm") };
-                                if !paid_many::add(function, budget, flat, *child, *weight)? { return Ok(None); }
+                                budget.reserve_bytes(
+                                    function,
+                                    paid_many::ADD_RECEIVING,
+                                    "factored composed flat add receivers",
+                                )?;
+                                let paid_many::Targets::PaidMany(flat) = targets else {
+                                    unreachable!("paid flat arm")
+                                };
+                                if !paid_many::add(function, budget, flat, *child, *weight)? {
+                                    return Ok(None);
+                                }
                             }
                             paid_many::Targets::Many(targets) => {
                                 if !targets.contains_key(child) {
@@ -611,10 +666,7 @@ impl Canonicalizer<'_> {
                     budget.reserve_bytes(
                         function,
                         std::mem::size_of::<
-                            std::collections::btree_map::IntoIter<
-                                Label,
-                                paid_many::Targets,
-                            >,
+                            std::collections::btree_map::IntoIter<Label, paid_many::Targets>,
                         >() + std::mem::size_of::<Option<(Label, paid_many::Targets)>>()
                             + std::mem::size_of::<(Label, paid_many::Targets)>(),
                         "factored successor target iterator receiving",
@@ -654,9 +706,14 @@ impl Canonicalizer<'_> {
                             Rc::new(singleton)
                         }
                         paid_many::Targets::PaidMany(_) => {
-                            budget.reserve_bytes(function, paid_many::FINISH_RECEIVING,
-                                "factored composed flat finish receivers")?;
-                            let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat finish") };
+                            budget.reserve_bytes(
+                                function,
+                                paid_many::FINISH_RECEIVING,
+                                "factored composed flat finish receivers",
+                            )?;
+                            let paid_many::Targets::PaidMany(flat) = targets else {
+                                unreachable!("paid flat finish")
+                            };
                             own_weighted(function, budget, flat)?
                         }
                         paid_many::Targets::Many(targets) => {
@@ -720,13 +777,33 @@ impl Canonicalizer<'_> {
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         match &budget.payer {
             AllocationPayer::ActiveBuilder => {
-                budget.reserve_bytes(function, borrowed_labels::ordinary_receiving_before_selected_anchor(), "factored direct singleton call receivers")?;
-                return borrowed_labels::ordinary_successors_before_selected_anchor(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(
+                    function,
+                    borrowed_labels::ordinary_receiving_before_selected_anchor(),
+                    "factored direct singleton call receivers",
+                )?;
+                return borrowed_labels::ordinary_successors_before_selected_anchor(
+                    function,
+                    budget,
+                    self.automaton,
+                    closed,
+                    accepted,
+                );
             }
             AllocationPayer::LegacyUnobserved => {}
             _ => {
-                budget.reserve_bytes(function, borrowed_labels::receiving::<ordered_weights::OrderedWeights>(), "factored borrowed label call receivers")?;
-                return borrowed_labels::successors(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(
+                    function,
+                    borrowed_labels::receiving::<ordered_weights::OrderedWeights>(),
+                    "factored borrowed label call receivers",
+                )?;
+                return borrowed_labels::successors(
+                    function,
+                    budget,
+                    self.automaton,
+                    closed,
+                    accepted,
+                );
             }
         }
         if budget.pays_allocations() {
@@ -794,18 +871,32 @@ impl Canonicalizer<'_> {
                             weight: total,
                         } => {
                             if budget.pays_allocations() {
-                                budget.reserve_bytes(function, paid_many::PROMOTE_RECEIVING,
-                                    "factored composed promotion receivers")?;
+                                budget.reserve_bytes(
+                                    function,
+                                    paid_many::PROMOTE_RECEIVING,
+                                    "factored composed promotion receivers",
+                                )?;
                             }
                             #[cfg(test)]
-                            if budget.pays_allocations() { paid_many::note_branch(false); }
-                            *targets = paid_many::promote(function, budget, *first, *total, *child, *weight)?;
+                            if budget.pays_allocations() {
+                                paid_many::note_branch(false);
+                            }
+                            *targets = paid_many::promote(
+                                function, budget, *first, *total, *child, *weight,
+                            )?;
                         }
                         paid_many::Targets::PaidMany(_) => {
-                            budget.reserve_bytes(function, paid_many::ADD_RECEIVING,
-                                "factored composed flat add receivers")?;
-                            let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat arm") };
-                            if !paid_many::add(function, budget, flat, *child, *weight)? { return Ok(None); }
+                            budget.reserve_bytes(
+                                function,
+                                paid_many::ADD_RECEIVING,
+                                "factored composed flat add receivers",
+                            )?;
+                            let paid_many::Targets::PaidMany(flat) = targets else {
+                                unreachable!("paid flat arm")
+                            };
+                            if !paid_many::add(function, budget, flat, *child, *weight)? {
+                                return Ok(None);
+                            }
                         }
                         paid_many::Targets::Many(targets) => {
                             if !targets.contains_key(child) {
@@ -877,9 +968,14 @@ impl Canonicalizer<'_> {
                         Rc::new(singleton)
                     }
                     paid_many::Targets::PaidMany(_) => {
-                        budget.reserve_bytes(function, paid_many::FINISH_RECEIVING,
-                            "factored composed flat finish receivers")?;
-                        let paid_many::Targets::PaidMany(flat) = targets else { unreachable!("paid flat finish") };
+                        budget.reserve_bytes(
+                            function,
+                            paid_many::FINISH_RECEIVING,
+                            "factored composed flat finish receivers",
+                        )?;
+                        let paid_many::Targets::PaidMany(flat) = targets else {
+                            unreachable!("paid flat finish")
+                        };
                         own_weighted(function, budget, flat)?
                     }
                     paid_many::Targets::Many(targets) => {
@@ -902,7 +998,6 @@ impl Canonicalizer<'_> {
         }
         Ok(Some((accepted, result)))
     }
-
 }
 
 // This separately scoped generation changes SelectedReservation only. These
@@ -924,8 +1019,10 @@ fn selected_text(text: &str) -> ([u8; 1024], usize) {
 }
 fn selected_failure(error: &Diagnostic) -> SelectedFailure {
     SelectedFailure {
-        code: error.code, severity: error.severity,
-        message: selected_text(&error.message), span: error.span,
+        code: error.code,
+        severity: error.severity,
+        message: selected_text(&error.message),
+        span: error.span,
         path: error.path.as_deref().map(selected_text),
         help: error.help.as_deref().map(selected_text),
     }
@@ -934,21 +1031,36 @@ fn selected_state(values: &[(usize, u64)]) -> SharedWeighted {
     Rc::new(SmallWeighted::Many(values.to_vec()))
 }
 fn selected_successors(
-    old: bool, function: &ResolvedFunction, graph: &Automaton, sink: usize,
-    input: &SharedWeighted, work: usize,
-) -> (Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic>, usize) {
+    old: bool,
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    input: &SharedWeighted,
+    work: usize,
+) -> (
+    Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic>,
+    usize,
+) {
     let mut budget = ReplayBudget::with_physical(function, 1 << 26).unwrap();
     budget.remaining = work;
-    budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-        "selected successor owner receiving").unwrap();
+    budget
+        .reserve_bytes(
+            function,
+            Canonicalizer::CONSTRUCTOR_CONTROLS,
+            "selected successor owner receiving",
+        )
+        .unwrap();
     let mut owner = Canonicalizer::new(graph, sink);
     let result = if old {
         owner.previous_selected_successors(function, input, &mut budget)
-    } else { owner.successors(function, input, &mut budget) };
+    } else {
+        owner.successors(function, input, &mut budget)
+    };
     (result, budget.remaining)
 }
 #[test]
-fn selected_generation_complete_prior_directory_and_new_tree_keep_weights_overflow_and_both_sites() {
+fn selected_generation_complete_prior_directory_and_new_tree_keep_weights_overflow_and_both_sites()
+{
     use crate::bounded_output::with_limit_usage_refusal;
     let function = fixture();
     let (graph, sink, roots) = super::tests::automaton(&function);
@@ -959,15 +1071,19 @@ fn selected_generation_complete_prior_directory_and_new_tree_keep_weights_overfl
                 // root or two entries reaches the ordered/general call site.
                 for values in [vec![(root, weight)], vec![(root, weight), (sink, 1)]] {
                     let state = selected_state(&values);
-                    let (expected, _) = selected_successors(true, &function, &graph, sink, &state, 1 << 20);
-                    let (actual, _) = selected_successors(false, &function, &graph, sink, &state, 1 << 20);
+                    let (expected, _) =
+                        selected_successors(true, &function, &graph, sink, &state, 1 << 20);
+                    let (actual, _) =
+                        selected_successors(false, &function, &graph, sink, &state, 1 << 20);
                     assert_eq!(actual, expected, "complete labels and weights {values:?}");
                     // Every low-work cut is independently repeatable, including
                     // all six fields. Directory's removed census is NOT offset.
                     for old in [false, true] {
                         for work in 0..=32 {
-                            let first = selected_successors(old, &function, &graph, sink, &state, work);
-                            let again = selected_successors(old, &function, &graph, sink, &state, work);
+                            let first =
+                                selected_successors(old, &function, &graph, sink, &state, work);
+                            let again =
+                                selected_successors(old, &function, &graph, sink, &state, work);
                             assert_eq!(first, again, "own generation work cut {work}");
                         }
                     }
@@ -976,22 +1092,37 @@ fn selected_generation_complete_prior_directory_and_new_tree_keep_weights_overfl
         }
         // Same-label repeated child overflow and real distinct-child promotion
         // are separate from closure multiplication overflow in the corpus.
-        for distinct in [false,true] {
-            let mut setup=ReplayBudget::unobserved();
-            let mut graph=Automaton::default();
-            let sink=graph.node(&function,&mut setup).unwrap();
-            let child=graph.node(&function,&mut setup).unwrap();
-            let root=graph.node(&function,&mut setup).unwrap();
-            let label=Label::End(super::super::super::SkeletonTerminal::Success);
-            graph.movement(&function,&mut setup,root,label.clone(),sink).unwrap();
-            graph.movement(&function,&mut setup,root,label,if distinct {child}else{sink}).unwrap();
-            for weight in [0,2,u64::MAX] {
-                let state=selected_state(&[(root,weight)]);
-                let (expected,_)=selected_successors(true,&function,&graph,sink,&state,1<<20);
-                let (actual,_)=selected_successors(false,&function,&graph,sink,&state,1<<20);
-                assert_eq!(actual,expected);
-                if !distinct && weight==u64::MAX {assert!(actual.unwrap().is_none());}
-                else {assert!(actual.unwrap().is_some());}
+        for distinct in [false, true] {
+            let mut setup = ReplayBudget::unobserved();
+            let mut graph = Automaton::default();
+            let sink = graph.node(&function, &mut setup).unwrap();
+            let child = graph.node(&function, &mut setup).unwrap();
+            let root = graph.node(&function, &mut setup).unwrap();
+            let label = Label::End(super::super::super::SkeletonTerminal::Success);
+            graph
+                .movement(&function, &mut setup, root, label.clone(), sink)
+                .unwrap();
+            graph
+                .movement(
+                    &function,
+                    &mut setup,
+                    root,
+                    label,
+                    if distinct { child } else { sink },
+                )
+                .unwrap();
+            for weight in [0, 2, u64::MAX] {
+                let state = selected_state(&[(root, weight)]);
+                let (expected, _) =
+                    selected_successors(true, &function, &graph, sink, &state, 1 << 20);
+                let (actual, _) =
+                    selected_successors(false, &function, &graph, sink, &state, 1 << 20);
+                assert_eq!(actual, expected);
+                if !distinct && weight == u64::MAX {
+                    assert!(actual.unwrap().is_none());
+                } else {
+                    assert!(actual.unwrap().is_some());
+                }
             }
         }
     });
@@ -1003,25 +1134,42 @@ struct SelectedObservation {
     charged: usize,
     work: usize,
 }
-fn selected_observe(old: bool, function: &ResolvedFunction, graph: &Automaton,
-    sink: usize, input: &SharedWeighted, limit: usize, floor: usize,
+fn selected_observe(
+    old: bool,
+    function: &ResolvedFunction,
+    graph: &Automaton,
+    sink: usize,
+    input: &SharedWeighted,
+    limit: usize,
+    floor: usize,
 ) -> (SelectedObservation, Metrics) {
     measure(|| {
         assert!(crate::bounded_output::set_active_floor(floor));
         let mut budget = match ReplayBudget::with_physical(function, limit) {
             Ok(value) => value,
             Err(error) => {
-                let result = Err(selected_failure(&error)); drop(error);
+                let result = Err(selected_failure(&error));
+                drop(error);
                 crate::bounded_output::clear_active_floor();
-                return SelectedObservation { result, charged: 0, work: 0 };
+                return SelectedObservation {
+                    result,
+                    charged: 0,
+                    work: 0,
+                };
             }
         };
         let result = (|| {
-            budget.reserve_bytes(function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "selected successor owner receiving")?;
+            budget.reserve_bytes(
+                function,
+                Canonicalizer::CONSTRUCTOR_CONTROLS,
+                "selected successor owner receiving",
+            )?;
             let mut owner = Canonicalizer::new(graph, sink);
-            if old { owner.previous_selected_successors(function, input, &mut budget) }
-            else { owner.successors(function, input, &mut budget) }
+            if old {
+                owner.previous_selected_successors(function, input, &mut budget)
+            } else {
+                owner.successors(function, input, &mut budget)
+            }
         })();
         let result = match result {
             Ok(value) => Ok(value.map(|(accepted, rows)| (accepted, rows.len()))),
@@ -1029,18 +1177,25 @@ fn selected_observe(old: bool, function: &ResolvedFunction, graph: &Automaton,
                 let first = selected_failure(&error);
                 let charged = budget.physical.as_ref().unwrap().charged();
                 let remaining = budget.remaining;
-                assert!(budget.reserve_bytes(function, 0, "selected refused retry").is_err());
+                assert!(budget
+                    .reserve_bytes(function, 0, "selected refused retry")
+                    .is_err());
                 assert_eq!(budget.physical.as_ref().unwrap().charged(), charged);
                 assert_eq!(budget.remaining, remaining);
                 assert_eq!(selected_failure(&error), first);
-                drop(error); Err(first)
+                drop(error);
+                Err(first)
             }
         };
         let charged = budget.physical.as_ref().unwrap().charged();
         let work = budget.remaining;
         drop(budget);
         crate::bounded_output::clear_active_floor();
-        SelectedObservation { result, charged, work }
+        SelectedObservation {
+            result,
+            charged,
+            work,
+        }
     })
 }
 #[test]
@@ -1048,32 +1203,67 @@ fn selected_generation_actual_local_and_enclosing_cuts_keep_six_fields_sticky_an
     use crate::bounded_output::with_limit_usage_refusal;
     let function = fixture();
     let (graph, sink, roots) = super::tests::automaton(&function);
-    for state in [selected_state(&[]), selected_state(&[(sink,1)]),
-        selected_state(&[(roots[0],1)]), selected_state(&[(roots[0],2),(roots[1],1)])] {
-        for old in [true,false] {
-            let ((success, allocation), refused, paid, _) = with_limit_usage_refusal(usize::MAX,
-                || selected_observe(old,&function,&graph,sink,&state,1<<26,0));
+    for state in [
+        selected_state(&[]),
+        selected_state(&[(sink, 1)]),
+        selected_state(&[(roots[0], 1)]),
+        selected_state(&[(roots[0], 2), (roots[1], 1)]),
+    ] {
+        for old in [true, false] {
+            let ((success, allocation), refused, paid, _) =
+                with_limit_usage_refusal(usize::MAX, || {
+                    selected_observe(old, &function, &graph, sink, &state, 1 << 26, 0)
+                });
             assert!(success.result.is_ok() && !refused);
-            assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
+            assert!(
+                !allocation.invalid
+                    && allocation.live == 0
+                    && allocation.allocated == allocation.freed
+            );
             assert!(allocation.allocated <= paid);
-            let exact=success.charged;
-            assert!(exact>0);
-            for limit in [0,exact/2,exact-1,exact] {
-                let observe=|| with_limit_usage_refusal(usize::MAX,
-                    || selected_observe(old,&function,&graph,sink,&state,limit,0));
-                let ((first, allocation), refused, paid, receipt)=observe();
-                assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
-                if limit==exact { assert!(first.result.is_ok()); } else { assert!(first.result.is_err()); }
-                let ((again, allocation), again_refused, again_paid, again_receipt)=observe();
-                assert_eq!(again,first); assert_eq!((again_refused,again_paid,again_receipt),(refused,paid,receipt));
-                assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
+            let exact = success.charged;
+            assert!(exact > 0);
+            for limit in [0, exact / 2, exact - 1, exact] {
+                let observe = || {
+                    with_limit_usage_refusal(usize::MAX, || {
+                        selected_observe(old, &function, &graph, sink, &state, limit, 0)
+                    })
+                };
+                let ((first, allocation), refused, paid, receipt) = observe();
+                assert!(
+                    !allocation.invalid
+                        && allocation.live == 0
+                        && allocation.allocated == allocation.freed
+                );
+                if limit == exact {
+                    assert!(first.result.is_ok());
+                } else {
+                    assert!(first.result.is_err());
+                }
+                let ((again, allocation), again_refused, again_paid, again_receipt) = observe();
+                assert_eq!(again, first);
+                assert_eq!(
+                    (again_refused, again_paid, again_receipt),
+                    (refused, paid, receipt)
+                );
+                assert!(
+                    !allocation.invalid
+                        && allocation.live == 0
+                        && allocation.allocated == allocation.freed
+                );
             }
             // Same exact positive local allowance, but an enclosing held floor
             // refuses the actual receiver before publication, not a guessed offset.
-            let ((failed,allocation),refused,_,receipt)=with_limit_usage_refusal(exact,
-                || selected_observe(old,&function,&graph,sink,&state,1<<26,1));
+            let ((failed, allocation), refused, _, receipt) =
+                with_limit_usage_refusal(exact, || {
+                    selected_observe(old, &function, &graph, sink, &state, 1 << 26, 1)
+                });
             assert!(failed.result.is_err() && refused && receipt.is_some());
-            assert!(!allocation.invalid && allocation.live==0 && allocation.allocated==allocation.freed);
+            assert!(
+                !allocation.invalid
+                    && allocation.live == 0
+                    && allocation.allocated == allocation.freed
+            );
         }
     }
 }
@@ -1081,290 +1271,68 @@ fn selected_generation_actual_local_and_enclosing_cuts_keep_six_fields_sticky_an
 #[test]
 fn selected_generation_foreign_function_budget_and_scope_never_revive_bound_receiver() {
     use crate::bounded_output::with_limit_usage_refusal;
-    let function=fixture(); let wrong=function.clone();
-    let (graph,sink,roots)=super::tests::automaton(&function);
-    let state=selected_state(&[(roots[0],1)]);
-    for old in [true,false] { for attack in 0..3 {
-        with_limit_usage_refusal(usize::MAX,|| {
-            let mut budget=ReplayBudget::with_physical(&function,1<<26).unwrap();
-            let mut foreign=ReplayBudget::with_physical(&function,1<<26).unwrap();
-            budget.reserve_bytes(&function,Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "selected foreign owner receiving").unwrap();
-            let mut owner=Canonicalizer::new(&graph,sink);
-            let initial=if old {owner.previous_selected_successors(&function,&state,&mut budget)}
-                else {owner.successors(&function,&state,&mut budget)};
-            assert!(initial.unwrap().is_some());
-            let result=if attack==0 {
-                if old {owner.previous_selected_successors(&wrong,&state,&mut budget)}
-                else {owner.successors(&wrong,&state,&mut budget)}
-            } else if attack==1 {
-                if old {owner.previous_selected_successors(&function,&state,&mut foreign)}
-                else {owner.successors(&function,&state,&mut foreign)}
-            } else {
-                with_limit_usage_refusal(1<<26,|| {
-                    if old {owner.previous_selected_successors(&function,&state,&mut budget)}
-                    else {owner.successors(&function,&state,&mut budget)}
-                }).0
-            };
-            let error=result.unwrap_err();
-            let frozen=selected_failure(&error);
-            assert_eq!(frozen,selected_failure(&Diagnostic::io("SPX-H006",String::new())));
-            let restored=if old {owner.previous_selected_successors(&function,&state,&mut budget)}
-                else {owner.successors(&function,&state,&mut budget)};
-            assert_eq!(selected_failure(&restored.unwrap_err()),frozen);
-            assert_eq!(selected_failure(&error),frozen);
-            assert!(!foreign.refusal_spent);
-        });
-    }}
-}
-
-#[test]
-fn selected_generation_retains_complete_immediate_methods_and_original_arena_gate() {
-    let original=include_str!("../../../../../docs/evidence/selected-successor-generation-20261017/before/src/cleanup_plan/replay/factored/canonical_shared.rs");
-    let current=include_str!("../canonical_shared.rs");
-    let acquired=crate::source_reflows_merge::main67107_inputs::canonical_import_input("src/cleanup_plan/replay/factored/canonical_shared.rs",current);
-    let current=acquired.as_str();
-    let restored=current.replace("                AllocationPayer::SelectedReservation => {}\n","")
-        .replace("            AllocationPayer::SelectedReservation => {}\n","");
-    assert_eq!(restored,original);
-    let tests=include_str!("arena_tests.rs");
-    let acquired_tests=crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(
-        "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",tests,"base851");
-    let tests=acquired_tests.as_str();
-    let oldtests=include_str!("../../../../../docs/evidence/selected-successor-generation-20261017/before/src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs");
-    assert!(tests.starts_with(oldtests));
-    for (start,end) in [("    fn successors(\n","    #[cfg(test)]\n    fn closure("),
-        ("    fn successors_with_receiving(\n","    pub(super) fn id_with_receiving(")] {
-        let offset=original.find(start).unwrap();
-        let body=&original[offset..offset+original[offset..].find(end).unwrap()];
-        let renamed=body.replace("fn successors(","fn previous_selected_successors(")
-            .replace("fn successors_with_receiving(","fn previous_selected_successors_with_receiving(")
-            .replace("self.successors_with_receiving(","self.previous_selected_successors_with_receiving(");
-        assert_eq!(tests.matches(&renamed).count(),1);
-    }
-}
-
-// Whole pre-preflight adapters retained independently; negative control below.
-impl Canonicalizer<'_> {
-    #[cfg(test)]
-    fn current_successors_before_owner_preflight(
-        &mut self,
-        function: &ResolvedFunction,
-        state: &SharedWeighted,
-        budget: &mut ReplayBudget,
-    ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
-        if budget.pays_allocations() {
-            budget.reserve_bytes(
-                function,
-                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "factored held closure invocation controls",
-            )?;
-        }
-        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
-        self.successors_with_receiving(function, state, budget, &mut receiving)
-    }
-    fn previous_successors_before_owner_preflight(
-        &mut self,
-        function: &ResolvedFunction,
-        state: &SharedWeighted,
-        budget: &mut ReplayBudget,
-    ) -> Result<Option<(u64, Vec<(Label, SharedWeighted)>)>, Diagnostic> {
-        if budget.pays_allocations() {
-            budget.reserve_bytes(
-                function,
-                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "factored held closure invocation controls",
-            )?;
-        }
-        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
-        self.previous_selected_successors_with_receiving(function, state, budget, &mut receiving)
-    }
-}
-
-#[test]
-fn complete_before_successor_adapters_record_payment_before_foreign_scope_as_negative() {
-    use crate::bounded_output::with_limit_usage_refusal;
     let function = fixture();
+    let wrong = function.clone();
     let (graph, sink, roots) = super::tests::automaton(&function);
     let state = selected_state(&[(roots[0], 1)]);
     for old in [true, false] {
-        with_limit_usage_refusal(usize::MAX, || {
-            let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
-            budget.reserve_bytes(&function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "before adapter negative owner").unwrap();
-            let mut owner = Canonicalizer::new(&graph, sink);
-            let initial = if old {
-                owner.previous_successors_before_owner_preflight(&function, &state, &mut budget)
-            } else {
-                owner.current_successors_before_owner_preflight(&function, &state, &mut budget)
-            };
-            assert!(initial.unwrap().is_some());
-            // The complete previous adapter pays before it reaches the bound
-            // Memo's scope check. A zero child proves that original bad order;
-            // this source remains a negative, not a new production acceptance.
-            let (result, refused, _, _) = with_limit_usage_refusal(0, || {
-                if old {
-                    owner.previous_successors_before_owner_preflight(&function, &state, &mut budget)
+        for attack in 0..3 {
+            with_limit_usage_refusal(usize::MAX, || {
+                let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
+                let mut foreign = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
+                budget
+                    .reserve_bytes(
+                        &function,
+                        Canonicalizer::CONSTRUCTOR_CONTROLS,
+                        "selected foreign owner receiving",
+                    )
+                    .unwrap();
+                let mut owner = Canonicalizer::new(&graph, sink);
+                let initial = if old {
+                    owner.previous_selected_successors(&function, &state, &mut budget)
                 } else {
-                    owner.current_successors_before_owner_preflight(&function, &state, &mut budget)
-                }
+                    owner.successors(&function, &state, &mut budget)
+                };
+                assert!(initial.unwrap().is_some());
+                let result = if attack == 0 {
+                    if old {
+                        owner.previous_selected_successors(&wrong, &state, &mut budget)
+                    } else {
+                        owner.successors(&wrong, &state, &mut budget)
+                    }
+                } else if attack == 1 {
+                    if old {
+                        owner.previous_selected_successors(&function, &state, &mut foreign)
+                    } else {
+                        owner.successors(&function, &state, &mut foreign)
+                    }
+                } else {
+                    with_limit_usage_refusal(1 << 26, || {
+                        if old {
+                            owner.previous_selected_successors(&function, &state, &mut budget)
+                        } else {
+                            owner.successors(&function, &state, &mut budget)
+                        }
+                    })
+                    .0
+                };
+                let error = result.unwrap_err();
+                let frozen = selected_failure(&error);
+                assert_eq!(
+                    frozen,
+                    selected_failure(&Diagnostic::io("SPX-H006", String::new()))
+                );
+                let restored = if old {
+                    owner.previous_selected_successors(&function, &state, &mut budget)
+                } else {
+                    owner.successors(&function, &state, &mut budget)
+                };
+                assert_eq!(selected_failure(&restored.unwrap_err()), frozen);
+                assert_eq!(selected_failure(&error), frozen);
+                assert!(!foreign.refusal_spent);
             });
-            let error = result.unwrap_err();
-            assert!(refused);
-            assert_eq!(error, super::super::replay_error(&function,
-                "cleanup replay physical reservation exhausted during factored held closure invocation controls"));
-        });
+        }
     }
 }
 
-// Complete immediate d3 entry bodies; only private method names/visibility differ.
-mod warm_before {
-    use super::super::*;
-    impl Canonicalizer<'_> {
-    pub(super) fn previous_warm_id(
-        &mut self,
-        function: &ResolvedFunction,
-        root: Weighted,
-        budget: &mut ReplayBudget,
-    ) -> Result<Option<usize>, Diagnostic> {
-        // Preserve the old entry's owner rejection before a fresh test-only slot
-        // can query or charge a foreign payer. A valid call still pays acquisition.
-        if self.closures.preflight(function, budget) {
-            if self.closures.failed() {
-                return Err(Diagnostic::io("SPX-H006", String::new()));
-            }
-        } else {
-            if self.closures.failed() {
-                return Err(Diagnostic::io("SPX-H006", String::new()));
-            }
-            // Keep the first-cold failure before invocation-slot acquisition.
-            // The outer id Result is unchanged; the inner auth Result is absent.
-            activate_closure!(self, function, budget, error, {
-                return Err(error);
-            });
-        }
-        if budget.pays_allocations() {
-            budget.reserve_bytes(function, Self::COLD_ROOT_CONTROLS, "factored cold terminal root predicate")?;
-        }
-        if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
-            if budget.pays_allocations() {
-                budget.reserve_bytes(function, Self::COLD_RESULT_CONTROLS, "factored cold terminal result receiving")?;
-            }
-            return self.cold_dead_id(function, root, budget);
-        }
-        if budget.pays_allocations() {
-            budget.reserve_bytes(
-                function,
-                closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "factored held closure invocation controls",
-            )?;
-        }
-        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
-        self.id_with_receiving(function, root, budget, &mut receiving)
-    }
-    pub(super) fn previous_warm_id_for_comparison(
-        &mut self, function: &ResolvedFunction, root: Weighted, budget: &mut ReplayBudget,
-    ) -> Result<Option<usize>, Diagnostic> {
-        self.closures.preflight(function, budget);
-        if self.closures.failed() {
-            return Err(Diagnostic::io("SPX-H006", String::new()));
-        }
-        if budget.pays_allocations() {
-            budget.reserve_bytes(function, Self::COLD_ROOT_CONTROLS,
-                "factored cold terminal root predicate")?;
-            budget.reserve_bytes(function, Self::COLD_RESULT_CONTROLS,
-                "factored cold terminal result receiving")?;
-        }
-        if root.len() == 1 && root[0].1 == 1 && self.cold_dead_node(root[0].0) {
-            return self.cold_dead_id(function, root, budget);
-        }
-        if budget.pays_allocations() {
-            budget.reserve_bytes(function, closure_receiving::ClosureReceiving::DIRECT_CONTROLS,
-                "factored held closure invocation controls")?;
-        }
-        let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
-        self.id_with_receiving(function, root, budget, &mut receiving)
-    }
-    }
-}
-
-#[test]
-fn warmed_canonical_entries_skip_only_impossible_cold_receivers_and_keep_old_authentication() {
-    let function = fixture();
-    let run = |previous, production, limit| {
-        let (graph, sink, roots) = corpus(&function, 0);
-        measure(|| {
-            let result = (|| {
-            let mut budget = ReplayBudget::with_physical(&function, limit)?;
-            budget.reserve_bytes(&function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "canonical ordered dictionary owner receiving")?;
-            let mut owner = Canonicalizer::new(&graph, sink);
-            let mut checksum = 0_u64;
-            for root in roots {
-                budget.reserve_array::<(usize, u64)>(&function, 1, "arena corpus root")?;
-                let root = vec![(root, 1)];
-                let id = match (previous, production) {
-                    (true, true) => owner.previous_warm_id_for_comparison(&function, root, &mut budget),
-                    (true, false) => owner.previous_warm_id(&function, root, &mut budget),
-                    (false, true) => owner.id_for_comparison(&function, root, &mut budget),
-                    (false, false) => owner.id(&function, root, &mut budget),
-                }?.unwrap();
-                checksum = checksum.wrapping_mul(31).wrapping_add(id as u64);
-                assert!(owner.scratch_paid);
-            }
-            let result = (budget.physical.as_ref().unwrap().charged(), budget.remaining, checksum);
-            drop((owner, budget));
-            Ok::<_, Diagnostic>(result)
-            })();
-            result.map_err(|error| { assert_eq!(error.code, "SPX-H006"); drop(error); })
-        })
-    };
-    for production in [false, true] {
-        let (old, old_heap) = run(true, production, 1 << 26);
-        let (current, heap) = run(false, production, 1 << 26);
-        let old = old.unwrap();
-        let current = current.unwrap();
-        assert_eq!((old.1, old.2), (current.1, current.2), "all original work and IDs");
-        let skipped = Canonicalizer::COLD_ROOT_CONTROLS
-            + if production { Canonicalizer::COLD_RESULT_CONTROLS } else { 0 };
-        assert_eq!(old.0 - current.0, 31 * skipped, "only the 31 impossible warm predicates");
-        for observed in [old_heap, heap] {
-            assert!(!observed.invalid && observed.live == 0);
-            assert_eq!(observed.allocated, observed.freed);
-        }
-        for limit in [0, current.0 - 1, current.0] {
-            let (result, observed) = run(false, production, limit);
-            assert_eq!(result.is_ok(), limit == current.0);
-            assert!(!observed.invalid && observed.live == 0);
-            assert_eq!(observed.allocated, observed.freed);
-        }
-        let mut errors = Vec::new();
-        for previous in [true, false] {
-            let (graph, sink, roots) = corpus(&function, 0);
-            let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
-            budget.reserve_bytes(&function, Canonicalizer::CONSTRUCTOR_CONTROLS,
-                "canonical ordered dictionary owner receiving").unwrap();
-            let mut owner = Canonicalizer::new(&graph, sink);
-            let root = vec![(roots[0], 1)];
-            match (previous, production) {
-                (true, true) => owner.previous_warm_id_for_comparison(&function, root, &mut budget),
-                (true, false) => owner.previous_warm_id(&function, root, &mut budget),
-                (false, true) => owner.id_for_comparison(&function, root, &mut budget),
-                (false, false) => owner.id(&function, root, &mut budget),
-            }.unwrap();
-            let foreign = function.clone();
-            let charged = budget.physical.as_ref().unwrap().charged();
-            let error = match (previous, production) {
-                (true, true) => owner.previous_warm_id_for_comparison(&foreign, Vec::new(), &mut budget),
-                (true, false) => owner.previous_warm_id(&foreign, Vec::new(), &mut budget),
-                (false, true) => owner.id_for_comparison(&foreign, Vec::new(), &mut budget),
-                (false, false) => owner.id(&foreign, Vec::new(), &mut budget),
-            }.unwrap_err();
-            assert_eq!(budget.physical.as_ref().unwrap().charged(), charged);
-            let sticky = owner.id_for_comparison(&function, Vec::new(), &mut budget).unwrap_err();
-            assert_eq!(error, sticky, "all six sticky diagnostic fields");
-            errors.push(error);
-        }
-        assert_eq!(errors[0], errors[1], "complete original foreign diagnostic");
-    }
-}
+include!("arena_tests_tail.rs");

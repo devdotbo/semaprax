@@ -1,74 +1,159 @@
 //! Closed current-byte authentication before the complete incominge177 view.
-use sha2::{Digest,Sha256};
+use sha2::{Digest, Sha256};
 use std::path::Path;
 struct LowerHex<T>(T);
 impl<T: AsRef<[u8]>> std::fmt::LowerHex for LowerHex<T> {
     fn fmt(&self, output: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for byte in self.0.as_ref() { write!(output,"{byte:02x}")?; } Ok(())
+        for byte in self.0.as_ref() {
+            write!(output, "{byte:02x}")?;
+        }
+        Ok(())
     }
 }
 const MAIN_E177_CAP: usize = 9_753_094;
-fn main_e177_body(reader: &mut impl std::io::Read, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN_E177_CAP { return Err("bound"); }
+fn main_e177_body(
+    reader: &mut impl std::io::Read,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN_E177_CAP {
+        return Err("bound");
+    }
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length).map_err(|_| "allocation")?;
     bytes.resize(length, 0);
     reader.read_exact(&mut bytes).map_err(|_| "truncated")?;
     let mut extra = [0u8; 1];
-    if reader.read(&mut extra).map_err(|_| "read")? != 0 { return Err("extra"); }
-    if main_e177_digest(&bytes) != expected { return Err("digest"); }
+    if reader.read(&mut extra).map_err(|_| "read")? != 0 {
+        return Err("extra");
+    }
+    if main_e177_digest(&bytes) != expected {
+        return Err("digest");
+    }
     String::from_utf8(bytes).map_err(|_| "utf8")
 }
 fn main_e177_digest(bytes: &[u8]) -> String {
     format!("{:x}", LowerHex(Sha256::digest(bytes)))
 }
 fn main_e177_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
-    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
+    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
+    {
+        return false;
+    }
     #[cfg(unix)]
-    { use std::os::unix::fs::MetadataExt; if a.dev() != b.dev() || a.ino() != b.ino() || a.ctime() != b.ctime() || a.ctime_nsec() != b.ctime_nsec() { return false; } }
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.dev() != b.dev()
+            || a.ino() != b.ino()
+            || a.ctime() != b.ctime()
+            || a.ctime_nsec() != b.ctime_nsec()
+        {
+            return false;
+        }
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::MetadataExt; if a.file_attributes() & 0x400 != 0 || b.file_attributes() & 0x400 != 0 || a.creation_time() != b.creation_time() || a.last_write_time() != b.last_write_time() { return false; } }
+    {
+        use std::os::windows::fs::MetadataExt;
+        if a.file_attributes() & 0x400 != 0
+            || b.file_attributes() & 0x400 != 0
+            || a.creation_time() != b.creation_time()
+            || a.last_write_time() != b.last_write_time()
+        {
+            return false;
+        }
+    }
     true
 }
-pub(crate) fn main_e177_file_raw(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN_E177_CAP { return Err("bound"); }
-    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(path,length,expected) {return Ok(value);}
-    if let Some(value)=crate::source_reflows_merge::main_e177_final_inputs::file(path,length,expected) {return Ok(value);}
-    if let Some(value)=crate::source_reflows_merge::next_big_batch_inputs::file(path,length,expected) {return Ok(value);}
+pub(crate) fn main_e177_file_raw(
+    path: &::std::path::Path,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN_E177_CAP {
+        return Err("bound");
+    }
+    if let Some(value) = crate::source_reflows_merge::main_e177_final_inputs::combined_side_file(
+        path, length, expected,
+    ) {
+        return Ok(value);
+    }
+    if let Some(value) =
+        crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected)
+    {
+        return Ok(value);
+    }
+    if let Some(value) =
+        crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected)
+    {
+        return Ok(value);
+    }
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
-    if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
-    let mut options = std::fs::OpenOptions::new(); options.read(true);
+    if path_before.file_type().is_symlink() || !path_before.is_file() {
+        return Err("length-or-nonregular");
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
     #[cfg(unix)]
-    { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK); }
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::OpenOptionsExt; options.custom_flags(0x0020_0000); }
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000);
+    }
     #[cfg(not(any(unix, windows)))]
-    { return Err("platform"); }
+    {
+        return Err("platform");
+    }
     let mut file = options.open(path).map_err(|_| "open")?;
     let metadata = file.metadata().map_err(|_| "metadata")?;
-    if !main_e177_same_file(&path_before, &metadata) || metadata.len() != u64::try_from(length).map_err(|_| "bound")? {
+    if !main_e177_same_file(&path_before, &metadata)
+        || metadata.len() != u64::try_from(length).map_err(|_| "bound")?
+    {
         return Err("length-or-nonregular");
     }
     // The one opened no-follow regular handle is checked before any buffer.
     let value = main_e177_body(&mut file, length, expected)?;
     let after = file.metadata().map_err(|_| "metadata")?;
     let path_after = std::fs::symlink_metadata(path).map_err(|_| "metadata")?;
-    if path_after.file_type().is_symlink() || !main_e177_same_file(&metadata, &after) || !main_e177_same_file(&after, &path_after) { return Err("metadata-drift"); }
+    if path_after.file_type().is_symlink()
+        || !main_e177_same_file(&metadata, &after)
+        || !main_e177_same_file(&after, &path_after)
+    {
+        return Err("metadata-drift");
+    }
     Ok(value)
 }
 
-
-fn digest(bytes: &[u8]) -> String { format!("{:x}", LowerHex(Sha256::digest(bytes))) }
+fn digest(bytes: &[u8]) -> String {
+    format!("{:x}", LowerHex(Sha256::digest(bytes)))
+}
 fn packet() -> serde_json::Value {
-    let data=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json"));
+    let data = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json"
+    ));
     assert_eq!(data.len(), 237696); // MAIN_E177_PACKET_LENGTH
-    assert_eq!(digest(data.as_bytes()), "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44"); // MAIN_E177_PACKET_SHA
-    let held=main_e177_file_raw(&Path::new(env!("CARGO_MANIFEST_DIR")).join("docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json"),
-        data.len(), &digest(data.as_bytes())).unwrap();
-    assert_eq!(held,data,"whole actual and compiled MAIN_E177 namespace");
-    let packet:serde_json::Value=serde_json::from_str(data).unwrap();
-    assert_eq!(packet["schema"],"semaprax.main-e177-whole-source-acquisition.v1");
-    assert_eq!(packet["rows"].as_array().unwrap().len(),471);
+    assert_eq!(
+        digest(data.as_bytes()),
+        "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44"
+    ); // MAIN_E177_PACKET_SHA
+    let held = main_e177_file_raw(
+        &Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json"),
+        data.len(),
+        &digest(data.as_bytes()),
+    )
+    .unwrap();
+    assert_eq!(held, data, "whole actual and compiled MAIN_E177 namespace");
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(
+        packet["schema"],
+        "semaprax.main-e177-whole-source-acquisition.v1"
+    );
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 471);
     packet
 }
 fn compiled(path: &str) -> Option<&'static str> {
@@ -255,30 +340,83 @@ fn compiled(path: &str) -> Option<&'static str> {
         _ => None,
     }
 }
-fn acquire(path: &Path) -> std::io::Result<(String,String)> {
-    let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let relative=path.strip_prefix(root).expect("confined MAIN_E177 source");
-    assert!(relative.components().all(|part|matches!(part,std::path::Component::Normal(_))));
-    let relative=relative.to_str().unwrap();let packet=packet();let rows=packet["rows"].as_array().unwrap();
-    assert_eq!(rows.iter().filter(|row|row["path"]==relative).count(),1);
-    let row=rows.iter().find(|row|row["path"]==relative).unwrap();
-    let read=|path:&Path,len,sha|main_e177_file_raw(path,len,sha).map_err(|message|std::io::Error::new(std::io::ErrorKind::InvalidData,message));
-    let actual=read(path,row["current_length"].as_u64().unwrap()as usize,row["current_sha256"].as_str().unwrap())?;
-    if let Some(compiled)=compiled(relative) {
-        let compiled=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(relative,row["current_sha256"].as_str().unwrap(),compiled);
-        let compiled=crate::source_reflows_merge::main_e177_final_inputs::value(relative,row["current_sha256"].as_str().unwrap(),&compiled);
-        let compiled=crate::source_reflows_merge::next_big_batch_inputs::value(relative,row["current_sha256"].as_str().unwrap(),&compiled);
-        assert_eq!(actual,compiled,"whole current compiled MAIN_E177 input");
+fn acquire(path: &Path) -> std::io::Result<(String, String)> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path.strip_prefix(root).expect("confined MAIN_E177 source");
+    assert!(relative
+        .components()
+        .all(|part| matches!(part, std::path::Component::Normal(_))));
+    let relative = relative.to_str().unwrap();
+    let packet = packet();
+    let rows = packet["rows"].as_array().unwrap();
+    assert_eq!(rows.iter().filter(|row| row["path"] == relative).count(), 1);
+    let row = rows.iter().find(|row| row["path"] == relative).unwrap();
+    let read = |path: &Path, len, sha| {
+        main_e177_file_raw(path, len, sha)
+            .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))
+    };
+    let actual = read(
+        path,
+        row["current_length"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    )?;
+    if let Some(compiled) = compiled(relative) {
+        let compiled =
+            crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(
+                relative,
+                row["current_sha256"].as_str().unwrap(),
+                compiled,
+            );
+        let compiled = crate::source_reflows_merge::main_e177_final_inputs::value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            &compiled,
+        );
+        let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            &compiled,
+        );
+        assert_eq!(actual, compiled, "whole current compiled MAIN_E177 input");
     }
-    let incoming=read(&root.join(row["main_archive"].as_str().unwrap()),row["main_length"].as_u64().unwrap()as usize,row["main_sha256"].as_str().unwrap())?;
-    Ok((actual,incoming))
+    let incoming = read(
+        &root.join(row["main_archive"].as_str().unwrap()),
+        row["main_length"].as_u64().unwrap() as usize,
+        row["main_sha256"].as_str().unwrap(),
+    )?;
+    Ok((actual, incoming))
 }
-pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {acquire(path.as_ref()).map(|(_,incoming)|incoming)}
-pub(crate) fn expected(path: &str,supplied: &str) -> String {
-    let (actual,incoming)=acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
-    let packet=packet();let row=packet["rows"].as_array().unwrap().iter().find(|row|row["path"]==path).unwrap();
-    let supplied=crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(path,row["current_sha256"].as_str().unwrap(),supplied);
-    let supplied=crate::source_reflows_merge::main_e177_final_inputs::value(path,row["current_sha256"].as_str().unwrap(),&supplied);
-    let supplied=crate::source_reflows_merge::next_big_batch_inputs::value(path,row["current_sha256"].as_str().unwrap(),&supplied);
-    assert!(supplied==actual || supplied==incoming,"foreign MAIN_E177 supplied source");incoming
+pub(crate) fn read(path: impl AsRef<Path>) -> std::io::Result<String> {
+    acquire(path.as_ref()).map(|(_, incoming)| incoming)
+}
+pub(crate) fn expected(path: &str, supplied: &str) -> String {
+    let (actual, incoming) = acquire(&Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap();
+    let packet = packet();
+    let row = packet["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["path"] == path)
+        .unwrap();
+    let supplied =
+        crate::source_reflows_merge::main_e177_final_inputs::combined_side_expected_value(
+            path,
+            row["current_sha256"].as_str().unwrap(),
+            supplied,
+        );
+    let supplied = crate::source_reflows_merge::main_e177_final_inputs::value(
+        path,
+        row["current_sha256"].as_str().unwrap(),
+        &supplied,
+    );
+    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(
+        path,
+        row["current_sha256"].as_str().unwrap(),
+        &supplied,
+    );
+    assert!(
+        supplied == actual || supplied == incoming,
+        "foreign MAIN_E177 supplied source"
+    );
+    incoming
 }

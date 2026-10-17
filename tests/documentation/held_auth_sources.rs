@@ -30,9 +30,13 @@ fn held_authentication_complete_source_owners_and_ordinary_receivers_stay_indepe
     ];
     for (path, complete) in owners {
         assert!(!complete.is_empty());
-        for (audit,prefix) in audits {
-            let declaration=format!("include_str!(\"{prefix}{path}\")");
-            assert_eq!(audit.matches(&declaration).count(),1,"unique full owner {path}");
+        for (audit, prefix) in audits {
+            let declaration = format!("include_str!(\"{prefix}{path}\")");
+            assert_eq!(
+                audit.matches(&declaration).count(),
+                1,
+                "unique full owner {path}"
+            );
         }
     }
     assert_eq!(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/memo.rs"),

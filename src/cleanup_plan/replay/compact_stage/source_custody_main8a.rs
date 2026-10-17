@@ -80,7 +80,8 @@ fn digest(text: &str) -> String {
 fn invert(record: &serde_json::Value, current: &str) -> String {
     let main = crate::source_reflows_merge::main8a_historical::input(
         crate::source_reflows_merge::main8a_historical::Domain::Compact7,
-        record["path"].as_str().unwrap(), current,
+        record["path"].as_str().unwrap(),
+        current,
     );
     let current = main.as_str();
     assert_eq!(
@@ -162,7 +163,10 @@ fn original_enumerator_enum_header_traits_and_lexical_helper_stay_complete() {
             }
             _ => panic!("unregistered original producer input"),
         };
-        let current_main = crate::source_reflows_merge::main8a_input(piece["compiled_path"].as_str().unwrap(), current);
+        let current_main = crate::source_reflows_merge::main8a_input(
+            piece["compiled_path"].as_str().unwrap(),
+            current,
+        );
         let current = current_main.as_str();
         let compiled = piece["compiled_body"].as_str().unwrap();
         assert_eq!(current.matches(compiled).count(), 1, "{}", piece["name"]);

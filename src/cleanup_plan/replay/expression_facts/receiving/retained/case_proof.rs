@@ -214,8 +214,8 @@ const LEXICAL_BEGIN_BYTES: usize = 2 * size_of::<LexicalAttempt<'_, '_>>()
     + 2 * size_of::<(&StatusCases<'_>, &ResolvedFunction, &mut ReplayBudget)>()
     + size_of::<&crate::cleanup_plan::replay::allocation::AllocationPayer>()
     + 6 * size_of::<bool>();
-pub(super) const ORIGINAL_BEGIN_BYTES: usize = 2 * size_of::<Attempt<'_, '_>>()
-    + size_of::<Result<Attempt<'_, '_>, Diagnostic>>();
+pub(super) const ORIGINAL_BEGIN_BYTES: usize =
+    2 * size_of::<Attempt<'_, '_>>() + size_of::<Result<Attempt<'_, '_>, Diagnostic>>();
 const _: () = assert!(LEXICAL_BEGIN_BYTES <= ORIGINAL_BEGIN_BYTES);
 macro_rules! begin_receiving {
     ($proof:ident, $function:ident, $budget:ident) => {{

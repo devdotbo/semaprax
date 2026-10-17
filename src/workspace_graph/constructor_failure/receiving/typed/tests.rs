@@ -128,12 +128,18 @@ fn typed_default_fields_match_complete_old_and_every_byte_refusal_has_no_later_a
             *fields = all[..width].to_vec();
         }
         let declarations = [("Row", &row)];
-        let old = constructor_test_inline_defaults::default_expr(&ty, &declarations, false).unwrap();
+        let old =
+            constructor_test_inline_defaults::default_expr(&ty, &declarations, false).unwrap();
         let (((), physical), refused, exact, first) = with_limit_usage_refusal(LIMIT, || {
             measure(|| {
                 let mut owner = Receiver::acquire().unwrap();
-                let actual =
-                    constructor_test_typed_defaults::default_expr(&ty, &declarations, false, &mut owner).unwrap();
+                let actual = constructor_test_typed_defaults::default_expr(
+                    &ty,
+                    &declarations,
+                    false,
+                    &mut owner,
+                )
+                .unwrap();
                 assert_eq!(actual, old);
                 drop(actual);
                 drop(owner);
@@ -154,8 +160,12 @@ fn typed_default_fields_match_complete_old_and_every_byte_refusal_has_no_later_a
                             Ok(owner) => owner,
                             Err(_) => return false,
                         };
-                        let actual =
-                            constructor_test_typed_defaults::default_expr(&ty, &declarations, false, &mut owner);
+                        let actual = constructor_test_typed_defaults::default_expr(
+                            &ty,
+                            &declarations,
+                            false,
+                            &mut owner,
+                        );
                         let stop = current_metrics().allocated;
                         let success = actual.is_ok();
                         if let Err(error) = &actual {
@@ -202,8 +212,13 @@ fn typed_static_defaults_and_stub_forwarding_keep_complete_old_six_fields_and_va
         let (((), physical), refused, used, first) = with_limit_usage_refusal(LIMIT, || {
             measure(|| {
                 let mut owner = Receiver::acquire().unwrap();
-                let actual =
-                    constructor_test_typed_import_stub::default_expr(function, &[], false, false, &mut owner);
+                let actual = constructor_test_typed_import_stub::default_expr(
+                    function,
+                    &[],
+                    false,
+                    false,
+                    &mut owner,
+                );
                 match (actual, &old) {
                     (Ok(actual), Ok(old)) => assert_eq!(&actual, old),
                     (Err(Failure::One(actual)), Err(old)) => {
@@ -225,7 +240,7 @@ fn typed_static_defaults_and_stub_forwarding_keep_complete_old_six_fields_and_va
 }
 #[test]
 fn typed_core_overlay_matches_complete_old_success_and_late_semantic_failure_through_drop() {
-    use crate::workspace_graph::expected_projection::{CoreProviderProofs, private_layout};
+    use crate::workspace_graph::expected_projection::{private_layout, CoreProviderProofs};
     let mut programs = [
         "module typed.app; use function @id(\"helper\") from typed.provider as increment; @id(\"main\") fn main()->i64 {increment(41)}",
         "module typed.provider; @id(\"helper\") fn helper(value:i64)->i64 {value+1}",
@@ -262,8 +277,16 @@ fn typed_core_overlay_matches_complete_old_success_and_late_semantic_failure_thr
                 );
                 match (&current, &old) {
                     (Ok(actual), Ok(old)) => {
-                        assert!(actual.source().types().iter().eq(old.source().types().iter()));
-                        assert!(actual.source().functions().iter().eq(old.source().functions().iter()));
+                        assert!(actual
+                            .source()
+                            .types()
+                            .iter()
+                            .eq(old.source().types().iter()));
+                        assert!(actual
+                            .source()
+                            .functions()
+                            .iter()
+                            .eq(old.source().functions().iter()));
                     }
                     (Err(Failure::One(actual)), Err(old)) => {
                         assert_eq!(std::slice::from_ref(actual), old.diagnostics())
@@ -287,7 +310,8 @@ fn typed_helper_budget_reaches_original_same_child_prepaid_final_report_without_
     let operation = || {
         attempt::run(usize::MAX, || {
             let mut owner = Receiver::acquire()?;
-            match constructor_test_typed_defaults::default_expr(&Type::I64, &[], false, &mut owner) {
+            match constructor_test_typed_defaults::default_expr(&Type::I64, &[], false, &mut owner)
+            {
                 Ok(value) => {
                     drop(value);
                     drop(owner);

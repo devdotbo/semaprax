@@ -462,7 +462,6 @@ fn validate_control_group_with_budget<K: Ord + Borrow<PathState>>(
     Ok(())
 }
 
-
 fn joined_ownership_state<K: Ord + Borrow<PathState>>(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

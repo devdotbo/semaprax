@@ -43,7 +43,13 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         if name == "sequence_skeleton_paths" {
             // Compose the later independently frozen prefix-transfer receiver;
             // keep this complete predecessor and every original assertion.
-            let intermediate = crate::source_reflows_merge::maina3_input("src/cleanup_plan/replay/sequence_prefix/before.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/sequence_prefix/before.rs")));
+            let intermediate = crate::source_reflows_merge::maina3_input(
+                "src/cleanup_plan/replay/sequence_prefix/before.rs",
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/src/cleanup_plan/replay/sequence_prefix/before.rs"
+                )),
+            );
             assert!(intermediate.contains(&current.replacen(
                 "fn sequence_skeleton_paths(",
                 "pub(super) fn sequence_skeleton_paths(",

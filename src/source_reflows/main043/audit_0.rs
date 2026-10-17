@@ -1,9 +1,12 @@
 #[test]
 fn complete_before_exit_receiver_and_full_source_inverses_remain_exact() {
     use sha2::{Digest, Sha256};
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/exit-prefix-reference-proof/retained.rs.before.txt"));
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::ExitPrefix))
-    .unwrap();
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/exit-prefix-reference-proof/retained.rs.before.txt"
+    ));
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::ExitPrefix)).unwrap();
     let fixed = [
         ("tests/hir_module_boundaries.rs", "03fde58554846398c379bbaa6f60cd1368d2573ff9fc715d340074f4c6ea56dc"),
         ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs", "bb72229bff1d33b7e6f03887a4022003465f077710cd643d75be9afcf4577961"),
@@ -46,7 +49,13 @@ fn complete_before_exit_receiver_and_full_source_inverses_remain_exact() {
         }
         assert_eq!(source, *archive);
     }
-    let current_tests = super::historical_ci_extra("src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs")));
+    let current_tests = super::historical_ci_extra(
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"
+        )),
+    );
     let copied = current_tests
         .split_once("\n// BEGIN COMPLETE PAID EXIT COMPARISON BRIDGE\n")
         .unwrap()
@@ -82,7 +91,13 @@ fn complete_before_exit_receiver_and_full_source_inverses_remain_exact() {
         restored = restored.replace(after, before);
     }
     assert_eq!(substitutions, 11);
-    let full_before = super::historical_ci_extra("src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs")));
+    let full_before = super::historical_ci_extra(
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/expression_facts/receiving/retained/exit_before.rs"
+        )),
+    );
     let full_before = &full_before[full_before.find("// The retained key proof").unwrap()..];
     assert_eq!(restored, full_before);
     let start = old.find("// The retained key proof").unwrap();

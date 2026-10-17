@@ -33,15 +33,20 @@ fn template_selected_name_minimum_and_static_refusal_remain_complete() {
     let prepared = resolver(&program);
     let function = &program.functions[0];
     let ordinary = prepared.resolve_function_template(function).unwrap();
-    let (bounded, refused, minimum, first) = with_limit_usage_refusal(64 * 1024 * 1024, || prepared.resolve_function_template(function));
+    let (bounded, refused, minimum, first) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+        prepared.resolve_function_template(function)
+    });
     assert!(!refused && first.is_none());
     assert_eq!(bounded.unwrap(), ordinary);
     assert!(minimum > function.name.len());
     for limit in [0, minimum - 1, minimum] {
-        let baseline = with_limit_usage_refusal(limit, || prepared.resolve_function_template(function));
+        let baseline =
+            with_limit_usage_refusal(limit, || prepared.resolve_function_template(function));
         let observed = with_limit_usage_refusal(limit, || {
             let result = prepared.resolve_function_template(function);
-            if result.is_err() { assert!(!crate::bounded_output::reserve_active(0)); }
+            if result.is_err() {
+                assert!(!crate::bounded_output::reserve_active(0));
+            }
             result
         });
         assert_eq!(observed, baseline);

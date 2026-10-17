@@ -1,6 +1,6 @@
 //! Complete df2 shipping plan in the unchanged historical observation representation.
+use super::super::compact_stage::before::{lexical_skeleton, SkeletonObservation, SkeletonPath};
 use super::super::*;
-use super::super::compact_stage::before::{SkeletonObservation, SkeletonPath, lexical_skeleton};
 
 pub(in crate::cleanup_plan::replay) fn plan_skeleton_paths(
     function: &ResolvedFunction,
@@ -585,4 +585,3 @@ pub(in crate::cleanup_plan::replay) fn plan_skeleton_paths(
     }
     Ok(paths)
 }
-

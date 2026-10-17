@@ -210,34 +210,78 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
                 // real forwarding reserve_vec Result; overflow publishes none.
                 let mut logical_budget = ReplayBudget::unobserved();
                 let mut logical = Canonicalizer::new(&graph, sink);
-                assert_eq!(logical.id(&function, vec![(root, weight)], &mut logical_budget).unwrap(), tuples[1].0);
+                assert_eq!(
+                    logical
+                        .id(&function, vec![(root, weight)], &mut logical_budget)
+                        .unwrap(),
+                    tuples[1].0
+                );
                 // Cold-dead publication fills both maps without entering the
                 // frame loop. This fresh one-root owner has no preexisting cache.
-                let nonempty_exits = if logical.scratch_paid { logical.states.iter().filter(|(_, id)| {
-                    logical.ids.iter().any(|((_, edges), stored)| stored == *id && !edges.is_empty())
-                }).count() } else { 0 };
+                let nonempty_exits = if logical.scratch_paid {
+                    logical
+                        .states
+                        .iter()
+                        .filter(|(_, id)| {
+                            logical
+                                .ids
+                                .iter()
+                                .any(|((_, edges), stored)| stored == *id && !edges.is_empty())
+                        })
+                        .count()
+                } else {
+                    0
+                };
                 let misses = if logical.scratch_paid {
-                    logical.ids.iter().filter(|((_, edges), _)| !edges.is_empty()).count()
-                } else { 0 };
+                    logical
+                        .ids
+                        .iter()
+                        .filter(|((_, edges), _)| !edges.is_empty())
+                        .count()
+                } else {
+                    0
+                };
                 assert!(logical.ids.iter().all(|((_, edges), _)| edges.len() <= 1));
-                let removed_backing = if nonempty_exits > 0 { size_of::<usize>() } else { 0 };
+                let removed_backing = if nonempty_exits > 0 {
+                    size_of::<usize>()
+                } else {
+                    0
+                };
                 let old_removed = nonempty_exits * super::super::empty_signature::BRANCH_CONTROLS
-                    + nonempty_exits * (super::super::intern_arena::SignatureQuery::EXIT_CONTROLS + size_of::<[usize; 2]>())
-                    + misses * (super::super::intern_arena::SignatureQuery::MISS_CONTROLS + size_of::<[&usize; 2]>())
+                    + nonempty_exits
+                        * (super::super::intern_arena::SignatureQuery::EXIT_CONTROLS
+                            + size_of::<[usize; 2]>())
+                    + misses
+                        * (super::super::intern_arena::SignatureQuery::MISS_CONTROLS
+                            + size_of::<[&usize; 2]>())
                     + removed_backing;
-                let new_added = if logical.scratch_paid { Canonicalizer::BORROWED_EXIT_LOCAL } else { 0 }
-                    + if nonempty_exits > 0 { Canonicalizer::BORROWED_EXIT_PRIMITIVE } else { 0 }
-                    + nonempty_exits * Canonicalizer::BORROWED_EXIT_WARM;
+                let new_added = if logical.scratch_paid {
+                    Canonicalizer::BORROWED_EXIT_LOCAL
+                } else {
+                    0
+                } + if nonempty_exits > 0 {
+                    Canonicalizer::BORROWED_EXIT_PRIMITIVE
+                } else {
+                    0
+                } + nonempty_exits * Canonicalizer::BORROWED_EXIT_WARM;
                 assert_eq!(tuples[0].2, tuples[1].2);
                 assert_eq!(tuples[0].1 + new_added, tuples[1].1 + old_removed,
                     "exact source-role equation; no constructor delta because both observers pay the same current envelope");
-                assert_eq!(tuples[0].3.allocated, tuples[1].3.allocated + removed_backing);
+                assert_eq!(
+                    tuples[0].3.allocated,
+                    tuples[1].3.allocated + removed_backing
+                );
                 assert_eq!(tuples[0].3.freed, tuples[1].3.freed + removed_backing);
-                assert_eq!(tuples[0].3.allocations, tuples[1].3.allocations + usize::from(nonempty_exits > 0));
+                assert_eq!(
+                    tuples[0].3.allocations,
+                    tuples[1].3.allocations + usize::from(nonempty_exits > 0)
+                );
                 assert_eq!(tuples[0].3.reallocations, tuples[1].3.reallocations);
-                assert!(tuples[1].3.highwater <= tuples[0].3.highwater
-                    && tuples[0].3.highwater <= tuples[1].3.highwater + removed_backing,
-                    "only the single persistent child-ID allocation was removed");
+                assert!(
+                    tuples[1].3.highwater <= tuples[0].3.highwater
+                        && tuples[0].3.highwater <= tuples[1].3.highwater + removed_backing,
+                    "only the single persistent child-ID allocation was removed"
+                );
             }
         }
     }
@@ -699,7 +743,6 @@ fn composed_promotion_work_refusal_keeps_six_fields_first_order_and_zero_allocat
     }
 }
 
-
 #[test]
 fn memo_identity_gate_rejects_nested_ledger_without_spending_or_poisoning_either_payer() {
     use crate::bounded_output::{
@@ -798,251 +841,280 @@ fn memo_identity_gate_rejects_nested_ledger_without_spending_or_poisoning_either
 
 // Complete immediate-old Memo and prices remain independently compiled.
 mod before_identity {
-//! Closure-only memo copy: fixed slot bitmap records explicit empty success.
-//! Ordinary Memo/RetainedMemo remain byte-exact independent owners.
-use super::{Diagnostic, ReplayBudget, ResolvedFunction};
-use crate::bounded_output::classifier_string::ClassifierLedger;
-use std::mem::size_of;
-const WIDTH: usize = 8;
+    //! Closure-only memo copy: fixed slot bitmap records explicit empty success.
+    //! Ordinary Memo/RetainedMemo remain byte-exact independent owners.
+    use super::{Diagnostic, ReplayBudget, ResolvedFunction};
+    use crate::bounded_output::classifier_string::ClassifierLedger;
+    use std::mem::size_of;
+    const WIDTH: usize = 8;
 
-struct Chunk<T> {
-    values: Option<Box<[Option<T>; WIDTH]>>,
-    empty: u8,
-}
-const _: () = assert!(WIDTH <= u8::BITS as usize);
-
-pub(super) struct Memo<T> {
-    chunks: Vec<Chunk<T>>,
-    pub(super) binding: Option<Binding>,
-    pub(super) failed: bool,
-}
-pub(super) struct Binding {
-    pub(super) function: *const ResolvedFunction,
-    pub(super) budget: *const ReplayBudget,
-    pub(super) ledger: ClassifierLedger,
-}
-impl<T> Memo<T> {
-    pub(super) fn new() -> Self {
-        Self {
-            chunks: Vec::new(),
-            binding: None,
-            failed: false,
-        }
+    struct Chunk<T> {
+        values: Option<Box<[Option<T>; WIDTH]>>,
+        empty: u8,
     }
-    pub(super) fn authenticate(
-        &mut self,
-        function: &ResolvedFunction,
-        budget: &mut ReplayBudget,
-    ) -> Result<(), Diagnostic> {
-        if self.failed {
-            return Err(Diagnostic::io("SPX-H006", String::new()));
-        }
-        if let Some(binding) = &self.binding {
-            // Read no foreign payer, even to construct a refusal report. The
-            // exact caller keeps both borrowed receivers at stable addresses.
-            let ledger_matches = binding.ledger.current();
-            if binding.function != std::ptr::from_ref(function)
-                || binding.budget != std::ptr::from_ref(budget)
-                || !ledger_matches
-            {
-                self.failed = true;
-                return Err(Diagnostic::io("SPX-H006", String::new()));
+    const _: () = assert!(WIDTH <= u8::BITS as usize);
+
+    pub(super) struct Memo<T> {
+        chunks: Vec<Chunk<T>>,
+        pub(super) binding: Option<Binding>,
+        pub(super) failed: bool,
+    }
+    pub(super) struct Binding {
+        pub(super) function: *const ResolvedFunction,
+        pub(super) budget: *const ReplayBudget,
+        pub(super) ledger: ClassifierLedger,
+    }
+    impl<T> Memo<T> {
+        pub(super) fn new() -> Self {
+            Self {
+                chunks: Vec::new(),
+                binding: None,
+                failed: false,
             }
         }
-        if let Err(error) =
-            budget.reserve_bytes(function, 0, "factored closure memo authentication")
-        {
-            self.failed = true;
-            return Err(error);
-        }
-        if budget.pays_allocations() {
-            if let Err(error) = budget.reserve_bytes(
-                function,
-                size_of::<Result<(), Diagnostic>>(),
-                "factored closure memo authorization receipt",
-            ) {
+        pub(super) fn authenticate(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &mut ReplayBudget,
+        ) -> Result<(), Diagnostic> {
+            if self.failed {
+                return Err(Diagnostic::io("SPX-H006", String::new()));
+            }
+            if let Some(binding) = &self.binding {
+                // Read no foreign payer, even to construct a refusal report. The
+                // exact caller keeps both borrowed receivers at stable addresses.
+                let ledger_matches = binding.ledger.current();
+                if binding.function != std::ptr::from_ref(function)
+                    || binding.budget != std::ptr::from_ref(budget)
+                    || !ledger_matches
+                {
+                    self.failed = true;
+                    return Err(Diagnostic::io("SPX-H006", String::new()));
+                }
+            }
+            if let Err(error) =
+                budget.reserve_bytes(function, 0, "factored closure memo authentication")
+            {
                 self.failed = true;
                 return Err(error);
             }
-        }
-        if self.binding.is_none() {
-            // One live Memo receiver (including its binding slot) and the
-            // separately named Option<Binding> initializer below.
-            // The old Canonicalizer constructor created only allocation-free
-            // inert fields; activation pays its new inline receiver once.
             if budget.pays_allocations() {
                 if let Err(error) = budget.reserve_bytes(
                     function,
-                    size_of::<Self>() + size_of::<Option<Binding>>(),
-                    "factored closure memo controls",
+                    size_of::<Result<(), Diagnostic>>(),
+                    "factored closure memo authorization receipt",
                 ) {
                     self.failed = true;
                     return Err(error);
                 }
             }
-            let binding = Some(Binding {
-                function: std::ptr::from_ref(function),
-                budget: std::ptr::from_ref(budget),
-                ledger: ClassifierLedger::capture(),
-            });
-            self.binding = binding;
-        }
-        Ok(())
-    }
-    // Identity-only preflight precedes acquiring a fresh invocation destination.
-    // It neither asks a foreign payer nor constructs a diagnostic receiver.
-    pub(super) fn preflight(&mut self, function: &ResolvedFunction, budget: &ReplayBudget) -> bool {
-        if self.failed {
-            return false;
-        }
-        if let Some(binding) = &self.binding {
-            let ledger_matches = binding.ledger.current();
-            if binding.function != std::ptr::from_ref(function)
-                || binding.budget != std::ptr::from_ref(budget)
-                || !ledger_matches
-            {
-                self.failed = true;
-            } else if budget.refusal_spent
-                || (budget.pays_allocations() && crate::bounded_output::active_refused())
-            {
-                // Identity is already bound before reading this same account.
-                // A warm poisoned owner must not consume its report or reset
-                // work through a fresh zero-byte payer authentication.
-                self.failed = true;
-            }
-            true
-        } else {
-            false
-        }
-    }
-    pub(super) fn unpublished(&self) -> bool { self.chunks.is_empty() }
-    #[cfg(test)]
-    pub(super) fn payload_chunks(&self) -> usize {
-        self.chunks.iter().filter(|chunk| chunk.values.is_some()).count()
-    }
-    pub(super) fn failed(&self) -> bool {
-        self.failed
-    }
-    // Caller already holds the selected error; retain it unchanged while
-    // invalidating views without querying any payer or allocating a report.
-    pub(super) fn reject_after_error(&mut self) {
-        self.failed = true;
-    }
-    pub(super) fn contains_key(&self, key: &usize) -> bool {
-        self.state(key) != 0
-    }
-    // Replaces the old contains_key boolean result with a one-byte state code.
-    // No owned Option/Rc/enum is transported by this borrowed metadata query.
-    pub(super) fn state(&self, key: &usize) -> u8 {
-        if self.failed {
-            return 0;
-        }
-        match self.chunks.get(*key / WIDTH) {
-            Some(chunk) => {
-                if chunk.values.as_ref().is_some_and(|values| values[*key % WIDTH].is_some()) {
-                    2
-                } else if chunk.empty & (1_u8 << (*key % WIDTH)) != 0 {
-                    1
-                } else {
-                    0
+            if self.binding.is_none() {
+                // One live Memo receiver (including its binding slot) and the
+                // separately named Option<Binding> initializer below.
+                // The old Canonicalizer constructor created only allocation-free
+                // inert fields; activation pays its new inline receiver once.
+                if budget.pays_allocations() {
+                    if let Err(error) = budget.reserve_bytes(
+                        function,
+                        size_of::<Self>() + size_of::<Option<Binding>>(),
+                        "factored closure memo controls",
+                    ) {
+                        self.failed = true;
+                        return Err(error);
+                    }
                 }
+                let binding = Some(Binding {
+                    function: std::ptr::from_ref(function),
+                    budget: std::ptr::from_ref(budget),
+                    ledger: ClassifierLedger::capture(),
+                });
+                self.binding = binding;
             }
-            None => 0,
+            Ok(())
         }
-    }
-    pub(super) fn get(&self, key: &usize) -> Option<&T> {
-        if self.failed {
-            return None;
+        // Identity-only preflight precedes acquiring a fresh invocation destination.
+        // It neither asks a foreign payer nor constructs a diagnostic receiver.
+        pub(super) fn preflight(
+            &mut self,
+            function: &ResolvedFunction,
+            budget: &ReplayBudget,
+        ) -> bool {
+            if self.failed {
+                return false;
+            }
+            if let Some(binding) = &self.binding {
+                let ledger_matches = binding.ledger.current();
+                if binding.function != std::ptr::from_ref(function)
+                    || binding.budget != std::ptr::from_ref(budget)
+                    || !ledger_matches
+                {
+                    self.failed = true;
+                } else if budget.refusal_spent
+                    || (budget.pays_allocations() && crate::bounded_output::active_refused())
+                {
+                    // Identity is already bound before reading this same account.
+                    // A warm poisoned owner must not consume its report or reset
+                    // work through a fresh zero-byte payer authentication.
+                    self.failed = true;
+                }
+                true
+            } else {
+                false
+            }
         }
-        self.chunks
-            .get(*key / WIDTH)?
-            .values
-            .as_ref()?
-            .get(*key % WIDTH)?
-            .as_ref()
-    }
-    #[cfg(test)]
-    pub(super) fn insert(
-        &mut self,
-        function: &ResolvedFunction,
-        key: usize,
-        budget: &mut ReplayBudget,
-        make: impl FnOnce() -> T,
-    ) -> Result<(), Diagnostic> {
-        self.authenticate(function, budget)?;
-        let result = self.insert_bound(function, key, budget, make);
-        if result.is_err() {
+        pub(super) fn unpublished(&self) -> bool {
+            self.chunks.is_empty()
+        }
+        #[cfg(test)]
+        pub(super) fn payload_chunks(&self) -> usize {
+            self.chunks
+                .iter()
+                .filter(|chunk| chunk.values.is_some())
+                .count()
+        }
+        pub(super) fn failed(&self) -> bool {
+            self.failed
+        }
+        // Caller already holds the selected error; retain it unchanged while
+        // invalidating views without querying any payer or allocating a report.
+        pub(super) fn reject_after_error(&mut self) {
             self.failed = true;
         }
-        result
-    }
-    pub(super) fn insert_bound(
-        &mut self,
-        function: &ResolvedFunction,
-        key: usize,
-        budget: &mut ReplayBudget,
-        make: impl FnOnce() -> T,
-    ) -> Result<(), Diagnostic> {
-        let index = key / WIDTH;
-        // WIDTH > 1, so quotient + 1 cannot overflow usize.
-        let required = index + 1;
-        if self.chunks.len() < required {
-            let additional = required - self.chunks.len();
-            budget.reserve_vec(
-                function,
-                &mut self.chunks,
-                additional,
-                "factored closure memo directory",
-            )?;
-            // One actual inline slot initializer; receiving directory backing
-            // is separately retained by reserve_vec above.
-            budget.reserve_array::<Chunk<T>>(function, additional, "factored closure memo slot initializer")?;
-            self.chunks.resize_with(required, || Chunk { values: None, empty: 0 });
+        pub(super) fn contains_key(&self, key: &usize) -> bool {
+            self.state(key) != 0
         }
-        if self.chunks[index].values.is_none() {
-            if budget.pays_allocations() {
-                // Full array initializer and heap array, Box local and Some
-                // initializer. No payload backing exists for empty-only slots.
-                budget.reserve_bytes(function,
-                    2 * size_of::<[Option<T>; WIDTH]>() + 2 * size_of::<Box<[Option<T>; WIDTH]>>(),
-                    "factored closure memo payload promotion")?;
+        // Replaces the old contains_key boolean result with a one-byte state code.
+        // No owned Option/Rc/enum is transported by this borrowed metadata query.
+        pub(super) fn state(&self, key: &usize) -> u8 {
+            if self.failed {
+                return 0;
             }
-            let values = Box::new(std::array::from_fn(|_| None));
-            self.chunks[index].values = Some(values);
+            match self.chunks.get(*key / WIDTH) {
+                Some(chunk) => {
+                    if chunk
+                        .values
+                        .as_ref()
+                        .is_some_and(|values| values[*key % WIDTH].is_some())
+                    {
+                        2
+                    } else if chunk.empty & (1_u8 << (*key % WIDTH)) != 0 {
+                        1
+                    } else {
+                        0
+                    }
+                }
+                None => 0,
+            }
         }
-        self.chunks[index].values.as_mut().expect("paid payload")[key % WIDTH] = Some(make());
-        Ok(())
-    }
-    pub(super) fn insert_empty_bound(
-        &mut self,
-        function: &ResolvedFunction,
-        key: usize,
-        budget: &mut ReplayBudget,
-    ) -> Result<(), Diagnostic> {
-        let index = key / WIDTH;
-        // WIDTH > 1, so quotient + 1 cannot overflow usize.
-        let required = index + 1;
-        if self.chunks.len() < required {
-            let additional = required - self.chunks.len();
-            budget.reserve_vec(
-                function,
-                &mut self.chunks,
-                additional,
-                "factored closure memo directory",
-            )?;
-            // One actual inline slot initializer; receiving directory backing
-            // is separately retained by reserve_vec above.
-            budget.reserve_array::<Chunk<T>>(function, additional, "factored closure memo slot initializer")?;
-            self.chunks.resize_with(required, || Chunk { values: None, empty: 0 });
+        pub(super) fn get(&self, key: &usize) -> Option<&T> {
+            if self.failed {
+                return None;
+            }
+            self.chunks
+                .get(*key / WIDTH)?
+                .values
+                .as_ref()?
+                .get(*key % WIDTH)?
+                .as_ref()
         }
-        // The original empty bits survive later paid payload promotion.
-        // Only unpublished keys reach this producer, exactly as before.
-        self.chunks[index].empty |= 1_u8 << (key % WIDTH);
-        Ok(())
+        #[cfg(test)]
+        pub(super) fn insert(
+            &mut self,
+            function: &ResolvedFunction,
+            key: usize,
+            budget: &mut ReplayBudget,
+            make: impl FnOnce() -> T,
+        ) -> Result<(), Diagnostic> {
+            self.authenticate(function, budget)?;
+            let result = self.insert_bound(function, key, budget, make);
+            if result.is_err() {
+                self.failed = true;
+            }
+            result
+        }
+        pub(super) fn insert_bound(
+            &mut self,
+            function: &ResolvedFunction,
+            key: usize,
+            budget: &mut ReplayBudget,
+            make: impl FnOnce() -> T,
+        ) -> Result<(), Diagnostic> {
+            let index = key / WIDTH;
+            // WIDTH > 1, so quotient + 1 cannot overflow usize.
+            let required = index + 1;
+            if self.chunks.len() < required {
+                let additional = required - self.chunks.len();
+                budget.reserve_vec(
+                    function,
+                    &mut self.chunks,
+                    additional,
+                    "factored closure memo directory",
+                )?;
+                // One actual inline slot initializer; receiving directory backing
+                // is separately retained by reserve_vec above.
+                budget.reserve_array::<Chunk<T>>(
+                    function,
+                    additional,
+                    "factored closure memo slot initializer",
+                )?;
+                self.chunks.resize_with(required, || Chunk {
+                    values: None,
+                    empty: 0,
+                });
+            }
+            if self.chunks[index].values.is_none() {
+                if budget.pays_allocations() {
+                    // Full array initializer and heap array, Box local and Some
+                    // initializer. No payload backing exists for empty-only slots.
+                    budget.reserve_bytes(
+                        function,
+                        2 * size_of::<[Option<T>; WIDTH]>()
+                            + 2 * size_of::<Box<[Option<T>; WIDTH]>>(),
+                        "factored closure memo payload promotion",
+                    )?;
+                }
+                let values = Box::new(std::array::from_fn(|_| None));
+                self.chunks[index].values = Some(values);
+            }
+            self.chunks[index].values.as_mut().expect("paid payload")[key % WIDTH] = Some(make());
+            Ok(())
+        }
+        pub(super) fn insert_empty_bound(
+            &mut self,
+            function: &ResolvedFunction,
+            key: usize,
+            budget: &mut ReplayBudget,
+        ) -> Result<(), Diagnostic> {
+            let index = key / WIDTH;
+            // WIDTH > 1, so quotient + 1 cannot overflow usize.
+            let required = index + 1;
+            if self.chunks.len() < required {
+                let additional = required - self.chunks.len();
+                budget.reserve_vec(
+                    function,
+                    &mut self.chunks,
+                    additional,
+                    "factored closure memo directory",
+                )?;
+                // One actual inline slot initializer; receiving directory backing
+                // is separately retained by reserve_vec above.
+                budget.reserve_array::<Chunk<T>>(
+                    function,
+                    additional,
+                    "factored closure memo slot initializer",
+                )?;
+                self.chunks.resize_with(required, || Chunk {
+                    values: None,
+                    empty: 0,
+                });
+            }
+            // The original empty bits survive later paid payload promotion.
+            // Only unpublished keys reach this producer, exactly as before.
+            self.chunks[index].empty |= 1_u8 << (key % WIDTH);
+            Ok(())
+        }
     }
 }
-}
-
 
 // Test reporting only. Formatting never allocates or queries a compiler payer;
 // printing occurs after measure() ends. Overflow is explicit, never called full.
@@ -1053,7 +1125,11 @@ struct ComparisonFailureReport {
 }
 impl ComparisonFailureReport {
     fn new() -> Self {
-        Self { bytes: [0; 16_384], len: 0, overflow: false }
+        Self {
+            bytes: [0; 16_384],
+            len: 0,
+            overflow: false,
+        }
     }
     fn as_str(&self) -> &str {
         std::str::from_utf8(&self.bytes[..self.len]).expect("whole formatter strings are UTF-8")
@@ -1127,32 +1203,62 @@ fn original_literal_free_linked_comparison_keeps_exact_selected_inventory_refusa
         let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(source);
         fixture.with_linked_context(|program| {
             let functions = program.functions();
-            let function = functions.iter().find(|function| function.id.as_str() == "probe").unwrap();
+            let function = functions
+                .iter()
+                .find(|function| function.id.as_str() == "probe")
+                .unwrap();
             let mut prior_receipt = None;
             for old in [true, false] {
                 let (receipt, metrics) = measure(|| {
                     let mut budget = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
                     let result = if old {
-                        before_paid_many::comparison::compare_with_index_storage(program, &function, &mut budget, None, None)
+                        before_paid_many::comparison::compare_with_index_storage(
+                            program,
+                            &function,
+                            &mut budget,
+                            None,
+                            None,
+                        )
                     } else {
                         compare_with_index_storage(program, &function, &mut budget, None, None)
                     };
-                    assert_eq!(result.as_ref(), Err(&expected), "whole original linked context remains a six-field negative");
+                    assert_eq!(
+                        result.as_ref(),
+                        Err(&expected),
+                        "whole original linked context remains a six-field negative"
+                    );
                     let paid = budget.physical.as_ref().unwrap().charged();
-                    assert!(paid > 0, "the physical whole-comparison route ran before refusal");
+                    assert!(
+                        paid > 0,
+                        "the physical whole-comparison route ran before refusal"
+                    );
                     assert!(current_metrics().allocated <= paid);
-                    let receipt = (paid, budget.remaining, budget.skeleton_remaining, budget.skeleton_spent, budget.lent_skeleton, budget.refusal_spent);
+                    let receipt = (
+                        paid,
+                        budget.remaining,
+                        budget.skeleton_remaining,
+                        budget.skeleton_spent,
+                        budget.lent_skeleton,
+                        budget.refusal_spent,
+                    );
                     let stopped = current_metrics().allocated;
                     drop(result);
                     drop(budget);
-                    assert_eq!(current_metrics().allocated, stopped, "negative Drop performs no allocation");
+                    assert_eq!(
+                        current_metrics().allocated,
+                        stopped,
+                        "negative Drop performs no allocation"
+                    );
                     receipt
                 });
                 assert!(!metrics.invalid && metrics.live == 0);
                 assert_eq!(metrics.allocated, metrics.freed);
                 assert!(receipt.0 >= metrics.allocated);
                 if let Some(prior) = prior_receipt {
-                    assert_eq!(receipt, prior, "whole old/current refusal accounting stays identical");
+                    assert_eq!(
+                        receipt, prior,
+                        "whole old/current refusal accounting stays identical"
+                    );
                 }
                 prior_receipt = Some(receipt);
             }

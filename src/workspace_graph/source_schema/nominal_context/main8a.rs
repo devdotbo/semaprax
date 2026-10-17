@@ -1,8 +1,8 @@
 //! Borrowed nominal lookup for metadata; the emitted declaration view stays local.
 use super::*;
-use crate::workspace_graph::*;
-use crate::workspace_graph::source_schema::*;
 use crate::hir::items::{ItemSource, View};
+use crate::workspace_graph::source_schema::*;
+use crate::workspace_graph::*;
 
 pub(super) struct Types<'a> {
     module: &'a WorkspaceResolvedModule,

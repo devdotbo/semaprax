@@ -1,10 +1,10 @@
 //! Independent full-old algebra and actual allocation/drop controls.
-use super::Canonicalizer;
-use super::before_inline_weighted::{own_weighted, share_weighted, weighted_successor};
 use super::super::{
-    Automaton, BTreeMap, Diagnostic, Label, MAX_REPLAY_WORK_UNITS, Rc, ReplayBudget,
-    ResolvedFunction, SkeletonTerminal, Weighted, canonical_before, physical_clone,
+    canonical_before, physical_clone, Automaton, BTreeMap, Diagnostic, Label, Rc, ReplayBudget,
+    ResolvedFunction, SkeletonTerminal, Weighted, MAX_REPLAY_WORK_UNITS,
 };
+use super::before_inline_weighted::{own_weighted, share_weighted, weighted_successor};
+use super::Canonicalizer;
 
 fn fixture() -> ResolvedFunction {
     super::super::lexical_plan_tests::fixture(super::super::lexical_plan_tests::WHILE).1
@@ -552,16 +552,18 @@ mod targets {
     // Whole predecessors remain byte-bound before every historical inverse.
     #[test]
     fn complete_predecessors_and_new_target_sources_are_bound() {
-        crate::source_reflows::complete_predecessors_and_new_target_sources_are_bound (super::super::targets::incoming_input);
+        crate::source_reflows::complete_predecessors_and_new_target_sources_are_bound(
+            super::super::targets::incoming_input,
+        );
     }
 }
 
 mod successor_labels {
-    use super::super::{targets, borrowed_labels as labels};
+    use super::super::super::compact_nodes::{Many, Node};
+    use super::super::{borrowed_labels as labels, targets};
+    use super::*;
     use crate::cleanup_plan::replay::SkeletonObservation;
     use crate::hir::ExpressionId;
-    use super::super::super::compact_nodes::{Node, Many};
-    use super::*;
 
     fn function() -> ResolvedFunction {
         fixture()
@@ -586,17 +588,19 @@ mod successor_labels {
             }
         }
         let nodes = (0..4)
-            .map(|node| Node::Many(Box::new(Many {
-                moves: keys
-                    .iter()
-                    .rev()
-                    .enumerate()
-                    .map(|(index, key)| {
-                        (key.clone(), if overflow { 0 } else { (index + node) % 5 })
-                    })
-                    .collect(),
-                epsilon: Vec::new(),
-            })))
+            .map(|node| {
+                Node::Many(Box::new(Many {
+                    moves: keys
+                        .iter()
+                        .rev()
+                        .enumerate()
+                        .map(|(index, key)| {
+                            (key.clone(), if overflow { 0 } else { (index + node) % 5 })
+                        })
+                        .collect(),
+                    epsilon: Vec::new(),
+                }))
+            })
             .collect();
         let weights = [
             (0, if overflow { u64::MAX } else { 0 }),
@@ -699,9 +703,21 @@ mod successor_labels {
                 crate::test_allocation_observer::measure(|| {
                     let mut budget = ReplayBudget::new();
                     let success = if old {
-                        inspect(before_labels(&function, &mut budget, &automaton, &closed, 57))
+                        inspect(before_labels(
+                            &function,
+                            &mut budget,
+                            &automaton,
+                            &closed,
+                            57,
+                        ))
                     } else {
-                        inspect(labels::successors(&function, &mut budget, &automaton, &closed, 57))
+                        inspect(labels::successors(
+                            &function,
+                            &mut budget,
+                            &automaton,
+                            &closed,
+                            57,
+                        ))
                     };
                     if !success {
                         assert!(budget.reserve_bytes(&function, 0, "sticky labels").is_err());

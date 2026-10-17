@@ -22,8 +22,8 @@
 //! None of this is reachable from production builds and it grants no proof or
 //! validation authority.
 
-use super::*;
 use super::nested_candidate_before::has_own_root_candidate;
+use super::*;
 
 mod cfg_build;
 mod draft;

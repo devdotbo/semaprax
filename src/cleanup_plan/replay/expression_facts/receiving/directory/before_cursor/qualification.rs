@@ -1,7 +1,7 @@
 //! Actual independent pre01527 layouts/fees, beside the funded shipping cursor.
 use super::*;
-use crate::bounded_output::{ReservationRefusal, with_limit_usage_refusal};
-use crate::test_allocation_observer::{Metrics, current_metrics, measure};
+use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
+use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 use std::fmt::Write as _;
 
 #[derive(Debug, PartialEq, Eq)]
@@ -167,8 +167,13 @@ fn observe(
                 (snapshot, spent_work)
             })
         });
-    ((result, spent_work, metrics), refused, paid, first,
-        site.map(|site| (site.file(), site.line())))
+    (
+        (result, spent_work, metrics),
+        refused,
+        paid,
+        first,
+        site.map(|site| (site.file(), site.line())),
+    )
 }
 fn balanced(metrics: &Metrics, paid: usize) {
     assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
@@ -217,7 +222,9 @@ fn actual_caller_prepaid_cursor_and_complete_old_producer_keep_receipts_floors_a
             assert!(next > end);
             end = next;
         }
-        if !old { qualify_actual_moved_caller_banks(&function); }
+        if !old {
+            qualify_actual_moved_caller_banks(&function);
+        }
         let exact_work = work;
         for work in [0, 1, exact_work - 1, exact_work] {
             let ((result, spent_work, metrics), _, paid, _, _) =
@@ -249,7 +256,10 @@ fn foreign_function_refuses_before_new_cursor_dispatch_and_keeps_all_six_fields(
                         let error = held.insert(&foreign, key, &mut budget).unwrap_err();
                         assert!(budget.refusal_spent);
                         assert_eq!((budget.remaining, budget.skeleton_remaining), (0, 0));
-                        assert_eq!(budget.skeleton_spent, spent, "poisoning is not a new work debit");
+                        assert_eq!(
+                            budget.skeleton_spent, spent,
+                            "poisoning is not a new work debit"
+                        );
                         assert_eq!(crate::bounded_output::active_remaining(), bytes);
                         let retry = budget.reserve_bytes(&function, 0, phase).unwrap_err();
                         assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
@@ -266,7 +276,10 @@ fn foreign_function_refuses_before_new_cursor_dispatch_and_keeps_all_six_fields(
                         let error = held.insert(&foreign, key, &mut budget).unwrap_err();
                         assert!(budget.refusal_spent);
                         assert_eq!((budget.remaining, budget.skeleton_remaining), (0, 0));
-                        assert_eq!(budget.skeleton_spent, spent, "poisoning is not a new work debit");
+                        assert_eq!(
+                            budget.skeleton_spent, spent,
+                            "poisoning is not a new work debit"
+                        );
                         assert_eq!(crate::bounded_output::active_remaining(), bytes);
                         let retry = budget.reserve_bytes(&function, 0, phase).unwrap_err();
                         assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
@@ -288,37 +301,69 @@ fn foreign_function_refuses_before_new_cursor_dispatch_and_keeps_all_six_fields(
     assert_eq!(signatures[0], signatures[1]);
 }
 
-
 // First Diagnostic oracle from the unchanged real reservation primitive at the
 // actually observed cumulative prefix. It never calls the new cursor/query.
-fn primitive_first(function: &ResolvedFunction, prefix: usize, requested: usize,
-    total_limit: usize, floor: usize) -> Failure {
+fn primitive_first(
+    function: &ResolvedFunction,
+    prefix: usize,
+    requested: usize,
+    total_limit: usize,
+    floor: usize,
+) -> Failure {
     let ((saved, metrics), refused, paid, first) = with_limit_usage_refusal(total_limit, || {
         assert!(crate::bounded_output::set_active_floor(floor));
         measure(|| {
             let mut budget = ReplayBudget::new();
             budget.prepare_builder(function).unwrap();
             let bootstrap = total_limit - crate::bounded_output::active_remaining().unwrap();
-            budget.reserve_bytes(function, prefix.checked_sub(bootstrap).unwrap(),
-                "independent actual status cursor prefix").unwrap();
-            assert_eq!(total_limit - crate::bounded_output::active_remaining().unwrap(), prefix);
-            let error = budget.reserve_bytes(function, requested, "status cursor real receipt").unwrap_err();
+            budget
+                .reserve_bytes(
+                    function,
+                    prefix.checked_sub(bootstrap).unwrap(),
+                    "independent actual status cursor prefix",
+                )
+                .unwrap();
+            assert_eq!(
+                total_limit - crate::bounded_output::active_remaining().unwrap(),
+                prefix
+            );
+            let error = budget
+                .reserve_bytes(function, requested, "status cursor real receipt")
+                .unwrap_err();
             let saved = failure(&error);
             crate::bounded_output::clear_active_floor();
-            drop(budget); drop(error); saved
+            drop(budget);
+            drop(error);
+            saved
         })
     });
-    assert!(refused); balanced(&metrics, paid);
+    assert!(refused);
+    balanced(&metrics, paid);
     let first = first.unwrap();
-    assert_eq!((first.requested, first.remaining, first.floor), (requested, total_limit - prefix, floor));
+    assert_eq!(
+        (first.requested, first.remaining, first.floor),
+        (requested, total_limit - prefix, floor)
+    );
     saved
 }
 fn actual_bank_line(needle: &str) -> u32 {
     let source = include_str!("../status_prefix.rs");
     let lines = source.lines().collect::<Vec<_>>();
-    let matches = lines.iter().enumerate().filter(|(_,line)| line.contains(needle)).map(|(n,_)|n).collect::<Vec<_>>();
-    assert_eq!(matches.len(), 1, "one real shipping caller bank for {needle}");
-    let call = lines[..=matches[0]].iter().rposition(|line| line.contains("budget.reserve_bytes(" )).unwrap();
+    let matches = lines
+        .iter()
+        .enumerate()
+        .filter(|(_, line)| line.contains(needle))
+        .map(|(n, _)| n)
+        .collect::<Vec<_>>();
+    assert_eq!(
+        matches.len(),
+        1,
+        "one real shipping caller bank for {needle}"
+    );
+    let call = lines[..=matches[0]]
+        .iter()
+        .rposition(|line| line.contains("budget.reserve_bytes("))
+        .unwrap();
     u32::try_from(call + 1).unwrap()
 }
 fn qualify_actual_moved_caller_banks(function: &ResolvedFunction) {
@@ -332,37 +377,79 @@ fn qualify_actual_moved_caller_banks(function: &ResolvedFunction) {
     for _ in 0..100_000 {
         let ((result, _, metrics), refused, paid, first, site) =
             observe(function, false, limit, 0, MAX_REPLAY_WORK_UNITS);
-        assert!(result.is_err() && refused); balanced(&metrics, paid);
+        assert!(result.is_err() && refused);
+        balanced(&metrics, paid);
         let first = first.unwrap();
         assert!(first.requested > first.remaining);
-        if let Some((path,line)) = site {
+        if let Some((path, line)) = site {
             if path.ends_with("expression_facts/receiving/directory/status_prefix.rs")
                 && (line == allocation || line == insertion)
-                && !found.iter().any(|(seen, prefix, _)| *seen == line && *prefix == paid) {
-                assert!(first.requested > 0, "positive actual production request at the exact typed-bank caller");
+                && !found
+                    .iter()
+                    .any(|(seen, prefix, _)| *seen == line && *prefix == paid)
+            {
+                assert!(
+                    first.requested > 0,
+                    "positive actual production request at the exact typed-bank caller"
+                );
                 found.push((line, paid, first.requested));
             }
         }
-        if found.iter().any(|(line,_,_)| *line == allocation)
-            && found.iter().filter(|(line,_,_)| *line == insertion).count() >= 2 { break; }
+        if found.iter().any(|(line, _, _)| *line == allocation)
+            && found
+                .iter()
+                .filter(|(line, _, _)| *line == insertion)
+                .count()
+                >= 2
+        {
+            break;
+        }
         let next = paid.checked_add(first.requested).unwrap();
-        assert!(next > limit, "complete-receiver first-refusal staircase advances"); limit = next;
+        assert!(
+            next > limit,
+            "complete-receiver first-refusal staircase advances"
+        );
+        limit = next;
     }
-    assert!(found.iter().any(|(line,_,_)| *line == allocation), "real ALLOCATE caller must be reached");
-    assert!(found.iter().filter(|(line,_,_)| *line == insertion).count() >= 2, "both empty/nonempty real INSERT calls must be reached");
-    for (line,prefix,requested) in found {
+    assert!(
+        found.iter().any(|(line, _, _)| *line == allocation),
+        "real ALLOCATE caller must be reached"
+    );
+    assert!(
+        found
+            .iter()
+            .filter(|(line, _, _)| *line == insertion)
+            .count()
+            >= 2,
+        "both empty/nonempty real INSERT calls must be reached"
+    );
+    for (line, prefix, requested) in found {
         let end = prefix.checked_add(requested).unwrap();
-        let ((exact, _, metrics), _, paid, _, _) = observe(function, false, end, 0, MAX_REPLAY_WORK_UNITS);
-        assert!(paid >= end, "exact actual caller bank admitted before later failure"); balanced(&metrics, paid); drop(exact);
-        for (total,floor) in [(prefix,0), (end-1,0), (end,1)] {
+        let ((exact, _, metrics), _, paid, _, _) =
+            observe(function, false, end, 0, MAX_REPLAY_WORK_UNITS);
+        assert!(
+            paid >= end,
+            "exact actual caller bank admitted before later failure"
+        );
+        balanced(&metrics, paid);
+        drop(exact);
+        for (total, floor) in [(prefix, 0), (end - 1, 0), (end, 1)] {
             let ((result, _, metrics), refused, paid, first, site) =
                 observe(function, false, total - floor, floor, MAX_REPLAY_WORK_UNITS);
-            assert!(refused); assert_eq!(paid, prefix); balanced(&metrics, paid);
-            assert_eq!(site.map(|(_,actual)|actual), Some(line));
+            assert!(refused);
+            assert_eq!(paid, prefix);
+            balanced(&metrics, paid);
+            assert_eq!(site.map(|(_, actual)| actual), Some(line));
             let first = first.unwrap();
-            assert_eq!((first.requested,first.remaining,first.floor), (requested,total-prefix,floor));
-            assert_eq!(result.unwrap_err(), primitive_first(function,prefix,requested,total,floor),
-                "all six first Diagnostic fields from unchanged primitive at this real caller");
+            assert_eq!(
+                (first.requested, first.remaining, first.floor),
+                (requested, total - prefix, floor)
+            );
+            assert_eq!(
+                result.unwrap_err(),
+                primitive_first(function, prefix, requested, total, floor),
+                "all six first Diagnostic fields from unchanged primitive at this real caller"
+            );
         }
     }
 }

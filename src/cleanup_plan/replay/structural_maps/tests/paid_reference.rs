@@ -1,13 +1,13 @@
 //! Complete old reference validator against closed paid refusal data.
 use super::{program, validate_reference_coverage};
-use crate::cleanup_plan::ExitContinuation;
 use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
 use crate::cleanup_plan::replay::selected_context::child::{
     ArrayReceiving, Deferred, NodeReceiving, Permit,
 };
 use crate::cleanup_plan::replay::{
-    ReplayBudget, expression_facts, selected_context, semantic_refusal,
+    expression_facts, selected_context, semantic_refusal, ReplayBudget,
 };
+use crate::cleanup_plan::ExitContinuation;
 use crate::diagnostic::Diagnostic;
 use crate::hir::ResolvedFunction;
 use crate::test_allocation_observer::measure;

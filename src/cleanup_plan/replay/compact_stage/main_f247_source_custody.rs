@@ -84,7 +84,9 @@ const FILES: [(&str, &str, &str, &str); 7] = [
 
 fn packet() -> &'static str {
     static PACKET: std::sync::OnceLock<String> = std::sync::OnceLock::new();
-    PACKET.get_or_init(|| f247_read("docs/evidence/compact-staged-observations-v1/inverse.json")).as_str()
+    PACKET
+        .get_or_init(|| f247_read("docs/evidence/compact-staged-observations-v1/inverse.json"))
+        .as_str()
 }
 fn digest(text: &str) -> String {
     format!(
@@ -115,7 +117,8 @@ fn invert(record: &serde_json::Value, current: &str) -> String {
 }
 pub(in crate::cleanup_plan::replay) fn before_root(current: &str) -> String {
     let authenticated = crate::source_reflows_merge::main_c883_inputs::f247_expected(
-        "src/cleanup_plan/replay.rs", current,
+        "src/cleanup_plan/replay.rs",
+        current,
     );
     let current = authenticated.as_str();
     let records: serde_json::Value = serde_json::from_str(packet()).unwrap();
@@ -153,7 +156,9 @@ fn all_seven_live_receivers_reconstruct_every_predecessor_byte() {
 #[test]
 fn original_enumerator_enum_header_traits_and_lexical_helper_stay_complete() {
     authenticate_compiled_inputs();
-    let pieces: serde_json::Value = serde_json::from_str(&f247_read("docs/evidence/compact-staged-observations-v1/original-pieces.json"))
+    let pieces: serde_json::Value = serde_json::from_str(&f247_read(
+        "docs/evidence/compact-staged-observations-v1/original-pieces.json",
+    ))
     .unwrap();
     assert_eq!(pieces.as_array().unwrap().len(), 7);
     for (index, piece) in pieces.as_array().unwrap().iter().enumerate() {
@@ -182,22 +187,51 @@ fn original_enumerator_enum_header_traits_and_lexical_helper_stay_complete() {
 fn f247_read(path: &str) -> String {
     crate::source_reflows_merge::main_c883_inputs::read_f247(
         std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path),
-    ).unwrap()
+    )
+    .unwrap()
 }
 fn authenticate_compiled_inputs() {
-    assert_eq!(f247_read("src/cleanup_plan/replay.rs"), source!("src/cleanup_plan/replay.rs"));
-    assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay.rs.before.txt"));
-    assert_eq!(f247_read("src/cleanup_plan/replay/branch_clone/tests.rs"), source!("src/cleanup_plan/replay/branch_clone/tests.rs"));
+    assert_eq!(
+        f247_read("src/cleanup_plan/replay.rs"),
+        source!("src/cleanup_plan/replay.rs")
+    );
+    assert_eq!(
+        f247_read(
+            "docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay.rs.before.txt"
+        ),
+        source!(
+            "docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay.rs.before.txt"
+        )
+    );
+    assert_eq!(
+        f247_read("src/cleanup_plan/replay/branch_clone/tests.rs"),
+        source!("src/cleanup_plan/replay/branch_clone/tests.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__branch_clone__tests.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__branch_clone__tests.rs.before.txt"));
-    assert_eq!(f247_read("src/cleanup_plan/replay/factored.rs"), source!("src/cleanup_plan/replay/factored.rs"));
+    assert_eq!(
+        f247_read("src/cleanup_plan/replay/factored.rs"),
+        source!("src/cleanup_plan/replay/factored.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored.rs.before.txt"));
-    assert_eq!(f247_read("src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"), source!("src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"));
+    assert_eq!(
+        f247_read("src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs"),
+        source!("src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored__borrowed_canonical__dictionary__keys.rs.before.txt"));
-    assert_eq!(f247_read("src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs"), source!("src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs"));
+    assert_eq!(
+        f247_read("src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs"),
+        source!("src/cleanup_plan/replay/factored/borrowed_canonical/tests.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored__borrowed_canonical__tests.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/src__cleanup_plan__replay__factored__borrowed_canonical__tests.rs.before.txt"));
-    assert_eq!(f247_read("tests/hir_module_boundaries.rs"), source!("tests/hir_module_boundaries.rs"));
+    assert_eq!(
+        f247_read("tests/hir_module_boundaries.rs"),
+        source!("tests/hir_module_boundaries.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/tests__hir_module_boundaries.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/tests__hir_module_boundaries.rs.before.txt"));
-    assert_eq!(f247_read("tests/workspace/semantic_graph/source_inventory.rs"), source!("tests/workspace/semantic_graph/source_inventory.rs"));
+    assert_eq!(
+        f247_read("tests/workspace/semantic_graph/source_inventory.rs"),
+        source!("tests/workspace/semantic_graph/source_inventory.rs")
+    );
     assert_eq!(f247_read("docs/evidence/compact-staged-observations-v1/tests__workspace__semantic_graph__source_inventory.rs.before.txt"), source!("docs/evidence/compact-staged-observations-v1/tests__workspace__semantic_graph__source_inventory.rs.before.txt"));
     assert_eq!(f247_read("src/cleanup_plan/replay/compact_stage/before.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/future831-f247-final-source-binding-20261017/incoming/4d10cbe619d26918551f006a29055551fbd0e1020387ac881848aa8d6f9719f6.txt")));
     assert_eq!(f247_read("src/cleanup_plan/replay/compact_stage/lexical_before.rs"), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/future831-f247-final-source-binding-20261017/incoming/ce639daa60fcb96e43d19d48d9c9f0e5e8eb22b34488604c48e12e55056bd889.txt")));

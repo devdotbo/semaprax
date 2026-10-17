@@ -86,7 +86,9 @@ pub(in crate::workspace_graph) fn uncached_output_layout_with_registry(
         )?;
         #[cfg(test)]
         observation.step(
-            path, *index, earlier,
+            path,
+            *index,
+            earlier,
             (retained_before, full_costs[*index], retained_costs[*index]),
             (peak, retained),
         );

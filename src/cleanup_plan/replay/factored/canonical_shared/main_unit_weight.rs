@@ -497,5 +497,4 @@ impl Automaton {
         self.movement(function, budget, node, Label::End(terminal), sink)?;
         Ok(node)
     }
-
 }

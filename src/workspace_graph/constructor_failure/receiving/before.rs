@@ -1,14 +1,12 @@
 //! Complete original core constructor, independently compiled; body unchanged.
 use crate::bounded_output::staged;
 use crate::workspace_graph::{
-    AuthoredDeclaration, ResolvedCore, ResolvedModuleInput, WorkspaceSource,
-    charge_builder_prebound, checked_retention, collect_expected_edges,
-    constructor_failure, expected_projection, graph_error, identity_resolution, loan_retention,
-    owned_generics,
+    charge_builder_prebound, checked_retention, collect_expected_edges, constructor_failure,
+    expected_projection, graph_error, identity_resolution, loan_retention, owned_generics,
     reserve_builder_structure, reserve_workspace_module_carrier, resolved_loan_bytes,
     retain_workspace_module, retained_validation, static_text,
-    validate_retained_declaration_shapes,
-    verify_resolved_call_edges,
+    validate_retained_declaration_shapes, verify_resolved_call_edges, AuthoredDeclaration,
+    ResolvedCore, ResolvedModuleInput, WorkspaceSource,
 };
 use crate::{ast::Program, diagnostic::Diagnostic, hir};
 use std::cell::Cell;
@@ -170,7 +168,8 @@ pub(in crate::workspace_graph) fn build_resolved_core_current(
             // until this legacy outer adapter.
             let (resolved, function_costs, reused_functions, static_text) =
                 identity_resolution::resolve_module_with_core(
-                    &mut core_proofs,frontend.as_deref(),
+                    &mut core_proofs,
+                    frontend.as_deref(),
                     &program.path,
                     &synthetic,
                     private,
@@ -360,5 +359,7 @@ pub(in crate::workspace_graph) fn build_resolved_core_current(
     ))
 }
 
-use crate::workspace_graph::validation::before_roots::{WorkspaceValidationIndex, validate_stub_signatures_authored};
 use crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;
+use crate::workspace_graph::validation::before_roots::{
+    validate_stub_signatures_authored, WorkspaceValidationIndex,
+};

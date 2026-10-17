@@ -42,4 +42,3 @@ fn reserve_node<T, E>(
         "incoming ownership state node",
     )
 }
-

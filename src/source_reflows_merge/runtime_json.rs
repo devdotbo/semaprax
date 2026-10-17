@@ -172,19 +172,23 @@ fn maina3_part_source(payload: &str, source: &str) {
 // Full incoming arrays use the same sealed reader; metadata never authorizes live work.
 pub(super) fn main44_metadata(fixture: super::main44_custody::Fixture) -> String {
     let spec = fixture.spec();
-    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect("complete authenticated Main44 metadata")
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated Main44 metadata")
 }
 pub(super) fn main44_input() -> String {
     let spec = super::main44_custody::input_spec();
-    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect("complete authenticated Main44 source domain")
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated Main44 source domain")
 }
 
 // Independent fixed Main043 descriptors through the original sealed bounded reader.
 pub(super) fn main043_metadata(fixture: super::main043_custody::Fixture) -> String {
     let spec = fixture.spec();
-    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect("complete authenticated Main043 metadata")
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated Main043 metadata")
 }
 pub(super) fn main043_input() -> String {
     let spec = super::main043_custody::input_spec();
-    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect("complete authenticated Main043 helper input")
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated Main043 helper input")
 }

@@ -1,9 +1,12 @@
 #[test]
 fn complete_before_edge_receiver_and_current_full_source_remain_exact() {
     use sha2::{Digest, Sha256};
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/referenced-edge-ownership-proof/retained.rs.before.txt"));
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::Edge))
-    .unwrap();
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/referenced-edge-ownership-proof/retained.rs.before.txt"
+    ));
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Edge)).unwrap();
     let fixed = [
         ("tests/hir_module_boundaries.rs", "5be1edee738ee12b426939fbfbc09635229d4c7a3da4f45d3c1074254e0eb0e2"),
         ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs", "844628e0b1a3f3dafd563a7a9ef3396f513e664dc63e7d70237912736d6558ea"),
@@ -44,7 +47,13 @@ fn complete_before_edge_receiver_and_current_full_source_remain_exact() {
         }
         assert_eq!(source, *archive);
     }
-    let current_tests = super::historical_ci_extra("src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs")));
+    let current_tests = super::historical_ci_extra(
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/expression_facts/receiving/retained/edge_tests.rs"
+        )),
+    );
     let copied = current_tests
         .split_once("\n// BEGIN COMPLETE PAID EDGE COMPARISON BRIDGE\n")
         .unwrap()
@@ -80,7 +89,13 @@ fn complete_before_edge_receiver_and_current_full_source_remain_exact() {
         restored = restored.replace(after, before);
     }
     assert_eq!(substitutions, 11);
-    let full_before = super::historical_ci_extra("src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs")));
+    let full_before = super::historical_ci_extra(
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/expression_facts/receiving/retained/edge_before.rs"
+        )),
+    );
     let full_before = &full_before[full_before.find("// The retained key proof").unwrap()..];
     assert_eq!(restored, full_before);
     let start = old

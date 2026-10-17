@@ -159,7 +159,10 @@ pub(super) const TAKE_CALL_CONTROLS: usize = TAKE_BYTES
     + 14 * size_of::<bool>() // lazy eligibility5+aggregate, capacity5, loop, matches, caller condition
     + size_of::<&mut Vec<std::rc::Rc<SkeletonObservation>>>(); // take receiver
 
-#[allow(dead_code, reason = "complete independently retained pre-fusion TAKE predicate")]
+#[allow(
+    dead_code,
+    reason = "complete independently retained pre-fusion TAKE predicate"
+)]
 pub(super) fn can_take(input: TakeCandidate<'_>) -> bool {
     #[cfg(test)]
     if tests::original_selected() {

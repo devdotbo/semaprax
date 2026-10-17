@@ -1,8 +1,8 @@
 #[test]
 fn complete_original_arena_and_every_added_source_join_have_exact_full_inverses() {
     use sha2::{Digest, Sha256};
-    let records: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::Prefix))
-    .unwrap();
+    let records: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Prefix)).unwrap();
     let sources = [
         (include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/arena.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/arena.rs.before.txt")), "94e056acbccb322afa35d42ba81af4672725b036bb4cf730c9495a8bbbb44d17"),
         (include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/tests/hir_module_boundaries.rs")), include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/prefix-certified-expression-lookup/hir_module_boundaries.rs.before.txt")), "57db1e409226dc2ddf5c9519071ad69822e646d6f71d11cfd16e88d51ad8c4fc"),

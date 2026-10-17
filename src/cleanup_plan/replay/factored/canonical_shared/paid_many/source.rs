@@ -28,15 +28,57 @@ fn restore(frozen: &str, row: &serde_json::Value) -> String {
 }
 // Only historical source expressions receive the distinct frozen views.
 macro_rules! include_str {
-    ("../before_paid_many.rs") => { &paid_view(&paid_rows(), "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs", ::std::include_str!("../before_paid_many.rs")) };
-    ("../../canonical_shared.rs") => { &paid_view(&paid_rows(), "src/cleanup_plan/replay/factored/canonical_shared.rs", ::std::include_str!("../../canonical_shared.rs")) };
-    ("../../../factored.rs") => { &whole_source_value("src/cleanup_plan/replay/factored.rs", 44197, "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6", ::std::include_str!("../../../factored.rs")) };
-    ("../terminal_leaf.rs") => { &whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs", 7251, "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275", ::std::include_str!("../terminal_leaf.rs")) };
-    ("../before_paid_many/compare.rs") => { &crate::source_reflows_merge::main_e177_final_inputs::combined_side_value("src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs", "whole6ef", ::std::include_str!("../before_paid_many/compare.rs")) };
-    ($path:literal) => { ::std::include_str!($path) };
+    ("../before_paid_many.rs") => {
+        &paid_view(
+            &paid_rows(),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+            ::std::include_str!("../before_paid_many.rs"),
+        )
+    };
+    ("../../canonical_shared.rs") => {
+        &paid_view(
+            &paid_rows(),
+            "src/cleanup_plan/replay/factored/canonical_shared.rs",
+            ::std::include_str!("../../canonical_shared.rs"),
+        )
+    };
+    ("../../../factored.rs") => {
+        &whole_source_value(
+            "src/cleanup_plan/replay/factored.rs",
+            44197,
+            "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6",
+            ::std::include_str!("../../../factored.rs"),
+        )
+    };
+    ("../terminal_leaf.rs") => {
+        &whole_source_value(
+            "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+            7251,
+            "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275",
+            ::std::include_str!("../terminal_leaf.rs"),
+        )
+    };
+    ("../before_paid_many/compare.rs") => {
+        &crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+            "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/compare.rs",
+            "whole6ef",
+            ::std::include_str!("../before_paid_many/compare.rs"),
+        )
+    };
+    ($path:literal) => {
+        ::std::include_str!($path)
+    };
 }
 macro_rules! include_bytes {
-    ("../terminal_leaf.rs") => { whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs", 7251, "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275", ::std::include_str!("../terminal_leaf.rs")).as_bytes() };
+    ("../terminal_leaf.rs") => {
+        whole_source_value(
+            "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+            7251,
+            "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275",
+            ::std::include_str!("../terminal_leaf.rs"),
+        )
+        .as_bytes()
+    };
 }
 
 #[test]
@@ -111,8 +153,10 @@ fn composed_production_prepays_both_real_promotion_search_and_finish_receivers()
     // Keep this complete original6ef production-source contract unchanged.
     // The additive current owner below separately checks all live root/macro/frame paths.
     let current = &crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
-        "src/cleanup_plan/replay/factored/canonical_shared.rs", "whole6ef",
-        ::std::include_str!("../../canonical_shared.rs"));
+        "src/cleanup_plan/replay/factored/canonical_shared.rs",
+        "whole6ef",
+        ::std::include_str!("../../canonical_shared.rs"),
+    );
     for (phase, receiver, call) in [
         (
             "factored composed promotion receivers",
@@ -168,14 +212,24 @@ fn composed_production_prepays_both_real_promotion_search_and_finish_receivers()
 mod paid_reader;
 const PAID_PREFIX: &str = "docs/evidence/c874-supplement-custody-domains-20261017";
 fn paid_rows() -> serde_json::Value {
-    let path = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(PAID_PREFIX).join("paid-inputs.json");
+    let path = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+        .join(PAID_PREFIX)
+        .join("paid-inputs.json");
     let value = paid_reader::read(&path, PAID_INPUT_LENGTH, PAID_INPUT_SHA, 2_097_152).unwrap();
     let rows: serde_json::Value = serde_json::from_str(&value).unwrap();
     assert_eq!(rows.as_array().unwrap().len(), 7);
     rows
 }
 fn paid_archive(row: &serde_json::Value) -> String {
-    paid_reader::read(&::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(PAID_PREFIX).join(row["archive"].as_str().unwrap()), usize::try_from(row["length"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap(), 2_097_152).unwrap()
+    paid_reader::read(
+        &::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join(PAID_PREFIX)
+            .join(row["archive"].as_str().unwrap()),
+        usize::try_from(row["length"].as_u64().unwrap()).unwrap(),
+        row["sha256"].as_str().unwrap(),
+        2_097_152,
+    )
+    .unwrap()
 }
 fn paid_view(rows: &serde_json::Value, path: &str, current: &str) -> String {
     assert_eq!(rows, &paid_rows(), "whole sealed paid-many source domain");
@@ -183,9 +237,23 @@ fn paid_view(rows: &serde_json::Value, path: &str, current: &str) -> String {
     assert_eq!(rows.iter().filter(|r| r["path"] == path).count(), 1);
     let row = rows.iter().find(|r| r["path"] == path).unwrap();
     let field = &row["current"];
-    let raw = whole_source_file(&::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path), usize::try_from(field["length"].as_u64().unwrap()).unwrap(), field["sha256"].as_str().unwrap()).unwrap();
-    let current = whole_source_value(path, usize::try_from(field["length"].as_u64().unwrap()).unwrap(), field["sha256"].as_str().unwrap(), current);
-    assert_eq!(raw, paid_archive(field), "complete independently archived current source");
+    let raw = whole_source_file(
+        &::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path),
+        usize::try_from(field["length"].as_u64().unwrap()).unwrap(),
+        field["sha256"].as_str().unwrap(),
+    )
+    .unwrap();
+    let current = whole_source_value(
+        path,
+        usize::try_from(field["length"].as_u64().unwrap()).unwrap(),
+        field["sha256"].as_str().unwrap(),
+        current,
+    );
+    assert_eq!(
+        raw,
+        paid_archive(field),
+        "complete independently archived current source"
+    );
     assert_eq!(current, raw, "complete actual paid-many source input");
     paid_archive(&row["view"])
 }
@@ -195,9 +263,23 @@ mod historical_std {
         pub fn read(path: impl AsRef<::std::path::Path>) -> ::std::io::Result<Vec<u8>> {
             let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
             let path = path.as_ref();
-            let logical = path.strip_prefix(root).ok().and_then(|p| p.to_str()).ok_or_else(|| ::std::io::Error::new(::std::io::ErrorKind::InvalidInput, "foreign paid-many source root"))?;
+            let logical = path
+                .strip_prefix(root)
+                .ok()
+                .and_then(|p| p.to_str())
+                .ok_or_else(|| {
+                    ::std::io::Error::new(
+                        ::std::io::ErrorKind::InvalidInput,
+                        "foreign paid-many source root",
+                    )
+                })?;
             let rows = super::super::paid_rows();
-            if let Some(row) = rows.as_array().unwrap().iter().find(|r| r["path"] == logical) {
+            if let Some(row) = rows
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["path"] == logical)
+            {
                 let raw = super::super::paid_archive(&row["current"]);
                 return Ok(super::super::paid_view(&rows, logical, &raw).into_bytes());
             }
@@ -209,8 +291,27 @@ mod historical_std {
             let recipe: serde_json::Value = serde_json::from_str(super::super::RECIPE).unwrap();
             let helpers = recipe["helpers"].as_array().unwrap();
             assert_eq!(helpers.len(), 115);
-            let row = helpers.iter().find(|r| r["path"] == logical).ok_or_else(|| ::std::io::Error::new(::std::io::ErrorKind::InvalidInput, "unknown paid-many helper"))?;
-            Ok(super::super::whole_source_file(path, usize::try_from(row["length"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap()).map_err(|_| ::std::io::Error::new(::std::io::ErrorKind::InvalidData,"whole unchanged paid-many helper"))?.into_bytes())
+            let row = helpers
+                .iter()
+                .find(|r| r["path"] == logical)
+                .ok_or_else(|| {
+                    ::std::io::Error::new(
+                        ::std::io::ErrorKind::InvalidInput,
+                        "unknown paid-many helper",
+                    )
+                })?;
+            Ok(super::super::whole_source_file(
+                path,
+                usize::try_from(row["length"].as_u64().unwrap()).unwrap(),
+                row["sha256"].as_str().unwrap(),
+            )
+            .map_err(|_| {
+                ::std::io::Error::new(
+                    ::std::io::ErrorKind::InvalidData,
+                    "whole unchanged paid-many helper",
+                )
+            })?
+            .into_bytes())
         }
     }
 }
@@ -225,10 +326,17 @@ fn complete_paid_many_source_domains_keep_all_original_inputs_and_raw_production
         let old = paid_archive(&row["view"]);
         assert_ne!(raw, old);
         assert_eq!(paid_view(&rows, path, &raw), old);
-        for bad in [String::new(), raw[..raw.len()-1].to_owned(), format!("{raw} "), format!("{raw}{raw}"), old] {
+        for bad in [
+            String::new(),
+            raw[..raw.len() - 1].to_owned(),
+            format!("{raw} "),
+            format!("{raw}{raw}"),
+            old,
+        ] {
             assert!(::std::panic::catch_unwind(|| paid_view(&rows, path, &bad)).is_err());
         }
-        let mut forged = rows.clone(); forged[0]["view"]["sha256"] = serde_json::Value::String("0".repeat(64));
+        let mut forged = rows.clone();
+        forged[0]["view"]["sha256"] = serde_json::Value::String("0".repeat(64));
         assert!(::std::panic::catch_unwind(|| paid_view(&forged, path, &raw)).is_err());
     }
     let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -242,9 +350,15 @@ const PAID_INPUT_SHA: &str = "fe4db433f6d05980bebe5b341c06d671b01de72eb3a946e6cb
 // Metadata row ordering only; canonical runtime cleanup vectors are untouched.
 fn ordered_recipe_input(current: &str) -> String {
     assert_eq!(RECIPE.len(), 25837);
-    assert_eq!(digest(RECIPE.as_bytes()), "9f419bb0fce12834a91ef948d90ea9be6655748efee773ae06cbee896f80272c");
+    assert_eq!(
+        digest(RECIPE.as_bytes()),
+        "9f419bb0fce12834a91ef948d90ea9be6655748efee773ae06cbee896f80272c"
+    );
     assert_eq!(current.len(), 25837);
-    assert_eq!(digest(current.as_bytes()), "53c5f765b4a94b70ba774096ea8e2619a464d8846b707ab29847f19a937f56eb");
+    assert_eq!(
+        digest(current.as_bytes()),
+        "53c5f765b4a94b70ba774096ea8e2619a464d8846b707ab29847f19a937f56eb"
+    );
     let old: serde_json::Value = serde_json::from_str(RECIPE).unwrap();
     let candidate: serde_json::Value = serde_json::from_str(current).unwrap();
     let before = old["helpers"].as_array().unwrap();
@@ -266,9 +380,16 @@ fn ordered_recipe_input(current: &str) -> String {
     current.to_owned()
 }
 fn ordered_recipe() -> String {
-    let path = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
-        .join("docs/evidence/source-custody-452-paid-recipe-order-20261017/recipe.ordered.json.txt");
-    let text = paid_reader::read(&path, 25837, "53c5f765b4a94b70ba774096ea8e2619a464d8846b707ab29847f19a937f56eb", 65_536).unwrap();
+    let path = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
+        "docs/evidence/source-custody-452-paid-recipe-order-20261017/recipe.ordered.json.txt",
+    );
+    let text = paid_reader::read(
+        &path,
+        25837,
+        "53c5f765b4a94b70ba774096ea8e2619a464d8846b707ab29847f19a937f56eb",
+        65_536,
+    )
+    .unwrap();
     ordered_recipe_input(&text)
 }
 #[test]
@@ -276,15 +397,26 @@ fn ordered_recipe_keeps_all115_original_rows_fields_and_refuses_old_or_forged_or
     let current = ordered_recipe();
     assert_ne!(current, RECIPE);
     let value: serde_json::Value = serde_json::from_str(&current).unwrap();
-    for bad in [String::new(), current[..current.len()-1].to_owned(), format!("{current} "), RECIPE.to_owned()] {
+    for bad in [
+        String::new(),
+        current[..current.len() - 1].to_owned(),
+        format!("{current} "),
+        RECIPE.to_owned(),
+    ] {
         assert!(::std::panic::catch_unwind(|| ordered_recipe_input(&bad)).is_err());
     }
     for kind in 0..3 {
         let mut wrong = value.clone();
         let rows = wrong["helpers"].as_array_mut().unwrap();
-        if kind == 0 { rows.swap(0, 1); }
-        if kind == 1 { rows[1] = rows[0].clone(); }
-        if kind == 2 { rows[0]["path"] = serde_json::Value::String("src/foreign.rs".to_owned()); }
+        if kind == 0 {
+            rows.swap(0, 1);
+        }
+        if kind == 1 {
+            rows[1] = rows[0].clone();
+        }
+        if kind == 2 {
+            rows[0]["path"] = serde_json::Value::String("src/foreign.rs".to_owned());
+        }
         assert!(::std::panic::catch_unwind(|| ordered_recipe_input(&wrong.to_string())).is_err());
     }
 }
@@ -292,34 +424,80 @@ fn ordered_recipe_keeps_all115_original_rows_fields_and_refuses_old_or_forged_or
 fn later_arena_helper(path: &::std::path::Path) -> ::std::io::Result<String> {
     let expected = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs");
-    if path != expected { return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidInput, "foreign arena helper path")); }
+    if path != expected {
+        return Err(::std::io::Error::new(
+            ::std::io::ErrorKind::InvalidInput,
+            "foreign arena helper path",
+        ));
+    }
     let directory = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("docs/evidence/source-custody-452-paid-recipe-order-20261017");
-    let read = |path: &::std::path::Path, length, sha| whole_source_file(path, length, sha)
-        .map_err(|_| ::std::io::Error::new(::std::io::ErrorKind::InvalidData, "whole original arena helper input"));
-    let current = read(path, 56925, "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27")?;
-    assert_eq!(current, read(&directory.join("arena.current.txt"), 56925, "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27")?);
-    read(&directory.join("arena.prior.txt"), 19645, "891edcee186f1c7b3fb59bf7d2adf2443c9d230343569865d941b90410b04dd8")
+    let read = |path: &::std::path::Path, length, sha| {
+        whole_source_file(path, length, sha).map_err(|_| {
+            ::std::io::Error::new(
+                ::std::io::ErrorKind::InvalidData,
+                "whole original arena helper input",
+            )
+        })
+    };
+    let current = read(
+        path,
+        56925,
+        "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27",
+    )?;
+    assert_eq!(
+        current,
+        read(
+            &directory.join("arena.current.txt"),
+            56925,
+            "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27"
+        )?
+    );
+    read(
+        &directory.join("arena.prior.txt"),
+        19645,
+        "891edcee186f1c7b3fb59bf7d2adf2443c9d230343569865d941b90410b04dd8",
+    )
 }
 
 // Named historical acquisitions only. Frozen7/115 tables still choose exact
 // subjects/lengths/digests; the original bounded reader remains the fallback.
-fn whole_source_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, paid_reader::Failure> {
-    if length > 2_097_152 { return Err(paid_reader::Failure::Bound); }
-    if let Some(previous) = crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected) {
+fn whole_source_file(
+    path: &::std::path::Path,
+    length: usize,
+    expected: &str,
+) -> Result<String, paid_reader::Failure> {
+    if length > 2_097_152 {
+        return Err(paid_reader::Failure::Bound);
+    }
+    if let Some(previous) =
+        crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected)
+    {
         return Ok(previous);
     }
-    if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected) {
+    if let Some(previous) =
+        crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected)
+    {
         return Ok(previous);
     }
     paid_reader::read(path, length, expected, 2_097_152)
 }
-pub(super) fn whole_source_value(source: &str, length: usize, expected: &str, supplied: &str) -> String {
+pub(super) fn whole_source_value(
+    source: &str,
+    length: usize,
+    expected: &str,
+    supplied: &str,
+) -> String {
     let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let actual = whole_source_file(&root.join(source), length, expected).unwrap();
-    let supplied = crate::source_reflows_merge::main_e177_final_inputs::value(source, expected, supplied);
-    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(source, expected, &supplied);
-    assert_eq!(actual, supplied, "whole actual and compiled historical source stage");
+    let supplied =
+        crate::source_reflows_merge::main_e177_final_inputs::value(source, expected, supplied);
+    let supplied =
+        crate::source_reflows_merge::next_big_batch_inputs::value(source, expected, &supplied);
+    assert_eq!(
+        actual, supplied,
+        "whole actual and compiled historical source stage"
+    );
     assert_eq!(actual.len(), length);
     assert_eq!(digest(actual.as_bytes()), expected);
     actual
@@ -327,48 +505,116 @@ pub(super) fn whole_source_value(source: &str, length: usize, expected: &str, su
 
 #[test]
 fn live_root_and_lexical_macro_keep_all_actual_paid_many_payment_order_and_observer_guards() {
-    let root=::std::include_str!("../../canonical_shared.rs");
-    let lexical=::std::include_str!("../lexical_successors.rs");
-    let frame=::std::include_str!("../lexical_successors/frame_loop.rs");
-    let previous=crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
-        "src/cleanup_plan/replay/factored/canonical_shared.rs","whole6ef",root);
-    assert_ne!(previous,root,"genuine complete6ef control is independently retained");
-    for (phase,receiver,call) in [
-        ("factored composed promotion receivers","paid_many::PROMOTE_RECEIVING","paid_many::promote("),
-        ("factored composed flat add receivers","paid_many::ADD_RECEIVING","paid_many::add("),
-        ("factored composed flat finish receivers","paid_many::FINISH_RECEIVING","own_weighted(function, budget, flat)"),
+    let root = ::std::include_str!("../../canonical_shared.rs");
+    let lexical = ::std::include_str!("../lexical_successors.rs");
+    let frame = ::std::include_str!("../lexical_successors/frame_loop.rs");
+    let previous = crate::source_reflows_merge::main_e177_final_inputs::combined_side_value(
+        "src/cleanup_plan/replay/factored/canonical_shared.rs",
+        "whole6ef",
+        root,
+    );
+    assert_ne!(
+        previous, root,
+        "genuine complete6ef control is independently retained"
+    );
+    for (phase, receiver, call) in [
+        (
+            "factored composed promotion receivers",
+            "paid_many::PROMOTE_RECEIVING",
+            "paid_many::promote(",
+        ),
+        (
+            "factored composed flat add receivers",
+            "paid_many::ADD_RECEIVING",
+            "paid_many::add(",
+        ),
+        (
+            "factored composed flat finish receivers",
+            "paid_many::FINISH_RECEIVING",
+            "own_weighted(function, budget, flat)",
+        ),
     ] {
-        assert_eq!(root.matches(phase).count(),2);assert_eq!(root.matches(receiver).count(),2);
-        let mut offset=0;
+        assert_eq!(root.matches(phase).count(), 2);
+        assert_eq!(root.matches(receiver).count(), 2);
+        let mut offset = 0;
         for _ in 0..2 {
-            let at=root[offset..].find(receiver).unwrap()+offset;let end=root[at..].find(call).unwrap()+at;
-            assert!(root[at..end].contains(phase));assert!(root[at..end].contains("?;"));offset=end+call.len();
+            let at = root[offset..].find(receiver).unwrap() + offset;
+            let end = root[at..].find(call).unwrap() + at;
+            assert!(root[at..end].contains(phase));
+            assert!(root[at..end].contains("?;"));
+            offset = end + call.len();
         }
     }
-    for (branch,indent) in [("true","                                "),("false","                            ")] {
-        let observer=format!("#[cfg(test)]\n{indent}if budget.pays_allocations() {{\n{indent}    paid_many::note_branch({branch});\n{indent}}}");
-        assert_eq!(root.matches(&observer).count(),1,"every complete current fallback observer is payer gated");
-    }
-    for (phase,receiver,call) in [
-        ("factored one-pass distinct-target receivers","paid_many::PROMOTE_RECEIVING","paid_many::promote("),
-        ("factored one-pass flat-target receivers","paid_many::ADD_RECEIVING","paid_many::add("),
-        ("factored one-pass flat finish receivers","paid_many::FINISH_RECEIVING","own_weighted("),
+    for (branch, indent) in [
+        ("true", "                                "),
+        ("false", "                            "),
     ] {
-        assert_eq!(lexical.matches(phase).count(),1);assert_eq!(lexical.matches(receiver).count(),1);
-        let at=lexical.find(receiver).unwrap();let end=lexical[at..].find(call).unwrap()+at;
-        assert!(lexical[at..end].contains(phase));assert!(lexical[at..end].contains("));"));
-        let begin=lexical[..at].rfind("$attempt!($budget.reserve_bytes(").unwrap();
-        assert!(begin<at && lexical[begin..end].contains("$function"),"actual primitive admission precedes helper arguments");
+        let observer=format!("#[cfg(test)]\n{indent}if budget.pays_allocations() {{\n{indent}    paid_many::note_branch({branch});\n{indent}}}");
+        assert_eq!(
+            root.matches(&observer).count(),
+            1,
+            "every complete current fallback observer is payer gated"
+        );
     }
-    let repeated="let Some(sum) = total.checked_add(*$weight) else {";
-    assert_eq!(lexical.matches(repeated).count(),1);
-    let repeated_at=lexical.find(repeated).unwrap();let promote_at=lexical.find("paid_many::PROMOTE_RECEIVING").unwrap();
-    assert!(repeated_at<promote_at,"checked duplicate addition precedes every distinct-target admission");
-    assert!(lexical[repeated_at..promote_at].contains("$receiving.finish_overflow();\n                            return;"));
+    for (phase, receiver, call) in [
+        (
+            "factored one-pass distinct-target receivers",
+            "paid_many::PROMOTE_RECEIVING",
+            "paid_many::promote(",
+        ),
+        (
+            "factored one-pass flat-target receivers",
+            "paid_many::ADD_RECEIVING",
+            "paid_many::add(",
+        ),
+        (
+            "factored one-pass flat finish receivers",
+            "paid_many::FINISH_RECEIVING",
+            "own_weighted(",
+        ),
+    ] {
+        assert_eq!(lexical.matches(phase).count(), 1);
+        assert_eq!(lexical.matches(receiver).count(), 1);
+        let at = lexical.find(receiver).unwrap();
+        let end = lexical[at..].find(call).unwrap() + at;
+        assert!(lexical[at..end].contains(phase));
+        assert!(lexical[at..end].contains("));"));
+        let begin = lexical[..at]
+            .rfind("$attempt!($budget.reserve_bytes(")
+            .unwrap();
+        assert!(
+            begin < at && lexical[begin..end].contains("$function"),
+            "actual primitive admission precedes helper arguments"
+        );
+    }
+    let repeated = "let Some(sum) = total.checked_add(*$weight) else {";
+    assert_eq!(lexical.matches(repeated).count(), 1);
+    let repeated_at = lexical.find(repeated).unwrap();
+    let promote_at = lexical.find("paid_many::PROMOTE_RECEIVING").unwrap();
+    assert!(
+        repeated_at < promote_at,
+        "checked duplicate addition precedes every distinct-target admission"
+    );
+    assert!(lexical[repeated_at..promote_at]
+        .contains("$receiving.finish_overflow();\n                            return;"));
     assert!(lexical[repeated_at..promote_at].contains("*total = sum;"));
-    assert_eq!(lexical.matches("lexical_one_pass_successors!(").count(),2,"both live unit/general expansions audited");
+    assert_eq!(
+        lexical.matches("lexical_one_pass_successors!(").count(),
+        2,
+        "both live unit/general expansions audited"
+    );
     assert_eq!(lexical.matches("if $budget.pays_allocations() {\n                            paid_many::note_branch(true);").count(),1);
-    assert_eq!(frame.matches("=> lexical_successors!(self, function, state, budget, receiving, attempt)").count(),1);
+    assert_eq!(
+        frame
+            .matches("=> lexical_successors!(self, function, state, budget, receiving, attempt)")
+            .count(),
+        1
+    );
     assert!(frame.contains("payer: AllocationPayer::ActiveBuilder"));
-    assert_eq!(frame.matches("self.successors_with_receiving(function, &state, budget, receiving)").count(),1);
+    assert_eq!(
+        frame
+            .matches("self.successors_with_receiving(function, &state, budget, receiving)")
+            .count(),
+        1
+    );
 }

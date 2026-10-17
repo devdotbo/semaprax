@@ -3,10 +3,10 @@
 mod consuming_renewal;
 #[path = "owned_leaf_vec/contract_owners.rs"]
 mod contract_owners;
-#[path = "owned_leaf_vec/field_reads.rs"]
-mod field_reads;
 #[path = "owned_leaf_vec/copy_field_update.rs"]
 mod copy_field_update;
+#[path = "owned_leaf_vec/field_reads.rs"]
+mod field_reads;
 #[path = "owned_leaf_vec/field_unique.rs"]
 mod field_unique;
 #[path = "owned_leaf_vec/if_handoff.rs"]

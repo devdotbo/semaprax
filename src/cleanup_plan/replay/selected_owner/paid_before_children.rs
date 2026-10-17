@@ -1,6 +1,6 @@
 //! Exact old owner checks with prepaid static refusal data.
 use super::super::selected_context::paid::refusal;
-use super::{ReplayBudget, ResolvedFunction, expression_facts};
+use super::{expression_facts, ReplayBudget, ResolvedFunction};
 pub(in super::super) fn owner(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

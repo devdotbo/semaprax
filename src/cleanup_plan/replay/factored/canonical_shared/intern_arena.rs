@@ -63,14 +63,16 @@ impl SignatureQuery<'_> {
     // borrowed child IDs replace the explicit index/increment operands.
     pub(super) const MISS_CONTROLS: usize =
         size_of::<std::vec::IntoIter<(Label, SharedWeighted)>>()
-        + 2 * size_of::<std::slice::Iter<'static, usize>>()
-        + 2 * size_of::<std::iter::Zip<
-            std::vec::IntoIter<(Label, SharedWeighted)>,
-            std::slice::Iter<'static, usize>,
-        >>()
-        + 3 * size_of::<&Vec<usize>>()
-        + 2 * size_of::<&[usize]>()
-        + 2 * size_of::<Result<(), super::Diagnostic>>();
+            + 2 * size_of::<std::slice::Iter<'static, usize>>()
+            + 2 * size_of::<
+                std::iter::Zip<
+                    std::vec::IntoIter<(Label, SharedWeighted)>,
+                    std::slice::Iter<'static, usize>,
+                >,
+            >()
+            + 3 * size_of::<&Vec<usize>>()
+            + 2 * size_of::<&[usize]>()
+            + 2 * size_of::<Result<(), super::Diagnostic>>();
 }
 impl Query<Signature> for SignatureQuery<'_> {
     fn compare(&self, stored: &Signature) -> Ordering {

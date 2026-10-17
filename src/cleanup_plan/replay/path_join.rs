@@ -504,9 +504,9 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
             }
             for successor in block_successors(function, block_id) {
                 let remaining = &mut remaining_predecessors[successor.0 as usize];
-                *remaining = remaining
-                    .checked_sub(1)
-                    .ok_or_else(|| replay_error(function, "cleanup predecessor count underflowed"))?;
+                *remaining = remaining.checked_sub(1).ok_or_else(|| {
+                    replay_error(function, "cleanup predecessor count underflowed")
+                })?;
                 if *remaining == 0 {
                     queue.push_back(successor);
                 }
@@ -1162,5 +1162,5 @@ mod before_final_edge;
 mod final_edge_tests;
 
 #[cfg(test)]
-#[allow(dead_code, reason="complete immediate old path boundary receiver")]
+#[allow(dead_code, reason = "complete immediate old path boundary receiver")]
 pub(in crate::cleanup_plan::replay) mod before_path_boundary;

@@ -11,7 +11,11 @@ const PACKET: &str = include_str!(concat!(
     "/docs/evidence/ordinary-hir-prefix-877-v1/source-inverse.json"
 ));
 fn restore(current: &str, row: &serde_json::Value) -> String {
-    let composed = crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(row["path"].as_str().unwrap(), current, "opt877");
+    let composed = crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(
+        row["path"].as_str().unwrap(),
+        current,
+        "opt877",
+    );
     let current = composed.as_str();
     let acquired = census_checkpoint(row["path"].as_str().unwrap(), current);
     let current = acquired.as_str();

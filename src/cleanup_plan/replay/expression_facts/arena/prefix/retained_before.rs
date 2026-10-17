@@ -145,8 +145,6 @@ pub(super) fn find<'a, 'hir>(
     Ok(None)
 }
 
-
-
 // One paid state for the complete immutable search, never a memo or identity.
 struct ReceivingComparison<'a> {
     bytes: Comparison<'a>,
@@ -297,8 +295,10 @@ pub(in crate::cleanup_plan::replay::expression_facts) fn find_receiving<'a, 'hir
 
 // Complete immediate-old Arena::fact dispatch, independently executable.
 pub(in crate::cleanup_plan::replay::expression_facts) fn dispatch<'a, 'hir>(
-    arena: &'a Arena<'hir>, function: &ResolvedFunction,
-    key: &ExpressionId, budget: &mut ReplayBudget,
+    arena: &'a Arena<'hir>,
+    function: &ResolvedFunction,
+    key: &ExpressionId,
+    budget: &mut ReplayBudget,
 ) -> Result<Option<&'a Option<CallFact<'hir>>>, Diagnostic> {
     if budget.payer == AllocationPayer::ActiveBuilder && !arena.nodes.is_empty() {
         find_receiving(arena, function, key, budget)

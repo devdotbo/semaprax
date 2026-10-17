@@ -35,4 +35,3 @@ pub(super) fn share(
     let shared = Rc::clone(inner);
     Ok(shared)
 }
-

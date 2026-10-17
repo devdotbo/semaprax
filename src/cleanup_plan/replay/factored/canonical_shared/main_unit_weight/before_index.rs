@@ -2,8 +2,8 @@
 //! Frames, open states and completed memo keys share only owned immutable
 //! vectors. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
-use super::*;
 use super::tests;
+use super::*;
 
 type SharedWeighted = Rc<Weighted>;
 

@@ -1,6 +1,9 @@
-use super::*;
 use super::super::*;
-use super::main696::{append_expr_paths, sequence_skeleton_paths, split_status_paths, split_contract, hir_skeleton_paths, receiving_bytes};
+use super::main696::{
+    append_expr_paths, hir_skeleton_paths, receiving_bytes, sequence_skeleton_paths,
+    split_contract, split_status_paths,
+};
+use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::measure;
 use std::cell::Cell;
@@ -274,7 +277,9 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
     )))
     .unwrap();
     let root = crate::source_reflows_merge::main696_input(
-        "src/cleanup_plan/replay.rs", include_str!("../../replay.rs"));
+        "src/cleanup_plan/replay.rs",
+        include_str!("../../replay.rs"),
+    );
     let compiled = include_str!("before.rs");
     for record in records.as_array().unwrap() {
         let name = record["name"].as_str().unwrap();

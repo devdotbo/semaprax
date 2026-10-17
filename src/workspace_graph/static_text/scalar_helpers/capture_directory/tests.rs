@@ -538,9 +538,16 @@ fn optional_source_work_selection_preserves_the_complete_prior_capture_body() {
 // Independent real ledger oracle: format the expected diagnostic in the
 // same refused scope as the producer. Outside that scope the complete original
 // strings remain required; those are checked separately below.
-fn refused_digest_scope(header: usize, receiver: usize, limit: usize) ->
-    (Vec<crate::diagnostic::Diagnostic>, bool, usize, Option<crate::bounded_output::ReservationRefusal>)
-{
+fn refused_digest_scope(
+    header: usize,
+    receiver: usize,
+    limit: usize,
+) -> (
+    Vec<crate::diagnostic::Diagnostic>,
+    bool,
+    usize,
+    Option<crate::bounded_output::ReservationRefusal>,
+) {
     crate::bounded_output::with_limit_usage_refusal(limit, || {
         if header != 0 {
             super::super::reserve_builder_structure(header).unwrap();
@@ -585,7 +592,8 @@ fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_
             crate::bounded_output::with_limit_usage(super::super::DIGEST_RECEIVER_BYTES, || {
                 let mut work = available;
                 let (digest, observed) = crate::test_allocation_observer::measure(|| {
-                    super::super::reserve_builder_structure(super::super::DIGEST_RECEIVER_BYTES).unwrap();
+                    super::super::reserve_builder_structure(super::super::DIGEST_RECEIVER_BYTES)
+                        .unwrap();
                     super::super::capture_digest(function, &revision, &mut work).unwrap()
                 });
                 (digest, work, observed)
@@ -608,7 +616,10 @@ fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_
     let mut work = units;
     complete_outside_digest_capacity();
     let (expected, expected_refused, expected_paid, expected_first) = refused_digest_scope(
-        0, super::super::DIGEST_RECEIVER_BYTES, super::super::DIGEST_RECEIVER_BYTES - 1);
+        0,
+        super::super::DIGEST_RECEIVER_BYTES,
+        super::super::DIGEST_RECEIVER_BYTES - 1,
+    );
     let (result, refused, paid, first) = crate::bounded_output::with_limit_usage_refusal(
         super::super::DIGEST_RECEIVER_BYTES - 1,
         || {
@@ -618,7 +629,10 @@ fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_
     );
     assert!(result.is_err() && refused);
     assert_eq!(result.as_ref().unwrap_err(), &expected);
-    assert_eq!((refused, paid, first), (expected_refused, expected_paid, expected_first));
+    assert_eq!(
+        (refused, paid, first),
+        (expected_refused, expected_paid, expected_first)
+    );
     complete_outside_digest_capacity();
     assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
     assert_eq!(work, units);
@@ -658,7 +672,11 @@ fn optional_digest_keeps_unsupported_body_and_internal_ceiling_g410_refusals() {
 fn prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal() {
     let programs = programs(&source(1));
     let resolved = crate::hir::resolve(&programs[0]).unwrap();
-    let function = resolved.functions.iter().find(|f| f.id.as_str() == "helpers.f0000").unwrap();
+    let function = resolved
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "helpers.f0000")
+        .unwrap();
     let revision = [19; 32];
     let header = super::super::DIGEST_PAYMENT_HEADER_BYTES;
     let receiver = super::super::DIGEST_RECEIVER_BYTES;
@@ -674,13 +692,15 @@ fn prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal() {
             let first = (|| {
                 super::super::reserve_builder_structure(receiver)?;
                 super::super::capture_digest(function, &revision, &mut work)
-            })().unwrap_err();
+            })()
+            .unwrap_err();
             assert_eq!(work, usize::MAX);
             let remaining = crate::bounded_output::active_remaining();
             let retry = (|| {
                 super::super::reserve_builder_structure(receiver)?;
                 super::super::capture_digest(function, &revision, &mut work)
-            })().unwrap_err();
+            })()
+            .unwrap_err();
             assert_eq!(work, usize::MAX);
             assert_eq!(crate::bounded_output::active_remaining(), remaining);
             ((), first, retry)
@@ -689,7 +709,10 @@ fn prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal() {
     assert_eq!(used, header);
     assert_eq!(first.unwrap().requested, receiver);
     assert_eq!(first_errors[0].code, "SPX-G171");
-    assert_eq!((refused, used, first), (expected_refused, expected_used, expected_first));
+    assert_eq!(
+        (refused, used, first),
+        (expected_refused, expected_used, expected_first)
+    );
     assert_eq!(first_errors, expected);
     assert_eq!(retry_errors, expected);
     assert_eq!(retry_errors, first_errors);
@@ -703,24 +726,44 @@ fn full_capture_keeps_six_byte_frontiers_protected_floor_and_allocation_free_dro
         let programs = programs(&text);
         let resolved = crate::hir::resolve(&programs[0]).unwrap();
         let authored = index_authored(&programs).unwrap();
-        let sources = [WorkspaceSource { path: "helpers.spx".into(), source: text }];
+        let sources = [WorkspaceSource {
+            path: "helpers.spx".into(),
+            source: text,
+        }];
         let (reference, refused, _) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-            legacy::capture(&programs[0], &resolved, &programs, &authored, Some(&sources)).unwrap().unwrap()
+            legacy::capture(
+                &programs[0],
+                &resolved,
+                &programs,
+                &authored,
+                Some(&sources),
+            )
+            .unwrap()
+            .unwrap()
         });
         assert!(!refused);
-        let ((units, measured), refused, needed) = crate::bounded_output::with_limit_usage(usize::MAX, || {
-            crate::test_allocation_observer::measure(|| {
-                let inventory = capture(&programs[0], &resolved, &programs, &authored, Some(&sources)).unwrap().unwrap();
-                equal(&inventory, &reference);
-                let units = inventory.capture_work;
-                let before_drop = crate::test_allocation_observer::current_metrics();
-                drop(inventory);
-                let after_drop = crate::test_allocation_observer::current_metrics();
-                assert_eq!(after_drop.allocated, before_drop.allocated);
-                assert_eq!(after_drop.live, 0);
-                units
-            })
-        });
+        let ((units, measured), refused, needed) =
+            crate::bounded_output::with_limit_usage(usize::MAX, || {
+                crate::test_allocation_observer::measure(|| {
+                    let inventory = capture(
+                        &programs[0],
+                        &resolved,
+                        &programs,
+                        &authored,
+                        Some(&sources),
+                    )
+                    .unwrap()
+                    .unwrap();
+                    equal(&inventory, &reference);
+                    let units = inventory.capture_work;
+                    let before_drop = crate::test_allocation_observer::current_metrics();
+                    drop(inventory);
+                    let after_drop = crate::test_allocation_observer::current_metrics();
+                    assert_eq!(after_drop.allocated, before_drop.allocated);
+                    assert_eq!(after_drop.live, 0);
+                    units
+                })
+            });
         assert!(!refused && needed > 1 && units > 0);
         assert!(!measured.invalid);
         assert_eq!(measured.live, 0);
@@ -729,14 +772,23 @@ fn full_capture_keeps_six_byte_frontiers_protected_floor_and_allocation_free_dro
             let ((published, observed), refused, used, first) =
                 crate::bounded_output::with_limit_usage_refusal(limit, || {
                     crate::test_allocation_observer::measure(|| {
-                        let result = capture(&programs[0], &resolved, &programs, &authored, Some(&sources));
+                        let result = capture(
+                            &programs[0],
+                            &resolved,
+                            &programs,
+                            &authored,
+                            Some(&sources),
+                        );
                         if limit >= needed {
                             let inventory = result.unwrap().unwrap();
                             equal(&inventory, &reference);
                             assert_eq!(inventory.capture_work, units);
                             let before_drop = crate::test_allocation_observer::current_metrics();
                             drop(inventory);
-                            assert_eq!(crate::test_allocation_observer::current_metrics().allocated, before_drop.allocated);
+                            assert_eq!(
+                                crate::test_allocation_observer::current_metrics().allocated,
+                                before_drop.allocated
+                            );
                             true
                         } else {
                             let errors = result.err().unwrap();
@@ -766,13 +818,24 @@ fn full_capture_keeps_six_byte_frontiers_protected_floor_and_allocation_free_dro
             crate::bounded_output::with_limit_usage_refusal(needed + floor, || {
                 assert!(crate::bounded_output::set_active_floor(floor));
                 crate::test_allocation_observer::measure(|| {
-                    let inventory = capture(&programs[0], &resolved, &programs, &authored, Some(&sources)).unwrap().unwrap();
+                    let inventory = capture(
+                        &programs[0],
+                        &resolved,
+                        &programs,
+                        &authored,
+                        Some(&sources),
+                    )
+                    .unwrap()
+                    .unwrap();
                     equal(&inventory, &reference);
                     assert_eq!(inventory.capture_work, units);
                     assert_eq!(crate::bounded_output::active_remaining(), Some(floor));
                     let before_drop = crate::test_allocation_observer::current_metrics();
                     drop(inventory);
-                    assert_eq!(crate::test_allocation_observer::current_metrics().allocated, before_drop.allocated);
+                    assert_eq!(
+                        crate::test_allocation_observer::current_metrics().allocated,
+                        before_drop.allocated
+                    );
                     assert_eq!(crate::bounded_output::active_remaining(), Some(floor));
                 })
             });
@@ -785,7 +848,15 @@ fn full_capture_keeps_six_byte_frontiers_protected_floor_and_allocation_free_dro
             crate::bounded_output::with_limit_usage_refusal(needed, || {
                 assert!(crate::bounded_output::set_active_floor(1));
                 crate::test_allocation_observer::measure(|| {
-                    let errors = capture(&programs[0], &resolved, &programs, &authored, Some(&sources)).err().unwrap();
+                    let errors = capture(
+                        &programs[0],
+                        &resolved,
+                        &programs,
+                        &authored,
+                        Some(&sources),
+                    )
+                    .err()
+                    .unwrap();
                     assert_eq!(errors[0].code, "SPX-G171");
                     assert_eq!(errors, super::super::capacity());
                     drop(errors);

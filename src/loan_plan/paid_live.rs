@@ -1,11 +1,13 @@
 //! Exact original checked-work/LIFO/edge order with caller-paid seed/live sets.
-use super::{BTreeSet, cfg_directory};
 #[cfg(test)]
-use super::{Cfg, Diagnostic, LoanCause, LoanId, LoanPlan, MAX_LOAN_PLAN_WORK_V1,
-    OwnershipMode, Place, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
-    ResolvedProgram, ResolvedStatement, ResolvedType, WorkCounter, boundary_tests,
-    build_cfg, charge, error, funded_flat, funded_flat_legacy, guidance,
-    paid_candidate, paid_plan, paid_plan_legacy, saved_planner, storage, traversal, work};
+use super::{
+    boundary_tests, build_cfg, charge, error, funded_flat, funded_flat_legacy, guidance,
+    paid_candidate, paid_plan, paid_plan_legacy, saved_planner, storage, traversal, work, Cfg,
+    Diagnostic, LoanCause, LoanId, LoanPlan, OwnershipMode, Place, ResolvedExpr, ResolvedExprKind,
+    ResolvedFunction, ResolvedProgram, ResolvedStatement, ResolvedType, WorkCounter,
+    MAX_LOAN_PLAN_WORK_V1,
+};
+use super::{cfg_directory, BTreeSet};
 #[cfg(test)]
 #[allow(
     clippy::duplicate_mod,
@@ -127,7 +129,7 @@ mod funded_before;
 #[cfg(test)]
 mod before_plan {
     use super::super::{
-        Diagnostic, LoanPlan, ResolvedFunction, ResolvedProgram, WorkCounter, paid_plan,
+        paid_plan, Diagnostic, LoanPlan, ResolvedFunction, ResolvedProgram, WorkCounter,
     };
     pub(super) fn build(
         program: &ResolvedProgram,
@@ -142,7 +144,7 @@ mod before_plan {
 // entire bodies; they only permit the complete old planner to call them.
 #[cfg(test)]
 pub(super) mod before_plan_live {
-    use super::{Cfg, Diagnostic, LoanId, WorkCounter, cfg_directory, original, work};
+    use super::{cfg_directory, original, work, Cfg, Diagnostic, LoanId, WorkCounter};
     pub(in crate::loan_plan) fn live_nodes(
         cfg: &Cfg<'_>,
         loan: LoanId,

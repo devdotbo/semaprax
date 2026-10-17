@@ -22,13 +22,17 @@ fn ordinary_summary_matches_complete_original_schema_and_raw_diagnostics() {
     let mut saw_original_error = false;
     for program in paid_type_facts::tests::fixtures() {
         for function in &program.functions {
-            assert_eq!(selected_schema_with_index(&program, function, None),
-                original_materializer::selected_schema_with_index(&program, function, None));
+            assert_eq!(
+                selected_schema_with_index(&program, function, None),
+                original_materializer::selected_schema_with_index(&program, function, None)
+            );
             let mut forged = function.clone();
             forged.cleanup_plan.schema = "forged.summary.schema";
             forged.cleanup = crate::cleanup::CleanupInventory::unresolved();
-            assert_eq!(selected_schema_with_index(&program, &forged, None),
-                original_materializer::selected_schema_with_index(&program, &forged, None));
+            assert_eq!(
+                selected_schema_with_index(&program, &forged, None),
+                original_materializer::selected_schema_with_index(&program, &forged, None)
+            );
             for ty in [
                 ResolvedType::Nominal {
                     declaration: crate::hir::DeclarationId::new("missing.λ\0.schema"),
@@ -42,9 +46,13 @@ fn ordinary_summary_matches_complete_original_schema_and_raw_diagnostics() {
                 let mut subject = function.clone();
                 subject.return_type = ty;
                 // Eq compares every diagnostic field, including raw UTF8 text.
-                let expected = original_materializer::selected_schema_with_index(&program, &subject, None);
+                let expected =
+                    original_materializer::selected_schema_with_index(&program, &subject, None);
                 saw_original_error |= expected.is_err();
-                assert_eq!(selected_schema_with_index(&program, &subject, None), expected);
+                assert_eq!(
+                    selected_schema_with_index(&program, &subject, None),
+                    expected
+                );
             }
         }
     }
@@ -89,9 +97,12 @@ fn whole_schema_composition_refuses_missing_duplicate_and_foreign_source() {
         assert!(std::panic::catch_unwind(|| {
             let restored = before_summary(&hostile);
             assert_eq!(
-                restored.strip_suffix("\npub(super) mod paid_summary;\n").unwrap(),
+                restored
+                    .strip_suffix("\npub(super) mod paid_summary;\n")
+                    .unwrap(),
                 immutable
             );
-        }).is_err());
+        })
+        .is_err());
     }
 }

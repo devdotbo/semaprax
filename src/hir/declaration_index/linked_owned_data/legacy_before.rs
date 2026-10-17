@@ -21,7 +21,9 @@ impl DeclarationIndex {
         templates: &[ResolvedFunctionTemplate],
         facts: &BTreeMap<DeclarationId, LinkedDeclarationFact>,
     ) -> Result<(), Diagnostic> {
-        self.extend_linked_data_before_legacy_coordinates(types, interfaces, functions, templates, facts, false)
+        self.extend_linked_data_before_legacy_coordinates(
+            types, interfaces, functions, templates, facts, false,
+        )
     }
 
     pub(in crate::hir) fn extend_linked_scalar_data_before_legacy_coordinates(
@@ -32,7 +34,9 @@ impl DeclarationIndex {
         templates: &[ResolvedFunctionTemplate],
         facts: &BTreeMap<DeclarationId, LinkedDeclarationFact>,
     ) -> Result<(), Diagnostic> {
-        self.extend_linked_data_before_legacy_coordinates(types, interfaces, functions, templates, facts, true)
+        self.extend_linked_data_before_legacy_coordinates(
+            types, interfaces, functions, templates, facts, true,
+        )
     }
 
     fn extend_linked_data_before_legacy_coordinates(

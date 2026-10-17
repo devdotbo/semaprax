@@ -62,102 +62,126 @@ macro_rules! authenticate_closure {
     }};
 }
 
-#[allow(dead_code, reason = "complete independently compiled immediate886 query and diagnostic fields")]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled immediate886 query and diagnostic fields"
+)]
 mod borrowed_single {
-//! One lexical Exit admission; original shared query/API/tariffs stay intact.
-use super::*;
-use std::mem::size_of;
-use std::cmp::Ordering;
+    //! One lexical Exit admission; original shared query/API/tariffs stay intact.
+    use super::*;
+    use std::cmp::Ordering;
+    use std::mem::size_of;
 
-pub(super) struct OneQuery<'a> {
-    pub(super) accepted: u64,
-    pub(super) label: &'a Label,
-    pub(super) child: &'a usize,
-}
-const _: () = assert!(size_of::<OneQuery<'static>>() == size_of::<intern_arena::SignatureQuery<'static>>());
-const _: () = assert!(size_of::<&OneQuery<'static>>() == size_of::<&intern_arena::SignatureQuery<'static>>());
-// Same Query::compare ABI as the complete old receiver; no constructor helper,
-// forwarding Self/Diagnostic return, payload copy or additional lookup exists.
-impl intern_arena::Query<intern_arena::Signature> for OneQuery<'_> {
-    fn compare(&self, stored: &intern_arena::Signature) -> Ordering {
-        let order = self.accepted.cmp(&stored.0);
-        if order != Ordering::Equal { return order; }
-        if stored.1.is_empty() { return Ordering::Greater; }
-        let order = self.label.cmp(&stored.1[0].0);
-        if order != Ordering::Equal { return order; }
-        let order = self.child.cmp(&stored.1[0].1);
-        if order != Ordering::Equal { return order; }
-        1_usize.cmp(&stored.1.len())
+    pub(super) struct OneQuery<'a> {
+        pub(super) accepted: u64,
+        pub(super) label: &'a Label,
+        pub(super) child: &'a usize,
     }
-}
-pub(super) const LOCAL_CONTROLS: usize = 2 * size_of::<bool>();
-// Exactly the full conservative primitive ABI: actual/formal arguments and
-// returned/received unit-success Result slots. Only this nonrecursive lexical
-// primitive place is retained; no compound query/Option/key/iterator is reused.
-pub(super) const PRIMITIVE: usize = 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
-    + 2 * size_of::<Result<(), Diagnostic>>();
-const QUERY: usize = 2 * size_of::<OneQuery<'static>>()
-    + 2 * size_of::<&Label>() + 2 * size_of::<&usize>();
-// Complete old successor iterator/borrow bank remains fresh. Its first next
-// call replaces the original loop's first next with identical Option/item ABI.
-const ITERATOR: usize = 2 * size_of::<std::slice::Iter<'static, (Label, SharedWeighted)>>()
-    + 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
-    + size_of::<&[(Label, SharedWeighted)]>();
-// Vec::remove has both mutable receiver/index arguments, returned/received
-// owned row, bounds length/predicate and the copied scalar child key. Its
-// inner row is dropped before signature insertion, as in the original loop.
-const MOVE: usize = 2 * size_of::<(Label, SharedWeighted)>()
-    + 2 * size_of::<&mut Vec<(Label, SharedWeighted)>>()
-    + 4 * size_of::<usize>() + 2 * size_of::<bool>()
-    + 2 * size_of::<usize>();
-const GUARD: usize = 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
-    + 2 * size_of::<usize>() + 4 * size_of::<bool>();
-const SELECT: usize = 4 * size_of::<bool>() + 2 * size_of::<usize>();
-// This conservative whole-Exit bound is acquired on every Exit, including
-// empty/general branches. The complete general path pays all its additional
-// original requests; there is no subtraction or old-baseline tariff change.
-pub(super) const FRESH: usize = QUERY + ITERATOR + MOVE + GUARD;
-pub(super) const WARM: usize = FRESH + SELECT;
-pub(super) const COLD: usize = FRESH + SELECT + PRIMITIVE;
-
-#[cfg(test)]
-#[derive(Clone, Copy, Debug)]
-pub(super) struct Event {
-    pub(super) cold: bool,
-    pub(super) requested: usize,
-    pub(super) paid: usize,
-    pub(super) remaining: usize,
-    pub(super) skeleton_remaining: usize,
-    pub(super) skeleton_spent: usize,
-}
-#[cfg(test)]
-thread_local! {
-    static EVENTS: std::cell::Cell<(bool, [Option<Event>; 16], usize)> = const {
-        std::cell::Cell::new((false, [None; 16], 0))
-    };
-}
-#[cfg(test)]
-pub(super) fn note(budget: &ReplayBudget, warm: bool) {
-    EVENTS.with(|slot| {
-        let (active, mut events, count) = slot.get();
-        if !active { return; }
-        if count < events.len() {
-            events[count] = Some(Event { cold: !warm, requested: if warm { WARM } else { COLD },
-                paid: budget.physical.as_ref().unwrap().charged(), remaining: budget.remaining,
-                skeleton_remaining: budget.skeleton_remaining, skeleton_spent: budget.skeleton_spent });
+    const _: () = assert!(
+        size_of::<OneQuery<'static>>() == size_of::<intern_arena::SignatureQuery<'static>>()
+    );
+    const _: () = assert!(
+        size_of::<&OneQuery<'static>>() == size_of::<&intern_arena::SignatureQuery<'static>>()
+    );
+    // Same Query::compare ABI as the complete old receiver; no constructor helper,
+    // forwarding Self/Diagnostic return, payload copy or additional lookup exists.
+    impl intern_arena::Query<intern_arena::Signature> for OneQuery<'_> {
+        fn compare(&self, stored: &intern_arena::Signature) -> Ordering {
+            let order = self.accepted.cmp(&stored.0);
+            if order != Ordering::Equal {
+                return order;
+            }
+            if stored.1.is_empty() {
+                return Ordering::Greater;
+            }
+            let order = self.label.cmp(&stored.1[0].0);
+            if order != Ordering::Equal {
+                return order;
+            }
+            let order = self.child.cmp(&stored.1[0].1);
+            if order != Ordering::Equal {
+                return order;
+            }
+            1_usize.cmp(&stored.1.len())
         }
-        slot.set((active, events, count.saturating_add(1)));
-    });
-}
+    }
+    pub(super) const LOCAL_CONTROLS: usize = 2 * size_of::<bool>();
+    // Exactly the full conservative primitive ABI: actual/formal arguments and
+    // returned/received unit-success Result slots. Only this nonrecursive lexical
+    // primitive place is retained; no compound query/Option/key/iterator is reused.
+    pub(super) const PRIMITIVE: usize =
+        2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
+            + 2 * size_of::<Result<(), Diagnostic>>();
+    const QUERY: usize =
+        2 * size_of::<OneQuery<'static>>() + 2 * size_of::<&Label>() + 2 * size_of::<&usize>();
+    // Complete old successor iterator/borrow bank remains fresh. Its first next
+    // call replaces the original loop's first next with identical Option/item ABI.
+    const ITERATOR: usize = 2 * size_of::<std::slice::Iter<'static, (Label, SharedWeighted)>>()
+        + 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
+        + size_of::<&[(Label, SharedWeighted)]>();
+    // Vec::remove has both mutable receiver/index arguments, returned/received
+    // owned row, bounds length/predicate and the copied scalar child key. Its
+    // inner row is dropped before signature insertion, as in the original loop.
+    const MOVE: usize = 2 * size_of::<(Label, SharedWeighted)>()
+        + 2 * size_of::<&mut Vec<(Label, SharedWeighted)>>()
+        + 4 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<usize>();
+    const GUARD: usize = 2 * size_of::<&Vec<(Label, SharedWeighted)>>()
+        + 2 * size_of::<usize>()
+        + 4 * size_of::<bool>();
+    const SELECT: usize = 4 * size_of::<bool>() + 2 * size_of::<usize>();
+    // This conservative whole-Exit bound is acquired on every Exit, including
+    // empty/general branches. The complete general path pays all its additional
+    // original requests; there is no subtraction or old-baseline tariff change.
+    pub(super) const FRESH: usize = QUERY + ITERATOR + MOVE + GUARD;
+    pub(super) const WARM: usize = FRESH + SELECT;
+    pub(super) const COLD: usize = FRESH + SELECT + PRIMITIVE;
 
-// Test-only exact role equations; no runtime fee helper or external authority.
-#[cfg(test)]
-impl Canonicalizer<'_> {
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_PRIMITIVE: usize = PRIMITIVE;
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_WARM: usize = WARM;
-    pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_LOCAL: usize = LOCAL_CONTROLS;
-}
+    #[cfg(test)]
+    #[derive(Clone, Copy, Debug)]
+    pub(super) struct Event {
+        pub(super) cold: bool,
+        pub(super) requested: usize,
+        pub(super) paid: usize,
+        pub(super) remaining: usize,
+        pub(super) skeleton_remaining: usize,
+        pub(super) skeleton_spent: usize,
+    }
+    #[cfg(test)]
+    thread_local! {
+        static EVENTS: std::cell::Cell<(bool, [Option<Event>; 16], usize)> = const {
+            std::cell::Cell::new((false, [None; 16], 0))
+        };
+    }
+    #[cfg(test)]
+    pub(super) fn note(budget: &ReplayBudget, warm: bool) {
+        EVENTS.with(|slot| {
+            let (active, mut events, count) = slot.get();
+            if !active {
+                return;
+            }
+            if count < events.len() {
+                events[count] = Some(Event {
+                    cold: !warm,
+                    requested: if warm { WARM } else { COLD },
+                    paid: budget.physical.as_ref().unwrap().charged(),
+                    remaining: budget.remaining,
+                    skeleton_remaining: budget.skeleton_remaining,
+                    skeleton_spent: budget.skeleton_spent,
+                });
+            }
+            slot.set((active, events, count.saturating_add(1)));
+        });
+    }
 
+    // Test-only exact role equations; no runtime fee helper or external authority.
+    #[cfg(test)]
+    impl Canonicalizer<'_> {
+        pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_PRIMITIVE: usize = PRIMITIVE;
+        pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_WARM: usize = WARM;
+        pub(in crate::cleanup_plan::replay::factored::canonical_shared) const BEFORE_ARITY_BORROWED_EXIT_LOCAL: usize = LOCAL_CONTROLS;
+    }
 }
 
 impl Canonicalizer<'_> {
@@ -287,108 +311,129 @@ impl Canonicalizer<'_> {
                     borrowed_single::note(budget, exit_admission_paid);
                     attempt!(budget.reserve_bytes(
                         function,
-                        if exit_admission_paid { borrowed_single::WARM } else { borrowed_single::COLD },
+                        if exit_admission_paid {
+                            borrowed_single::WARM
+                        } else {
+                            borrowed_single::COLD
+                        },
                         "canonical lexical exit receiving",
                     ));
                     exit_admission_paid = true;
                     match successors.len() {
-                    0 => {
-                        if budget.pays_allocations() {
-                            attempt!(budget.reserve_bytes(
-                                function,
-                                empty_signature::EMPTY_CONTROLS,
-                                "canonical empty signature receiving",
-                            ));
-                        }
-                        self.child_ids.clear();
-                        // Retain the original key-vector zero authentication;
-                        // no child directory, borrowed query or Zip exists here.
-                        attempt!(budget.reserve_array::<(Label, usize)>(
-                            function,
-                            0,
-                            "factored canonical signature vector",
-                        ));
-                        let key = (accepted, Vec::new());
-                        let id = match self.ids.get(&key) {
-                            Some(id) => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(true);
-                                *id
+                        0 => {
+                            if budget.pays_allocations() {
+                                attempt!(budget.reserve_bytes(
+                                    function,
+                                    empty_signature::EMPTY_CONTROLS,
+                                    "canonical empty signature receiving",
+                                ));
                             }
-                            None => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(false);
+                            self.child_ids.clear();
+                            // Retain the original key-vector zero authentication;
+                            // no child directory, borrowed query or Zip exists here.
+                            attempt!(budget.reserve_array::<(Label, usize)>(
+                                function,
+                                0,
+                                "factored canonical signature vector",
+                            ));
+                            let key = (accepted, Vec::new());
+                            let id = match self.ids.get(&key) {
+                                Some(id) => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(true);
+                                    *id
+                                }
+                                None => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(false);
+                                    intern_arena::prepare_insert!(
+                                        self.ids,
+                                        intern_arena::Signature,
+                                        function,
+                                        budget
+                                    );
+                                    let id = self.ids.len();
+                                    self.ids.insert_prepaid(key, id);
+                                    id
+                                }
+                            };
+                            self.child_ids.clear();
+                            if !self.states.contains_key(&state) {
                                 intern_arena::prepare_insert!(
-                                    self.ids,
-                                    intern_arena::Signature,
+                                    self.states,
+                                    SharedWeighted,
                                     function,
                                     budget
                                 );
-                                let id = self.ids.len();
-                                self.ids.insert_prepaid(key, id);
-                                id
                             }
-                        };
-                        self.child_ids.clear();
-                        if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(
-                                self.states,
-                                SharedWeighted,
-                                function,
-                                budget
-                            );
+                            self.states.insert_prepaid(state, id);
+                            continue;
                         }
-                        self.states.insert_prepaid(state, id);
-                        continue;
-                    }
-                    1 => {
-                        // One original iterator.next, without an Index or slice
-                        // helper. Its temporary iterator ends before remove(0).
-                        let Some((label, child)) = successors.iter().next() else {
-                            unreachable!("one successor was matched");
-                        };
-                        let Some(child_id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
-                            receiving.ready = true;
-                            return;
-                        };
-                        let query = borrowed_single::OneQuery { accepted, label, child: child_id };
-                        let id = match self.ids.get(&query) {
-                            Some(id) => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(true);
-                                *id
-                            }
-                            None => {
-                                #[cfg(test)]
-                                arena_tests::signature_lookup(false);
-                                attempt!(budget.reserve_array::<(Label, usize)>(
-                                    function, 1, "factored canonical signature vector",
-                                ));
-                                let mut key = Vec::with_capacity(1);
-                                {
-                                    let (label, _child) = successors.remove(0);
-                                    key.push((label, *child_id));
+                        1 => {
+                            // One original iterator.next, without an Index or slice
+                            // helper. Its temporary iterator ends before remove(0).
+                            let Some((label, child)) = successors.iter().next() else {
+                                unreachable!("one successor was matched");
+                            };
+                            let Some(child_id) = self.states.get(child) else {
+                                receiving.refusal =
+                                    Some(replay_error(function, "cleanup CFG contains a cycle"));
+                                receiving.ready = true;
+                                return;
+                            };
+                            let query = borrowed_single::OneQuery {
+                                accepted,
+                                label,
+                                child: child_id,
+                            };
+                            let id = match self.ids.get(&query) {
+                                Some(id) => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(true);
+                                    *id
                                 }
-                                // Same owned Vec input slots as the original
-                                // into_iter hand-off; release its buffer before
-                                // either arena can acquire backing, as before.
-                                drop(successors);
-                                let key = (accepted, key);
-                                intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
-                                let id = self.ids.len();
-                                self.ids.insert_prepaid(key, id);
-                                id
+                                None => {
+                                    #[cfg(test)]
+                                    arena_tests::signature_lookup(false);
+                                    attempt!(budget.reserve_array::<(Label, usize)>(
+                                        function,
+                                        1,
+                                        "factored canonical signature vector",
+                                    ));
+                                    let mut key = Vec::with_capacity(1);
+                                    {
+                                        let (label, _child) = successors.remove(0);
+                                        key.push((label, *child_id));
+                                    }
+                                    // Same owned Vec input slots as the original
+                                    // into_iter hand-off; release its buffer before
+                                    // either arena can acquire backing, as before.
+                                    drop(successors);
+                                    let key = (accepted, key);
+                                    intern_arena::prepare_insert!(
+                                        self.ids,
+                                        intern_arena::Signature,
+                                        function,
+                                        budget
+                                    );
+                                    let id = self.ids.len();
+                                    self.ids.insert_prepaid(key, id);
+                                    id
+                                }
+                            };
+                            self.child_ids.clear();
+                            if !self.states.contains_key(&state) {
+                                intern_arena::prepare_insert!(
+                                    self.states,
+                                    SharedWeighted,
+                                    function,
+                                    budget
+                                );
                             }
-                        };
-                        self.child_ids.clear();
-                        if !self.states.contains_key(&state) {
-                            intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                            self.states.insert_prepaid(state, id);
+                            continue;
                         }
-                        self.states.insert_prepaid(state, id);
-                        continue;
-                    }
-                    _ => {}
+                        _ => {}
                     }
                     attempt!(budget.reserve_bytes(
                         function,
@@ -553,23 +598,34 @@ impl Canonicalizer<'_> {
     }
 }
 
-
 #[test]
 fn complete_immediate_886_method_roles_and_wrapper_keep_whole_source_after_only_namespace_glue() {
-    const BASE: &str = concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/arity-dispatch-duplicate-arena-20261017/whole-before/");
+    const BASE: &str = concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/arity-dispatch-duplicate-arena-20261017/whole-before/"
+    );
     let frame = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/arity-dispatch-duplicate-arena-20261017/whole-before/src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs"));
     let roles = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/arity-dispatch-duplicate-arena-20261017/whole-before/src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs"));
     let root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/arity-dispatch-duplicate-arena-20261017/whole-before/src/cleanup_plan/replay/factored/canonical_shared.rs"));
     let macros = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/borrowed-single-macro-scope-fix-20261017/original-authentication-macros.rs.txt"));
     assert!(!BASE.is_empty());
-    let method = frame[frame.find("impl Canonicalizer").unwrap()..]
-        .replacen("fn id_inner_into(", "fn before_arity_dispatch_id_inner_into(", 1);
+    let method = frame[frame.find("impl Canonicalizer").unwrap()..].replacen(
+        "fn id_inner_into(",
+        "fn before_arity_dispatch_id_inner_into(",
+        1,
+    );
     let mut roles = roles.replacen("#[cfg(test)]\nmod tests;\n", "", 1);
     for name in ["PRIMITIVE", "WARM", "LOCAL"] {
-        roles = roles.replace(&format!("const BORROWED_EXIT_{name}"), &format!("const BEFORE_ARITY_BORROWED_EXIT_{name}"));
+        roles = roles.replace(
+            &format!("const BORROWED_EXIT_{name}"),
+            &format!("const BEFORE_ARITY_BORROWED_EXIT_{name}"),
+        );
     }
     let start = root.find("    pub(super) fn id_with_receiving(").unwrap();
-    let end = root[start..].find("\n}\n\n#[cfg(test)]\nmod tests;").unwrap() + start;
+    let end = root[start..]
+        .find("\n}\n\n#[cfg(test)]\nmod tests;")
+        .unwrap()
+        + start;
     let wrapper = root[start..end]
         .replacen("pub(super) fn id_with_receiving(", "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn before_arity_dispatch_id_with_receiving(", 1)
         .replacen("self.id_inner_into(", "self.before_arity_dispatch_id_inner_into(", 1);
@@ -584,5 +640,9 @@ fn complete_immediate_886_method_roles_and_wrapper_keep_whole_source_after_only_
     expected.push_str("\n}\n");
     let current = include_str!("before_arity_dispatch.rs");
     let prefix = current.split("\n#[test]\nfn complete_immediate_886_method_roles_and_wrapper_keep_whole_source_after_only_namespace_glue").next().unwrap();
-    assert_eq!(prefix.trim_end(), expected.trim_end(), "entire immediate886 method, exact roles, auth macros and wrapper");
+    assert_eq!(
+        prefix.trim_end(),
+        expected.trim_end(),
+        "entire immediate886 method, exact roles, auth macros and wrapper"
+    );
 }

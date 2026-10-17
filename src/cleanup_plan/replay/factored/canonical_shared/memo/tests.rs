@@ -1,5 +1,5 @@
-use super::{Memo, WIDTH};
 use super::super::{Diagnostic, ReplayBudget, ResolvedFunction};
+use super::{Memo, WIDTH};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{current_metrics, measure};
 fn fixture() -> ResolvedFunction {

@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1168,
-      "current_boundary_production": 418,
+      "current_boundary_members": 1178,
+      "current_boundary_production": 419,
       "outside_production_still_fully_authenticated": 84,
-      "full_role_production": 502,
-      "full_role_test_only": 903,
-      "full_raw_sha256": "10c4a97ae27d742aca8d178f75350846112d911362ddc7ba1864f4b6e14479e5",
-      "boundary_production_sha256": "b3211644a43bce26f9f54212c6106dc3d42ac6e54c9d23ceb5d425f8eec7acf9",
+      "full_role_production": 503,
+      "full_role_test_only": 912,
+      "full_raw_sha256": "d863b06f1fc902fd6a6f4f0adf980163791ef661995a8f20d4fa84e4a6cdf1bf",
+      "boundary_production_sha256": "8b5830ef4b9d7ebf74f19a7f8fbe213566d6087cb64147b1ea729ca97697dcb2",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -31,13 +31,13 @@
     },
     "projection": {
       "original_roots": 179,
-      "current_boundary_members": 196,
+      "current_boundary_members": 198,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 550,
-      "full_role_production": 623,
-      "full_role_test_only": 962,
-      "full_raw_sha256": "de9e1d36f6e8a90c74647c720a6dd0615f1375bfd6b74084f8a6cc76d90e0641",
-      "boundary_production_sha256": "8c3c84a79e79fde1321b31c995c23a4ad648c3856eb0dfb03589b88d680891d0",
+      "outside_production_still_fully_authenticated": 552,
+      "full_role_production": 625,
+      "full_role_test_only": 970,
+      "full_raw_sha256": "0f27d2248d2ee570c8c37583da13778d274bdae13149fda23477dc71dd36c316",
+      "boundary_production_sha256": "d310297c3a271c48d2468a1280449fda112d3c9b2b50588df9dbd24d7af03d80",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -56,6 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
+  "actual_acquisition_completion_sha256": "f6bf08c3dd88bd2175ed8fdf154b2abb9cd1dba06ec320e1bedf6ee291acf690",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -65,6 +66,10 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "ONE_ACTUAL_ORIGINAL_PARSER_WASM_REGISTRATION_EDGE_NO_OTHER_ROLE_CHUNK_OR_REGISTRATION_CHANGE",
-  "global_polluted_purity_result_not_claimed": true
+  "registration_update": "CURRENT_A110_FORMAT_SPLITS_AND_INCOMING_MODULE_CLOSURE",
+  "before_head": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "global_polluted_purity_result_not_claimed": true,
+  "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
+  "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
+  "storage_implementation_sha256": "653cf683557b582baa60790b78f00ee51c65e48f2bbea75818a888a437749a26"
 }

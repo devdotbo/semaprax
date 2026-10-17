@@ -100,10 +100,8 @@ fn held_closure_complete_old_canonical_and_caller_are_independent_byte_exact_bod
             .unwrap(),
         expected
     );
-    assert!(
-        caller
-            .contains("use super::canonical_shared::before_closure_receiver as canonical_shared;")
-    );
+    assert!(caller
+        .contains("use super::canonical_shared::before_closure_receiver as canonical_shared;"));
     let current = include_str!("../../canonical_shared.rs");
     let producer = current
         .split_once("    fn closure_inner_into(")

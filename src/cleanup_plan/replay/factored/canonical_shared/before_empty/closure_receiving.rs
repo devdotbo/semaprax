@@ -103,4 +103,6 @@ impl ClosureReceiving {
 }
 
 #[cfg(test)]
-pub(super) fn note_producer() { super::super::closure_receiving::note_producer(); }
+pub(super) fn note_producer() {
+    super::super::closure_receiving::note_producer();
+}

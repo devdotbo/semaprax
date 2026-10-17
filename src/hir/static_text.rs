@@ -1,7 +1,7 @@
 //! Immutable literal roots are authenticated from typed module expressions.
 //! The bounded walk owns no heap inventory and never trusts attached plans.
 use super::{
-    OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedProgram, ResolvedType, hir_error,
+    hir_error, OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedProgram, ResolvedType,
 };
 use crate::diagnostic::Diagnostic;
 

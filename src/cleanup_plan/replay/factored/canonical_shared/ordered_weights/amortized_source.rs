@@ -35,7 +35,9 @@ fn current40f(path: &str, current: &str) -> String {
             current,
         )
     } else {
-        crate::cleanup_plan::replay::physical_budget::authentication::previous_include(path, current)
+        crate::cleanup_plan::replay::physical_budget::authentication::previous_include(
+            path, current,
+        )
     };
     let current = held.as_str();
     let merged = crate::source_reflows_merge::weighted(path, current);

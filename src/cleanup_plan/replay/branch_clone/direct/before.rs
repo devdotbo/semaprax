@@ -25,74 +25,90 @@ macro_rules! previous_produce {
      $branch:ident, $queue:ident) => {{
         let decision = $crate::cleanup_plan::replay::branch_clone::production_capacity::probe(
             $crate::cleanup_plan::replay::branch_clone::TakeCandidate {
-                values: &$observations, remaining_edges: $remaining_edges.len(),
-                edge_count: $edges.len(), budget: $budget, plan: $plan, target: $edge.to,
+                values: &$observations,
+                remaining_edges: $remaining_edges.len(),
+                edge_count: $edges.len(),
+                budget: $budget,
+                plan: $plan,
+                target: $edge.to,
             },
         );
         if decision.take {
-                                    note_skeleton_materialization();
-                                    $budget.charge_skeleton($function, 1, "plan branch observation push")?;
-                                    note_skeleton_materialization();
-                                    $budget.reserve_bytes($function, 0, "plan branch observation push")?;
-                                    $budget.reserve_bytes($function,
-                                        physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(&$observation),
-                                        "plan branch observation push")?;
-                                    #[cfg(test)]
-                                    branch_clone::note_take();
-                                    #[cfg(test)]
-                                    branch_clone::note_generic_take();
-                                    $branch = std::mem::take(&mut $observations);
-                                    $branch.push($observation.into());
-                                    skeleton_queue_push($budget, $function, &mut $queue,
-                                        ($edge.to, $branch), "plan branch state push")?;
-                                    continue;
+            note_skeleton_materialization();
+            $budget.charge_skeleton($function, 1, "plan branch observation push")?;
+            note_skeleton_materialization();
+            $budget.reserve_bytes($function, 0, "plan branch observation push")?;
+            $budget.reserve_bytes(
+                $function,
+                physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(
+                    &$observation,
+                ),
+                "plan branch observation push",
+            )?;
+            #[cfg(test)]
+            branch_clone::note_take();
+            #[cfg(test)]
+            branch_clone::note_generic_take();
+            $branch = std::mem::take(&mut $observations);
+            $branch.push($observation.into());
+            skeleton_queue_push(
+                $budget,
+                $function,
+                &mut $queue,
+                ($edge.to, $branch),
+                "plan branch state push",
+            )?;
+            continue;
         }
-                        $budget.reserve_clone(
-                            $function,
-                            &$observations,
-                            "cleanup-plan skeleton branch clone",
-                        )?;
-                        note_skeleton_materialization();
-                        // Original push work precedes every extra backing debit.
-                        $budget.charge_skeleton($function, 1, "plan branch observation push")?;
-                        note_skeleton_materialization();
-                        let capacity = if let Some(capacity) = decision.copy_capacity {
-                            capacity
-                        } else if $observations.is_empty() {
-                            1
-                        } else {
-                            if $observations.len() > usize::MAX / 2 {
-                                return Err($budget.budget_refusal(
-                                    $function,
-                                    "cleanup replay branch capacity overflowed",
-                                    "",
-                                ));
-                            }
-                            $observations.len() * 2
-                        };
-                        $budget.reserve_array::<std::rc::Rc<SkeletonObservation>>(
-                            $function,
-                            capacity - $observations.len(),
-                            "plan branch observation push",
-                        )?;
-                        $budget.reserve_bytes(
-                            $function,
-                            physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(
-                                &$observation,
-                            ),
-                            "plan branch observation push",
-                        )?;
-                        $branch = Vec::with_capacity(capacity);
-                        $branch.extend($observations.iter().cloned());
-                        $branch.push($observation.into());
-                        // Count only the successfully filled bounded-copy Vec.
-                        // TAKE, shape probes and original fallback do not count.
-                        #[cfg(test)]
-                        if decision.copy_capacity.is_some() {
-                            branch_clone::note_plan_copy();
-                        }
-        skeleton_queue_push($budget, $function, &mut $queue,
-            ($edge.to, $branch), "plan branch state push")?;
+        $budget.reserve_clone(
+            $function,
+            &$observations,
+            "cleanup-plan skeleton branch clone",
+        )?;
+        note_skeleton_materialization();
+        // Original push work precedes every extra backing debit.
+        $budget.charge_skeleton($function, 1, "plan branch observation push")?;
+        note_skeleton_materialization();
+        let capacity = if let Some(capacity) = decision.copy_capacity {
+            capacity
+        } else if $observations.is_empty() {
+            1
+        } else {
+            if $observations.len() > usize::MAX / 2 {
+                return Err($budget.budget_refusal(
+                    $function,
+                    "cleanup replay branch capacity overflowed",
+                    "",
+                ));
+            }
+            $observations.len() * 2
+        };
+        $budget.reserve_array::<std::rc::Rc<SkeletonObservation>>(
+            $function,
+            capacity - $observations.len(),
+            "plan branch observation push",
+        )?;
+        $budget.reserve_bytes(
+            $function,
+            physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(&$observation),
+            "plan branch observation push",
+        )?;
+        $branch = Vec::with_capacity(capacity);
+        $branch.extend($observations.iter().cloned());
+        $branch.push($observation.into());
+        // Count only the successfully filled bounded-copy Vec.
+        // TAKE, shape probes and original fallback do not count.
+        #[cfg(test)]
+        if decision.copy_capacity.is_some() {
+            branch_clone::note_plan_copy();
+        }
+        skeleton_queue_push(
+            $budget,
+            $function,
+            &mut $queue,
+            ($edge.to, $branch),
+            "plan branch state push",
+        )?;
         continue;
     }};
 }
@@ -513,15 +529,22 @@ pub(super) fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
-                        budget.reserve_bytes(function, previous_inline_controls::<std::rc::Rc<SkeletonObservation>>(),
-                            "branch clone receiving controls")?;
+                    if let ReplayBudget {
+                        payer: AllocationPayer::ActiveBuilder,
+                        ..
+                    } = budget
+                    {
+                        budget.reserve_bytes(
+                            function,
+                            previous_inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls",
+                        )?;
                     } else {
-                    budget.reserve_bytes(
-                        function,
-                        branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
-                        "branch clone receiving controls",
-                    )?;
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls",
+                        )?;
                     }
                     // The branch producer has no Result<Vec<_>, Diagnostic>
                     // receiver or owned observation forwarding argument. Its
@@ -550,11 +573,28 @@ pub(super) fn plan_skeleton_paths(
                         // Original clone1 is charged above on both true and
                         // false probe paths; this is a bounded implementation
                         // detail of that materialization, not a CPU ledger.
-                        if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
-                            budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,
-                                "plan final branch probe receiving")?;
-                            previous_produce!(budget, function, observations,
-                                observation, plan, edge, remaining_edges, edges, branch, queue);
+                        if let ReplayBudget {
+                            payer: AllocationPayer::ActiveBuilder,
+                            ..
+                        } = budget
+                        {
+                            budget.reserve_bytes(
+                                function,
+                                branch_clone::TAKE_CALL_CONTROLS,
+                                "plan final branch probe receiving",
+                            )?;
+                            previous_produce!(
+                                budget,
+                                function,
+                                observations,
+                                observation,
+                                plan,
+                                edge,
+                                remaining_edges,
+                                edges,
+                                branch,
+                                queue
+                            );
                         }
                         budget.reserve_clone(
                             function,

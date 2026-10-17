@@ -1,8 +1,10 @@
 //! Complete immediate d962 canonical receiver, compiled independently.
-use super::{app_census, tests, arena_tests, physical_clone, replay_error, Automaton, BTreeMap,
-    Diagnostic, Label, Rc, ReplayBudget, ResolvedFunction, Weighted, closure_receiving,
-    empty_closure, before_terminal_leaf_empty_memo as empty_memo, ordered_alias, ordered_weights, successor_targets,
-    inline_weighted, intern_arena};
+use super::{
+    app_census, arena_tests, before_terminal_leaf_empty_memo as empty_memo, closure_receiving,
+    empty_closure, inline_weighted, intern_arena, ordered_alias, ordered_weights, physical_clone,
+    replay_error, successor_targets, tests, Automaton, BTreeMap, Diagnostic, Label, Rc,
+    ReplayBudget, ResolvedFunction, Weighted,
+};
 use inline_weighted::SmallWeighted;
 
 // Invoked only after preflight proved an unbound, nonfailed Memo. This is the
@@ -1236,31 +1238,39 @@ impl<'a> Canonicalizer<'a> {
                         "factored canonical signature construction",
                     ));
                     attempt!(budget.reserve_bytes(
-                        function, intern_arena::SignatureQuery::EXIT_CONTROLS,
+                        function,
+                        intern_arena::SignatureQuery::EXIT_CONTROLS,
                         "canonical borrowed signature receiving",
                     ));
                     // Retained scalar scratch contains only the child IDs for
                     // this frame; the epsilon cursor keeps its original shape.
                     self.child_ids.clear();
                     attempt!(budget.reserve_vec(
-                        function, &mut self.child_ids, successors.len(),
+                        function,
+                        &mut self.child_ids,
+                        successors.len(),
                         "canonical ordered child identity scratch",
                     ));
                     attempt!(budget.reserve_array::<[usize; 2]>(
-                        function, successors.len(), "canonical child identity receiving",
+                        function,
+                        successors.len(),
+                        "canonical child identity receiving",
                     ));
                     // Resolve every ID before signature comparison can stop at
                     // its first mismatch. This preserves the original failure order.
                     for (_, child) in &successors {
                         let Some(id) = self.states.get(child) else {
-                            receiving.refusal = Some(replay_error(function, "cleanup CFG contains a cycle"));
+                            receiving.refusal =
+                                Some(replay_error(function, "cleanup CFG contains a cycle"));
                             receiving.ready = true;
                             return;
                         };
                         self.child_ids.push(*id);
                     }
                     let query = intern_arena::SignatureQuery {
-                        accepted, successors: &successors, children: &self.child_ids,
+                        accepted,
+                        successors: &successors,
+                        children: &self.child_ids,
                     };
                     let id = match self.ids.get(&query) {
                         Some(id) => {
@@ -1272,24 +1282,35 @@ impl<'a> Canonicalizer<'a> {
                             #[cfg(test)]
                             arena_tests::signature_lookup(false);
                             attempt!(budget.reserve_array::<(Label, usize)>(
-                                function, successors.len(), "factored canonical signature vector",
+                                function,
+                                successors.len(),
+                                "factored canonical signature vector",
                             ));
                             // Every ID is already resolved. Move each original
                             // label with its borrowed ID, without an owned
                             // scalar cursor or repeated index/increment operands.
                             attempt!(budget.reserve_bytes(
-                                function, intern_arena::SignatureQuery::MISS_CONTROLS,
+                                function,
+                                intern_arena::SignatureQuery::MISS_CONTROLS,
                                 "canonical signature miss iterator receiving",
                             ));
                             attempt!(budget.reserve_array::<[&usize; 2]>(
-                                function, successors.len(), "canonical signature miss borrowed IDs",
+                                function,
+                                successors.len(),
+                                "canonical signature miss borrowed IDs",
                             ));
                             let mut key = Vec::with_capacity(successors.len());
-                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids) {
+                            for ((label, _child), id) in successors.into_iter().zip(&self.child_ids)
+                            {
                                 key.push((label, *id));
                             }
                             let key = (accepted, key);
-                            intern_arena::prepare_insert!(self.ids, intern_arena::Signature, function, budget);
+                            intern_arena::prepare_insert!(
+                                self.ids,
+                                intern_arena::Signature,
+                                function,
+                                budget
+                            );
                             let id = self.ids.len();
                             self.ids.insert_prepaid(key, id);
                             id
@@ -1297,7 +1318,12 @@ impl<'a> Canonicalizer<'a> {
                     };
                     self.child_ids.clear();
                     if !self.states.contains_key(&state) {
-                        intern_arena::prepare_insert!(self.states, SharedWeighted, function, budget);
+                        intern_arena::prepare_insert!(
+                            self.states,
+                            SharedWeighted,
+                            function,
+                            budget
+                        );
                     }
                     self.states.insert_prepaid(state, id);
                 }
@@ -1312,6 +1338,10 @@ impl<'a> Canonicalizer<'a> {
 }
 
 impl Canonicalizer<'_> {
-    pub(super) fn signatures(&self) -> &intern_arena::Arena<intern_arena::Signature> { &self.ids }
-    pub(super) fn states(&self) -> &intern_arena::Arena<SharedWeighted> { &self.states }
+    pub(super) fn signatures(&self) -> &intern_arena::Arena<intern_arena::Signature> {
+        &self.ids
+    }
+    pub(super) fn states(&self) -> &intern_arena::Arena<SharedWeighted> {
+        &self.states
+    }
 }

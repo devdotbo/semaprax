@@ -3,8 +3,8 @@
 //! The original push loop still produces and meters every path. Acquiring the
 //! same power-of-two capacity early preserves every subsequent growth target.
 use super::super::*;
-use super::tests;
 use super::main696 as path_array;
+use super::tests;
 
 pub(super) fn receiving_bytes() -> usize {
     use std::mem::size_of;
@@ -210,7 +210,9 @@ pub(super) fn hir_skeleton_paths(
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
     struct Restore(bool);
     impl Drop for Restore {
-        fn drop(&mut self) { SELECTED.with(|flag| flag.set(self.0)); }
+        fn drop(&mut self) {
+            SELECTED.with(|flag| flag.set(self.0));
+        }
     }
     let _restore = Restore(SELECTED.with(|flag| flag.replace(true)));
     super::super::hir_skeleton_paths(program, function, budget)

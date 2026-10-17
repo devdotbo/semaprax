@@ -122,7 +122,8 @@ pub(in crate::cleanup_plan::replay) fn validate_status_sources_certified<'hir>(
                         StatusProducer::CheckedAllocation {
                             normalized_cases, ..
                         },
-                    ) if function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
+                    ) if function.cleanup_plan.schema
+                        == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V20
                         && *normalized_cases
                             == [
                                 crate::cleanup_plan::AllocationCase::PayloadRefused,

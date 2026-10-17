@@ -147,7 +147,9 @@ fn project(rows: &str, source: &str, current: &str) -> String {
         return current.to_owned();
     };
     let acquired = main67107_inputs::compile35f_expected_input(
-        source, row["current_sha256"].as_str().unwrap(), current,
+        source,
+        row["current_sha256"].as_str().unwrap(),
+        current,
     );
     let current = acquired.as_str();
     assert_eq!(
@@ -773,12 +775,19 @@ pub(crate) fn arena854_input(source: &str, current: &str) -> String {
     } else {
         current.to_owned()
     };
-    let next = project(include_str!("../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json"), source, &query_input);
+    let next = project(
+        include_str!("../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json"),
+        source,
+        &query_input,
+    );
     let main65 = main65_previous(source, current);
     // The complete16c overlay may already remove this same source delta.
     // Authenticate raw bytes above, then accept only raw or that exact old view.
     let main65 = if next != current {
-        assert!(main65 == current || main65 == next, "arena854 normalized input drift");
+        assert!(
+            main65 == current || main65 == next,
+            "arena854 normalized input drift"
+        );
         next
     } else {
         main65
@@ -929,7 +938,9 @@ fn compile9ce_input(source: &str, current: &str) -> String {
         return current.to_owned();
     }
     project(
-        include_str!("../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json"),
+        include_str!(
+            "../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json"
+        ),
         source,
         current,
     )
@@ -986,15 +997,25 @@ pub(crate) fn main_e47_input(source: &str, current: &str) -> String {
 #[path = "source_reflows_merge/main44_custody.rs"]
 mod main44_custody;
 pub(crate) use main44_custody::Fixture as Main44Fixture;
-pub(crate) fn main44_metadata(fixture: Main44Fixture) -> String { runtime_json::main44_metadata(fixture) }
-pub(crate) fn main44_input(source: &str, current: &str) -> String { main44_custody::input(source, current) }
+pub(crate) fn main44_metadata(fixture: Main44Fixture) -> String {
+    runtime_json::main44_metadata(fixture)
+}
+pub(crate) fn main44_input(source: &str, current: &str) -> String {
+    main44_custody::input(source, current)
+}
 
 #[path = "source_reflows_merge/main043_custody.rs"]
 mod main043_custody;
 pub(crate) use main043_custody::Fixture as Main043Fixture;
-pub(crate) fn main043_metadata(fixture: Main043Fixture) -> String { runtime_json::main043_metadata(fixture) }
-pub(crate) fn main043_input(source: &str, current: &str) -> String { main043_custody::input(source, current) }
-pub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String { main043_custody::historical_ci_extra(source, current) }
+pub(crate) fn main043_metadata(fixture: Main043Fixture) -> String {
+    runtime_json::main043_metadata(fixture)
+}
+pub(crate) fn main043_input(source: &str, current: &str) -> String {
+    main043_custody::input(source, current)
+}
+pub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String {
+    main043_custody::historical_ci_extra(source, current)
+}
 // Current344 direct readers keep their complete historical predicates below.
 #[path = "source_reflows_merge/current344.rs"]
 pub(crate) mod current344;
@@ -1028,7 +1049,10 @@ pub(crate) mod main67107_inputs;
 mod ordinary_plan_inputs;
 
 // Only the historical PLAN source test receives this exact root checkpoint.
-pub(crate) fn ordinary_plan_history_root_checkpoint(current: &str, compiled_before: &str) -> String {
+pub(crate) fn ordinary_plan_history_root_checkpoint(
+    current: &str,
+    compiled_before: &str,
+) -> String {
     ordinary_plan_inputs::original_root_checkpoint(current, compiled_before)
 }
 

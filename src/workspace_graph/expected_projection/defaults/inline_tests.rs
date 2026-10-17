@@ -340,7 +340,8 @@ fn complete_inline_sources_and_original_owners_have_exact_whole_file_inverses() 
     assert_eq!(records.len(), owners.len());
     for ((record, current), original) in records.iter().zip(owners).zip(originals) {
         let current = crate::source_reflows_merge::constructor_complete_input(
-            record["source"].as_str().unwrap(), current,
+            record["source"].as_str().unwrap(),
+            current,
         );
         let current = current.as_str();
         let mut restored = current.to_owned();
@@ -367,7 +368,8 @@ fn complete_inline_sources_and_original_owners_have_exact_whole_file_inverses() 
     ];
     for (record, source) in proof["children"].as_array().unwrap().iter().zip(children) {
         let source = crate::source_reflows_merge::constructor_complete_input(
-            record["source"].as_str().unwrap(), source,
+            record["source"].as_str().unwrap(),
+            source,
         );
         assert_eq!(
             format!(

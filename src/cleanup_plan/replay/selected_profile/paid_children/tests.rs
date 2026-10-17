@@ -3,7 +3,7 @@ use super::collections;
 use crate::cleanup::ReplayContext;
 use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
 use crate::cleanup_plan::replay::{
-    ReplayBudget, expression_facts, selected_context, selected_profile,
+    expression_facts, selected_context, selected_profile, ReplayBudget,
 };
 use crate::diagnostic::Diagnostic;
 use crate::hir::{OwnershipMode, ResolvedExpr, ResolvedExprKind, ResolvedFunction, ResolvedType};
@@ -137,8 +137,8 @@ fn set_work(b: &mut ReplayBudget, lent: bool, allowance: usize) {
 }
 fn append_extra_bytes() -> usize {
     use crate::cleanup_plan::replay::selected_context::{
-        Context,
         child::{Deferred, Permit},
+        Context,
     };
     use crate::cleanup_plan::replay::semantic_refusal::Receipt;
     use crate::hir::{ExpressionId, ResolvedBinding, ValueId};
@@ -298,8 +298,8 @@ fn full_append_original_lent_unscoped_exact_short_zero_and_sticky_first_owner_st
 
 #[test]
 fn actual_session_child_refusal_retains_full_old_diagnostic_and_public_paid_report_owner() {
-    use crate::cleanup_plan::ReplayPhysicalReservation;
     use crate::cleanup_plan::replay::selected_entry::{Acquired, ReportForm};
+    use crate::cleanup_plan::ReplayPhysicalReservation;
     const FORM: ReportForm = ReportForm::new("SPX-T781", "selected finite profile refusal");
     let fixture = SourceRecordReplayFixture::new(fixtures::VECTOR);
     fixture.with_prepared_context(|context| {
@@ -372,11 +372,9 @@ fn actual_session_child_refusal_retains_full_old_diagnostic_and_public_paid_repo
             };
             assert_eq!(receipt.stage(), "selected child");
             let actual = detailed(&foreign, actual);
-            assert!(
-                actual
-                    .message
-                    .contains("selected Vec call has invalid type arguments")
-            );
+            assert!(actual
+                .message
+                .contains("selected Vec call has invalid type arguments"));
             same(&detailed(&foreign, original), &actual);
             drop(current);
             drop(old);

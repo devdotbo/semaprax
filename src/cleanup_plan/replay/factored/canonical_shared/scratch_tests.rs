@@ -1,7 +1,7 @@
 //! Exact immediate-old receivers and physical scratch lifetime controls.
-use super::{before_scratch, Canonicalizer, Diagnostic, ReplayBudget};
 use super::before_held::memo;
 use super::tests;
+use super::{before_scratch, Canonicalizer, Diagnostic, ReplayBudget};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{current_metrics, measure};
 
@@ -400,56 +400,57 @@ fn retained_cache_receiving_fee_preserves_floor_and_sticky_refusal_without_alloc
 }
 
 mod immediate_old_floor {
-pub(super) fn run() {
-    retained_cache_receiving_fee_preserves_floor_and_sticky_refusal_without_allocation();
-}
-use super::*;
-use super::super::before_held::Canonicalizer;
-#[test]
-fn retained_cache_receiving_fee_preserves_floor_and_sticky_refusal_without_allocation() {
-    use crate::bounded_output::{
-        active_remaining, clear_active_floor, reserve_active_required, set_active_floor,
-    };
-    let function = fixture();
-    let (automaton, sink, roots) = super::tests::automaton(&function);
-    for floor in [false, true] {
-        let (((), allocation), refused, _, first) = with_limit_usage_refusal(1 << 20, || {
-            measure(|| {
-                let mut current = Canonicalizer::new(&automaton, sink);
-                let mut budget = ReplayBudget::new();
-                current.closure(&function, roots[3], &mut budget).unwrap();
-                let remaining = active_remaining().unwrap();
-                let receipt = std::mem::size_of::<Result<(), Diagnostic>>();
-                if floor {
-                    assert!(set_active_floor(remaining - receipt));
-                } else {
-                    assert!(reserve_active_required(remaining - receipt));
-                }
-                let at = current_metrics().allocated;
-                assert!(current
-                    .closure(&function, roots[3], &mut budget)
-                    .unwrap()
-                    .is_some());
-                assert_eq!(current_metrics().allocated, at);
-                assert!(!reserve_active_required(1));
-                clear_active_floor();
-                assert!(current.closure(&function, roots[3], &mut budget).is_err());
-                assert_eq!(current_metrics().allocated, at);
-                assert!(current.closures.failed());
-                drop(current);
-                drop(budget);
-            })
-        });
-        assert!(refused);
-        let first = first.unwrap();
-        assert_eq!(first.requested, 1);
-        assert_eq!(first.floor > 0, floor);
-        assert!(
-            !allocation.invalid && allocation.live == 0 && allocation.allocated == allocation.freed
-        );
+    pub(super) fn run() {
+        retained_cache_receiving_fee_preserves_floor_and_sticky_refusal_without_allocation();
     }
-}
-
+    use super::super::before_held::Canonicalizer;
+    use super::*;
+    #[test]
+    fn retained_cache_receiving_fee_preserves_floor_and_sticky_refusal_without_allocation() {
+        use crate::bounded_output::{
+            active_remaining, clear_active_floor, reserve_active_required, set_active_floor,
+        };
+        let function = fixture();
+        let (automaton, sink, roots) = super::tests::automaton(&function);
+        for floor in [false, true] {
+            let (((), allocation), refused, _, first) = with_limit_usage_refusal(1 << 20, || {
+                measure(|| {
+                    let mut current = Canonicalizer::new(&automaton, sink);
+                    let mut budget = ReplayBudget::new();
+                    current.closure(&function, roots[3], &mut budget).unwrap();
+                    let remaining = active_remaining().unwrap();
+                    let receipt = std::mem::size_of::<Result<(), Diagnostic>>();
+                    if floor {
+                        assert!(set_active_floor(remaining - receipt));
+                    } else {
+                        assert!(reserve_active_required(remaining - receipt));
+                    }
+                    let at = current_metrics().allocated;
+                    assert!(current
+                        .closure(&function, roots[3], &mut budget)
+                        .unwrap()
+                        .is_some());
+                    assert_eq!(current_metrics().allocated, at);
+                    assert!(!reserve_active_required(1));
+                    clear_active_floor();
+                    assert!(current.closure(&function, roots[3], &mut budget).is_err());
+                    assert_eq!(current_metrics().allocated, at);
+                    assert!(current.closures.failed());
+                    drop(current);
+                    drop(budget);
+                })
+            });
+            assert!(refused);
+            let first = first.unwrap();
+            assert_eq!(first.requested, 1);
+            assert_eq!(first.floor > 0, floor);
+            assert!(
+                !allocation.invalid
+                    && allocation.live == 0
+                    && allocation.allocated == allocation.freed
+            );
+        }
+    }
 }
 
 #[test]

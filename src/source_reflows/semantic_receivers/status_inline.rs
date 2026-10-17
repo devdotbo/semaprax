@@ -31,9 +31,16 @@ const MAIN6D_CAP: usize = 262_144;
 fn main6d_error(message: &'static str) -> ::std::io::Error {
     ::std::io::Error::new(::std::io::ErrorKind::InvalidData, message)
 }
-fn main6d_held(path: &::std::path::Path, length: usize, expected: &str) -> ::std::io::Result<String> {
-    if length > MAIN6D_CAP { return Err(main6d_error("Main6d exact source bound")); }
-    crate::source_reflows_merge::main_e177_inputs::main_e177_file_raw(path, length, expected).map_err(main6d_error)
+fn main6d_held(
+    path: &::std::path::Path,
+    length: usize,
+    expected: &str,
+) -> ::std::io::Result<String> {
+    if length > MAIN6D_CAP {
+        return Err(main6d_error("Main6d exact source bound"));
+    }
+    crate::source_reflows_merge::main_e177_inputs::main_e177_file_raw(path, length, expected)
+        .map_err(main6d_error)
 }
 fn main6d_compiled(source: &str) -> Option<&'static str> {
     match source {
@@ -48,44 +55,118 @@ fn main6d_compiled(source: &str) -> Option<&'static str> {
     }
 }
 fn main6d_packet() -> ::std::io::Result<serde_json::Value> {
-    let data=::std::include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"));
+    let data = ::std::include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"
+    ));
     assert_eq!(data.len(), 6867);
-    assert_eq!(format!("{:x}",crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(data.as_bytes()))), "7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050");
-    let root=::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(main6d_held(&root.join("docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"),6867,"7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050")?,data,"whole physical and compiled Main6d packet");
-    let packet:serde_json::Value=serde_json::from_str(data).unwrap();
-    assert_eq!(packet["schema"],"semaprax.main6d-closed-controller-acquisition.v1");
-    assert_eq!(packet["main_head"],"6d101efd8c255330a3fe5fb0c06e058c6f8c085f");
-    assert_eq!(packet["rows"].as_array().unwrap().len(),7);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(data.as_bytes()))
+        ),
+        "7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050"
+    );
+    let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(
+        main6d_held(
+            &root.join("docs/evidence/main6d-closed-controller-acquisition-20261017/inputs.json"),
+            6867,
+            "7003275c8ccc1f6ebdb64ef96ccdc6297aac4f85e76f12d080f73b7dfef03050"
+        )?,
+        data,
+        "whole physical and compiled Main6d packet"
+    );
+    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(
+        packet["schema"],
+        "semaprax.main6d-closed-controller-acquisition.v1"
+    );
+    assert_eq!(
+        packet["main_head"],
+        "6d101efd8c255330a3fe5fb0c06e058c6f8c085f"
+    );
+    assert_eq!(packet["rows"].as_array().unwrap().len(), 7);
     Ok(packet)
 }
 fn main6d_read(path: &::std::path::Path) -> ::std::io::Result<String> {
-    let root=::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
-    let relative=path.strip_prefix(root).map_err(|_|main6d_error("foreign Main6d root"))?;
-    if !relative.components().all(|part|matches!(part,::std::path::Component::Normal(_))) {return Err(main6d_error("foreign Main6d spelling"));}
-    let source=relative.to_str().ok_or_else(||main6d_error("nonUTF8 Main6d path"))?;
-    if source=="docs/evidence/status-inline-receipts-v1/sources.json" {
-        let text=main6d_held(path,7249,"5534b323fbebfaa7db577853f154231fba164dc18572645a1eaf25d0be23cdeb")?;
-        assert_eq!(text,::std::include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/status-inline-receipts-v1/sources.json")),"whole immutable Main6d control table");
+    let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path
+        .strip_prefix(root)
+        .map_err(|_| main6d_error("foreign Main6d root"))?;
+    if !relative
+        .components()
+        .all(|part| matches!(part, ::std::path::Component::Normal(_)))
+    {
+        return Err(main6d_error("foreign Main6d spelling"));
+    }
+    let source = relative
+        .to_str()
+        .ok_or_else(|| main6d_error("nonUTF8 Main6d path"))?;
+    if source == "docs/evidence/status-inline-receipts-v1/sources.json" {
+        let text = main6d_held(
+            path,
+            7249,
+            "5534b323fbebfaa7db577853f154231fba164dc18572645a1eaf25d0be23cdeb",
+        )?;
+        assert_eq!(
+            text,
+            ::std::include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/status-inline-receipts-v1/sources.json"
+            )),
+            "whole immutable Main6d control table"
+        );
         return Ok(text);
     }
-    let packet=main6d_packet()?;let rows=packet["rows"].as_array().unwrap();
-    let before:Vec<_>=rows.iter().filter(|row|row["before"]["path"]==source).collect();
-    if before.len()==1 {
-        let before=&before[0]["before"];
-        return main6d_held(path,before["length"].as_u64().unwrap()as usize,before["sha256"].as_str().unwrap());
+    let packet = main6d_packet()?;
+    let rows = packet["rows"].as_array().unwrap();
+    let before: Vec<_> = rows
+        .iter()
+        .filter(|row| row["before"]["path"] == source)
+        .collect();
+    if before.len() == 1 {
+        let before = &before[0]["before"];
+        return main6d_held(
+            path,
+            before["length"].as_u64().unwrap() as usize,
+            before["sha256"].as_str().unwrap(),
+        );
     }
-    let found:Vec<_>=rows.iter().filter(|row|row["source"]==source).collect();
-    if found.len()!=1 {return Err(main6d_error("unknown or duplicate Main6d source"));}
-    let row=found[0];let current=&row["current"];
-    let actual=main6d_held(path,current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())?;
-    assert_eq!(Some(actual.as_str()),main6d_compiled(source),"whole actual and compiled Main6d source");
-    assert_eq!(actual,main6d_held(&root.join(current["path"].as_str().unwrap()),current["length"].as_u64().unwrap()as usize,current["sha256"].as_str().unwrap())?,"whole current source archive");
-    let incoming=&row["incoming"];
-    main6d_held(&root.join(incoming["path"].as_str().unwrap()),incoming["length"].as_u64().unwrap()as usize,incoming["sha256"].as_str().unwrap())
+    let found: Vec<_> = rows.iter().filter(|row| row["source"] == source).collect();
+    if found.len() != 1 {
+        return Err(main6d_error("unknown or duplicate Main6d source"));
+    }
+    let row = found[0];
+    let current = &row["current"];
+    let actual = main6d_held(
+        path,
+        current["length"].as_u64().unwrap() as usize,
+        current["sha256"].as_str().unwrap(),
+    )?;
+    assert_eq!(
+        Some(actual.as_str()),
+        main6d_compiled(source),
+        "whole actual and compiled Main6d source"
+    );
+    assert_eq!(
+        actual,
+        main6d_held(
+            &root.join(current["path"].as_str().unwrap()),
+            current["length"].as_u64().unwrap() as usize,
+            current["sha256"].as_str().unwrap()
+        )?,
+        "whole current source archive"
+    );
+    let incoming = &row["incoming"];
+    main6d_held(
+        &root.join(incoming["path"].as_str().unwrap()),
+        incoming["length"].as_u64().unwrap() as usize,
+        incoming["sha256"].as_str().unwrap(),
+    )
 }
 mod std {
-    pub use ::std::{collections,panic};
+    pub use ::std::{collections, panic};
     pub mod fs {
         pub fn read_to_string(path: impl AsRef<::std::path::Path>) -> ::std::io::Result<String> {
             super::super::main6d_read(path.as_ref())

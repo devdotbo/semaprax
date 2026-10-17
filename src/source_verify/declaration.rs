@@ -233,7 +233,14 @@ fn verify_profile_funded<'p>(
         // Keep those declaration receipts without checking executable bodies
         // or exposing unsupported-storage signature cascades.
         let declaration_prefix = diagnostics.len();
-        check_function_declarations(program, capacity_functions, &types, &mut functions, &mut ids, &mut diagnostics);
+        check_function_declarations(
+            program,
+            capacity_functions,
+            &types,
+            &mut functions,
+            &mut ids,
+            &mut diagnostics,
+        );
         let mut position = 0;
         diagnostics.retain(|diagnostic| {
             let retain =

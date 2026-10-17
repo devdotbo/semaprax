@@ -54,7 +54,7 @@ impl<'a> Ancestry<'a> {
 mod tests {
     use super::Ancestry;
     use crate::bounded_output::with_limit_usage_refusal;
-    use crate::hir::{Binding, resolver_scope};
+    use crate::hir::{resolver_scope, Binding};
     use crate::test_allocation_observer::measure;
     use std::{collections::BTreeMap, mem::size_of};
     #[test]
@@ -81,34 +81,38 @@ mod tests {
             expected,
         ] {
             let operation = || {
-                    let mut state = Ancestry::acquire()?;
-                    assert!(state.entry().is_none());
-                    super::reserve_scope()?;
-                    state.enter(entry.clone(), 1);
-                    super::reserve_scope()?;
-                    state.enter(entry.clone(), 3);
-                    state.leave(2);
-                    assert!(std::ptr::eq(state.entry().unwrap(), &map));
-                    state.leave(1);
-                    assert!(state.entry().is_some());
-                    state.leave(0);
-                    assert!(state.entry().is_none());
-                    Ok::<_, crate::diagnostic::Diagnostic>(())
+                let mut state = Ancestry::acquire()?;
+                assert!(state.entry().is_none());
+                super::reserve_scope()?;
+                state.enter(entry.clone(), 1);
+                super::reserve_scope()?;
+                state.enter(entry.clone(), 3);
+                state.leave(2);
+                assert!(std::ptr::eq(state.entry().unwrap(), &map));
+                state.leave(1);
+                assert!(state.entry().is_some());
+                state.leave(0);
+                assert!(state.entry().is_none());
+                Ok::<_, crate::diagnostic::Diagnostic>(())
             };
             // Retain the complete external setup + compiler + final Drop
             // observation, independently of the already-created-ledger scope.
             let ((whole_result, whole_refused, whole_used, whole_first), whole) =
                 measure(|| with_limit_usage_refusal(limit, operation));
-            assert_eq!((whole.allocations, whole.allocated, whole.live),
-                (setup.allocations, setup.allocated, 0));
+            assert_eq!(
+                (whole.allocations, whole.allocated, whole.live),
+                (setup.allocations, setup.allocated, 0)
+            );
             assert_eq!(whole.allocated, whole.freed);
             assert!(!whole.invalid);
             // The zero-heap claim is only the complete compiler receiver inside
             // the real caller-owned invocation ledger, never ledger creation.
             let ((result, metrics), refused, used, first) =
                 with_limit_usage_refusal(limit, || measure(operation));
-            assert_eq!((&result, refused, used, first),
-                (&whole_result, whole_refused, whole_used, whole_first));
+            assert_eq!(
+                (&result, refused, used, first),
+                (&whole_result, whole_refused, whole_used, whole_first)
+            );
             assert_eq!(result.is_ok(), limit == expected);
             assert_eq!(refused, limit < expected);
             assert_eq!(first.is_some(), limit < expected);

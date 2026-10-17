@@ -67,9 +67,9 @@ pub(crate) fn walk<'a>(function: &'a ResolvedFunction, mut visit: impl FnMut(&'a
 mod paid_walk;
 pub(crate) use paid_walk::walk as try_walk;
 mod funded;
-pub(crate) use funded::walk_funded_paying;
 #[cfg(test)]
 pub(crate) use funded::walk_funded;
+pub(crate) use funded::walk_funded_paying;
 pub fn target_universe(program: &ResolvedProgram) -> Vec<&ResolvedFunction> {
     let mut ids = BTreeSet::new();
     for f in program.functions.iter().chain(

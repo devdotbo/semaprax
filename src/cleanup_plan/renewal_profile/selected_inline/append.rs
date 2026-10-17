@@ -1,9 +1,9 @@
 //! Exact same-owner String append receiving facts without Debug formatting.
-use super::{DEPTH, prepay};
-use super::{Refusal, error};
+use super::{error, Refusal};
+use super::{prepay, DEPTH};
 use crate::cleanup_plan::ReplayPhysicalReservation;
-use crate::hir::{OwnershipMode, ResolvedType};
 use crate::hir::ResolvedBinding;
+use crate::hir::{OwnershipMode, ResolvedType};
 pub(crate) fn admitted(
     binding: &ResolvedBinding,
     value: &crate::hir::ResolvedExpr,

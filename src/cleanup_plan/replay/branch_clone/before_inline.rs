@@ -1,7 +1,7 @@
 //! Complete immediate old enumerator, using its unchanged fused helper.
-use super::super::*;
-use super::super::compact_stage::before::{SkeletonObservation, SkeletonPath, lexical_skeleton};
 use super::super::branch_clone;
+use super::super::compact_stage::before::{lexical_skeleton, SkeletonObservation, SkeletonPath};
+use super::super::*;
 
 pub(super) fn plan_skeleton_paths(
     function: &ResolvedFunction,

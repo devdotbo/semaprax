@@ -420,7 +420,6 @@ pub(in crate::hir) fn compare_finish_drop(
     );
 }
 
-
 // Original finish algorithms compiled independently; only their private names
 // change. No production dispatch or fake source/authentication context exists.
 use crate::ast::Span;

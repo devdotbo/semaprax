@@ -513,7 +513,9 @@ pub(super) fn pay_type(declaration: &TypeDeclaration, owner: &mut Receiver) -> R
     cost.pay()
 }
 pub(super) fn pay_signature(function: &Function, owner: &mut Receiver) -> Result<(), Setup> {
-    owner.reserve(size_of::<Result<(), Setup>>() + size_of::<&Function>() + size_of::<&mut Receiver>())?;
+    owner.reserve(
+        size_of::<Result<(), Setup>>() + size_of::<&Function>() + size_of::<&mut Receiver>(),
+    )?;
     let mut cost = Cost::new(owner, true)?;
     ast_function_signature_cost(function, &mut cost)?;
     cost.pay()
@@ -963,7 +965,11 @@ mod tests {
         let rows = rows.as_array().unwrap();
         assert_eq!(rows.len(), sources.len());
         for (row, (current, original)) in rows.iter().zip(sources) {
-            let projected = crate::source_reflows_merge::consumer_input("cost825", row["source"].as_str().unwrap(), current);
+            let projected = crate::source_reflows_merge::consumer_input(
+                "cost825",
+                row["source"].as_str().unwrap(),
+                current,
+            );
             let current = projected.as_str();
             assert_eq!(
                 format!(

@@ -1,6 +1,6 @@
 //! Whole base36 borrowed sequence; finite old merge and macro namespaces only.
-use super::super::*;
 use super::super::sequence_vector as before_sequence_vector;
+use super::super::*;
 
 pub(super) fn sequence_skeleton_paths(
     prefixes: Vec<ExprSkeletonPath>,
@@ -124,7 +124,9 @@ pub(super) fn sequence_skeleton_paths(
         // Lexical remainder of the original first clone: no second charge and
         // no newly forwarded Result<Observations, Diagnostic>.
         let observations = skeleton_work::prefix_fusion::after_work!(
-            work, prefix.observations, first_suffix.observations
+            work,
+            prefix.observations,
+            first_suffix.observations
         );
         let owned_source = work.clone_owned(
             &first_suffix.owned_source,
@@ -250,4 +252,3 @@ pub(super) fn sequence_skeleton_paths(
     }
     Ok(combined)
 }
-

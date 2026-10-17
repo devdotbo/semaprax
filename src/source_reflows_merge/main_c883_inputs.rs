@@ -1,20 +1,28 @@
 //! Closed acquisition for the complete main-c883 historical controllers.
 //! This read boundary is test-only and never feeds a current raw source audit.
-use std::path::Path;
 use sha2::{Digest, Sha256};
+use std::path::Path;
 const CAP: usize = 32 * 1024 * 1024;
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn held(path: &Path, length: usize, expected: &str) -> std::io::Result<String> {
-    if let Some(value) = crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected) { return Ok(value); }
-    if let Some(value) = super::main67107_inputs::accepted_expected_file(path, length, expected) { return Ok(value); }
+    if let Some(value) =
+        crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected)
+    {
+        return Ok(value);
+    }
+    if let Some(value) = super::main67107_inputs::accepted_expected_file(path, length, expected) {
+        return Ok(value);
+    }
     use std::io::Read;
     let before = std::fs::symlink_metadata(path)?;
     assert!(before.is_file() && !before.file_type().is_symlink());
     assert!(length <= CAP && before.len() == length as u64);
     let mut source = String::new();
-    std::fs::File::open(path)?.take(CAP as u64 + 1).read_to_string(&mut source)?;
+    std::fs::File::open(path)?
+        .take(CAP as u64 + 1)
+        .read_to_string(&mut source)?;
     assert_eq!(source.len(), length);
     assert_eq!(digest(source.as_bytes()), expected);
     let after = std::fs::symlink_metadata(path)?;
@@ -24,9 +32,13 @@ fn held(path: &Path, length: usize, expected: &str) -> std::io::Result<String> {
     Ok(source)
 }
 fn packet() -> serde_json::Value {
-    let data = include_str!("../../docs/evidence/main-c883-next-source-merge-20261017/main-inputs.json");
+    let data =
+        include_str!("../../docs/evidence/main-c883-next-source-merge-20261017/main-inputs.json");
     assert_eq!(data.len(), 119129);
-    assert_eq!(digest(data.as_bytes()), "83ac5f029587334507d16b67b075e1382b7cfa3df0ae4e704e1fe7fc3c6c019d");
+    assert_eq!(
+        digest(data.as_bytes()),
+        "83ac5f029587334507d16b67b075e1382b7cfa3df0ae4e704e1fe7fc3c6c019d"
+    );
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-c883-source-acquisition.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 240);
@@ -129,26 +141,61 @@ pub(crate) fn current_1e_value(source: &str, supplied: &str) -> String {
     let rows = packet["rows"].as_array().unwrap();
     assert_eq!(rows.iter().filter(|row| row["path"] == source).count(), 1);
     let row = rows.iter().find(|row| row["path"] == source).unwrap();
-    crate::source_reflows_merge::next_big_batch_inputs::value(source, row["current_sha256"].as_str().unwrap(), supplied)
+    crate::source_reflows_merge::next_big_batch_inputs::value(
+        source,
+        row["current_sha256"].as_str().unwrap(),
+        supplied,
+    )
 }
 fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Result<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let path = path.as_ref();
     let relative = path.strip_prefix(root).expect("main-c883 confined source");
-    assert!(relative.components().all(|part| matches!(part, std::path::Component::Normal(_))));
+    assert!(relative
+        .components()
+        .all(|part| matches!(part, std::path::Component::Normal(_))));
     let relative = relative.to_str().unwrap();
     let rows = packet["rows"].as_array().unwrap();
-    assert_eq!(rows.iter().filter(|row| row["path"] == relative).count(), 1, "closed main-c883 source membership");
+    assert_eq!(
+        rows.iter().filter(|row| row["path"] == relative).count(),
+        1,
+        "closed main-c883 source membership"
+    );
     let row = rows.iter().find(|row| row["path"] == relative).unwrap();
-    let current = if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap()) { previous } else {
-        held(path, row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())?
+    let current = if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(
+        path,
+        row["current_length"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    ) {
+        previous
+    } else {
+        held(
+            path,
+            row["current_length"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        )?
     };
     if let Some(compiled) = compiled(relative) {
-        let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(relative, row["current_sha256"].as_str().unwrap(), compiled);
-        let compiled = super::main67107_inputs::accepted_expected_value(relative, row["current_sha256"].as_str().unwrap(), &compiled);
-        assert_eq!(current, compiled, "complete physical/compiled main-c883 owner");
+        let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            compiled,
+        );
+        let compiled = super::main67107_inputs::accepted_expected_value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            &compiled,
+        );
+        assert_eq!(
+            current, compiled,
+            "complete physical/compiled main-c883 owner"
+        );
     }
-    held(&root.join(row["main_archive"].as_str().unwrap()), row["main_length"].as_u64().unwrap() as usize, row["main_sha256"].as_str().unwrap())
+    held(
+        &root.join(row["main_archive"].as_str().unwrap()),
+        row["main_length"].as_u64().unwrap() as usize,
+        row["main_sha256"].as_str().unwrap(),
+    )
 }
 
 #[test]
@@ -160,15 +207,22 @@ fn closed_main_c883_acquisition_authenticates_all_complete_current_owners() {
         assert_eq!(current.len() as u64, row["main_length"].as_u64().unwrap());
         assert_eq!(digest(current.as_bytes()), row["main_sha256"]);
     }
-    for path in [root.join("not-a-main-c883-input"), root.join("src/../Cargo.toml")] {
+    for path in [
+        root.join("not-a-main-c883-input"),
+        root.join("src/../Cargo.toml"),
+    ] {
         assert!(std::panic::catch_unwind(|| read(path)).is_err());
     }
 }
 
 fn packet_1e() -> serde_json::Value {
-    let data = include_str!("../../docs/evidence/main-1e-next-source-merge-20261017/main-inputs.json");
+    let data =
+        include_str!("../../docs/evidence/main-1e-next-source-merge-20261017/main-inputs.json");
     assert_eq!(data.len(), 10780);
-    assert_eq!(digest(data.as_bytes()), "d322aa4ae642d4d0176b174d4a076ec7cdc9240cfc38bf256bd402c23d9312a3");
+    assert_eq!(
+        digest(data.as_bytes()),
+        "d322aa4ae642d4d0176b174d4a076ec7cdc9240cfc38bf256bd402c23d9312a3"
+    );
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-1e-source-acquisition.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 22);
@@ -189,9 +243,14 @@ fn closed_main_1e_acquisition_authenticates_all_complete_current_owners() {
 // Separate f247 acquisition. Current physical bytes are authenticated first;
 // complete incoming JSON/source images remain a distinct immutable namespace.
 fn packet_f247() -> serde_json::Value {
-    let data = include_str!("../../docs/evidence/future831-f247-final-source-binding-20261017/main-f247-inputs.json");
+    let data = include_str!(
+        "../../docs/evidence/future831-f247-final-source-binding-20261017/main-f247-inputs.json"
+    );
     assert_eq!(data.len(), 218113); // F247_PACKET_LENGTH
-    assert_eq!(digest(data.as_bytes()), "6f23ce8906ae025b4bc263885b423c999219a659618f401144e89b95bcadf8de");
+    assert_eq!(
+        digest(data.as_bytes()),
+        "6f23ce8906ae025b4bc263885b423c999219a659618f401144e89b95bcadf8de"
+    );
     let packet: serde_json::Value = serde_json::from_str(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-f247-source-acquisition.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 408); // F247_PACKET_ROWS
@@ -199,8 +258,13 @@ fn packet_f247() -> serde_json::Value {
 }
 pub(crate) fn read_f247(path: impl AsRef<Path>) -> std::io::Result<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let relative = path.as_ref().strip_prefix(root).expect("confined f247 source");
-    assert!(relative.components().all(|p| matches!(p, std::path::Component::Normal(_))));
+    let relative = path
+        .as_ref()
+        .strip_prefix(root)
+        .expect("confined f247 source");
+    assert!(relative
+        .components()
+        .all(|p| matches!(p, std::path::Component::Normal(_))));
     let relative = relative.to_str().unwrap();
     let packet = packet_f247();
     let rows = packet["rows"].as_array().unwrap();
@@ -210,22 +274,60 @@ pub(crate) fn read_f247(path: impl AsRef<Path>) -> std::io::Result<String> {
         super::main67107_inputs::main_f247_file_raw(path, length, expected)
             .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))
     };
-    let current = read(&root.join(relative), row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap())?;
-    if let Some(compiled) = compiled(relative).or_else(|| super::main67107_inputs::accepted_physical_compiled(relative)) {
-        let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(relative, row["current_sha256"].as_str().unwrap(), compiled);
-        let compiled = super::main67107_inputs::accepted_expected_value(relative, row["current_sha256"].as_str().unwrap(), &compiled);
-        assert_eq!(current, compiled, "actual complete compiled f247 current owner");
+    let current = read(
+        &root.join(relative),
+        row["current_length"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    )?;
+    if let Some(compiled) =
+        compiled(relative).or_else(|| super::main67107_inputs::accepted_physical_compiled(relative))
+    {
+        let compiled = crate::source_reflows_merge::next_big_batch_inputs::value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            compiled,
+        );
+        let compiled = super::main67107_inputs::accepted_expected_value(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            &compiled,
+        );
+        assert_eq!(
+            current, compiled,
+            "actual complete compiled f247 current owner"
+        );
     }
-    read(&root.join(row["main_archive"].as_str().unwrap()), row["main_length"].as_u64().unwrap() as usize, row["main_sha256"].as_str().unwrap())
+    read(
+        &root.join(row["main_archive"].as_str().unwrap()),
+        row["main_length"].as_u64().unwrap() as usize,
+        row["main_sha256"].as_str().unwrap(),
+    )
 }
 pub(crate) fn f247_expected(path: &str, supplied: &str) -> String {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let incoming = read_f247(root.join(path)).unwrap();
     let packet = packet_f247();
-    let row = packet["rows"].as_array().unwrap().iter().find(|r| r["path"] == path).unwrap();
-    let actual = super::main67107_inputs::main_f247_file_raw(&root.join(path), row["current_length"].as_u64().unwrap() as usize, row["current_sha256"].as_str().unwrap()).unwrap();
-    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(path, row["current_sha256"].as_str().unwrap(), supplied);
-    assert!(supplied == actual || supplied == incoming, "foreign f247 supplied source");
+    let row = packet["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == path)
+        .unwrap();
+    let actual = super::main67107_inputs::main_f247_file_raw(
+        &root.join(path),
+        row["current_length"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    )
+    .unwrap();
+    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(
+        path,
+        row["current_sha256"].as_str().unwrap(),
+        supplied,
+    );
+    assert!(
+        supplied == actual || supplied == incoming,
+        "foreign f247 supplied source"
+    );
     incoming
 }
 #[test]

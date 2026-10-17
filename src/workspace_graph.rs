@@ -9,10 +9,10 @@
     reason = "sealed validation and test-only replay seams remain non-public"
 )]
 mod builder_bytes_report;
-#[cfg(test)]
-mod cold_canonical;
 mod callee_inventory;
 mod checked_value_retention;
+#[cfg(test)]
+mod cold_canonical;
 #[path = "workspace_graph/import_validation.rs"]
 mod import_validation;
 use checked_value_retention::retained_signature_type_facts;
@@ -4062,14 +4062,17 @@ fn build_resolved_core_current(
         // Exact stubs/spans and the unconditional prebound govern hits.
         let cached = staged!(
             FrontendLookup,
-            frontend.as_deref_mut().filter(|_| reuse_fits).and_then(|cache| match &synthetic {
-                expected_projection::borrowed_leaf::Input::Owned(input) =>
-                    cache.checked_module(&program.path, input),
-                expected_projection::borrowed_leaf::Input::Borrowed(input) =>
-                    cache.checked_module_source(&program.path, input),
-                expected_projection::borrowed_leaf::Input::Transient(_) =>
-                    unreachable!("transient wrapper view has no frontend cache"),
-            })
+            frontend
+                .as_deref_mut()
+                .filter(|_| reuse_fits)
+                .and_then(|cache| match &synthetic {
+                    expected_projection::borrowed_leaf::Input::Owned(input) =>
+                        cache.checked_module(&program.path, input),
+                    expected_projection::borrowed_leaf::Input::Borrowed(input) =>
+                        cache.checked_module_source(&program.path, input),
+                    expected_projection::borrowed_leaf::Input::Transient(_) =>
+                        unreachable!("transient wrapper view has no frontend cache"),
+                })
         );
         let shared_before = core_proofs.base_prelude.selected_bytes();
         let (resolved, static_text) = if let Some((resolved, resolver_bytes, original_loan_bytes)) =
@@ -5256,7 +5259,9 @@ fn reconstruct_workspace_declaration_facts_with_authority(
     modules: &[(String, ResolvedModuleInput)],
     programs: &[Program],
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
-    authority: Option<&expected_projection::private_layout::authority::invocation::scratch::ScratchInvocation<'_>>,
+    authority: Option<
+        &expected_projection::private_layout::authority::invocation::scratch::ScratchInvocation<'_>,
+    >,
 ) -> Result<BTreeMap<String, WorkspaceDeclarationFact>, Vec<Diagnostic>> {
     let expected = expected_declaration_facts(programs)?;
     let resolved_record_iterator = modules
@@ -5279,7 +5284,10 @@ fn reconstruct_workspace_declaration_facts_with_authority(
             programs,
             module_uses_record_iterator,
         )?;
-        let private = expected_projection::private_layout::authority::invocation::scratch::Current::derive(authority, source, programs, authored)?;
+        let private =
+            expected_projection::private_layout::authority::invocation::scratch::Current::derive(
+                authority, source, programs, authored,
+            )?;
         let synthetic_main = crate::bounded_output::budgeted_format(format_args!(
             "workspace.synthetic.main.{module}"
         ));

@@ -1,6 +1,8 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
-mod branch_clone; #[cfg(test)] use crate::bounded_output::stage_debits::route_debits as debit_routes;
+mod branch_clone;
+#[cfg(test)]
+use crate::bounded_output::stage_debits::route_debits as debit_routes;
 mod compact_stage;
 mod constructed_variant;
 #[cfg(test)]
@@ -18,11 +20,11 @@ mod expression_facts;
 mod flat_records;
 use call_paths::finish_call_states;
 mod inventory_coverage;
-pub(in crate::cleanup_plan) mod ordinary_status;
-mod ordinary_plan_history;
-mod physical_budget;
 #[cfg(test)]
 mod merge_census;
+mod ordinary_plan_history;
+pub(in crate::cleanup_plan) mod ordinary_status;
+mod physical_budget;
 mod physical_clone;
 mod physical_storage;
 mod scalar_match;
@@ -539,8 +541,16 @@ pub(in crate::cleanup_plan) fn validate_program_context(
         ),
         &mut budget,
     )?;
-    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?; #[cfg(test)] let mut diagnostic_ordinal = 0usize;
-    for function in program.functions() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_ordinal, false, function.id.as_str()); diagnostic_ordinal = diagnostic_ordinal.saturating_add(1); scope };
+    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;
+    #[cfg(test)]
+    let mut diagnostic_ordinal = 0usize;
+    for function in program.functions() {
+        #[cfg(test)]
+        let _debit_function = {
+            let scope = debit_routes::function(diagnostic_ordinal, false, function.id.as_str());
+            diagnostic_ordinal = diagnostic_ordinal.saturating_add(1);
+            scope
+        };
         validate_structure_with_budget_storage(
             program,
             function,
@@ -548,8 +558,17 @@ pub(in crate::cleanup_plan) fn validate_program_context(
             Some(&helpers),
             Some(&mut continuations),
         )?;
-    } #[cfg(test)] let mut diagnostic_instance = 0usize;
-    for instance in program.function_instances() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_instance, true, instance.function.id.as_str()); diagnostic_instance = diagnostic_instance.saturating_add(1); scope };
+    }
+    #[cfg(test)]
+    let mut diagnostic_instance = 0usize;
+    for instance in program.function_instances() {
+        #[cfg(test)]
+        let _debit_function = {
+            let scope =
+                debit_routes::function(diagnostic_instance, true, instance.function.id.as_str());
+            diagnostic_instance = diagnostic_instance.saturating_add(1);
+            scope
+        };
         validate_structure_with_budget_storage(
             program,
             &instance.function,
@@ -2806,7 +2825,9 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
-) -> Result<(), Diagnostic> { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if function.cleanup_plan.lexical_control.is_none()
         && factored::validate_with_index_storage(
             program,
@@ -2817,9 +2838,13 @@ fn validate_typed_control_skeleton_with_index<'hir>(
         )?
     {
         return Ok(());
-    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
+    }
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let mut expected =
-        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
         payer: AllocationPayer::ActiveBuilder,
@@ -2831,13 +2856,17 @@ fn validate_typed_control_skeleton_with_index<'hir>(
             ordinary_plan_history::SELECT_CALL_CONTROLS,
             "ordinary plan history selector call receivers",
         )?;
-        if ordinary_plan_history::select(function, budget)? { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
+        if ordinary_plan_history::select(function, budget)? {
+            #[cfg(test)]
+            let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
             budget.reserve_bytes(
                 function,
                 ordinary_plan_history::PRODUCE_CALL_CONTROLS,
                 "ordinary plan history producer call receivers",
             )?;
-            let actual = ordinary_plan_history::produce(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+            let actual = ordinary_plan_history::produce(function, budget)?;
+            #[cfg(test)]
+            let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
             budget.reserve_bytes(
                 function,
                 skeleton_work::enumerated_prefix::ENTRY_CALL,
@@ -2851,8 +2880,12 @@ fn validate_typed_control_skeleton_with_index<'hir>(
             )?;
             return ordinary_plan_history::compare(function, budget, actual, &expected);
         }
-    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
-    let mut actual = plan_skeleton_paths(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+    }
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+    let mut actual = plan_skeleton_paths(function, budget)?;
+    #[cfg(test)]
+    let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
     if match budget {
         ReplayBudget {
             payer: AllocationPayer::ActiveBuilder,
@@ -3170,7 +3203,9 @@ fn sequence_skeleton_paths(
         // Lexical remainder of the original first clone: no second charge and
         // no newly forwarded Result<Observations, Diagnostic>.
         let observations = skeleton_work::prefix_fusion::after_work!(
-            work, prefix.observations, first_suffix.observations
+            work,
+            prefix.observations,
+            first_suffix.observations
         );
         let owned_source = work.clone_owned(
             &first_suffix.owned_source,
@@ -6988,7 +7023,10 @@ fn plan_skeleton_paths(
                     let observation = final_output::observation!(edge, budget, function);
                     budget.reserve_bytes(
                         function,
-                        branch_clone::direct::inline_controls::<std::rc::Rc<SkeletonObservation>, SkeletonObservation>(),
+                        branch_clone::direct::inline_controls::<
+                            std::rc::Rc<SkeletonObservation>,
+                            SkeletonObservation,
+                        >(),
                         "branch clone receiving controls",
                     )?;
                     // The direct generic call's actual/formal arguments and
@@ -7010,8 +7048,13 @@ fn plan_skeleton_paths(
                         )?;
                     } else {
                         branch = branch_clone::direct::copy_prepaid(
-                            budget, function, &observations, observation,
-                            "cleanup-plan skeleton branch clone", plan, edge.to,
+                            budget,
+                            function,
+                            &observations,
+                            observation,
+                            "cleanup-plan skeleton branch clone",
+                            plan,
+                            edge.to,
                         )?;
                     }
                     skeleton_queue_push(
@@ -7129,15 +7172,24 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
-                        budget.reserve_bytes(function, branch_clone::production_capacity::production_inline_controls::<std::rc::Rc<SkeletonObservation>>(),
-                            "branch clone receiving controls")?;
+                    if let ReplayBudget {
+                        payer: AllocationPayer::ActiveBuilder,
+                        ..
+                    } = budget
+                    {
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::production_capacity::production_inline_controls::<
+                                std::rc::Rc<SkeletonObservation>,
+                            >(),
+                            "branch clone receiving controls",
+                        )?;
                     } else {
-                    budget.reserve_bytes(
-                        function,
-                        branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
-                        "branch clone receiving controls",
-                    )?;
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls",
+                        )?;
                     }
                     // The branch producer has no Result<Vec<_>, Diagnostic>
                     // receiver or owned observation forwarding argument. Its
@@ -7166,11 +7218,28 @@ fn plan_skeleton_paths(
                         // Original clone1 is charged above on both true and
                         // false probe paths; this is a bounded implementation
                         // detail of that materialization, not a CPU ledger.
-                        if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
-                            budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,
-                                "plan final branch probe receiving")?;
-                            branch_clone::production_capacity::produce!(budget, function, observations,
-                                observation, plan, edge, remaining_edges, edges, branch, queue);
+                        if let ReplayBudget {
+                            payer: AllocationPayer::ActiveBuilder,
+                            ..
+                        } = budget
+                        {
+                            budget.reserve_bytes(
+                                function,
+                                branch_clone::TAKE_CALL_CONTROLS,
+                                "plan final branch probe receiving",
+                            )?;
+                            branch_clone::production_capacity::produce!(
+                                budget,
+                                function,
+                                observations,
+                                observation,
+                                plan,
+                                edge,
+                                remaining_edges,
+                                edges,
+                                branch,
+                                queue
+                            );
                         }
                         budget.reserve_clone(
                             function,
@@ -7896,7 +7965,9 @@ struct BeforeDirectAnchorBudgetLayout {
     builder_clone_cursor_paid: bool,
 }
 #[cfg(test)]
-const _: () = assert!(std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>());
+const _: () = assert!(
+    std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>()
+);
 // Test diagnostics only. This POD record owns no HIR, text or heap allocation
 // and is never consulted by validation or a budget decision.
 #[cfg(test)]

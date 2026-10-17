@@ -305,9 +305,12 @@ pub(super) fn find_receiving<'a, 'hir>(
 
 #[cfg(test)]
 #[path = "prefix/retained_before.rs"]
-#[allow(dead_code, reason = "complete independently compiled immediate-old lookup")]
+#[allow(
+    dead_code,
+    reason = "complete independently compiled immediate-old lookup"
+)]
 pub(super) mod retained_before;
 
 // Exact immediate-old scratch retained by the bounded certified-row successor.
-pub(super) const RETAINABLE_BYTES: usize = std::mem::size_of::<LookupControl>()
-    + 2 * std::mem::size_of::<ReceivingComparison<'static>>();
+pub(super) const RETAINABLE_BYTES: usize =
+    std::mem::size_of::<LookupControl>() + 2 * std::mem::size_of::<ReceivingComparison<'static>>();

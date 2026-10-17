@@ -159,7 +159,10 @@ fn original_enumerator_enum_header_traits_and_lexical_helper_stay_complete() {
             }
             _ => panic!("unregistered original producer input"),
         };
-        let current_main = crate::source_reflows_merge::maina3_input(piece["compiled_path"].as_str().unwrap(), current);
+        let current_main = crate::source_reflows_merge::maina3_input(
+            piece["compiled_path"].as_str().unwrap(),
+            current,
+        );
         let current = current_main.as_str();
         let compiled = piece["compiled_body"].as_str().unwrap();
         assert_eq!(current.matches(compiled).count(), 1, "{}", piece["name"]);

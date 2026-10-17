@@ -319,7 +319,12 @@ fn assert_complete_old_sources() {
     super::tests::assert_complete_old_sources();
     use sha2::{Digest, Sha256};
     assert_eq!(
-        format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(include_str!("before_transfer_current.rs").as_bytes()))),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(
+                include_str!("before_transfer_current.rs").as_bytes()
+            ))
+        ),
         "0f262dc78bccc47841ddf525edcb38b3c90a557fd96667bf9e82c3831145d2b0"
     );
 }

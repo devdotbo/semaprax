@@ -423,10 +423,5 @@ pub(in crate::workspace_graph) fn constructor_test_default_expr_inline(
     allow_owned: bool,
     allow_byte_forward: bool,
 ) -> Result<crate::ast::Expr, crate::workspace_graph::constructor_failure::Failure> {
-    super::import_stub::default_expr_inline(
-        function,
-        declarations,
-        allow_owned,
-        allow_byte_forward,
-    )
+    super::import_stub::default_expr_inline(function, declarations, allow_owned, allow_byte_forward)
 }

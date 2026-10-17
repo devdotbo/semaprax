@@ -1,7 +1,7 @@
 //! Same complete default evaluation with explicit internal error custody.
 use super::typed_fields as field_directory;
 use super::{
-    Span, StructuralCost, Type, TypeDeclaration, TypeDeclarationKind, checked_builder_sum,
+    checked_builder_sum, Span, StructuralCost, Type, TypeDeclaration, TypeDeclarationKind,
 };
 use crate::ast::{Expr, ExprKind};
 use crate::diagnostic::Diagnostic;

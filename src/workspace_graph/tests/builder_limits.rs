@@ -392,7 +392,10 @@ fn core_retry_fixture() -> Vec<WorkspaceSource> {
 #[test]
 fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refusal() {
     // Preserve the complete earlier fixture before changing only admissibility.
-    let current = crate::source_reflows_merge::main83_retry_fixture_input("src/workspace_graph/tests/builder_limits.rs", include_str!("builder_limits.rs"));
+    let current = crate::source_reflows_merge::main83_retry_fixture_input(
+        "src/workspace_graph/tests/builder_limits.rs",
+        include_str!("builder_limits.rs"),
+    );
     let start = current
         .find("/// Tune only the fixture size, never the production bound.")
         .unwrap();
@@ -486,22 +489,33 @@ fn identity_prebound_production_core_retry_preserves_phase_debit_and_nested_refu
     // versioned strict-smaller forecast selector used by the live builder.
     // No observed mode list or replacement literal attempt count is authority.
     let (mut planned_resolve, _, allow_uncached_peak, mut planned_mode) = actual_initial;
-    let maximum_mode = if allow_uncached_peak { 6 } else {
+    let maximum_mode = if allow_uncached_peak {
+        6
+    } else {
         expected_projection::cached_exact::MODE
     };
     let mut expected_attempts = vec![(planned_mode, planned_resolve)];
     while planned_mode < maximum_mode {
         let (next, _) = if allow_uncached_peak {
             expected_projection::next_retention_prebound_with_uncached_peak_with_registry(
-                &ordered_programs, &ordered_authored, planned_resolve,
-                &mut planned_mode, true, Some(&registry),
-            ).unwrap()
+                &ordered_programs,
+                &ordered_authored,
+                planned_resolve,
+                &mut planned_mode,
+                true,
+                Some(&registry),
+            )
+            .unwrap()
         } else {
             expected_projection::cached_exact::next_with_registry(
-                &ordered_programs, &ordered_authored, planned_resolve,
-                &mut planned_mode, expected_projection::cached_exact::Retention::Parsed,
+                &ordered_programs,
+                &ordered_authored,
+                planned_resolve,
+                &mut planned_mode,
+                expected_projection::cached_exact::Retention::Parsed,
                 Some(&registry),
-            ).unwrap()
+            )
+            .unwrap()
         };
         planned_resolve = next;
         expected_attempts.push((planned_mode, planned_resolve));
@@ -625,7 +639,8 @@ fn retained_output_reuses_only_complete_exact_carriers_and_charges_all_sidecars(
 #[test]
 fn catalog_normalizer_compact_core_fits_production_builder_cap() {
     let _successor_application = crate::cleanup_plan::SuccessorAppCensus::normalizer();
-    let forecast_report = forecast_observation::Report::prepare("catalog-normalizer-compact-original");
+    let forecast_report =
+        forecast_observation::Report::prepare("catalog-normalizer-compact-original");
     let _route_observation = crate::bounded_output::stage_debits::route_debits::observe();
     let _epsilon_app_census = crate::cleanup_plan::EpsilonAppCensus::normalizer();
     let manifest = crate::project::ProjectManifest::parse(include_str!(

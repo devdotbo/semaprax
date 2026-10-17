@@ -251,7 +251,10 @@ fn complete_old_functions_are_compiled_and_only_capacity_hooks_change() {
         "/docs/evidence/minimum-path-array-v1/functions.json"
     )))
     .unwrap();
-    let root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"));
+    let root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"
+    ));
     let compiled = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay/path_array/before.rs.txt"));
     for record in records.as_array().unwrap() {
         let name = record["name"].as_str().unwrap();

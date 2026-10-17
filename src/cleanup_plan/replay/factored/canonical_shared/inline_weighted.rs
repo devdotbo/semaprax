@@ -10,26 +10,40 @@ pub(super) enum SmallWeighted {
 }
 impl SmallWeighted {
     pub(super) fn as_slice(&self) -> &[(usize, u64)] {
-        match self { Self::One(item) => item, Self::Many(items) => items.as_slice() }
+        match self {
+            Self::One(item) => item,
+            Self::Many(items) => items.as_slice(),
+        }
     }
     #[cfg(test)]
     pub(super) fn capacity(&self) -> usize {
-        match self { Self::One(_) => 1, Self::Many(items) => items.capacity() }
+        match self {
+            Self::One(_) => 1,
+            Self::Many(items) => items.capacity(),
+        }
     }
 }
 impl Deref for SmallWeighted {
     type Target = [(usize, u64)];
-    fn deref(&self) -> &Self::Target { self.as_slice() }
+    fn deref(&self) -> &Self::Target {
+        self.as_slice()
+    }
 }
 impl PartialEq for SmallWeighted {
-    fn eq(&self, other: &Self) -> bool { self.as_slice() == other.as_slice() }
+    fn eq(&self, other: &Self) -> bool {
+        self.as_slice() == other.as_slice()
+    }
 }
 impl Eq for SmallWeighted {}
 impl PartialOrd for SmallWeighted {
-    fn partial_cmp(&self, other: &Self) -> Option<Ordering> { Some(self.cmp(other)) }
+    fn partial_cmp(&self, other: &Self) -> Option<Ordering> {
+        Some(self.cmp(other))
+    }
 }
 impl Ord for SmallWeighted {
-    fn cmp(&self, other: &Self) -> Ordering { self.as_slice().cmp(other.as_slice()) }
+    fn cmp(&self, other: &Self) -> Ordering {
+        self.as_slice().cmp(other.as_slice())
+    }
 }
 
 // Test-only borrowed comparison surface. Historical receivers retain their
@@ -42,14 +56,18 @@ pub(super) trait StateEntries {
 }
 #[cfg(test)]
 impl StateEntries for super::BTreeMap<super::SharedWeighted, usize> {
-    fn len(&self) -> usize { super::BTreeMap::len(self) }
+    fn len(&self) -> usize {
+        super::BTreeMap::len(self)
+    }
     fn iter(&self) -> impl Iterator<Item = (&super::SharedWeighted, &usize)> {
         super::BTreeMap::iter(self)
     }
 }
 #[cfg(test)]
 impl StateEntries for super::intern_arena::Arena<super::SharedWeighted> {
-    fn len(&self) -> usize { super::intern_arena::Arena::len(self) }
+    fn len(&self) -> usize {
+        super::intern_arena::Arena::len(self)
+    }
     fn iter(&self) -> impl Iterator<Item = (&super::SharedWeighted, &usize)> {
         super::intern_arena::Arena::iter(self)
     }
@@ -86,6 +104,6 @@ pub(super) fn assert_successors(
     }
 }
 #[cfg(test)]
-mod tests;
-#[cfg(test)]
 pub(crate) mod source;
+#[cfg(test)]
+mod tests;

@@ -1,8 +1,8 @@
 //! Full old AVL shape and complete actual receiver/last-Drop controls.
+use super::super::{ExpressionId, StatusLane, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};
 use super::{
     Diagnostic, Directory, Owner, Refusal, ReplayBudget, ResolvedFunction, StatusSourceId,
 };
-use super::super::{ExpressionId, MAX_REPLAY_WORK_UNITS, StatusLane, StatusProducer, StatusSource};
 use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
 use crate::test_allocation_observer::{current_metrics, measure, Metrics};
 

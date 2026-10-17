@@ -64,7 +64,10 @@ fn admitted_source() -> String {
 #[test]
 fn original_owned_option_remains_an_exact_unadmitted_residual_control() {
     let diagnostics = crate::check(SOURCE, "history-owned.spx").unwrap_err();
-    let errors = diagnostics.iter().filter(|diagnostic| diagnostic.severity.is_error()).collect::<Vec<_>>();
+    let errors = diagnostics
+        .iter()
+        .filter(|diagnostic| diagnostic.severity.is_error())
+        .collect::<Vec<_>>();
     assert_eq!(errors.len(), 2, "{diagnostics:?}");
     for (diagnostic, message) in errors.iter().zip([
         "`?` with a live resource binding is not supported yet",
@@ -74,9 +77,15 @@ fn original_owned_option_remains_an_exact_unadmitted_residual_control() {
         assert_eq!(diagnostic.severity, crate::diagnostic::Severity::Error);
         assert_eq!(diagnostic.message, message);
         assert_eq!(diagnostic.path.as_deref(), Some("history-owned.spx"));
-        assert_eq!(diagnostic.span, Some(crate::ast::Span {
-            start: 1028, end: 1034, line: 30, column: 17,
-        }));
+        assert_eq!(
+            diagnostic.span,
+            Some(crate::ast::Span {
+                start: 1028,
+                end: 1034,
+                line: 30,
+                column: 17,
+            })
+        );
         assert_eq!(diagnostic.help, None);
     }
 }

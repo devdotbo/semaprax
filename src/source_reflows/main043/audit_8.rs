@@ -1,9 +1,12 @@
 #[test]
 fn complete_before_status_fact_receiver_and_full_source_remain_exact() {
     use sha2::{Digest, Sha256};
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/status-fact-borrow-reuse/retained.rs.before.txt"));
-    let rows: serde_json::Value = serde_json::from_str(super::metadata(super::Fixture::Status))
-    .unwrap();
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/status-fact-borrow-reuse/retained.rs.before.txt"
+    ));
+    let rows: serde_json::Value =
+        serde_json::from_str(super::metadata(super::Fixture::Status)).unwrap();
     let fixed = [
         ("src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs", "c6069082ff7abb15cff8c832bc0a6086f8ef5c57103c450448ffc0494aa5eeee"),
         ("tests/hir_module_boundaries.rs", "83dc4425c79ca5720aa4d98d61561bdae8690701a0d7fb8daa0fbdfd0076f259"),

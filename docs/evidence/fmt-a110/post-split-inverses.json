@@ -1,0 +1,22 @@
+{
+  "src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs": [
+    {
+      "after": "rdinary flat suffix\")?;\n                type FusionObservation =\n                    std::rc::Rc<$crate::cleanup_plan::replay::SkeletonObservation>;\n                $work.budget.reserve_array::<FusionObservation>(\n                    $work.function,\n                    target,\n                    \"ordinary flat suffix\",\n                )?;\n                let mut items = Vec::new();\n                ",
+      "before": "rdinary flat suffix\")?;\n                type FusionObservation = std::rc::Rc<$crate::cleanup_plan::replay::SkeletonObservation>;\n                $work.budget.reserve_array::<FusionObservation>($work.function, target, \"ordinary flat suffix\")?;\n                let mut items = Vec::new();\n                "
+    },
+    {
+      "after": "es($work.function, 0, \"ordinary flat suffix\")?;\n                type FusionObservation = std::rc::Rc<$crate::cleanup_plan::replay::SkeletonObservation>;\n                $work.budget.reserve_array::<FusionObservation>($work.function, target, \"ordinary flat suffix\")?;\n            ",
+      "before": "es($work.function, 0, \"ordinary flat suffix\")?;\n                $work.budget.reserve_array::<std::rc::Rc<\n                                        $crate::cleanup_plan::replay::SkeletonObservation,\n                                    >>($work.function, target, \"ordinary flat suffix\")?;\n            "
+    }
+  ],
+  "src/source_reflows_merge/main67107_inputs.rs": [
+    {
+      "after": "ojection/borrowed_imports/typed/alias/rename_tests.rs\"\n        )\n        }\n        \"src/hir/resolve_program/tests/reservation_stages.rs\" =",
+      "before": "ojection/borrowed_imports/typed/alias/rename_tests.rs\"\n        ),\n        \"src/hir/resolve_program/tests/reservation_stages.rs\" ="
+    },
+    {
+      "after": "ted_projection/borrowed_imports/typed/alias/rename_tests.rs\" => {\n            include_str!(\n            \"../workspace_graph/expected_projectio",
+      "before": "ted_projection/borrowed_imports/typed/alias/rename_tests.rs\" => include_str!(\n            \"../workspace_graph/expected_projectio"
+    }
+  ]
+}

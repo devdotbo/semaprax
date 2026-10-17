@@ -87,7 +87,6 @@ impl SkeletonWork<'_, '_> {
     }
 }
 
-
 // Complete incoming optimized method retained under cfg(test), not yet compiled.
 // Shipping activation remains pending.
 impl SkeletonWork<'_, '_> {

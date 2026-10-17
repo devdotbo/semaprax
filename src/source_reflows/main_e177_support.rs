@@ -3,7 +3,15 @@ use crate::source_reflows_merge::main_e177_inputs::read as main_e177_read;
 static RECORDS: OnceLock<serde_json::Value> = OnceLock::new();
 pub(super) fn records() -> &'static [serde_json::Value] {
     RECORDS
-        .get_or_init(|| serde_json::from_str(&main_e177_read(Path::new(env!("CARGO_MANIFEST_DIR")).join("src/source_reflows.json")).unwrap()).unwrap())
+        .get_or_init(|| {
+            serde_json::from_str(
+                &main_e177_read(
+                    Path::new(env!("CARGO_MANIFEST_DIR")).join("src/source_reflows.json"),
+                )
+                .unwrap(),
+            )
+            .unwrap()
+        })
         .as_array()
         .unwrap()
 }
@@ -38,4 +46,3 @@ pub(super) fn restore(record: &serde_json::Value, current: &str) -> String {
     );
     restored
 }
-

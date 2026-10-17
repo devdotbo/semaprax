@@ -9,11 +9,11 @@ use super::super::*;
 use super::DeclarationIndex;
 
 #[cfg(test)]
+mod legacy_before;
+#[cfg(test)]
 mod original;
 #[cfg(test)]
 mod tests;
-#[cfg(test)]
-mod legacy_before;
 
 impl DeclarationIndex {
     /// Extend the canonical compiler prelude with exactly one authenticated
@@ -177,7 +177,10 @@ impl DeclarationIndex {
                         let fields: nominal_payload::map::CaseFields = if cases.is_shared() {
                             nominal_payload::map::CaseFields::canonical(cases.clone(), ordinal)
                         } else if cases.is_legacy_shared() {
-                            nominal_payload::map::CaseFields::legacy_unfunded(cases.clone(), ordinal)
+                            nominal_payload::map::CaseFields::legacy_unfunded(
+                                cases.clone(),
+                                ordinal,
+                            )
                         } else {
                             // Decoded/hostile Owned inputs keep independent facts.
                             case.fields.clone().into()

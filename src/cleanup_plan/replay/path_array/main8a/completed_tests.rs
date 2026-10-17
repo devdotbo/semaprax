@@ -189,9 +189,15 @@ fn complete_finished_predecessor_is_compiled_and_source_bound() {
     let new = "    let mut completed = Vec::new();\n    path_array::completed_minimum(\n        &mut completed,\n        paths.len(),\n        &mut work,\n        \"completed HIR skeleton capacity\",\n    )?;\n    for path in paths {";
     assert_eq!(body.matches(old).count(), 1);
     assert_eq!(
-        crate::source_reflows_merge::main8a_input("src/cleanup_plan/replay.rs", include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay.rs")))
-            .matches(&body.replacen(old, new, 1))
-            .count(),
+        crate::source_reflows_merge::main8a_input(
+            "src/cleanup_plan/replay.rs",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay.rs"
+            ))
+        )
+        .matches(&body.replacen(old, new, 1))
+        .count(),
         1
     );
 }

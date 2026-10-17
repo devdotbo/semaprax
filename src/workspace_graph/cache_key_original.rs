@@ -532,5 +532,7 @@ impl<'a> CheckedValueNode<'a> {
     }
 }
 
-use crate::workspace_graph::validation::before_roots::{WorkspaceValidationIndex, validate_stub_signatures_authored};
 use crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;
+use crate::workspace_graph::validation::before_roots::{
+    validate_stub_signatures_authored, WorkspaceValidationIndex,
+};

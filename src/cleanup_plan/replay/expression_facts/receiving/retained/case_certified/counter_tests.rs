@@ -89,7 +89,6 @@ fn certified_while_counter_preserves_complete_before_fields_work_and_receiving_d
     assert_eq!(saved, include_str!("../../../../../../../docs/evidence/status-case-counter-828f/complete-certified-before.rs.txt"));
 }
 
-
 #[test]
 fn certified_unobserved_wide_dispatch_keeps_complete_rows_and_original_work_ceiling() {
     // Real HIR discovery must authenticate these rows: synthetic status tables
@@ -204,10 +203,13 @@ fn certified_active_wide_rows_publish_the_held_membership_index_and_keep_sticky_
         >(
             function,
             crate::cleanup_plan::replay::expression_facts::capacity::Payer::Selected(
-                &mut crate::cleanup_plan::replay::physical_storage::PhysicalReservation::new(usize::MAX),
+                &mut crate::cleanup_plan::replay::physical_storage::PhysicalReservation::new(
+                    usize::MAX,
+                ),
             ),
             &mut preparation,
-        ).unwrap(),
+        )
+        .unwrap(),
     );
     let observe = |limit, work| {
         crate::bounded_output::with_limit_usage_refusal(limit, || {
@@ -216,9 +218,16 @@ fn certified_active_wide_rows_publish_the_held_membership_index_and_keep_sticky_
                 budget.remaining = work;
                 let result = (|| -> Result<(), crate::diagnostic::Diagnostic> {
                     let proof = StatusCases::validate(&program, function, &mut budget)?;
-                    let sources = validate_status_sources_certified(function, &facts, &mut budget, &proof)?;
-                    let ids = sources.ids.as_ref().expect("actual Arena receiver returns its directory");
-                    assert!(ids.has_frozen_lookup_for_test(), "actual certified ActiveBuilder route publishes the index");
+                    let sources =
+                        validate_status_sources_certified(function, &facts, &mut budget, &proof)?;
+                    let ids = sources
+                        .ids
+                        .as_ref()
+                        .expect("actual Arena receiver returns its directory");
+                    assert!(
+                        ids.has_frozen_lookup_for_test(),
+                        "actual certified ActiveBuilder route publishes the index"
+                    );
                     assert_eq!(ids.len(), function.cleanup_plan.status_sources.len());
                     // Full current keys, not synthetic fixture identities, use the retained frozen lookup.
                     for _ in 0..2 {
@@ -236,11 +245,20 @@ fn certified_active_wide_rows_publish_the_held_membership_index_and_keep_sticky_
                     let allocated = crate::test_allocation_observer::current_metrics().allocated;
                     let remaining = budget.remaining;
                     let active = crate::bounded_output::active_remaining();
-                    let retry = budget.reserve_bytes(function, 0, "certified frozen sticky retry").unwrap_err();
-                    assert_eq!(retry, crate::diagnostic::Diagnostic::io("SPX-H006", String::new()), "retry preserves the stable consumed-receipt Diagnostic");
+                    let retry = budget
+                        .reserve_bytes(function, 0, "certified frozen sticky retry")
+                        .unwrap_err();
+                    assert_eq!(
+                        retry,
+                        crate::diagnostic::Diagnostic::io("SPX-H006", String::new()),
+                        "retry preserves the stable consumed-receipt Diagnostic"
+                    );
                     assert_eq!(budget.remaining, remaining);
                     assert_eq!(crate::bounded_output::active_remaining(), active);
-                    assert_eq!(crate::test_allocation_observer::current_metrics().allocated, allocated);
+                    assert_eq!(
+                        crate::test_allocation_observer::current_metrics().allocated,
+                        allocated
+                    );
                     drop(retry);
                     drop(error);
                 }
@@ -264,7 +282,10 @@ fn certified_active_wide_rows_publish_the_held_membership_index_and_keep_sticky_
     for work in [0, spent - 1, spent] {
         let (((ok, _), metrics), refused, _, _) = observe(usize::MAX, work);
         assert_eq!(ok, work == spent);
-        assert!(!refused, "logical refusal does not fabricate a builder byte refusal");
+        assert!(
+            !refused,
+            "logical refusal does not fabricate a builder byte refusal"
+        );
         assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
     }
 }

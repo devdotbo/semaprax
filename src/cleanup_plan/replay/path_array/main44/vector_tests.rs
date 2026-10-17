@@ -294,7 +294,10 @@ fn complete_predecessor_and_original_push_operations_stay_source_bound() {
     );
     let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay/sequence_vector/before.rs.txt"));
     assert_eq!(old, format!("use super::super::*;\n\npub(super) {body}\n"));
-    let root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"));
+    let root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/main44-independent-custody-20261016/raw/src/cleanup_plan/replay.rs.txt"
+    ));
     let hook = "    if sequence_vector::can_reuse(sequence_vector::Candidate {\n        prefixes: &prefixes,\n        suffixes: &suffixes,\n        budget: work.budget,\n    }) {\n        work.budget.reserve_array::<u8>(\n            work.function,\n            sequence_vector::receiving_bytes(),\n            \"single-successor receiving frame\",\n        )?;\n        return sequence_vector::single(prefixes, &suffixes, work, share_prefix);\n    }\n";
     let expected = body.replacen(
         "    let share_prefix = work.shares_prefix_tail(&suffixes)?;\n",

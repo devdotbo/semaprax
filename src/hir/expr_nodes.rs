@@ -756,10 +756,12 @@ mod residual_payload_tests {
             let ((value, allocation), child_refused, child_used) =
                 output::with_limit_usage(debit, || {
                     assert_eq!(output::active_limit(), Some(0));
-                    measure(|| crate::hir::resolved_residual_type!({
-                        arguments.set(arguments.get() + 1);
-                        ResolvedType::I64
-                    }))
+                    measure(|| {
+                        crate::hir::resolved_residual_type!({
+                            arguments.set(arguments.get() + 1);
+                            ResolvedType::I64
+                        })
+                    })
                 });
             assert!(value.is_none() && child_refused);
             assert_eq!(child_used, 0);
@@ -781,7 +783,8 @@ mod residual_payload_tests {
                         let value = crate::hir::resolved_residual_type!({
                             arguments.set(arguments.get() + 1);
                             ResolvedType::I64
-                        }).unwrap();
+                        })
+                        .unwrap();
                         assert_eq!(*value, ResolvedType::I64);
                         drop(value);
                     })

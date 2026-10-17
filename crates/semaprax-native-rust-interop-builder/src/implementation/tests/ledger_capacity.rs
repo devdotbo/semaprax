@@ -123,8 +123,14 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
         include_str!("../../../../../src/cleanup_plan/replay/factored/moderate_tests.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/moderate_tests/before.rs"),
     );
-    assert!(hir_resolver.starts_with(relocated_prefix), "all relocated subjects must enter the actual native resolver inventory");
-    assert!(!hir_resolver[relocated_prefix.len()..].starts_with(relocated_prefix), "duplicate native inventory prefix");
+    assert!(
+        hir_resolver.starts_with(relocated_prefix),
+        "all relocated subjects must enter the actual native resolver inventory"
+    );
+    assert!(
+        !hir_resolver[relocated_prefix.len()..].starts_with(relocated_prefix),
+        "duplicate native inventory prefix"
+    );
     let hir_validator = hir_validator_source_inventory!();
     let hir_validator = [hir_validator.as_str(), scope_projection::TEXT].concat();
     let verifier = verifier_source_inventory!();
@@ -138,7 +144,21 @@ fn hir_capacity_layout_constants_are_bound_to_root_const_assertions() {
             ),
         ),
         include_str!("../../../../../src/cleanup/replay_context.rs"),
-        include_str!("../../../../../src/cleanup/inventory_builder.rs"),
+        concat!(
+            include_str!("../../../../../src/cleanup/inventory_builder.rs"),
+            include_str!("../../../../../src/cleanup/inventory_builder/selected_inline.rs"),
+            concat!(
+                include_str!("../../../../../src/cleanup/inventory_builder/typed.rs"),
+                include_str!("../../../../../src/cleanup/inventory_builder/typed/receiving.rs"),
+                include_str!(
+                    "../../../../../src/cleanup/inventory_builder/typed/before_initial.rs"
+                ),
+                include_str!("../../../../../src/cleanup/inventory_builder/typed/queries.rs"),
+                include_str!("../../../../../src/cleanup/inventory_builder/typed/failure.rs"),
+                include_str!("../../../../../src/cleanup/inventory_builder/typed/selected.rs"),
+                include_str!("../../../../../src/cleanup/inventory_builder/typed/traversal.rs")
+            )
+        ),
         include_str!("../../../../../src/cleanup/inventory_builder/selected.rs"),
         include_str!("../../../../../src/cleanup/inventory_builder/selected/flat_record.rs"),
         include_str!("../../../../../src/cleanup/inventory_builder/selected/vector.rs"),

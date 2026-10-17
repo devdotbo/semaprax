@@ -1,10 +1,12 @@
 //! Complete previous Drop body; only receiver/signature adapter.
-use super::super::{DeclarationIndex, ResolvedType, nominal_payload};
+use super::super::{nominal_payload, DeclarationIndex, ResolvedType};
 impl DeclarationIndex {
     pub(in super::super) fn drop_before_argument_reuse(mut self) {
         if let Some(scratch) = self.nominal_drop_workspace.scratch.take() {
-            let mut scratch=scratch.lock().expect("construction disposal lock");
-            self.drain_recursive_types_for_private_contract(|ty| nominal_payload::dispose(ty, &mut scratch));
+            let mut scratch = scratch.lock().expect("construction disposal lock");
+            self.drain_recursive_types_for_private_contract(|ty| {
+                nominal_payload::dispose(ty, &mut scratch)
+            });
             return;
         }
         let mut pending = Vec::new();
@@ -22,4 +24,3 @@ impl DeclarationIndex {
         }
     }
 }
-

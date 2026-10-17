@@ -16,8 +16,8 @@ use crate::diagnostic::Diagnostic;
 use crate::hir;
 
 use super::{
-    graph_error, prelude_binding, reserve_builder_structure,
-    AuthoredDeclaration, ResolvedModuleInput, WorkspaceDeclarationFact,
+    graph_error, prelude_binding, reserve_builder_structure, AuthoredDeclaration,
+    ResolvedModuleInput, WorkspaceDeclarationFact,
 };
 
 #[derive(Clone, Debug, Eq, PartialEq)]

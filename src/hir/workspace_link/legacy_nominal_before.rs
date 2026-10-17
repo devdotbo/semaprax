@@ -1,9 +1,8 @@
 //! Complete a417 final constructor; only entry name and full old index call differ.
 use super::{
-    analyze_byte_data_capacity, compiler_prelude, derive_byte_slice_provenance,
-    link_error, rebuild_cleanup_metadata, validate, BTreeSet, DeclarationId,
-    Diagnostic, IdentityOrigin, LinkedOwnedDataParts, LinkedScalarFunction,
-    ResolvedProgram, ResolvedType,
+    analyze_byte_data_capacity, compiler_prelude, derive_byte_slice_provenance, link_error,
+    rebuild_cleanup_metadata, validate, BTreeSet, DeclarationId, Diagnostic, IdentityOrigin,
+    LinkedOwnedDataParts, LinkedScalarFunction, ResolvedProgram, ResolvedType,
 };
 pub(crate) fn link_owned_data_api_workspace_before_legacy_coordinates(
     module: String,

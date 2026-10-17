@@ -119,9 +119,15 @@ fn exit_region_matches() -> &'static [serde_json::Value] {
 fn proofs() -> &'static [serde_json::Value] {
     PROOF_RECORDS.get_or_init(|| {
         assert_eq!(LIVE_AUDITS.len(), 24038);
-        assert_eq!(digest(LIVE_AUDITS), "b2437b4145d12bc9fe20fb1dbf2c888c1a6832f2e699a50064017479b1124e4a");
+        assert_eq!(
+            digest(LIVE_AUDITS),
+            "b2437b4145d12bc9fe20fb1dbf2c888c1a6832f2e699a50064017479b1124e4a"
+        );
         assert_eq!(PROOFS.len(), 305847);
-        assert_eq!(digest(PROOFS), "c78ab917232bf92e83004d3cff18876476007fe69e8376c5e40ea7209a5f3053");
+        assert_eq!(
+            digest(PROOFS),
+            "c78ab917232bf92e83004d3cff18876476007fe69e8376c5e40ea7209a5f3053"
+        );
         let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
         let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
         assert_eq!(original.len(), 12);
@@ -247,8 +253,7 @@ fn ordinary_setup_complete_sources_and_original_legacy_constructor_remain_exact(
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/ordinary-replay-setup-v1");
     let rows: Vec<serde_json::Value> =
-        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(rows.len(), 34);
     let mut paths = std::collections::BTreeSet::new();
     for row in &rows {
@@ -381,11 +386,9 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/source-reader-followups-20261016");
     let records: serde_json::Value =
-        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap()).unwrap();
     for record in records.as_array().unwrap() {
-        let original =
-            main090_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
+        let original = main090_read(evidence.join(record["archive"].as_str().unwrap())).unwrap();
         assert_eq!(digest(&original), record["sha256"]);
         let current = main090_read(root.join(record["path"].as_str().unwrap())).unwrap();
         let restore = |source: &str| -> Option<String> {
@@ -443,8 +446,7 @@ fn held_status_views_preserve_complete_original_inputs_and_validation_loops() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main090_read(root.join("docs/evidence/held-status-prefix-v1/sources.json"))
-            .unwrap(),
+        &main090_read(root.join("docs/evidence/held-status-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 6);
@@ -525,10 +527,7 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main090_read(
-            root.join("docs/evidence/held-continuation-growth-v1/sources.json"),
-        )
-        .unwrap(),
+        &main090_read(root.join("docs/evidence/held-continuation-growth-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -547,13 +546,11 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     };
     let old_tests = before_file("src/cleanup_plan/replay/continuation_storage/tests.rs");
     let current_tests =
-        main090_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs"))
-            .unwrap();
+        main090_read(root.join("src/cleanup_plan/replay/continuation_storage/tests.rs")).unwrap();
     assert!(current_tests.starts_with(&old_tests));
     let old_storage = before_file("src/cleanup_plan/replay/continuation_storage.rs");
     let current_storage =
-        main090_read(root.join("src/cleanup_plan/replay/continuation_storage.rs"))
-            .unwrap();
+        main090_read(root.join("src/cleanup_plan/replay/continuation_storage.rs")).unwrap();
     let fixed = old_storage.find("pub(super) fn fresh").unwrap();
     let fixed_end = fixed
         + old_storage[fixed..]
@@ -567,9 +564,8 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     );
     let machine_types = old_storage.find("pub(super) type OwnedStep").unwrap();
     assert!(current_storage.contains(&old_storage[machine_types..]));
-    let mut machine = before_last_branch_root(
-        &main090_read(root.join("src/cleanup_plan/replay.rs")).unwrap(),
-    );
+    let mut machine =
+        before_last_branch_root(&main090_read(root.join("src/cleanup_plan/replay.rs")).unwrap());
     let standalone = "if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?\n            }";
     assert_eq!(machine.matches(standalone).count(), 1);
     machine = machine.replacen(
@@ -637,10 +633,8 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
         assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
     }
     let whole: Vec<serde_json::Value> = serde_json::from_str(
-        &main090_read(
-            root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"),
-        )
-        .unwrap(),
+        &main090_read(root.join("docs/evidence/paid-expression-lookup-state-v1/sources.json"))
+            .unwrap(),
     )
     .unwrap();
     assert_eq!(whole.len(), 10);
@@ -699,8 +693,7 @@ fn receiving_lookup_views_keep_complete_prior_modules_and_all_owning_inputs() {
 fn ordinary_replay_routes_keep_complete_predecessors_and_existing_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let records: Vec<serde_json::Value> = serde_json::from_str(
-        &main090_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json"))
-            .unwrap(),
+        &main090_read(root.join("docs/evidence/ordinary-replay-routes-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(records.len(), 6);
@@ -766,8 +759,7 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     let evidence = root.join("docs/evidence/borrowed-exit-region-match-v1");
     let sources: Vec<serde_json::Value> =
-        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(sources.len(), 7);
     for proof in sources {
         let current = main090_read(root.join(proof["path"].as_str().unwrap())).unwrap();
@@ -778,12 +770,10 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
     }
     for manifest in ["new-files.json", "retained-sources.json"] {
         let records: Vec<serde_json::Value> =
-            serde_json::from_str(&main090_read(evidence.join(manifest)).unwrap())
-                .unwrap();
+            serde_json::from_str(&main090_read(evidence.join(manifest)).unwrap()).unwrap();
         assert_eq!(records.len(), 2);
         for record in records {
-            let current =
-                main090_read(root.join(record["path"].as_str().unwrap())).unwrap();
+            let current = main090_read(root.join(record["path"].as_str().unwrap())).unwrap();
             let current = if record["path"] == "src/cleanup_plan/replay.rs" {
                 before_last_branch_root(&current)
             } else {
@@ -800,8 +790,7 @@ fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() 
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let evidence = root.join("docs/evidence/string-slot-byte-helper-v1");
     let sources: Vec<serde_json::Value> =
-        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main090_read(evidence.join("sources.json")).unwrap()).unwrap();
     assert_eq!(sources.len(), 9);
     let mut paths = std::collections::BTreeSet::new();
     for proof in &sources {
@@ -825,8 +814,7 @@ fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() 
         }
     }
     let new_files: Vec<serde_json::Value> =
-        serde_json::from_str(&main090_read(evidence.join("new-files.json")).unwrap())
-            .unwrap();
+        serde_json::from_str(&main090_read(evidence.join("new-files.json")).unwrap()).unwrap();
     assert_eq!(new_files.len(), 1);
     for file in new_files {
         let current = main090_read(root.join(file["path"].as_str().unwrap())).unwrap();
@@ -855,8 +843,7 @@ fn before_last_branch_root(current: &str) -> String {
 fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let sources: Vec<serde_json::Value> = serde_json::from_str(
-        &main090_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json"))
-            .unwrap(),
+        &main090_read(root.join("docs/evidence/last-branch-prefix-v1/sources.json")).unwrap(),
     )
     .unwrap();
     assert_eq!(sources.len(), 4);
@@ -878,8 +865,7 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
             assert!(current.starts_with(&before));
         }
     }
-    let helper =
-        main090_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
+    let helper = main090_read(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
     let proof = sources
         .iter()
         .find(|proof| proof["path"] == "src/cleanup_plan/replay/branch_clone.rs")
@@ -894,66 +880,104 @@ fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls()
 // Separate finite bounded acquisition; complete original body above.
 const MAIN090_MANIFEST: &str = "docs/evidence/main09013-source-namespaces-v1/input-domains.json";
 const MAIN090_MANIFEST_LEN: usize = 241196;
-const MAIN090_MANIFEST_SHA: &str = "8139fb31fcbe9177e5527bb1067a7efd45ce7588c03ad39a8fa8602d069426b4";
+const MAIN090_MANIFEST_SHA: &str =
+    "8139fb31fcbe9177e5527bb1067a7efd45ce7588c03ad39a8fa8602d069426b4";
 const MAIN090_CAP: usize = 9464242; // Exact largest sealed MAIN8c input, distinct historical namespace.
 fn main090_manifest() -> serde_json::Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let text = main090_file(
-        &root.join(MAIN090_MANIFEST), MAIN090_MANIFEST_LEN, MAIN090_MANIFEST_SHA).unwrap();
+        &root.join(MAIN090_MANIFEST),
+        MAIN090_MANIFEST_LEN,
+        MAIN090_MANIFEST_SHA,
+    )
+    .unwrap();
     serde_json::from_str(&text).unwrap()
 }
 fn main090_checked(path: &Path, length: usize, sha: &str) -> String {
     assert!(length <= MAIN090_CAP);
-    main090_file(path,length,sha).unwrap()
+    main090_file(path, length, sha).unwrap()
 }
-fn main090_row<'a>(manifest: &'a serde_json::Value, domain: &str, path: &str) -> Option<&'a serde_json::Value> {
-    manifest[domain].as_array().unwrap().iter().find(|r| r["path"] == path)
+fn main090_row<'a>(
+    manifest: &'a serde_json::Value,
+    domain: &str,
+    path: &str,
+) -> Option<&'a serde_json::Value> {
+    manifest[domain]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == path)
 }
 fn main090_entry(entry: &serde_json::Value, current: &str) -> String {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     // Every staged value is authenticated against actual physical current input.
-    let raw = main090_checked(&root.join(entry["path"].as_str().unwrap()),
-        entry["current_len"].as_u64().unwrap() as usize,entry["current_sha256"].as_str().unwrap());
-    let before = main090_checked(&root.join(entry["archive"].as_str().unwrap()),
-        entry["view_len"].as_u64().unwrap() as usize,entry["view_sha256"].as_str().unwrap());
+    let raw = main090_checked(
+        &root.join(entry["path"].as_str().unwrap()),
+        entry["current_len"].as_u64().unwrap() as usize,
+        entry["current_sha256"].as_str().unwrap(),
+    );
+    let before = main090_checked(
+        &root.join(entry["archive"].as_str().unwrap()),
+        entry["view_len"].as_u64().unwrap() as usize,
+        entry["view_sha256"].as_str().unwrap(),
+    );
     assert!(current == raw || current == before, "foreign MAIN090 stage");
     before
 }
 fn main090_project(path: &str, current: &str) -> String {
     let manifest = main090_manifest();
-    match main090_row(&manifest,"main",path) {
-        Some(row) => main090_entry(row,current), None => current.to_owned(),
+    match main090_row(&manifest, "main", path) {
+        Some(row) => main090_entry(row, current),
+        None => current.to_owned(),
     }
 }
 fn main090_read(path: impl AsRef<Path>) -> std::io::Result<String> {
     let path = path.as_ref();
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let logical = path.strip_prefix(root).ok().and_then(|p| p.to_str())
-        .ok_or_else(|| std::io::Error::new(std::io::ErrorKind::InvalidInput,"foreign MAIN090 read root"))?;
+    let logical = path
+        .strip_prefix(root)
+        .ok()
+        .and_then(|p| p.to_str())
+        .ok_or_else(|| {
+            std::io::Error::new(
+                std::io::ErrorKind::InvalidInput,
+                "foreign MAIN090 read root",
+            )
+        })?;
     let manifest = main090_manifest();
-    if let Some(row) = main090_row(&manifest,"main",logical) {
-        let raw = main090_checked(path,row["current_len"].as_u64().unwrap() as usize,
-            row["current_sha256"].as_str().unwrap());
-        return Ok(main090_entry(row,&raw));
+    if let Some(row) = main090_row(&manifest, "main", logical) {
+        let raw = main090_checked(
+            path,
+            row["current_len"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        );
+        return Ok(main090_entry(row, &raw));
     }
-    Err(std::io::Error::new(std::io::ErrorKind::InvalidInput,"unknown MAIN090 read subject"))
+    Err(std::io::Error::new(
+        std::io::ErrorKind::InvalidInput,
+        "unknown MAIN090 read subject",
+    ))
 }
 pub(in crate::source_reflows) fn ours_input(path: &str, current: &str) -> String {
     let manifest = main090_manifest();
-    match main090_row(&manifest,"ours",path) {
-        Some(row) => main090_entry(row,current), None => current.to_owned(),
+    match main090_row(&manifest, "ours", path) {
+        Some(row) => main090_entry(row, current),
+        None => current.to_owned(),
     }
 }
-pub(in crate::source_reflows) fn ours_expected_input(proof: &serde_json::Value, current: &str) -> String {
+pub(in crate::source_reflows) fn ours_expected_input(
+    proof: &serde_json::Value,
+    current: &str,
+) -> String {
     let manifest = main090_manifest();
     let path = proof["path"].as_str().unwrap();
-    match main090_row(&manifest,"ours",path) {
-        Some(row) if proof["after_sha256"] == row["view_sha256"] => main090_entry(row,current),
+    match main090_row(&manifest, "ours", path) {
+        Some(row) if proof["after_sha256"] == row["view_sha256"] => main090_entry(row, current),
         _ => current.to_owned(), // Preserve an already selected older MAIN domain.
     }
 }
 pub(super) fn ours_contains(path: &str) -> bool {
-    main090_row(&main090_manifest(),"ours",path).is_some()
+    main090_row(&main090_manifest(), "ours", path).is_some()
 }
 fn records() -> &'static [serde_json::Value] {
     static RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
@@ -993,49 +1017,100 @@ fn restore(record: &serde_json::Value, current: &str) -> String {
     restored
 }
 
-fn main090_body(reader: &mut impl std::io::Read, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN090_CAP { return Err("bound"); }
+fn main090_body(
+    reader: &mut impl std::io::Read,
+    length: usize,
+    expected: &str,
+) -> Result<String, &'static str> {
+    if length > MAIN090_CAP {
+        return Err("bound");
+    }
     let mut bytes = Vec::new();
     bytes.try_reserve_exact(length).map_err(|_| "allocation")?;
     bytes.resize(length, 0);
     reader.read_exact(&mut bytes).map_err(|_| "truncated")?;
     let mut extra = [0u8; 1];
-    if reader.read(&mut extra).map_err(|_| "read")? != 0 { return Err("extra"); }
-    if digest_bytes(&bytes) != expected { return Err("digest"); }
+    if reader.read(&mut extra).map_err(|_| "read")? != 0 {
+        return Err("extra");
+    }
+    if digest_bytes(&bytes) != expected {
+        return Err("digest");
+    }
     String::from_utf8(bytes).map_err(|_| "utf8")
 }
 fn digest_bytes(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn main090_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
-    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok() { return false; }
+    if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
+    {
+        return false;
+    }
     #[cfg(unix)]
-    { use std::os::unix::fs::MetadataExt; if a.dev() != b.dev() || a.ino() != b.ino() || a.ctime() != b.ctime() || a.ctime_nsec() != b.ctime_nsec() { return false; } }
+    {
+        use std::os::unix::fs::MetadataExt;
+        if a.dev() != b.dev()
+            || a.ino() != b.ino()
+            || a.ctime() != b.ctime()
+            || a.ctime_nsec() != b.ctime_nsec()
+        {
+            return false;
+        }
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::MetadataExt; if a.file_attributes() & 0x400 != 0 || b.file_attributes() & 0x400 != 0 || a.creation_time() != b.creation_time() || a.last_write_time() != b.last_write_time() { return false; } }
+    {
+        use std::os::windows::fs::MetadataExt;
+        if a.file_attributes() & 0x400 != 0
+            || b.file_attributes() & 0x400 != 0
+            || a.creation_time() != b.creation_time()
+            || a.last_write_time() != b.last_write_time()
+        {
+            return false;
+        }
+    }
     true
 }
 fn main090_file(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
-    if length > MAIN090_CAP { return Err("bound"); }
+    if length > MAIN090_CAP {
+        return Err("bound");
+    }
     let path_before = std::fs::symlink_metadata(path).map_err(|_| "missing")?;
-    if path_before.file_type().is_symlink() || !path_before.is_file() { return Err("length-or-nonregular"); }
-    let mut options = std::fs::OpenOptions::new(); options.read(true);
+    if path_before.file_type().is_symlink() || !path_before.is_file() {
+        return Err("length-or-nonregular");
+    }
+    let mut options = std::fs::OpenOptions::new();
+    options.read(true);
     #[cfg(unix)]
-    { use std::os::unix::fs::OpenOptionsExt; options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK); }
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        options.custom_flags(libc::O_NOFOLLOW | libc::O_CLOEXEC | libc::O_NONBLOCK);
+    }
     #[cfg(windows)]
-    { use std::os::windows::fs::OpenOptionsExt; options.custom_flags(0x0020_0000); }
+    {
+        use std::os::windows::fs::OpenOptionsExt;
+        options.custom_flags(0x0020_0000);
+    }
     #[cfg(not(any(unix, windows)))]
-    { return Err("platform"); }
+    {
+        return Err("platform");
+    }
     let mut file = options.open(path).map_err(|_| "open")?;
     let metadata = file.metadata().map_err(|_| "metadata")?;
-    if !main090_same_file(&path_before, &metadata) || metadata.len() != u64::try_from(length).map_err(|_| "bound")? {
+    if !main090_same_file(&path_before, &metadata)
+        || metadata.len() != u64::try_from(length).map_err(|_| "bound")?
+    {
         return Err("length-or-nonregular");
     }
     // The one opened no-follow regular handle is checked before any buffer.
     let value = main090_body(&mut file, length, expected)?;
     let after = file.metadata().map_err(|_| "metadata")?;
     let path_after = std::fs::symlink_metadata(path).map_err(|_| "metadata")?;
-    if path_after.file_type().is_symlink() || !main090_same_file(&metadata, &after) || !main090_same_file(&after, &path_after) { return Err("metadata-drift"); }
+    if path_after.file_type().is_symlink()
+        || !main090_same_file(&metadata, &after)
+        || !main090_same_file(&after, &path_after)
+    {
+        return Err("metadata-drift");
+    }
     Ok(value)
 }
 
@@ -1043,18 +1118,36 @@ fn main090_expected(proof: &serde_json::Value, current: &str) -> String {
     let manifest = main090_manifest();
     let path = proof["path"].as_str().unwrap();
     let expected = proof["after_sha256"].as_str().unwrap();
-    if let Some(stage) = manifest["expected"].as_array().unwrap().iter()
-        .find(|row| row["path"] == path && row["view_sha256"] == expected) {
-        let row = main090_row(&manifest,"main",path).unwrap();
+    if let Some(stage) = manifest["expected"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["path"] == path && row["view_sha256"] == expected)
+    {
+        let row = main090_row(&manifest, "main", path).unwrap();
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-        let _physical = main090_checked(&root.join(path),row["current_len"].as_u64().unwrap() as usize,
-            row["current_sha256"].as_str().unwrap());
-        if digest(current) == expected { return current.to_owned(); }
-        let selected = main090_entry(row,current);
-        assert_eq!(selected, main090_checked(&Path::new(env!("CARGO_MANIFEST_DIR")).join(row["archive"].as_str().unwrap()),
-            row["view_len"].as_u64().unwrap() as usize,row["view_sha256"].as_str().unwrap()));
-        return main090_checked(&Path::new(env!("CARGO_MANIFEST_DIR")).join(stage["archive"].as_str().unwrap()),
-            stage["view_len"].as_u64().unwrap() as usize,expected);
+        let _physical = main090_checked(
+            &root.join(path),
+            row["current_len"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        );
+        if digest(current) == expected {
+            return current.to_owned();
+        }
+        let selected = main090_entry(row, current);
+        assert_eq!(
+            selected,
+            main090_checked(
+                &Path::new(env!("CARGO_MANIFEST_DIR")).join(row["archive"].as_str().unwrap()),
+                row["view_len"].as_u64().unwrap() as usize,
+                row["view_sha256"].as_str().unwrap()
+            )
+        );
+        return main090_checked(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(stage["archive"].as_str().unwrap()),
+            stage["view_len"].as_u64().unwrap() as usize,
+            expected,
+        );
     }
     current.to_owned()
 }
@@ -1062,38 +1155,65 @@ pub(super) fn legacy_checked(path: &Path, length: usize, expected: &str) -> Opti
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let logical = path.strip_prefix(root).ok()?.to_str()?;
     let manifest = main090_manifest();
-    let old = main090_row(&manifest,"legacy_current",logical)?;
-    if old["view_sha256"] != expected || old["view_len"].as_u64()? as usize != length { return None; }
-    let row = main090_row(&manifest,"physical",logical).unwrap();
-    let _raw = main090_checked(path,row["current_len"].as_u64().unwrap() as usize,row["current_sha256"].as_str().unwrap());
-    Some(main090_checked(&root.join(old["archive"].as_str().unwrap()),length,expected))
+    let old = main090_row(&manifest, "legacy_current", logical)?;
+    if old["view_sha256"] != expected || old["view_len"].as_u64()? as usize != length {
+        return None;
+    }
+    let row = main090_row(&manifest, "physical", logical).unwrap();
+    let _raw = main090_checked(
+        path,
+        row["current_len"].as_u64().unwrap() as usize,
+        row["current_sha256"].as_str().unwrap(),
+    );
+    Some(main090_checked(
+        &root.join(old["archive"].as_str().unwrap()),
+        length,
+        expected,
+    ))
 }
 pub(super) fn legacy_expected(entry: &serde_json::Value, current: &str) -> String {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let path = entry["path"].as_str().unwrap();
     let manifest = main090_manifest();
-    if let Some(row) = main090_row(&manifest,"physical",path) {
-        let raw = main090_checked(&root.join(path),row["current_len"].as_u64().unwrap() as usize,row["current_sha256"].as_str().unwrap());
+    if let Some(row) = main090_row(&manifest, "physical", path) {
+        let raw = main090_checked(
+            &root.join(path),
+            row["current_len"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        );
         if current == raw {
-            return legacy_checked(&root.join(path),entry["current_len"].as_u64().unwrap() as usize,
-                entry["current_sha256"].as_str().unwrap()).unwrap();
+            return legacy_checked(
+                &root.join(path),
+                entry["current_len"].as_u64().unwrap() as usize,
+                entry["current_sha256"].as_str().unwrap(),
+            )
+            .unwrap();
         }
     }
     current.to_owned()
 }
 #[test]
 fn main090_sealed_domains_refuse_foreign_and_incomplete_inputs() {
-    assert_eq!(main090_body(&mut &b"abc"[..],3,&digest_bytes(b"abc")).unwrap(),"abc");
-    for bytes in [&b"ab"[..],&b"abcd"[..]] { assert!(main090_body(&mut &bytes[..],3,&digest_bytes(b"abc")).is_err()); }
-    assert!(main090_body(&mut &b"abc"[..],3,&"0".repeat(64)).is_err());
-    assert!(main090_body(&mut &b"\xff"[..],1,&digest_bytes(b"\xff")).is_err());
-    assert!(main090_body(&mut &b""[..],MAIN090_CAP+1,&"0".repeat(64)).is_err());
+    assert_eq!(
+        main090_body(&mut &b"abc"[..], 3, &digest_bytes(b"abc")).unwrap(),
+        "abc"
+    );
+    for bytes in [&b"ab"[..], &b"abcd"[..]] {
+        assert!(main090_body(&mut &bytes[..], 3, &digest_bytes(b"abc")).is_err());
+    }
+    assert!(main090_body(&mut &b"abc"[..], 3, &"0".repeat(64)).is_err());
+    assert!(main090_body(&mut &b"\xff"[..], 1, &digest_bytes(b"\xff")).is_err());
+    assert!(main090_body(&mut &b""[..], MAIN090_CAP + 1, &"0".repeat(64)).is_err());
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(main090_read(root.join("foreign-main090-input.rs")).is_err());
     for row in main090_manifest()["main"].as_array().unwrap() {
-        let raw = main090_checked(&root.join(row["path"].as_str().unwrap()),row["current_len"].as_u64().unwrap() as usize,row["current_sha256"].as_str().unwrap());
-        let view = main090_entry(row,&raw);
-        assert_eq!(main090_entry(row,&view),view);
-        assert!(std::panic::catch_unwind(||main090_entry(row,&(raw.clone()+"\n"))).is_err());
+        let raw = main090_checked(
+            &root.join(row["path"].as_str().unwrap()),
+            row["current_len"].as_u64().unwrap() as usize,
+            row["current_sha256"].as_str().unwrap(),
+        );
+        let view = main090_entry(row, &raw);
+        assert_eq!(main090_entry(row, &view), view);
+        assert!(std::panic::catch_unwind(|| main090_entry(row, &(raw.clone() + "\n"))).is_err());
     }
 }

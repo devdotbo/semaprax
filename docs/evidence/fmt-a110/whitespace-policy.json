@@ -1,0 +1,21 @@
+{
+  "status": "PASS_ALL_ACTIVE_CODE_AND_METADATA_WHITESPACE",
+  "preserved_exact_immutable_archive_EOFs": [
+    "docs/evidence/fmt-a110/0pTtr8ZuOo5PpmyNA7ExzUUDGwMrbwnyRiJW0qAWyH4.txt",
+    "docs/evidence/fmt-a110/4rUEh5MqnVDPOA1xmd1YbhW5J2SALhWA_Pj-dQAnsVE.txt",
+    "docs/evidence/fmt-a110/6jHiKINu_6-u7k41Aa7FGgM5Bu1oNLZPCg6r0ZUoRBU.txt",
+    "docs/evidence/fmt-a110/9QbKn2eHTUEZ9rXYw_HIJEtQMmCrlCWOhZwReKiR7Uw.txt",
+    "docs/evidence/fmt-a110/DyYtx4vMxHhB3fUl7cs4s8kKVX_ZZme_noLDgxFF0rA.txt",
+    "docs/evidence/fmt-a110/K9YyOkCSbfGtlPJTEVJz24zIniYFSXA8joMwN0Ierio.txt",
+    "docs/evidence/fmt-a110/P7M48kfciY2wu7_QfIemy1kiO8zs5IPhMzB5fN2U81E.txt",
+    "docs/evidence/fmt-a110/Yqgnp-UBSY6vgvl36gtauoYp50amyBDg1mduDppsXmo.txt",
+    "docs/evidence/fmt-a110/ci-iirRBgrtW8yhDsF1Wz2n7_WxLWeMr5XUIXSuErfU.txt",
+    "docs/evidence/fmt-a110/etoNz7rQqdeR0PLl-jspwbawoQF9XcYoFix29iHCuzY.txt",
+    "docs/evidence/fmt-a110/jtp5J70q3abNtdtiqXQnUPGkDjKFhNrfTKnjpWJQ8Cw.txt",
+    "docs/evidence/fmt-a110/kutTAci42dn6C9GaMp9-ByfOmyTDS4_W-k0Mha0bJXU.txt",
+    "docs/evidence/fmt-a110/oQ713qMFZWQbGBBIWgCstAK_s9keCtejHXh60web7hI.txt",
+    "docs/evidence/fmt-a110/p64RE6XvA-iu256ELGrirgnX4GZxkMtqzjQjJrVVWM4.txt"
+  ],
+  "reason": "Each archived SHA256-addressed complete source contains its original extra EOF newline. Trimming changes the immutable before image and its digest. Only these14 exact archive paths are excluded from the housekeeping whitespace scan; every active code/metadata path passes.",
+  "archive_SHA256_filename_bytes_verified": true
+}

@@ -1,5 +1,5 @@
 //! Complete immediate-old BTree receiver vs current numeric arena receiver.
-use super::super::{Canonicalizer, Rc, ReplayBudget, before_ordered};
+use super::super::{before_ordered, Canonicalizer, Rc, ReplayBudget};
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{current_metrics, measure};
 
@@ -153,13 +153,13 @@ fn ordered_full_receiver_actual_reservation_allocation_peak_and_every_exit_drop(
     ] {
         for old in [true, false] {
             let full = observe(old, usize::MAX, &state);
-            assert!(full.0.0 == (state[0].0 != roots[6]) && !full.1 && full.3.is_none());
-            assert!(!full.0.1.invalid && full.0.1.live == 0);
-            assert_eq!(full.0.1.allocated, full.0.1.freed);
-            assert!(full.0.1.allocated <= full.2 && full.0.1.highwater <= full.2);
+            assert!(full.0 .0 == (state[0].0 != roots[6]) && !full.1 && full.3.is_none());
+            assert!(!full.0 .1.invalid && full.0 .1.live == 0);
+            assert_eq!(full.0 .1.allocated, full.0 .1.freed);
+            assert!(full.0 .1.allocated <= full.2 && full.0 .1.highwater <= full.2);
             eprintln!(
                 "ordered full old={old} input={state:?} reservation={} allocation={:?}",
-                full.2, full.0.1
+                full.2, full.0 .1
             );
             // Cycle diagnostics have semantic failure independently of bytes;
             // their unchanged result was compared above, including all work cuts.
@@ -168,13 +168,13 @@ fn ordered_full_receiver_actual_reservation_allocation_peak_and_every_exit_drop(
             }
             for bytes in [0, full.2 - 1, full.2] {
                 let actual = observe(old, bytes, &state);
-                assert_eq!(actual.0.0, bytes == full.2);
+                assert_eq!(actual.0 .0, bytes == full.2);
                 assert_eq!(actual.1, bytes < full.2);
                 assert_eq!(actual.3.is_some(), bytes < full.2);
-                assert!(!actual.0.1.invalid && actual.0.1.live == 0);
-                assert_eq!(actual.0.1.allocated, actual.0.1.freed);
+                assert!(!actual.0 .1.invalid && actual.0 .1.live == 0);
+                assert_eq!(actual.0 .1.allocated, actual.0 .1.freed);
                 if bytes == 0 {
-                    assert_eq!(actual.0.1.allocated, 0);
+                    assert_eq!(actual.0 .1.allocated, 0);
                 }
             }
         }

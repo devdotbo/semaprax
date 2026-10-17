@@ -221,7 +221,10 @@ pub(super) fn build_owned_inner(
                 );
                 constructor_failure::attempt::run(active_builder_limit(), || {
                     constructor_failure::attempt::reserve(layouts.receipt())?;
-                    staged!(CorePrebound, constructor_failure::attempt::reserve(resolve_builder_bytes))?;
+                    staged!(
+                        CorePrebound,
+                        constructor_failure::attempt::reserve(resolve_builder_bytes)
+                    )?;
                     let custody = custody::SourceCustody::plan(
                         &sources,
                         &programs,

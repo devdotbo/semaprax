@@ -1,7 +1,9 @@
 //! Complete Main8a receiver; dependency aliases only.
 use super::helper as sequence_prefix;
 use crate::cleanup_plan::replay::path_array_main8a as path_array;
-use crate::cleanup_plan::replay::{lexical_skeleton,note_skeleton_materialization,Diagnostic,ExprSkeletonPath,SkeletonWork};
+use crate::cleanup_plan::replay::{
+    lexical_skeleton, note_skeleton_materialization, Diagnostic, ExprSkeletonPath, SkeletonWork,
+};
 pub(in crate::cleanup_plan::replay) fn sequence_skeleton_paths(
     prefixes: Vec<ExprSkeletonPath>,
     suffixes: &[ExprSkeletonPath],

@@ -437,11 +437,9 @@ mod tests {
         };
         let error = validate(&context, &function, &mut budget(usize::MAX)).unwrap_err();
         assert_eq!(error.code, "SPX-H006");
-        assert!(
-            error
-                .message
-                .contains("unauthenticated or unsupported fields")
-        );
+        assert!(error
+            .message
+            .contains("unauthenticated or unsupported fields"));
     }
 }
 

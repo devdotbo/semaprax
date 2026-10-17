@@ -26,13 +26,19 @@ fn retained_receipt_contains_complete_originals_resolved_closure_and_two_actual_
     // The original manifest-comment positive was inadmissible: the owning
     // Project grammar requires schema first and exact ordered assignments.
     // Keep both complete original hostile byte strings as six-field negatives.
-    for malformed in [&commented, &format!("{commented}# changed raw input, same parsed manifest\n")] {
+    for malformed in [
+        &commented,
+        &format!("{commented}# changed raw input, same parsed manifest\n"),
+    ] {
         let diagnostics = project::ProjectManifest::parse(malformed).unwrap_err();
         assert_eq!(diagnostics.len(), 1);
         let diagnostic = &diagnostics[0];
         assert_eq!(diagnostic.code, "SPX-J100");
         assert_eq!(diagnostic.severity, semaprax::diagnostic::Severity::Error);
-        assert_eq!(diagnostic.message, "Project v1 manifest expected canonical `schema` string assignment");
+        assert_eq!(
+            diagnostic.message,
+            "Project v1 manifest expected canonical `schema` string assignment"
+        );
         assert_eq!(diagnostic.path, None);
         assert_eq!(diagnostic.span, None);
         assert_eq!(diagnostic.help, None);

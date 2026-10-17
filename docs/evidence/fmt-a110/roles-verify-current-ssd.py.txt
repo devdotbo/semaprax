@@ -1,0 +1,19 @@
+from pathlib import Path
+import json,hashlib,importlib.util,resource,shutil
+R=Path.cwd();S=Path('/Volumes/Semaprax/tmp/ci-38383508340');O=S/'format-role-generation-a110';V=S/'legacy-publish-886';H=lambda b:hashlib.sha256(b).hexdigest()
+for name in ['hir','projection']:
+ p=O/'roles-full'/(name+'.json');p.parent.mkdir(exist_ok=True);shutil.copyfile(O/(name+'-complete.json'),p)
+toolpath=R/'docs/evidence/source-boundary-domains-20261016/boundary_tools.py';tool=toolpath.read_bytes();ns={'__file__':str(toolpath)};exec(compile(tool,str(toolpath),'exec'),ns)
+source=R/'docs/evidence/a3-e47-final-custody-20261016/generate-authority.py';prefix=source.read_text().split("for name,chunks in [('hir',hir_chunks),('projection',projection_chunks)]:",1)[0]
+spec=importlib.util.spec_from_file_location('ssd_source_text',V/'ssd_source_text.py');storage=importlib.util.module_from_spec(spec);spec.loader.exec_module(storage);controls=json.loads((V/'storage-controls-result.json').read_bytes());assert controls['status']=='PASS'and controls['storage_implementation_sha256']==H((V/'ssd_source_text.py').read_bytes());store=storage.Store(O/'verified-source-snapshots');original_provider=ns['original_verifier']
+def provider(repo):
+ verify,digest=original_provider(repo);assert digest==controls['original_verifier_prefix_sha256'];verify.__globals__['R']=storage.Root(repo,store);return verify,digest
+ns['original_verifier']=provider
+class ExactExpected:
+ def __init__(self,name):self.name=name
+ def __eq__(self,actual):return isinstance(actual,dict)and(json.dumps(actual,separators=(',',':'))+'\n').encode()==(O/'roles-full'/(self.name+'.json')).read_bytes()
+class Generated:
+ def __getitem__(self,name):assert name in ['hir','projection'];return ExactExpected(name)
+print('Run both complete current source-role domains through the original unchanged verifier with immutable SSD-backed UTF8 buffers.',flush=True)
+manifest,proof=ns['generated_scope'](R,O/'roles-full',regenerated=(Generated(),H(prefix.encode())));print('Both complete domains passed; run all six original hostile controls.',flush=True);negative=ns['negative_checks'](R,O/'roles-full',manifest);assert len(negative)==6 and all(negative.values());proof.update(actual_acquisition_completion_sha256=H((O/'complete-chain-receipt.json').read_bytes()),negative_controls=negative,status='SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS',registration_update='CURRENT_A110_FORMAT_SPLITS_AND_INCOMING_MODULE_CLOSURE',before_head='a110ea82e2f3eec797b4fd44b98836927f7218e1',global_polluted_purity_result_not_claimed=True,verification_storage='Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.',storage_controls_sha256=H((V/'storage-controls-result.json').read_bytes()),storage_implementation_sha256=H((V/'ssd_source_text.py').read_bytes()))
+(O/'verified-current-domains.json').write_text(json.dumps(manifest,indent=2)+'\n');(O/'verified-boundary-source-proof.json').write_text(json.dumps(proof,indent=2)+'\n');(O/'verification-result.json').write_text(json.dumps({'status':'SOURCE_ONLY_ORIGINAL_FULL_DOMAIN_AND_HOSTILE_CONTROLS_PASS','domains':sorted(manifest['domains']),'negative_controls':negative,'generation_receipt_sha256':H((O/'generation-receipt.json').read_bytes()),'complete_chain_receipt_sha256':H((O/'complete-chain-receipt.json').read_bytes()),'peak_RSS_bytes':resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,'no_Rust_or_hosted_qualification_claimed':True,'must_refresh_if_header_or_other_source_changes':True},indent=2)+'\n');print('Both complete domains and every original hostile control passed; peak RSS bytes',resource.getrusage(resource.RUSAGE_SELF).ru_maxrss,flush=True)

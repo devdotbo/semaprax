@@ -211,8 +211,10 @@ fn borrowed_owned_mixed_and_synthetic_main_keep_zero_or_original_capacity_and_fu
                 );
                 let (expected, actual) = match (old_result, current_result) {
                     (Ok(expected), Ok(actual)) => (expected.0, actual.0),
-                    (Err(crate::hir::identity_resolution::Failure::Source(old_errors)),
-                     Err(crate::hir::identity_resolution::Failure::Source(current_errors))) => {
+                    (
+                        Err(crate::hir::identity_resolution::Failure::Source(old_errors)),
+                        Err(crate::hir::identity_resolution::Failure::Source(current_errors)),
+                    ) => {
                         assert_old_alias_refusal(&old, &old_errors);
                         assert_eq!(old_errors, current_errors);
                         // Both historical owning-name routes are retained as
@@ -222,11 +224,19 @@ fn borrowed_owned_mixed_and_synthetic_main_keep_zero_or_original_capacity_and_fu
                         let oracle = provider_binding_oracle(&old, &programs);
                         let production = crate::workspace_graph::expected_projection::borrowed_imports::typed::alias::construct_transient(&programs[0], &authored, &programs, &registry, None, &mut owner).unwrap();
                         let expected = crate::hir::identity_resolution::resolve_source_nominal(
-                            &oracle, layout.presentation(&programs[0], &oracle).unwrap(),
-                            crate::workspace_graph::reserve_builder_structure).unwrap().0;
+                            &oracle,
+                            layout.presentation(&programs[0], &oracle).unwrap(),
+                            crate::workspace_graph::reserve_builder_structure,
+                        )
+                        .unwrap()
+                        .0;
                         let actual = crate::hir::identity_resolution::resolve_source_nominal(
-                            &production, layout.presentation(&programs[0], &production).unwrap(),
-                            crate::workspace_graph::reserve_builder_structure).unwrap().0;
+                            &production,
+                            layout.presentation(&programs[0], &production).unwrap(),
+                            crate::workspace_graph::reserve_builder_structure,
+                        )
+                        .unwrap()
+                        .0;
                         (expected, actual)
                     }
                     other => panic!(
@@ -238,22 +248,55 @@ fn borrowed_owned_mixed_and_synthetic_main_keep_zero_or_original_capacity_and_fu
                 // Genuine parsed renamed providers keep canonical metadata and
                 // local lookup independently, including the all/mixed cases.
                 for import in &programs[0].module_uses {
-                    let provider = programs[1].functions.iter()
-                        .find(|function| function.stable_id == import.persistent_id).unwrap();
+                    let provider = programs[1]
+                        .functions
+                        .iter()
+                        .find(|function| function.stable_id == import.persistent_id)
+                        .unwrap();
                     let id = actual.declarations.function_id(&import.alias).unwrap();
                     assert_eq!(id.as_str(), import.persistent_id);
-                    assert_eq!(actual.declarations.declaration(id).unwrap().name, provider.name);
-                    assert_eq!(actual.function_templates.iter()
-                        .find(|template| template.id == *id).unwrap().name, provider.name);
-                    assert_eq!(actual.function_templates.iter()
-                        .filter(|template| template.id == *id).count(), 1);
+                    assert_eq!(
+                        actual.declarations.declaration(id).unwrap().name,
+                        provider.name
+                    );
+                    assert_eq!(
+                        actual
+                            .function_templates
+                            .iter()
+                            .find(|template| template.id == *id)
+                            .unwrap()
+                            .name,
+                        provider.name
+                    );
+                    assert_eq!(
+                        actual
+                            .function_templates
+                            .iter()
+                            .filter(|template| template.id == *id)
+                            .count(),
+                        1
+                    );
                     if id.as_str() == "std.collections.vec.with-capacity" {
-                        let metadata = (actual.declarations.declaration(id).unwrap().clone(),
-                            actual.function_templates.iter().find(|template| template.id == *id).unwrap().clone());
-                        if let Some(first) = &canonical_metadata { assert_eq!(first, &metadata); }
-                        else { canonical_metadata = Some(metadata); }
-                        if import.alias == "with_capacity" { same_provider_bindings[0] = true; }
-                        if import.alias == "make_vec" { same_provider_bindings[1] = true; }
+                        let metadata = (
+                            actual.declarations.declaration(id).unwrap().clone(),
+                            actual
+                                .function_templates
+                                .iter()
+                                .find(|template| template.id == *id)
+                                .unwrap()
+                                .clone(),
+                        );
+                        if let Some(first) = &canonical_metadata {
+                            assert_eq!(first, &metadata);
+                        } else {
+                            canonical_metadata = Some(metadata);
+                        }
+                        if import.alias == "with_capacity" {
+                            same_provider_bindings[0] = true;
+                        }
+                        if import.alias == "make_vec" {
+                            same_provider_bindings[1] = true;
+                        }
                     }
                 }
                 crate::hir::validate(&actual).unwrap();
@@ -266,29 +309,64 @@ fn borrowed_owned_mixed_and_synthetic_main_keep_zero_or_original_capacity_and_fu
     // monomorphic aliases; neither may inherit the opposite naming policy.
     // Fixture construction is outside the paid resolver invocation.
     {
-        use crate::ast::program_source::function_alias::{FunctionDirectory, FunctionEntry, FunctionView, TransientFunctions};
+        use crate::ast::program_source::function_alias::{
+            FunctionDirectory, FunctionEntry, FunctionView, TransientFunctions,
+        };
         use crate::ast::program_source::generated_roots::GeneratedRoots;
         let provider = crate::parse("module ordinary.provider; @id(\"ordinary.generic\") fn generic<T>(value:T)->T{value} @id(\"ordinary.plain\") fn plain(value:i64)->i64{value}", "ordinary-provider.spx").unwrap();
         let caller = crate::parse("module ordinary.consumer; @id(\"ordinary.main\") fn main()->i64 {local_generic<i64>(7)+local_plain(8)}", "ordinary-consumer.spx").unwrap();
         let directory = FunctionDirectory {
             roots: GeneratedRoots::plain(Vec::new(), Vec::new()),
             entries: vec![
-                FunctionEntry::Borrowed(FunctionView::checked(&provider, &provider.functions[0], "local_generic").unwrap()),
-                FunctionEntry::Borrowed(FunctionView::checked(&provider, &provider.functions[1], "local_plain").unwrap()),
+                FunctionEntry::Borrowed(
+                    FunctionView::checked(&provider, &provider.functions[0], "local_generic")
+                        .unwrap(),
+                ),
+                FunctionEntry::Borrowed(
+                    FunctionView::checked(&provider, &provider.functions[1], "local_plain")
+                        .unwrap(),
+                ),
             ],
         };
         let input = TransientFunctions::new(&caller, directory);
         let ((), overflowed, _, first) = with_limit_usage_refusal(LIMIT, || {
             let resolved = crate::hir::identity_resolution::resolve_source_nominal(
-                &input, None, crate::workspace_graph::reserve_builder_structure).unwrap().0;
+                &input,
+                None,
+                crate::workspace_graph::reserve_builder_structure,
+            )
+            .unwrap()
+            .0;
             let generic = resolved.declarations.function_id("local_generic").unwrap();
             let plain = resolved.declarations.function_id("local_plain").unwrap();
             assert_eq!(generic.as_str(), "ordinary.generic");
             assert_eq!(plain.as_str(), "ordinary.plain");
-            assert_eq!(resolved.declarations.declaration(generic).unwrap().name, "generic");
-            assert_eq!(resolved.function_templates.iter().find(|item| item.id == *generic).unwrap().name, "generic");
-            assert_eq!(resolved.declarations.declaration(plain).unwrap().name, "local_plain");
-            assert_eq!(resolved.functions.iter().find(|item| item.id == *plain).unwrap().name, "local_plain");
+            assert_eq!(
+                resolved.declarations.declaration(generic).unwrap().name,
+                "generic"
+            );
+            assert_eq!(
+                resolved
+                    .function_templates
+                    .iter()
+                    .find(|item| item.id == *generic)
+                    .unwrap()
+                    .name,
+                "generic"
+            );
+            assert_eq!(
+                resolved.declarations.declaration(plain).unwrap().name,
+                "local_plain"
+            );
+            assert_eq!(
+                resolved
+                    .functions
+                    .iter()
+                    .find(|item| item.id == *plain)
+                    .unwrap()
+                    .name,
+                "local_plain"
+            );
             crate::hir::validate(&resolved).unwrap();
             drop(resolved);
         });
@@ -553,7 +631,11 @@ fn complete_immediate_directory_producer_and_expanded_acquisition_remain_source_
         format!("{}\n", expected.trim_end()),
         include_str!("before_owned_directory.rs")
     );
-    let tests = crate::source_reflows_merge::maina3_847_input("src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs", include_str!("tests.rs")).replace(
+    let tests = crate::source_reflows_merge::maina3_847_input(
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs",
+        include_str!("tests.rs"),
+    )
+    .replace(
         "        let current = super::owned_growth_tests::previous_source(source, &current);\n",
         "",
     );
@@ -566,7 +648,6 @@ fn complete_immediate_directory_producer_and_expanded_acquisition_remain_source_
     );
 }
 
-
 /// Additional, test-only provider/binding oracle. This is not the historical
 /// receiver and is never inside its paid/allocation observation window. Every
 /// declaration produced by the old route is authenticated completely before
@@ -575,7 +656,9 @@ pub(super) fn provider_binding_oracle<'p>(
     old: &dyn ProgramSource,
     programs: &'p [Program],
 ) -> crate::ast::program_source::function_alias::TransientFunctions<'p> {
-    use crate::ast::program_source::function_alias::{FunctionDirectory, FunctionEntry, FunctionView, TransientFunctions};
+    use crate::ast::program_source::function_alias::{
+        FunctionDirectory, FunctionEntry, FunctionView, TransientFunctions,
+    };
     use crate::ast::program_source::{generated_roots::GeneratedRoots, FunctionSlices};
     let authored = &programs[0];
     assert_eq!(old.path(), authored.path);
@@ -585,7 +668,14 @@ pub(super) fn provider_binding_oracle<'p>(
         assert_eq!(old.functions().get(index), Some(function));
     }
     let mut directory = FunctionDirectory {
-        roots: GeneratedRoots::plain(old.types().iter().skip(authored.types.len()).cloned().collect(), Vec::new()),
+        roots: GeneratedRoots::plain(
+            old.types()
+                .iter()
+                .skip(authored.types.len())
+                .cloned()
+                .collect(),
+            Vec::new(),
+        ),
         entries: Vec::new(),
     };
     for function in old.functions().iter().skip(authored.functions.len()) {
@@ -594,24 +684,47 @@ pub(super) fn provider_binding_oracle<'p>(
                 && import.persistent_id == function.stable_id
                 && import.alias == function.name
         });
-        let provider = imported.and_then(|import| programs.iter().find(|provider| provider.module == import.target_module));
-        let original = provider.and_then(|provider| provider.functions.iter().find(|candidate| candidate.stable_id == function.stable_id));
+        let provider = imported.and_then(|import| {
+            programs
+                .iter()
+                .find(|provider| provider.module == import.target_module)
+        });
+        let original = provider.and_then(|provider| {
+            provider
+                .functions
+                .iter()
+                .find(|candidate| candidate.stable_id == function.stable_id)
+        });
         match (imported, provider, original) {
             (Some(import), Some(provider), Some(original))
                 if crate::vec_ops::source_wrapper(provider, original).is_some()
-                    || crate::box_ops::source_wrapper(provider, original).is_some() => {
-                directory.entries.push(FunctionEntry::Borrowed(FunctionView::checked(provider, original, &import.alias).unwrap()));
+                    || crate::box_ops::source_wrapper(provider, original).is_some() =>
+            {
+                directory.entries.push(FunctionEntry::Borrowed(
+                    FunctionView::checked(provider, original, &import.alias).unwrap(),
+                ));
             }
             _ => {
-                directory.entries.push(FunctionEntry::Owned(directory.roots.functions.len()));
+                directory
+                    .entries
+                    .push(FunctionEntry::Owned(directory.roots.functions.len()));
                 directory.roots.functions.push(function.clone());
             }
         }
         let views = FunctionSlices::projected(&[], &directory).unwrap();
-        assert!(views.get(views.len() - 1).unwrap().same_ordinary_declaration(function), "complete historical payload differs from authenticated provider/binding");
+        assert!(
+            views
+                .get(views.len() - 1)
+                .unwrap()
+                .same_ordinary_declaration(function),
+            "complete historical payload differs from authenticated provider/binding"
+        );
     }
     let bridge = TransientFunctions::new(authored, directory);
-    assert_eq!(old.types().iter().collect::<Vec<_>>(), bridge.types().iter().collect::<Vec<_>>());
+    assert_eq!(
+        old.types().iter().collect::<Vec<_>>(),
+        bridge.types().iter().collect::<Vec<_>>()
+    );
     assert_eq!(old.permits(), bridge.permits());
     assert_eq!(old.interfaces(), bridge.interfaces());
     assert_eq!(old.protocols(), bridge.protocols());
@@ -631,18 +744,28 @@ pub(super) fn assert_old_alias_refusal(
     let mut expected = Vec::new();
     for function in old.function_refs() {
         let kind = if crate::vec_ops::wrapper_by_id(&function.payload().stable_id)
-            .is_some_and(|op| Some(function.name()) != crate::vec_ops::wrapper_name(op)) {
+            .is_some_and(|op| Some(function.name()) != crate::vec_ops::wrapper_name(op))
+        {
             Some(("SPX-T283", "vector"))
         } else if crate::box_ops::wrapper_by_id(&function.payload().stable_id)
-            .is_some_and(|op| function.name() != crate::box_ops::wrapper_name(op)) {
+            .is_some_and(|op| function.name() != crate::box_ops::wrapper_name(op))
+        {
             Some(("SPX-T286", "box"))
-        } else { None };
+        } else {
+            None
+        };
         if let Some((code, kind)) = kind {
             // The old route's binding name is deliberately distinct from the
             // exact reserved wrapper declaration name; no forged success here.
-            let mut diagnostic = crate::diagnostic::Diagnostic::error(code,
-                format!("`{}.{}` must be one exact transparent compiler-owned {kind} wrapper", old.module(), function.name()),
-                function.payload().span);
+            let mut diagnostic = crate::diagnostic::Diagnostic::error(
+                code,
+                format!(
+                    "`{}.{}` must be one exact transparent compiler-owned {kind} wrapper",
+                    old.module(),
+                    function.name()
+                ),
+                function.payload().span,
+            );
             diagnostic.path = Some(old.path().to_owned());
             expected.push(diagnostic);
         }

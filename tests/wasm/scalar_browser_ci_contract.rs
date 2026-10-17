@@ -121,7 +121,10 @@ fn browser_known_answers_match_authenticated_baseline_and_rename_graphs() {
                     file.write_all(revision.semantic_graph().as_bytes())
                         .expect("capture complete actual calculator graph");
                 }
-                previous_digests.push(historical_builder::current_browser_digest(revision.semantic_graph(), name));
+                previous_digests.push(historical_builder::current_browser_digest(
+                    revision.semantic_graph(),
+                    name,
+                ));
                 historical_builder::current_browser_drift_controls(revision.semantic_graph(), name);
                 let actual = [
                     revision.project_revision(),
@@ -265,7 +268,7 @@ mod main_c11;
 // Shared custody seam for independent retained Main receivers.
 use historical_builder::custody as browser_custody;
 
-#[path = "../../src/source_reflows_merge/main99f_inputs.rs"]
-mod main99f_inputs;
 #[path = "scalar_browser_ci_contract/incoming_main3e66.rs"]
 mod incoming_main3e66;
+#[path = "../../src/source_reflows_merge/main99f_inputs.rs"]
+mod main99f_inputs;

@@ -1,5 +1,5 @@
 //! Same stub decision and provider proof, with explicit original receiver.
-use super::{Expr, ExprKind, Function, ParamMode, Type, forward_parameter, record_shape};
+use super::{forward_parameter, record_shape, Expr, ExprKind, Function, ParamMode, Type};
 use crate::workspace_graph::constructor_failure::{receiving::Receiver, typed::Failure};
 pub(in crate::workspace_graph) fn default_expr(
     function: &Function,

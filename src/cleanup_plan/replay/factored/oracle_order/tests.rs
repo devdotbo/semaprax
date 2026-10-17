@@ -270,8 +270,8 @@ fn compact_staged_receiving_keeps_floor_and_foreign_owner_first_refusal() {
                 let mut budget = ReplayBudget::new();
                 budget.prepare_builder(function).unwrap();
                 let materializations = skeleton_materializations();
-                let error = skeleton_clone(&mut budget, function, source, "floor source")
-                    .unwrap_err();
+                let error =
+                    skeleton_clone(&mut budget, function, source, "floor source").unwrap_err();
                 assert_eq!(
                     error,
                     replay_error(

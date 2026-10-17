@@ -1,0 +1,18 @@
+{
+  "status": "PASS_SOURCE_ONLY_COMPLETE_PACKET_CONFIG_AND_FRAGMENT_CONTROLS",
+  "current_rows": 433,
+  "original_rows_and_all_original_fields_retained": 124,
+  "complete_prior_views": 534,
+  "actual_Python_supported_current_rows": 429,
+  "actual_Python_oversize_refusals": 4,
+  "actual_Python_named_prior_replays": 521,
+  "wrong_length_or_digest_refusals": 866,
+  "foreign_named_source_refused": true,
+  "post_load_CONFIG_tamper_symlink_and_nonregular_refusals": 4,
+  "each_compiled_fragment_tamper_blocks_parent_historical_view": 10,
+  "complete_public_bootstrap_predecessor_reconstructed": true,
+  "Rust_source_cap_unchanged": 9753094,
+  "Python_input_cap_unchanged": 262144,
+  "Python_program_cap_unchanged": 65536,
+  "scope": "Physical/source-only authenticity. Compiled-source equality must also be exercised by the owning Rust routes; no full Rust, hosted CI, production support or broader Python source-size support is inferred."
+}

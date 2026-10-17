@@ -63,7 +63,10 @@ fn first_graph_difference(warm: &Value, cold: &Value, skip_root_digest: bool) ->
         };
         match (warm, cold) {
             (Some(Value::Object(left)), Some(Value::Object(right))) => {
-                for key in left.keys().chain(right.keys().filter(|key| !left.contains_key(*key))) {
+                for key in left
+                    .keys()
+                    .chain(right.keys().filter(|key| !left.contains_key(*key)))
+                {
                     if skip_root_digest && depth == 0 && key == "graph_digest" {
                         continue;
                     }
@@ -75,7 +78,9 @@ fn first_graph_difference(warm: &Value, cold: &Value, skip_root_digest: bool) ->
             }
             (Some(Value::Array(left)), Some(Value::Array(right))) => {
                 for index in 0..left.len().max(right.len()) {
-                    if let Some(found) = child(&index.to_string(), left.get(index), right.get(index)) {
+                    if let Some(found) =
+                        child(&index.to_string(), left.get(index), right.get(index))
+                    {
                         return Some(found);
                     }
                 }
