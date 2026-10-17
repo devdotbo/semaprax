@@ -276,6 +276,9 @@ impl<'a> Canonicalizer<'a> {
                 return Err(error);
             });
         }
+        // Existing received owner place: no copied tag, bool or reference.
+        // scratch_paid=true makes cold_dead_node false by its own definition.
+        if let Self { scratch_paid: false, .. } = self {
         if budget.pays_allocations() {
             budget.reserve_bytes(function, Self::COLD_ROOT_CONTROLS, "factored cold terminal root predicate")?;
         }
@@ -284,6 +287,7 @@ impl<'a> Canonicalizer<'a> {
                 budget.reserve_bytes(function, Self::COLD_RESULT_CONTROLS, "factored cold terminal result receiving")?;
             }
             return self.cold_dead_id(function, root, budget);
+        }
         }
         if budget.pays_allocations() {
             budget.reserve_bytes(
