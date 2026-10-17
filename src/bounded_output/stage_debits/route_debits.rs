@@ -507,3 +507,88 @@ fn comparison_aggregate_census_keeps_8769_calls_and_marks_arithmetic_overflow_wi
     assert!(!complete);
     assert_eq!(cell.attempts, usize::MAX);
 }
+
+// Full mapping/control test; these are diagnostic cells, never compiler credit.
+#[test]
+fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_overflow() {
+    use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal};
+    const LABELS: [&str; 13] = [
+        "ordinary plan history comparator controls",
+        "ordinary plan history order call",
+        "ordinary plan history sift call",
+        "ordinary plan history comparison receivers",
+        "ordinary plan history sort receivers",
+        "ordinary plan history left cursor prepare",
+        "ordinary plan history right cursor prepare",
+        "ordinary plan history HIR cursor prepare",
+        "ordinary plan history paired cursor next",
+        "ordinary plan history HIR cursor next",
+        "ordinary plan retained drain swap receivers",
+        "ordinary plan retained sift swap receivers",
+        "ordinary plan retained final Zip next receivers",
+    ];
+    assert_eq!(LABELS.len(), COMPARISON_PHASES);
+    assert_eq!(comparison_phase("ordinary plan retained comparison owner"), Some(0));
+    assert_eq!(comparison_phase("foreign comparison phase"), None);
+    let _observation = observe();
+    for selected_route in [Route::Production, Route::UnoptedCrosscheck, Route::OptedOracle] {
+        for (category, label) in LABELS.into_iter().enumerate() {
+            assert_eq!(comparison_phase(label), Some(category));
+            let (((), metrics), refused, used, first) = with_limit_usage_refusal(8_769, || {
+                crate::test_allocation_observer::measure(|| {
+                    // Only observer coordinates are supplied here. The actual
+                    // allowance comes from with_limit_usage_refusal above.
+                    start(1, 0, 0);
+                    let _function = function(0, false, "comparison-census");
+                    let _route = route(selected_route);
+                    assert!(comparison_before("foreign comparison phase", 1).is_none());
+                    for _ in 0..8_769 {
+                        let ticket = comparison_before(label, 1);
+                        assert!(ticket.is_some());
+                        assert!(reserve_active_required(1));
+                        comparison_after(ticket, true);
+                    }
+                    let ticket = comparison_before(label, 1);
+                    assert!(ticket.is_some());
+                    assert!(!reserve_active_required(1));
+                    comparison_after(ticket, false);
+                    finish(1, 8_769, 0);
+                })
+            });
+            assert!(refused);
+            assert_eq!(used, 8_769);
+            let first = first.unwrap();
+            assert_eq!((first.requested, first.remaining, first.floor), (1, 0, 0));
+            assert!(!metrics.invalid);
+            assert_eq!((metrics.allocations, metrics.reallocations, metrics.allocated, metrics.freed, metrics.live), (0, 0, 0, 0, 0));
+            STATE.with(|state| {
+                let state = state.borrow();
+                assert!(state.have_last && state.have_max);
+                let packet = &state.last;
+                assert!(packet.comparison_complete);
+                assert_eq!((packet.used, packet.consumed), (1, 8_769));
+                for route_index in 0..ROUTES {
+                    for phase_index in 0..COMPARISON_PHASES {
+                        let cell = packet.rows[0].comparison[route_index][phase_index];
+                        let expected = if route_index == selected_route as usize && phase_index == category {
+                            (8_770, 8_770, 8_769, 1)
+                        } else { (0, 0, 0, 0) };
+                        assert_eq!((cell.attempts, cell.requested, cell.acquired, cell.refused), expected);
+                    }
+                }
+            });
+            // Every category's four counters use the SAME checked primitive;
+            // exercise each field independently, without saturating away the
+            // incomplete flag or confusing it with a compiler refusal.
+            let mut cell = ComparisonCell::EMPTY;
+            for slot in [&mut cell.attempts, &mut cell.requested, &mut cell.acquired, &mut cell.refused] {
+                let mut complete = true;
+                add(slot, usize::MAX, &mut complete);
+                assert!(complete);
+                add(slot, 1, &mut complete);
+                assert!(!complete);
+                assert_eq!(*slot, usize::MAX);
+            }
+        }
+    }
+}
