@@ -1,0 +1,41 @@
+{
+  "status": "SOURCE_ONLY_UNCOMPILED_UNEXECUTED",
+  "baseline": "7622b5b10e28e95f18a6710e99f3b552491977f6",
+  "concrete_source_defect_fixed": "Application Scope Drop used infallible eprintln! and could replace original unwind on stderr write failure.",
+  "new_Rust_modules": 0,
+  "new_control_selectors": 1,
+  "original_single_pair_tests_exact": true,
+  "original_single_pair_observer_state_and_capture_exact": true,
+  "unchanged_paths_sha256": {
+    "src/cleanup_plan/replay/factored/canonical_shared.rs": "09ad1595bbf16bef93e5c5921ededa0fc64d9b75c8419b0051423ce1ae15c376",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs": "14a25524fa6fdb37691785f49e3ef00ce5107a6c409c63c3bcc665ae53397b2a",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs": "db06143a7a46c5030fc813b49a7ca7be73a1f9d619a13bb14a198799a5c7c1d8",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs": "6574f2145c08dda98817759625ae7ed0100784501f1a80ae31b6aca600617560",
+    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs": "fc054c4c7c3089e8aa3fd136d92d7d895bfe79f41f1e75e9bd92f60396e585e0",
+    "src/workspace_graph/tests/builder_limits.rs": "3a52fa4127f7c7665f44df0d673f0a3c906f14fd6792691b9c594aee23b09c91",
+    "tests/native/string_settlement/codec_allocation/codec808_frontier.rs": "e9fe6869382db9e86c8ddd2a4ee4d71d63783ccb6817724d813b192bd72d54e0"
+  },
+  "checks_run": [
+    "scoped rustfmt",
+    "git diff --check",
+    "pure whole-source forward/inverse and byte comparisons"
+  ],
+  "not_run": [
+    "Cargo",
+    "rustc",
+    "tests",
+    "builds",
+    "binders",
+    "actual applications",
+    "gain or application admission"
+  ],
+  "files": {
+    "README.md": "3c3436b59bf9ab0519390d652b93bf8edba8c98464c16c13325bbc336048560a",
+    "docs__LEXICAL-CANONICAL-SUCCESSORS-V1.md.before.txt": "da31b022e4efc117d6b2f9afb1c6eaa09c58eef0d2ca9ac920055d67d9c795f6",
+    "docs__LEXICAL-CANONICAL-SUCCESSORS-V1.md.current.txt": "71f530091f119fd8c740b1e95c177020439af12fab1668841963a7bdce31674a",
+    "pending-selectors.json": "2a5d9c35026877f01b409d6a926865314ec31b0ead53de0f0992eac198450076",
+    "src__cleanup_plan__replay__factored__canonical_shared__lexical_successors__census.rs.before.txt": "bc4e0c6a6c483c9c9ffe4fcfa365c304c2a94224920309fb85f68f260fb8d5da",
+    "src__cleanup_plan__replay__factored__canonical_shared__lexical_successors__census.rs.current.txt": "4bfecd5cc338ed82e82fe87904011fcfe6f654d6cb4c024beb8b2681d36729cf",
+    "whole-source-inverses.json": "81b19967387f4c6d4fb2f7f89efd66d02716421cdd59ab9840a85a8cad41a98d"
+  }
+}

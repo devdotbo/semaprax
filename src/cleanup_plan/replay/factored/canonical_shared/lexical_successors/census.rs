@@ -137,7 +137,7 @@ pub(in crate::cleanup_plan::replay::factored) fn phase(hir: bool) -> Phase {
 impl Drop for Phase {
     fn drop(&mut self) {
         STATE.with(|s| s.borrow_mut().phase = self.previous);
-        APPLICATION.with(|slot| {
+        let _ = APPLICATION.try_with(|slot| {
             let mut state = slot.get();
             state.phase = self.application_previous;
             slot.set(state);
@@ -404,12 +404,14 @@ impl Scope {
         Self::new("catalog-normalizer-compact-original")
     }
 }
-impl Drop for Scope {
-    fn drop(&mut self) {
+impl Scope {
+    // Report only after restoring the fixed counters. TLS teardown and closed
+    // diagnostic streams must not replace the original owner Result or unwind.
+    fn write_settled(&mut self, output: &mut impl std::io::Write) {
         let Some(mut previous) = self.previous.take() else {
             return;
         };
-        let report = APPLICATION.with(|slot| {
+        let Ok(report) = APPLICATION.try_with(|slot| {
             let mut state = slot.get();
             if state.current.is_some() || state.pending.is_some() || state.suppressed != 0 {
                 state.lost();
@@ -418,10 +420,18 @@ impl Drop for Scope {
             previous.serial = state.serial;
             slot.set(previous);
             state.report
-        });
-        eprintln!("OPT884 application-successor-census owner={} partial_prefix={} complete={} overflowed={} lost={} axes=old_current/other_HIR_PLAN/general_unit actual_attempted_and_acquired_not_unique_frequency=true report={report:?}",
+        }) else {
+            return;
+        };
+        let _ = writeln!(output, "OPT884 application-successor-census owner={} partial_prefix={} complete={} overflowed={} lost={} axes=old_current/other_HIR_PLAN/general_unit actual_attempted_and_acquired_not_unique_frequency=true report={report:?}",
             self.owner, std::thread::panicking(), report.complete, report.overflowed, report.lost);
-        eprintln!("OPT884 application invocation binding diagnostic_only=true function={} budget={} serial={} started={:?} finished={:?}", report.last_function, report.last_budget, report.last_serial, report.started, report.finished);
+        let _ = writeln!(output, "OPT884 application invocation binding diagnostic_only=true function={} budget={} serial={} started={:?} finished={:?}", report.last_function, report.last_budget, report.last_serial, report.started, report.finished);
+    }
+}
+impl Drop for Scope {
+    fn drop(&mut self) {
+        let mut stderr = std::io::stderr().lock();
+        self.write_settled(&mut stderr);
     }
 }
 pub(in crate::cleanup_plan::replay::factored::canonical_shared) struct Invocation {
@@ -495,7 +505,7 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn invocation(
 }
 impl Drop for Invocation {
     fn drop(&mut self) {
-        APPLICATION.with(|slot| {
+        let _ = APPLICATION.try_with(|slot| {
             let mut state = slot.get();
             if self.suppressed {
                 if state.suppressed == 0 {
@@ -746,4 +756,66 @@ fn application_census_counter_overflow_invalidates_fixed_report() {
     assert!(!r.complete && r.overflowed);
     assert_eq!(r.cells[1][0][1].acquired_entries, usize::MAX);
     drop(scope);
+}
+
+#[test]
+fn application_closed_report_stream_preserves_original_unwind_after_fixture_drop() {
+    use std::cell::Cell;
+    struct Closed<'a>(&'a Cell<usize>);
+    impl std::io::Write for Closed<'_> {
+        fn write(&mut self, _: &[u8]) -> std::io::Result<usize> {
+            self.0.set(self.0.get() + 1);
+            Err(std::io::ErrorKind::BrokenPipe.into())
+        }
+        fn flush(&mut self) -> std::io::Result<()> {
+            Err(std::io::ErrorKind::BrokenPipe.into())
+        }
+    }
+    struct Fixture<'a>(&'a Cell<bool>);
+    impl Drop for Fixture<'_> {
+        fn drop(&mut self) {
+            self.0.set(true);
+        }
+    }
+    struct ClosedReport<'a> {
+        scope: Scope,
+        fixture_dropped: &'a Cell<bool>,
+        after_fixture: &'a Cell<bool>,
+        writes: &'a Cell<usize>,
+    }
+    impl Drop for ClosedReport<'_> {
+        fn drop(&mut self) {
+            self.after_fixture.set(self.fixture_dropped.get());
+            self.scope.write_settled(&mut Closed(self.writes));
+        }
+    }
+    for unwind in [false, true] {
+        let fixture_dropped = Cell::new(false);
+        let after_fixture = Cell::new(false);
+        let writes = Cell::new(0);
+        // Synthetic ownership only: no wrapper intercepts an actual producer.
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let _report = ClosedReport {
+                scope: Scope::new("synthetic-closed-report-stream"),
+                fixture_dropped: &fixture_dropped,
+                after_fixture: &after_fixture,
+                writes: &writes,
+            };
+            let _fixture = Fixture(&fixture_dropped);
+            if unwind {
+                panic!("original application owner failure");
+            }
+        }));
+        if unwind {
+            assert_eq!(
+                result.unwrap_err().downcast_ref::<&str>(),
+                Some(&"original application owner failure")
+            );
+        } else {
+            assert!(result.is_ok());
+        }
+        assert!(fixture_dropped.get() && after_fixture.get());
+        assert_eq!(writes.get(), 2);
+        assert!(!APPLICATION.with(|slot| slot.get().enabled));
+    }
 }

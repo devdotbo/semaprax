@@ -125,3 +125,11 @@ Such a report cannot establish savings. A complete failed-prefix report is
 still a failed-prefix measurement, not full-path N or fit. The successful-path
 (N-M)P-A-NR equation must not be applied to failed attempted entries as if all
 banks were acquired. Actual application execution remains pending.
+
+Application reporting restores the fixed counter state before best-effort writes
+to locked stderr. Closed diagnostic streams and unavailable TLS cannot panic
+through the new application scope/invocation cleanup or replace an original
+owner unwind. The source-only closed-writer control covers normal return and
+fixture teardown during an unchanged synthetic panic; it does not intercept an
+actual application producer. Missing or truncated report output grants no
+measurement or qualification claim. Execution remains pending.

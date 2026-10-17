@@ -1,0 +1,10 @@
+{
+  "status": "SOURCE_ONLY_UNEXECUTED_UNREGISTERED",
+  "checks": [
+    {
+      "role": "lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::lexical_successors::census::application_closed_report_stream_preserves_original_unwind_after_fixture_drop",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
+    }
+  ]
+}
