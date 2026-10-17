@@ -162,13 +162,22 @@ fn verify_profile<'p>(
 
     let mut types = TypeTable::new(program);
     types.private = private;
+    let storage_diagnostics_start = diagnostics.len();
     check_byte_data_declarations(program, &types, &mut diagnostics);
+    let storage_declaration_refused = diagnostics[storage_diagnostics_start..]
+        .iter()
+        .any(|diagnostic| diagnostic.severity.is_error());
     let mut native_rust_names = HashSet::new();
     check_native_rust_imports(program, &types, &mut native_rust_names, &mut diagnostics);
     check_resource_lifecycles(program, &import_keys, &mut diagnostics);
     check_declared_fields(program, &types, &mut diagnostics);
     let mut checked_layouts = HashSet::new();
     check_record_layouts(program, &types, &mut checked_layouts, &mut diagnostics);
+    // Rejected storage has no executable type. Finish all declaration checks
+    // and preserve native-import failure priority before executable checks.
+    if storage_declaration_refused {
+        return finish_diagnostics(diagnostics);
+    }
 
     check_function_declarations(program, &types, &mut functions, &mut ids, &mut diagnostics);
     diagnostics.extend(crate::session_protocol::source::check(program));
@@ -290,6 +299,10 @@ fn verify_profile<'p>(
             diagnostics.push(diagnostic);
         }
     }
+    finish_diagnostics(diagnostics)
+}
+
+fn finish_diagnostics(mut diagnostics: Vec<Diagnostic>) -> Vec<Diagnostic> {
     let mut native_interop_failures = HashSet::new();
     diagnostics.retain(|diagnostic| {
         diagnostic.code != "SPX-B107" || native_interop_failures.insert(diagnostic.message.clone())
