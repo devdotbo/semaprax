@@ -1,0 +1,15 @@
+{
+  "status": "SOURCE_ONLY_NAMED_e34_FULL_AFTER_ACQUISITION",
+  "source": "src/hir/ids/declaration_tag.rs",
+  "before_sha256": "e550304de4f7dd17bf5309a8a469f29b6c97354569b2acbf2921147ce79a439a",
+  "after_sha256": "34cea24eb73a94530046e3f230cd9950c5c4a382be118d23893ad82992ee593e",
+  "edits": [
+    {
+      "before": "    for (source, current) in sources {\n        let old = old_source(source, current).unwrap();",
+      "after": "    for (source, actual_current) in sources {\n        let proof:serde_json::Value=serde_json::from_str(include_str!(\"../../../docs/evidence/declaration-tag-identity-20261018/sources.json\")).unwrap();\n        let row=proof.as_array().unwrap().iter().find(|row|row[\"source\"]==source).unwrap();\n        let acquired=crate::source_reflows_merge::next_big_batch_inputs::value(source,row[\"after\"][\"sha256\"].as_str().unwrap(),actual_current);\n        let current=acquired.as_str();\n        let old = old_source(source, current).unwrap();"
+    }
+  ],
+  "old_source_algorithm_unchanged": true,
+  "all_original_hostiles_unchanged": true,
+  "actual_raw_child_assertions_unchanged": true
+}
