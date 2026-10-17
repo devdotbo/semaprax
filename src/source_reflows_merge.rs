@@ -1037,3 +1037,7 @@ pub(crate) mod main_c883_inputs;
 
 #[path = "source_reflows_merge/main99f_inputs.rs"]
 pub(crate) mod main99f_inputs;
+
+// Distinct complete final-batch views precede both frozen parent readers.
+#[path = "source_reflows_merge/next_big_batch_inputs.rs"]
+pub(crate) mod next_big_batch_inputs;
