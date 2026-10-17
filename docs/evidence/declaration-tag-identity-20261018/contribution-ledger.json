@@ -1,0 +1,37 @@
+{
+  "status": "SOURCE_ONLY_NO_LAYOUT_OR_GAIN_MEASUREMENT",
+  "issue": 891,
+  "actual_new_width": "UNKNOWN_UNTIL_TARGET_COMPILER_AND_OWNING_TEST",
+  "old_width_contract": "complete independent old DeclarationId == String == 24 on64bit; old Option/alignment assertions retained",
+  "new_width_contract": "actual DeclarationId, Option and alignment <= complete old carrier; no16assertion",
+  "physical_backing": {
+    "static": "old and current allocate zero; closed Copy tag text() yields exact static bytes",
+    "dynamic": "unchanged Arc<str> allocation and cloning",
+    "request_formula": "Layout<[usize;2]>.extend(Layout::array::<u8>(len)).0.pad_to_align().size()",
+    "constructor_refusal": "same original payer, same callback, no sentinels, no allowance/refund",
+    "owned_overlap": "same already-owned String retained during Arc allocation; full old/new physical tuples authored"
+  },
+  "inline_vector_equation": "old_requested = N * size_of::<before::DeclarationId>(); current_requested = N * size_of::<DeclarationId>(); old_requested + N*current_size == current_requested + N*old_size",
+  "pure_getter_instruction_delta": {
+    "static_constructor": "old compiler(tag) evaluates tag.text() then retains borrowed static fat pointer; current retains Copy tag directly",
+    "static_read": "old as_str reads stored static fat pointer; current as_str invokes const CompilerDeclaration::text() on its Copy tag",
+    "formal_and_return": "same outer as_str(&self)->&str ABI and same exact returned bytes/lifetime; internal tag decoder is an additional primitive instruction/call-path change",
+    "work": "extra static-read decoder work and removed constructor decoder work are UNMEASURED; no speed claim",
+    "funding": "No fresh owner/Result/heap/ledger consult is introduced by text lookup. This is NOT a whole-caller per-read frame/funding proof; no removed old fee is credited to these reads. Primitive getter contribution remains separate from physical backing/debit metrics."
+  },
+  "fees_and_limits": {
+    "identity_backing": "unchanged",
+    "text_terms": "unchanged",
+    "structural_factor": 24,
+    "string_factor": 64,
+    "identity_factor": 16,
+    "bookkeeping": "unchanged",
+    "builder_cap": 67108864,
+    "fee_override_or_refund": false
+  },
+  "original_body_scope": "Every DeclarationId implementation/codec item except the3 named storage/dispatch edits and footprint contract is unchanged; all later ids.rs definitions unchanged",
+  "whole_old_scope": "entire ids.rs archived; complete DeclarationId prefix and unchanged Codec independently compiled; original width/backing test body retained on oldproducer",
+  "raw_source_ownership": "all three inventories retain complete oldroots+both newtestchildren once; linecounts unchanged",
+  "qualification": "target layout, all nine authored controls, original controls, graph/cache/backend parity, source custody and real app receivers remain pending",
+  "Cargo": false
+}

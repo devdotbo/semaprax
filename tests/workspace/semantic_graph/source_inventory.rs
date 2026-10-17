@@ -432,7 +432,7 @@ include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/inl
                     include_str!("../../src/hir/validation/executable_profiles/before_812.rs"),
                     include_str!("../../src/hir/validation/call_parameters/before_812.rs"),
                     include_str!("../../src/hir/validation/call_parameters/held_tests.rs"),
-                    include_str!("../../src/hir/ids/fixed_operation_tests.rs"),
+                    include_str!("../../src/hir/ids/fixed_operation_tests.rs"), include_str!("../../src/hir/ids/declaration_tag.rs"), include_str!("../../src/hir/ids/declaration_tag/before.rs"),
                     include_str!("../../src/hir/resolve_box_call/map/identity_tests.rs"),
                     include_str!("../../src/hir/resolve_box_call/list/identity_tests.rs"),
                     include_str!("../../src/hir/resolve_box_call/iterator/identity_tests.rs"),

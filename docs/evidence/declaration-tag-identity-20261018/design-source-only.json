@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_ONLY_UNQUALIFIED",
+  "issue": 891,
+  "base": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "representation_edits": [
+    {
+      "before": "    CompilerStatic(&'static str),",
+      "after": "    CompilerStatic(CompilerDeclaration),"
+    },
+    {
+      "before": "Self(DeclarationText::CompilerStatic(id.text()))",
+      "after": "Self(DeclarationText::CompilerStatic(id))"
+    },
+    {
+      "before": "DeclarationText::CompilerStatic(text) => text,",
+      "after": "DeclarationText::CompilerStatic(id) => id.text(),"
+    },
+    {
+      "before": "// The former `String` footprint, which frame constants, layout pins and\n// size-of forecasts are written against, including through `Option`. These\n// check the actual layout rather than assuming it.\n#[cfg(target_pointer_width = \"64\")]\nconst _: () = {\n    assert!(std::mem::size_of::<DeclarationId>() == 24);\n    assert!(std::mem::size_of::<DeclarationId>() == std::mem::size_of::<String>());\n    assert!(std::mem::align_of::<DeclarationId>() == std::mem::align_of::<String>());\n    assert!(std::mem::size_of::<Option<DeclarationId>>() == std::mem::size_of::<Option<String>>());\n};\n",
+      "after": "// The whole former 24-byte contract remains compiled in the independent test\n// oracle. This candidate promises no target-specific reduced width until its\n// actual target layout is observed; all typed reservation formulas keep using\n// size_of of the actual receiver. No backing, text or bookkeeping fee changes.\n#[cfg(target_pointer_width = \"64\")]\nconst _: () = {\n    assert!(std::mem::size_of::<DeclarationId>() <= std::mem::size_of::<String>());\n    assert!(std::mem::align_of::<DeclarationId>() <= std::mem::align_of::<String>());\n    assert!(std::mem::size_of::<Option<DeclarationId>>() <= std::mem::size_of::<Option<String>>());\n};\n"
+    },
+    {
+      "before": "",
+      "after": "\n#[cfg(test)]\n#[path = \"ids/declaration_tag.rs\"]\nmod declaration_tag;\n"
+    }
+  ],
+  "compiled_oracle_prefix_glue": [
+    {
+      "before": "use std::fmt::Write as _;\n",
+      "after": ""
+    },
+    {
+      "before": "use super::nodes::ResolvedType;\n",
+      "after": ""
+    },
+    {
+      "before": "mod compiler;\npub(crate) use compiler::CompilerDeclaration;",
+      "after": "use crate::hir::ids::compiler::CompilerDeclaration;"
+    }
+  ],
+  "original_width_control_glue": {
+    "before": "fn backing_width_is_the_actual_requested_arc_layout() {\n",
+    "after": "fn backing_width_is_the_actual_requested_arc_layout() {\n    // Preserve the complete original width/backing control on its real old producer.\n    use super::declaration_tag::before::DeclarationId;\n"
+  },
+  "target_width": "UNMEASURED_NO_16_BYTE_CLAIM",
+  "new_footprint_contract": "actual size/alignment/Option no larger than complete old String-sized oracle",
+  "funding": "No backing/text/identity multiplicative/structure/bookkeeping/cap changes; actual sizeof-based slots follow actual representation.",
+  "Cargo": false
+}

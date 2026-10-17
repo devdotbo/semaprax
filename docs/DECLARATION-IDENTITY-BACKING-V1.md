@@ -4,9 +4,13 @@ Status: source checkpoint; current-head owning execution qualification pending.
 
 Audience: compiler contributors and reviewers.
 
-The private carrier has only valid text: CompilerStatic(&'static str) from a closed
-compiler declaration enum, or Shared(Arc<str>). The actual 64-bit size/alignment and
-Option footprint are asserted against the former String carrier. Equality, order,
+The private carrier has only valid text: CompilerStatic(CompilerDeclaration) from
+the same closed compiler declaration set, or Shared(Arc<str>). The compiler tag's
+const text() returns the exact original static spelling. The current target
+size/alignment and Option footprint are required to be no larger than the former
+String carrier; no precise reduced width has been measured or qualified. The
+complete original String-sized carrier and its exact 64-bit assertions remain
+independently compiled in ids/declaration_tag/before.rs. Equality, order,
 hash, Borrow<str>, Display, Debug and codec wire consult exact text, never an address,
 variant, fingerprint, budget or admission flag. Compiler constants grant no source,
 prelude, layout or backend authority. Dynamic identities cannot select static text.
@@ -411,3 +415,31 @@ Authored controls include every declaration kind, NUL/Unicode/empty text, live
 owner roots and missing parents, zero/exact/short/floor/sticky/nested/restored
 budgets, all six diagnostic fields, original empty/G173 priority, physical
 backing overlap and complete Drop. Exact source custody is not a runtime PASS.
+
+## Closed-tag candidate, issue #891
+
+Status: SOURCE ONLY; actual target layout, executable qualification, application
+budget effect and measured benefit remain pending. The 24-to-16-byte hypothesis
+is unmeasured. No claim follows from Rust enum niche expectations.
+
+Only the private compiler-static payload changes: it retains the existing Copy
+CompilerDeclaration tag, whose const text method yields the same static bytes.
+Dynamic Arc construction, shared backing layout, byte-based traits and codec are
+unchanged. Static/shared equality cannot grant source or backend authority.
+The legacy public constructor remains infallible and explicitly unfunded.
+
+The complete old DeclarationId implementation and codec are independently
+compiled; the whole original ids.rs and width/backing controls are archived in
+docs/evidence/declaration-tag-identity-20261018/. The original 24-byte layout test
+keeps its entire body on that real old producer. Additional current controls
+exercise all closed tag families, mixed dynamic/static traits and wire, genuine
+shared allocation and exact/short/zero/floor/sticky refusal, old/new owned backing
+overlap, complete Drop, actual Option/layout and Vec allocator equations. No
+precise new width is asserted before the compiler and owning allocator run.
+
+All sizeof-based receiving terms continue using actual typed layouts; identity
+backing, text-copy terms, expansion factors, bookkeeping and 64MiB limits remain
+unchanged. No historical source or baseline fee is inflated. Three raw inventories
+join both complete new test modules, with whole-before inverses and unchanged
+line counts. Final source custody and target-specific footprint promotion belong
+to the combined qualified batch.

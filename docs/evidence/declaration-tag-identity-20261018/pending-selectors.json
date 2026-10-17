@@ -1,0 +1,80 @@
+{
+  "status": "SOURCE_ONLY_UNREGISTERED_NO_EXECUTION",
+  "issue": 891,
+  "selectors": [
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::all_closed_tags_and_mixed_dynamic_identities_preserve_exact_old_traits_and_wire",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::static_tag_creation_clone_and_drop_allocate_nothing_and_cannot_reopen_sticky_budget",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::both_complete_producers_keep_exact_short_zero_floor_sticky_and_full_backing_drop",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::decoder_refuses_truncated_foreign_utf8_and_owning_limits_without_changing_wire",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::actual_target_layout_and_vector_cost_equations_are_reported_without_a_guessed_width",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::complete_old_owned_overlap_and_new_backing_have_the_same_physical_frontiers",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::complete_original_identity_prefix_codec_and_old_width_control_are_exact",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::closed_variant_corpus_covers_every_named_compiler_tag_without_static_text_admission",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    },
+    {
+      "package": "semaprax",
+      "kind": "lib",
+      "selector": "hir::ids::declaration_tag::complete_source_inverses_keep_all_raw_children_and_refuse_foreign_stages",
+      "status": "SOURCE_AUTHORED_UNEXECUTED"
+    }
+  ],
+  "existing_required_controls": [
+    "hir::ids::declaration_backing_tests",
+    "hir::ids::shared_identity_tests",
+    "hir::ids::legacy_constructor_boundary_tests",
+    "hir::ids::identity_comparison_tests"
+  ],
+  "new_modules": [
+    {
+      "path": "src/hir/ids/declaration_tag.rs",
+      "role": "test-only",
+      "parent": "src/hir/ids.rs",
+      "edge": "#[cfg(test)] + #[path = \"ids/declaration_tag.rs\"] mod declaration_tag"
+    },
+    {
+      "path": "src/hir/ids/declaration_tag/before.rs",
+      "role": "test-only",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "edge": "#[path = \"declaration_tag/before.rs\"] pub(super) mod before; inherited cfg(test)"
+    }
+  ]
+}

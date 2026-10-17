@@ -29,19 +29,19 @@ pub struct DeclarationId(DeclarationText);
 
 #[derive(Clone)]
 enum DeclarationText {
-    CompilerStatic(&'static str),
+    CompilerStatic(CompilerDeclaration),
     Shared(Arc<str>),
 }
 
-// The former `String` footprint, which frame constants, layout pins and
-// size-of forecasts are written against, including through `Option`. These
-// check the actual layout rather than assuming it.
+// The whole former 24-byte contract remains compiled in the independent test
+// oracle. This candidate promises no target-specific reduced width until its
+// actual target layout is observed; all typed reservation formulas keep using
+// size_of of the actual receiver. No backing, text or bookkeeping fee changes.
 #[cfg(target_pointer_width = "64")]
 const _: () = {
-    assert!(std::mem::size_of::<DeclarationId>() == 24);
-    assert!(std::mem::size_of::<DeclarationId>() == std::mem::size_of::<String>());
-    assert!(std::mem::align_of::<DeclarationId>() == std::mem::align_of::<String>());
-    assert!(std::mem::size_of::<Option<DeclarationId>>() == std::mem::size_of::<Option<String>>());
+    assert!(std::mem::size_of::<DeclarationId>() <= std::mem::size_of::<String>());
+    assert!(std::mem::align_of::<DeclarationId>() <= std::mem::align_of::<String>());
+    assert!(std::mem::size_of::<Option<DeclarationId>>() <= std::mem::size_of::<Option<String>>());
 };
 
 impl DeclarationId {
@@ -61,7 +61,7 @@ impl DeclarationId {
     /// and grants no prelude or admission authority; only the closed
     /// `CompilerDeclaration` set can reach it.
     pub(crate) const fn compiler(id: CompilerDeclaration) -> Self {
-        Self(DeclarationText::CompilerStatic(id.text()))
+        Self(DeclarationText::CompilerStatic(id))
     }
 
     /// Funded construction from borrowed text. The caller's own payer is
@@ -113,7 +113,7 @@ impl DeclarationId {
 
     pub fn as_str(&self) -> &str {
         match &self.0 {
-            DeclarationText::CompilerStatic(text) => text,
+            DeclarationText::CompilerStatic(id) => id.text(),
             DeclarationText::Shared(text) => text,
         }
     }
@@ -682,3 +682,7 @@ pub(in crate::hir) mod fixed_operation_tests;
 
 #[path = "ids/instance_match.rs"]
 pub(in crate::hir) mod instance_match;
+
+#[cfg(test)]
+#[path = "ids/declaration_tag.rs"]
+mod declaration_tag;

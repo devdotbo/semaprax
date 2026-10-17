@@ -1,0 +1,130 @@
+[
+  {
+    "source": "src/hir/ids.rs",
+    "before": {
+      "length": 23249,
+      "sha256": "186e98de002cd77f1e546a34423a6ca4792d8fbedc8ff7decc8d8a6a3e03b306",
+      "archive": "ids.whole-before.rs.txt"
+    },
+    "after": {
+      "length": 23379,
+      "sha256": "5e56cda454fa3f14f61e2db5f410eea13ac7795d0887e680348eefdc64e80e64"
+    },
+    "inverse": [
+      {
+        "before": "",
+        "after": "\n#[cfg(test)]\n#[path = \"ids/declaration_tag.rs\"]\nmod declaration_tag;\n"
+      },
+      {
+        "before": "// The former `String` footprint, which frame constants, layout pins and\n// size-of forecasts are written against, including through `Option`. These\n// check the actual layout rather than assuming it.\n#[cfg(target_pointer_width = \"64\")]\nconst _: () = {\n    assert!(std::mem::size_of::<DeclarationId>() == 24);\n    assert!(std::mem::size_of::<DeclarationId>() == std::mem::size_of::<String>());\n    assert!(std::mem::align_of::<DeclarationId>() == std::mem::align_of::<String>());\n    assert!(std::mem::size_of::<Option<DeclarationId>>() == std::mem::size_of::<Option<String>>());\n};\n",
+        "after": "// The whole former 24-byte contract remains compiled in the independent test\n// oracle. This candidate promises no target-specific reduced width until its\n// actual target layout is observed; all typed reservation formulas keep using\n// size_of of the actual receiver. No backing, text or bookkeeping fee changes.\n#[cfg(target_pointer_width = \"64\")]\nconst _: () = {\n    assert!(std::mem::size_of::<DeclarationId>() <= std::mem::size_of::<String>());\n    assert!(std::mem::align_of::<DeclarationId>() <= std::mem::align_of::<String>());\n    assert!(std::mem::size_of::<Option<DeclarationId>>() <= std::mem::size_of::<Option<String>>());\n};\n"
+      },
+      {
+        "before": "DeclarationText::CompilerStatic(text) => text,",
+        "after": "DeclarationText::CompilerStatic(id) => id.text(),"
+      },
+      {
+        "before": "Self(DeclarationText::CompilerStatic(id.text()))",
+        "after": "Self(DeclarationText::CompilerStatic(id))"
+      },
+      {
+        "before": "    CompilerStatic(&'static str),",
+        "after": "    CompilerStatic(CompilerDeclaration),"
+      }
+    ]
+  },
+  {
+    "source": "src/hir/ids/declaration_backing_tests.rs",
+    "before": {
+      "length": 24588,
+      "sha256": "a729acfdc5f1c7a65560468a9e1af2426d94a6791638dbb11cbd995c8ebdfec2",
+      "archive": "declaration_backing_tests.whole-before.rs.txt"
+    },
+    "after": {
+      "length": 24729,
+      "sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c"
+    },
+    "inverse": [
+      {
+        "before": "fn backing_width_is_the_actual_requested_arc_layout() {\n",
+        "after": "fn backing_width_is_the_actual_requested_arc_layout() {\n    // Preserve the complete original width/backing control on its real old producer.\n    use super::declaration_tag::before::DeclarationId;\n"
+      }
+    ]
+  },
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "before": {
+      "length": 106143,
+      "sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "archive": "tests__hir_module_boundaries.rs.before.txt"
+    },
+    "after": {
+      "length": 106252,
+      "sha256": "0e22a96bc32a2dc96a25718e0e5557890aba2820624b050c5cef279c7d4edee4"
+    },
+    "inverse": [
+      {
+        "before": "include_str!(\"../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../src/hir/ids/declaration_tag.rs\"), include_str!(\"../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ]
+  },
+  {
+    "source": "tests/workspace/semantic_graph/source_inventory.rs",
+    "before": {
+      "length": 104065,
+      "sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "archive": "tests__workspace__semantic_graph__source_inventory.rs.before.txt"
+    },
+    "after": {
+      "length": 104180,
+      "sha256": "282a152563aa5065bbfb267cec453d4c00096712a962a60f2248431a44766618"
+    },
+    "inverse": [
+      {
+        "before": "include_str!(\"../../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ]
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "before": {
+      "length": 165305,
+      "sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df",
+      "archive": "crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt"
+    },
+    "after": {
+      "length": 165438,
+      "sha256": "8867f36b6b8a8985de65489f1f9a625e8388a2ccac7190df48d8121282876c10"
+    },
+    "inverse": [
+      {
+        "before": "include_str!(\"../../../../../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../../../../../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../../../../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../../../../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ]
+  },
+  {
+    "source": "docs/DECLARATION-IDENTITY-BACKING-V1.md",
+    "before": {
+      "length": 26752,
+      "sha256": "341254bf82e2f225ac334a6d5db35110b6a89755a531d3fe4525eb155ffc87af",
+      "archive": "backing-contract.whole-before.md.txt"
+    },
+    "after": {
+      "length": 28773,
+      "sha256": "3bd6bc60ee4633016f426463f7c4c2dce8734b0018864ec9b51562d0614bf232"
+    },
+    "inverse": [
+      {
+        "before": "",
+        "after": "\n## Closed-tag candidate, issue #891\n\nStatus: SOURCE ONLY; actual target layout, executable qualification, application\nbudget effect and measured benefit remain pending. The 24-to-16-byte hypothesis\nis unmeasured. No claim follows from Rust enum niche expectations.\n\nOnly the private compiler-static payload changes: it retains the existing Copy\nCompilerDeclaration tag, whose const text method yields the same static bytes.\nDynamic Arc construction, shared backing layout, byte-based traits and codec are\nunchanged. Static/shared equality cannot grant source or backend authority.\nThe legacy public constructor remains infallible and explicitly unfunded.\n\nThe complete old DeclarationId implementation and codec are independently\ncompiled; the whole original ids.rs and width/backing controls are archived in\ndocs/evidence/declaration-tag-identity-20261018/. The original 24-byte layout test\nkeeps its entire body on that real old producer. Additional current controls\nexercise all closed tag families, mixed dynamic/static traits and wire, genuine\nshared allocation and exact/short/zero/floor/sticky refusal, old/new owned backing\noverlap, complete Drop, actual Option/layout and Vec allocator equations. No\nprecise new width is asserted before the compiler and owning allocator run.\n\nAll sizeof-based receiving terms continue using actual typed layouts; identity\nbacking, text-copy terms, expansion factors, bookkeeping and 64MiB limits remain\nunchanged. No historical source or baseline fee is inflated. Three raw inventories\njoin both complete new test modules, with whole-before inverses and unchanged\nline counts. Final source custody and target-specific footprint promotion belong\nto the combined qualified batch.\n"
+      },
+      {
+        "before": "The private carrier has only valid text: CompilerStatic(&'static str) from a closed\ncompiler declaration enum, or Shared(Arc<str>). The actual 64-bit size/alignment and\nOption footprint are asserted against the former String carrier.",
+        "after": "The private carrier has only valid text: CompilerStatic(CompilerDeclaration) from\nthe same closed compiler declaration set, or Shared(Arc<str>). The compiler tag's\nconst text() returns the exact original static spelling. The current target\nsize/alignment and Option footprint are required to be no larger than the former\nString carrier; no precise reduced width has been measured or qualified. The\ncomplete original String-sized carrier and its exact 64-bit assertions remain\nindependently compiled in ids/declaration_tag/before.rs."
+      }
+    ]
+  }
+]
