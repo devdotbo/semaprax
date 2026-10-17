@@ -629,7 +629,7 @@ impl<K: KeyWork> Directory<K> {
 }
 
 mod status_prefix;
-pub(super) use status_prefix::Owner as StatusInsertionOwner;
+pub(super) use status_prefix::{HeldPrefix, Owner as StatusInsertionOwner};
 
 #[cfg(test)]
 mod before_cursor;

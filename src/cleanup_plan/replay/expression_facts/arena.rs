@@ -2,6 +2,7 @@
 use super::*;
 use std::cmp::Ordering;
 mod prefix;
+pub(super) mod retained;
 const NIL: usize = usize::MAX;
 struct Node<'hir> {
     key: ExpressionId,
