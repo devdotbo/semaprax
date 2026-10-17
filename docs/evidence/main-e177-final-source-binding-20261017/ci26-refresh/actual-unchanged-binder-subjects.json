@@ -1,0 +1,43 @@
+{
+  "status": "SOURCE_ONLY_PRIOR_BINDER_SUBJECTS_REAUTHENTICATED",
+  "unchanged_records": [
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/successor174/bind-next.py",
+      "length": 84320,
+      "sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/frozen174-preparation.json",
+      "length": 1443,
+      "sha256": "e2aad1aed6d0c00c080da001ebe542b8abf27997cabfeab924c85bc5ab25cf73"
+    },
+    {
+      "path": "docs/evidence/main09013-source-namespaces-v1/input-domains.json",
+      "length": 241196,
+      "sha256": "af0be7c1f165fe66b4dcd4fa457cb47422fe3568e73547723f3fb70004144dd3"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current-inputs.json",
+      "length": 134044,
+      "sha256": "73d23e216bd44b8a0a615b1f36db02be98028360aa979461ea7195ec85382b70"
+    },
+    {
+      "path": "docs/evidence/main99f-full-controller-acquisition-20261017/inputs.json",
+      "length": 228105,
+      "sha256": "7da7c03cee1c8232577d85e4b34a671ec5af4c32617d1385f4ec6e7226b3c0d9"
+    },
+    {
+      "path": "docs/evidence/main-e177-full-controller-acquisition-20261017/inputs.json",
+      "length": 237696,
+      "sha256": "1f84d144fc74a6218f904956aefb2d8d05d8e763cd57edfd09e89b15f7883e44"
+    }
+  ],
+  "physical174_current_subjects_exact": 174,
+  "FINAL6_current_subjects_exact": 6,
+  "old_executed_wrapper_and_preparation_unchanged": true,
+  "no_174_or_FINAL6_execution": true,
+  "role_changed_subjects": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "CI26_CHANGELOG_step_not_relabelled_as_old_run": true
+}

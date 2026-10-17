@@ -1,0 +1,1 @@
+{"status": "SOURCE_ONLY_SINGLE_HELPER_ROLE241_REFRESH", "written": true, "owners": 241, "negative_controls": {"dropped_actual_child_refused": true, "coordinated_class_drop_not_original_generated_output": true, "production_reclassification_refused": true, "actual_source_drift_refused": true, "whole_raw_drift_refused": true, "foreign_path_child_cannot_escape": true}}

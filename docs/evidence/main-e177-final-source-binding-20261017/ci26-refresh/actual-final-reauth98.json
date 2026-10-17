@@ -1,0 +1,21 @@
+{
+  "status": "POSTBIND_SOURCE_ONLY_FULL_REAUTH_PASS",
+  "input_HEAD": "96b49d10c9eecc3e9fdf1187304fc24458712e6a",
+  "current_rows": 98,
+  "retained_source_views": 105,
+  "complete_old_table_anchors": 8,
+  "literal_registered_compiled_channels": 94,
+  "actual_new_compiled_binary_claim": false,
+  "actual_required_modules": 57,
+  "ordered_rows": 462,
+  "role_owners": 241,
+  "Python_closed_channels": 69,
+  "distinct_held_paths": 317,
+  "packet_sha256": "3fa32fc7c4b039abed780ccc39b34d759e329705e2674f62cc56016ab08007bd",
+  "guard_sha256": "4e3f0780784b4327633d3e52051028b906a346724a96ab3327854f955009767b",
+  "source_cap_unchanged": 9753094,
+  "Python_small_cap_unchanged": 262144,
+  "Cargo": false,
+  "Rust": false,
+  "source_mutations": false
+}
