@@ -925,7 +925,20 @@ jobs:
           manifest-path: platform-tests/component-runtime/Cargo.toml
           arguments: --config platform-tests/component-runtime/deny.toml --all-features --locked
       - name: Fetch dependencies, then execute every v3/v4/v5/v6/v7/v8/v9/v10 Component gate offline
+        id: component_gates
         run: scripts/component-runtime-v3.sh
+      - name: Trace the original result-v3 case after the Component gate fails
+        if: failure() && steps.component_gates.outcome == 'failure'
+        timeout-minutes: 20
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! command -v gdb >/dev/null; then
+            sudo apt-get update
+            sudo apt-get install --yes --no-install-recommends gdb
+          fi
+          python3 -m unittest discover -s scripts/tests -p test_ci_component_stack_trace.py
+          python3 scripts/ci-component-stack-trace.py
 
   wasm-scalar-exports-browser-v1:
     name: Public Wasm Scalar Exports v1 Chromium
