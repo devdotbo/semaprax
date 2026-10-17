@@ -597,6 +597,7 @@ mod targets {
 }
 
 mod successor_labels {
+    use super::super::targets;
     use super::*;
 
     fn function() -> ResolvedFunction {

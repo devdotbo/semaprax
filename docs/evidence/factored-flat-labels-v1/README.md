@@ -34,3 +34,10 @@ All code and controls stay inside the two existing audited modules. Four whole
 predecessor archives and inverses retain the original unit-weight and target
 proofs without deleting any previous inverse. The source control also binds the
 complete compiled prior outer producer to its archived implementation.
+
+Hosted compilation of the first label change caught a test-module name collision:
+the comparison producer's `targets` name resolved through its sibling test
+module. An explicit import now selects the production target module. The small
+compiler component reproduces the actual nested test-module layout, including
+that sibling, instead of placing the comparison beside the production modules.
+Complete immediate predecessors and every earlier inverse remain retained.
