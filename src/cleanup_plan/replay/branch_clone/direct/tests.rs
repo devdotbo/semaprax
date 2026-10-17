@@ -349,7 +349,26 @@ fn current_query_rejects_missing_cycles_overflow_and_foreign_authority() {
 
 #[test]
 fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
-    let program = program();
+    // Keep the original tail-expression fixture as a negative: it has no
+    // explicit return edge and cannot supply a FunctionReturn control target.
+    let tail_program = program();
+    assert!(tail_program.functions[0].cleanup_plan.exits.iter().all(|exit|
+        !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
+    drop(tail_program);
+    // Author a real return, then use its resolver-owned source and target.
+    // The same 96 statements and both original branches remain in the body.
+    let mut source = String::from("module direct879; @id(\"f\") fn f(a:bool,b:bool)->i64 {");
+    for i in 0..96 {
+        source.push_str(&format!("let n{i}=({i}+1)*({i}+2);"));
+    }
+    source.push_str(
+        "if a { return 1; };let v=if a {1}else{2};if b {v+1}else{v+2}} @id(\"main\") fn main()->i64 {f(true,false)}",
+    );
+    let parsed = crate::check(&source, "direct879.spx").unwrap();
+    let canonical = crate::format::canonical(&parsed);
+    let checked = crate::check(&canonical, "direct879.spx").unwrap();
+    assert_eq!(crate::format::canonical(&checked), canonical);
+    let program = crate::hir::resolve(&checked).unwrap();
     let original = &program.functions[0];
     let terminal=original.cleanup_plan.blocks.iter().find(|block| matches!(block.terminator,
         CleanupTerminator::Exit(exit) if matches!(original.cleanup_plan.exits[exit.0 as usize].continuation,

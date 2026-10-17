@@ -535,6 +535,29 @@ fn optional_source_work_selection_preserves_the_complete_prior_capture_body() {
     assert_eq!(restored, original);
 }
 
+// Independent real ledger oracle: format the expected diagnostic in the
+// same refused scope as the producer. Outside that scope the complete original
+// strings remain required; those are checked separately below.
+fn refused_digest_scope(header: usize, receiver: usize, limit: usize) ->
+    (Vec<crate::diagnostic::Diagnostic>, bool, usize, Option<crate::bounded_output::ReservationRefusal>)
+{
+    crate::bounded_output::with_limit_usage_refusal(limit, || {
+        if header != 0 {
+            super::super::reserve_builder_structure(header).unwrap();
+        }
+        assert!(!crate::bounded_output::reserve_active(receiver));
+        super::super::capacity()
+    })
+}
+fn complete_outside_digest_capacity() {
+    assert!(crate::bounded_output::active_remaining().is_none());
+    assert_eq!(super::super::active_builder_limit(), 67_108_864);
+    let expected = crate::diagnostic::Diagnostic::io("SPX-G171",
+        "Workspace Semantic Graph `builder_bytes` exceeds 67108864")
+        .with_help("live graph construction, not the static admission pre-charge, exceeded the 67108864-byte budget while allocating workspace graph structure.");
+    assert_eq!(super::super::capacity(), vec![expected]);
+}
+
 #[test]
 fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_hashes() {
     let programs = programs(&source(1));
@@ -583,7 +606,10 @@ fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_
     }
     // Acquisition precedes the hash callback and keeps the sticky byte refusal.
     let mut work = units;
-    let (result, refused, _, first) = crate::bounded_output::with_limit_usage_refusal(
+    complete_outside_digest_capacity();
+    let (expected, expected_refused, expected_paid, expected_first) = refused_digest_scope(
+        0, super::super::DIGEST_RECEIVER_BYTES, super::super::DIGEST_RECEIVER_BYTES - 1);
+    let (result, refused, paid, first) = crate::bounded_output::with_limit_usage_refusal(
         super::super::DIGEST_RECEIVER_BYTES - 1,
         || {
             super::super::reserve_builder_structure(super::super::DIGEST_RECEIVER_BYTES)?;
@@ -591,7 +617,9 @@ fn optional_digest_work_declines_short_shared_limits_without_publishing_partial_
         },
     );
     assert!(result.is_err() && refused);
-    assert_eq!(result.as_ref().unwrap_err(), &super::super::capacity());
+    assert_eq!(result.as_ref().unwrap_err(), &expected);
+    assert_eq!((refused, paid, first), (expected_refused, expected_paid, expected_first));
+    complete_outside_digest_capacity();
     assert_eq!(result.unwrap_err()[0].code, "SPX-G171");
     assert_eq!(work, units);
     assert_eq!(
@@ -635,6 +663,9 @@ fn prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal() {
     let header = super::super::DIGEST_PAYMENT_HEADER_BYTES;
     let receiver = super::super::DIGEST_RECEIVER_BYTES;
     let mut work = usize::MAX;
+    complete_outside_digest_capacity();
+    let (expected, expected_refused, expected_used, expected_first) =
+        refused_digest_scope(header, receiver, header + receiver - 1);
     let (((), first_errors, retry_errors), refused, used, first) =
         crate::bounded_output::with_limit_usage_refusal(header + receiver - 1, || {
             // This is the same order as the production Inventory bank and its
@@ -658,9 +689,11 @@ fn prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal() {
     assert_eq!(used, header);
     assert_eq!(first.unwrap().requested, receiver);
     assert_eq!(first_errors[0].code, "SPX-G171");
-    assert_eq!(first_errors, super::super::capacity());
-    assert_eq!(retry_errors, super::super::capacity());
+    assert_eq!((refused, used, first), (expected_refused, expected_used, expected_first));
+    assert_eq!(first_errors, expected);
+    assert_eq!(retry_errors, expected);
     assert_eq!(retry_errors, first_errors);
+    complete_outside_digest_capacity();
 }
 
 #[test]

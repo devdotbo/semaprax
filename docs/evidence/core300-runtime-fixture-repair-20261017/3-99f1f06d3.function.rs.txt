@@ -1,0 +1,14 @@
+pub(crate) fn budgeted_format(arguments: fmt::Arguments<'_>) -> String {
+    let budget = active();
+    match format_within(budget.as_deref(), arguments) {
+        Ok(output) => output,
+        Err(FormatFailure::Refused) => String::new(),
+        Err(FormatFailure::Formatter) => match budget {
+            Some(budget) => {
+                budget.overflowed.set(true);
+                String::new()
+            }
+            None => panic!("a formatting trait implementation returned an error"),
+        },
+    }
+}

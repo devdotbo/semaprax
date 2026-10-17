@@ -1,0 +1,16 @@
+pub(super) fn limit_error(field: &'static str, maximum: usize) -> Diagnostic {
+    let error = graph_error(
+        "SPX-G171",
+        crate::bounded_output::budgeted_format(format_args!(
+            "Workspace Semantic Graph `{field}` exceeds {maximum}"
+        )),
+    );
+    if field != "builder_bytes" {
+        return error;
+    }
+    let help = builder_bytes_help(maximum);
+    if help.is_empty() {
+        return error;
+    }
+    error.with_help(help)
+}

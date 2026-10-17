@@ -1,0 +1,3 @@
+fn capacity() -> Vec<Diagnostic> {
+    vec![limit_error("builder_bytes", active_builder_limit())]
+}

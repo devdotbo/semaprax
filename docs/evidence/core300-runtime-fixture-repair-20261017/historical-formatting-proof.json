@@ -1,0 +1,104 @@
+{
+  "status": "BYTE_EXACT_SAME_PRIOR_AND_CURRENT_REFUSAL_ROUTE",
+  "rows": [
+    {
+      "source": "src/workspace_graph.rs",
+      "head": "99f1f06d361e16bd937f4a6eda19703e78f0e525",
+      "whole_length": 231531,
+      "whole_sha256": "0c1e77b55ff43fc75bd1e45eed1a3cb4062ea4562a3cba0002a0ebb1a34be4c3",
+      "function_sha256": "86552b985914d2872b3779f50533821e5c4bd89380b5acb6c9f89e09c9a02b13",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/0-99f1f06d3.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "head": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+      "whole_length": 217060,
+      "whole_sha256": "b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31",
+      "function_sha256": "86552b985914d2872b3779f50533821e5c4bd89380b5acb6c9f89e09c9a02b13",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/0-a6c92a197.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph.rs",
+      "head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+      "whole_length": 217060,
+      "whole_sha256": "b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31",
+      "function_sha256": "86552b985914d2872b3779f50533821e5c4bd89380b5acb6c9f89e09c9a02b13",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/0-6efb0d750.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/static_text.rs",
+      "head": "99f1f06d361e16bd937f4a6eda19703e78f0e525",
+      "whole_length": 14253,
+      "whole_sha256": "d4d6d404769730518d9fc0eee9d4923ed74b255752a11bfb3359f16fd3f9b779",
+      "function_sha256": "5a5f70a9487382a7d0ef2ae06b2dd007758f9afbab0452018c5233df284effa2",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/1-99f1f06d3.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/static_text.rs",
+      "head": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+      "whole_length": 14253,
+      "whole_sha256": "d4d6d404769730518d9fc0eee9d4923ed74b255752a11bfb3359f16fd3f9b779",
+      "function_sha256": "5a5f70a9487382a7d0ef2ae06b2dd007758f9afbab0452018c5233df284effa2",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/1-a6c92a197.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/static_text.rs",
+      "head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+      "whole_length": 14253,
+      "whole_sha256": "d4d6d404769730518d9fc0eee9d4923ed74b255752a11bfb3359f16fd3f9b779",
+      "function_sha256": "5a5f70a9487382a7d0ef2ae06b2dd007758f9afbab0452018c5233df284effa2",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/1-6efb0d750.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/diagnostics.rs",
+      "head": "99f1f06d361e16bd937f4a6eda19703e78f0e525",
+      "whole_length": 15575,
+      "whole_sha256": "473a3903815b6d21d422f061ea4f492548cc934172310633e4595b526982f05a",
+      "function_sha256": "18043f70b5085ef6d4bb313122eb48143fd34ba14633b8807f41b1e893f5dfee",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/2-99f1f06d3.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/diagnostics.rs",
+      "head": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+      "whole_length": 15942,
+      "whole_sha256": "1c1552d56400ec781eb96ff6fd825bbbeec854f5042fab960e4d3d2941e60127",
+      "function_sha256": "18043f70b5085ef6d4bb313122eb48143fd34ba14633b8807f41b1e893f5dfee",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/2-a6c92a197.function.rs.txt"
+    },
+    {
+      "source": "src/workspace_graph/diagnostics.rs",
+      "head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+      "whole_length": 15942,
+      "whole_sha256": "1c1552d56400ec781eb96ff6fd825bbbeec854f5042fab960e4d3d2941e60127",
+      "function_sha256": "18043f70b5085ef6d4bb313122eb48143fd34ba14633b8807f41b1e893f5dfee",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/2-6efb0d750.function.rs.txt"
+    },
+    {
+      "source": "src/bounded_output.rs",
+      "head": "99f1f06d361e16bd937f4a6eda19703e78f0e525",
+      "whole_length": 49995,
+      "whole_sha256": "9bbf6855f7dde5f9bfd6f68043645d4d03bd14e2cae5878e8d4a6443169ac3ba",
+      "function_sha256": "0919fff9fbfd579a602bf744f886bf80009f5b078902ceb44833058fd0057554",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/3-99f1f06d3.function.rs.txt"
+    },
+    {
+      "source": "src/bounded_output.rs",
+      "head": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+      "whole_length": 50190,
+      "whole_sha256": "d01a82d602c286044cc1d5df8d05d02dfe5168d1139a82380aa01b06e47c7fd5",
+      "function_sha256": "0919fff9fbfd579a602bf744f886bf80009f5b078902ceb44833058fd0057554",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/3-a6c92a197.function.rs.txt"
+    },
+    {
+      "source": "src/bounded_output.rs",
+      "head": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+      "whole_length": 50190,
+      "whole_sha256": "d01a82d602c286044cc1d5df8d05d02dfe5168d1139a82380aa01b06e47c7fd5",
+      "function_sha256": "0919fff9fbfd579a602bf744f886bf80009f5b078902ceb44833058fd0057554",
+      "archive": "/Volumes/Semaprax/provenance/core300-scalar-refusal-oracle-matrix-20261017/3-6efb0d750.function.rs.txt"
+    }
+  ],
+  "normative": "bounded_output::budgeted_format explicitly returns empty String after active formatter budget refusal; old/current reserve constructs limit_error inside same refused scope; capacity called outside scope instead legitimately returns complete strings",
+  "tests": false,
+  "Cargo": false
+}

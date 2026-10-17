@@ -1,0 +1,51 @@
+{
+  "base": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "files": [
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before_length": 17883,
+      "before_sha256": "7db9c82810929bcb0ac09eb1eabef4e1aa2292c783ff393178b92731e48aaff3",
+      "after_length": 19017,
+      "after_sha256": "db132fbe22511643e7525dce32698f5baa2eb95950d4b3e26e4f5ef146134050",
+      "before_archive": "docs/evidence/core300-runtime-fixture-repair-20261017/before/src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "edits": [
+        {
+          "before": "fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {\n    let program = program();\n    let original = &program.functions[0];",
+          "after": "fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {\n    // Keep the original tail-expression fixture as a negative: it has no\n    // explicit return edge and cannot supply a FunctionReturn control target.\n    let tail_program = program();\n    assert!(tail_program.functions[0].cleanup_plan.exits.iter().all(|exit|\n        !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));\n    drop(tail_program);\n    // Author a real return, then use its resolver-owned source and target.\n    // The same 96 statements and both original branches remain in the body.\n    let mut source = String::from(\"module direct879; @id(\\\"f\\\") fn f(a:bool,b:bool)->i64 {\");\n    for i in 0..96 {\n        source.push_str(&format!(\"let n{i}=({i}+1)*({i}+2);\"));\n    }\n    source.push_str(\n        \"if a { return 1; };let v=if a {1}else{2};if b {v+1}else{v+2}} @id(\\\"main\\\") fn main()->i64 {f(true,false)}\",\n    );\n    let parsed = crate::check(&source, \"direct879.spx\").unwrap();\n    let canonical = crate::format::canonical(&parsed);\n    let checked = crate::check(&canonical, \"direct879.spx\").unwrap();\n    assert_eq!(crate::format::canonical(&checked), canonical);\n    let program = crate::hir::resolve(&checked).unwrap();\n    let original = &program.functions[0];"
+        }
+      ],
+      "whole_inverse_verified": true
+    },
+    {
+      "source": "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+      "before_length": 33531,
+      "before_sha256": "b912238b74ededd9143f1a2d039c8d3a41a9af9723f3aee877a85f4f5f8d2685",
+      "after_length": 35356,
+      "after_sha256": "21b61d5c14e7c0c80f10244932d6fa7c1ea37c05b4891db9d94f59a89e19e8fe",
+      "before_archive": "docs/evidence/core300-runtime-fixture-repair-20261017/before/src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+      "edits": [
+        {
+          "before": "#[test]\nfn optional_digest_work_declines_short_shared_limits_without_publishing_partial_hashes() {",
+          "after": "// Independent real ledger oracle: format the expected diagnostic in the\n// same refused scope as the producer. Outside that scope the complete original\n// strings remain required; those are checked separately below.\nfn refused_digest_scope(header: usize, receiver: usize, limit: usize) ->\n    (Vec<crate::diagnostic::Diagnostic>, bool, usize, Option<crate::bounded_output::ReservationRefusal>)\n{\n    crate::bounded_output::with_limit_usage_refusal(limit, || {\n        if header != 0 {\n            super::super::reserve_builder_structure(header).unwrap();\n        }\n        assert!(!crate::bounded_output::reserve_active(receiver));\n        super::super::capacity()\n    })\n}\nfn complete_outside_digest_capacity() {\n    assert!(crate::bounded_output::active_remaining().is_none());\n    assert_eq!(super::super::active_builder_limit(), 67_108_864);\n    let expected = crate::diagnostic::Diagnostic::io(\"SPX-G171\",\n        \"Workspace Semantic Graph `builder_bytes` exceeds 67108864\")\n        .with_help(\"live graph construction, not the static admission pre-charge, exceeded the 67108864-byte budget while allocating workspace graph structure.\");\n    assert_eq!(super::super::capacity(), vec![expected]);\n}\n\n#[test]\nfn optional_digest_work_declines_short_shared_limits_without_publishing_partial_hashes() {"
+        },
+        {
+          "before": "    let (result, refused, _, first) = crate::bounded_output::with_limit_usage_refusal(\n        super::super::DIGEST_RECEIVER_BYTES - 1,",
+          "after": "    complete_outside_digest_capacity();\n    let (expected, expected_refused, expected_paid, expected_first) = refused_digest_scope(\n        0, super::super::DIGEST_RECEIVER_BYTES, super::super::DIGEST_RECEIVER_BYTES - 1);\n    let (result, refused, paid, first) = crate::bounded_output::with_limit_usage_refusal(\n        super::super::DIGEST_RECEIVER_BYTES - 1,"
+        },
+        {
+          "before": "    assert_eq!(result.as_ref().unwrap_err(), &super::super::capacity());\n    assert_eq!(result.unwrap_err()[0].code, \"SPX-G171\");",
+          "after": "    assert_eq!(result.as_ref().unwrap_err(), &expected);\n    assert_eq!((refused, paid, first), (expected_refused, expected_paid, expected_first));\n    complete_outside_digest_capacity();\n    assert_eq!(result.unwrap_err()[0].code, \"SPX-G171\");"
+        },
+        {
+          "before": "    let mut work = usize::MAX;\n    let (((), first_errors, retry_errors), refused, used, first) =\n        crate::bounded_output::with_limit_usage_refusal(header + receiver - 1, || {",
+          "after": "    let mut work = usize::MAX;\n    complete_outside_digest_capacity();\n    let (expected, expected_refused, expected_used, expected_first) =\n        refused_digest_scope(header, receiver, header + receiver - 1);\n    let (((), first_errors, retry_errors), refused, used, first) =\n        crate::bounded_output::with_limit_usage_refusal(header + receiver - 1, || {"
+        },
+        {
+          "before": "    assert_eq!(first_errors, super::super::capacity());\n    assert_eq!(retry_errors, super::super::capacity());\n    assert_eq!(retry_errors, first_errors);",
+          "after": "    assert_eq!((refused, used, first), (expected_refused, expected_used, expected_first));\n    assert_eq!(first_errors, expected);\n    assert_eq!(retry_errors, expected);\n    assert_eq!(retry_errors, first_errors);\n    complete_outside_digest_capacity();"
+        }
+      ],
+      "whole_inverse_verified": true
+    }
+  ]
+}

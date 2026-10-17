@@ -1,0 +1,37 @@
+{
+  "status": "SOURCE_ONLY_CANDIDATE_UNEXECUTED",
+  "base": "6efb0d75020a3feeb6ea7ce0660f29a69c8b2661",
+  "changed_sources": [
+    "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs"
+  ],
+  "new_modules": [],
+  "production_changed": false,
+  "selectors": [
+    "cleanup_plan::replay::branch_clone::direct::tests::continue_return_break_and_latch_have_real_bounded_continuation_controls",
+    "workspace_graph::static_text::scalar_helpers::capture_directory::tests::optional_digest_work_declines_short_shared_limits_without_publishing_partial_hashes",
+    "workspace_graph::static_text::scalar_helpers::capture_directory::tests::prepaid_digest_bank_denies_before_work_and_keeps_sticky_first_refusal"
+  ],
+  "owner145": "Original tail fixture preserved unchanged plus explicit absence negative; dedicated realreturn retains all96statements/originalbranches; original continuation/bound/work/allocation/Drop body unchanged",
+  "owners155_157": "Fullsix same-scope independent primitive oracle plus whole firstrefusal/spent/work and sticky checks; separate complete outside-scope literal message/help fullsix control before/after. No production diagnostic/frame/cap change.",
+  "historical_proof_sha256": "c19fdfe2ce22ebbb3c6198cb94629d79d24e02473527a92ab7051ee715ab2045",
+  "whole_inverse_sha256": "6e678915f192f8cca11200fdaaed6f9439b947e68223070aafa4538776b50237",
+  "parser_only": [
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "exit_code": 0,
+      "source_unchanged": true,
+      "kind": "rustfmt parse only, not compilation or test"
+    },
+    {
+      "source": "src/workspace_graph/static_text/scalar_helpers/capture_directory/tests.rs",
+      "exit_code": 0,
+      "source_unchanged": true,
+      "kind": "rustfmt parse only, not compilation or test"
+    }
+  ],
+  "Cargo": false,
+  "tests": false,
+  "ROOT_writes": false,
+  "source_coupling": "Pending only after parent integrates cohesive batch; preserve historical whole tests before source guards"
+}

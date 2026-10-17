@@ -1,0 +1,7 @@
+fn reserve_builder_structure(bytes: usize) -> Result<(), Vec<Diagnostic>> {
+    if crate::bounded_output::reserve_active(bytes) {
+        Ok(())
+    } else {
+        Err(vec![limit_error("builder_bytes", active_builder_limit())])
+    }
+}
