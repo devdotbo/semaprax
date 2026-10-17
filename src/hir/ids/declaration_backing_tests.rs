@@ -99,6 +99,8 @@ fn cache_wire_is_the_former_owned_string_tuple_in_both_directions() {
 
 #[test]
 fn backing_width_is_the_actual_requested_arc_layout() {
+    // Preserve the complete original width/backing control on its real old producer.
+    use super::declaration_tag::before::DeclarationId;
     #[cfg(target_pointer_width = "64")]
     assert_eq!(
         std::mem::size_of::<DeclarationId>(),
