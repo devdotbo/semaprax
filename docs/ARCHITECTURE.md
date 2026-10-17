@@ -4871,6 +4871,14 @@ complete owning region receiver. The unchanged replay work account bounds all
 walks. Whole-source predecessors and pending full-fixture qualification live in
 [the comparison packet](evidence/borrowed-exit-region-match-v1/README.md).
 
+`cleanup_plan/replay/branch_clone.rs` also owns the ordinary final-branch
+prefix transfer probe. It permits moving an existing observation buffer only
+when a bounded terminal-chain walk proves all remaining observations fit and
+the avoided clone backing covers the full new control state. The original work,
+materialization count, ordering and clone fallback remain; selected replay is
+unchanged. Full predecessor custody and pending owning qualification are in
+[the transfer packet](evidence/last-branch-prefix-v1/README.md).
+
 Ordinary cleanup replay DAG constructors in
 `cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs` retain an immutable
 checked pending bound per node and prepay a reusable Work-owned destruction

@@ -559,7 +559,9 @@ fn held_continuation_inputs_preserve_the_complete_machine_and_all_original_contr
     );
     let machine_types = old_storage.find("pub(super) type OwnedStep").unwrap();
     assert!(current_storage.contains(&old_storage[machine_types..]));
-    let mut machine = std::fs::read_to_string(root.join("src/cleanup_plan/replay.rs")).unwrap();
+    let mut machine = before_last_branch_root(
+        &std::fs::read_to_string(root.join("src/cleanup_plan/replay.rs")).unwrap(),
+    );
     let standalone = "if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?\n            }";
     assert_eq!(machine.matches(standalone).count(), 1);
     machine = machine.replacen(
@@ -774,6 +776,11 @@ fn borrowed_exit_region_views_preserve_all_complete_predecessors_and_controls() 
         for record in records {
             let current =
                 std::fs::read_to_string(root.join(record["path"].as_str().unwrap())).unwrap();
+            let current = if record["path"] == "src/cleanup_plan/replay.rs" {
+                before_last_branch_root(&current)
+            } else {
+                current
+            };
             assert_eq!(digest(&current), record["sha256"]);
             assert_ne!(digest(&(current + "\n")), record["sha256"]);
         }
@@ -818,4 +825,60 @@ fn slot_byte_helper_and_generic_bound_frontier_keep_complete_source_receivers() 
         assert_eq!(digest(&current), file["sha256"]);
         assert_ne!(digest(&(current + "\n")), file["sha256"]);
     }
+}
+
+fn before_last_branch_root(current: &str) -> String {
+    let sources: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(
+            Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("docs/evidence/last-branch-prefix-v1/sources.json"),
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let proof = sources
+        .iter()
+        .find(|proof| proof["path"] == "src/cleanup_plan/replay.rs")
+        .unwrap();
+    invert(proof, current)
+}
+
+#[test]
+fn last_branch_prefix_keeps_complete_predecessors_and_original_source_controls() {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let sources: Vec<serde_json::Value> = serde_json::from_str(
+        &std::fs::read_to_string(root.join("docs/evidence/last-branch-prefix-v1/sources.json"))
+            .unwrap(),
+    )
+    .unwrap();
+    assert_eq!(sources.len(), 4);
+    let mut paths = std::collections::BTreeSet::new();
+    for proof in &sources {
+        let path = proof["path"].as_str().unwrap();
+        assert!(paths.insert(path));
+        let current = std::fs::read_to_string(root.join(path)).unwrap();
+        let before = invert(proof, &current);
+        assert_eq!(
+            before,
+            std::fs::read_to_string(root.join(proof["archive"].as_str().unwrap())).unwrap()
+        );
+        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + "\n"))).is_err());
+        let mut forged = proof.clone();
+        forged["before_sha256"] = serde_json::Value::String("0".repeat(64));
+        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());
+        if path.ends_with("branch_clone/tests.rs") {
+            assert!(current.starts_with(&before));
+        }
+    }
+    let helper =
+        std::fs::read_to_string(root.join("src/cleanup_plan/replay/branch_clone.rs")).unwrap();
+    let proof = sources
+        .iter()
+        .find(|proof| proof["path"] == "src/cleanup_plan/replay/branch_clone.rs")
+        .unwrap();
+    let before = invert(proof, &helper);
+    assert_eq!(
+        helper.split("/// A pure probe").next().unwrap(),
+        before.split("#[cfg(test)]\nmod tests;").next().unwrap()
+    );
 }

@@ -6632,7 +6632,8 @@ fn plan_skeleton_paths(
                 )?;
             }
             CleanupTerminator::Branch(edges) => {
-                for edge in edges {
+                let mut remaining_edges = edges.iter();
+                while let Some(edge) = remaining_edges.next() {
                     let edge = &plan.edges[edge.0 as usize];
                     let observation = match &edge.condition {
                         EdgeCondition::BooleanResult(expression, value) => {
@@ -6704,12 +6705,38 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
-                    let mut branch = branch_clone::for_push(
+                    let mut branch = if branch_clone::can_take(branch_clone::TakeCandidate {
+                        values: &observations,
+                        remaining_edges: remaining_edges.len(),
+                        edge_count: edges.len(),
                         budget,
-                        function,
-                        &observations,
-                        "cleanup-plan skeleton branch clone",
-                    )?;
+                        plan,
+                        target: edge.to,
+                    }) {
+                        // Keep the original clone work/materialization, fund the
+                        // complete probe, then move this final prefix unchanged.
+                        budget.charge_skeleton(
+                            function,
+                            1,
+                            "cleanup-plan skeleton branch clone",
+                        )?;
+                        budget.reserve_array::<u8>(
+                            function,
+                            branch_clone::TAKE_BYTES,
+                            "cleanup-plan skeleton branch clone",
+                        )?;
+                        note_skeleton_materialization();
+                        #[cfg(test)]
+                        branch_clone::note_take();
+                        std::mem::take(&mut observations)
+                    } else {
+                        branch_clone::for_push(
+                            budget,
+                            function,
+                            &observations,
+                            "cleanup-plan skeleton branch clone",
+                        )?
+                    };
                     skeleton_push(
                         budget,
                         function,

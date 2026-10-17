@@ -1,5 +1,7 @@
 # Changelog
 
+- Transfer already funded final-branch observation backing when a bounded terminal-chain probe proves it can hold every remaining observation, preserving original clone work, fallback receivers and source controls.
+
 - Admit strictly checked primitive String-slot reads in nonallocating byte-helper proofs, avoid temporary type owners during slot inspection, and retain generic declaration-bound receipts at the rejected-storage frontier.
 
 - Refresh browser graph pins from complete hosted 21abcda9b captures after the 4,707-byte cumulative builder-debit reduction, retaining every prior wire and source control.
