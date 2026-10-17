@@ -1,3 +1,4 @@
+- Source-only #859 restores independent body diagnostics after authenticated concrete-record shape refusals; other rejected-storage routes retain their prior early return. Focused qualification is pending.
 - Add a private ordinary PLAN history candidate with immutable numeric-link
   segments and prepaid forward comparison against the unchanged HIR multiset.
   Complete flat predecessors and refusal/teardown controls remain compiled;
