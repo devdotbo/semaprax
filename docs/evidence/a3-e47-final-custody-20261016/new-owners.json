@@ -211,7 +211,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
-    "sha256": "8db7099863e022516f2d00ef96cc2b8b349d92cf850518d5d97cd2e393efb21c",
+    "sha256": "cb728c0ddeb15d888796dd7a7d396c4fa98efc0f5b5f0c7cd99ccea7bf718be7",
     "lines": 399
   },
   {
@@ -516,8 +516,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
-    "sha256": "1d5f944822d4b1c425fb818015530b06230e1d1e38d1a298bcfd607d2ae3c36d",
-    "lines": 1058
+    "sha256": "e9024cb5b3c27f63fc9c16a471d579203e2fe069732fc94216d80599c30afc6f",
+    "lines": 1059
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/merge_keys.rs",
@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "381369b227d0d4233a33179f376b725a4f0a73675151596ce9e8db071497d8bf",
+    "sha256": "907cefedf059b48eff648d7f6a2e30494ef41c0a7bae59d2d611a7fe12e908a0",
     "lines": 1099
   },
   {
@@ -941,8 +941,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
-    "sha256": "250e582f1fcb5fa762b65ea05bbed980bf34e233c51d7f0004c9e8e45460d87a",
-    "lines": 615
+    "sha256": "770bc0dce160bbcf8cc6fbb3055545d26af4e7cbae029c1435349eed96c54efe",
+    "lines": 616
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs",
@@ -1066,12 +1066,12 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "84d7e8a2807ff2f99080de35982ba767d97ed005ee7bd215d9649fa088036048",
-    "lines": 183
+    "sha256": "0baf47bfbc6192ae099c116b10512d228d87c1d9e190600c05426a2b7da9757c",
+    "lines": 184
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
-    "sha256": "ddb9414c06f4886c230d78abc81d29ba3987f93a8d1a90d43a9fb9d5e9d81e95",
+    "sha256": "6eb1507d513397b5fd93336b51fadff0045e2c49b4dfb56ea39c3d9266726e11",
     "lines": 272
   },
   {
@@ -1141,12 +1141,12 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
-    "sha256": "42b1d47b690d33be215f6f22da1abf491f8d2242bfa66ddf04a5185ebfb1634d",
+    "sha256": "a17747b6a114c26a3dac80a0e8508124ce820fc86cae2f2b55cb5732a37f2e52",
     "lines": 130
   },
   {
     "source": "src/source_reflows/semantic_receivers/status_inline.rs",
-    "sha256": "1f55a733a273a93a38eda94b112b4900eea5a0b5e448c56c5fbc846711e12cec",
+    "sha256": "2e0ab1fc87aaa376ead7ccda750905620f01e7c4cd9432c7000d54fbd28ee0da",
     "lines": 94
   }
 ]

@@ -1,0 +1,134 @@
+{
+  "status": "PASS_SOURCE_ONLY_HASH_SUCCESSOR",
+  "head": "3eeb2edcc74ffafe5b94ca4cec42f91a3b94e4ea",
+  "base": "a6c92a197a21ed3e8c67c842b20886f2240cb0e2",
+  "changed_sources": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/source_reflows_merge/main_e177_inputs.rs"
+  ],
+  "roles_chunks_declarations_attributes_unchanged": true,
+  "exact_registered_edge_offsets_refreshed": [
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs"
+  ],
+  "current_owners": 230,
+  "physical174_membership_unchanged": true,
+  "incoming471_membership_unchanged": true,
+  "old_afa54_and454_unchanged": true,
+  "historical_generic_proof_unchanged": true,
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "whole_inverses": [
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2108589,
+        "sha256": "34c070e6e386469d05bcbfc8437173d402aaf8babac89d2fd582c7a013b7d108",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      },
+      "after": {
+        "length": 2108589,
+        "sha256": "cc43809c1b973d026c07026f144a81433bb168b0e965e4c2a83aaf3ffb618569"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "cc43809c1b973d026c07026f144a81433bb168b0e965e4c2a83aaf3ffb618569",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2400685,
+        "sha256": "a7fcf7460ba5f2ba83056c3283683d2ad7bd4eba79f44f97f09d5bb535e54faa",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      },
+      "after": {
+        "length": 2400685,
+        "sha256": "7c43c04698928840fa19839009b24fc560b7e84d2cdb16bcf1bf9580884c187c"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "7c43c04698928840fa19839009b24fc560b7e84d2cdb16bcf1bf9580884c187c",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 42195,
+        "sha256": "ae7efa39aabed4aecc83b880d0b886ad9df39e48f86526d26237dfe185deced8",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      },
+      "after": {
+        "length": 42195,
+        "sha256": "ecb205835b593512a0eb3928121b7543248a9dcea1e23384b35ec38b50f5a7e4"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "ecb205835b593512a0eb3928121b7543248a9dcea1e23384b35ec38b50f5a7e4",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      }
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 237039,
+        "sha256": "a2d88caae2715266eae490811ac0121aaccd5d43ae001439e35cc3fea9150693",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+      },
+      "after": {
+        "length": 237039,
+        "sha256": "92fb3d10155ff4c2684fc37b0537f5f0df45e24c94d6b55181f098dde1882a4a"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "92fb3d10155ff4c2684fc37b0537f5f0df45e24c94d6b55181f098dde1882a4a",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+      }
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 2781,
+        "sha256": "7835ec7457a33f61aa1cb663b88bdfeaab58210a37de58dc5790fa731cc9a628",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2816,
+        "sha256": "6afc13155e489c8d8ddcaacb7b2f5fa1d9719c07ab11b9a82d4edc811f1fb989"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "6afc13155e489c8d8ddcaacb7b2f5fa1d9719c07ab11b9a82d4edc811f1fb989",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/authority-source-proof.json",
+      "before": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c",
+        "archive": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__authority-source-proof.json.txt"
+      },
+      "after": {
+        "length": 2175,
+        "sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c"
+      },
+      "inverse": {
+        "require_exact_after_sha256": "0045560ce870d5471651c95ff2ba4c211276b7aef55e1bc50f0988b53d6f5d9c",
+        "restore_whole_before": "docs/evidence/core300-compile-pin-repair-20261017/role-before/docs__evidence__a3-e47-final-custody-20261016__authority-source-proof.json.txt"
+      }
+    }
+  ],
+  "written": true,
+  "Cargo": false
+}
