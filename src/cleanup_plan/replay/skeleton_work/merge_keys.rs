@@ -4,7 +4,7 @@ use super::*;
 // Search carries a borrowed candidate/group, the borrowed closure captures,
 // a slice search range, its result, and the returned directory position. No
 // borrowed key or group address survives a lookup or a vector mutation.
-const SEARCH_CONTROLS: usize = std::mem::size_of::<(
+pub(in crate::cleanup_plan::replay) const SEARCH_CONTROLS: usize = std::mem::size_of::<(
     &ExprSkeletonPath,
     &ExprSkeletonPath,
     &Vec<usize>,
@@ -17,7 +17,7 @@ const SEARCH_CONTROLS: usize = std::mem::size_of::<(
     std::cmp::Ordering,
 )>();
 
-fn compare_paths(left: &ExprSkeletonPath, right: &ExprSkeletonPath) -> std::cmp::Ordering {
+pub(in crate::cleanup_plan::replay) fn compare_paths(left: &ExprSkeletonPath, right: &ExprSkeletonPath) -> std::cmp::Ordering {
     left.owned_source
         .cmp(&right.owned_source)
         .then_with(|| left.failed.cmp(&right.failed))

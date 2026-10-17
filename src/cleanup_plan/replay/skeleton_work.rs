@@ -6,11 +6,11 @@
 //! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
 mod dag_storage;
-mod merge_keys;
+pub(super) mod merge_keys;
 #[cfg(test)]
 mod merge_keys_before;
 #[cfg(test)]
-mod merge_keys_tests;
+pub(super) mod merge_keys_tests;
 #[cfg(test)]
 mod oracle_entry;
 mod ordinary_dag;
@@ -910,7 +910,7 @@ impl Ord for Observations {
 }
 
 impl SkeletonWork<'_, '_> {
-    fn lexical_merge_normal(&self, path: &ExprSkeletonPath) -> bool {
+    pub(in crate::cleanup_plan::replay) fn lexical_merge_normal(&self, path: &ExprSkeletonPath) -> bool {
         self.function.cleanup_plan.lexical_control.is_none()
             || (self.active_copy_region.is_some()
                 && !path.failed

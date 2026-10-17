@@ -112,6 +112,7 @@ use leaf_index::Leaves;
 mod path_summary;
 mod skeleton_bound;
 mod skeleton_work;
+mod owned_suffix;
 mod typed_storage;
 use compact_stage::CopySource;
 use path_summary::{
@@ -3003,6 +3004,7 @@ fn sequence_expression<'hir>(
         return Ok(prefixes);
     }
     let suffixes = expression_skeleton(program, function, expression, work)?;
+    owned_suffix::dispatch!(prefixes, suffixes, work);
     sequence_skeleton_paths(prefixes, &suffixes, work)
 }
 

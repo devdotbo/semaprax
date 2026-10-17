@@ -48,10 +48,48 @@ whole-source bindings need an explicit new finite successor generation for
 `skeleton_work.rs` and changed inventories. No source-custody refresh, Cargo,
 common gate or public qualification was run in this private lane.
 
-Owned suffix consumption remains a separate required part of #878. A caller
-frame containing prefixes before suffixes alone does not suffice: moving
-original suffix observations into the existing fallible union passes those
-owners to a nested frame which destroys them on refusal before the caller's
-prefixes. Activation needs an explicit retained union ownership design and
-prefix-before-original-suffix refusal proof; simply passing the owned vector to
-`merged_paths` is not the proposed implementation.
+The second source candidate consumes the suffix vector into an explicit
+retention frame whose prefix field precedes its original suffix field. Original
+suffix observation backing and metadata remain intact through every union and
+sequence refusal. Thin merged rows copy only observation backing for independent
+unions; they borrow representative metadata by index. A separate borrowed view
+array feeds a copy of the current sequence core and its one-successor macros.
+This deliberately retains observation copies to preserve original-owner Drop;
+it removes the full `ExprSkeletonPath` clone array and owned-source/continuation
+copies. It does not claim zero suffix-copy allocation.
+
+The whole original 7,847-line replay input and the original one-successor module
+are archived with exact lengths and SHA-256s. The complete original borrowed
+sequence function and original one-successor module remain byte-exact in
+production. The adapted core retains all original payment literals, work,
+materialization events and control branches. Borrowed view field access and
+fanout inspection adapt their input representation. The copied macros use the
+unchanged original fee constants; no old fee is reduced. A paid query precedes
+the new dispatch on every active expression sequence, including ordinary and
+one-suffix fallthrough. The larger retention frame is charged only before its
+owned branch. This is a real additional ordinary reservation cost, with no
+exemption or application-fit claim. Original historical test selectors dispatch
+to their complete prior borrowed receiver before the new path.
+
+Four further lib owners under `cleanup_plan::replay::owned_suffix::tests`
+compare complete ordered languages, failure/residual/owned-source/continuation
+states and exact work on ordinary/selected and lexical cases; compare all six
+original work diagnostics and watched original backing free order; sweep every
+smaller physical allowance through union and output refusal, requiring original
+prefix carrier release before original suffix carrier release; and report
+cumulative allocation/reservation through result destruction. These are authored,
+not executed. Source audit registration must also join `owned_suffix.rs`,
+`owned_suffix/sequence_vector.rs` and `owned_suffix/tests.rs` to each raw3/MAIN043
+scope. The fixed native carrier still must remain at most 1,500 lines.
+
+The current actual 452 baseline also has existing regressions to rerun unchanged:
+
+- `cleanup_plan::replay::factored::canonical_shared::memo::tests::chunked_complete_canonical_receiver_preserves_old_work_ids_and_last_drop`
+- `cleanup_plan::replay::factored::tests::ordinary_factored_functions_and_contracts_reuse_exact_program_storage_with_old_automata_work_and_drop`
+
+The reported memo failure spends 16 extra ordinary work units in current source;
+the factored regression underflows its old-minus-current allocation subtraction.
+No assertions or counters in those owners were changed here, and the new key
+and suffix paths add no logical work units. All application and regression
+qualification, independent fee/ownership review, and finite source binding
+integration remain pending. #878 is not claimed closed.

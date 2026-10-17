@@ -51,7 +51,7 @@ fn expand(observations: &Observations) -> Vec<Vec<Observation>> {
     values
 }
 
-type Snapshot = (
+pub(in crate::cleanup_plan::replay) type Snapshot = (
     Vec<Vec<Observation>>,
     Option<CleanupPlace>,
     bool,
@@ -59,7 +59,7 @@ type Snapshot = (
     lexical_skeleton::Continuation,
     Vec<(u32, CleanupPlace)>,
 );
-fn snapshot(states: Vec<CallSkeletonState>) -> Vec<Snapshot> {
+pub(in crate::cleanup_plan::replay) fn snapshot(states: Vec<CallSkeletonState>) -> Vec<Snapshot> {
     states
         .into_iter()
         .map(|(p, commits)| {
