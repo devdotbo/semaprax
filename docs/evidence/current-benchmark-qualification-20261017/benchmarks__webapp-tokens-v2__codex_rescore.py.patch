@@ -1,0 +1,30 @@
+--- benchmarks/webapp-tokens-v2/codex_rescore.py
++++ benchmarks/webapp-tokens-v2/codex_rescore.py
+@@ -247,17 +247,22 @@
+     return groups
+ 
+ 
+-def reference_case_groups(receipt: dict[str, Any], arm: str, settings: dict[str, Any], compiler_sha: str) -> dict[str, str]:
++def reference_case_groups(receipt: dict[str, Any], arm: str, settings: dict[str, Any], compiler_sha: str, *, report_bytes: bytes | None = None) -> dict[str, str]:
+     """Load the receipt-bound full reference report, never its spotlight summary."""
+     arm_receipt = receipt.get("arms", {}).get(arm)
+     if not isinstance(arm_receipt, dict):
+         raise ValueError(f"qualification receipt lacks {arm} reference binding")
+     report_path = Path(str(arm_receipt.get("report_file", "")))
+     report_sha = arm_receipt.get("report_sha256")
+-    if (not isinstance(report_sha, str) or report_path.is_symlink() or not report_path.is_file()
+-            or digest(report_path) != report_sha):
+-        raise ValueError(f"qualification receipt {arm} report hash binding differs")
+-    report = load_json(report_path)
++    if report_bytes is None:
++        if (not isinstance(report_sha, str) or report_path.is_symlink() or not report_path.is_file()
++                or digest(report_path) != report_sha):
++            raise ValueError(f"qualification receipt {arm} report hash binding differs")
++        report = load_json(report_path)
++    else:
++        if hashlib.sha256(report_bytes).hexdigest() != report_sha:
++            raise ValueError(f"qualification receipt {arm} report hash binding differs")
++        report = campaign.qualification_json(report_bytes)
+     checks, gate_rows, qualification = report.get("checks"), report.get("gate"), report.get("qualification", {})
+     if (not isinstance(checks, list) or not isinstance(gate_rows, list)
+             or not all(isinstance(row, dict) and isinstance(row.get("id"), str) and row["id"]

@@ -1091,5 +1091,97 @@ class WebappCampaignTests(unittest.TestCase):
         self.assertIsNone(summary["acceptance_wall_seconds_all_attempts"])
 
 
+class CurrentQualificationReceiptTests(unittest.TestCase):
+    """No provider/compiler calls: complete synthetic reports exercise the admission boundary."""
+
+    def fixture(self, root):
+        gate = root / "benchmarks/webapp-tokens-v2/acceptance/run.mjs"
+        gate.parent.mkdir(parents=True); gate.write_text("// fixed gate fixture\n")
+        gate_sha = hashlib.sha256(gate.read_bytes()).hexdigest()
+        settings = {"repository_root": str(root), "compiler_source_commit": "a" * 40,
+                    "source_binary_sha256": "b" * 64, "qualification": {"spec_sha256": "spec"},
+                    "harness_source_snapshot": {"files_sha256": {
+                        "benchmarks/webapp-tokens-v2/acceptance/run.mjs": gate_sha}}}
+        qualification = {"passed": True, "cases": 912, "failures": [], "missingCases": [], "missingGroups": []}
+        receipt = {"schema": "semaprax.teamdesk.reference.qualification.v1", "qualified": True,
+                   "spec_sha256": "spec", "compiler_source_commit": "a" * 40,
+                   "compiler_binary_sha256": "b" * 64, "arms": {}}
+        for arm in campaign.ARMS:
+            report = {"schema": "semaprax.teamdesk.acceptance.v1", "arm": arm, "spec_sha256": "spec",
+                      "qualification": qualification, "gate": [{"name": "run.mjs", "sha256": gate_sha}],
+                      "compiler": {"source_sha": "a" * 40, "sha256": "b" * 64},
+                      "checks": [{"id": str(i), "group": "fixture", "status": "passed"} for i in range(912)]}
+            report_path = root / (arm + "-report.json"); report_path.write_text(json.dumps(report))
+            execution_path = root / (arm + "-execution.json")
+            execution_path.write_text(json.dumps({"exit_code": 0, "fixture_only_not_live_evidence": True}))
+            receipt["arms"][arm] = {"qualification": qualification, "report_file": str(report_path),
+                "report_sha256": hashlib.sha256(report_path.read_bytes()).hexdigest(),
+                "execution_file": str(execution_path), "execution_sha256": hashlib.sha256(execution_path.read_bytes()).hexdigest()}
+        path = root / "summary.json"; raw = json.dumps(receipt).encode(); path.write_bytes(raw)
+        return path, raw, receipt, settings
+
+    def test_current_receipt_keeps_full_reports_and_refuses_drift_before_command(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); path, raw, receipt, settings = self.fixture(root)
+            self.assertEqual(campaign.held_qualification(path, hashlib.sha256(raw).hexdigest()), raw)
+            binding = campaign.current_qualification_binding(path, raw, receipt, settings)
+            settings["current_qualification_receipt"] = binding
+            self.assertEqual(len(binding["pins"]), 5)
+            artifacts = root / "artifacts"; artifacts.mkdir()
+            campaign.snapshot_current_qualification(settings, artifacts)
+            self.assertEqual((artifacts / "current-qualification/reference-summary.json").read_bytes(), raw)
+            campaign.require_current_qualification(settings)
+            report = Path(receipt["arms"]["typescript"]["report_file"])
+            report.write_bytes(report.read_bytes() + b" ")
+            with self.assertRaisesRegex(ValueError, "drifted"):
+                campaign._command(settings, "no dispatch is permitted")
+
+    def test_current_receipt_rejects_coordinated_hash_for_incomplete_report(self):
+        with tempfile.TemporaryDirectory() as directory:
+            path, raw, receipt, settings = self.fixture(Path(directory))
+            report = Path(receipt["arms"]["semaprax"]["report_file"])
+            data = json.loads(report.read_text()); data["checks"].pop(); report.write_text(json.dumps(data))
+            receipt["arms"]["semaprax"]["report_sha256"] = hashlib.sha256(report.read_bytes()).hexdigest()
+            raw = json.dumps(receipt).encode(); path.write_bytes(raw)
+            with self.assertRaisesRegex(ValueError, "full accepted reference"):
+                campaign.current_qualification_binding(path, raw, receipt, settings)
+
+    def test_current_receipt_rejects_hash_symlink_and_dependency_escape(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory); path, raw, receipt, settings = self.fixture(root)
+            with self.assertRaisesRegex(ValueError, "drifted"):
+                campaign.held_qualification(path, "0" * 64)
+            link = root / "linked.json"; link.symlink_to(path)
+            with self.assertRaisesRegex(ValueError, "symlinks"):
+                campaign.held_qualification(link, hashlib.sha256(raw).hexdigest())
+            receipt["arms"]["semaprax"]["report_file"] = str(root.parent / "not-admitted.json")
+            with self.assertRaisesRegex(ValueError, "inside the receipt directory"):
+                campaign.current_qualification_binding(path, raw, receipt, settings)
+
+    def test_plan_requires_both_explicit_current_receipt_arguments(self):
+        for receipt, digest in (("explicit.json", None), (None, "a" * 64)):
+            args = types.SimpleNamespace(repo=str(ROOT), base_ref="HEAD", compiler_source_ref="HEAD",
+                semaprax_bin="/bin/sh", qualification_receipt=receipt, qualification_receipt_sha256=digest)
+            with self.assertRaisesRegex(ValueError, "required together"):
+                campaign.plan(args)
+
+    def test_current_receipt_json_duplicate_members_are_refused(self):
+        with self.assertRaisesRegex(ValueError, "duplicate"):
+            campaign.qualification_json(b'{"qualified":true,"qualified":false}')
+
+    def test_output_reasoning_authored_edits_and_final_source_are_distinct(self):
+        rows = [{"status": "accepted", "observed": {"request_usage_sum": {
+                    "output_tokens": 17, "reasoning_output_tokens": 9}},
+                 "final_candidate_source_metrics": {"total_tokens": 23}},
+                {"status": "failed", "observed": {"request_usage_sum": {
+                    "output_tokens": 5, "reasoning_output_tokens": 2}}}]
+        summary = campaign.summarize(rows)
+        self.assertEqual(summary["provider_output_tokens_all_attempts"], 22)
+        self.assertEqual(summary["reasoning_output_tokens_all_attempts"], 11)
+        self.assertEqual(summary["accepted_final_source_token_proxy"], 23)
+        self.assertIsNone(summary["cumulative_authored_edit_tokens"])
+        self.assertIsNone(summary["provider_receipt_actual_usd"])
+
+
 if __name__ == "__main__":
     unittest.main()
