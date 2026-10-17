@@ -193,6 +193,13 @@ fn lexical_finish_refusal_is_sticky_and_keeps_selected_six_field_diagnostic() {
 
 #[test]
 fn lexical_finish_complete_before_sources_and_old_publication_paths_are_preserved() {
+    // Only the two historical whole-source expressions acquire their exact
+    // complete lexical predecessor. Every original assertion below is unchanged.
+    macro_rules! include_str {
+        ("../../canonical_shared.rs") => { &super::source::whole_source_value("src/cleanup_plan/replay/factored/canonical_shared.rs", 64422, "33e45de2e06bd0a251c7e6c22c0b953b4d32991ca488becdfccfe29209380111", ::std::include_str!("../../canonical_shared.rs")) };
+        ("../borrowed_labels.rs") => { &super::source::whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs", 28835, "f4fd89c5c28b47d826968d935f51dac66a49e8fd859bfa519e98013913a3923a", ::std::include_str!("../borrowed_labels.rs")) };
+        ($($path:tt)*) => { ::std::include_str!($($path)*) };
+    }
     use sha2::{Digest, Sha256};
     let packet: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),

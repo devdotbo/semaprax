@@ -1,0 +1,33 @@
+{
+  "status": "SOURCE_CANDIDATE_PENDING_FINAL_VIEW_COUPLING_NO_RUST_EXECUTION",
+  "base": "29034d54b71b85fbdc4cfc26e4707c3e32447761",
+  "owners": [
+    227,
+    228,
+    229,
+    233
+  ],
+  "fix": "Named historical physical and compiled acquisition before unchanged whole-body equality and original frozen7/115 controls. Literal caller/terminal and two lexical source expressions are adapted; original assertions and old recipe/table bytes are untouched.",
+  "old_cap_2097152_unchanged": true,
+  "whole115_helpers_checked_for_changed_physical_sources": true,
+  "eight_additional_current_rows_and_exact_old_views_required": false,
+  "all_changed_source_bodies_reconstruct_complete_base_byteexact": true,
+  "shipping_raw_checks": "Owner228 retains the original ::std::include_str! raw canonical checks without projection; no count/assertion relaxed. Final raw3 semantic audit must join every actual new module before qualification, independently of all historical source views.",
+  "no_new_physical_module": false,
+  "metadata": "Only existing source hashes; role/new module captures belong to the accepted combined batch.",
+  "final_coupling_pending": true,
+  "Rust_test_bodies_executed": 0,
+  "Cargo": false,
+  "nine_additional_current_rows_and_exact_old_views_required": true,
+  "genuine_old_memo_compiled_dependency": {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "sha256": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+    "reason": "The original before producer must retain51c1 current() parent-ledger behavior; it cannot share later current_identity() behavior while source text alone claims the oldhelper."
+  },
+  "compiled_old_memo": {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "sha256": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+    "reason": "The original before producer must retain51c1 current() parent-ledger behavior; it cannot share later current_identity() behavior while source text alone claims the oldhelper."
+  },
+  "production_effect": "None; only cfg(test) paid source owners and independent before producer change."
+}

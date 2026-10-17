@@ -1,0 +1,99 @@
+{
+  "base": "29034d54b71b85fbdc4cfc26e4707c3e32447761",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
+      "before": {
+        "length": 15189,
+        "sha256": "38a6b60b2f2f734dd1f92037a9b0cde74432ce5fe2a64924b4b8d96e70baccc2",
+        "archive": "docs/evidence/paid-many-source-stage-repair-20261017/before/src__cleanup_plan__replay__factored__canonical_shared__paid_many__source.rs.txt"
+      },
+      "after": {
+        "length": 17411,
+        "sha256": "54fee23c22ec6d3b830f543c4f1cbb05e69f34be324fa8b48b6286e01464e432"
+      },
+      "edits": [
+        {
+          "before": "    ($path:literal) => { ::std::include_str!($path) };\n}",
+          "after": "    (\"../../../factored.rs\") => { &whole_source_value(\"src/cleanup_plan/replay/factored.rs\", 44197, \"343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6\", ::std::include_str!(\"../../../factored.rs\")) };\n    (\"../terminal_leaf.rs\") => { &whole_source_value(\"src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\", 7251, \"102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275\", ::std::include_str!(\"../terminal_leaf.rs\")) };\n    ($path:literal) => { ::std::include_str!($path) };\n}\nmacro_rules! include_bytes {\n    (\"../terminal_leaf.rs\") => { whole_source_value(\"src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\", 7251, \"102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275\", ::std::include_str!(\"../terminal_leaf.rs\")).as_bytes() };\n}",
+          "count": 1
+        },
+        {
+          "before": "    let raw = paid_reader::read(&::std::path::Path::new(env!(\"CARGO_MANIFEST_DIR\")).join(path), usize::try_from(field[\"length\"].as_u64().unwrap()).unwrap(), field[\"sha256\"].as_str().unwrap(), 2_097_152).unwrap();",
+          "after": "    let raw = whole_source_file(&::std::path::Path::new(env!(\"CARGO_MANIFEST_DIR\")).join(path), usize::try_from(field[\"length\"].as_u64().unwrap()).unwrap(), field[\"sha256\"].as_str().unwrap()).unwrap();\n    let current = whole_source_value(path, usize::try_from(field[\"length\"].as_u64().unwrap()).unwrap(), field[\"sha256\"].as_str().unwrap(), current);",
+          "count": 1
+        },
+        {
+          "before": "super::super::paid_reader::read(path, usize::try_from(row[\"length\"].as_u64().unwrap()).unwrap(), row[\"sha256\"].as_str().unwrap(), 2_097_152)",
+          "after": "super::super::whole_source_file(path, usize::try_from(row[\"length\"].as_u64().unwrap()).unwrap(), row[\"sha256\"].as_str().unwrap())",
+          "count": 1
+        },
+        {
+          "before": "paid_reader::read(path, length, sha, 2_097_152)\n        .map_err",
+          "after": "whole_source_file(path, length, sha)\n        .map_err",
+          "count": 1
+        },
+        {
+          "before": "",
+          "after": "\n// Named historical acquisitions only. Frozen7/115 tables still choose exact\n// subjects/lengths/digests; the original bounded reader remains the fallback.\nfn whole_source_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, paid_reader::Error> {\n    if let Some(previous) = crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected) {\n        return Ok(previous);\n    }\n    if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected) {\n        return Ok(previous);\n    }\n    paid_reader::read(path, length, expected, 2_097_152)\n}\npub(super) fn whole_source_value(source: &str, length: usize, expected: &str, supplied: &str) -> String {\n    let root = ::std::path::Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let actual = whole_source_file(&root.join(source), length, expected).unwrap();\n    let supplied = crate::source_reflows_merge::main_e177_final_inputs::value(source, expected, supplied);\n    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(source, expected, &supplied);\n    assert_eq!(actual, supplied, \"whole actual and compiled historical source stage\");\n    assert_eq!(actual.len(), length);\n    assert_eq!(digest(actual.as_bytes()), expected);\n    actual\n}\n",
+          "offset": "EOF",
+          "count": 1
+        },
+        {
+          "before": "Result<String, paid_reader::Error>",
+          "after": "Result<String, paid_reader::Failure>",
+          "count": 1
+        },
+        {
+          "before": "fn whole_source_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, paid_reader::Failure> {\n",
+          "after": "fn whole_source_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, paid_reader::Failure> {\n    if length > 2_097_152 { return Err(paid_reader::Failure::Bound); }\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/lexical_tests.rs",
+      "before": {
+        "length": 18009,
+        "sha256": "65d09ccad2df6d6138fde916ceac9c8b48bd56ffc880a62543ce440f4b2064b8",
+        "archive": "docs/evidence/paid-many-source-stage-repair-20261017/before/src__cleanup_plan__replay__factored__canonical_shared__paid_many__lexical_tests.rs.txt"
+      },
+      "after": {
+        "length": 18798,
+        "sha256": "8db7099863e022516f2d00ef96cc2b8b349d92cf850518d5d97cd2e393efb21c"
+      },
+      "edits": [
+        {
+          "before": "fn lexical_finish_complete_before_sources_and_old_publication_paths_are_preserved() {\n",
+          "after": "fn lexical_finish_complete_before_sources_and_old_publication_paths_are_preserved() {\n    // Only the two historical whole-source expressions acquire their exact\n    // complete lexical predecessor. Every original assertion below is unchanged.\n    macro_rules! include_str {\n        (\"../../canonical_shared.rs\") => { &super::source::whole_source_value(\"src/cleanup_plan/replay/factored/canonical_shared.rs\", 64422, \"33e45de2e06bd0a251c7e6c22c0b953b4d32991ca488becdfccfe29209380111\", ::std::include_str!(\"../../canonical_shared.rs\")) };\n        (\"../borrowed_labels.rs\") => { &super::source::whole_source_value(\"src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs\", 28835, \"f4fd89c5c28b47d826968d935f51dac66a49e8fd859bfa519e98013913a3923a\", ::std::include_str!(\"../borrowed_labels.rs\")) };\n        ($($path:tt)*) => { ::std::include_str!($($path)*) };\n    }\n",
+          "count": 1
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+      "before": {
+        "length": 62623,
+        "sha256": "499e2e20b836ab7adf9b095ae608e55482a411ae7e5d9bea34b3a560d77ccdf2",
+        "archive": "docs/evidence/paid-many-source-stage-repair-20261017/before/src__cleanup_plan__replay__factored__canonical_shared__before_paid_many.rs.txt"
+      },
+      "after": {
+        "length": 62670,
+        "sha256": "988b68859a9b20957ee69832cb662fcd5a8e6957a7050fef1277f4d8f6d54356"
+      },
+      "edits": [
+        {
+          "before": "    empty_closure, empty_memo, empty_signature, intern_arena, ordered_alias,",
+          "after": "    empty_closure, empty_signature, intern_arena, ordered_alias,",
+          "count": 1
+        },
+        {
+          "before": "#[path = \"before_paid_many/terminal_leaf.rs\"]",
+          "after": "#[path = \"before_paid_many/empty_memo.rs\"]\nmod empty_memo;\n#[path = \"before_paid_many/terminal_leaf.rs\"]",
+          "count": 1
+        }
+      ]
+    }
+  ],
+  "status": "SOURCE_ONLY_PENDING_EXACT_WHOLE_VIEW_ADMISSION"
+}

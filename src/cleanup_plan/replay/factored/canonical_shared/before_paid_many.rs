@@ -1,7 +1,7 @@
 //! Complete immediate51c1 receiver; production body and old target type retained.
 use super::{app_census, physical_clone, replay_error, Automaton, BTreeMap, Diagnostic, Label, Rc,
     ReplayBudget, ResolvedFunction, Weighted, SmallWeighted, closure_receiving,
-    empty_closure, empty_memo, empty_signature, intern_arena, ordered_alias,
+    empty_closure, empty_signature, intern_arena, ordered_alias,
     ordered_weights, successor_targets, arena_tests, tests};
 // Invoked only after preflight proved an unbound, nonfailed Memo. This is the
 // original cold activation body at its caller: no authenticate Result or
@@ -1362,6 +1362,8 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
+#[path = "before_paid_many/empty_memo.rs"]
+mod empty_memo;
 #[path = "before_paid_many/terminal_leaf.rs"]
 mod terminal_leaf;
 impl Canonicalizer<'_> {

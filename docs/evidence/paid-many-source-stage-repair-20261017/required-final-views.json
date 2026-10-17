@@ -1,0 +1,94 @@
+{
+  "status": "EXACT_OLD_VIEWS_PENDING_FINAL_CURRENT_AUTHENTICATION",
+  "rows": [
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+      "name": "whole-opt870-original-51c1-helper",
+      "length": 9275,
+      "sha256": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0.txt",
+      "immutable_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
+      "name": "whole-opt870-original-51c1-helper",
+      "length": 11110,
+      "sha256": "5c90131b3b1b642982d77be8b298fde44058382f9428fe59789dd70ea5dade30",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/5c90131b3b1b642982d77be8b298fde44058382f9428fe59789dd70ea5dade30.txt",
+      "immutable_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+      "name": "whole-opt870-original-51c1-helper",
+      "length": 7251,
+      "sha256": "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275.txt",
+      "immutable_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+      "name": "whole-opt870-original-51c1-helper",
+      "length": 1720,
+      "sha256": "b6d48fd5125b0ab91d8bae0ded52561d43a3f8fe27d36a4e79c15b29f879a4d7",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/b6d48fd5125b0ab91d8bae0ded52561d43a3f8fe27d36a4e79c15b29f879a4d7.txt",
+      "immutable_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/oracle_hook.rs",
+      "name": "whole-opt870-original-51c1-helper",
+      "length": 11716,
+      "sha256": "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae.txt",
+      "immutable_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "name": "whole-paid-many-lexical-finish-da035",
+      "length": 64422,
+      "sha256": "33e45de2e06bd0a251c7e6c22c0b953b4d32991ca488becdfccfe29209380111",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/33e45de2e06bd0a251c7e6c22c0b953b4d32991ca488becdfccfe29209380111.txt",
+      "immutable_git": "da0350114f9a61c298b7e3f82643987716c1c115"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+      "name": "whole-paid-many-lexical-finish-da035",
+      "length": 28835,
+      "sha256": "f4fd89c5c28b47d826968d935f51dac66a49e8fd859bfa519e98013913a3923a",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/views/f4fd89c5c28b47d826968d935f51dac66a49e8fd859bfa519e98013913a3923a.txt",
+      "immutable_git": "da0350114f9a61c298b7e3f82643987716c1c115"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+      "name": "whole-paid-recipe-order-arena-current",
+      "length": 56925,
+      "sha256": "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27",
+      "archive": "docs/evidence/source-custody-452-paid-recipe-order-20261017/arena.current.txt",
+      "immutable_git": "0f9fb3766f0413694e4a12447538f7c7bb99627f"
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+      "name": "whole-paid7-current-before-independent-old-memo-binding",
+      "length": 62623,
+      "sha256": "499e2e20b836ab7adf9b095ae608e55482a411ae7e5d9bea34b3a560d77ccdf2",
+      "archive": "docs/evidence/paid-many-source-stage-repair-20261017/before/src__cleanup_plan__replay__factored__canonical_shared__before_paid_many.rs.txt",
+      "immutable_git": "0f9fb3766f0413694e4a12447538f7c7bb99627f"
+    }
+  ],
+  "unchanged_prior_tables": [
+    "docs/evidence/c874-supplement-custody-domains-20261017/paid-inputs.json",
+    "docs/evidence/opt870-inline-paid-many-51c1-20261017/frozen-receivers.json",
+    "docs/evidence/paid-many-lexical-finish-20261017/before-inputs.json"
+  ],
+  "existing_next_views_reused": [
+    "factored.rs whole343eda37 caller",
+    "canonical root wholecdbced11 paid7 current"
+  ],
+  "new_current_rows": "All9 paths were absent preceding final49; append exact actual current/compiled descriptors and declared wholeviews after final semantic freeze. Canonical also needs its old0f9/afa-current view for the original next_big stage.",
+  "self_hash": "Neither edited source.rs nor lexical_tests.rs is a subject here; no hash cycle.",
+  "additional_new_physical_module": {
+    "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs",
+    "sha256": "e6fe00f0a39f8c1ee59fa25e72dfa4fe8d1b5a81315602244ea6dff75965e0c0",
+    "lines": 243,
+    "exact_whole_git": "51c1dfc49962e046566ad21ec31f20c6b3a9bdae:src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs"
+  }
+}

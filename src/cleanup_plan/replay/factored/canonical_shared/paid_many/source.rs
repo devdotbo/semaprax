@@ -30,7 +30,12 @@ fn restore(frozen: &str, row: &serde_json::Value) -> String {
 macro_rules! include_str {
     ("../before_paid_many.rs") => { &paid_view(&paid_rows(), "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs", ::std::include_str!("../before_paid_many.rs")) };
     ("../../canonical_shared.rs") => { &paid_view(&paid_rows(), "src/cleanup_plan/replay/factored/canonical_shared.rs", ::std::include_str!("../../canonical_shared.rs")) };
+    ("../../../factored.rs") => { &whole_source_value("src/cleanup_plan/replay/factored.rs", 44197, "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6", ::std::include_str!("../../../factored.rs")) };
+    ("../terminal_leaf.rs") => { &whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs", 7251, "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275", ::std::include_str!("../terminal_leaf.rs")) };
     ($path:literal) => { ::std::include_str!($path) };
+}
+macro_rules! include_bytes {
+    ("../terminal_leaf.rs") => { whole_source_value("src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs", 7251, "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275", ::std::include_str!("../terminal_leaf.rs")).as_bytes() };
 }
 
 #[test]
@@ -176,7 +181,8 @@ fn paid_view(rows: &serde_json::Value, path: &str, current: &str) -> String {
     assert_eq!(rows.iter().filter(|r| r["path"] == path).count(), 1);
     let row = rows.iter().find(|r| r["path"] == path).unwrap();
     let field = &row["current"];
-    let raw = paid_reader::read(&::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path), usize::try_from(field["length"].as_u64().unwrap()).unwrap(), field["sha256"].as_str().unwrap(), 2_097_152).unwrap();
+    let raw = whole_source_file(&::std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(path), usize::try_from(field["length"].as_u64().unwrap()).unwrap(), field["sha256"].as_str().unwrap()).unwrap();
+    let current = whole_source_value(path, usize::try_from(field["length"].as_u64().unwrap()).unwrap(), field["sha256"].as_str().unwrap(), current);
     assert_eq!(raw, paid_archive(field), "complete independently archived current source");
     assert_eq!(current, raw, "complete actual paid-many source input");
     paid_archive(&row["view"])
@@ -202,7 +208,7 @@ mod historical_std {
             let helpers = recipe["helpers"].as_array().unwrap();
             assert_eq!(helpers.len(), 115);
             let row = helpers.iter().find(|r| r["path"] == logical).ok_or_else(|| ::std::io::Error::new(::std::io::ErrorKind::InvalidInput, "unknown paid-many helper"))?;
-            Ok(super::super::paid_reader::read(path, usize::try_from(row["length"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap(), 2_097_152).map_err(|_| ::std::io::Error::new(::std::io::ErrorKind::InvalidData,"whole unchanged paid-many helper"))?.into_bytes())
+            Ok(super::super::whole_source_file(path, usize::try_from(row["length"].as_u64().unwrap()).unwrap(), row["sha256"].as_str().unwrap()).map_err(|_| ::std::io::Error::new(::std::io::ErrorKind::InvalidData,"whole unchanged paid-many helper"))?.into_bytes())
         }
     }
 }
@@ -287,9 +293,32 @@ fn later_arena_helper(path: &::std::path::Path) -> ::std::io::Result<String> {
     if path != expected { return Err(::std::io::Error::new(::std::io::ErrorKind::InvalidInput, "foreign arena helper path")); }
     let directory = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .join("docs/evidence/source-custody-452-paid-recipe-order-20261017");
-    let read = |path: &::std::path::Path, length, sha| paid_reader::read(path, length, sha, 2_097_152)
+    let read = |path: &::std::path::Path, length, sha| whole_source_file(path, length, sha)
         .map_err(|_| ::std::io::Error::new(::std::io::ErrorKind::InvalidData, "whole original arena helper input"));
     let current = read(path, 56925, "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27")?;
     assert_eq!(current, read(&directory.join("arena.current.txt"), 56925, "6dbb0428fcd1e70858de38f0b795d7ac92f0b601d92318e7d2c818b5dfc3cb27")?);
     read(&directory.join("arena.prior.txt"), 19645, "891edcee186f1c7b3fb59bf7d2adf2443c9d230343569865d941b90410b04dd8")
+}
+
+// Named historical acquisitions only. Frozen7/115 tables still choose exact
+// subjects/lengths/digests; the original bounded reader remains the fallback.
+fn whole_source_file(path: &::std::path::Path, length: usize, expected: &str) -> Result<String, paid_reader::Failure> {
+    if length > 2_097_152 { return Err(paid_reader::Failure::Bound); }
+    if let Some(previous) = crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected) {
+        return Ok(previous);
+    }
+    if let Some(previous) = crate::source_reflows_merge::next_big_batch_inputs::file(path, length, expected) {
+        return Ok(previous);
+    }
+    paid_reader::read(path, length, expected, 2_097_152)
+}
+pub(super) fn whole_source_value(source: &str, length: usize, expected: &str, supplied: &str) -> String {
+    let root = ::std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let actual = whole_source_file(&root.join(source), length, expected).unwrap();
+    let supplied = crate::source_reflows_merge::main_e177_final_inputs::value(source, expected, supplied);
+    let supplied = crate::source_reflows_merge::next_big_batch_inputs::value(source, expected, &supplied);
+    assert_eq!(actual, supplied, "whole actual and compiled historical source stage");
+    assert_eq!(actual.len(), length);
+    assert_eq!(digest(actual.as_bytes()), expected);
+    actual
 }
