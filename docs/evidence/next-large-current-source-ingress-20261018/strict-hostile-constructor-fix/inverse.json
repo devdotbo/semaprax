@@ -1,0 +1,9 @@
+{
+  "before_sha256": "149110de7c15636aec42452de7e33ae11fa60ae21569623454c6f13112009776",
+  "after_sha256": "17699b82ab27b89490d349261380688e7b00df9e3616d276c3b8c5e0b20296eb",
+  "before": " record=new['verify_guard'](path,raw,original);fragment=record['added_fragments'][0]\n for bad in [raw.replace(fragment,'',1),raw+fragment,raw+'include_str!(\"/foreign.rs\"),']:\n  refuses(lambda:new['verify_guard'](path,bad,original))",
+  "after": " # Preserve the complete historical fragment cases against their own whole\n # prior carrier and original verifier, rather than a freshness-only refusal.\n prior_record=old['verify_guard'](path,before,original)\n prior_fragment=prior_record['added_fragments'][0]\n assert before.count(prior_fragment)==1\n for bad in [before.replace(prior_fragment,'',1),before+prior_fragment,before+'include_str!(\"/foreign.rs\"),']:\n  assert bad!=before\n  refuses(lambda:old['verify_guard'](path,bad,original))\n # The latest verifier returns an older record by design. Acquire one complete\n # literal fragment from the authenticated CURRENT closed module grammar.\n base=m['CONFIG']['carriers'][path]['base']\n candidates=['include_str!(\"'+base+name+'\"),'for name in sorted(m['CONFIG']['modules'])]\n fragments=[fragment for fragment in candidates if raw.count(fragment)==1]\n assert fragments,'actual closed current include fragment missing'\n fragment=fragments[0]\n for bad in [raw.replace(fragment,'',1),raw+fragment,raw+'include_str!(\"/foreign.rs\"),']:\n  assert bad!=raw,'identity mutation is not negative evidence'\n  refuses(lambda:new['verify_guard'](path,bad,original))",
+  "guard_algorithm_and_old_tables_unchanged": true,
+  "old_full_fragment_hostiles_use_own_prior_verifier": true,
+  "current_closed_mutation_requires_nonidentity": true
+}

@@ -38,8 +38,23 @@ for path in allowed:
  old['verify_guard'](path,before,original)
  archive=D/'before'/(path.replace('/','__')+'.txt');assert archive.read_text()==before
  refuses(lambda:old['verify_guard'](path,raw,original))
- record=new['verify_guard'](path,raw,original);fragment=record['added_fragments'][0]
+ # Preserve the complete historical fragment cases against their own whole
+ # prior carrier and original verifier, rather than a freshness-only refusal.
+ prior_record=old['verify_guard'](path,before,original)
+ prior_fragment=prior_record['added_fragments'][0]
+ assert before.count(prior_fragment)==1
+ for bad in [before.replace(prior_fragment,'',1),before+prior_fragment,before+'include_str!("/foreign.rs"),']:
+  assert bad!=before
+  refuses(lambda:old['verify_guard'](path,bad,original))
+ # The latest verifier returns an older record by design. Acquire one complete
+ # literal fragment from the authenticated CURRENT closed module grammar.
+ base=m['CONFIG']['carriers'][path]['base']
+ candidates=['include_str!("'+base+name+'"),'for name in sorted(m['CONFIG']['modules'])]
+ fragments=[fragment for fragment in candidates if raw.count(fragment)==1]
+ assert fragments,'actual closed current include fragment missing'
+ fragment=fragments[0]
  for bad in [raw.replace(fragment,'',1),raw+fragment,raw+'include_str!("/foreign.rs"),']:
+  assert bad!=raw,'identity mutation is not negative evidence'
   refuses(lambda:new['verify_guard'](path,bad,original))
  if path==m['CARRIER']:
   for name in m['SCRATCH']:
