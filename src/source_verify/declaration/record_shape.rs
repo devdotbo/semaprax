@@ -96,7 +96,16 @@ pub(in crate::source_verify) fn all_storage_refusals_recoverable(
         }
         refused = true;
         if !program.types().iter().any(|declaration| {
-            origin_named(program, types, &declaration.name, diagnostics) == Some(index)
+            // Bound refusals keep the previous signature-only frontier. In
+            // particular, generic signatures can add T223/T224 after this gate.
+            let root = Type::Named {
+                name: declaration.name.clone(),
+                arguments: Vec::new(),
+            };
+            matches!(
+                classify_nested_owned_byte_record(types, &root),
+                NestedOwnedRecordAdmission::OutsideProfile
+            ) && origin_named(program, types, &declaration.name, diagnostics) == Some(index)
         }) {
             return false;
         }
@@ -211,6 +220,18 @@ mod tests {
             }
             assert!(!all_storage_refusals_recoverable(&parsed, &types, &[foreign]));
         }
+        let fields = (0..257)
+            .map(|index| format!("leaf_{index}: Bytes,"))
+            .collect::<String>();
+        let bounded = crate::parse(
+            &format!("module bounded; record Bag {{{fields}}} fn main()->i64{{0}}"),
+            Path::new("storage-recovery-bound.spx"),
+        ).unwrap();
+        let bounded_types = TypeTable::new(&bounded);
+        let mut bounded_diagnostics = Vec::new();
+        before::check_byte_data_declarations(&bounded, &bounded_types, &mut bounded_diagnostics);
+        assert_eq!(bounded_diagnostics.len(), 1);
+        assert!(!all_storage_refusals_recoverable(&bounded, &bounded_types, &bounded_diagnostics));
         let mixed = crate::parse(
             &format!("{source} class Other {{ payload: Bytes, }}"),
             Path::new("storage-recovery-mixed.spx"),
