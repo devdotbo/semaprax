@@ -1180,3 +1180,5 @@ Audience: all documentation readers.
 - [Separate reference merger helper names](evidence/tail-merge-helper-name-v1/README.md)
 
 - [Reuse paid status insertion scratch](evidence/status-cursor-reuse-v1/README.md)
+
+- [Public report wire receipts](evidence/public-wire-receipts-v1/README.md)

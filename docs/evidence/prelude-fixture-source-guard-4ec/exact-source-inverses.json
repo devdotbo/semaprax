@@ -35,6 +35,10 @@
       {
         "after": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n\n#[test]\nfn private_layout_inventory_retains_every_full_input_and_every_current_owned_module() {\n    source_inventory_controls::verify(\n        Path::new(env!(\"CARGO_MANIFEST_DIR\")),\n        SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT,\n        semantic_graph_private_layout_source_inventory!(),\n        semantic_graph_private_layout_module_source_inventory!(),\n        include_str!(\"../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv\"),\n    );\n}\n",
         "before": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n"
+      },
+      {
+        "after": " replaced.\nfn capture_pin_candidate(name: &str, bytes: &[u8]) {\n    super::pin_capture::record(name, bytes);\n    let Some(directory) = std::env::var_os(\"SEMAPRAX_PRELUDE_PIN",
+        "before": " replaced.\nfn capture_pin_candidate(name: &str, bytes: &[u8]) {\n    let Some(directory) = std::env::var_os(\"SEMAPRAX_PRELUDE_PIN"
       }
     ]
   }

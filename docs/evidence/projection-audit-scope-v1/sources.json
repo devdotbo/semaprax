@@ -3,8 +3,12 @@
     "path": "tests/workspace/semantic_graph.rs",
     "archive": "docs/evidence/projection-audit-scope-v1/tests__workspace__semantic_graph.rs.before.txt",
     "before_sha256": "4af44d68c4988c4b042a6e7b08ad5aa6f6e6f726953c0858a9e4e65ca35b497a",
-    "after_sha256": "f55a9ff27884e16088511f7dea0a7c17eb5d55c08327758ae46d3fd9833650a3",
+    "after_sha256": "6e2f921d4e56968dee9781070a212bac15df2617dc7fffb9f99d82c7cc3f9293",
     "inverse": [
+      {
+        "after": " replaced.\nfn capture_pin_candidate(name: &str, bytes: &[u8]) {\n    super::pin_capture::record(name, bytes);\n    let Some(directory) = std::env::var_os(\"SEMAPRAX_PRELUDE_PIN",
+        "before": " replaced.\nfn capture_pin_candidate(name: &str, bytes: &[u8]) {\n    let Some(directory) = std::env::var_os(\"SEMAPRAX_PRELUDE_PIN"
+      },
       {
         "after": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n\n#[test]\nfn private_layout_inventory_retains_every_full_input_and_every_current_owned_module() {\n    source_inventory_controls::verify(\n        Path::new(env!(\"CARGO_MANIFEST_DIR\")),\n        SEMANTIC_GRAPH_PRIVATE_LAYOUT_ROOT,\n        semantic_graph_private_layout_source_inventory!(),\n        semantic_graph_private_layout_module_source_inventory!(),\n        include_str!(\"../../docs/evidence/projection-audit-scope-v1/legacy-inputs.tsv\"),\n    );\n}\n",
         "before": ";\n    }\n    std::fs::remove_dir_all(&ordinary_root).unwrap();\n}\n"
@@ -43,8 +47,12 @@
     "path": "src/source_reflows/semantic_receivers.rs",
     "archive": "docs/evidence/projection-audit-scope-v1/src__source_reflows__semantic_receivers.rs.before.txt",
     "before_sha256": "7ee1815e4582685f17893b75df00c7cf8afe13cbf6dd70c85fd8f66572b4be81",
-    "after_sha256": "fd6e92a4383f667e95ad71962760a7117259c1421d0f3d134600dc69c9d49bd1",
+    "after_sha256": "a354a8476c045fcb176ce6babbbb6174236f49efa3f3deae24de7eb4c445d8e9",
     "inverse": [
+      {
+        "after": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n\n#[test]\nfn public_wire_receipts_preserve_complete_sources_and_every_original_assertion() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/public-wire-receipts-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(proofs.len(), 6);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &proofs {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
+        "before": "::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n"
+      },
       {
         "after": "ssert_eq!(current.replace(new, old), before);\n        }\n    }\n}\n\n#[test]\nfn reused_status_cursor_preserves_complete_predecessors_and_all_original_receivers() {\n    let root = Path::new(env!(\"CARGO_MANIFEST_DIR\"));\n    let proofs: Vec<serde_json::Value> = serde_json::from_str(\n        &std::fs::read_to_string(root.join(\"docs/evidence/status-cursor-reuse-v1/sources.json\"))\n            .unwrap(),\n    )\n    .unwrap();\n    assert_eq!(proofs.len(), 5);\n    let mut paths = std::collections::BTreeSet::new();\n    for proof in &proofs {\n        let path = proof[\"path\"].as_str().unwrap();\n        assert!(paths.insert(path));\n        let current = std::fs::read_to_string(root.join(path)).unwrap();\n        let before = invert(proof, &current);\n        assert_eq!(\n            before,\n            std::fs::read_to_string(root.join(proof[\"archive\"].as_str().unwrap())).unwrap()\n        );\n        assert!(std::panic::catch_unwind(|| invert(proof, &(current.clone() + \"\\n\"))).is_err());\n        let mut forged = proof.clone();\n        forged[\"before_sha256\"] = serde_json::Value::String(\"0\".repeat(64));\n        assert!(std::panic::catch_unwind(|| invert(&forged, &current)).is_err());\n    }\n}\n",
         "before": "ssert_eq!(current.replace(new, old), before);\n        }\n    }\n}\n"
