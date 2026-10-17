@@ -1,6 +1,6 @@
 //! Independent structural validation of attached cleanup plans without invoking the builder.
 // Private prerequisite only: no selected replay admission hook.
-mod branch_clone;
+mod branch_clone; #[cfg(test)] use crate::bounded_output::stage_debits::route_debits as debit_routes;
 mod compact_stage;
 mod constructed_variant;
 #[cfg(test)]
@@ -210,6 +210,7 @@ struct ReplayBudget {
 }
 
 impl ReplayBudget {
+    #[cfg_attr(test, track_caller)]
     fn charge(
         &mut self,
         function: &ResolvedFunction,
@@ -224,7 +225,29 @@ impl ReplayBudget {
             return self.charge_skeleton(function, units, phase);
         }
         self.charge_oracle_work(function, units, phase)?;
+        #[cfg(test)]
+        let caller = std::panic::Location::caller();
         self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+            #[cfg(test)]
+            REPLAY_WORK_REFUSAL.with(|record| {
+                record.set(Some(ReplayWorkRefusal {
+                    caller,
+                    requested: units,
+                    remaining: self.remaining,
+                    status_sources: function.cleanup_plan.status_sources.len(),
+                    first_status_bytes: function
+                        .cleanup_plan
+                        .status_sources
+                        .first()
+                        .map_or(0, |source| source.id.expression.as_str().len()),
+                    payer: match self.payer {
+                        AllocationPayer::LegacyUnobserved => "unobserved",
+                        AllocationPayer::ActiveBuilder => "builder",
+                        AllocationPayer::SelectedReservation => "selected",
+                        AllocationPayer::Oracle(_) => "oracle",
+                    },
+                }))
+            });
             self.budget_refusal(
                 function,
                 "cleanup replay work budget exhausted during ",
@@ -512,8 +535,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
         ),
         &mut budget,
     )?;
-    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?;
-    for function in program.functions() {
+    let mut continuations = continuation_storage::Storage::for_program(full, &mut budget)?; #[cfg(test)] let mut diagnostic_ordinal = 0usize;
+    for function in program.functions() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_ordinal, false, function.id.as_str()); diagnostic_ordinal = diagnostic_ordinal.saturating_add(1); scope };
         validate_structure_with_budget_storage(
             program,
             function,
@@ -521,8 +544,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
             Some(&helpers),
             Some(&mut continuations),
         )?;
-    }
-    for instance in program.function_instances() {
+    } #[cfg(test)] let mut diagnostic_instance = 0usize;
+    for instance in program.function_instances() { #[cfg(test)] let _debit_function = { let scope = debit_routes::function(diagnostic_instance, true, instance.function.id.as_str()); diagnostic_instance = diagnostic_instance.saturating_add(1); scope };
         validate_structure_with_budget_storage(
             program,
             &instance.function,
@@ -585,6 +608,10 @@ fn validate_structure_with_budget_storage<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<(), Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::ReplayStructure,
+    );
     let plan = &function.cleanup_plan;
     if helpers.is_some_and(|index| {
         !program
@@ -2775,7 +2802,7 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     budget: &mut ReplayBudget,
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     mut continuations: Option<&mut continuation_storage::Storage<'hir>>,
-) -> Result<(), Diagnostic> {
+) -> Result<(), Diagnostic> { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     if function.cleanup_plan.lexical_control.is_none()
         && factored::validate_with_index_storage(
             program,
@@ -2786,9 +2813,9 @@ fn validate_typed_control_skeleton_with_index<'hir>(
         )?
     {
         return Ok(());
-    }
+    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let mut expected =
-        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
+        hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
         payer: AllocationPayer::ActiveBuilder,
@@ -2800,13 +2827,13 @@ fn validate_typed_control_skeleton_with_index<'hir>(
             ordinary_plan_history::SELECT_CALL_CONTROLS,
             "ordinary plan history selector call receivers",
         )?;
-        if ordinary_plan_history::select(function, budget)? {
+        if ordinary_plan_history::select(function, budget)? { #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);
             budget.reserve_bytes(
                 function,
                 ordinary_plan_history::PRODUCE_CALL_CONTROLS,
                 "ordinary plan history producer call receivers",
             )?;
-            let actual = ordinary_plan_history::produce(function, budget)?;
+            let actual = ordinary_plan_history::produce(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
             budget.reserve_bytes(
                 function,
                 skeleton_work::enumerated_prefix::ENTRY_CALL,
@@ -2820,8 +2847,8 @@ fn validate_typed_control_skeleton_with_index<'hir>(
             )?;
             return ordinary_plan_history::compare(function, budget, actual, &expected);
         }
-    }
-    let mut actual = plan_skeleton_paths(function, budget)?;
+    } #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
+    let mut actual = plan_skeleton_paths(function, budget)?; #[cfg(test)] let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
     if match budget {
         ReplayBudget {
             payer: AllocationPayer::ActiveBuilder,
@@ -2883,6 +2910,10 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::ReplayHirSkeleton,
+    );
     let mut work = SkeletonWork::checked_with_index(program, function, budget, helpers)?;
     work.continuations = continuations;
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
@@ -3281,10 +3312,16 @@ fn expression_skeleton<'hir>(
     } else {
         (
             continuation_storage::Lease::Local,
-            if work.budget.payer == AllocationPayer::ActiveBuilder {
-                continuation_storage::fresh_receiving(function, work.budget)?
-            } else {
-                continuation_storage::fresh(function, work.budget)?
+            match work.budget {
+                ReplayBudget {
+                    payer: AllocationPayer::ActiveBuilder,
+                    lent_skeleton: false,
+                    ..
+                } => continuation_storage::fresh_receiving(function, work.budget)?,
+                // A factored constructor has lent its ordinary allowance to the
+                // original skeleton events. Keep its standalone fixed backing;
+                // incremental relocation needs an independent ordinary account.
+                _ => continuation_storage::fresh(function, work.budget)?,
             },
         )
     };
@@ -6714,6 +6751,10 @@ fn plan_skeleton_paths(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    #[cfg(test)]
+    let _operation = crate::bounded_output::stage_debits::operation_guard(
+        crate::bounded_output::stage_debits::Operation::ReplayPlanSkeleton,
+    );
     let plan = &function.cleanup_plan;
     let mut queue = VecDeque::new();
     skeleton_queue_push(
@@ -7122,11 +7163,16 @@ fn plan_skeleton_paths(
                             ));
                         }
                     };
+                    if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
+                        budget.reserve_bytes(function, branch_clone::production_capacity::production_inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls")?;
+                    } else {
                     budget.reserve_bytes(
                         function,
                         branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
                         "branch clone receiving controls",
                     )?;
+                    }
                     // The branch producer has no Result<Vec<_>, Diagnostic>
                     // receiver or owned observation forwarding argument. Its
                     // nested work/census/payment Results retain their charges.
@@ -7155,33 +7201,10 @@ fn plan_skeleton_paths(
                         // false probe paths; this is a bounded implementation
                         // detail of that materialization, not a CPU ledger.
                         if let ReplayBudget { payer: AllocationPayer::ActiveBuilder, .. } = budget {
-                                budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,
-                                    "plan final branch probe receiving")?;
-                                if branch_clone::can_take(branch_clone::TakeCandidate {
-                                    values: &observations,
-                                    remaining_edges: remaining_edges.len(),
-                                    edge_count: edges.len(),
-                                    budget,
-                                    plan,
-                                    target: edge.to,
-                                }) {
-                                    note_skeleton_materialization();
-                                    budget.charge_skeleton(function, 1, "plan branch observation push")?;
-                                    note_skeleton_materialization();
-                                    budget.reserve_bytes(function, 0, "plan branch observation push")?;
-                                    budget.reserve_bytes(function,
-                                        physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(&observation),
-                                        "plan branch observation push")?;
-                                    #[cfg(test)]
-                                    branch_clone::note_take();
-                                    #[cfg(test)]
-                                    branch_clone::note_generic_take();
-                                    branch = std::mem::take(&mut observations);
-                                    branch.push(observation.into());
-                                    skeleton_queue_push(budget, function, &mut queue,
-                                        (edge.to, branch), "plan branch state push")?;
-                                    continue;
-                                }
+                            budget.reserve_bytes(function, branch_clone::TAKE_CALL_CONTROLS,
+                                "plan final branch probe receiving")?;
+                            branch_clone::production_capacity::produce!(budget, function, observations,
+                                observation, plan, edge, remaining_edges, edges, branch, queue);
                         }
                         budget.reserve_clone(
                             function,
@@ -7908,3 +7931,23 @@ struct BeforeDirectAnchorBudgetLayout {
 }
 #[cfg(test)]
 const _: () = assert!(std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>());
+// Test diagnostics only. This POD record owns no HIR, text or heap allocation
+// and is never consulted by validation or a budget decision.
+#[cfg(test)]
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct ReplayWorkRefusal {
+    pub(crate) caller: &'static std::panic::Location<'static>,
+    pub(crate) requested: usize,
+    pub(crate) remaining: usize,
+    pub(crate) status_sources: usize,
+    pub(crate) first_status_bytes: usize,
+    pub(crate) payer: &'static str,
+}
+#[cfg(test)]
+thread_local! {
+    static REPLAY_WORK_REFUSAL: std::cell::Cell<Option<ReplayWorkRefusal>> = const { std::cell::Cell::new(None) };
+}
+#[cfg(test)]
+pub(crate) fn take_replay_work_refusal() -> Option<ReplayWorkRefusal> {
+    REPLAY_WORK_REFUSAL.with(|record| record.take())
+}

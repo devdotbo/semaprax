@@ -729,8 +729,8 @@ impl<'a> Canonicalizer<'a> {
             let accepted = closed.get(&self.sink).copied().unwrap_or(0);
             match &budget.payer {
                 AllocationPayer::ActiveBuilder => {
-                    budget.reserve_bytes(function, borrowed_labels::ordinary_receiving(), "factored direct singleton call receivers")?;
-                    return borrowed_labels::ordinary_successors(function, budget, self.automaton, closed, accepted);
+                    budget.reserve_bytes(function, borrowed_labels::one_pass_receiving(), "factored one-pass label call receivers")?;
+                    return borrowed_labels::one_pass_successors(function, budget, self.automaton, closed, accepted);
                 }
                 AllocationPayer::SelectedReservation => {}
                 AllocationPayer::LegacyUnobserved => {}
@@ -959,8 +959,8 @@ impl<'a> Canonicalizer<'a> {
         let accepted = closed.get(&self.sink).copied().unwrap_or(0);
         match &budget.payer {
             AllocationPayer::ActiveBuilder => {
-                budget.reserve_bytes(function, borrowed_labels::ordinary_receiving(), "factored direct singleton call receivers")?;
-                return borrowed_labels::ordinary_successors(function, budget, self.automaton, closed, accepted);
+                budget.reserve_bytes(function, borrowed_labels::one_pass_receiving(), "factored one-pass label call receivers")?;
+                return borrowed_labels::one_pass_successors(function, budget, self.automaton, closed, accepted);
             }
             AllocationPayer::SelectedReservation => {}
             AllocationPayer::LegacyUnobserved => {}
@@ -1153,6 +1153,10 @@ impl<'a> Canonicalizer<'a> {
         budget: &mut ReplayBudget,
         receiving: &mut closure_receiving::ClosureReceiving,
     ) -> Result<Option<usize>, Diagnostic> {
+        #[cfg(test)]
+        let _operation = crate::bounded_output::stage_debits::operation_guard(
+            crate::bounded_output::stage_debits::Operation::ReplayFactoredCanonical,
+        );
         #[cfg(test)]
         tests::note_actual_entry(budget);
         // Authenticate even when states already contains the requested root.
@@ -1358,16 +1362,13 @@ impl<'a> Canonicalizer<'a> {
                         continue;
                     }
                     attempt!(budget.reserve_bytes(
-                        function, intern_arena::SignatureQuery::EXIT_CONTROLS,
+                        function, intern_arena::SignatureQuery::LEXICAL_EXIT_CONTROLS,
                         "canonical borrowed signature receiving",
                     ));
                     // Retained scalar scratch contains only the child IDs for
                     // this frame; the epsilon cursor keeps its original shape.
                     self.child_ids.clear();
-                    attempt!(budget.reserve_vec(
-                        function, &mut self.child_ids, successors.len(),
-                        "canonical ordered child identity scratch",
-                    ));
+                    lexical_child_scratch::prepare!(self, successors, function, budget, receiving);
                     attempt!(budget.reserve_array::<[usize; 2]>(
                         function, successors.len(), "canonical child identity receiving",
                     ));
@@ -1475,3 +1476,5 @@ mod before_terminal_leaf_empty_memo;
 #[cfg(test)]
 #[path = "canonical_shared/incoming_flat_targets.rs"]
 mod targets;
+
+mod lexical_child_scratch;

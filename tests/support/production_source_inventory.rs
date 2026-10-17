@@ -6,7 +6,7 @@ mod boundary;
 mod original;
 
 pub(super) fn production(raw: &str, manifest: &str) -> String {
-    assert_semantic_batch_relocated_prefix(raw);
+    assert_accepted_batch_relocated_prefix(raw);
     // Authenticate ALL raw bytes, sources, registrations and production/test
     // roles first. No outside-boundary source is relabelled or left unaudited.
     let complete_authenticated_production = original::production(raw, manifest);
@@ -89,11 +89,19 @@ fn semantic_batch_relocated_prefix() -> &'static str {
         include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs"),
     )
 }
-fn assert_semantic_batch_relocated_prefix(raw: &str) {
+fn assert_semantic_batch_relocated_prefix_before162(raw: &str) {
     let prefix = semantic_batch_relocated_prefix();
     assert!(!prefix.is_empty());
     let rest = raw.strip_prefix(prefix).expect("all seventeen relocated subjects must enter the actual raw inventory");
     assert!(!rest.starts_with(prefix), "duplicate semantic batch relocated inventory prefix");
+}
+// The complete prefix is a declaration of the relocated slice, not a complete
+// inventory on its own. The full source owner authenticates the remaining raw
+// sources and role table after this placement check; do not project that tail.
+fn assert_semantic_batch_relocated_prefix(raw: &str) {
+    assert_semantic_batch_relocated_prefix_before162(raw);
+    let rest = raw.strip_prefix(semantic_batch_relocated_prefix()).unwrap();
+    assert!(!rest.is_empty(), "relocated prefix must be followed by the remaining raw inventory");
 }
 #[test]
 fn semantic_batch_relocated_subjects_require_all_seventeen_and_keep_prior_three_five_guards() {
@@ -125,5 +133,76 @@ fn semantic_batch_relocated_subjects_require_all_seventeen_and_keep_prior_three_
         assert!(std::panic::catch_unwind(|| assert_semantic_batch_relocated_prefix(&missing)).is_err());
         let moved = format!("{missing}{subject}");
         assert!(std::panic::catch_unwind(|| assert_semantic_batch_relocated_prefix(&moved)).is_err());
+    }
+}
+
+// Separate accepted generation; complete three/five/seventeen controls above
+// remain independently compiled, including the nonempty raw-tail regression.
+fn accepted_batch_relocated_prefix() -> &'static str {
+    concat!(
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs"),
+        include_str!("../../src/loop_calls/byte_writer/tests/string_slots.rs"),
+        include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/before_hir_compare.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/sequence_vector.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs"),
+        include_str!("../../src/bounded_output/stage_debits/route_debits.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
+        include_str!("../../src/source_reflows/main_c883_receivers.rs"),
+        include_str!("../../src/source_reflows_merge/main_c883_inputs.rs"),
+        include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs"),
+    )
+}
+fn assert_accepted_batch_relocated_prefix(raw: &str) {
+    let prefix = accepted_batch_relocated_prefix();
+    assert!(!prefix.is_empty());
+    let rest = raw.strip_prefix(prefix).expect("all twenty-eight accepted subjects enter the raw owner in order");
+    assert!(!rest.is_empty(), "accepted relocated prefix requires the remaining raw inventory");
+    assert!(!rest.starts_with(prefix), "duplicate accepted relocated inventory prefix");
+}
+#[test]
+fn accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail() {
+    let prefix = accepted_batch_relocated_prefix();
+    assert_accepted_batch_relocated_prefix(&format!("{prefix}remaining raw inventory"));
+    assert_semantic_batch_relocated_prefix(&format!("{}remaining raw inventory", semantic_batch_relocated_prefix()));
+    for bad in [String::new(), prefix.to_owned(), format!("sentinel{prefix}"), format!("{prefix}{prefix}"),
+        format!("{}remaining raw inventory", semantic_batch_relocated_prefix())] {
+        assert!(std::panic::catch_unwind(|| assert_accepted_batch_relocated_prefix(&bad)).is_err());
+    }
+    for subject in [
+        include_str!("../../src/bounded_output/stage_debits/route_debits.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
+        include_str!("../../src/source_reflows/main_c883_receivers.rs"),
+        include_str!("../../src/source_reflows_merge/main_c883_inputs.rs"),
+        include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs"),
+    ] {
+        assert!(!subject.is_empty());
+        let missing = prefix.replacen(subject, "", 1);
+        for bad in [missing.clone(), format!("{missing}{subject}")] {
+            assert!(std::panic::catch_unwind(|| assert_accepted_batch_relocated_prefix(&bad)).is_err());
+        }
     }
 }
