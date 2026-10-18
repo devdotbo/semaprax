@@ -564,6 +564,9 @@ See `help language author:static-utf8` and the
 
 ## Strings and bytes
 
+`str_byte_at(text,index)` returns `Option<u8>`; match `Some`, then `i64_from_u8`.
+`std.bytes.get_or`: `useful-data.v1` (`help library std.bytes.get_or`).
+
 Use `string_format` for literal templates: `"id={}"`. See
 `help language author:literal-format` for fields, scope and pending gates.
 
@@ -1419,8 +1422,6 @@ fn order_status(paid: bool) -> string
 
 ## Projects
 
-`str_byte_at(text,index)` returns `Option<u8>`; match `Some`, then `i64_from_u8`.
-`std.bytes.get_or`: `useful-data.v1` (`help library std.bytes.get_or`).
 `semaprax.toml` beside `src/`; canonical tables or frozen one-line-per-key v1.
 
 ```toml
@@ -1442,85 +1443,82 @@ web = ["calculator.add"]
 std.num = "^0.1.0"
 ```
 
-Tables: ordered sections; blank lines; one-line arrays; no comments. SPX-J100:
-first differing canonical line; frozen v1: six ordered lines.
-Unknown/reserved keys: SPX-J120. `[package] profile`: boundary carriers.
-Bundled std.*: 0.1.0; unknown packages/ranges: SPX-J121; resolution separate. `[targets] matrix = ["wasm32"]` rejects native with SPX-J122.
+Tables: ordered sections, blank lines, one-line arrays, no comments.
+SPX-J100: first canonical mismatch. Frozen v1: six ordered lines.
+Unknown/reserved: SPX-J120. `[package] profile`: boundary carriers.
+Bundled std.*: 0.1.0; unknown packages/ranges: SPX-J121; separate resolution.
+`[targets] matrix = ["wasm32"]`: native refuses, SPX-J122.
 [Tables](PACKAGE-MANIFEST-V1.md); [frozen v1](PROJECT-MANIFEST-V1.md).
 
 After `module`: `use function @id("calculator.add") from calculator.core as add;`.
-`entry`: main module. V1: Copy scalars; profiles add carriers. SPX-G174: unsupported aggregates stay local or need an admitting profile.
+`entry`: main module. V1: Copy scalars; profiles add carriers. SPX-G174:
+unsupported aggregates stay local or require an admitting profile.
 H006, 4096 loan points: extract admitted helpers; other causes differ.
 
 Test `main`: 0 succeeds; each `@id` fn test_<name>() -> i64 runs separately.
-Failures: ID/outcome, contract clause/arguments. Projects interpret;
-v26/v28 tests need authenticated native roots:
-`semaprax test <project> --target native`.
+Failures: ID/outcome, contract clause/arguments. Projects interpret; v26/v28
+need authenticated native roots: `semaprax test <project> --target native`.
 [Bounds](PROJECT-NATIVE-TEST-V1.md); [cases](PROJECT-TEST-CASES-V1.md).
 
-Start with `help library` for the module index, then
-`help library <module|name|stable-id>` for exact lookup (no fuzzy/prefix match).
-Search this guide with `help language find:<word>:0`; request later pages as
-needed. Use `help library all` only for an explicit full offline
-[catalog](STANDARD-LIBRARY-CATALOG.md) export. Import IDs/dependencies.
+Index: `help library`; exact lookup: `help library <module|name|stable-id>`
+(no fuzzy/prefix match). Search: `help language find:<word>:0`, then later pages.
+`help library all`: explicit full offline [catalog](STANDARD-LIBRARY-CATALOG.md)
+export only. Import IDs/dependencies.
 Vec: `owned-data-api.v1`, `std.collections = "^0.1.0"`, exact
 std.collections.vec.* IDs, explicit Copy-scalar type args. Mutators transfer/return
 owners; no public/generic ABI.
 
 `new <dir> --template source-command-file-text`: v26 source-command.v1/native64,
-argv-utf8+file-text.v1; Web/Wasm/npm refuse. Interpreter run/test: SPX-F102;
-use native `semaprax test .`. `doctor --profile`: reporting only. V28
-source-command.resource-output.v1 retains v26 ABI; bounded 1 MiB Strings,
-borrowed text/staged output: [limits](PROJECT-MANIFEST-V28.md).
+argv-utf8+file-text.v1. Web/Wasm/npm refuse; interpreter run/test: SPX-F102.
+Use native `semaprax test .`. `doctor --profile`: reports only. V28
+source-command.resource-output.v1 keeps v26 ABI; 1 MiB Strings, borrowed
+text/staged output: [limits](PROJECT-MANIFEST-V28.md).
 
 `new <dir> --template stdin-stream-data`/`project-scaffold`: v27,
 `language-command-io.stream-data.v1`; main/command fn() -> i64.
-V27 admits immutable `borrow Vec<T>` for
-all eight Copy scalars
-(`i64`, `i32`, `u8`, `usize`, `char`, `f32`, `f64`, `bool`);
-pure `main`/test closures may interpret without
-authority, stdin provider, or command adapter. Web/Wasm/npm refuse v27.
-`stdin-stream-text` stays v25
-for private owned-String helpers.
-v24/v25 retain closed helper boundaries.
+V27: immutable `borrow Vec<T>` for eight Copy scalars
+(`i64`, `i32`, `u8`, `usize`, `char`, `f32`, `f64`, `bool`).
+Pure `main`/test closures interpret without authority, stdin provider or command
+adapter. Web/Wasm/npm refuse v27. `stdin-stream-text`: v25 private owned-String
+helpers; v24/v25 helper boundaries stay closed.
 [V27](STREAM-DATA-COMMAND-V1.md).
 
 V29: private Copy records/Vec<R>; v30 language-command-io.owned-data.v1:
 private Vec<string>/flat owned-leaf records. Vec schema grants no carrier.
 `text: string` consumes; `text: own string`: SPX-O002. Push consumes;
-for own uses vec_into_iter. Bytes allocation/copy or Bytes-bearing record clone
-in while: SPX-T267. See `help language author:owned-data`,
+for own: vec_into_iter. Bytes allocation/copy or Bytes-record clone in while:
+SPX-T267. `help language author:owned-data`,
 [v29](STREAM-DATA-COMMAND-V2.md), [v30](STREAM-OWNED-DATA-COMMAND-V1.md).
 [Owned-leaf gate](../examples/owned-leaf-command-project/README.md): pending.
-Outer Row Vec renews `out=vec_push<Row>(out,item)` in for own. Independently
-rederived immutable-empty literal-index clone refusal skips unreachable copy
-charges; no loop allocation/refund.
+For own renews outer Row Vec: `out=vec_push<Row>(out,item)`. Rederived
+immutable-empty literal-index clone refusal skips unreachable copy charges;
+no loop allocation/refund.
 [Renewal](CONSUMING-OWNED-RECORD-VEC-RENEWAL-V1.md).
 
-V31 adds private records/admitted Vecs and scoped field reads. See
-`help language detail:field-views` for complete field-view boundaries;
-`help language author:record-field-views`. Qualification remains pending.
+V31: private records/admitted Vecs, scoped field reads; qualification pending.
+Full boundaries: `help language detail:field-views`;
+`help language author:record-field-views`.
 
 `vec_sort_by<Row>(rows,"priority:desc,arrival:asc")`: 1..8 unique literal keys,
 one admitted explicit flat monomorphic record (SPX-T311). Consumes Vec; stable
-ties/payload owners; end loans first. Descending reverses operands (signed MIN safe).
-vec_sort_owned retains declaration order. [Sort](EXPLICIT-RECORD-SORT-KEYS-V1.md).
+ties/payload owners. End loans first. Descending swaps operands (signed MIN safe).
+vec_sort_owned keeps declaration order. [Sort](EXPLICIT-RECORD-SORT-KEYS-V1.md).
 
-`vec_update_field<Row>(rows,index,value,"count")` consumes/renews the Vec and
-writes one exact Copy scalar. Literal field name is last; invariant-free flat
-owned-leaf records only (SPX-T320), usize index, exact RHS type. End all field
-loans first. No leaf clones or capacity change. Qualification pending:
+`vec_update_field<Row>(rows,index,value,"count")`: consume/renew Vec, write one
+exact Copy scalar. Last argument: literal field name. Invariant-free flat
+owned-leaf records only (SPX-T320); usize index, exact RHS type. End field loans
+first. No leaf clones/capacity change. Qualification pending:
 [contract](OWNED-RECORD-SCALAR-FIELD-UPDATE-V1.md), `help language author:update-field`.
 
 `vec_unique_by<Row>(rows,"id")` -> bool: duplicate check on one literal String or
-i64/i32/u8/usize/bool/char field of a named own/borrow record Vec (SPX-T319).
-Borrows rows for the call; no key copies, order or generation change. Floats,
-Bytes, paths and temporaries refuse. [Uniqueness](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md).
+i64/i32/u8/usize/bool/char field; named own/borrow record Vec (SPX-T319).
+Call borrows rows; no key copy/order/generation change. Floats, Bytes, paths
+and temporaries refuse. [Uniqueness](BORROWED-RECORD-FIELD-UNIQUENESS-V1.md).
 
 `lock semaprax.toml --write`: identity/source/interface/targets/capabilities;
 --verify checks; --compare <base.lock>: breaking interfaces (CI nonzero).
 Ranges: ^/~/=. `resolve semaprax.toml --target native64 --cache <dir> --write`
-pins targets; --verify checks. Build does not link dependencies.
+pins targets; --verify checks. Build links no dependencies.
 [Lock](PROJECT-LOCK-V1.md); [resolution](PROJECT-DEPENDENCY-RESOLUTION-V1.md).
 
 ## JSON documents and cursors
