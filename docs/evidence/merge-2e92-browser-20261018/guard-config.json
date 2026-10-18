@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 58661,
-      "sha256": "8f5030ef0a6e6b909fd632a266f7557d883bb2e0834dffff4ab208e52b1d5f9d"
+      "length": 58759,
+      "sha256": "b096ff014a9eae100de071058cef5ff46936230cf3c4232dcd56901b9359e1e7"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -829,8 +829,8 @@
       "sha256": "90cf27667fe64714fdc3d5196406d0eec2ad59cbd12d1a07b16a23810eda066a"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs": {
-      "length": 18230,
-      "sha256": "1eff692e97a3ed279d0161882829963cf7dde9251539ce8e220007f9556a7dd5"
+      "length": 18356,
+      "sha256": "1c2321043b1d07870e34e2cacf6fa4791de51214b6df9d0e840690e3fd63e6f7"
     }
   },
   "carriers": {
