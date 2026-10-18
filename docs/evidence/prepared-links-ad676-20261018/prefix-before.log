@@ -1,0 +1,85 @@
+
+running 1 test
+test before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail ... FAILED
+
+failures:
+
+---- before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail stdout ----
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:105:5:
+accepted relocated prefix requires the remaining raw inventory
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:109:5:
+duplicate accepted relocated inventory prefix
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:104:10:
+all twenty-eight accepted subjects enter the raw owner in order
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:105:5:
+accepted relocated prefix requires the remaining raw inventory
+
+thread 'before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail' (40478346) panicked at /Volumes/Semaprax/tmp/ci-38383508340/pop-links-ad676/prefix-probe.rs:199:13:
+assertion failed: std::panic::catch_unwind(||
+            assert_accepted_batch_relocated_prefix(&bad)).is_err()
+
+
+failures:
+    before::accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_tail
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 1 filtered out; finished in 0.06s
+

@@ -28,7 +28,27 @@ fn tail_delta(row: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize
     let removed = (before - paired_value::TAIL) * row.value_tails
         + (before + 2 * size_of::<Option<&SkeletonObservation>>() - lexical_cursor::TAIL)
             * row.tails;
-    (views, removed)
+    let old_step = 2 * size_of::<&Vec<usize>>() + size_of::<usize>();
+    let new_step = 2 * size_of::<usize>();
+    let old_load = 2 * size_of::<&Vec<usize>>()
+        + 2 * size_of::<&[usize]>()
+        + 2 * size_of::<&[usize]>()
+        + size_of::<usize>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<&[usize]>()
+        + 2 * size_of::<usize>()
+        + size_of::<&usize>()
+        + size_of::<usize>();
+    let new_load = 2 * size_of::<&mut Vec<usize>>()
+        + size_of::<Option<usize>>()
+        + size_of::<usize>()
+        + size_of::<bool>();
+    let setup = 4 * size_of::<usize>(); // two actual fields and their initial values
+    let limit = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();
+    (
+        views + setup + limit * (2 * row.pairs + expected.len()),
+        removed + (old_step - new_step) * row.steps + (old_load - new_load) * row.loads,
+    )
 }
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{Metrics, measure};
@@ -709,14 +729,24 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         cursor,
         "whole old macro source and every tariff exact"
     );
+    let current_cursor = include_str!("lexical_cursor.rs");
+    assert_eq!(
+        whole_before_format(
+            "lexical_cursor.rs",
+            "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+            current_cursor,
+        ),
+        include_str!("lexical_cursor_before_tail.rs"),
+        "frozen cursor is the complete authenticated pre-tail generation"
+    );
     assert_eq!(
         whole_before_format(
             "lexical_cursor.rs",
             "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
-            include_str!("lexical_cursor_before_tail.rs")
+            current_cursor,
         ),
         cursor,
-        "production cursor macro/API/prices unchanged"
+        "retained cursor macro/API/prices unchanged"
     );
     let tests = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -1126,7 +1156,11 @@ fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_paddi
     );
     assert_eq!(
         paid,
-        old_paid + PAIR_PRIMITIVE + paired_value::ADDITIONAL_PRIMITIVES + flat_delta(&expected).0,
+        old_paid
+            + PAIR_PRIMITIVE
+            + paired_value::ADDITIONAL_PRIMITIVES
+            + flat_delta(&expected).0
+            + tail_delta(&row, &expected).0,
         "new primitive frames are honestly funded even on this unused path"
     );
     eprintln!(
@@ -1138,8 +1172,9 @@ fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_paddi
 fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_exact_invoice() {
     assert_eq!(
         size_of::<ComparisonOwner<'static>>(),
-        size_of::<super::super::super::before_paired::ComparisonOwner<'static>>(),
-        "actual unchanged owner layout, no uncounted added state"
+        size_of::<super::super::super::before_paired::ComparisonOwner<'static>>()
+            + 2 * size_of::<usize>(),
+        "exact two retained segment fields; their initial values are separately invoiced"
     );
     assert_eq!(paired_value::ADDITIONAL_PRIMITIVES, 5 * PAYMENT_HEADER);
     assert_eq!(
@@ -1374,10 +1409,30 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                     })
                 })
             };
+            // Every comparison gets a fresh explicit diagnostic capture. These
+            // calls occur outside both observed allocator/payer windows.
+            let ended_row = |old| {
+                let (rows, lost) = pair_scope_census::finish();
+                assert_eq!(lost, 0);
+                assert_eq!(rows.len(), 1);
+                let row = rows[0];
+                assert_eq!(row.old, old);
+                assert!(row.ended && !row.unwound && !row.truncated && !row.overflow);
+                assert_eq!(row.complete, mutation == 0);
+                row
+            };
+            pair_scope_census::reset();
             let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
+            let old_row = ended_row(true);
             frontiers::finish();
+            pair_scope_census::reset();
             let ((current, heap), refused, paid, receipt) = observe(false);
-            let row = complete_row(false);
+            let row = if mutation == 0 {
+                complete_row(false)
+            } else {
+                ended_row(false)
+            };
+            assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
             frontiers::finish();
             assert_eq!(
                 current, old,

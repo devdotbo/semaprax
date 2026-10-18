@@ -250,15 +250,9 @@ fn complete_old_prefix_dispatch_and_ordinary_caller_remain_source_bound() {
         .next()
         .unwrap();
     let strip_test_modules = |text: &str| {
-        text.replace("#[cfg(test)]\nmod tests;\n", "")
-            .replace(
-                "#[cfg(test)]\n#[path = \"prefix/source_main8a.rs\"]\nmod source_main8a;\n",
-                "",
-            )
-            .replace(
-                "#[cfg(test)]\n#[path = \"prefix/source_maina3.rs\"]\nmod source_maina3;\n",
-                "",
-            )
+        let registration = "#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\n#[path = \"prefix/source_main8a.rs\"]\nmod source_main8a;\n\n#[cfg(test)]\n#[path = \"prefix/source_maina3.rs\"]\nmod source_maina3;\n";
+        assert_eq!(text.matches(registration).count(), 1);
+        text.replacen(registration, "", 1)
     };
     let old = include_str!("../../../arena/prefix/retained_before.rs");
     let old = old
@@ -274,6 +268,11 @@ fn complete_old_prefix_dispatch_and_ordinary_caller_remain_source_bound() {
         .trim()
     );
     let replay = include_str!("../../../../../replay.rs");
+    let replay = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay.rs",
+        "6cdfce6c20964d62f360cd147d0c6ca8b4d9cb86f671d6d5b5773d8c6e446ae7",
+        replay,
+    );
     let start = replay
         .find("fn validate_structure_with_budget_storage<")
         .unwrap();

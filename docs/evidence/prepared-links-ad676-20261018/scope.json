@@ -1,0 +1,10 @@
+{
+  "actual_complete_shipping_before_body": true,
+  "complete_scratch_candidate_body": true,
+  "actual_Cursor_prepare_and_next": true,
+  "all_shipping_source_unchanged": true,
+  "opaque_observation_function_values": true,
+  "recording_payer_not_actual_builder": true,
+  "shared_HIR_only_typechecked": true,
+  "not_application_or_physical_qualification": true
+}

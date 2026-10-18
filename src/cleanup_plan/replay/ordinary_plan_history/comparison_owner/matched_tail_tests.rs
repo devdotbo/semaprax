@@ -927,7 +927,11 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
 fn composed_retained_tails_preserve_complete_before_sources_and_all_generation_macros() {
     use sha2::Digest;
     {
-        let current = include_str!("../comparison_owner.rs");
+        let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+            "197a4add6f4ab9654be4eeac51ee8f47379ad9485b72a9fd2b596f9868a96796",
+            include_str!("../comparison_owner.rs"),
+        );
         assert_eq!(current.len(), 28084);
         let mut restored = current.to_owned();
         for &(at, after, before) in &[(27386usize,r#"                    _ => {
@@ -1012,7 +1016,11 @@ mod before_fused_flat;
         assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))), "ff45e4ec289829d44d0d55022961ab41bb8bfb18c14a68872ce0bfcf675f91d9");
     }
     {
-        let current = include_str!("paired_value.rs");
+        let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+            "00d201f24d0a4a598093075e2b5a8dce94302c6ab21265a7b37392d5995ff159",
+            include_str!("paired_value.rs"),
+        );
         assert_eq!(current.len(), 6486);
         let mut restored = current.to_owned();
         for &(at, after, before) in &[(5730usize,r#"            match $tail {
@@ -1079,7 +1087,7 @@ pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
     assert_eq!(include_str!("lexical_cursor_before_tail.rs"), include_str!("before_pair_scope/lexical_cursor.rs"));
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(sha2::Sha256::digest(include_bytes!("paired_value_before_tail.rs")))), "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b");
     let incoming = include_str!("before_retained_tail.rs")
-        .replace("#[path = \"lexical_cursor.rs\"]\n", "")
+        .replace("#[path = \"lexical_cursor_before_prepared_links.rs\"]\n", "")
         .replace("#[cfg(test)]\nuse super::pair_scope_census;", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;") + "#[cfg(test)]\nmod tests;\n";
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(sha2::Sha256::digest(incoming.as_bytes()))), "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d");
 }

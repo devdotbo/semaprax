@@ -1,0 +1,11 @@
+
+running 6 tests
+test independent_prepared_link_source_prices ... ok
+test ordinary_plan_history::comparison_owner::pair_scope_census::controls::finish_while_guard_is_live_cannot_publish_complete_or_resume_same_row ... ok
+test ordinary_plan_history::comparison_owner::pair_scope_census::controls::generation_overflow_disables_collection_and_never_wraps_to_old_identity ... ok
+test ordinary_plan_history::comparison_owner::pair_scope_census::controls::nested_reset_rejects_foreign_and_restored_generation_without_touching_new_row ... ok
+test ordinary_plan_history::comparison_owner::pair_scope_census::controls::prepared_link_counter_overflow_is_incomplete_and_does_not_spend_work ... ok
+test ordinary_plan_history::comparison_owner::pair_scope_census::controls::serial_overflow_is_explicit_loss_and_does_not_alias_a_live_invocation ... ok
+
+test result: ok. 6 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

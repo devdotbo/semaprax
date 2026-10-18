@@ -223,7 +223,10 @@ fn projection344_stage(supplied: &str) -> String {
                 || matches!((source, length, sha),
                     ("src/workspace_graph/expected_projection/borrowed_imports/typed.rs", 19540, "2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36")
                     | ("src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs", 15496, "434640ce68332a1d96840ae10b8e4a500799a567f6d75cc903a6e272196a24b2")
-                    | ("src/ast/program_source/decl_slices.rs", 6910, "7b86d102694e1358c2a5ce00738a882df320d3e4860ba062c855cea56c198397"))
+                    | ("src/ast/program_source/decl_slices.rs", 6910, "7b86d102694e1358c2a5ce00738a882df320d3e4860ba062c855cea56c198397")
+                    | ("src/workspace_graph/expected_projection.rs", 59451, "974468e7035d1a7baa48b13078ce7ec7b0711c2c7610d64db7feea561b192f0c")
+                    | ("src/workspace_graph/expected_projection/held_projection.rs", 21629, "1530f578236abe624f92941698def06f8de44d9deba0003936fb60206afe74bd")
+                    | ("src/workspace_graph/expected_projection/prelude_forecast_tests.rs", 10768, "ffb60b4728460a4972be5820c709d687977287aeb82ea229a8a1736114b2813d"))
             {
                 // The same exact current-image owner authenticates before
                 // selecting this immutable, named historical part.

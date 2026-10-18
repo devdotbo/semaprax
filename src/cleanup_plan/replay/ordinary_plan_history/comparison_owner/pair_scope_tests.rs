@@ -1,5 +1,5 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
-use super::super::before_flat_view::compare;
+use super::super::before_flat_view::{ComparisonOwner, compare};
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{Metrics, measure};
@@ -679,14 +679,24 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         cursor,
         "whole old macro source and every tariff exact"
     );
+    let current_cursor = include_str!("lexical_cursor.rs");
+    assert_eq!(
+        whole_before_format(
+            "lexical_cursor.rs",
+            "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+            current_cursor,
+        ),
+        include_str!("lexical_cursor_before_tail.rs"),
+        "frozen cursor is the complete authenticated pre-tail generation"
+    );
     assert_eq!(
         whole_before_format(
             "lexical_cursor.rs",
             "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
-            include_str!("lexical_cursor_before_tail.rs")
+            current_cursor,
         ),
         cursor,
-        "production cursor macro/API/prices unchanged"
+        "retained cursor macro/API/prices unchanged"
     );
     let tests = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -960,7 +970,7 @@ fn fused_pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_e
             old_paid
                 + PAIR_SCOPE * row.pairs
                 + PAIR_PRIMITIVE
-                + paired_value::ADDITIONAL_PRIMITIVES
+                + super::super::before_flat_view::PAIRED_PRIMITIVES
                 + NEW_PAIR_REFERENCES * row.rounds
         );
         eprintln!(
@@ -1046,7 +1056,7 @@ fn fused_pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_
         old_paid
             + PAIR_SCOPE * row.pairs
             + PAIR_PRIMITIVE
-            + paired_value::ADDITIONAL_PRIMITIVES
+            + super::super::before_flat_view::PAIRED_PRIMITIVES
             + NEW_PAIR_REFERENCES * row.rounds
     );
     assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
@@ -1086,7 +1096,7 @@ fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_paddi
     );
     assert_eq!(
         paid,
-        old_paid + PAIR_PRIMITIVE + paired_value::ADDITIONAL_PRIMITIVES,
+        old_paid + PAIR_PRIMITIVE + super::super::before_flat_view::PAIRED_PRIMITIVES,
         "new primitive frames are honestly funded even on this unused path"
     );
     eprintln!(
@@ -1101,17 +1111,26 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
         size_of::<super::super::super::before_paired::ComparisonOwner<'static>>(),
         "actual unchanged owner layout, no uncounted added state"
     );
-    assert_eq!(paired_value::ADDITIONAL_PRIMITIVES, 5 * PAYMENT_HEADER);
     assert_eq!(
-        lexical_cursor::STEP,
-        paired_value::STEP + 2 * size_of::<Option<&SkeletonObservation>>()
+        super::super::before_flat_view::PAIRED_PRIMITIVES,
+        5 * PAYMENT_HEADER
     );
     assert_eq!(
-        lexical_cursor::TAIL,
-        paired_value::TAIL + 2 * size_of::<Option<&SkeletonObservation>>()
+        super::super::before_flat_view::LEXICAL_STEP,
+        super::super::before_flat_view::PAIRED_STEP + 2 * size_of::<Option<&SkeletonObservation>>()
     );
-    assert_eq!(lexical_cursor::LOAD, paired_value::LOAD);
-    assert_eq!(lexical_cursor::EMPTY, paired_value::EMPTY);
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_TAIL,
+        super::super::before_flat_view::PAIRED_TAIL + 2 * size_of::<Option<&SkeletonObservation>>()
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_LOAD,
+        super::super::before_flat_view::PAIRED_LOAD
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_EMPTY,
+        super::super::before_flat_view::PAIRED_EMPTY
+    );
     let program = super::super::super::tests::program();
     let function = &program.functions[0];
     for (left_len, right_len, tail) in [
@@ -1191,7 +1210,9 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
         assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
         assert_eq!(
             paid + fused_removed(&row),
-            old_paid + paired_value::ADDITIONAL_PRIMITIVES + NEW_PAIR_REFERENCES * row.rounds
+            old_paid
+                + super::super::before_flat_view::PAIRED_PRIMITIVES
+                + NEW_PAIR_REFERENCES * row.rounds
         );
         if left_len <= 1 && right_len <= 1 {
             assert!(
@@ -1239,7 +1260,19 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
             false,
         ),
     ] {
-        let mut restored = witness.replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "");
+        let witness = if paired {
+            witness.strip_suffix("// Exact compiled-generation tariff exports for its own matched controls.\npub(super) const LEXICAL_STEP: usize = lexical_cursor::STEP;\npub(super) const LEXICAL_TAIL: usize = lexical_cursor::TAIL;\npub(super) const LEXICAL_LOAD: usize = lexical_cursor::LOAD;\npub(super) const LEXICAL_EMPTY: usize = lexical_cursor::EMPTY;\npub(super) const PAIRED_STEP: usize = paired_value::STEP;\npub(super) const PAIRED_TAIL: usize = paired_value::TAIL;\npub(super) const PAIRED_LOAD: usize = paired_value::LOAD;\npub(super) const PAIRED_EMPTY: usize = paired_value::EMPTY;\npub(super) const PAIRED_PRIMITIVES: usize = paired_value::ADDITIONAL_PRIMITIVES;\n").unwrap()
+        } else {
+            witness
+        };
+        let mut restored = witness
+            .replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "")
+            .replace("pub(super) mod lexical_cursor;", "mod lexical_cursor;")
+            .replace("pub(super) mod paired_value;", "mod paired_value;")
+            .replace(
+                "pub(super) struct ComparisonOwner",
+                "struct ComparisonOwner",
+            );
         if paired {
             restored = restored.replace("#[path = \"paired_value_before_tail.rs\"]\n", "");
         }

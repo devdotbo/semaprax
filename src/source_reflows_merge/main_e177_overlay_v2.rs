@@ -57,6 +57,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "src/workspace_graph/test_replay_context.rs",
     "tests/project/standard_library/application_json.rs",
+    "tests/support/production_source_inventory.rs",
     "tests/wasm/scalar_browser_ci_contract.rs",
     "tests/wasm/scalar_browser_ci_contract/historical_builder.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",

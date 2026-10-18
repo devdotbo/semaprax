@@ -12,7 +12,7 @@ pub(super) const INITIALIZERS: usize = 2 * size_of::<&Vec<Segment>>() + 2 * size
 pub(super) const RESET: usize = size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>();
 // A fresh lexical slice pattern; no get Option, index, callee/formal, compound
 // Result or items-view construction is hidden in a paid-once bank.
-pub(super) const STEP: usize = 2 * size_of::<&Vec<usize>>() + size_of::<usize>() + size_of::<bool>() // unchanged len/condition
+pub(super) const STEP: usize = 2 * size_of::<usize>() + size_of::<bool>() // retained segment extent and condition
     + 2 * size_of::<bool>() // loaded condition and negation
     + size_of::<&Rc<SkeletonObservation>>() // head pattern
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // rest pattern and assignment copy
@@ -20,14 +20,18 @@ pub(super) const STEP: usize = 2 * size_of::<&Vec<usize>>() + size_of::<usize>()
     + 2 * size_of::<Option<&SkeletonObservation>>() // Some initializer and caller-received output
     + size_of::<usize>(); // original item increment
                           // Only entering a new immutable segment forms these views/index receivers.
-pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local
-    + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return
-    + 2 * size_of::<usize>() // subtraction intermediates
-    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // slice index actual/formal
-    + size_of::<&usize>() + size_of::<usize>() // returned reference and copied link
-    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() + size_of::<&Segment>()
-    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal
-    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy
+pub(super) const LIMIT: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();
+// Prepared backward links are consumed from the back. Their original extent
+// remains in the comparison owner; the cursor segment/item counters stay exact.
+pub(super) const LOAD: usize = 2 * size_of::<&mut Vec<usize>>()
+    + size_of::<Option<usize>>()
+    + size_of::<usize>()
+    + size_of::<bool>()
+    + 2 * size_of::<&[Segment]>()
+    + 2 * size_of::<usize>()
+    + size_of::<&Segment>()
+    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<bool>(); // loaded=true
                          // The original exhausted-segment update remains above. Each tail scope forms
                          // one immutable Vec slice; each yielded head/rest, assignment, as_ref output,
@@ -62,7 +66,7 @@ const _: () = assert!(
 );
 
 macro_rules! lexical_plan_next {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,
+    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
      $tail:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
@@ -73,7 +77,9 @@ macro_rules! lexical_plan_next {
                     lexical_cursor::STEP + lexical_cursor::EMPTY,
                     $phase
                 )?;
-                if $owner.$cursor.segment >= $owner.$cursor.links.len() {
+                #[cfg(test)]
+                $census.step();
+                if $owner.$cursor.segment >= $owner.$limit {
                     break;
                 }
                 $budget.charge(
@@ -83,8 +89,11 @@ macro_rules! lexical_plan_next {
                 )?;
                 if !$owner.$loaded {
                     paid!($budget, $function, lexical_cursor::LOAD, $phase)?;
-                    let links = $owner.$cursor.links.as_slice();
-                    let link = links[links.len() - $owner.$cursor.segment - 1];
+                    #[cfg(test)]
+                    $census.load();
+                    let Some(link) = $owner.$cursor.links.pop() else {
+                        unreachable!("prepared ordinary plan links");
+                    };
                     $owner.$items = $owner.arena[link].items.as_slice();
                     $owner.$loaded = true;
                 }

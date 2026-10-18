@@ -1163,3 +1163,7 @@ mod combined_pair_scope_tests;
 
 #[path = "matched_tail_tests.rs"]
 mod matched_tail_tests;
+
+#[path = "prepared_pairing_tests.rs"]
+#[rustfmt::skip]
+mod prepared_pairing_tests;

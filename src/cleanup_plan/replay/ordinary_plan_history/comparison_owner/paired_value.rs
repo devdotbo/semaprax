@@ -3,21 +3,22 @@ use super::*;
 // One additional right expansion; all five real primitive frontiers are paid
 // even for zero pairs. No frozen old invoice is credited or changed.
 pub(super) const ADDITIONAL_PRIMITIVES: usize = 5 * PAYMENT_HEADER;
-pub(super) const STEP: usize = 2 * size_of::<&Vec<usize>>() + size_of::<usize>() + size_of::<bool>() // unchanged len/condition
+pub(super) const STEP: usize = 2 * size_of::<usize>() + size_of::<bool>() // retained segment extent and condition
     + 2 * size_of::<bool>() // loaded condition and negation
     + size_of::<&Rc<SkeletonObservation>>() // head pattern
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // rest pattern and assignment copy
     + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref actual/formal/return
     + size_of::<usize>(); // original item increment
 // Only entering a new immutable segment forms these views/index receivers.
-pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local
-    + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return
-    + 2 * size_of::<usize>() // subtraction intermediates
-    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // slice index actual/formal
-    + size_of::<&usize>() + size_of::<usize>() // returned reference and copied link
-    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() + size_of::<&Segment>()
-    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal
-    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy
+pub(super) const LOAD: usize = 2 * size_of::<&mut Vec<usize>>()
+    + size_of::<Option<usize>>()
+    + size_of::<usize>()
+    + size_of::<bool>()
+    + 2 * size_of::<&[Segment]>()
+    + 2 * size_of::<usize>()
+    + size_of::<&Segment>()
+    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<bool>(); // loaded=true
 // The original exhausted-segment update and fresh tail remain honestly paid.
 pub(super) const EMPTY: usize = 2 * size_of::<usize>() + size_of::<bool>(); // segment increment, item=0, loaded=false
@@ -30,7 +31,7 @@ pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
     + size_of::<usize>();
 
 macro_rules! lexical_plan_value {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,
+    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
      $tail:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
@@ -43,12 +44,14 @@ macro_rules! lexical_plan_value {
                 )?;
                 #[cfg(test)]
                 $census.value_step();
+                #[cfg(test)]
+                $census.step();
                 #[cfg(feature = "unstable-workflow-profiling")]
                 $crate::workflow_profile::plan_comparison::event(
                     $crate::workflow_profile::plan_comparison::Site::StepAdmitted,
                     paired_value::STEP + paired_value::EMPTY,
                 );
-                if $owner.$cursor.segment >= $owner.$cursor.links.len() {
+                if $owner.$cursor.segment >= $owner.$limit {
                     break;
                 }
                 $budget.charge(
@@ -63,8 +66,11 @@ macro_rules! lexical_plan_value {
                         $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
                         paired_value::LOAD,
                     );
-                    let links = $owner.$cursor.links.as_slice();
-                    let link = links[links.len() - $owner.$cursor.segment - 1];
+                    #[cfg(test)]
+                    $census.load();
+                    let Some(link) = $owner.$cursor.links.pop() else {
+                        unreachable!("prepared ordinary plan links");
+                    };
                     $owner.$items = $owner.arena[link].items.as_slice();
                     $owner.$loaded = true;
                 }

@@ -270,14 +270,28 @@ all unrelated returning Results and all old ordinary fees remain paid.
 
 The immutable arena and function remain borrowed. A callback never receives the
 Session, scratch fields or output/error slots: original helpers receive only a
-temporary reborrow of the original budget. Before a renewal binding callback,
-variant declaration callback, or complete CallCommit parameter/drop-type helper
-sequence, the known original payer reserves the full fresh borrowed-ledger guard
-controls and its reserve macro's initialized byte/phase/acceptance locals and terminal reason/phase references. After
-a successful callback sequence, the captured status owner's ledger must again be
-the exact current, non-refused ledger. This borrowed check holds no TLS guard
-across a callback and clones no Rc. A restored outer invocation is legal; a
-foreign or sticky invocation refuses before another scratch query. Callback
+temporary reborrow of the original budget. A borrowed `StorageParent` keeps a concrete parent Budget loan, so its later
+checks do not rematch or dereference the held Rc. Acquisition occurs once on
+the known payer before the transition loop; it grants no allowance or ACTIVE
+admission. The containing ledger remains alive, and the witness holds no TLS
+RefCell guard. Its field, Option return/receive, pattern, acquisition method and
+Rc dereference controls are included in the cold bank.
+
+Before a renewal binding callback, variant declaration callback, or complete
+CallCommit parameter/drop-type helper sequence, the original payer reserves
+each actual call's TLS, borrowed-current, pointer identity, sticky predicate,
+method/closure and reserve receiving controls. After the successful sequence,
+that witness checks a freshly read ACTIVE and sticky state. Restored outer
+invocations remain legal; foreign or sticky invocations refuse before another
+scratch query.
+
+The complete mismatch and record_refusal producer is prepaid ONCE before the
+loop, including its Cell receivers, receipt, site and literal roles. Every false
+check immediately returns the original full refusal through the already paid
+Failure slot, so no second mismatch can consume this bank. It has no counter,
+mutable credit, refund, callback-visible state or fallible Drop. The original
+ClassifierLedger guard and its full per-call bank remain unchanged for other
+callers. Callback
 errors return their original complete diagnostic before this guard is evaluated.
 
 CallCommit custody covers target/interface/provider resolution AND all later
@@ -292,7 +306,8 @@ actual guarded callback sequences. The complete additional comparison is:
 
 - old tail: `q * (OLD_SCRATCH + 2*sizeof(Result<Option<&Option<CallFact>>, Diagnostic>))`;
 - new tail: `q * (into_edge_local_bytes + into_edge_query_bytes + sizeof(Option<&Option<CallFact>>))`
-  plus `c * (STORAGE_PARENT_CURRENT_CONTROLS + sizeof(usize) + 3*sizeof(&str) + sizeof(bool))`.
+  plus `c * (StorageParent::CURRENT_CONTROLS + sizeof(usize) + 3*sizeof(&str) + sizeof(bool))`
+  plus the one cold `StorageParent::ACQUISITION_CONTROLS + StorageParent::TERMINAL_CONTROLS + sizeof(usize) + 3*sizeof(&str) + sizeof(bool)` bank.
 
 These are actual target-layout costs. The positive gate uses the complete
 immediate invocation, including its unchanged acquisition, prior retained phases,

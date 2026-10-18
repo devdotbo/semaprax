@@ -13,6 +13,9 @@ mod before_lexical_cursor;
 #[cfg(test)]
 mod before_pair_scope;
 #[cfg(test)]
+#[rustfmt::skip]
+mod before_prepared_pairing;
+#[cfg(test)]
 mod before_retained_tail;
 #[cfg(test)]
 pub(super) mod pair_scope_census;
@@ -35,6 +38,8 @@ struct ComparisonOwner<'history> {
     right_loaded: bool,
     left_cursor: Cursor,
     right_cursor: Cursor,
+    left_segments: usize,
+    right_segments: usize,
     step: Step,
     return_to: Step,
     after_pair: Step,
@@ -142,6 +147,7 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
     + FINAL_ITERATORS + size_of::<bool>() + 4 * MISMATCH_CALL
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
+    + 2 * size_of::<usize>() // initial retained segment extents
     + 3 * size_of::<Step>(); // copied state transports at return/schedule sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
@@ -225,6 +231,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
             segment: 0,
             item: 0,
         },
+        left_segments: 0,
+        right_segments: 0,
         step: Step::Build,
         return_to: Step::Build,
         after_pair: Step::Root,
@@ -311,13 +319,13 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET + lexical_cursor::LIMIT,
                     "ordinary plan history left cursor prepare"
                 )?;
                 #[cfg(feature = "unstable-workflow-profiling")]
                 crate::workflow_profile::plan_comparison::event(
                     crate::workflow_profile::plan_comparison::Site::LeftPrepareAdmitted,
-                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET + lexical_cursor::LIMIT,
                 );
                 owner.left_cursor.prepare(
                     &actual.paths[owner.left].history,
@@ -330,18 +338,19 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     crate::workflow_profile::plan_comparison::Site::LeftResetCompleted,
                     0,
                 );
+                owner.left_segments = owner.left_cursor.links.len();
                 owner.left_items = &[];
                 owner.left_loaded = false;
                 paid!(
                     budget,
                     function,
-                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET + lexical_cursor::LIMIT,
                     "ordinary plan history right cursor prepare"
                 )?;
                 #[cfg(feature = "unstable-workflow-profiling")]
                 crate::workflow_profile::plan_comparison::event(
                     crate::workflow_profile::plan_comparison::Site::RightPrepareAdmitted,
-                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET + lexical_cursor::LIMIT,
                 );
                 owner.right_cursor.prepare(
                     &actual.paths[owner.right].history,
@@ -354,6 +363,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     crate::workflow_profile::plan_comparison::Site::RightResetCompleted,
                     0,
                 );
+                owner.right_segments = owner.right_cursor.links.len();
                 owner.right_items = &[];
                 owner.right_loaded = false;
                 #[cfg(test)]
@@ -413,6 +423,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_cursor,
                             left_items,
                             left_loaded,
+                            left_segments,
                             left_tail,
                             function,
                             budget,
@@ -429,6 +440,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     right_cursor,
                                     right_items,
                                     right_loaded,
+                                    right_segments,
                                     right_tail,
                                     function,
                                     budget,
@@ -453,6 +465,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_cursor,
                             right_items,
                             right_loaded,
+                            right_segments,
                             right_tail,
                             function,
                             budget,
@@ -538,13 +551,17 @@ pub(in crate::cleanup_plan::replay) fn compare(
         paid!(
             budget,
             function,
-            PREPARE_CALL + lexical_cursor::RESET + lexical_cursor::TAIL_VIEW,
+            PREPARE_CALL
+                + lexical_cursor::RESET
+                + lexical_cursor::TAIL_VIEW
+                + lexical_cursor::LIMIT,
             "ordinary plan history HIR cursor prepare"
         )?;
         owner
             .left_cursor
             .prepare(&path.history, &actual.arena, function, budget)?;
         let mut plan_tail = path.history.tail.as_slice();
+        owner.left_segments = owner.left_cursor.links.len();
         owner.left_items = &[];
         owner.left_loaded = false;
         budget.reserve_bytes(
@@ -575,6 +592,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
+                        left_segments,
                         plan_tail,
                         census,
                         function,
@@ -623,6 +641,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
+                        left_segments,
                         plan_tail,
                         census,
                         function,

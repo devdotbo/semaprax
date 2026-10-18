@@ -466,15 +466,18 @@ fn transition_scratch_has_complete_immediate_typed_invoice_and_unchanged_work() 
         let new_query = Session::into_edge_local_bytes()
             + Session::into_edge_query_bytes()
             + size_of::<Option<&Option<CallFact<'_>>>>();
-        let guards = ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
+        let guards = StorageParent::CURRENT_CONTROLS
+            + (size_of::<usize>() + 3 * size_of::<&str>() + size_of::<bool>());
+        let cold = StorageParent::ACQUISITION_CONTROLS
+            + StorageParent::TERMINAL_CONTROLS
             + (size_of::<usize>() + 3 * size_of::<&str>() + size_of::<bool>());
         // No second activation, allocation, selector or status/edge credit.
         let old_tail = lookups * old_query;
-        let new_tail = lookups * new_query + callbacks * guards;
+        let new_tail = lookups * new_query + callbacks * guards + cold;
         assert_eq!(old.2 + new_tail, current.2 + old_tail);
         if rows == 64 {
             assert!(lookups > 0 && callbacks > 0);
-            assert!(old_tail > new_tail, "complete typed positive gate");
+            assert!(old_tail > new_tail, "complete typed positive gate: lookups={lookups} callbacks={callbacks} old_query={old_query} new_query={new_query} guards={guards} cold={cold} old_tail={old_tail} new_tail={new_tail} old={old:?} current={current:?}");
         }
         eprintln!("transition-scratch rows={rows} lookups={lookups} callbacks={callbacks} old={old:?} current={current:?} old_query={old_query} new_query={new_query} guards={guards}");
     }

@@ -468,9 +468,15 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
             free: 26,
             ifs: 1,
             vars: 8,
-            blocks: 0,
+            blocks: 2,
         }
     );
+    // Braced if arms are actual free Block nodes, including empty-statement
+    // arms. Keep full AST/HIR/cost equality and the independent zero boundary.
+    let mut helper = Census::default();
+    ast_census(&parsed.functions[0].body, false, true, &mut helper);
+    assert_eq!(helper.blocks, 0);
+    assert_eq!(ast.blocks, 2);
     let cost = cost_census(&parsed);
     assert_eq!(cost.exact_absent_roots, ast.kinds);
     assert_eq!(cost.exact_carrier_free_roots, ast.free);
@@ -501,6 +507,11 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
         assert!(function.requires.is_empty() && function.ensures.is_empty());
         built += hir_census(&function.body, false, true, &mut hir);
     }
+    let mut helper_hir = Census::default();
+    let add = resolved.functions.iter().find(|f| f.name == "add").unwrap();
+    hir_census(&add.body, false, true, &mut helper_hir);
+    assert_eq!(helper_hir.blocks, 0);
+    assert_eq!(hir.blocks, 2);
     // No literal/unary/binary root is folded, elided, or moved into a carrier.
     assert_eq!(hir, ast);
     // Exactly the three authored statements (two with bindings) exist, all

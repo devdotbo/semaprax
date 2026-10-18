@@ -2,6 +2,7 @@
 //! SOURCE WIP: typed receiving ledger and independent controls pending review.
 use super::case_certified::retained_lookup;
 use super::*;
+use crate::bounded_output::classifier_string::StorageParent;
 use crate::cleanup_plan::replay::expression_facts::arena::retained::Session;
 use crate::cleanup_plan::replay::ordinary_receiving::{
     prepare_into, refuse_into, reserve_into, Failure,
@@ -429,6 +430,36 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                 }
                             }
 
+                            // One prepaid terminal producer: every false guard immediately returns.
+                            if !reserve_into!(
+                                session.budget,
+                                function,
+                                failure,
+                                StorageParent::ACQUISITION_CONTROLS
+                                    + StorageParent::TERMINAL_CONTROLS
+                                    + std::mem::size_of::<usize>()
+                                    + 3 * std::mem::size_of::<&str>()
+                                    + std::mem::size_of::<bool>(),
+                                "retained transition parent and terminal controls"
+                            ) {
+                                return Err(failure
+                                    .error
+                                    .take()
+                                    .expect("parent acquisition payment"));
+                            }
+                            let Some(transition_parent) = statuses.ledger.storage_parent() else {
+                                refuse_into!(
+                                    session.budget,
+                                    function,
+                                    failure,
+                                    "ordinary builder already failed",
+                                    ""
+                                );
+                                return Err(failure
+                                    .error
+                                    .take()
+                                    .expect("missing transition parent"));
+                            };
                             // Keep the existing fully paid output/error slots through
                             // the last transition query; never lend scratch to callbacks.
                             macro_rules! transition_fact {
@@ -479,7 +510,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         session.budget,
                                         function,
                                         failure,
-                                        ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
+                                        StorageParent::CURRENT_CONTROLS
                                             + std::mem::size_of::<usize>()
                                             + 3 * std::mem::size_of::<&str>()
                                             + std::mem::size_of::<bool>(),
@@ -493,7 +524,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             }
                             macro_rules! transition_callback_complete {
                                 () => {
-                                    if !statuses.ledger.storage_parent_current() {
+                                    if !transition_parent.current() {
                                         // The original prepaid renderer keeps the complete
                                         // sticky-builder diagnostic; no foreign debit.
                                         refuse_into!(

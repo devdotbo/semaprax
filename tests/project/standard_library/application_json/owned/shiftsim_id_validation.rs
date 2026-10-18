@@ -182,8 +182,14 @@ fn sorted_arrival_cursor_matches_frozen_event_scans_and_host_count_oracle() {
         "@id(\"shiftsim.schedule.advance_arrivals\")",
         "@id(\"shiftsim.schedule.run\")",
     );
+    let worker = section(
+        model,
+        "@id(\"shiftsim.worker\")",
+        "@id(\"shiftsim.model.anchor\")",
+    );
     let dispatch = include_str!("shiftsim_id_validation/original_dispatch_helpers.txt");
-    let mut source = format!("module shiftsim.events;\n{states}\n{old}\n{dispatch}\n{fast}\n");
+    let mut source =
+        format!("module shiftsim.events;\n{states}\n{worker}\n{old}\n{dispatch}\n{fast}\n");
     for (case, (count, time)) in [
         (0usize, 0i64),
         (1, 0),

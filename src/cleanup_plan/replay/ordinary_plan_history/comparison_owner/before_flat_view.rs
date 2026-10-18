@@ -19,7 +19,7 @@ enum Step {
     Siblings,
     Root,
 }
-struct ComparisonOwner<'history> {
+pub(super) struct ComparisonOwner<'history> {
     arena: &'history [Segment],
     left_items: &'history [Rc<SkeletonObservation>],
     right_items: &'history [Rc<SkeletonObservation>],
@@ -626,3 +626,13 @@ pub(in crate::cleanup_plan::replay) fn compare(
     Ok(())
 }
 
+// Exact compiled-generation tariff exports for its own matched controls.
+pub(super) const LEXICAL_STEP: usize = lexical_cursor::STEP;
+pub(super) const LEXICAL_TAIL: usize = lexical_cursor::TAIL;
+pub(super) const LEXICAL_LOAD: usize = lexical_cursor::LOAD;
+pub(super) const LEXICAL_EMPTY: usize = lexical_cursor::EMPTY;
+pub(super) const PAIRED_STEP: usize = paired_value::STEP;
+pub(super) const PAIRED_TAIL: usize = paired_value::TAIL;
+pub(super) const PAIRED_LOAD: usize = paired_value::LOAD;
+pub(super) const PAIRED_EMPTY: usize = paired_value::EMPTY;
+pub(super) const PAIRED_PRIMITIVES: usize = paired_value::ADDITIONAL_PRIMITIVES;

@@ -1,5 +1,20 @@
 //! Fixed complete before/current witness for the retained-tail mechanism.
 //! This is an explicit semantic transformation witness, separate from formatting.
+pub(super) fn prepared_owner_stage(current: &str) -> String {
+    crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "41cb2cf4267b055c3aee09c6a6bb143da182c28a6b583524ca7608e590133c10",
+        current,
+    )
+}
+pub(super) fn prepared_tail_stage(current: &str) -> String {
+    crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+        "1b4fe517fc67c10d948bde00946cb17bf88c84b0f6c333d2b365851b28f22d37",
+        current,
+    )
+}
+
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(
         current.len(),
@@ -23,17 +38,19 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
-pub(super) fn previous(current: &str) -> String {
+mod prepared_links;
+fn previous_stage(current: &str) -> String {
     restore(current, 6431, MACRO)
 }
+pub(super) fn previous(current: &str) -> String {
+    previous_stage(&prepared_links::previous_macro(current))
+}
 pub(super) fn previous_owner(current: &str) -> String {
-    let acquired = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
-        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-        "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
-        current,
-    );
-    let current = acquired.as_str();
-    restore(current, 21817, OWNER)
+    restore(
+        &prepared_links::previous_owner(&prepared_owner_stage(current)),
+        21817,
+        OWNER,
+    )
 }
 #[rustfmt::skip]
 const MACRO: &[(usize, &str, &str)] = &[
@@ -95,19 +112,22 @@ mod tests {
     }
     #[test]
     fn retained_tail_witness_rejects_span_extent_and_unrecognized_body_drift() {
+        let stage = prepared_links::previous_macro(CURRENT);
+        let current = stage.as_str();
+        let previous = previous_stage;
         let &(at, after, _) = MACRO
             .iter()
             .find(|(_, after, _)| !after.is_empty())
             .unwrap();
-        let mut changed = CURRENT.to_owned();
+        let mut changed = current.to_owned();
         let end = at + after.chars().next().unwrap().len_utf8();
         let replacement = if &changed[at..end] == "x" { "y" } else { "x" };
         changed.replace_range(at..end, replacement);
         assert!(std::panic::catch_unwind(|| previous(&changed)).is_err());
-        let changed = format!("{CURRENT} ");
+        let changed = format!("{current} ");
         assert!(std::panic::catch_unwind(|| previous(&changed)).is_err());
-        let changed = CURRENT.replacen("macro_rules!", "macro_rulex!", 1);
-        assert_ne!(changed, CURRENT);
+        let changed = current.replacen("macro_rules!", "macro_rulex!", 1);
+        assert_ne!(changed, current);
         let result = std::panic::catch_unwind(|| previous(&changed));
         assert!(result.is_err() || result.unwrap() != BEFORE);
     }

@@ -18,6 +18,8 @@ pub(super) struct Row {
     pub value_steps: usize,
     pub value_tails: usize,
     pub tails: usize,
+    pub steps: usize,
+    pub loads: usize,
     pub complete: bool,
     pub ended: bool,
     pub unwound: bool,
@@ -40,6 +42,8 @@ const EMPTY: Row = Row {
     value_steps: 0,
     value_tails: 0,
     tails: 0,
+    steps: 0,
+    loads: 0,
     complete: false,
     ended: false,
     unwound: false,
@@ -197,6 +201,18 @@ impl Guard {
             None => r.overflow = true,
         });
     }
+    pub(super) fn step(&self) {
+        self.update(|r| match r.steps.checked_add(1) {
+            Some(n) => r.steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn load(&self) {
+        self.update(|r| match r.loads.checked_add(1) {
+            Some(n) => r.loads = n,
+            None => r.overflow = true,
+        });
+    }
     pub(super) fn tail(&self) {
         self.update(|r| match r.tails.checked_add(1) {
             Some(n) => r.tails = n,
@@ -333,6 +349,36 @@ mod controls {
         assert!(rows.is_empty());
         TRACE.with(|t| t.borrow_mut().generation = 0);
     }
+    #[test]
+    fn prepared_link_counter_overflow_is_incomplete_and_does_not_spend_work() {
+        for load in [false, true] {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                if load {
+                    trace.rows[0].loads = usize::MAX;
+                } else {
+                    trace.rows[0].steps = usize::MAX;
+                }
+            });
+            if load {
+                guard.load();
+            } else {
+                guard.step();
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost_count) = finish();
+            assert_eq!(lost_count, 0);
+            assert_eq!(rows.len(), 1);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+            assert_eq!(budget.remaining, remaining);
+        }
+    }
 }
 
 // Sole owning-test observation scope, outside compiler ledgers and allocation
@@ -368,6 +414,8 @@ impl Drop for Scope {
             sum(|r| r.pair_matches_admitted),
             sum(|r| r.value_steps),
             sum(|r| r.value_tails),
+            sum(|r| r.steps),
+            sum(|r| r.loads),
         ];
         let total_overflow = totals.iter().any(Option::is_none);
         let complete = self
@@ -381,7 +429,7 @@ impl Drop for Scope {
                 .iter()
                 .all(|row| row.complete && !row.old && row.owner_admitted);
         eprintln!(
-            "OPT888 whole-caller current_candidate=true unqualified=true bytes={} outcome={:?} unwind={} complete={} partial_prefix={} invocations_reached={} owner_banks_admitted={} pairs_prepared={:?} rounds_reached={:?} match_banks_admitted={:?} step_banks_admitted={:?} tail_banks_admitted={:?} total_overflow={} lost={} row_capacity=128; complete-only equation current+tuple*N+2Option*(STEP+TAIL)=old886+5HEADER*M+2reference*N; no whole-shipping net claim",
+            "OPT888 whole-caller current_candidate=true unqualified=true bytes={} outcome={:?} unwind={} complete={} partial_prefix={} invocations_reached={} owner_banks_admitted={} pairs_prepared={:?} rounds_reached={:?} match_banks_admitted={:?} step_banks_admitted={:?} tail_banks_admitted={:?} prepared_steps={:?} prepared_loads={:?} total_overflow={} lost={} row_capacity=128; complete-only fused component equation current+tuple*N+2Option*(STEP+TAIL)=old886+5HEADER*M+2reference*N; flat/retained-tail/prepared-link components billed separately; no whole-shipping net claim",
             self.bytes,
             self.outcome.get(),
             unwind,
@@ -394,6 +442,8 @@ impl Drop for Scope {
             totals[2],
             totals[3],
             totals[4],
+            totals[5],
+            totals[6],
             total_overflow,
             lost
         );
@@ -408,7 +458,7 @@ impl Drop for Scope {
             let function = std::str::from_utf8(&row.function[..row.function_len])
                 .unwrap_or("<truncated UTF-8>");
             eprintln!(
-                "OPT888 row={} generation={} serial={} function={:?} old={} payer={} selected={} owner_admitted={} pairs={} rounds={} match_admitted={} STEP={} TAIL={} complete={} ended={} unwound={} overflow={} truncated={}",
+                "OPT888 row={} generation={} serial={} function={:?} old={} payer={} selected={} owner_admitted={} pairs={} rounds={} match_admitted={} STEP={} TAIL={} prepared_steps={} prepared_loads={} complete={} ended={} unwound={} overflow={} truncated={}",
                 row.invocation,
                 row.generation,
                 row.serial,
@@ -422,6 +472,8 @@ impl Drop for Scope {
                 row.pair_matches_admitted,
                 row.value_steps,
                 row.value_tails,
+                row.steps,
+                row.loads,
                 row.complete,
                 row.ended,
                 row.unwound,

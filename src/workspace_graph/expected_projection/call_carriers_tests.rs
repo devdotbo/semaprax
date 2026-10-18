@@ -305,7 +305,11 @@ fn exact_one_short_zero_and_whole_allocation_drop_controls() {
         crate::hir::validate(&resolved).unwrap();
         drop(resolved);
     });
-    assert!(!allocation.invalid);
+    assert!(
+        !allocation.invalid,
+        "complete HIR allocation observation: reason={:?}, metrics={allocation:?}",
+        crate::test_allocation_observer::invalid_reason(),
+    );
     assert_eq!(allocation.live, 0);
     assert_eq!(allocation.allocated, allocation.freed);
     assert!(allocation.allocations > 0);
@@ -439,7 +443,25 @@ fn owned_result_keeps_every_cleanup_storage_and_scratch_failure_keeps_carriers()
         "{HEADER}@id(\"ordinary.main\") fn main()->i64 {{ {}f() }}",
         "-".repeat(130)
     );
-    assert_eq!(proof(&source).roots, 0);
+    // The original depth-hostile source is not an admitted proof fixture.
+    // Its parser refusal remains explicit; the 129 flat sibling bindings above
+    // independently exercise the real bounded Names exhaustion.
+    assert_eq!(
+        crate::parse(&source, "ordinary.spx").unwrap_err(),
+        crate::diagnostic::Diagnostic {
+            code: "SPX-P207",
+            severity: crate::diagnostic::Severity::Error,
+            message: "source nesting depth exceeds the admitted maximum (128)".into(),
+            path: Some("ordinary.spx".into()),
+            span: Some(crate::ast::Span {
+                start: 219,
+                end: 220,
+                line: 1,
+                column: 220
+            }),
+            help: Some("split the expression or block into named helper functions".into()),
+        }
+    );
 }
 
 #[test]
@@ -472,7 +494,28 @@ fn native_import_priority_and_malformed_or_runtime_censuses_keep_old_charges() {
     let source = format!(
         "{HEADER}@id(\"host.f\") import rust fn f()->i64 failure infallible; @id(\"ordinary.main\") fn main()->i64{{f()}}"
     );
-    assert_eq!(proof(&source).roots, 0);
+    assert_eq!(
+        crate::parse(&source, "ordinary.spx").unwrap_err(),
+        crate::diagnostic::Diagnostic {
+            code: "SPX-P104",
+            severity: crate::diagnostic::Severity::Error,
+            message: "expected `fn`".into(),
+            path: Some("ordinary.spx".into()),
+            span: Some(crate::ast::Span {
+                start: 67,
+                end: 73,
+                line: 1,
+                column: 68
+            }),
+            help: None,
+        }
+    );
+    // Imports are admitted only inside an interface, including real Rust
+    // imports. Its name takes precedence over the competing local function.
+    let admitted = format!(
+        "{HEADER}@id(\"ordinary.host\") interface Host permits {{}} {{ @id(\"host.f\") import rust fn f()->i64 effects {{}} failure infallible; }} @id(\"ordinary.main\") fn main()->i64{{f()}}"
+    );
+    assert_eq!(proof(&admitted).roots, 0);
     let mut raw = super::super::StructuralCost::new();
     raw.exact_expressions = 1;
     raw.exact_carrier_free_calls = 2;
