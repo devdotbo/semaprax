@@ -377,6 +377,10 @@ pub(crate) fn expected(path: &str, supplied: &str) -> String {
 
 // Named whole pre-c883 validator input only for the original historical
 // body assertion. Current freeze behavior stays in the unprojected audits.
+#[allow(
+    dead_code,
+    reason = "This complete historical source validator is shared by harnesses with different active receiver sets."
+)]
 pub(crate) fn held_status_before_freeze(supplied: &str) -> String {
     let source = "src/cleanup_plan/replay/expression_facts/receiving/retained.rs";
     let incoming = expected(source, supplied);
