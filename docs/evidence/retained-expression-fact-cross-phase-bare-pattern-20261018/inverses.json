@@ -1,0 +1,82 @@
+{
+  "status": "SOURCE_ONLY_UNRUN",
+  "base": "c3368f26364a69b47b3e3a8e664b6f13ba4289d4",
+  "sources": [
+    {
+      "path": "docs/RETAINED-EXPRESSION-FACT-LOOKUP-V1.md",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/whole-c336-before/docs/RETAINED-EXPRESSION-FACT-LOOKUP-V1.md.txt",
+        "length": 15919,
+        "sha256": "c993b95828978db354d21a2106fb396d972b2f707061d95fa0dc65f7240b165e"
+      },
+      "after": {
+        "length": 16126,
+        "sha256": "5b55f081e80510acef98f7af33b224e5391487f3f4e2bb55cb16b71d12e82b98"
+      },
+      "edits": [
+        {
+          "before": "\n| Role | Complete typed payment |\n| --- | --- |\n| Mutable Session and query actual/formal pair | `2 * size_of::<(&mut Session, &ExpressionId)>()` |\n| Internal arena/function/budget/control/comparison field loans | `size_of::<(&Arena, &ResolvedFunction, &mut ReplayBudget, &mut Control, &mut Compared)>()` |\n| Budget reborrow and receiver | `2 * size_of::<&mut ReplayBudget>()` |\n| New predicate result/receiving | `2 * size_of::<bool>()` |\n\nThere is no new Session acquisition, selector, scan, callback, Option<Session>,\nreturned Session, or continuation argument/result. The lexical `facts`/`proof`\nreferences correspond to the exact old certified receiver formals. The tail's\nstorage/leaves/status references correspond to the exact old edge receiver\nformals. No removed call or unused old charge is credited: all original charges,\n",
+          "after": "\n| Role | Complete typed payment |\n| --- | --- |\n| Mutable Session and query actual/formal pair | `2 * size_of::<(&mut Session, &ExpressionId)>()` |\n| Internal arena/function/budget/control/comparison field loans | `size_of::<(&Arena, &ResolvedFunction, &mut ReplayBudget, &mut Control, &mut Compared)>()` |\n| Budget reborrow and receiver | `2 * size_of::<&mut ReplayBudget>()` |\n\nThe unknown-expression check uses a bare `if let None` pattern, with a targeted\nClippy attribute documenting why no Option method is called. No Option-method\nreceiver pair or bool-returning predicate is formed or charged. Both full old\nResult terms remain unchanged.\n\nThere is no new Session acquisition, selector, scan, callback, Option<Session>,\nreturned Session, or continuation argument/result. The lexical `facts`/`proof`\nreferences correspond to the exact old certified receiver formals. The tail's\nstorage/leaves/status references correspond to the exact old edge receiver\nformals. No removed call or unused old charge is credited: all original charges,\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/whole-c336-before/src/cleanup_plan/replay/expression_facts/arena/retained.rs.txt",
+        "length": 15619,
+        "sha256": "bc4116826224bf73e88ffbe6832f9951ce0d20104919d83a7614541178139bb2"
+      },
+      "after": {
+        "length": 15587,
+        "sha256": "663cc41755cb8083333cb1702352ea59478a35ff427a6bc1039c96007b2a5093"
+      },
+      "edits": [
+        {
+          "before": "            &Arena<'_>,\n            &ResolvedFunction,\n            &mut ReplayBudget,\n            &mut Control,\n            &mut Compared<'_>,\n        )>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<bool>();\n    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =\n        RESULTS + Self::EDGE_QUERY_BYTES;\n    pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(\n        &mut self,\n        query: &'arena ExpressionId,\n    ) -> Result<Option<&'arena Option<CallFact<'hir>>>, Diagnostic> {\n",
+          "after": "            &Arena<'_>,\n            &ResolvedFunction,\n            &mut ReplayBudget,\n            &mut Control,\n            &mut Compared<'_>,\n        )>()\n        + 2 * size_of::<&mut ReplayBudget>();\n    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =\n        RESULTS + Self::EDGE_QUERY_BYTES;\n    pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(\n        &mut self,\n        query: &'arena ExpressionId,\n    ) -> Result<Option<&'arena Option<CallFact<'hir>>>, Diagnostic> {\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/whole-c336-before/src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs.txt",
+        "length": 76322,
+        "sha256": "72f4b74e7be6848c673e6bd3a3b81cfa39b381757e101b59bbc4ae5b7c4b1081"
+      },
+      "after": {
+        "length": 76609,
+        "sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6"
+      },
+      "edits": [
+        {
+          "before": "                                        )?;\n                                        session.budget.reserve_bytes(\n                                            function,\n                                            Session::EDGE_RECEIVING_BYTES,\n                                            \"retained expression-fact query result controls\",\n                                        )?;\n                                        if session.fact_edge_prepaid(expression)?.is_none() {\n                                            return Err(replay_error(function,\n                        format_args!(\"cleanup plan references unknown expression `{expression}`\")));\n                                        }\n                                    }\n                                    EdgeCondition::StatusZero(source)\n                                    | EdgeCondition::StatusNonzero(source) => {\n",
+          "after": "                                        )?;\n                                        session.budget.reserve_bytes(\n                                            function,\n                                            Session::EDGE_RECEIVING_BYTES,\n                                            \"retained expression-fact query result controls\",\n                                        )?;\n                                        #[allow(\n                                            clippy::redundant_pattern_matching,\n                                            reason = \"bare pattern avoids a new Option method receiving boundary\"\n                                        )]\n                                        if let None = session.fact_edge_prepaid(expression)? {\n                                            return Err(replay_error(function,\n                        format_args!(\"cleanup plan references unknown expression `{expression}`\")));\n                                        }\n                                    }\n                                    EdgeCondition::StatusZero(source)\n                                    | EdgeCondition::StatusNonzero(source) => {\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/whole-c336-before/src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs.txt",
+        "length": 11069,
+        "sha256": "1033ff9b12b272c6ebcdaeea7c8c463fa8bb6a7f939be951969586f36209e024"
+      },
+      "after": {
+        "length": 13041,
+        "sha256": "c4ad474a7b093d140a4f58eb8bcf6dc74f545c835dd4e45d5c2274c7ff0eb64c"
+      },
+      "edits": [
+        {
+          "before": "        (\"src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs\",include_str!(\"../../arena/retained/tests.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving.rs\",include_str!(\"../../receiving.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained.rs\",include_str!(\"../retained.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\",include_str!(\"case_certified.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\",include_str!(\"case_certified/retained_lookup.rs\")),\n    ] {\n        let row=records[\"sources\"].as_array().unwrap().iter().find(|r|r[\"path\"]==path).unwrap();\n        assert_eq!(current.len(),row[\"after\"][\"length\"].as_u64().unwrap()as usize);\n        assert_eq!(format!(\"{:x}\",sha2::Sha256::digest(current.as_bytes())),row[\"after\"][\"sha256\"].as_str().unwrap());\n        let mut restored=current.to_owned();\n        for edit in row[\"edits\"].as_array().unwrap().iter().rev() {\n            let after=edit[\"after\"].as_str().unwrap();assert_eq!(restored.matches(after).count(),1);\n",
+          "after": "        (\"src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs\",include_str!(\"../../arena/retained/tests.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving.rs\",include_str!(\"../../receiving.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained.rs\",include_str!(\"../retained.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\",include_str!(\"case_certified.rs\")),\n        (\"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\",include_str!(\"case_certified/retained_lookup.rs\")),\n    ] {\n        let restored_c336 = before_bare_pattern_source(path, current);\n        let current = restored_c336.as_str();\n        let row=records[\"sources\"].as_array().unwrap().iter().find(|r|r[\"path\"]==path).unwrap();\n        assert_eq!(current.len(),row[\"after\"][\"length\"].as_u64().unwrap()as usize);\n        assert_eq!(format!(\"{:x}\",sha2::Sha256::digest(current.as_bytes())),row[\"after\"][\"sha256\"].as_str().unwrap());\n        let mut restored=current.to_owned();\n        for edit in row[\"edits\"].as_array().unwrap().iter().rev() {\n            let after=edit[\"after\"].as_str().unwrap();assert_eq!(restored.matches(after).count(),1);\n"
+        },
+        {
+          "before": "        \"cross-phase retained LexicalAttempt={} Session={} S={} Re={}\",\n        std::mem::size_of::<case_proof::LexicalAttempt<'_, '_>>(),\n        std::mem::size_of::<Session<'_, '_, '_>>(),\n        Session::OLD_SCRATCH,\n        Session::EDGE_QUERY_BYTES\n    );\n}\n",
+          "after": "        \"cross-phase retained LexicalAttempt={} Session={} S={} Re={}\",\n        std::mem::size_of::<case_proof::LexicalAttempt<'_, '_>>(),\n        std::mem::size_of::<Session<'_, '_, '_>>(),\n        Session::OLD_SCRATCH,\n        Session::EDGE_QUERY_BYTES\n    );\n    let path = \"src/cleanup_plan/replay/expression_facts/arena/retained.rs\";\n    let raw = include_str!(\"../../arena/retained.rs\");\n    for bad in [\n        raw[..raw.len() - 1].to_owned(),\n        format!(\"{raw}//foreign\\n\"),\n        format!(\"{raw}{raw}\"),\n    ] {\n        assert_ne!(bad, raw);\n        assert!(std::panic::catch_unwind(|| before_bare_pattern_source(path, &bad)).is_err());\n    }\n}\n\n// Compose only the exact independently reviewed post-c336 source delta before\n// the immutable c336 whole-source controls above. Other owners stay unchanged.\nfn before_bare_pattern_source(path: &str, current: &str) -> String {\n    let records: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/inverses.json\"\n    )))\n    .unwrap();\n    let Some(row) = records[\"sources\"]\n        .as_array()\n        .unwrap()\n        .iter()\n        .find(|r| r[\"path\"] == path)\n    else {\n        return current.to_owned();\n    };\n    assert_eq!(\n        current.len(),\n        row[\"after\"][\"length\"].as_u64().unwrap() as usize\n    );\n    assert_eq!(\n        format!(\"{:x}\", sha2::Sha256::digest(current.as_bytes())),\n        row[\"after\"][\"sha256\"].as_str().unwrap()\n    );\n    let mut restored = current.to_owned();\n    for edit in row[\"edits\"].as_array().unwrap().iter().rev() {\n        let after = edit[\"after\"].as_str().unwrap();\n        assert_eq!(restored.matches(after).count(), 1);\n        restored = restored.replacen(after, edit[\"before\"].as_str().unwrap(), 1);\n    }\n    assert_eq!(\n        restored.len(),\n        row[\"before\"][\"length\"].as_u64().unwrap() as usize\n    );\n    assert_eq!(\n        format!(\"{:x}\", sha2::Sha256::digest(restored.as_bytes())),\n        row[\"before\"][\"sha256\"].as_str().unwrap()\n    );\n    restored\n}\n"
+        }
+      ]
+    }
+  ]
+}

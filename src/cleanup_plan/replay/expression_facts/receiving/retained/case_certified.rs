@@ -386,4 +386,4 @@ pub(in crate::cleanup_plan::replay) mod lookup_before;
 mod lookup_caller_before;
 #[cfg(test)]
 mod lookup_tests;
-mod retained_lookup;
+pub(super) mod retained_lookup;

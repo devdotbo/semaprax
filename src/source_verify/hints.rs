@@ -655,9 +655,12 @@ pub(super) const IMMUTABLE_TRAVERSAL_HELP: &str = "move the finished vector into
     not(test),
     allow(dead_code, reason = "ordinary diagnostic adapter retained")
 )]
-#[allow(
-    dead_code,
-    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+#[cfg_attr(
+    test,
+    allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )
 )]
 pub(super) fn unpermitted_effect(
     program: &dyn ProgramSource,
@@ -697,9 +700,12 @@ pub(super) fn unpermitted_effect_ref(
     not(test),
     allow(dead_code, reason = "ordinary diagnostic adapter retained")
 )]
-#[allow(
-    dead_code,
-    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+#[cfg_attr(
+    test,
+    allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )
 )]
 pub(super) fn missing_effect(
     program: &dyn ProgramSource,

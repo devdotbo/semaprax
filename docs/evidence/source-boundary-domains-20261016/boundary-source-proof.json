@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1181,
-      "current_boundary_production": 419,
+      "current_boundary_members": 1184,
+      "current_boundary_production": 420,
       "outside_production_still_fully_authenticated": 84,
-      "full_role_production": 503,
-      "full_role_test_only": 917,
-      "full_raw_sha256": "8096e4a6fc4c3b5ecaab19602a3cf7c8195917226e800572e8bc7b3bad0c0803",
-      "boundary_production_sha256": "99b42fe2d8177407e374a90431a3d07b330a091381de5ba68ce923ea727a70ca",
+      "full_role_production": 504,
+      "full_role_test_only": 919,
+      "full_raw_sha256": "9528a8f82d797ef21c5b310db8e76f5c8631f7c35050fa0235b3863f51c3e288",
+      "boundary_production_sha256": "f767d4253e811e12310d446f1915bc0da23a79da79da93986e1faea5bab1fe22",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -33,11 +33,11 @@
       "original_roots": 179,
       "current_boundary_members": 198,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 552,
-      "full_role_production": 625,
-      "full_role_test_only": 975,
-      "full_raw_sha256": "975d1c8d3115843e5d7613495d11c1ae52db7ae3f51e2e6b864b74d4cd29b564",
-      "boundary_production_sha256": "d310297c3a271c48d2468a1280449fda112d3c9b2b50588df9dbd24d7af03d80",
+      "outside_production_still_fully_authenticated": 553,
+      "full_role_production": 626,
+      "full_role_test_only": 977,
+      "full_raw_sha256": "673a4d0875bd42c731396899ad21afe0572ff4361e3559a8101723425ec30586",
+      "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -56,6 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
+  "actual_acquisition_completion_sha256": "1ff8f239646ef2be8742b2cbeb18340ec7183cd795bbd5d96825f0eb0f13d445",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -65,6 +66,11 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "ONLY_SIX_KNOWN_SOURCE_HASHES_AND_TWO_UNIQUE_EDGE_OFFSETS_NO_ROLE_CHUNK_EDGE_TEXT_OR_REGISTRATION_CHANGE",
-  "global_polluted_purity_result_not_claimed": true
+  "registration_update": "CURRENT_E32_CROSS_PHASE_MODULES_AND_EXPLICIT_IMPORT_REPAIR",
+  "before_head": "3a205c841d02e487de8f3194121134a5eb646959",
+  "incoming_main": "e32be37755524c57e7205044935807aab71f2b0b",
+  "global_polluted_purity_result_not_claimed": true,
+  "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
+  "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
+  "storage_implementation_sha256": "653cf683557b582baa60790b78f00ee51c65e48f2bbea75818a888a437749a26"
 }

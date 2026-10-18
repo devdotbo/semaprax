@@ -1084,6 +1084,7 @@ impl<'a> Canonicalizer<'a> {
 
 
 impl Canonicalizer<'_> {
+    #[allow(clippy::type_complexity, reason = "retained complete canonical memo signature tuple for independent receiver controls")]
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> { &self.ids }
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn states(&self) -> &BTreeMap<SharedWeighted, usize> { &self.states }
 }

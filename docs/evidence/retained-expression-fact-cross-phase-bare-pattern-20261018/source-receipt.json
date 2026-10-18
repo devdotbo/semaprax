@@ -1,0 +1,45 @@
+{
+  "status": "SOURCE_ONLY_UNRUN",
+  "base": "c3368f26364a69b47b3e3a8e664b6f13ba4289d4",
+  "inverse_sha256": "d6923029a1c03e3e51368dc65e7516b4dbe11f477feede73b797c0df1fe5a147",
+  "changed": [
+    "docs/RETAINED-EXPRESSION-FACT-LOOKUP-V1.md",
+    "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"
+  ],
+  "production_changes": [
+    "bare if-let-None replaces new Option::is_none boundary",
+    "only two new is_none predicate bool terms removed from EDGE_QUERY_BYTES",
+    "targeted redundant_pattern_matching statement attribute documents physical receiving reason"
+  ],
+  "old_RESULT_terms_unchanged": true,
+  "old_status_query_bytes_and_complete_fact_method_unchanged": true,
+  "c336_all_original_evidence_unchanged": true,
+  "full_current_to_c336_to847_inverse_source_check": "PASS",
+  "new_modules": [],
+  "selectors_unchanged": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::actual_status_to_initial_edge_owner_has_full_typed_net_and_unchanged_work",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::dense_status_with_zero_expression_edges_keeps_the_whole_immediate_bill",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::schema_regions_entry_and_edge_identity_keep_first_six_field_diagnostics",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::later_unknown_expression_keeps_full_diagnostic_and_original_work_frontier",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::first_and_later_original_work_cuts_preserve_complete_diagnostics",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::whole_caller_drop_releases_actual_backing_on_success_and_refusal",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::same_abi_source_has_no_early_owner_or_selector_and_consumes_budget_before_callbacks",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_keeps_all_old_work_cuts_and_complete_payload_identity",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing"
+  ],
+  "source_checks": [
+    "rustfmt parse/check",
+    "git diff --check",
+    "all4 whole-c336 inverses",
+    "all7 original c336->847 inverses composed",
+    "original full Session::fact and two RESULTS byteexact"
+  ],
+  "cargo": false,
+  "build": false,
+  "tests": false,
+  "source_coupling": false
+}

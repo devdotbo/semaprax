@@ -191,9 +191,12 @@ pub(crate) fn source_arguments_are_admitted(
     not(test),
     allow(dead_code, reason = "staged alias-aware verifier map receiver")
 )]
-#[allow(
-    dead_code,
-    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+#[cfg_attr(
+    test,
+    allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )
 )]
 pub(crate) fn source_parameter_is_admitted_ref(
     program: &dyn ProgramSource,

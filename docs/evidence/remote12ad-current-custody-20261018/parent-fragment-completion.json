@@ -1,0 +1,23 @@
+{
+  "status": "EXACT_EXISTING_PARENT_FRAGMENT_CANONICAL_RECORDS_COMPLETED",
+  "added": [
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "src/source_reflows_merge/main67107_inputs.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/hir/resolve_program.rs"
+  ],
+  "before": {
+    "length": 205886,
+    "sha256": "6b6de8be9d9b7feae740a4899242ebd1f60b59075a83b8a6d0f3c812bcf24e1d"
+  },
+  "after": {
+    "length": 208108,
+    "sha256": "c9f1675fc9cfead816db0874b01778686c39859711b37366e4e7c99139c32097"
+  },
+  "helper_edit": {
+    "before": "(205886,\"6b6de8be9d9b7feae740a4899242ebd1f60b59075a83b8a6d0f3c812bcf24e1d\".to_owned())",
+    "after": "(208108,\"c9f1675fc9cfead816db0874b01778686c39859711b37366e4e7c99139c32097\".to_owned())"
+  }
+}

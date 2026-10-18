@@ -1220,6 +1220,9 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
@@ -2312,6 +2315,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs",
         "src/cleanup_plan/replay/factored/canonical_shared.rs",
@@ -2743,9 +2747,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "f664df983bb22125471313fc680aaaeda47eb4bed6b4e915277a983cc9982a9a",
-      "full_raw_sha256": "8096e4a6fc4c3b5ecaab19602a3cf7c8195917226e800572e8bc7b3bad0c0803",
-      "full_authenticated_production_sha256": "1882b0d47402416a9a052dea7ebb98871b1dba2d01cd1c69d46bd78299eb32de"
+      "full_manifest_sha256": "098071a48330bc2951056624e0aa7877d1c19e19a28ba19ab1a57e4051977be5",
+      "full_raw_sha256": "9528a8f82d797ef21c5b310db8e76f5c8631f7c35050fa0235b3863f51c3e288",
+      "full_authenticated_production_sha256": "21aec27c25a6971d953d5a36547838334ce380ad9d5c3f272aa3788663329f75"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3249,6 +3253,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs",
         "src/cleanup_plan/replay/factored.rs",
@@ -3760,9 +3765,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "372d6e424b2f2c33923ecd3fd558f9c2b2d8045b0ed5f26cde34e29ed3b264ff",
-      "full_raw_sha256": "975d1c8d3115843e5d7613495d11c1ae52db7ae3f51e2e6b864b74d4cd29b564",
-      "full_authenticated_production_sha256": "19581443adadbd07882d20f782ba4ce9583e676b2009ac6fdbb4d723d59ead82"
+      "full_manifest_sha256": "334391b5719d5da163a87f506927f724d7fcf40869d8d4cdd10c11ab7ec039f8",
+      "full_raw_sha256": "673a4d0875bd42c731396899ad21afe0572ff4361e3559a8101723425ec30586",
+      "full_authenticated_production_sha256": "358a49744edeb31eeee11ae92102b554b4ee2cfb543777039e7bbedb4108f025"
     }
   }
 }

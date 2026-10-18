@@ -1,0 +1,65 @@
+{
+  "status": "SOURCE_ONLY_AUTHORED_UNRUN_SOURCE_CUSTODY_PENDING",
+  "base": "8478981af4421237cbf06424252ca85d561eddf9",
+  "inverse_sha256": "dcd58ad537b69b918f4e9c5261a734e14f314e71c2b192d17c9c6c25ea17a1e0",
+  "new_modules": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "role": "production",
+      "length": 76322,
+      "sha256": "72f4b74e7be6848c673e6bd3a3b81cfa39b381757e101b59bbc4ae5b7c4b1081",
+      "lines": 1323
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "role": "test-only",
+      "length": 4051,
+      "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3",
+      "lines": 111
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "role": "test-only",
+      "length": 11069,
+      "sha256": "1033ff9b12b272c6ebcdaeea7c8c463fa8bb6a7f939be951969586f36209e024",
+      "lines": 283
+    }
+  ],
+  "changed_existing_rust": [
+    "src/cleanup_plan/replay.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"
+  ],
+  "selectors": [
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::actual_status_to_initial_edge_owner_has_full_typed_net_and_unchanged_work",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::dense_status_with_zero_expression_edges_keeps_the_whole_immediate_bill",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::schema_regions_entry_and_edge_identity_keep_first_six_field_diagnostics",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::later_unknown_expression_keeps_full_diagnostic_and_original_work_frontier",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::first_and_later_original_work_cuts_preserve_complete_diagnostics",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::whole_caller_drop_releases_actual_backing_on_success_and_refusal",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::same_abi_source_has_no_early_owner_or_selector_and_consumes_budget_before_callbacks",
+    "cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_keeps_all_old_work_cuts_and_complete_payload_identity",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky",
+    "cleanup_plan::replay::expression_facts::arena::retained::tests::prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing"
+  ],
+  "source_checks": [
+    "complete inverse of every changed Rust owner",
+    "whole independent immediate outer body exact apart from visibility/constant qualification",
+    "old Session::fact byteexact",
+    "all new modules below1500",
+    "rustfmt parse/check only"
+  ],
+  "qualification": "NO CARGO BUILD TEST CLIPPY OR BENCHMARK",
+  "remaining": [
+    "recursive source inventory joins for NEW3",
+    "current-to-whole-immediate side-projection composition before all immutable existing historical source controls",
+    "affected current source pins/role and genuine174/FINAL6 ownership inspection once combined",
+    "independent source/funding review and actual focused qualification"
+  ],
+  "claim": "No actual byte/work/physical/runtime/app gain claimed. The owning unit asserts exact typed equation rather than updating tariff from observed bills."
+}

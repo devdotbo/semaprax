@@ -1,0 +1,12 @@
+{
+  "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+  "before_sha256": "d29c55faef71142151d9b9d44be970a76245c79bf5405521d8312cb4f3b9b3b6",
+  "current_sha256": "5c5c77c8409a2d0c029db3494c439cf80f3470b599455bf2c9e5329b164cc19e",
+  "inverse": "    #[allow(clippy::type_complexity, reason = \"retained complete canonical memo signature tuple for independent receiver controls\")]\n",
+  "scope": "exact retained signatures method only; body and tuple unchanged",
+  "before_whole_source": {
+    "length": 46018,
+    "sha256": "d29c55faef71142151d9b9d44be970a76245c79bf5405521d8312cb4f3b9b3b6",
+    "archive": "docs/evidence/merge-e32-browser-20261018/whole/d29c55faef71142151d9b9d44be970a76245c79bf5405521d8312cb4f3b9b3b6.txt"
+  }
+}

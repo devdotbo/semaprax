@@ -1,0 +1,30 @@
+pub enum FieldLivenessShape {
+    NoDrop,
+    Leaf {
+        flag: LivenessFlagId,
+        lifecycle: DeclarationId,
+    },
+    Record {
+        declaration: DeclarationId,
+        fields: Vec<FieldLiveness>,
+    },
+    /// A conditional sum inventory. Every leaf path is qualified by its stable
+    /// case identity before its stable field identity. At runtime exactly the
+    /// authenticated active case may contribute live flags.
+    Variant {
+        declaration: DeclarationId,
+        cases: Vec<VariantCaseLiveness>,
+    },
+}
+
+pub struct VariantCaseLiveness {
+    pub case: DeclarationId,
+    pub case_index: u32,
+    pub fields: Vec<FieldLiveness>,
+}
+
+pub struct FieldLiveness {
+    pub field: DeclarationId,
+    pub field_index: u32,
+    pub shape: FieldLivenessShape,
+}

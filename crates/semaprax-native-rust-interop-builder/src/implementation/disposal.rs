@@ -19,9 +19,141 @@ pub(super) enum ResolvedDisposeFrame {
     Shapes(Vec<semaprax::cleanup::FieldLiveness>),
 }
 
-// Closed compiler declaration tags reduce both inline type/shape payloads by
-// one word. Keep an exact layout pin; reservation and retention use size_of
-// of this live frame rather than the historical 56-byte frame.
+// Preserve the genuine pre-891 56-byte envelope independently of the live ID ABI.
+// The frame witnesses contain all thirteen variants. Box/Vec payloads retain their
+// actual header types; no old pointed-to HIR layout or CPU saving is inferred.
+#[rustfmt::skip]
+#[allow(dead_code)] // Layout-only types; no historical value is constructed.
+pub(super) mod disposal_layout {
+    use super::*;
+    struct HistoricalLivenessFlagId(pub u32);
+#[derive(Clone)]
+struct HistoricalDeclarationId(HistoricalDeclarationText);
+#[derive(Clone)]
+enum HistoricalDeclarationText {
+    CompilerStatic(&'static str),
+    Shared(std::sync::Arc<str>),
+}
+enum HistoricalResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
+    /// A retained affine zero-argument, i64-result callable.
+    OnceFunction,
+    OnceFunctionI64,
+    OnceFunctionI64Pair,
+    /// Same-thread transactional i64 callback; unlike ordinary function
+    /// values it owns one mutable receiver state cell.
+    MutFunctionI64,
+    Function {
+        parameters: Vec<HistoricalResolvedType>,
+        result: Box<HistoricalResolvedType>,
+    },
+    Unit,
+    I64,
+    /// A checked signed 32-bit integer.
+    I32,
+    /// One Unicode scalar value.
+    Char,
+    /// One unsigned 8-bit integer value.
+    U8,
+    /// A target-independent checked unsigned 64-bit semantic integer.
+    Usize,
+    /// Inline Copy byte storage with exact target-independent length.
+    ArrayU8(u32),
+    /// IEEE-754 single precision.
+    F32,
+    /// IEEE-754 double precision.
+    F64,
+    Bool,
+    /// An owned heap UTF-8 string value; never `Copy`.
+    String,
+    /// Uniquely owned immutable bytes. This needs drop but is not a resource.
+    Bytes,
+    /// A non-owning UTF-8 view rooted in the current invocation.
+    Str,
+    /// A non-owning byte view rooted in the current invocation.
+    SliceU8,
+    /// String Collections v1: the uniquely owned `Map<string, i64>` carrier.
+    /// It needs drop, is never `Copy`, and is admitted only for local
+    /// bindings threaded through the compiler-owned `map_*` operations.
+    StringMap,
+    TypeParameter {
+        owner: HistoricalDeclarationId,
+        index: u32,
+    },
+    Nominal {
+        declaration: HistoricalDeclarationId,
+        arguments: Vec<HistoricalResolvedType>,
+    },
+}
+enum HistoricalFieldLivenessShape {
+    NoDrop,
+    Leaf {
+        flag: HistoricalLivenessFlagId,
+        lifecycle: HistoricalDeclarationId,
+    },
+    Record {
+        declaration: HistoricalDeclarationId,
+        fields: Vec<HistoricalFieldLiveness>,
+    },
+    /// A conditional sum inventory. Every leaf path is qualified by its stable
+    /// case identity before its stable field identity. At runtime exactly the
+    /// authenticated active case may contribute live flags.
+    Variant {
+        declaration: HistoricalDeclarationId,
+        cases: Vec<HistoricalVariantCaseLiveness>,
+    },
+}
+struct HistoricalVariantCaseLiveness {
+    pub case: HistoricalDeclarationId,
+    pub case_index: u32,
+    pub fields: Vec<HistoricalFieldLiveness>,
+}
+struct HistoricalFieldLiveness {
+    pub field: HistoricalDeclarationId,
+    pub field_index: u32,
+    pub shape: HistoricalFieldLivenessShape,
+}
+    macro_rules! frame {
+        ($name:ident, $ty:ty, $shape:ty, $field:ty) => {
+enum $name {
+    ExprBox(Box<ResolvedExpr>),
+    Exprs(Vec<ResolvedExpr>),
+    Bindings(Vec<crate::hir::ResolvedBinding>),
+    Captures(Vec<crate::hir::ResolvedClosureCapture>),
+    Statements(Vec<ResolvedStatement>),
+    Fields(Vec<crate::hir::ResolvedFieldInitializer>),
+    Arms(Vec<crate::hir::ResolvedMatchArm>),
+    RecordPatternFields(Vec<crate::hir::ResolvedRecordMatchPatternField>),
+    VariantPatternFields(Vec<crate::hir::ResolvedMatchPatternField>),
+    Type($ty),
+    Types(Vec<$ty>),
+    Shape($shape),
+    Shapes(Vec<$field>),
+}
+        };
+    }
+    frame!(HistoricalFrame, HistoricalResolvedType, HistoricalFieldLivenessShape, HistoricalFieldLiveness);
+    frame!(CurrentFrame, ResolvedType, semaprax::cleanup::FieldLivenessShape, semaprax::cleanup::FieldLiveness);
+    pub(in crate::implementation) const HISTORICAL_BYTES: usize = std::mem::size_of::<HistoricalFrame>();
+    pub(in crate::implementation) const CURRENT_BYTES: usize = std::mem::size_of::<CurrentFrame>();
+    const _: () = {
+        assert!(HISTORICAL_BYTES == 56);
+        assert!(std::mem::size_of::<HistoricalDeclarationId>() == 24);
+        assert!(std::mem::size_of::<semaprax::cleanup::LivenessFlagId>() == std::mem::size_of::<HistoricalLivenessFlagId>());
+        assert!(std::mem::align_of::<semaprax::cleanup::LivenessFlagId>() == std::mem::align_of::<HistoricalLivenessFlagId>());
+        assert!(std::mem::size_of::<ResolvedDisposeFrame>() == CURRENT_BYTES);
+        assert!(std::mem::align_of::<ResolvedDisposeFrame>() == std::mem::align_of::<CurrentFrame>());
+        assert!(CURRENT_BYTES <= HISTORICAL_BYTES);
+        assert!(std::mem::align_of::<CurrentFrame>() <= std::mem::align_of::<HistoricalFrame>());
+        assert!(std::mem::size_of::<Vec<HistoricalResolvedType>>() == std::mem::size_of::<Vec<ResolvedType>>());
+        assert!(std::mem::align_of::<Vec<HistoricalResolvedType>>() == std::mem::align_of::<Vec<ResolvedType>>());
+        assert!(std::mem::size_of::<Vec<HistoricalFieldLiveness>>() == std::mem::size_of::<Vec<semaprax::cleanup::FieldLiveness>>());
+        assert!(std::mem::align_of::<Vec<HistoricalFieldLiveness>>() == std::mem::align_of::<Vec<semaprax::cleanup::FieldLiveness>>());
+    };
+}
+
+// Preserve the independently measured current-generation pin from main.
 const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 48);
 
 pub(super) struct ResolvedProgramOwner {

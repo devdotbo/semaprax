@@ -12,8 +12,8 @@ fn packet() -> serde_json::Value {
     assert_eq!(
         (data.len(), digest(data.as_bytes())),
         (
-            157964,
-            "1c0285e9a59c2600d87798e63572e6669611e0f834648f6c1caae23ef14ee431".to_owned()
+            212076,
+            "5fec5794582e2c23b013fea8df0f2d012d7c53156758e0a8cb14dc93bdd0cfcc".to_owned()
         )
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -1119,17 +1119,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 77047);
+        assert_eq!(data.len(), 80040);
         assert_eq!(
             digest(data.as_bytes()),
-            "05a30834d0f1b2bdd4476bc35132eeca7f021c24ad646a0c0ad2b82202d9dc21"
+            "af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "05a30834d0f1b2bdd4476bc35132eeca7f021c24ad646a0c0ad2b82202d9dc21"
+                "af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d"
             )
             .unwrap(),
             data

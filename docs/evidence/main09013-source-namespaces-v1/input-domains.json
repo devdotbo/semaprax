@@ -5,8 +5,8 @@
   "main": [
     {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "current_len": 181883,
-      "current_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
+      "current_len": 181907,
+      "current_sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
       "view_len": 105523,
       "view_sha256": "70b707a2915c51abb76a72aeb084835c943c8a969c906a1b12eb287e7fa6beca",
@@ -1013,8 +1013,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone/tests.rs",
-      "current_len": 33988,
-      "current_sha256": "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3",
+      "current_len": 34279,
+      "current_sha256": "8b2d648beed922295d90513d54949a49f4dcf9d021cde4579ba1d2789924f908",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone/tests.rs",
       "view_len": 14266,
       "view_sha256": "48956a2d192fdbc73cbfa58cb9e57f3e4380a4ff601728ded0d53c2bbf9db8ca",
@@ -1085,8 +1085,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
-      "current_len": 54774,
-      "current_sha256": "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e",
+      "current_len": 54932,
+      "current_sha256": "96f3344239af80ebe85eb637e5933bd596afde32f88c2e2184bd8edf32c96375",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "view_len": 29718,
       "view_sha256": "371f112bb250011df5930334be7d3bd4f4ff82e10a8471469d981ca0ba094a87",
@@ -1564,8 +1564,8 @@
   "physical": [
     {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "current_len": 181883,
-      "current_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
+      "current_len": 181907,
+      "current_sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
       "view_len": 105523,
       "view_sha256": "70b707a2915c51abb76a72aeb084835c943c8a969c906a1b12eb287e7fa6beca",
@@ -2572,8 +2572,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone/tests.rs",
-      "current_len": 33988,
-      "current_sha256": "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3",
+      "current_len": 34279,
+      "current_sha256": "8b2d648beed922295d90513d54949a49f4dcf9d021cde4579ba1d2789924f908",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone/tests.rs",
       "view_len": 14266,
       "view_sha256": "48956a2d192fdbc73cbfa58cb9e57f3e4380a4ff601728ded0d53c2bbf9db8ca",
@@ -2644,8 +2644,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
-      "current_len": 54774,
-      "current_sha256": "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e",
+      "current_len": 54932,
+      "current_sha256": "96f3344239af80ebe85eb637e5933bd596afde32f88c2e2184bd8edf32c96375",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "view_len": 29718,
       "view_sha256": "371f112bb250011df5930334be7d3bd4f4ff82e10a8471469d981ca0ba094a87",
@@ -3124,8 +3124,8 @@
       "archive": "docs/evidence/main09013-source-namespaces-v1/main21-current-checkpoints/src/source_reflows/incoming67107_semantic_receivers.rs",
       "view_len": 32182,
       "view_sha256": "6c5d74b4423ae089bdb8864c3b0210bad4b160b8a6e003819a5553d7ab891e43",
-      "current_len": 34564,
-      "current_sha256": "bece004991e952b9e0a5249aba35f66d320a50be19385ffd757f963131712a7f"
+      "current_len": 34695,
+      "current_sha256": "2741ae801dcf4a4d2e416812576bcbf69f66e94ad69746ea81989a554f1cfd3f"
     }
   ],
   "ours": [],
@@ -4100,5 +4100,5 @@
   ],
   "unassembled": [],
   "cap": 9464242,
-  "bound_final_head": "afedb9ff7b2a33194e21eaeb2baf853566d119f4"
+  "bound_final_head": "8c0b66ee170eef397252d71f2551e0c8495791ac"
 }

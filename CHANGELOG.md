@@ -1,5 +1,7 @@
 - Correct the native Rust SDK disposal-frame layout pin to the measured 48-byte closed-tag layout; keep exact assertions and size-based ledger accounting. Full hosted qualification remains pending.
 - Source-only #890 reuses complete ordinary HIR validation over the same immutable native emission borrow when building resource ABI descriptors. Raw builders and selected receiving validation remain intact; whole previous emission, hostile diagnostic, invocation-count and carrier-layout controls are authored. Compilation, runtime, measured cost and application-fit qualification remain pending.
+
+- Preserve the historical native resolved-disposal frame layout while checking the current ID-dependent frame through complete typed witnesses; runtime qualification is pending.
 - Source-only #785 replaces workspace root-identity temporary String/Arc construction with a lifetime-bound text view while retaining its original debit, sticky/floor and empty/G173 behavior. Complete old helper/callers, source inverses and physical/Drop controls are authored; compilation and runtime qualification remain pending.
 - Align hosted contract action pins with the pinned workflow revision and trace the failing Component test on its original hosted feature profile while retaining the owning gate failure.
 - Fix Rust 1.88 module namespace compatibility and refresh standalone project dependency locks after root dependency updates. Keep historical evidence and named lock fixtures outside runnable-project lock discovery, with workflow coverage retained.

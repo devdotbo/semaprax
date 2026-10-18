@@ -1,0 +1,57 @@
+{
+  "before_config": {
+    "length": 116353,
+    "sha256": "b32234413bdee3b3870411686158b9130be557787d004393eb0a656382c1ad5e",
+    "archive": "docs/evidence/merge-e32-browser-20261018/whole/b32234413bdee3b3870411686158b9130be557787d004393eb0a656382c1ad5e.txt"
+  },
+  "before_guard": {
+    "length": 10639,
+    "sha256": "5d0e0b52d242a0390e3456daafba44dba40ec8c42c562b8245526a3a1fd7cf45",
+    "archive": "docs/evidence/merge-e32-browser-20261018/whole/5d0e0b52d242a0390e3456daafba44dba40ec8c42c562b8245526a3a1fd7cf45.txt"
+  },
+  "changes": [
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "before": {
+        "path": "tests/hir_module_boundaries.rs",
+        "length": 125075,
+        "sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051",
+        "base": "../"
+      },
+      "current": {
+        "length": 125400,
+        "sha256": "8cbba49ac56c132842b7d661d6c8505589cf68a66667d48ad3235cff38c8821a",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/8cbba49ac56c132842b7d661d6c8505589cf68a66667d48ad3235cff38c8821a.txt"
+      }
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": {
+        "path": "tests/workspace/semantic_graph/source_inventory.rs",
+        "length": 141562,
+        "sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e",
+        "base": "../../"
+      },
+      "current": {
+        "length": 141896,
+        "sha256": "8ec1264e85c2952d40d6c31d9971a259c500bb4657ae4974828478b0c5ec218b",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/8ec1264e85c2952d40d6c31d9971a259c500bb4657ae4974828478b0c5ec218b.txt"
+      }
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": {
+        "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "length": 181907,
+        "sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
+        "base": "../../../../../"
+      },
+      "current": {
+        "length": 182268,
+        "sha256": "9f709a06c198dc7d024c14984c0d30c9fbbede425663f68b0da8eda6f5b7b6d9",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/9f709a06c198dc7d024c14984c0d30c9fbbede425663f68b0da8eda6f5b7b6d9.txt"
+      }
+    }
+  ],
+  "no_protocol_or_caps_changed": true
+}

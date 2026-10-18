@@ -1,0 +1,14 @@
+{
+  "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+  "before_sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+  "current_sha256": "6ba196436b4c28008168b9f927ab70a4b9703a5a23885f49b540aadb4ffa5394",
+  "selected_helper": "receiving::require_expression(&ResolvedFunction, &dyn Lookup, &ExpressionId, &mut ReplayBudget)",
+  "unselected_helper": "replay::require_expression takes a BTreeMap and three arguments",
+  "unchanged_call_sites": 9,
+  "only_edit": "use super::super::require_expression;\n",
+  "before_whole_source": {
+    "length": 76609,
+    "sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+    "archive": "docs/evidence/merge-e32-browser-20261018/whole/df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6.txt"
+  }
+}
