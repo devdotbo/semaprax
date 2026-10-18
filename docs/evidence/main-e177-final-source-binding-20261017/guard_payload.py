@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/short-plan-clone-20261018/guard-config.json'
-_CONFIG_LENGTH=139534
-_CONFIG_SHA256='91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1'
+_CONFIG_PATH=R/'docs/evidence/selected-compile-20261018/guard-config.json'
+_CONFIG_LENGTH=139780
+_CONFIG_SHA256='6f8238f25eaf9e8fd4278b28523a9ed41585b9b82ba671e29db30d4ea7fea486'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -32,7 +32,7 @@ def packet_fmt433():
  assert len(v['rows'])==len({x['source']for x in v['rows']})
  return v
 
-def packet():
+def packet_before_compile():
  base=packet_fmt433()
  extension=CONFIG['extension'];ext=json.loads(bounded(R/extension['path'],extension['length'],extension['sha256']))
  assert ext['schema']=='semaprax.fmt433-local133-extension.v1'
@@ -65,6 +65,28 @@ def packet():
   assert all(v in row['views']for v in prior['views'])
   assert row['current']==prior['current']or dict(name='whole-local133-current',**prior['current'])in row['views']
   a=dict(row);a.pop('fragments',None);a['current']=prior['current'];a['views']=prior['views'];assert a==prior
+ return logical
+
+def packet():
+ base=packet_before_compile();pin=CONFIG['compile_overlay'];ext=json.loads(bounded(R/pin['path'],pin['length'],pin['sha256']))
+ assert ext['schema']=='semaprax.current519-compile-overlay.v1'and ext['prior_extension']==CONFIG['extension']
+ assert set(ext)=={'schema','prior_extension','additional_before','rows'}and len(ext['additional_before'])==1
+ added=ext['additional_before'][0];assert added['source']=='src/hir/ids/declaration_backing_tests.rs'and added['compiled']is False
+ rows=list(base['rows']);assert added['source']not in {r['source']for r in rows};rows.append(added);positions={r['source']:i for i,r in enumerate(rows)};seen=set()
+ for row in ext['rows']:
+  source=row['source'];assert source in positions and source not in seen;seen.add(source);prior=rows[positions[source]]
+  assert row.get('views',[])[:len(prior.get('views',[]))]==prior.get('views',[])
+  if row['current']!=prior['current']:assert dict(name='whole-646-current',**prior['current'])in row['views']
+  restored=dict(row);restored['current']=prior['current']
+  if 'views'in prior:restored['views']=prior['views']
+  else:restored.pop('views',None)
+  if 'fragments'in prior:restored['fragments']=prior['fragments']
+  assert restored==prior;rows[positions[source]]=row
+ assert len(rows)==len(positions)==520;by={r['source']:r for r in rows};edges=0
+ for row in rows:
+  for child in row.get('fragments',[]):
+   assert not child.get('fragments')and child['compiled']is True and child==by[child['source']];edges+=1
+ assert edges==10;logical=dict(base);logical['rows']=rows;restored=dict(logical);restored['rows']=base['rows'];assert restored==base
  return logical
 
 def _successor_rows_4a6eb():

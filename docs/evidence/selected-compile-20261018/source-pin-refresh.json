@@ -1,0 +1,64 @@
+{
+  "status": "SOURCE_ONLY_COMPLETE520_OVERLAY_PREDICATES_PASS",
+  "before_head": "6465284748dbefaf89843b00158e85965ebc446b",
+  "before_guard": {
+    "length": 10638,
+    "sha256": "f6dc5d82c83da37b142dbf56dc889c1556d1d59c07373c0ece0fd53130c95609",
+    "archive": "docs/evidence/selected-compile-20261018/whole/f6dc5d82c83da37b142dbf56dc889c1556d1d59c07373c0ece0fd53130c95609.txt"
+  },
+  "before_config": {
+    "length": 139534,
+    "sha256": "91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1",
+    "archive": "docs/evidence/selected-compile-20261018/whole/91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1.txt"
+  },
+  "before_helper": {
+    "length": 112756,
+    "sha256": "dec0980fb03d2fb6fb7b4d31e66ecd9951991c27bb90cb8c3cf896df008fbe18",
+    "archive": "docs/evidence/selected-compile-20261018/whole/dec0980fb03d2fb6fb7b4d31e66ecd9951991c27bb90cb8c3cf896df008fbe18.txt"
+  },
+  "module_pins_refreshed": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/joins.rs",
+    "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs",
+    "src/cleanup_plan/replay/path_join/selected/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+    "src/cleanup_plan/replay/path_join/selected/strings.rs",
+    "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/structural_control/selected.rs",
+    "src/cleanup_plan/replay/structural_control/selected/calls.rs"
+  ],
+  "changed_sources": [
+    "src/cleanup_plan/replay/structural_control/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs",
+    "src/cleanup_plan/replay/path_join/selected/joins.rs",
+    "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+    "src/cleanup_plan/replay/path_join/selected/strings.rs",
+    "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
+    "src/cleanup_plan/replay/structural_control/selected/calls.rs",
+    "src/hir/ids/declaration_backing_tests.rs",
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/source_reflows_merge/main67107_inputs.rs"
+  ],
+  "overlay": {
+    "path": "docs/evidence/selected-compile-20261018/overlay.json",
+    "length": 11279,
+    "sha256": "6d0637bcec6b6082275c6c461ef11205f44a106360b823893bec2517355000d5"
+  },
+  "original_extension_unchanged": {
+    "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+    "length": 262141,
+    "sha256": "25013204bb0f5ac77b9b14909befe1473c8e983c3be2850459a481e345d3cb92"
+  },
+  "original_python_and_rust_loaders_whole_body_unchanged": true,
+  "all_original_519_rows_and_10_fragment_edges_retained": true,
+  "one_whole_reader_subject_added": true,
+  "logical_rows": 520,
+  "all_old_row_fields_views_and_current_pins_retained": true,
+  "per_file_limits_unchanged": true,
+  "helper_lines": 1494
+}

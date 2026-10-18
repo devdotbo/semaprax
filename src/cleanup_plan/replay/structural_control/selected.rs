@@ -2,6 +2,7 @@
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError as Error;
 use crate::cleanup_plan::replay::selected_context::child::Permit;
+use crate::cleanup_plan::{ExitTargetId, CLEANUP_PLAN_SCHEMA_V18, CLEANUP_PLAN_SCHEMA_V19};
 // The closure capture and its new typed Result are admitted before the
 // closure is formed. Macro expansion adds no forwarding helper activation.
 macro_rules! control_refusal {
@@ -19,16 +20,16 @@ macro_rules! control_refusal {
 // argument, Option result or pattern bindings. This lexical packet is acquired
 // on every call, including the terminal None; no forwarding helper is formed.
 macro_rules! dynamic_next {
-    ($budget:ident,$function:ident,$iter:ident,$roles:ty,$fields:expr) => {{
-        $budget.reserve_array::<$roles>($function, 1,
-            "selected dynamic iterator next receiving")?;
+    ($budget:ident,$function:ident,$iter:ident,$iterator:ty,$item:ty,($($binding:ty),*),$fields:expr) => {{
+        $budget.reserve_array::<(&mut $iterator, Option<$item>, $($binding,)*)>(
+            $function, 1, "selected dynamic iterator next receiving")?;
         $budget.charge($function, $fields, "selected dynamic iterator next receiving")?;
         $iter.next()
     }};
 
-    ($budget:ident,$function:ident,$iter:ident,$iterator:ty,$item:ty,($($binding:ty),*),$fields:expr) => {{
-        $budget.reserve_array::<(&mut $iterator, Option<$item>, $($binding,)*)>(
-            $function, 1, "selected dynamic iterator next receiving")?;
+    ($budget:ident,$function:ident,$iter:ident,$roles:ty,$fields:expr) => {{
+        $budget.reserve_array::<$roles>($function, 1,
+            "selected dynamic iterator next receiving")?;
         $budget.charge($function, $fields, "selected dynamic iterator next receiving")?;
         $iter.next()
     }};

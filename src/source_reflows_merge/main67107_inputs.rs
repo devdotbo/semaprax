@@ -605,9 +605,9 @@ fn factored_core_file(
     if let Some(value) = accepted_expected_file(path, length, expected) {
         return Ok(value);
     }
-    if let Some(value) = crate::source_reflows_merge::main_e177_final_inputs::file(
-        path, length, expected,
-    ) {
+    if let Some(value) =
+        crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected)
+    {
         return Ok(value);
     }
     factored_core_file_raw(path, length, expected)

@@ -126,11 +126,17 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         actual,
     );
     let expected = include_str!("../../../docs/evidence/actual2e92-fixed-operation-source-stage-20261018/iterator_ops.b00-parent.whole.rs.txt");
-    assert_eq!(current, expected, "complete genuine pre-provider-view source");
     assert_eq!(
-        format!("{:x}", crate::digest_hex::LowerHex(
-            <sha2::Sha256 as sha2::Digest>::digest(expected.as_bytes())
-        )),
+        current, expected,
+        "complete genuine pre-provider-view source"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(
+                expected.as_bytes()
+            ))
+        ),
         "6a9bd6dfb76df8707e5cd21ddd4e0ec85b0248cfc1834645c14824d11d775b16",
     );
     let current = current.as_str();

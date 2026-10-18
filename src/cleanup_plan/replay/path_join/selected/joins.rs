@@ -54,7 +54,7 @@ pub(super) fn validate_control_group_with_budget(
             6,
             renewal::validate_join_compatibility(
                 function,
-                states.range(..state),
+                states.range::<Box<PathState>, _>(..state),
                 state.as_ref(),
                 block,
                 budget,

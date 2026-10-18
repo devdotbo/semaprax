@@ -150,7 +150,7 @@ pub(super) fn capture_loop_entry(
         };
     }
     budget.reserve_btree_node::<usize, PathState>(function, "lexical loop snapshot node")?;
-    path_join::retained_child!(
+    retained_child!(
         budget,
         function,
         StateClone,

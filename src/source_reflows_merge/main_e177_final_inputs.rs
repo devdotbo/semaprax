@@ -5,8 +5,20 @@ const SOURCE_CAP: usize = 9753094;
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
-#[rustfmt::skip] // Preserve this exact bounded historical packet loader.
+#[rustfmt::skip] // Bounded additive overlay; the complete previous loader remains below.
 fn packet() -> serde_json::Value {
+ let base=packet_before_compile();let data=include_str!("../../docs/evidence/selected-compile-20261018/overlay.json");assert!(data.len()<=262144);assert_eq!((data.len(),digest(data.as_bytes())),(11279,"6d0637bcec6b6082275c6c461ef11205f44a106360b823893bec2517355000d5".to_owned()));let root=Path::new(env!("CARGO_MANIFEST_DIR"));assert_eq!(held(&root.join("docs/evidence/selected-compile-20261018/overlay.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
+ let ext:serde_json::Value=serde_json::from_str(data).unwrap();assert_eq!(ext["schema"],"semaprax.current519-compile-overlay.v1");assert_eq!(ext["prior_extension"],serde_json::json!({"path":"docs/evidence/fmt-local-441-20261018/extension.json","length":262141,"sha256":"25013204bb0f5ac77b9b14909befe1473c8e983c3be2850459a481e345d3cb92"}));
+ let mut logical=base.clone();let rows=logical["rows"].as_array_mut().unwrap();assert_eq!(ext.as_object().unwrap().len(),4);let added=ext["additional_before"].as_array().unwrap();assert_eq!(added.len(),1);assert_eq!(added[0]["source"],"src/hir/ids/declaration_backing_tests.rs");assert_eq!(added[0]["compiled"],false);assert!(!rows.iter().any(|r|r["source"]==added[0]["source"]));rows.push(added[0].clone());let mut seen=std::collections::BTreeSet::new();
+ for row in ext["rows"].as_array().unwrap(){let source=row["source"].as_str().unwrap();assert!(seen.insert(source));let index=rows.iter().position(|r|r["source"]==source).unwrap();let prior=&rows[index];let views=row["views"].as_array().unwrap();let before=prior["views"].as_array().unwrap();assert_eq!(&views[..before.len()],before.as_slice());
+ if row["current"]!=prior["current"]{let mut view=prior["current"].clone();view["name"]="whole-646-current".into();assert!(views.contains(&view));}
+ let mut restored=row.clone();restored["current"]=prior["current"].clone();restored["views"]=prior["views"].clone();if prior.get("fragments").is_some(){restored["fragments"]=prior["fragments"].clone();}assert_eq!(&restored,prior);rows[index]=row.clone();}
+ assert_eq!(rows.len(),520);let mut edges=0;for row in rows.iter(){for child in row.get("fragments").and_then(|v|v.as_array()).into_iter().flatten(){assert!(child.get("fragments").is_none());assert_eq!(child["compiled"],true);assert_eq!(Some(child),rows.iter().find(|r|r["source"]==child["source"]));edges+=1;}}assert_eq!(edges,10);
+ let mut restored=logical.clone();restored["rows"]=base["rows"].clone();assert_eq!(restored,base,"complete previous519 inverse");logical
+}
+
+#[rustfmt::skip] // Preserve this exact bounded historical packet loader.
+fn packet_before_compile() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);

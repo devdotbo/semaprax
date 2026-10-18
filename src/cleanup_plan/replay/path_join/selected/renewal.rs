@@ -483,7 +483,7 @@ pub(super) fn renew(
     )?;
     let flag = flag_at!(budget, function, flags, 0);
     if !budget.selected() && crate::string_ops::replacement::binding(function, at).is_some() {
-        return string_replacement::finish(function, flag, &history, state);
+        return Ok(string_replacement::finish(function, flag, &history, state)?);
     }
     if !history.contains(&flag)
         || !equal_without_flag!(budget, function, history, state.live_order, flag)

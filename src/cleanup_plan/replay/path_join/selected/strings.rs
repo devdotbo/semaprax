@@ -52,23 +52,24 @@ pub(in crate::cleanup_plan::replay) fn reserve_append(
     receive!(
         budget,
         function,
-        (usize, Option<usize>),
-        2,
+        (usize, Option<usize>, usize),
+        3,
         "selected append arithmetic receiving",
         ()
     );
+    let lookup_work = (appends.len() + 1)
+        .checked_mul(at.as_str().len() + 1)
+        .and_then(|n| n.checked_mul(2))
+        .ok_or_else(path_refusal!(
+            budget,
+            function,
+            permit,
+            usize,
+            Kind::SelectedAppendLookupOverflow
+        ))?;
     budget.charge(
         function,
-        (appends.len() + 1)
-            .checked_mul(at.as_str().len() + 1)
-            .and_then(|n| n.checked_mul(2))
-            .ok_or_else(path_refusal!(
-                budget,
-                function,
-                permit,
-                usize,
-                Kind::SelectedAppendLookupOverflow
-            ))?,
+        lookup_work,
         "selected append exact current lookup",
     )?;
     if matches!(source.storage, StorageId::Value(_))
@@ -177,12 +178,13 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
     budget.reserve_array::<(
         Vec<LivenessFlagId>,
         usize,
+        usize,
         Vec<LivenessFlagId>,
         &Vec<LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
     )>(function, 1, "selected path publish_append body receiving")?;
-    budget.charge(function, 6, "selected path publish_append body receiving")?;
+    budget.charge(function, 7, "selected path publish_append body receiving")?;
     budget.reserve_array::<(
         &ResolvedFunction,
         Option<Vec<LivenessFlagId>>,
@@ -210,17 +212,18 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
                 usize,
                 Kind::AppendPublicationLengthOverflow
             ))?;
+        let publication_work = capacity
+            .checked_mul(capacity + 1)
+            .ok_or_else(path_refusal!(
+                budget,
+                function,
+                permit,
+                usize,
+                Kind::AppendPublicationWorkOverflow
+            ))?;
         budget.charge(
             function,
-            capacity
-                .checked_mul(capacity + 1)
-                .ok_or_else(path_refusal!(
-                    budget,
-                    function,
-                    permit,
-                    usize,
-                    Kind::AppendPublicationWorkOverflow
-                ))?,
+            publication_work,
             "selected append publication exact history",
         )?;
         budget.reserve_array::<LivenessFlagId>(
