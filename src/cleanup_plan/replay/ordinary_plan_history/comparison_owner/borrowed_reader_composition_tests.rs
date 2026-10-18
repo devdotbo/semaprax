@@ -310,7 +310,6 @@ fn borrowed_reader_sources_keep_whole_pure2c_root_macro_and_all_original_pair_co
             "use super::super::before_main487::{compare, PAYMENT_HEADER, PATH_INDEX, PAIR_SCOPE, PAIR_PRIMITIVE, ComparisonOwner, Step};\n",
             "",
         ),
-        ("use super::super::before_main487::lexical_cursor;\n", ""),
         (
             "#[allow(clippy::duplicate_mod, reason = \"complete incoming2c tail owner independently compiled against genuine old comparator\")]\n#[path = \"main_b692_paired_tails.rs\"]",
             "#[path = \"pair_scope_tests/paired_tails.rs\"]",

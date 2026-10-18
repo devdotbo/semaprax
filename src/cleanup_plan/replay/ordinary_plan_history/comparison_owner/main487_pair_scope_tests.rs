@@ -1,7 +1,6 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
 use super::*;
 use super::super::before_main487::{compare, PAYMENT_HEADER, PATH_INDEX, PAIR_SCOPE, PAIR_PRIMITIVE, ComparisonOwner, Step};
-use super::super::before_main487::lexical_cursor;
 #[allow(clippy::duplicate_mod, reason = "complete incoming2c tail owner independently compiled against genuine old comparator")]
 #[path = "main_b692_paired_tails.rs"]
 mod paired_tails;
