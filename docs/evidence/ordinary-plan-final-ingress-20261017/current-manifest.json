@@ -14,8 +14,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/ordinary_plan_history/frontiers.rs",
-      "sha256": "9d426284e668624a8173a4bbe19e63d34aadee30500529ac8e13c05f0a7530ec",
-      "lines": 83
+      "sha256": "0e72ccf74360792956022784b2249c92914883a70bd85b1fc779ae99a7504d7c",
+      "lines": 101
     },
     {
       "path": "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
@@ -44,7 +44,7 @@
     },
     {
       "path": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-      "sha256": "94b21f9ef45d1a428df04fd17bf1c9b7b1094e77648d7e91677be2566d2cb823",
+      "sha256": "fd1e00a699cad7d1c78a93247e65dccb0fd1edae7436e34059a5860394bd5c7b",
       "lines": 520
     }
   ]
