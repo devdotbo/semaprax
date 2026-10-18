@@ -1066,7 +1066,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "1120ba43e933febb40d156332fc7c25e9d52b7071ac03d67e4575ebb244f8dc6",
+    "sha256": "379070cc4deeb7e1ebe4cbfdfcf81d7aaf1ab528de57ccdd6762e8012484989c",
     "lines": 948
   },
   {
@@ -1301,13 +1301,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
-    "sha256": "c05f65d6acd89ca4d6cf7b6bb2dd2c96197b265d9038ec03353cf9e3a9e75aec",
-    "lines": 916
+    "sha256": "d29c55faef71142151d9b9d44be970a76245c79bf5405521d8312cb4f3b9b3b6",
+    "lines": 1092
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs",
-    "sha256": "98b98b5415e02bf23d3f133772ad775a98e54456698b1f3b38f689be2629d1ea",
-    "lines": 480
+    "sha256": "8b0d6827a6c54f43a59f78f13174947762a40026eae81bede3877696432c0ab6",
+    "lines": 812
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
@@ -1316,8 +1316,8 @@
   },
   {
     "source": "src/hir/ids/declaration_tag.rs",
-    "sha256": "34cea24eb73a94530046e3f230cd9950c5c4a382be118d23893ad82992ee593e",
-    "lines": 572
+    "sha256": "b09d3fb2f9d3c57fddc7255d0ae7e084bec6396014b732b82e9496eb7e576b05",
+    "lines": 676
   },
   {
     "source": "src/hir/ids/declaration_tag/before.rs",

@@ -1,0 +1,30 @@
+{
+  "before_sha256": "95104ee3c8ca0043dae1b41f60452492293a08d563779744246044d2af52177b",
+  "after_sha256": "04ef18d92dcb1a17ef0d0deb8574da1fdd2c5305b712e05fe64e8d5748894a7a",
+  "edits": [
+    {
+      "before": "HEAD='91fd98ff8'",
+      "after": "HEAD='768e0501432708111f14f2759c4d1aaba241f73e'"
+    },
+    {
+      "before": "expected={'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs'}",
+      "after": "expected={'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs','src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs','src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs','src/hir/ids/declaration_tag.rs'}"
+    },
+    {
+      "before": "view=dict(name='whole-before-inline-memo-tests',**prior)",
+      "after": "view=dict(name='whole-before-matched-ABI-compile-repair',**prior)"
+    },
+    {
+      "before": "for p in expected:\n assert p in c['modules'];b=git(p);c['modules'][p].update(length=len(b),sha256=H(b))",
+      "after": "for p in sorted(expected&set(c['modules'])):\n b=git(p);c['modules'][p].update(length=len(b),sha256=H(b))"
+    },
+    {
+      "before": "O=D/'memo-final-candidate'",
+      "after": "O=D/'compile-repair-candidate'"
+    },
+    {
+      "before": "SOURCE_ONLY_ONE_MATCHED_MEMO_TEST_NAMESPACE_RESEAL_UNAPPLIED",
+      "after": "SOURCE_ONLY_FOUR_EXISTING_COMPILE_REPAIR_SOURCE_ROWS_UNAPPLIED"
+    }
+  ]
+}

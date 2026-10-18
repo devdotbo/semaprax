@@ -1,0 +1,66 @@
+{
+  "before_sha256": "6a544a374b211764583e1cc9bd8a43c728f4dfad9cf9fb9edbdbd3531ffc9ffa",
+  "after_sha256": "96277f9765437c19e67128eaac61d4c0c450163ef9792859e95fc91e5982972a",
+  "edits": [
+    {
+      "before": "BASE='f44e687aa7e37e2fec0a74803ccce3e315b69c41';REL='docs/evidence/f44-forwarding-repair-20261017'",
+      "after": "BASE='fc085244241be52c846dae746138276d29f5be84';REL='docs/evidence/matched831-ABI-current-custody-20261018'",
+      "count": 1
+    },
+    {
+      "before": "Path('/Volumes/Semaprax/worktrees/large-next-implementation-integration/AI-Lang')",
+      "after": "Path('/Volumes/Semaprax/worktrees/fixture11-linked-context-530073-20261018')",
+      "count": 1
+    },
+    {
+      "before": "{'src/source_reflows_merge/main67107_inputs.rs','src/source_reflows_merge/main_e177_final_inputs.rs','src/source_reflows_merge/ordinary_plan_inputs.rs'}",
+      "after": "{'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs','src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs','src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs','src/hir/ids/declaration_tag.rs','src/hir/validation/owned_iterative_oracle.rs','src/source_reflows_merge/main_e177_final_inputs.rs'}",
+      "count": 2
+    },
+    {
+      "before": "assert len(owners)==220",
+      "after": "assert len(owners)==265",
+      "count": 1
+    },
+    {
+      "before": "current_owners=220",
+      "after": "current_owners=265",
+      "count": 1
+    },
+    {
+      "before": "current=held(source)",
+      "after": "current=held(source);assert current==git('show',a.expected_head+':'+source)",
+      "count": 1
+    },
+    {
+      "before": "   raw=held(edge['parent']);text=edge['text'].encode();assert raw[edge['start']:edge['start']+len(text)]==text",
+      "after": "   raw=held(edge['parent']);text=edge['text'].encode()\n   mapping={518:5742,573:5797}\n   if edge['parent']=='src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs':\n    prior=git('show',BASE+':'+edge['parent']);assert prior[edge['start']:edge['start']+len(text)]==text and prior.count(text)==raw.count(text)==1\n    assert edge['start']in mapping and raw.index(text)==mapping[edge['start']]\n    edge['start']=mapping[edge['start']]\n   assert raw[edge['start']:edge['start']+len(text)]==text",
+      "count": 1
+    },
+    {
+      "before": " check=copy.deepcopy(m);check['sources']=old['sources'];assert check==old;full[name]=m",
+      "after": " check=copy.deepcopy(m);check['sources']=old['sources']\n for cls in check['classes'].values():\n  for chain in cls['chains']:\n   for edge in chain['edges']:\n    if edge['parent']=='src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs':\n     inverse={5742:518,5797:573};assert edge['start']in inverse;edge['start']=inverse[edge['start']]\n assert check==old;full[name]=m",
+      "count": 1
+    },
+    {
+      "before": "ONLY_THREE_KNOWN_SOURCE_HASHES_CHANGED_NO_ROLE_CHUNK_EDGE_OR_REGISTRATION_CHANGE",
+      "after": "ONLY_SIX_KNOWN_SOURCE_HASHES_AND_TWO_UNIQUE_EDGE_OFFSETS_NO_ROLE_CHUNK_EDGE_TEXT_OR_REGISTRATION_CHANGE",
+      "count": 1
+    },
+    {
+      "before": "roles_chunks_edges_attributes_unchanged=True",
+      "after": "roles_chunks_edge_text_attributes_unchanged=True,only_two_unique_declared_edge_offsets_remapped=True,actual_FINAL6_subjects_unchanged=True",
+      "count": 1
+    }
+  ],
+  "allowed_sources": [
+    "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+    "src/hir/ids/declaration_tag.rs",
+    "src/hir/validation/owned_iterative_oracle.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "old_and_current_owner_count": 265,
+  "source_only": true
+}
