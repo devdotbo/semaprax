@@ -451,7 +451,7 @@ fn transition_scratch_has_complete_immediate_typed_invoice_and_unchanged_work() 
             + Session::into_edge_query_bytes()
             + size_of::<Option<&Option<CallFact<'_>>>>();
         let guards = ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
-            + size_of::<(usize, &str, bool, &str, &str)>();
+            + (size_of::<usize>() + 3 * size_of::<&str>() + size_of::<bool>());
         // No second activation, allocation, selector or status/edge credit.
         let old_tail = lookups * old_query;
         let new_tail = lookups * new_query + callbacks * guards;

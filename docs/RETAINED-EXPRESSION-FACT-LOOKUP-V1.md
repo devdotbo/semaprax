@@ -292,7 +292,7 @@ actual guarded callback sequences. The complete additional comparison is:
 
 - old tail: `q * (OLD_SCRATCH + 2*sizeof(Result<Option<&Option<CallFact>>, Diagnostic>))`;
 - new tail: `q * (into_edge_local_bytes + into_edge_query_bytes + sizeof(Option<&Option<CallFact>>))`
-  plus `c * (STORAGE_PARENT_CURRENT_CONTROLS + sizeof((usize, &str, bool, &str, &str)))`.
+  plus `c * (STORAGE_PARENT_CURRENT_CONTROLS + sizeof(usize) + 3*sizeof(&str) + sizeof(bool))`.
 
 These are actual target-layout costs. The positive gate uses the complete
 immediate invocation, including its unchanged acquisition, prior retained phases,
