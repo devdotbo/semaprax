@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 80032,
-      "sha256": "93676d87d5fbdfd20a7078c596dc2cf737c1d4ac76ffa4635b0a898209e3a772"
+      "sha256": "83d8083a2cf4ba3b7e541953e098dad912f5b7405899ce987950863c319632d6"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1021,8 +1021,8 @@
       "sha256": "8d7ce550bcd6f49d491d9a5ea286b209e71307f23bf558f77ec9120e43bdb16a"
     },
     "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs": {
-      "length": 4326,
-      "sha256": "592ff99b199000a529e68f39e91e986fc133871718965889231f0139ff6a575e"
+      "length": 6885,
+      "sha256": "4c664503b8c2940f9c3519524d80c9a58f234f8dbdb9738438dda5eff6fd1edd"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs": {
       "length": 32095,
