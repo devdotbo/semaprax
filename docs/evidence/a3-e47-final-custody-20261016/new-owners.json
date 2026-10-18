@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "4afc7cdb8d6f4dfcae1fe42fe6db573f3715a12efc1216c8f2b8cc9f9045cc0d",
+    "sha256": "b8f7b4f56ed08e413bc4867b9fc4f04175fc992de4dcbc725283ff4e70e4bad4",
     "lines": 1235
   },
   {
@@ -706,8 +706,8 @@
   },
   {
     "source": "src/source_reflows_merge/final_ready_inputs.rs",
-    "sha256": "b837c9e303d875f0b8927c727c3c014b051b812c8633c8af694d4c28a0f6e6bb",
-    "lines": 425
+    "sha256": "8329dd416a08c5a72240ed958211b54bec08e15b20735b7f78e6f76195b5fe4d",
+    "lines": 428
   },
   {
     "source": "src/source_reflows_merge/main043_custody.rs",
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "944422d5bafe6d733cf1eeb0520899fa4a5b3f7a3806e78e3d219fdb25f3cd46",
+    "sha256": "31c4466a59fd33f313b5e80aa51b3cda135597257048b248635524ac3888c770",
     "lines": 520
   },
   {
@@ -996,13 +996,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-    "sha256": "197a4add6f4ab9654be4eeac51ee8f47379ad9485b72a9fd2b596f9868a96796",
-    "lines": 660
+    "sha256": "4d1b77c0e2af83e3988274975af589b9fef1cfe3b320ae1dd659764b0f2891d6",
+    "lines": 679
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
-    "sha256": "fb1c8cbcd52c0052722aa8f0ed4b3c659769bd11c6b5b7f3bd730606ba37143d",
-    "lines": 1165
+    "sha256": "e4f7dff02b5a0ab70c470d7d8ba3fe87da7aa978183d4d91af881078d6fe543a",
+    "lines": 1169
   },
   {
     "source": "src/cleanup_plan/replay/owned_suffix_878.rs",
@@ -1201,8 +1201,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-    "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22",
-    "lines": 117
+    "sha256": "8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b",
+    "lines": 126
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs",
@@ -1216,8 +1216,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
-    "sha256": "dcad168b4f31f6a81fa698f896ba0b2d4a4d2116a645990e87303b3ba8d085e0",
-    "lines": 624
+    "sha256": "76e0070cec959abb2e7d995bf576862026646ac893a037433aa1f9e9802c02a3",
+    "lines": 636
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs",
@@ -1231,8 +1231,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
-    "sha256": "cf871a10ee1e484abfa4b2fbbb1ccf0e170a88a6cd194bc7f91658688897bdaa",
-    "lines": 370
+    "sha256": "10b7aadc7f271ead518a33d6929eaf4a02dd7fe75172709e9ea9a0b0ccabc3a1",
+    "lines": 369
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
@@ -1266,13 +1266,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
-    "sha256": "c698e7060b861f02ad4a42729861450e93b8ff547214c95aa23c85b236fb3ee1",
-    "lines": 433
+    "sha256": "16a4ae9e363108b3377ae98b1339a8ed52c3c85c5f71f5dc84c31f625ffa76bb",
+    "lines": 485
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-    "sha256": "59afa3f12d2f7913cb43990ca48fb424c4d2a85da0aabd7d65cd68330cc3470c",
-    "lines": 1411
+    "sha256": "ff93aa1d5126986ac294ced32a7f054b36f0f96f1ab5a4545f30baf47ab38602",
+    "lines": 1444
   },
   {
     "source": "src/workspace_graph/shape_identity/before785.rs",
@@ -1326,8 +1326,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
-    "sha256": "079086c40d298ec210e9d531f359a83a068128ee218163fcc0a241f5924ad21f",
-    "lines": 1469
+    "sha256": "d29a70e85a11ecb4a8c8d6acc05419e127ac5ae378fde641b356db69728b9afd",
+    "lines": 1500
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
@@ -1336,8 +1336,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
-    "sha256": "b83b862a58b8339802c69d45511e801af32d97f5d77196ff7f94b538e00c3921",
-    "lines": 844
+    "sha256": "07ba09146551154e91b34c3fe9a870bc33371e289b5806e80c2cf90f33d4dc46",
+    "lines": 847
   },
   {
     "source": "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
@@ -1656,8 +1656,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
-    "sha256": "2aa84bda96497c790ebf5a15f295b60f3bdc3d79dd96fd2be0fe4e1930444420",
-    "lines": 263
+    "sha256": "056b1597667bf84de802965a91afbe68b1c0a6bdd6e5ac18e9b6b2f559c2a926",
+    "lines": 268
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "47353f0b7ebb6767687c86b429245ae2c8de862224a773ffd75b283b70caa959",
-    "lines": 1361
+    "sha256": "c269ab821ea70b6aae3c1e35c98a6fa60e110a435f12638408f4149ff656ac78",
+    "lines": 1380
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -1761,8 +1761,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
-    "sha256": "00d201f24d0a4a598093075e2b5a8dce94302c6ab21265a7b37392d5995ff159",
-    "lines": 125
+    "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e",
+    "lines": 131
   },
   {
     "source": "src/source_reflows_merge/runtime_json/sealed_io.rs",
@@ -1781,8 +1781,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
-    "sha256": "0914628a7c67cacb5798eb52eb8b5afb1e44a9e9560a825bc8222480aa9171af",
-    "lines": 628
+    "sha256": "efe37def7206f52eb92424c36d79bf3befbdbc1ba8e456d027fa8f30b62d93fa",
+    "lines": 638
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
@@ -1791,8 +1791,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
-    "sha256": "220697292f765bb9a1069be77bb959944106b07baaf169bd230baccfb551fe87",
-    "lines": 1425
+    "sha256": "b3a1e3e2d6e78473a39fad747b00ce0ed4dd4ae8fc0454568b83cff4dca13583",
+    "lines": 1480
   },
   {
     "source": "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
@@ -1816,7 +1816,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs",
-    "sha256": "2e41bd44a89c7a15957228600f8350aa83c7c6de9f9f78483f1d77539d2832b3",
+    "sha256": "adea1ccc8383fdceab390253fcde53adcfc4223f395fc89efa76521c183b689d",
     "lines": 518
   },
   {
@@ -1826,8 +1826,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs",
-    "sha256": "d11463da2bf2bba7e0f3f659edbd714d43ccd44ff307e02f5dd3a3dc14ae16da",
-    "lines": 1085
+    "sha256": "3bcc9a83700d77eb24eacd0192f13f3254681459ff8841e0c4c38a95b785b79d",
+    "lines": 1093
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs",
@@ -1841,8 +1841,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
-    "sha256": "75daf950d1b9ac32325b57809453c771f9b3f4fe24ff13454346da9d5a89abd0",
-    "lines": 114
+    "sha256": "f4dee6ae5901cbf94798600c1a1e207640b790d5577cdfe6014c6b4129eefbf2",
+    "lines": 134
   },
   {
     "source": "src/source_reflows_merge/main_e177_historical_before_data.rs",
@@ -1876,13 +1876,13 @@
   },
   {
     "source": "src/workspace_graph/expected_projection/call_carriers.rs",
-    "sha256": "21d2f0daca470d1bf08a75a8cf954b90e7988dd4d4350990aeba1f900833a799",
-    "lines": 350
+    "sha256": "84802a57f88f708bbc10da608f169ebedba8307677b2e6858cd8e0850c505aaa",
+    "lines": 357
   },
   {
     "source": "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
-    "sha256": "e88cb5b33a88dc9395d88fbf409d09a9258de3bd4bd9121009c85e83426424ab",
-    "lines": 760
+    "sha256": "30ee9b7d27da7985809d73823ad6b2297548873c76731723659b4464c9c49170",
+    "lines": 772
   },
   {
     "source": "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
@@ -1896,7 +1896,42 @@
   },
   {
     "source": "src/workspace_graph/expected_projection/call_carriers_tests.rs",
-    "sha256": "fee1e38967bcd4ac45b6e21043ec02e52cdad971880a6ee742ddbaadb58c976d",
-    "lines": 489
+    "sha256": "2ec48dabe7a72fdf527b604711b6b74fedf90e0977fc097aecedbef1b375dc13",
+    "lines": 539
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs",
+    "sha256": "aed0aeafaf41aa8a9e187d855f2ec450cd570f29c4fcb593cd3627489628a106",
+    "lines": 532
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs",
+    "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22",
+    "lines": 117
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs",
+    "sha256": "f9e75926f5df0b6b7746a78cf3d2f705bf76d342356346c3581ddd8b6c04aba9",
+    "lines": 970
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "sha256": "51cb131aee4bb8e75181b5d531193f50f99ba859bc40e2280d298bda5e224b23",
+    "lines": 163
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/call_carriers_before_directory.rs",
+    "sha256": "87142dc1b3f98f9d381459f0f4f8925c807d28645aa0646ea453eea3c63cc512",
+    "lines": 342
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/call_carriers_directory.rs",
+    "sha256": "67b31e8d89fc1bee8b6cee5002166c29147c012d6227e7d704de4274be555561",
+    "lines": 597
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs",
+    "sha256": "e99dea3e086c62ef27198c1dc5f7294f118365d7ba547af07cfd587ed2d686af",
+    "lines": 393
   }
 ]
