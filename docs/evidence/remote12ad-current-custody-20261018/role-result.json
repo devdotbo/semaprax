@@ -1,0 +1,1290 @@
+{
+  "status": "PASS_SOURCE_ONLY_MERGED_SAME_ROLE_CUSTODY",
+  "head": "4b2e0320ae62ec00396e3005610f0888fde31d30",
+  "dc_base": "dc64a29f847233f675507db16cdae41eaa347c1b",
+  "incoming_base": "12adce43484c6bd914f03fbaebe1e11579dbccd2",
+  "owners": 265,
+  "incoming_owner_list": 260,
+  "changed_sources": [
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/ast/program_source/decl_slices/alias_tests.rs",
+    "src/ast/program_source/decl_slices/before_alias.rs",
+    "src/ast/program_source/function_alias/presentation.rs",
+    "src/cleanup_plan/renewal_profile/ordinary/direct_presence_tests.rs",
+    "src/cleanup_plan/replay/branch_clone/funded_tests.rs",
+    "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
+    "src/cleanup_plan/replay/branch_clone/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_empty.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_held.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/amortized_source.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/source.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/tests.rs",
+    "src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs",
+    "src/cleanup_plan/replay/factored/compact_nodes/tests.rs",
+    "src/cleanup_plan/replay/factored/instrumentation.rs",
+    "src/cleanup_plan/replay/factored/moderate_tests.rs",
+    "src/cleanup_plan/replay/factored/oracle_order/tests.rs",
+    "src/cleanup_plan/replay/flat_records/tests/receiving_status_scalar.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
+    "src/cleanup_plan/replay/path_array/sequence_minimum/before.rs",
+    "src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs",
+    "src/cleanup_plan/replay/path_join/boxed_states/before.rs",
+    "src/cleanup_plan/replay/path_join/tests.rs",
+    "src/cleanup_plan/replay/physical_budget/authentication/tests.rs",
+    "src/cleanup_plan/replay/selected_context/child/tests.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main24/before.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main24/tests.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs",
+    "src/cleanup_plan/replay/sequence_vector/before_funded.rs",
+    "src/cleanup_plan/replay/sequence_vector/funded_tests.rs",
+    "src/cleanup_plan/replay/sequence_vector/observation_parity.rs",
+    "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+    "src/cleanup_plan/replay/structural_control/calls/custody_tests.rs",
+    "src/hir/identity_resolution/nominal.rs",
+    "src/hir/ids/declaration_tag.rs",
+    "src/hir/resolve_program_methods.rs",
+    "src/hir/resolve_yield.rs",
+    "src/loop_calls/byte_writer/source_index.rs",
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows/incoming67107_semantic_receivers.rs",
+    "src/source_reflows/semantic_receivers_main44.rs",
+    "src/source_reflows/semantic_receivers_main7c6.rs",
+    "src/source_reflows/semantic_receivers_main8a.rs",
+    "src/source_reflows/semantic_receivers_main_afba.rs",
+    "src/source_reflows/semantic_receivers_main_f1.rs",
+    "src/source_reflows/semantic_receivers_maina3.rs",
+    "src/source_reflows/semantic_receivers_mainb80.rs",
+    "src/source_reflows_merge.rs",
+    "src/source_reflows_merge/main67107_inputs_tail.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/source_reflows_merge/ordinary_plan_inputs.rs",
+    "src/source_reflows_merge/runtime_json.rs",
+    "src/source_reflows_merge/runtime_json/tests.rs",
+    "src/source_verify/declaration/functions/old.rs",
+    "src/source_verify/declaration/functions/public_signature_before.rs",
+    "src/source_verify/funding.rs",
+    "src/source_verify/hints.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs",
+    "src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs",
+    "src/workspace_graph/source_schema/nominal_context/main8a.rs",
+    "src/workspace_graph/validation/before_roots.rs",
+    "tests/support/production_source_inventory.rs"
+  ],
+  "incoming_additional_chains": {
+    "hir": {
+      "classes": [
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+        "src/hir/resolve_program_methods.rs",
+        "src/source_reflows_merge/main67107_inputs_tail.rs",
+        "tests/workspace/semantic_graph/source_inventory.rs"
+      ],
+      "chains": 39
+    },
+    "projection": {
+      "classes": [
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+        "src/hir/resolve_program_methods.rs",
+        "src/source_reflows_merge/main67107_inputs_tail.rs",
+        "tests/workspace/semantic_graph/source_inventory.rs"
+      ],
+      "chains": 39
+    }
+  },
+  "physical_edge_successors": [
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21939,
+      "after": 25548,
+      "text_sha256": "4fda2a66ab48ab3d03967a55c6ee31708904ce9ac9376674be8e9ca1dd17687d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21939,
+      "after": 25548,
+      "text_sha256": "4fda2a66ab48ab3d03967a55c6ee31708904ce9ac9376674be8e9ca1dd17687d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 21745,
+      "after": 25354,
+      "text_sha256": "9e48091083a3f7626864805bb2d420603320304e71be45e05537710634efd18a",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs",
+      "before": 518,
+      "after": 5742,
+      "text_sha256": "96abad0894fa84a34a06c895f0a9da855a88a03ad7becdbed3b0a79aa804d976",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
+      "before": 573,
+      "after": 5797,
+      "text_sha256": "d3f8dfab72bb263b5bef15beed46c5f5096d10892ae0369a78959d25bee36531",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21939,
+      "after": 25548,
+      "text_sha256": "4fda2a66ab48ab3d03967a55c6ee31708904ce9ac9376674be8e9ca1dd17687d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "before": 19286,
+      "after": 32998,
+      "text_sha256": "dab195b8b3de3f44cfb24e3ec2e7acd2cfc534946ab44739e079df79b137c265",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21317,
+      "after": 35029,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 77518,
+      "after": 92856,
+      "text_sha256": "c09f1603230ef7c0adcd19a4a05452e56a1bf67e8e67561f24b3edcbc1f48587",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 21939,
+      "after": 25548,
+      "text_sha256": "4fda2a66ab48ab3d03967a55c6ee31708904ce9ac9376674be8e9ca1dd17687d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 19514,
+      "after": 33226,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+      "before": 70927,
+      "after": 86265,
+      "text_sha256": "344e515d6cad63cfca90c49aea31ea77b6314e299d231b36dd47027d9d6a1353",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 19713,
+      "after": 33425,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+      "before": 68482,
+      "after": 83820,
+      "text_sha256": "d6708366e2568bdf8527a56f30c4bbdebafea9dcf0dcf5fa06a25155df593562",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 19926,
+      "after": 33638,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+      "before": 68885,
+      "after": 84223,
+      "text_sha256": "76f295f58e2ca3e68e289de8018f3ac9f75ed41579bb4957e520583deb2a6b19",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 20135,
+      "after": 33847,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+      "before": 69098,
+      "after": 84436,
+      "text_sha256": "3721a9a1e8a54e89e31b952a97bd35c7ca2570f826bdd9187689cb4302c3e9d8",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs",
+      "before": 20334,
+      "after": 34046,
+      "text_sha256": "a887dc4534c52e1cb9630bd3119421924cc8c1f7672f7d6bea17cd2949373693",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs",
+      "before": 20511,
+      "after": 34223,
+      "text_sha256": "0dc1412793e091981bf03a1f86ae9963e31348846b8acc05e9889d3cdc7a3ab9",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs",
+      "before": 20675,
+      "after": 34387,
+      "text_sha256": "36af93f0178d8c69cd9915a5c0cee93631458a6a519e0cbff7479c8e8e706a27",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 20813,
+      "after": 34525,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/hir/resolve_program_methods.rs",
+      "before": 62652,
+      "after": 77990,
+      "text_sha256": "85aaf0b1c59ad15dd31928784f2cbeabc40c0e0e519430aa182f9b57310f0b08",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 20940,
+      "after": 34652,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "src/source_reflows_merge/main67107_inputs_tail.rs",
+      "before": 62125,
+      "after": 77463,
+      "text_sha256": "c97a57fb3817be0cc09cea761ce3d79f04133172ec3e1bf19d1dc22553d54694",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 28339,
+      "after": 42051,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 79252,
+      "after": 94590,
+      "text_sha256": "b3da68f18c8d5b42596e2648f7a66025f933cdbf189618c4b2060c0404fc2c8d",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 21745,
+      "after": 25354,
+      "text_sha256": "9e48091083a3f7626864805bb2d420603320304e71be45e05537710634efd18a",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs",
+      "before": 518,
+      "after": 5742,
+      "text_sha256": "96abad0894fa84a34a06c895f0a9da855a88a03ad7becdbed3b0a79aa804d976",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "child": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
+      "before": 573,
+      "after": 5797,
+      "text_sha256": "d3f8dfab72bb263b5bef15beed46c5f5096d10892ae0369a78959d25bee36531",
+      "prior_generation": "12adce43484c6bd914f03fbaebe1e11579dbccd2"
+    }
+  ],
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "whole_class_keys_chunks_roles_and_dc_owner_prefix_preserved": true,
+  "Cargo": false,
+  "written": true
+}

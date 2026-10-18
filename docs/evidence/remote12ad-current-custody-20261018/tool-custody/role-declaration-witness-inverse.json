@@ -1,0 +1,28 @@
+{
+  "before_sha256": "ca827a351654d34b88f4a5a3ccc90b9899582d93ba43bc8458f76f037181e7f5",
+  "after_sha256": "efed0752e1a66a61dc9bb0880aee115795846fd850a41cd8a9b26fedf85cb3e0",
+  "edits": [
+    {
+      "before": "def shape(ch):",
+      "after": "LINT_PARENTS={'src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs'}\nLINT_ATTRIBUTE='#[allow(\\n    clippy::module_inception,\\n    reason = \"The nested control deliberately reproduces the predecessor lexical module path.\"\\n)]'\ndef shape(ch):"
+    },
+    {
+      "before": " for e in c['edges']:e.pop('start');e.pop('text')",
+      "after": " for e in c['edges']:\n  e.pop('start');e.pop('text')\n  if e['parent']in LINT_PARENTS and LINT_ATTRIBUTE in e['attributes']:e['attributes'].remove(LINT_ATTRIBUTE)"
+    },
+    {
+      "before": "   if choices:i,c=choices[0];used.add(i);chains.append(current_chain(c,REMOTE))",
+      "after": "   if choices:\n    i,c=choices[0];used.add(i)\n    for left,right in zip(ch['edges'],c['edges']):\n     if left['text']!=right['text']:\n      assert left['parent']in LINT_PARENTS and right['parent']==left['parent']\n      assert right['text']==left['text'].replace('pub(super) mod before_wrapper;',LINT_ATTRIBUTE+'\\npub(super) mod before_wrapper;',1)\n      assert right['attributes']==left['attributes']+[LINT_ATTRIBUTE]\n      original=G(DC,left['parent']);incoming=G(REMOTE,left['parent']);assert incoming.count((LINT_ATTRIBUTE+'\\n').encode())==1 and incoming.replace((LINT_ATTRIBUTE+'\\n').encode(),b'',1)==original\n     else:assert left['text']==right['text'] and left['attributes']==right['attributes']\n    chains.append(current_chain(c,REMOTE))"
+    },
+    {
+      "before": "LINT_PARENTS={'src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs'}",
+      "after": "LINT_PARENTS=['src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs', 'src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs']"
+    }
+  ],
+  "deterministic_parent_literal_sorted": [
+    "src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs",
+    "src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs"
+  ],
+  "old_tool_only_diagnostic_no_metadata_writes": true
+}
