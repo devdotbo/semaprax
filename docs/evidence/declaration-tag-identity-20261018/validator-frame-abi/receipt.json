@@ -1,0 +1,87 @@
+{
+  "status": "SOURCE_ONLY_UNRUN_ABI_REPAIR",
+  "base": "fc085244241be52c846dae746138276d29f5be84",
+  "historical_source": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "historical_build": {
+    "path": "/Volumes/Semaprax/lane-prompts/semantic-focused243-530073-20261018/owning-build-result.json",
+    "sha256": "3c3d078a7b93c1a2a52afc390ca398ce5b498081b7b29eb75ef59bf31e8f80ff",
+    "source_subject": "530073a528dcd226bb9260627da189a1fffcf8a8",
+    "exit_code": 0,
+    "executed_test_bodies": 0,
+    "scope": "Historical eight-artifact compile only; no inherited current qualification"
+  },
+  "inline_companions": [
+    {
+      "source": "src/hir/validation/call_parameters.rs",
+      "len": 10996,
+      "sha256": "dc3f689d03476a4de4c6b3914524ba4feddbc2bc852071f681b19134926b6c51",
+      "whole_530_equal_current": true
+    },
+    {
+      "source": "src/hir/validation/call_signature.rs",
+      "len": 404,
+      "sha256": "0899ddbcbb00069357bb6d2e389c14d3e9629668b0510c8de91a02e376a0df27",
+      "whole_530_equal_current": true
+    },
+    {
+      "source": "src/hir/validation/held_profiles.rs",
+      "len": 7087,
+      "sha256": "29cd59495ad1015d7efccf12e63e228cd2b454449d4e355af6c3a381a7194529",
+      "whole_530_equal_current": true
+    }
+  ],
+  "unchanged_production_and_dispatch": [
+    {
+      "source": "src/hir.rs",
+      "len": 58967,
+      "sha256": "e3aaf1c870be500fa794ec24d393f8dc94fcd996990abf388222ce079f4e0b04"
+    },
+    {
+      "source": "src/hir/validation.rs",
+      "len": 399157,
+      "sha256": "85a730c701db6b3031fecd84499aa1f2dff5f5c07d0498612bdcd1284dd0b271"
+    },
+    {
+      "source": "src/hir/validation/owned_iterative_oracle/dispatch_0.rs",
+      "len": 52554,
+      "sha256": "08a89606c39156a5d9263488f56e77516b575ad9ebccd1e1a066f0d55f6d29b2"
+    },
+    {
+      "source": "src/hir/validation/owned_iterative_oracle/dispatch_1.rs",
+      "len": 47390,
+      "sha256": "1b53d3ee59cf630af7d69bb1cff6498883b595b0b2ea9cbed6eb07675145be08"
+    },
+    {
+      "source": "src/hir/validation/owned_iterative_oracle/dispatch_2.rs",
+      "len": 45778,
+      "sha256": "4efa2b64013dce1180ea6f9a023057890016d85e3973289e79428ac1e61eda01"
+    },
+    {
+      "source": "src/hir/validation/owned_iterative_oracle/dispatch_3.rs",
+      "len": 12821,
+      "sha256": "14cfa942f87b784695deaa5977be6487584459e745463d331d25db024dd67c19"
+    }
+  ],
+  "new_selectors": [
+    "hir::validation::owned_iterative_oracle::frame_layout::historical_and_current_full_frames_keep_exact_typed_payload_equation_and_tariff",
+    "hir::validation::owned_iterative_oracle::frame_layout::whole_saved_frame_and_type_sources_have_only_declared_layout_substitutions"
+  ],
+  "unchanged_funding_bytes": 248,
+  "actual_current_size": "UNMEASURED: exact generic const witnesses must compile in authorized combined build",
+  "checks_performed": [
+    "full inverse to complete pre-repair saved oracle",
+    "complete historical Frame enum byte-equal530",
+    "complete historical ResolvedType and DeclarationText shape substitution source controls",
+    "rustfmt parse and targeted formatting check",
+    "1086line module budget"
+  ],
+  "not_performed": [
+    "Cargo",
+    "build",
+    "Rust tests",
+    "Clippy",
+    "metadata generation",
+    "issue writes",
+    "push"
+  ]
+}

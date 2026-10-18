@@ -1,0 +1,52 @@
+pub enum ResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
+    /// A retained affine zero-argument, i64-result callable.
+    OnceFunction,
+    OnceFunctionI64,
+    OnceFunctionI64Pair,
+    /// Same-thread transactional i64 callback; unlike ordinary function
+    /// values it owns one mutable receiver state cell.
+    MutFunctionI64,
+    Function {
+        parameters: Vec<ResolvedType>,
+        result: Box<ResolvedType>,
+    },
+    Unit,
+    I64,
+    /// A checked signed 32-bit integer.
+    I32,
+    /// One Unicode scalar value.
+    Char,
+    /// One unsigned 8-bit integer value.
+    U8,
+    /// A target-independent checked unsigned 64-bit semantic integer.
+    Usize,
+    /// Inline Copy byte storage with exact target-independent length.
+    ArrayU8(u32),
+    /// IEEE-754 single precision.
+    F32,
+    /// IEEE-754 double precision.
+    F64,
+    Bool,
+    /// An owned heap UTF-8 string value; never `Copy`.
+    String,
+    /// Uniquely owned immutable bytes. This needs drop but is not a resource.
+    Bytes,
+    /// A non-owning UTF-8 view rooted in the current invocation.
+    Str,
+    /// A non-owning byte view rooted in the current invocation.
+    SliceU8,
+    /// String Collections v1: the uniquely owned `Map<string, i64>` carrier.
+    /// It needs drop, is never `Copy`, and is admitted only for local
+    /// bindings threaded through the compiler-owned `map_*` operations.
+    StringMap,
+    TypeParameter {
+        owner: DeclarationId,
+        index: u32,
+    },
+    Nominal {
+        declaration: DeclarationId,
+        arguments: Vec<ResolvedType>,
+    },
+}
