@@ -1,0 +1,56 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      181907,
+      "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab"
+    ],
+    "src/cleanup_plan/replay/branch_clone/tests.rs": [
+      34279,
+      "8b2d648beed922295d90513d54949a49f4dcf9d021cde4579ba1d2789924f908"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs": [
+      54932,
+      "96f3344239af80ebe85eb637e5933bd596afde32f88c2e2184bd8edf32c96375"
+    ],
+    "src/source_reflows/incoming67107_semantic_receivers.rs": [
+      34695,
+      "2741ae801dcf4a4d2e416812576bcbf69f66e94ad69746ea81989a554f1cfd3f"
+    ]
+  },
+  "strict_dependencies": 1955,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    }
+  ],
+  "logical_rows": 441,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "09870f50b5c8cb4990f8f7624bdac3e159be3f1a1013aff8aa441f5758cf95f6",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
