@@ -1,5 +1,3 @@
-/Volumes/Semaprax/worktrees/v010-eb819-custody-union-20261018/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs:
-
 //! Exact pair-local link and sealed unit-driver successor.
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
