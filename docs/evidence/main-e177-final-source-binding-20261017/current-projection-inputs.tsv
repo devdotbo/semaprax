@@ -59,6 +59,8 @@ src/cleanup_plan/replay/branch_clone/direct/tests.rs
 src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs
