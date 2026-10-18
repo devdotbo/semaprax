@@ -1,0 +1,22 @@
+{
+  "status": "SOURCE_AND_OPAQUE_MODELS_ONLY_NOT_RUNTIME_QUALIFICATION",
+  "current_and_immutable883_models_each_cases": 6000,
+  "current_and_immutable883_models_each_work_error_cuts": 86118,
+  "all_original_and_successor_source_tests": 19,
+  "source_phase_forwarding_test_passed": true,
+  "actual_invoice_function_bodies_typechecked_and_independent_scalar_cases_passed": true,
+  "models_shared_HIR_only_typechecked": true,
+  "full_compiler_physical_allocator_native64MiB_STD08_browser_Lean_and_applications_still_require_current_hosted_CI": true,
+  "complete-model-memory.json": {
+    "owner-probe-compile": 191440,
+    "owner-probe-run": 130800,
+    "baseline-probe-compile": 138160,
+    "baseline-probe-run": 136832
+  },
+  "source-memory.json": {
+    "source-compile": 200592,
+    "source-run": 32,
+    "phase-compile": 108064,
+    "phase-run": 32
+  }
+}

@@ -15,6 +15,8 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_macro(current: &str) -> String {
+    let current = super::super::super::paired_links::previous_macro(current);
+    let current = current.as_str();
     restore(current, 17993, MACRO)
 }
 #[rustfmt::skip]
@@ -28,6 +30,8 @@ const MACRO: &[(usize, &str, &str)] = &[
     (339, "// The shared immutable-step branch adds six payment and five work sites.\n", "// The shared immutable-step branch adds four payment and five work sites.\n"),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    let current = super::super::super::paired_links::previous_pair_tests(current);
+    let current = current.as_str();
     restore(current, 49614, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -48,6 +52,8 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (732, "    pub shared_runs: usize,\n    pub shared_turns: usize,\n", ""),
 ];
 pub(super) fn previous_boundary_controls(current: &str) -> String {
+    let current = super::super::super::paired_links::previous_boundary_controls(current);
+    let current = current.as_str();
     restore(current, 22995, BOUNDARY_CONTROLS)
 }
 #[rustfmt::skip]
@@ -63,6 +69,8 @@ const BOUNDARY_CONTROLS: &[(usize, &str, &str)] = &[
     (721, "mod shared_runs;\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    let current = super::super::super::paired_links::previous_route(current);
+    let current = current.as_str();
     restore(current, 35279, ROUTE)
 }
 #[rustfmt::skip]
@@ -153,7 +161,9 @@ mod tests {
     #[test]
     fn run_sources_refuse_span_extent_and_outside_drift_without_masking() {
         hostile(
-            include_str!("../../../../../../lexical_cursor.rs"),
+            &super::super::super::super::paired_links::previous_macro(include_str!(
+                "../../../../../../lexical_cursor.rs"
+            )),
             previous_macro,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -162,7 +172,9 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../../../pair_scope_tests.rs"),
+            &super::super::super::super::paired_links::previous_pair_tests(include_str!(
+                "../../../../../../pair_scope_tests.rs"
+            )),
             previous_pair_tests,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -180,7 +192,9 @@ mod tests {
             CENSUS,
         );
         hostile(
-            include_str!("../shared_boundaries.rs"),
+            &super::super::super::super::paired_links::previous_boundary_controls(include_str!(
+                "../shared_boundaries.rs"
+            )),
             previous_boundary_controls,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -189,9 +203,9 @@ mod tests {
             BOUNDARY_CONTROLS,
         );
         hostile(
-            include_str!(
+            &super::super::super::super::paired_links::previous_route(include_str!(
                 "../../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
-            ),
+            )),
             previous_route,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),

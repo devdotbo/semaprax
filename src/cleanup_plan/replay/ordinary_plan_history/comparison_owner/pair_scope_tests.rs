@@ -94,21 +94,17 @@ fn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize)
         + size_of::<&Segment>()
         + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
         + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-    let links = 4 * size_of::<&Vec<usize>>()
-        + 4 * size_of::<&[usize]>()
-        + 4 * size_of::<usize>()
-        + 3 * size_of::<bool>();
+    let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();
     let query = 2 * size_of::<&[Segment]>()
         + 2 * size_of::<usize>()
         + size_of::<&Segment>()
         + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
         + 3 * size_of::<&[Rc<SkeletonObservation>]>()
         + size_of::<bool>();
-    let advance = 4 * size_of::<&mut Vec<usize>>()
-        + 2 * size_of::<Option<usize>>()
-        + 10 * size_of::<usize>()
-        + 6 * size_of::<bool>()
+    let advance = 2 * size_of::<&[usize]>()
         + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + (4 * size_of::<usize>() + 4 * size_of::<usize>())
+        + 4 * size_of::<bool>()
         + size_of::<Ordering>();
     (
         (pair + 4 * step + 2 * load) * row.shared_boundaries,
@@ -139,13 +135,18 @@ fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usi
         + 2 * size_of::<usize>()
         + size_of::<bool>();
     let retained = 4 * size_of::<usize>()
-        + if paths >= 2 { 11 * header } else { 0 }
+        + if paths >= 2 { 10 * header } else { 0 }
         + size_of::<usize>() * row.loads
         + 3 * size_of::<bool>() * row.shared_checks
         + size_of::<bool>() * row.shared_patterns
         + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata
-        + (2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>()) * row.shared_runs
-        + (4 * size_of::<usize>() + size_of::<bool>()) * row.shared_turns
+        + (4 * size_of::<&Vec<usize>>() + 4 * size_of::<&[usize]>()) * row.pairs
+        + (2 * size_of::<&[Rc<SkeletonObservation>]>()
+            + 4 * size_of::<usize>()
+            + 6 * size_of::<std::iter::Take<std::iter::Repeat<()>>>()
+            + 2 * size_of::<&mut std::iter::Take<std::iter::Repeat<()>>>()
+            + 2 * size_of::<Option<()>>())
+            * row.shared_runs
         + (4 * size_of::<&[Rc<SkeletonObservation>]>()
             + 4 * size_of::<usize>()
             + size_of::<Ordering>())
@@ -1189,5 +1190,24 @@ fn shared_run_replays_every_real_883_work_cut_before_private_cursor_publication(
             new, old,
             "complete six-field diagnostics and exact remaining work at cut {cut}"
         );
+    }
+}
+
+#[test]
+fn sealed_unit_driver_is_exactly_unit_only_and_never_allocates_or_owns_cleanup() {
+    use lexical_cursor::SharedUnitDriver;
+    fn unit_iter<I: Iterator<Item = ()>>(_: &I) {}
+    assert_eq!(size_of::<()>(), 0);
+    assert!(!std::mem::needs_drop::<SharedUnitDriver>());
+    for length in [0, 1, 2, 4, 257] {
+        let ((), heap) = measure(|| {
+            let mut driver: SharedUnitDriver = std::iter::repeat(()).take(length);
+            unit_iter(&driver);
+            for _ in 0..length {
+                assert_eq!(driver.next(), Some(()));
+            }
+            assert_eq!(driver.next(), None); // this sole terminal call ends the primitive
+        });
+        assert_eq!(heap, Metrics::default());
     }
 }

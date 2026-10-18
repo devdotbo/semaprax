@@ -1,0 +1,132 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "before": {
+      "length": 23539,
+      "sha256": "a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8.txt"
+    },
+    "current": {
+      "length": 23894,
+      "sha256": "c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "before": {
+      "length": 17993,
+      "sha256": "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9.txt"
+    },
+    "current": {
+      "length": 21368,
+      "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "before": {
+      "length": 49614,
+      "sha256": "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa.txt"
+    },
+    "current": {
+      "length": 50482,
+      "sha256": "912e395a250f4ef36eaf8aa573d7afa532bf4098073d7d1aded519cb922ac9bd",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/912e395a250f4ef36eaf8aa573d7afa532bf4098073d7d1aded519cb922ac9bd.txt"
+    }
+  },
+  {
+    "source": "src/bounded_output/stage_debits/route_debits.rs",
+    "before": {
+      "length": 35279,
+      "sha256": "4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d.txt"
+    },
+    "current": {
+      "length": 35701,
+      "sha256": "b125788670ff005f7e6c52453fd573985b3fbc227058f06a5893a84655e7e398",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/b125788670ff005f7e6c52453fd573985b3fbc227058f06a5893a84655e7e398.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+    "before": {
+      "length": 11132,
+      "sha256": "fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921.txt"
+    },
+    "current": {
+      "length": 11150,
+      "sha256": "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+    "before": {
+      "length": 18577,
+      "sha256": "329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255.txt"
+    },
+    "current": {
+      "length": 18935,
+      "sha256": "0c0437fd827d8461cdda760700ce7d8186c79b49a6242cd30eb909c2d9044002",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/0c0437fd827d8461cdda760700ce7d8186c79b49a6242cd30eb909c2d9044002.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+    "before": {
+      "length": 18765,
+      "sha256": "4303877ac229afaa6b73341699573a4425c3e6222b1c2116a84e30a9d38adf86",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/4303877ac229afaa6b73341699573a4425c3e6222b1c2116a84e30a9d38adf86.txt"
+    },
+    "current": {
+      "length": 19581,
+      "sha256": "d2edfb10c666c696cc1897e0619f5673753309f81180ef997437d6bcb4382890",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/d2edfb10c666c696cc1897e0619f5673753309f81180ef997437d6bcb4382890.txt"
+    }
+  },
+  {
+    "source": "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md",
+    "before": {
+      "length": 10070,
+      "sha256": "4978dd6bcd103f3a727dd32a7b1f29be95ee086400b814ff01ab10882fd5a44a",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/4978dd6bcd103f3a727dd32a7b1f29be95ee086400b814ff01ab10882fd5a44a.txt"
+    },
+    "current": {
+      "length": 12538,
+      "sha256": "09c8a78781a06ee8e4e329949828326b66a3974b6b3cf472b73b30caa1957f89",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/09c8a78781a06ee8e4e329949828326b66a3974b6b3cf472b73b30caa1957f89.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 578640,
+      "sha256": "e0ba3d445d1c59e9be2798a059564af149af93a9a3287c4ac1982fff6bef360a",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/e0ba3d445d1c59e9be2798a059564af149af93a9a3287c4ac1982fff6bef360a.txt"
+    },
+    "current": {
+      "length": 578977,
+      "sha256": "f8be6d1714ca825e0b4fbf3a0edc6d188e8ece6b44c9ef5f51f973a176e43c1e",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/f8be6d1714ca825e0b4fbf3a0edc6d188e8ece6b44c9ef5f51f973a176e43c1e.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+    "before": {
+      "length": 22995,
+      "sha256": "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16.txt"
+    },
+    "current": {
+      "length": 23201,
+      "sha256": "db28863e00f2732ab65d3322bbebe3bf2f5f9928f8cad813260d6e5ab6890b85",
+      "archive": "docs/evidence/pair-links-7e-20261018/whole/db28863e00f2732ab65d3322bbebe3bf2f5f9928f8cad813260d6e5ab6890b85.txt"
+    }
+  }
+]

@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 23539,
-      "sha256": "a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8"
+      "length": 23894,
+      "sha256": "c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 43007,
@@ -261,8 +261,8 @@
       "sha256": "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
-      "length": 17993,
-      "sha256": "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9"
+      "length": 21368,
+      "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3"
     },
     "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs": {
       "length": 11775,
@@ -317,8 +317,8 @@
       "sha256": "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 49614,
-      "sha256": "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa"
+      "length": 50482,
+      "sha256": "912e395a250f4ef36eaf8aa573d7afa532bf4098073d7d1aded519cb922ac9bd"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 41016,
-      "sha256": "75d793cd0851a3944b5254caa0ecaee65f8a2822a18072cfd41820f4a67e733f"
+      "sha256": "a5853c159d11f996a36be2f05e528c3a0c05064537a76e6ccaccfdbac1430382"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

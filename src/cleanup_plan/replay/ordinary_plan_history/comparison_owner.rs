@@ -323,7 +323,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW,
+                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW + 2 * lexical_cursor::PAIR_LINK_VIEW,
                     "ordinary plan history pair-local paths"
                 )?;
                 {
@@ -331,9 +331,13 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     let right_path = &actual.paths[owner.right];
                     let mut left_tail = left_path.history.tail.as_slice();
                     let mut right_tail = right_path.history.tail.as_slice();
+                    let mut left_links = owner.left_cursor.links.as_slice();
+                    let mut right_links = owner.right_cursor.links.as_slice();
                     loop {
                         shared_plan_pair_step!(
                             owner,
+                            left_links,
+                            right_links,
                             census,
                             function,
                             budget,
@@ -352,6 +356,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_loaded,
                             left_segments,
                             left_tail,
+                            left_links,
                             census,
                             function,
                             budget,
@@ -364,6 +369,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_loaded,
                             right_segments,
                             right_tail,
+                            right_links,
                             census,
                             function,
                             budget,

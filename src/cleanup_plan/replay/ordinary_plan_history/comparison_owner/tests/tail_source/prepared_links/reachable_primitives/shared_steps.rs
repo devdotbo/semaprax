@@ -30,6 +30,8 @@ const MACRO: &[(usize, &str, &str)] = &[
     (339, "// The shared immutable-step branch adds four payment and five work sites.\n", ""),
 ];
 pub(super) fn previous_owner(current: &str) -> String {
+    let current = super::paired_links::previous_owner(current);
+    let current = current.as_str();
     restore(current, 23539, OWNER)
 }
 #[rustfmt::skip]
@@ -73,6 +75,8 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (479, "    pub shared_checks: usize,\n    pub shared_patterns: usize,\n    pub shared_metadata: usize,\n    pub shared_steps: usize,\n", ""),
 ];
 pub(super) fn previous_reachable(current: &str) -> String {
+    let current = super::paired_links::previous_reachable(current);
+    let current = current.as_str();
     restore(current, 11132, REACHABLE)
 }
 #[rustfmt::skip]
@@ -174,7 +178,9 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../../comparison_owner.rs"),
+            &super::super::paired_links::previous_owner(include_str!(
+                "../../../../../comparison_owner.rs"
+            )),
             previous_owner,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -203,7 +209,9 @@ mod tests {
             CENSUS,
         );
         hostile(
-            include_str!("../reachable_primitives.rs"),
+            &super::super::paired_links::previous_reachable(include_str!(
+                "../reachable_primitives.rs"
+            )),
             previous_reachable,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),

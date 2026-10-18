@@ -151,3 +151,40 @@ failure cuts; a real compiler fixture checks every cut of a multi-step run.
 Every predecessor invoice, exact-source inverse and hostile control remains.
 These source and bounded model results do not establish full compiler, physical
 allocator, application, native64MiB, STD-08, browser or hosted qualification.
+
+## Pair-local prepared views and sealed unit run driver
+
+Within each prepared sorting pair, two immutable slices borrow the existing
+validated link vectors. Suffix patterns advance these pair-local views without
+forming Vec::pop's data-bearing Option or repeated Vec-to-slice receivers.
+They discover no new links. The vectors themselves retain their scalar indices
+until the next original prepare clears them; capacity, owned Drop, allocations,
+original validation and every work request remain unchanged. These loans end
+before another preparation or path swap. Final independent HIR cursors retain
+the complete original Vec-consuming implementation. All new view, suffix,
+selector and state transports are paid before formation.
+
+One run uses the closed concrete Take<Repeat<()>> driver. This is a NEW narrow
+primitive family, separate from the earlier accepted880 Result<(), Diagnostic>
+rule. Its one fixed run-local iterator owns only scalar state, has no Drop,
+captures no references or callback, allocates nothing, yields only Some(()) and
+ends immediately on its sole terminal None. Its constructor, IntoIterator
+transfers and one complete sequential nonescaping next caller frame are funded
+per run before construction. Unit success carries zero payload; the fixed
+Option<()> discriminant slot and stable mutable receiver are covered there.
+No data-bearing Option, observation, slice, index, ordinary Cursor::next or
+Zip::next payload receives this rule. There is no runtime exemption parameter.
+The old explicit caller condition/decrement values no longer exist; the closed
+standard-library driver implementation has scalar state already funded here.
+
+The run still executes all five original work calls for every observation and
+publishes private borrowed cursor state only after all succeed. Original
+physical, six-field diagnostic, work-cut, ownership, exact-source and hostile
+controls remain. Independent typed invoices account for the two pair views,
+new constructor/driver transfers, changed suffix transports and all reachable
+payment sites. A real compiler unit checks the exact unit driver and zero
+allocation/Drop behavior. Complete bounded comparator models exercise all
+previous cases and cuts against both current and immutable883 bodies. These
+checks do not establish full compiler, application, allocator, native64MiB,
+STD-08, browser or current hosted qualification; all those gates remain required
+with unchanged limits and source corpus.

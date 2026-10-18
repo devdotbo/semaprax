@@ -53,6 +53,9 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (602, "    pub shared_empty_checks: usize,\n    pub shared_links: usize,\n    pub shared_queries: usize,\n    pub shared_boundaries: usize,\n", ""),
 ];
 pub(super) fn previous_shared_steps(current: &str) -> String {
+    previous_shared_steps_stage(&super::super::paired_links::previous_stage1(current))
+}
+fn previous_shared_steps_stage(current: &str) -> String {
     restore(current, 18577, SHARED_STEPS)
 }
 #[rustfmt::skip]
@@ -184,8 +187,8 @@ mod tests {
             CENSUS,
         );
         hostile(
-            include_str!("../shared_steps.rs"),
-            previous_shared_steps,
+            &super::super::super::paired_links::previous_stage1(include_str!("../shared_steps.rs")),
+            previous_shared_steps_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-shared-steps.rs.txt"

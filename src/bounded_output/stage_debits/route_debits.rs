@@ -819,7 +819,7 @@ fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
 fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_site() {
     // Closed current invocation grammar. An unfamiliar source shape fails this
     // guard instead of silently omitting a real payment from the census.
-    fn phases<'a>(source: &'a str, token: &str, arguments: usize) -> Vec<&'a str> {
+    fn phases<'a>(source: &'a str, token: &str, arguments: &[usize]) -> Vec<(&'a str, usize)> {
         let mut phases = Vec::new();
         for (start, _) in source.match_indices(token) {
             let begin = start + token.len();
@@ -857,9 +857,10 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             );
             let first = body.find('"').unwrap();
             let last = body.rfind('"').unwrap();
-            assert_eq!(body[..first].matches(',').count(), arguments - 1);
+            let arity = body[..first].matches(',').count() + 1;
+            assert!(arguments.contains(&arity), "unknown macro arity");
             assert!(body[last + 1..].trim().trim_matches(',').trim().is_empty());
-            phases.push(&body[first + 1..last]);
+            phases.push((&body[first + 1..last], arity));
         }
         phases
     }
@@ -867,26 +868,29 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         env!("CARGO_MANIFEST_DIR"),
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
     ));
-    let direct = phases(owner, "paid!(", 4);
-    let forwarded = phases(owner, "lexical_plan_next!(", 10);
-    let shared = phases(owner, "shared_plan_pair_step!(", 5);
+    let direct = phases(owner, "paid!(", &[4]);
+    let forwarded = phases(owner, "lexical_plan_next!(", &[10, 11]);
+    let shared = phases(owner, "shared_plan_pair_step!(", &[7]);
     assert_eq!(
         (direct.len(), forwarded.len(), shared.len()),
         (13, 4, 1),
         "audit new lexical payment sites explicitly"
     );
+    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 10).count(), 2);
+    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 11).count(), 2);
     let lexical = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
     let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 13, "audit every generic payment site");
+    assert_eq!(sites.len(), 15, "audit every generic payment site");
     assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
     assert_eq!(lexical.matches("shared_plan_segment_run!(").count(), 1);
     let compact: String = lexical.split_whitespace().collect();
+    assert_eq!(compact.matches("lexical_pair_plan_next!($owner,$cursor,$items,$loaded,$limit,$tail,$links,$census,$function,$budget,$phase)").count(), 1);
     assert_eq!(
         compact
-            .matches("shared_plan_boundary!($owner,$census,$function,$budget,$phase);")
+            .matches("shared_plan_boundary!($owner,$left_links,$right_links,$census,$function,$budget,$phase);")
             .count(),
         1
     );
@@ -907,7 +911,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             "unknown generic payment forwarding shape: {phase}"
         );
     }
-    for phase in direct.into_iter().chain(forwarded).chain(shared) {
+    for (phase, _) in direct.into_iter().chain(forwarded).chain(shared) {
         assert!(
             comparison_phase(phase).is_some(),
             "unattributed actual payment phase: {phase}"
