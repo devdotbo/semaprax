@@ -203,7 +203,7 @@ pub(in crate::cleanup_plan::replay) fn copy_controls<T: Clone, V>() -> usize {
 // Whole literal old inline census plus the direct bank. This replaces the
 // prior zero-argument fee expression without an additional runtime fee call,
 // argument, arithmetic helper Result or unpriced receiving usize.
-pub(in crate::cleanup_plan::replay) fn inline_controls<T: Clone, V>() -> usize {
+pub(in crate::cleanup_plan::replay) const fn inline_controls<T: Clone, V>() -> usize {
     size_of::<Result<(), Diagnostic>>() // caller payment result
         + 4 * size_of::<Result<(), Diagnostic>>() // clone/push work, clone census, conversion
         + 2 * size_of::<Result<(), Diagnostic>>() // backing wrapper and nested byte payment
@@ -321,3 +321,101 @@ mod tests;
 
 #[cfg(test)]
 mod before;
+
+// Const-only copy of the complete unchanged inline role bank. It introduces no
+// runtime fee call; the real caller still acquires super::inline_controls.
+const fn small_inline_controls<T: Clone>() -> usize {
+    size_of::<Result<(), Diagnostic>>() // caller payment result
+        + 4 * size_of::<Result<(), Diagnostic>>() // clone/push work, clone census, conversion
+        + 2 * size_of::<Result<(), Diagnostic>>() // backing wrapper and nested byte payment
+        + size_of::<Result<usize, Diagnostic>>() // checked array size conversion
+        + size_of::<Option<usize>>()
+        + 2 * size_of::<Vec<T>>() // initializer and the enumerator's named branch
+        + size_of::<&mut ReplayBudget>() + size_of::<&ResolvedFunction>()
+        + size_of::<&Vec<T>>() // direct clone census argument
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<&mut Vec<T>>() + size_of::<&[T]>()
+        + 2 * size_of::<std::slice::Iter<'_, T>>()
+        + 2 * size_of::<std::iter::Cloned<std::slice::Iter<'_, T>>>()
+}
+
+// Paid in the existing initial selection call, before the moved payer test or
+// the new length predicate. No old role or later backing payment is credited.
+pub(in crate::cleanup_plan::replay) const SMALL_SELECTION_CONTROLS: usize = 2 * size_of::<&ReplayBudget>() // pays_allocations actual/formal reborrow
+    + 4 * size_of::<&AllocationPayer>() // inequality actual/formal left and right
+    + size_of::<Vec<std::rc::Rc<SkeletonObservation>>>() // moved uninitialized named branch
+    + 2 * size_of::<&Vec<std::rc::Rc<SkeletonObservation>>>() // len actual/formal
+    + 4 * size_of::<usize>() // length result, comparison inputs and cutoff receiver
+    + 6 * size_of::<bool>(); // inequality, return/receive, negation, length and condition
+
+// The complete original initial bank plus the separately typed new receivers.
+pub(in crate::cleanup_plan::replay) const PLAN_SMALL_SELECTION_CONTROLS: usize =
+    super::super::final_output::PLAN_SELECTION_CONTROLS + SMALL_SELECTION_CONTROLS;
+
+// For shorter histories even the largest possible reduction from doubled
+// capacity to len+1 cannot cover the full direct-call/query bank and selection.
+// This is a storage choice, never a program admission or work limit.
+pub(in crate::cleanup_plan::replay) const SMALL_COPY_LIMIT: usize =
+    (inline_controls::<std::rc::Rc<SkeletonObservation>, SkeletonObservation>()
+        - small_inline_controls::<std::rc::Rc<SkeletonObservation>>()
+        - SMALL_SELECTION_CONTROLS
+        - 1)
+        / size_of::<std::rc::Rc<SkeletonObservation>>()
+        + 2;
+
+// Statement expansion owns no helper inputs or Vec/Diagnostic return. Its
+// complete unchanged inline census is acquired by the caller before expansion.
+macro_rules! copy_small_plan {
+    ($branch:ident, $values:ident, $observation:ident, $budget:ident, $function:ident) => {{
+        $budget.charge_skeleton($function, 1, "cleanup-plan skeleton branch clone")?;
+        $budget.reserve_clone($function, &$values, "cleanup-plan skeleton branch clone")?;
+        note_skeleton_materialization();
+        // Keep the original push-work refusal ahead of additional backing.
+        $budget.charge_skeleton($function, 1, "plan branch observation push")?;
+        note_skeleton_materialization();
+        let capacity = if $values.is_empty() {
+            1
+        } else {
+            if $values.len() > usize::MAX / 2 {
+                return Err($budget.budget_refusal(
+                    $function,
+                    "cleanup replay branch capacity overflowed",
+                    "",
+                ));
+            }
+            $values.len() * 2
+        };
+        $budget.reserve_array::<std::rc::Rc<SkeletonObservation>>(
+            $function,
+            capacity - $values.len(),
+            "plan branch observation push",
+        )?;
+        $budget.reserve_bytes(
+            $function,
+            physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(&$observation),
+            "plan branch observation push",
+        )?;
+        $branch = Vec::with_capacity(capacity);
+        $branch.extend($values.iter().cloned());
+        $branch.push($observation.into());
+        #[cfg(test)]
+        $crate::cleanup_plan::replay::branch_clone::direct::note_small_copy();
+    }};
+}
+pub(in crate::cleanup_plan::replay) use copy_small_plan;
+
+// Descriptive fixed-size observer; it supplies no physical or work authority.
+#[cfg(test)]
+std::thread_local! {
+    static SMALL_COPIES: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) fn note_small_copy() {
+    SMALL_COPIES.with(|slot| slot.set(slot.get().checked_add(1).unwrap()));
+}
+#[cfg(test)]
+fn take_small_copies() -> usize {
+    SMALL_COPIES.with(|slot| slot.replace(0))
+}

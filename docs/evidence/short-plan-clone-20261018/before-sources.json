@@ -1,0 +1,50 @@
+[
+  {
+    "source": "src/cleanup_plan/replay.rs",
+    "length": 321849,
+    "sha256": "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay.rs.before.txt"
+  },
+  {
+    "source": "src/cleanup_plan/replay/final_output.rs",
+    "length": 9225,
+    "sha256": "14ef67381d229e623951062d33c4af71d0a33f4878ce6bbccea0e012fbf19794",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay__final_output.rs.before.txt"
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone.rs",
+    "length": 17122,
+    "sha256": "7f639da343b5b88c60751510a27cd4f7cd8c97bccfa454d662e9c179057e9a4c",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay__branch_clone.rs.before.txt"
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+    "length": 13556,
+    "sha256": "5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay__branch_clone__direct.rs.before.txt"
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+    "length": 33216,
+    "sha256": "6e6772615546625651a3772f4685a92b816b44fb9eddd0d9ad83b20d43885c99",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay__branch_clone__direct__before.rs.before.txt"
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "length": 20361,
+    "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/src__cleanup_plan__replay__branch_clone__direct__tests.rs.before.txt"
+  },
+  {
+    "source": "CHANGELOG.md",
+    "length": 576654,
+    "sha256": "4f1b65dbf1c0ee0a498f75c426f106954b5b1f9ef11b3293617f6299351066dd",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/CHANGELOG.md.before.txt"
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/resolved_disposal.rs",
+    "length": 46797,
+    "sha256": "3dccefdddce06477f61559e703f7d4b9709033dae97bad99f18800b0a02befab",
+    "scratch_archive": "/Volumes/Semaprax/tmp/ci-38383508340/small-branch-clone-f94c/crates__semaprax-native-rust-interop-builder__src__implementation__tests__resolved_disposal.rs.before.txt"
+  }
+]

@@ -1,0 +1,9 @@
+{
+  "src/cleanup_plan/replay/final_output.rs": "14ef67381d229e623951062d33c4af71d0a33f4878ce6bbccea0e012fbf19794",
+  "src/cleanup_plan/replay/branch_clone/direct/tests.rs": "454e4a72720e21d401c3eba21270129632f567ca91816457cd2545be58a583e7",
+  "src/cleanup_plan/replay.rs": "70c0ce82d4865d4fd0be470838cf4f106090931a9a6e4af0ab8bb1aa16803dac",
+  "CHANGELOG.md": "2aecb41c4b93a00d26c26bac5161706f0deef87b01a254a0e9fd285ec2d2c0dc",
+  "src/cleanup_plan/replay/branch_clone/direct.rs": "e6c0be34dad331407aef566b9a97d73549114df5a5c4bf0739a8788fda987a73",
+  "src/cleanup_plan/replay/branch_clone.rs": "13ec0cecbb6a9b4b02b8be3744fc803d230366214f1badf379e37137e43443a1",
+  "src/cleanup_plan/replay/branch_clone/direct/before.rs": "a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65"
+}

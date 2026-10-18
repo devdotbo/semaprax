@@ -1,0 +1,14 @@
+{
+  "status": "PASS",
+  "files": [
+    "src/cleanup_plan/replay.rs",
+    "src/cleanup_plan/replay/final_output.rs",
+    "src/cleanup_plan/replay/branch_clone.rs",
+    "src/cleanup_plan/replay/branch_clone/direct.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/resolved_disposal.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "peak_kib": 39536
+}

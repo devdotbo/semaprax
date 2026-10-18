@@ -6906,24 +6906,22 @@ fn plan_skeleton_paths(
             CleanupTerminator::Branch(edges) => {
                 budget.reserve_bytes(
                     function,
-                    final_output::PLAN_SELECTION_CONTROLS,
+                    branch_clone::direct::PLAN_SMALL_SELECTION_CONTROLS,
                     "plan final-output selection controls",
                 )?;
                 if edges.len() == 2 && observations.len() < observations.capacity() {
                     let edge = &plan.edges[edges[0].0 as usize];
                     let observation = final_output::observation!(edge, budget, function);
-                    budget.reserve_bytes(
-                        function,
-                        branch_clone::direct::inline_controls::<
-                            std::rc::Rc<SkeletonObservation>,
-                            SkeletonObservation,
-                        >(),
-                        "branch clone receiving controls",
-                    )?;
-                    // The direct generic call's actual/formal arguments and
-                    // Vec Result are funded above, before their formation.
                     let mut branch;
                     if !budget.pays_allocations() {
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::direct::inline_controls::<
+                                std::rc::Rc<SkeletonObservation>,
+                                SkeletonObservation,
+                            >(),
+                            "branch clone receiving controls",
+                        )?;
                         branch = skeleton_clone(
                             budget,
                             function,
@@ -6937,7 +6935,28 @@ fn plan_skeleton_paths(
                             observation,
                             "plan branch observation push",
                         )?;
+                    } else if observations.len() < branch_clone::direct::SMALL_COPY_LIMIT {
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),
+                            "branch clone receiving controls",
+                        )?;
+                        branch_clone::direct::copy_small_plan!(
+                            branch,
+                            observations,
+                            observation,
+                            budget,
+                            function
+                        );
                     } else {
+                        budget.reserve_bytes(
+                            function,
+                            branch_clone::direct::inline_controls::<
+                                std::rc::Rc<SkeletonObservation>,
+                                SkeletonObservation,
+                            >(),
+                            "branch clone receiving controls",
+                        )?;
                         branch = branch_clone::direct::copy_prepaid(
                             budget,
                             function,

@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/merge-2e92-browser-20261018/guard-config.json'
-_CONFIG_LENGTH=111000
-_CONFIG_SHA256='7c253d062b7224bdbdaa7b142ff3da6c25a28ed9c63e1991a61afffa9af82f01'
+_CONFIG_PATH=R/'docs/evidence/short-plan-clone-20261018/guard-config.json'
+_CONFIG_LENGTH=139534
+_CONFIG_SHA256='91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
