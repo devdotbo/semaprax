@@ -15,6 +15,7 @@ use function @id("std.data.json.scan.first_element") from std.data.json.scan as 
 use function @id("std.data.json.scan.next_element") from std.data.json.scan as next_element;
 use function @id("std.data.json.scan.key_eq") from std.data.json.scan as key_eq;
 use function @id("std.data.json.scan.decimal_end") from std.data.json.scan as decimal_end;
+use function @id("std.data.json.scan.utf8_text_valid") from std.data.json.scan as utf8_text_valid;
 
 @id("std.data.json.scan.tests.navigation")
 fn navigation() -> bool
@@ -68,7 +69,7 @@ fn hostile() -> bool
     let trailing_view = array_as_slice(trailing);
     let empty = [32u8];
     let empty_view = array_as_slice(empty);
-    !is_document(escape_view) && !is_document(hex_view) && !is_document(high_view) && !is_document(low_view) && !is_document(pair_view) && !is_document(control_view) && !is_document(utf8_view) && !is_document(utf8cut_view) && !is_document(leading_view) && !is_document(fraction_view) && !is_document(exponent_view) && !is_document(comma_view) && strict_end(mixed_view, 32usize, 0) == byte_len(mixed_view) + 7usize && !is_document(colon_view) && !is_document(trailing_view) && !is_document(empty_view)
+    !is_document(escape_view) && !is_document(hex_view) && !is_document(high_view) && !is_document(low_view) && !is_document(pair_view) && !is_document(control_view) && !is_document(utf8_view) && !is_document(utf8cut_view) && !is_document(leading_view) && !is_document(fraction_view) && !is_document(exponent_view) && !is_document(comma_view) && strict_end(mixed_view, 32usize, 0) == byte_len(mixed_view) + 7usize && !is_document(colon_view) && !is_document(trailing_view) && !is_document(empty_view) && !utf8_text_valid(utf8_view, 0usize, byte_len(utf8_view), 64usize) && !utf8_text_valid(utf8cut_view, 0usize, byte_len(utf8cut_view), 64usize)
 }
 
 @id("std.data.json.scan.tests.policies")
@@ -104,7 +105,7 @@ fn unicode() -> bool
     let view = array_as_slice(valid);
     let first = first_element(view, 0usize);
     let second = next_element(view, first, 32usize);
-    strict_end(view, 32usize, 1) == byte_len(view) && kind(view, first) == 3 && kind(view, second) == 3 && next_element(view, second, 32usize) == byte_len(view)
+    strict_end(view, 32usize, 1) == byte_len(view) && kind(view, first) == 3 && kind(view, second) == 3 && next_element(view, second, 32usize) == byte_len(view) && utf8_text_valid(view, first, value_end(view, first, 32usize), 4usize) && !utf8_text_valid(view, first, value_end(view, first, 32usize), 3usize) && utf8_text_valid(view, second, value_end(view, second, 32usize), 2usize) && !utf8_text_valid(view, second, value_end(view, second, 32usize), 1usize) && !utf8_text_valid(view, second, value_end(view, second, 32usize), 65usize)
 }
 
 @id("std.data.json.scan.tests.main")

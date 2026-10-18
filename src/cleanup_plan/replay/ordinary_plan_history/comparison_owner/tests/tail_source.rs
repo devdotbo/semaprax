@@ -23,11 +23,15 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
-pub(super) fn previous(current: &str) -> String {
+mod prepared_links;
+fn previous_stage(current: &str) -> String {
     restore(current, 6431, MACRO)
 }
+pub(super) fn previous(current: &str) -> String {
+    previous_stage(&prepared_links::previous_macro(current))
+}
 pub(super) fn previous_owner(current: &str) -> String {
-    restore(current, 21817, OWNER)
+    restore(&prepared_links::previous_owner(current), 21817, OWNER)
 }
 #[rustfmt::skip]
 const MACRO: &[(usize, &str, &str)] = &[
@@ -89,19 +93,22 @@ mod tests {
     }
     #[test]
     fn retained_tail_witness_rejects_span_extent_and_unrecognized_body_drift() {
+        let stage = prepared_links::previous_macro(CURRENT);
+        let current = stage.as_str();
+        let previous = previous_stage;
         let &(at, after, _) = MACRO
             .iter()
             .find(|(_, after, _)| !after.is_empty())
             .unwrap();
-        let mut changed = CURRENT.to_owned();
+        let mut changed = current.to_owned();
         let end = at + after.chars().next().unwrap().len_utf8();
         let replacement = if &changed[at..end] == "x" { "y" } else { "x" };
         changed.replace_range(at..end, replacement);
         assert!(std::panic::catch_unwind(|| previous(&changed)).is_err());
-        let changed = format!("{CURRENT} ");
+        let changed = format!("{current} ");
         assert!(std::panic::catch_unwind(|| previous(&changed)).is_err());
-        let changed = CURRENT.replacen("macro_rules!", "macro_rulex!", 1);
-        assert_ne!(changed, CURRENT);
+        let changed = current.replacen("macro_rules!", "macro_rulex!", 1);
+        assert_ne!(changed, current);
         let result = std::panic::catch_unwind(|| previous(&changed));
         assert!(result.is_err() || result.unwrap() != BEFORE);
     }

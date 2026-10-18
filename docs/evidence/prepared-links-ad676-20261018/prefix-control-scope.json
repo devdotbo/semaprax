@@ -1,0 +1,11 @@
+{
+  "actual_failed_job": 117653150024,
+  "before_head": "ad676a63ba3aa69b375d01a7616b235173f7bbee",
+  "all_13_old_subject_cases_retained": true,
+  "new_lexical_children_checked_by_actual_current_owner": true,
+  "historical_28_subject_prefix_unchanged": true,
+  "nonempty_tails_and_identity_checks_added_to_missing_and_reordered_fixtures": true,
+  "local_protocol_probe": "BEFORE_FAILS_AFTER_PASSES_COMPLETE_RUST_CONTROL_FUNCTIONS_ACTUAL_FILE_BYTES_LAZY_FIXTURE_DATA_ADAPTER",
+  "real_harness_CI_still_required": true,
+  "compile_time_include_and_real_harness_authentication_UNEXECUTED": true
+}

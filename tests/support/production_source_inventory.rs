@@ -320,9 +320,28 @@ fn accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_t
         include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs"),
     ] {
         assert!(!subject.is_empty());
-        let missing = prefix.replacen(subject, "", 1);
-        for bad in [missing.clone(), format!("{missing}{subject}")] {
-            assert!(std::panic::catch_unwind(|| assert_accepted_batch_relocated_prefix(&bad)).is_err());
+        let current = current_accepted_batch_relocated_prefix();
+        let (owner, verify): (&str, fn(&str)) = if prefix.contains(subject) {
+            (prefix, assert_accepted_batch_relocated_prefix)
+        } else {
+            assert!(
+                [
+                    include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
+                    include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
+                ].contains(&subject),
+                "only the declared new lexical children use the current receiver"
+            );
+            (current.as_str(), assert_current_accepted_batch_relocated_prefix)
+        };
+        assert_eq!(owner.matches(subject).count(), 1);
+        let missing = owner.replacen(subject, "", 1);
+        let moved = format!("{missing}{subject}");
+        let moved = if moved == owner { format!("{subject}{missing}") } else { moved };
+        for changed in [missing, moved] {
+            assert_ne!(changed, owner, "identity mutation cannot prove refusal");
+            for bad in [changed.clone(), format!("{changed}remaining raw inventory")] {
+                assert!(std::panic::catch_unwind(|| verify(&bad)).is_err());
+            }
         }
     }
 }

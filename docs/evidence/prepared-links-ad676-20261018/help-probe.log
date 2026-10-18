@@ -1,0 +1,7 @@
+
+running 2 tests
+test help::usages::tests::exhaustive_catalog_hides_only_the_full_new_shape_from_the_public_host ... ok
+test help::usages::tests::new_help_preserves_exact_public_and_full_grammar ... ok
+
+test result: ok. 2 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

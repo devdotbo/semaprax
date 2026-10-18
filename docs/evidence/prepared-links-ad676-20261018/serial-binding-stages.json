@@ -1,0 +1,24 @@
+{
+  "before_head": "ad676a63ba3aa69b375d01a7616b235173f7bbee",
+  "first_cursor_stage_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+  ],
+  "complete_actual_intermediate_page_retained": {
+    "length": 168409,
+    "sha256": "626a35c2c12504ceffdebebf0b2f5ff0223e117080a22585f5629de19ba8232a",
+    "archive": "docs/evidence/prepared-links-ad676-20261018/whole/626a35c2c12504ceffdebebf0b2f5ff0223e117080a22585f5629de19ba8232a.txt"
+  },
+  "complete_actual_intermediate_policy_retained": {
+    "length": 15829,
+    "sha256": "1dfa8019bba299c24de473516ecdbbe3a1e3a2ee63a1de5f452670df6d002dae",
+    "archive": "docs/evidence/prepared-links-ad676-20261018/whole/1dfa8019bba299c24de473516ecdbbe3a1e3a2ee63a1de5f452670df6d002dae.txt"
+  },
+  "final_prefix_stage_sources": [
+    "tests/support/production_source_inventory.rs"
+  ],
+  "all_previous_wires_views_and_row_order_retained": true,
+  "not_a_new_producer_execution_or_runtime_claim": true
+}

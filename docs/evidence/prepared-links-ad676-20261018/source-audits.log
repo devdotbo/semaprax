@@ -1,0 +1,9 @@
+
+running 4 tests
+test tests::tail_source::prepared_links::tests::complete_macro_owner_and_prior_tail_controls_have_exact_before_bytes ... ok
+test tests::tail_source::prepared_links::tests::unknown_span_extent_and_outside_body_drift_never_match_whole_before_sources ... ok
+test tests::tail_source::tests::retained_tail_witness_covers_the_whole_macro_and_owner ... ok
+test tests::tail_source::tests::retained_tail_witness_rejects_span_extent_and_unrecognized_body_drift ... ok
+
+test result: ok. 4 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

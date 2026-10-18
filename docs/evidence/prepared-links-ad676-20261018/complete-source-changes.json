@@ -1,0 +1,119 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "before": {
+      "length": 21817,
+      "sha256": "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d.txt"
+    },
+    "current": {
+      "length": 22474,
+      "sha256": "41cb2cf4267b055c3aee09c6a6bb143da182c28a6b583524ca7608e590133c10",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/41cb2cf4267b055c3aee09c6a6bb143da182c28a6b583524ca7608e590133c10.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "before": {
+      "length": 6431,
+      "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22.txt"
+    },
+    "current": {
+      "length": 6457,
+      "sha256": "8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "before": {
+      "length": 9167,
+      "sha256": "0d0b20f5ef894692ee8fd14387d936f7b1b3ed8156d32ecd34de41f5ac6a4b23",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/0d0b20f5ef894692ee8fd14387d936f7b1b3ed8156d32ecd34de41f5ac6a4b23.txt"
+    },
+    "current": {
+      "length": 10663,
+      "sha256": "d52a7804f5e7b309b97f971e235f68dd584f0f12f4c5ef39e348bf477a3e0a70",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/d52a7804f5e7b309b97f971e235f68dd584f0f12f4c5ef39e348bf477a3e0a70.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "before": {
+      "length": 37558,
+      "sha256": "eb6ad553c326cd785282cf0ecd1392d3a84a376f8871c8083295573f9a764bd0",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/eb6ad553c326cd785282cf0ecd1392d3a84a376f8871c8083295573f9a764bd0.txt"
+    },
+    "current": {
+      "length": 39324,
+      "sha256": "7c8c21116a4c24c477f22ca3e35d59047c9988ac595a235ae296aed1c0baaa7c",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/7c8c21116a4c24c477f22ca3e35d59047c9988ac595a235ae296aed1c0baaa7c.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "before": {
+      "length": 5301,
+      "sha256": "7312b7548cb44e3fd276bcee8a487defc1073f273aa9c2b26e64f612f8b77a29",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/7312b7548cb44e3fd276bcee8a487defc1073f273aa9c2b26e64f612f8b77a29.txt"
+    },
+    "current": {
+      "length": 5600,
+      "sha256": "1b4fe517fc67c10d948bde00946cb17bf88c84b0f6c333d2b365851b28f22d37",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/1b4fe517fc67c10d948bde00946cb17bf88c84b0f6c333d2b365851b28f22d37.txt"
+    }
+  },
+  {
+    "source": "src/cli/help.rs",
+    "before": {
+      "length": 89685,
+      "sha256": "14c16fc43eeee853d1e78ca56c5d3b5943b3003231ce4d0cdd237fd6c186ba33",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/14c16fc43eeee853d1e78ca56c5d3b5943b3003231ce4d0cdd237fd6c186ba33.txt"
+    },
+    "current": {
+      "length": 89572,
+      "sha256": "eb595f6d341dee8c79314184802cc8ec79d4cea09c886445a299a21b53612602",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/eb595f6d341dee8c79314184802cc8ec79d4cea09c886445a299a21b53612602.txt"
+    }
+  },
+  {
+    "source": "tests/project/standard_library/application_json/owned/shiftsim_id_validation.rs",
+    "before": {
+      "length": 12263,
+      "sha256": "f5ad3b12d0b7cc1379de34f62a658caa682e78c086d5811153f0216b6b0da940",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/f5ad3b12d0b7cc1379de34f62a658caa682e78c086d5811153f0216b6b0da940.txt"
+    },
+    "current": {
+      "length": 12407,
+      "sha256": "642b9b1e3446bd1f233a6998bc5abd76cb9256346dd325bc20acbb0a4d4add18",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/642b9b1e3446bd1f233a6998bc5abd76cb9256346dd325bc20acbb0a4d4add18.txt"
+    }
+  },
+  {
+    "source": "std/data-json-scan/src/tests.spx",
+    "before": {
+      "length": 7726,
+      "sha256": "cc813b3d0e9c2c0d05847b4297b18a95e27652e8c58d1d6a7706f38076f83f3d",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/cc813b3d0e9c2c0d05847b4297b18a95e27652e8c58d1d6a7706f38076f83f3d.txt"
+    },
+    "current": {
+      "length": 8344,
+      "sha256": "99f3817fd897da3011bb9d88bad7a13fcd273b5604d05996d505c6162f7bbfbc",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/99f3817fd897da3011bb9d88bad7a13fcd273b5604d05996d505c6162f7bbfbc.txt"
+    }
+  },
+  {
+    "source": "tests/support/production_source_inventory.rs",
+    "before": {
+      "length": 25203,
+      "sha256": "8ebfa7f693a69f7b22005e0720b3e571f35ead3967aa415b5b94481c83e5ba8f",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/8ebfa7f693a69f7b22005e0720b3e571f35ead3967aa415b5b94481c83e5ba8f.txt"
+    },
+    "current": {
+      "length": 26267,
+      "sha256": "fe6ab35478b9d3e9c8c4611584f1f997a1be95ed36b0fc9d0c6db107490b8fa7",
+      "archive": "docs/evidence/prepared-links-ad676-20261018/whole/fe6ab35478b9d3e9c8c4611584f1f997a1be95ed36b0fc9d0c6db107490b8fa7.txt"
+    }
+  }
+]

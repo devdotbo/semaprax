@@ -14,6 +14,8 @@ pub(super) struct Row {
     pub pairs: usize,
     pub rounds: usize,
     pub tails: usize,
+    pub steps: usize,
+    pub loads: usize,
     pub complete: bool,
     pub ended: bool,
     pub unwound: bool,
@@ -32,6 +34,8 @@ const EMPTY: Row = Row {
     pairs: 0,
     rounds: 0,
     tails: 0,
+    steps: 0,
+    loads: 0,
     complete: false,
     ended: false,
     unwound: false,
@@ -161,6 +165,18 @@ impl Guard {
     pub(super) fn round(&self) {
         self.update(|r| match r.rounds.checked_add(1) {
             Some(n) => r.rounds = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn step(&self) {
+        self.update(|r| match r.steps.checked_add(1) {
+            Some(n) => r.steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn load(&self) {
+        self.update(|r| match r.loads.checked_add(1) {
+            Some(n) => r.loads = n,
             None => r.overflow = true,
         });
     }
@@ -299,5 +315,35 @@ mod controls {
         assert!(lost_count > 0);
         assert!(rows.is_empty());
         TRACE.with(|t| t.borrow_mut().generation = 0);
+    }
+    #[test]
+    fn prepared_link_counter_overflow_is_incomplete_and_does_not_spend_work() {
+        for load in [false, true] {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                if load {
+                    trace.rows[0].loads = usize::MAX;
+                } else {
+                    trace.rows[0].steps = usize::MAX;
+                }
+            });
+            if load {
+                guard.load();
+            } else {
+                guard.step();
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost_count) = finish();
+            assert_eq!(lost_count, 0);
+            assert_eq!(rows.len(), 1);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+            assert_eq!(budget.remaining, remaining);
+        }
     }
 }

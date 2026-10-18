@@ -1,0 +1,22 @@
+{
+  "logical_changed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "tests/support/production_source_inventory.rs"
+  ],
+  "nonlogical_existing": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "src/cli/help.rs",
+    "tests/project/standard_library/application_json/owned/shiftsim_id_validation.rs",
+    "std/data-json-scan/src/tests.spx"
+  ],
+  "new_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "src/cli/help/usages.rs"
+  ],
+  "original_174_and_FINAL6_subjects_unchanged": true,
+  "pending_final_source_controls_and_roles": false,
+  "source_only_final_controls_and_roles_pass": true
+}

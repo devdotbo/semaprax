@@ -6,6 +6,7 @@ mod language_details;
 mod library;
 mod reference_links;
 mod shapes;
+mod usages;
 use library::library_help;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -864,7 +865,7 @@ pub(crate) fn catalog(private: bool) -> String {
         .iter()
         .filter(|s| s.global && available(s, private))
     {
-        for usage in spec.usages {
+        for usage in usages::visible(spec, private) {
             if spec.canonical == "build" && !private {
                 out.push_str(&usage.replace("|rust", ""));
             } else {
@@ -878,7 +879,7 @@ pub(crate) fn catalog(private: bool) -> String {
 pub(crate) fn scoped(name: &str, private: bool) -> Option<String> {
     let spec = selected(name, private)?;
     let mut out = String::from("Usage:\n");
-    for usage in spec.usages {
+    for usage in usages::visible(spec, private) {
         out.push_str("  ");
         if spec.canonical == "build" && !private {
             out.push_str(&usage.replace("|rust", ""));
@@ -892,12 +893,9 @@ pub(crate) fn scoped(name: &str, private: bool) -> Option<String> {
     }
     Some(out)
 }
-/// Every canonical top-level command name this compiler admits, public or
-/// private. Exposed so a sibling module's own closed vocabulary (for example
-/// `agent_skill_bundle::PUBLIC_WORKFLOW`'s `cli_command` field) can be
-/// cross-checked against the real, single-sourced CLI catalog instead of
-/// duplicating it; see `cli::agent::tests::public_workflow_commands_are_all_
-/// catalogued`.
+/// Canonical public and private command names for checking sibling vocabularies,
+/// including `agent_skill_bundle::PUBLIC_WORKFLOW`, against this catalog.
+/// See `cli::agent::tests::public_workflow_commands_are_all_catalogued`.
 #[allow(
     dead_code,
     reason = "used only in `#[cfg(test)]` cross-check; bin build sees no call site"
