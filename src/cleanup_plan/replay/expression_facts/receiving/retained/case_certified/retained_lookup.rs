@@ -2,6 +2,9 @@
 use super::directory::HeldPrefix;
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::arena::{retained::Session, Arena};
+use crate::cleanup_plan::replay::ordinary_receiving::{
+    prepare_into, refuse_into, reserve_into, Failure,
+};
 use std::mem::size_of;
 
 // Disjoint first-frontier site ledger. The borrowed tag pattern constructs
@@ -67,7 +70,7 @@ pub(super) fn complete_rows<'hir, 'facts>(
 ) -> Result<(), Diagnostic> {
     budget.reserve_bytes(
         function,
-        S + Session::acquisition_bytes(),
+        S + Session::acquisition_bytes() + Failure::acquisition_bytes(),
         "retained expression-fact owner acquisition",
     )?;
     budget.charge(
@@ -75,10 +78,40 @@ pub(super) fn complete_rows<'hir, 'facts>(
         12,
         "retained expression-fact owner initialization",
     )?;
+    #[cfg(test)]
+    crate::cleanup_plan::replay::ordinary_receiving::observe_site(1);
+    let mut failure = Failure {
+        error: None,
+        function,
+        budget: budget,
+    };
+    let mut received = None;
     let mut session = Session::new_prepaid(arena, function, budget);
     loop {
         let source = &function.cleanup_plan.status_sources[*ordinal];
-        let Some(fact) = session.fact(&source.id.expression)? else {
+        {
+            let budget = &mut *session.budget;
+            let slot = &mut failure;
+            if !reserve_into!(
+                budget,
+                function,
+                slot,
+                Session::into_query_bytes(),
+                "ordinary fact query actual and formal receiving"
+            ) {
+                return Err(slot
+                    .error
+                    .take()
+                    .expect("query frontier selected first error"));
+            }
+        }
+        if !session.fact_into(&source.id.expression, &mut received, &mut failure) {
+            return Err(failure
+                .error
+                .take()
+                .expect("fact query selected first error"));
+        }
+        let Some(fact) = received else {
             return Err(<Diagnostic as semantic_refusal::Error>::structural(
                 function,
                 semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),

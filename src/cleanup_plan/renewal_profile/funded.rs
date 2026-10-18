@@ -495,3 +495,7 @@ mod tests {
         assert_eq!(active, 0);
     }
 }
+
+#[path = "funded_receiving.rs"]
+mod receiving;
+pub(crate) use receiving::bindings_into;

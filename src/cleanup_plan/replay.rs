@@ -146,6 +146,7 @@ mod lexical_skeleton;
 mod mixed_result_tests;
 mod nested_shape;
 mod ordinary_inventory;
+mod ordinary_receiving;
 mod ordinary_renewals;
 mod paid_type_facts;
 mod path_join;
@@ -2842,7 +2843,76 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayHirSkeleton,
     );
-    let mut work = SkeletonWork::checked_with_index(program, function, budget, helpers)?;
+    #[cfg(test)]
+    if ordinary_receiving::saved() {
+        return ordinary_receiving::hir_skeleton_paths_with_index_storage_before(
+            program,
+            function,
+            budget,
+            helpers,
+            continuations,
+        );
+    }
+    #[cfg(test)]
+    let ordinary_oracle = budget.oracle_lease().is_some();
+    #[cfg(not(test))]
+    let ordinary_oracle = false;
+    let mut work = if budget.selected() || ordinary_oracle {
+        SkeletonWork::checked_with_index(program, function, budget, helpers)?
+    } else {
+        // Exactly the old ordinary bootstrap/cursor frontier. No new receiving
+        // owner exists before these earlier errors have been selected.
+        budget.prepare_builder(function)?;
+        budget.prepare_clone_cursor(function)?;
+        budget.reserve_bytes(
+            function,
+            skeleton_work::receiving::acquisition_bytes(),
+            "ordinary skeleton receiving owner",
+        )?;
+        #[cfg(test)]
+        ordinary_receiving::observe_site(0);
+        let mut failure = ordinary_receiving::Failure {
+            error: None,
+            function,
+            budget: &*budget,
+        };
+        let mut prepared = skeleton_work::receiving::Prepared {
+            owner: None,
+            requires: false,
+            reads: BTreeSet::new(),
+            moves: BTreeSet::new(),
+            renewals: crate::cleanup_plan::renewal_profile::RenewalBindings::empty(),
+        };
+        if !skeleton_work::receiving::prepare_into(
+            program,
+            function,
+            budget,
+            helpers.is_some(),
+            &mut prepared,
+            &mut failure,
+        ) {
+            return Err(failure
+                .error
+                .take()
+                .expect("ordinary setup selected first error"));
+        }
+        SkeletonWork {
+            function,
+            budget,
+            continuations: None,
+            active_copy_region: None,
+            dag_scratch: None,
+            ordinary_scratch: None,
+            next_ordinary_dag: 0,
+            held_renewals: None,
+            ordinary_index: helpers,
+            ordinary_program: Some(program),
+            renewal_bindings: prepared.renewals,
+            string_owner_moves: prepared.moves,
+            string_condition_reads: prepared.reads,
+            owner: prepared.owner,
+        }
+    };
     work.continuations = continuations;
     let mut paths = work.singleton_path(empty_expr_path(), "HIR root path")?;
     for contract in &function.requires {

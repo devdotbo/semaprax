@@ -8,7 +8,7 @@ use super::*;
 use std::cell::RefCell;
 use std::rc::Rc;
 
-pub(super) struct DestructionScratch {
+pub(in crate::cleanup_plan::replay) struct DestructionScratch {
     pub(super) pending: Vec<Rc<ObservationDag>>,
     pub(super) registered_edges: usize,
     // One checked construction sequence belongs to this shared frontier.

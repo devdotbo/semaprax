@@ -832,3 +832,6 @@ mod inline_status;
 
 mod ordinary_cross_phase;
 pub(in crate::cleanup_plan::replay) use ordinary_cross_phase::validate_structure_with_budget_storage;
+
+#[cfg(test)]
+mod ordinary_cross_phase_before_receiving;

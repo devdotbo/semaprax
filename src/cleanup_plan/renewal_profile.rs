@@ -319,4 +319,5 @@ pub(crate) mod type_drop_refusal;
 
 pub(crate) mod path_boundary_refusal;
 
+pub(crate) use funded::bindings_into;
 pub(crate) use funded::bindings_with_index_funded;

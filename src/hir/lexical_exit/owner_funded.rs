@@ -372,3 +372,7 @@ mod tests {
 mod work;
 #[cfg(test)]
 pub(crate) use work::{owner_funded_with_work, requires_funded_with_work};
+
+#[path = "owner_funded_receiving.rs"]
+mod receiving;
+pub(crate) use receiving::{owner_into, requires_into};

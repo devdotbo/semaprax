@@ -1,7 +1,7 @@
 use super::*;
 use crate::test_allocation_observer::measure;
 
-fn program() -> ResolvedProgram {
+pub(super) fn program() -> ResolvedProgram {
     crate::hir::resolve(
         &crate::check(
             "module retained.lookup; @id(\"lookup.main\") fn main()->i64 {0}",
@@ -11,7 +11,7 @@ fn program() -> ResolvedProgram {
     )
     .unwrap()
 }
-fn arena<'hir>(function: &'hir ResolvedFunction, keys: &[ExpressionId]) -> Arena<'hir> {
+pub(super) fn arena<'hir>(function: &'hir ResolvedFunction, keys: &[ExpressionId]) -> Arena<'hir> {
     let mut physical = physical_storage::PhysicalReservation::new(usize::MAX);
     let mut capacity =
         capacity::FactCapacity::with_payer(function, capacity::Payer::Selected(&mut physical))
@@ -29,7 +29,7 @@ fn arena<'hir>(function: &'hir ResolvedFunction, keys: &[ExpressionId]) -> Arena
     assert!(arena.balanced());
     arena
 }
-fn acquire<'a, 'hir, 'b>(
+pub(super) fn acquire<'a, 'hir, 'b>(
     arena: &'a Arena<'hir>,
     function: &'a ResolvedFunction,
     budget: &'b mut ReplayBudget,

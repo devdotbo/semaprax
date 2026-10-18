@@ -404,7 +404,7 @@ mod queue_tests;
 // every internal operation label. No authored bytes other than the exact held
 // function ID are copied here. Oversized internal labels select a fixed
 // invariant description rather than allocating beyond this paid backing.
-const REFUSAL_PHASE_BYTES: usize = 256;
+pub(super) const REFUSAL_PHASE_BYTES: usize = 256;
 const REFUSAL_FIXED_BYTES: usize = 512;
 impl ReplayBudget {
     pub(super) fn budget_refusal(

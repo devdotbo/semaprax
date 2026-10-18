@@ -387,3 +387,6 @@ mod lookup_caller_before;
 #[cfg(test)]
 mod lookup_tests;
 pub(super) mod retained_lookup;
+
+#[cfg(test)]
+mod retained_lookup_before_receiving;
