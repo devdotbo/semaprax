@@ -700,10 +700,17 @@ mod witness_tests {
                 },
                 source.len()
             );
+            let source_sha256 = {
+                use sha2::Digest;
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(sha2::Sha256::digest(source.as_bytes()))
+                )
+            };
             eprintln!(
                 "OPT904_JSON {}",
                 serde_json::json!({
-                    "source_sha256": {use sha2::Digest; format!("{:x}", crate::digest_hex::LowerHex(sha2::Sha256::digest(source.as_bytes())))} ,
+                    "source_sha256": source_sha256,
                     "source_bytes": source.len(), "complete": true,
                     "frame_size": report.size, "frame_align": report.alignment,
                     "requested_capacity": report.requested_capacity,
