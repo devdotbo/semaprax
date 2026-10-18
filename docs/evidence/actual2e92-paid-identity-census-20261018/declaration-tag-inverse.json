@@ -1,0 +1,13 @@
+{
+  "source": "src/hir/ids/declaration_tag.rs",
+  "before_sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
+  "after_sha256": "d475d793e586b2d6c0798317efdfe9d0f3faafc2ccbc97f4e778c439a7684fd3",
+  "before": "    let current_tests = include_str!(\"declaration_backing_tests.rs\");\n",
+  "after": "    let current_tests = crate::source_reflows_merge::main_e177_final_inputs::value(\n        \"src/hir/ids/declaration_backing_tests.rs\",\n        \"b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c\",\n        include_str!(\"declaration_backing_tests.rs\"),\n    );\n",
+  "required_source_view": {
+    "source": "src/hir/ids/declaration_backing_tests.rs",
+    "length": 24729,
+    "sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c",
+    "archive": "docs/evidence/actual2e92-paid-identity-census-20261018/declaration_backing_tests.rs.whole-before.txt"
+  }
+}

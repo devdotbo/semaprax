@@ -552,7 +552,11 @@ fn complete_original_identity_prefix_codec_and_old_width_control_are_exact() {
             .unwrap();
     assert_eq!(codec.trim(), current_codec[start..end].trim());
     let old_tests=include_str!("../../../docs/evidence/declaration-tag-identity-20261018/declaration_backing_tests.whole-before.rs.txt");
-    let current_tests = include_str!("declaration_backing_tests.rs");
+    let current_tests = crate::source_reflows_merge::main_e177_final_inputs::value(
+        "src/hir/ids/declaration_backing_tests.rs",
+        "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c",
+        include_str!("declaration_backing_tests.rs"),
+    );
     assert_eq!(current_tests.replace("    // Preserve the complete original width/backing control on its real old producer.\n    use super::declaration_tag::before::DeclarationId;\n", ""),old_tests);
 }
 

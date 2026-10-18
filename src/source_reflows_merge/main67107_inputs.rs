@@ -605,6 +605,11 @@ fn factored_core_file(
     if let Some(value) = accepted_expected_file(path, length, expected) {
         return Ok(value);
     }
+    if let Some(value) = crate::source_reflows_merge::main_e177_final_inputs::file(
+        path, length, expected,
+    ) {
+        return Ok(value);
+    }
     factored_core_file_raw(path, length, expected)
 }
 
@@ -1088,9 +1093,23 @@ const SUPPLEMENT_RECEIVER_SHA: &str =
 const OWNED_COMPILE35F_PATH: &str =
     "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs";
 const OWNED_COMPILE35F_RAW: &str = include_str!(
-    "../workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs"
+    "../../docs/evidence/compile35f-owned-growth-ingress-20261017/owned-growth.current.rs.txt"
 );
 fn owned_compile35f_input(source: &str, current: &str) -> String {
+    if source != OWNED_COMPILE35F_PATH {
+        return current.to_owned();
+    }
+    // Acquire the complete seal-owning generation before its unchanged
+    // original byte inverse. The current physical/compiled image is checked
+    // by the independently authenticated current logical source table.
+    let prior = crate::source_reflows_merge::main_e177_final_inputs::value(
+        source,
+        "5265ad08a18f48440a0615bf5e4f815e40790f99c43ec681d0f31401a3e4aaa9",
+        current,
+    );
+    owned_compile35f_input_previous(source, &prior)
+}
+fn owned_compile35f_input_previous(source: &str, current: &str) -> String {
     if source != OWNED_COMPILE35F_PATH {
         return current.to_owned();
     }

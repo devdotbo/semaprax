@@ -1,0 +1,27 @@
+{
+  "source": "src/source_reflows_merge/main67107_inputs.rs",
+  "before_sha256": "2e2eebecd6e98607ffe410942d3419bc435b529bdff160af81cb5dc46e23ca4f",
+  "after_sha256": "4b07d27549aa308afd950e20784f517cae0f2356716d309bed75d01ca4080992",
+  "edits": [
+    {
+      "before": "    factored_core_file_raw(path, length, expected)\n}",
+      "after": "    if let Some(value) = crate::source_reflows_merge::main_e177_final_inputs::file(\n        path, length, expected,\n    ) {\n        return Ok(value);\n    }\n    factored_core_file_raw(path, length, expected)\n}"
+    },
+    {
+      "before": "const OWNED_COMPILE35F_RAW: &str = include_str!(\n    \"../workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs\"\n);",
+      "after": "const OWNED_COMPILE35F_RAW: &str = include_str!(\n    \"../../docs/evidence/compile35f-owned-growth-ingress-20261017/owned-growth.current.rs.txt\"\n);"
+    },
+    {
+      "before": "fn owned_compile35f_input(source: &str, current: &str) -> String {\n",
+      "after": "fn owned_compile35f_input(source: &str, current: &str) -> String {\n    if source != OWNED_COMPILE35F_PATH {\n        return current.to_owned();\n    }\n    // Acquire the complete seal-owning generation before its unchanged\n    // original byte inverse. The current physical/compiled image is checked\n    // by the independently authenticated current logical source table.\n    let prior = crate::source_reflows_merge::main_e177_final_inputs::value(\n        source,\n        \"5265ad08a18f48440a0615bf5e4f815e40790f99c43ec681d0f31401a3e4aaa9\",\n        current,\n    );\n    owned_compile35f_input_previous(source, &prior)\n}\nfn owned_compile35f_input_previous(source: &str, current: &str) -> String {\n"
+    }
+  ],
+  "required_source_view": {
+    "source": "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs",
+    "length": 29968,
+    "sha256": "5265ad08a18f48440a0615bf5e4f815e40790f99c43ec681d0f31401a3e4aaa9",
+    "archive": "docs/evidence/compile35f-owned-growth-ingress-20261017/owned-growth.current.rs.txt"
+  },
+  "original_seal_and_inverse_unchanged": true,
+  "status": "SOURCE_ONLY_LOGICAL_CHANNEL_BINDING_PENDING"
+}

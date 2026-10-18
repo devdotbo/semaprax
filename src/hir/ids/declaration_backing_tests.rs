@@ -493,6 +493,59 @@ fn qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier() {
     // lifecycle payers, plus their complete independent historical twins.
     // Filesystem enumeration order grants no semantic meaning.
     sites.sort_by(|a, b| a.0.cmp(&b.0));
+    // These independently compiled historical controls were added after the
+    // original paid-domain census. Authenticate their entire source before
+    // partitioning their exact three callsites from the unchanged old census.
+    let mut added = Vec::new();
+    for (path, compiled, expected, count) in [
+        (
+            "hir/ids/declaration_tag.rs",
+            include_str!("declaration_tag.rs"),
+            "d475d793e586b2d6c0798317efdfe9d0f3faafc2ccbc97f4e778c439a7684fd3",
+            2,
+        ),
+        (
+            "hir/ids/declaration_tag/before.rs",
+            include_str!("declaration_tag/before.rs"),
+            "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355",
+            1,
+        ),
+    ] {
+        assert_eq!(std::fs::read_to_string(root.join(path)).unwrap(), compiled);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(
+                    compiled.as_bytes()
+                ))
+            ),
+            expected,
+        );
+        assert_eq!(
+            compiled.matches("DeclarationId::paid_borrowed(").count(),
+            count
+        );
+        let current = sites
+            .iter()
+            .filter(|(source, ..)| source == path)
+            .cloned()
+            .collect::<Vec<_>>();
+        assert_eq!(current.len(), count);
+        added.extend(current);
+    }
+    assert!(include_str!("../ids.rs")
+        .contains("#[cfg(test)]\n#[path = \"ids/declaration_tag.rs\"]\nmod declaration_tag;"));
+    let complete = sites.clone();
+    sites.retain(|(path, ..)| {
+        path != "hir/ids/declaration_tag.rs" && path != "hir/ids/declaration_tag/before.rs"
+    });
+    let mut recomposed = sites.clone();
+    recomposed.extend(added);
+    recomposed.sort_by(|a, b| a.0.cmp(&b.0));
+    assert_eq!(
+        recomposed, complete,
+        "all current identity constructors retained"
+    );
     assert_eq!(
         sites
             .iter()
