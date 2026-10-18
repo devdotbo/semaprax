@@ -210,10 +210,26 @@ fn validate_selected_with_static_text(
     program: &ResolvedProgram,
     fused: Option<selected_fused_candidate::Selected<'_>>,
 ) -> Result<bool, Diagnostic> {
+    #[cfg(test)]
+    let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+        "hir::validate_selected_with_static_text",
+    );
     byte_partition::refuse_default(program)?;
-    agent_validation::validate(program)?;
+    {
+        #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::agent_validation::validate",
+        );
+        agent_validation::validate(program)?;
+    }
     let (selected, deferred) = inspection::validate_with_loan_comparison(program, fused)?;
-    deferred.finish(program)?;
+    {
+        #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::canonical_loan_storage::Deferred::finish",
+        );
+        deferred.finish(program)?;
+    }
     Ok(selected)
 }
 

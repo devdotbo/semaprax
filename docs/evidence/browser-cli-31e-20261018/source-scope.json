@@ -1,0 +1,20 @@
+{
+  "base_head": "31eaf2f541fdada219a884c28a28f577d9931a7c",
+  "logical_changed": [
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "CHANGELOG.md"
+  ],
+  "actual_capture_head": "31eaf2f541fdada219a884c28a28f577d9931a7c",
+  "actual_capture_run": 39158106716,
+  "actual_capture_job": 117766019033,
+  "only_graph_budget_and_self_digest_wire_differences": true,
+  "all_other_graph_bytes_and_original_assertions_retained": true,
+  "browser_runtime_still_requires_CI": true,
+  "new_workflow": ".github/workflows/macos-cli-diagnostic.yml",
+  "workflow_manual_only": true,
+  "workflow_permission_contents_read": true,
+  "normal_compiler_build_and_version_smoke_only": true,
+  "all_standard_CI_jobs_and_fixture_inputs_and_graph_limits_unchanged": true,
+  "no_compiler_implementation_or_pricing_change": true,
+  "no_new_registered_Rust_classes": true
+}

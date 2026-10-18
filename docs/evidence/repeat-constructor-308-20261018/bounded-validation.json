@@ -1,0 +1,17 @@
+{
+  "status": "SOURCE_AND_CONSTRUCTOR_ONLY_NOT_RUNTIME_QUALIFICATION",
+  "actual_failure_job": "https://github.com/wavect/semaprax/actions/runs/39147585528/job/117735049214",
+  "source_tests_passed": 21,
+  "original_tests_and_hostile_controls_preserved": true,
+  "production_bodies_and_tariffs_unchanged": true,
+  "constructor_clippy_warnings_denied_passed": true,
+  "source_memory": {
+    "compile": 192896,
+    "run": 32
+  },
+  "constructor_memory": {
+    "compile": 129600,
+    "run": 32
+  },
+  "full_current_head_CI_still_required": true
+}

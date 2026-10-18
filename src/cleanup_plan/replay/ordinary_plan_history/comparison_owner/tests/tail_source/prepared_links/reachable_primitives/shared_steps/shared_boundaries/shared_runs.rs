@@ -87,9 +87,16 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (732, "    pub shared_runs: usize,\n    pub shared_turns: usize,\n", ""),
 ];
 pub(super) fn previous_boundary_controls(current: &str) -> String {
-    // The explicit child path changes registration only. Bind the complete
-    // compiled parent before the existing authenticated historical acquisition.
-    if current
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+        "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        )),
+    );
+    let stage = if current
         == include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
@@ -126,16 +133,17 @@ pub(super) fn previous_boundary_controls(current: &str) -> String {
             ),
             "3a1eeb16c1dba344d7835ff7c9bf23078205645aedf8fe2a54364f519f0059b3"
         );
-    }
-    let stage = incoming_stage(
-        current,
-        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
-        "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
-        include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
-        )),
-    );
+        let old_acquisition = "    let stage = if current\n        == include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs\"\n        )) {\n        crate::source_reflows_merge::main_e177_final_inputs::value_direct(\n            \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs\",\n            \"329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255\",\n            current,\n        )\n    } else {\n        current.to_owned()\n    };\n    let current = stage.as_str();\n";
+        assert_eq!(before.matches(old_acquisition).count(), 1);
+        let before = before.replacen(old_acquisition, "", 1);
+        assert_eq!(before.len(), 22995);
+        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))),
+            "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16");
+        assert!(stage == current || stage == before, "unexpected complete boundary entry stage");
+        before
+    } else {
+        stage
+    };
     let current = stage.as_str();
     restore(current, 22995, BOUNDARY_CONTROLS)
 }
@@ -178,7 +186,47 @@ mod tests {
         inverse: fn(&str) -> String,
         before: &str,
         edits: &[(usize, &str, &str)],
+        expected_stage: (usize, &str),
     ) {
+        // Authenticate the complete physical input first, including its EOF.
+        assert_eq!(inverse(current), before);
+        assert!(std::panic::catch_unwind(|| inverse(&format!("{current} "))).is_err());
+        let physical_at = current
+            .char_indices()
+            .find(|(_, c)| c.is_ascii_alphanumeric())
+            .unwrap()
+            .0;
+        let mut physical_drift = current.to_owned();
+        let replacement = if &physical_drift[physical_at..physical_at + 1] == "x" {
+            "y"
+        } else {
+            "x"
+        };
+        physical_drift.replace_range(physical_at..physical_at + 1, replacement);
+        let physical_result = std::panic::catch_unwind(|| inverse(&physical_drift));
+        assert!(physical_result.is_err() || physical_result.unwrap() != before);
+        // Restore the exact complete historical input BEFORE applying its
+        // original offset controls. Keep all old span/extent/outside checks.
+        let mut stage = before.to_owned();
+        for &(at, after, prior) in edits.iter().rev() {
+            let end = at.checked_add(prior.len()).expect("shared stage overflow");
+            assert!(
+                end <= stage.len() && stage.is_char_boundary(at) && stage.is_char_boundary(end)
+            );
+            assert_eq!(&stage[at..end], prior);
+            stage.replace_range(at..end, after);
+        }
+        assert_eq!(stage.len(), expected_stage.0);
+        use sha2::{Digest, Sha256};
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(stage.as_bytes()))
+            ),
+            expected_stage.1
+        );
+        let current = stage.as_str();
+        assert_eq!(inverse(current), before);
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -259,6 +307,10 @@ mod tests {
                 "/docs/evidence/shared-runs-b66-20261018/before-macro.rs.txt"
             )),
             MACRO,
+            (
+                17993,
+                "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9",
+            ),
         );
         hostile(
             include_str!("../../../../../../pair_scope_tests.rs"),
@@ -268,6 +320,10 @@ mod tests {
                 "/docs/evidence/shared-runs-b66-20261018/before-pair-tests.rs.txt"
             )),
             PAIR_TESTS,
+            (
+                49614,
+                "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa",
+            ),
         );
         hostile(
             include_str!("../../../../../../pair_scope_census.rs"),
@@ -277,6 +333,10 @@ mod tests {
                 "/docs/evidence/shared-runs-b66-20261018/before-census.rs.txt"
             )),
             CENSUS,
+            (
+                16853,
+                "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5",
+            ),
         );
         hostile(
             include_str!("../shared_boundaries.rs"),
@@ -286,6 +346,10 @@ mod tests {
                 "/docs/evidence/shared-runs-b66-20261018/before-boundary-controls.rs.txt"
             )),
             BOUNDARY_CONTROLS,
+            (
+                22995,
+                "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
+            ),
         );
         hostile(
             include_str!(
@@ -297,6 +361,10 @@ mod tests {
                 "/docs/evidence/shared-runs-b66-20261018/before-route.rs.txt"
             )),
             ROUTE,
+            (
+                35279,
+                "4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d",
+            ),
         );
     }
 }

@@ -28,7 +28,7 @@ pub(super) fn tail_delta(
         + size_of::<&SkeletonObservation>();
     let views =
         2 * paired_value::TAIL_VIEW * row.pairs + lexical_cursor::TAIL_VIEW * expected.len();
-    let removed = (before - paired_value::TAIL) * row.value_tails
+    let removed = (before - paired_value::TAIL) * (row.value_tails + 2 * row.fused_turns)
         + (before + 2 * size_of::<Option<&SkeletonObservation>>() - lexical_cursor::TAIL)
             * row.tails;
     let old_step = 2 * size_of::<&Vec<usize>>() + size_of::<usize>();
@@ -836,7 +836,8 @@ pub(super) fn fused_removed(row: &pair_scope_census::Row) -> usize {
                 + row.certified_bases
                 + 2 * row.identity_observations
                 + 4 * row.shared_boundary_complete
-                + row.value_tails)
+                + row.value_tails
+                + 4 * row.fused_turns)
 }
 fn observe_886_pair(
     function: &ResolvedFunction,

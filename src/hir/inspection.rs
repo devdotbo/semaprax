@@ -18,14 +18,34 @@ pub(super) fn validate_with_loan_comparison<'a>(
     program: &'a ResolvedProgram,
     fused: Option<super::selected_fused_candidate::Selected<'a>>,
 ) -> Result<(bool, super::canonical_loan_storage::Deferred<'a>), Diagnostic> {
-    let directory = super::function_directory::caller::prepare(program)
-        .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?;
-    let (selected, deferred) = super::canonical_loan_storage::caller::validate_with_comparison(
-        program,
-        fused,
-        Some(&directory),
-    )?;
+    #[cfg(test)]
+    let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+        "hir::inspection::validate_with_loan_comparison",
+    );
+    let directory = {
+        #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::function_directory::caller::prepare",
+        );
+        super::function_directory::caller::prepare(program)
+            .map_err(|_| Diagnostic::io("SPX-H006", String::new()))?
+    };
+    let (selected, deferred) = {
+        #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::canonical_loan_storage::caller::validate_with_comparison",
+        );
+        super::canonical_loan_storage::caller::validate_with_comparison(
+            program,
+            fused,
+            Some(&directory),
+        )?
+    };
     {
+        #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::function_value::validate_program",
+        );
         #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::FunctionValues,
@@ -34,6 +54,10 @@ pub(super) fn validate_with_loan_comparison<'a>(
     }
     {
         #[cfg(test)]
+        let _allocation_phase = crate::test_allocation_observer::function_phase_guard(
+            "hir::inspection::validate_attached_identity_references",
+        );
+        #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::AttachedIdentities,
         );
@@ -41,12 +65,18 @@ pub(super) fn validate_with_loan_comparison<'a>(
     }
     {
         #[cfg(test)]
+        let _allocation_phase =
+            crate::test_allocation_observer::function_phase_guard("cleanup::validate_program");
+        #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::CleanupInventory,
         );
         crate::cleanup::validate_program(program)?;
     }
     {
+        #[cfg(test)]
+        let _allocation_phase =
+            crate::test_allocation_observer::function_phase_guard("cleanup_plan::validate_program");
         #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::CleanupReplay,

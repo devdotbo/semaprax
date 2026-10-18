@@ -1,0 +1,60 @@
+{
+  "base_head": "7e4326d86ca432d582ef239a9360f4a2d5789c35",
+  "logical_changed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "subjects": [
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "name": "owner",
+      "archive": "before-owner.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "name": "macro",
+      "archive": "before-macro.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+      "name": "pair",
+      "archive": "before-pair-tests.rs.txt"
+    },
+    {
+      "source": "src/bounded_output/stage_debits/route_debits.rs",
+      "name": "route",
+      "archive": "before-route.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+      "name": "reachable",
+      "archive": "before-reachable.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+      "name": "stage1",
+      "archive": "before-stage1.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+      "name": "stage3",
+      "archive": "before-stage3.rs.txt"
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+      "name": "stage2",
+      "archive": "before-stage2.rs.txt"
+    }
+  ],
+  "new_test_only_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+  "all_old_limits_work_diagnostic_Drop_controls_retained": true,
+  "new_closed_unit_only_primitive_separate_from_original_Result_criterion": true,
+  "models_not_full_compiler_application_qualification": true,
+  "whole_inverse_subjects": 8,
+  "all_19_original_and_successor_source_tests_passed": true,
+  "complete_models_each_cases": 6000,
+  "complete_models_each_work_error_cuts": 86118
+}

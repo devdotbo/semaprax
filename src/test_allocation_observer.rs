@@ -35,9 +35,15 @@ pub(crate) struct Metrics {
     pub(crate) invalid: bool,
 }
 
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PhaseLabel {
+    Reservation(crate::bounded_output::ReservationStage),
+    Function(&'static str),
+}
+
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct PhaseObservation {
-    stage: crate::bounded_output::ReservationStage,
+    stage: PhaseLabel,
     entry: Metrics,
     exit: Metrics,
 }
@@ -55,8 +61,17 @@ thread_local! {
     static PHASE_TRACE: RefCell<Option<PhaseTrace>> = const { RefCell::new(None) };
 }
 
-pub(crate) struct PhaseGuard(Option<(crate::bounded_output::ReservationStage, Metrics)>);
+pub(crate) struct PhaseGuard(Option<(PhaseLabel, Metrics)>);
 pub(crate) fn phase_guard(stage: crate::bounded_output::ReservationStage) -> PhaseGuard {
+    labeled_phase_guard(PhaseLabel::Reservation(stage))
+}
+
+/// Fixed diagnostic label; no reservation, allocation, or semantic authority.
+pub(crate) fn function_phase_guard(function: &'static str) -> PhaseGuard {
+    labeled_phase_guard(PhaseLabel::Function(function))
+}
+
+fn labeled_phase_guard(stage: PhaseLabel) -> PhaseGuard {
     let enabled = PHASE_TRACE.with(|trace| trace.borrow().is_some());
     PhaseGuard(if enabled && active() {
         Some((stage, current_metrics()))
@@ -473,11 +488,11 @@ mod tests {
         for phase in trace.intervals.iter().flatten() {
             assert_eq!(phase.exit.highwater, observed.highwater);
             match phase.stage {
-                ReservationStage::HirLowering => {
+                PhaseLabel::Reservation(ReservationStage::HirLowering) => {
                     assert_eq!(phase.entry.live, 0);
                     assert_eq!(phase.exit.live, 0);
                 }
-                ReservationStage::HirValidation => {
+                PhaseLabel::Reservation(ReservationStage::HirValidation) => {
                     assert_eq!(phase.entry.live, 257);
                     assert_eq!(phase.exit.live, 257);
                 }
@@ -485,6 +500,121 @@ mod tests {
             }
         }
     }
+    #[test]
+    fn named_validation_intervals_are_inclusive_and_do_not_perturb_outcomes_or_layouts() {
+        let operation = || {
+            let _outer = function_phase_guard("test::validation");
+            let bytes = vec![9_u8; 67];
+            {
+                let _inner = function_phase_guard("test::validation::callee");
+                std::hint::black_box(&bytes);
+            }
+            drop(bytes);
+            23
+        };
+        let (plain_value, plain) = measure(operation);
+        let ((observed_value, observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!((plain_value, plain), (observed_value, observed));
+        assert!(!trace.overflow);
+        assert_eq!(trace.intervals.iter().flatten().count(), 2);
+        for interval in trace.intervals.iter().flatten() {
+            assert!(interval.entry.highwater <= interval.exit.highwater);
+            assert_eq!(interval.exit.highwater, observed.highwater);
+            match interval.stage {
+                PhaseLabel::Function("test::validation") => {
+                    assert_eq!((interval.entry.live, interval.exit.live), (0, 0));
+                }
+                PhaseLabel::Function("test::validation::callee") => {
+                    assert_eq!((interval.entry.live, interval.exit.live), (67, 67));
+                }
+                _ => panic!("unexpected fixed interval label"),
+            }
+        }
+    }
+
+    #[test]
+    fn named_validation_interval_overflow_is_explicit_and_allocation_free() {
+        const LABELS: [&str; 65] = [
+            "fixed::0",
+            "fixed::1",
+            "fixed::2",
+            "fixed::3",
+            "fixed::4",
+            "fixed::5",
+            "fixed::6",
+            "fixed::7",
+            "fixed::8",
+            "fixed::9",
+            "fixed::10",
+            "fixed::11",
+            "fixed::12",
+            "fixed::13",
+            "fixed::14",
+            "fixed::15",
+            "fixed::16",
+            "fixed::17",
+            "fixed::18",
+            "fixed::19",
+            "fixed::20",
+            "fixed::21",
+            "fixed::22",
+            "fixed::23",
+            "fixed::24",
+            "fixed::25",
+            "fixed::26",
+            "fixed::27",
+            "fixed::28",
+            "fixed::29",
+            "fixed::30",
+            "fixed::31",
+            "fixed::32",
+            "fixed::33",
+            "fixed::34",
+            "fixed::35",
+            "fixed::36",
+            "fixed::37",
+            "fixed::38",
+            "fixed::39",
+            "fixed::40",
+            "fixed::41",
+            "fixed::42",
+            "fixed::43",
+            "fixed::44",
+            "fixed::45",
+            "fixed::46",
+            "fixed::47",
+            "fixed::48",
+            "fixed::49",
+            "fixed::50",
+            "fixed::51",
+            "fixed::52",
+            "fixed::53",
+            "fixed::54",
+            "fixed::55",
+            "fixed::56",
+            "fixed::57",
+            "fixed::58",
+            "fixed::59",
+            "fixed::60",
+            "fixed::61",
+            "fixed::62",
+            "fixed::63",
+            "fixed::64",
+        ];
+        let operation = || {
+            for label in LABELS {
+                let _guard = function_phase_guard(label);
+                std::hint::black_box(label);
+            }
+        };
+        let (_, plain) = measure(operation);
+        let (((), observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!(plain, observed);
+        assert_eq!(observed.allocated, 0);
+        assert_eq!(trace.intervals.iter().flatten().count(), 64);
+        assert!(trace.overflow);
+    }
+
     #[test]
     fn fixed_registry_backing_is_lazy_reused_and_outside_the_observed_window() {
         assert_eq!(SLOTS, 16_384);

@@ -12,7 +12,11 @@ readme = "README.md"
 keywords = ["compiler", "agents", "systems-programming", "semantic-graph"]
 categories = ["compilers", "development-tools"]
 # Historical private implementation snapshots stay in Git, outside the public crate.
-exclude = ["docs/evidence/nominal-payload-827/original/crates/**"]
+exclude = [
+    "docs/evidence/nominal-payload-827/original/crates/**",
+    "docs/evidence/**/crates/semaprax-native-rust-interop*/**",
+    "docs/evidence/**/src/native_rust_interop.rs*",
+]
 
 [workspace]
 members = [

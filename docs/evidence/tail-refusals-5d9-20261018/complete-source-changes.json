@@ -1,0 +1,28 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests/paired_tails.rs",
+    "before": {
+      "length": 5931,
+      "sha256": "d469ea22ce334e03e8d9498fc00893a07b204777913122f7b76947850c169c00",
+      "archive": "docs/evidence/tail-refusals-5d9-20261018/whole/d469ea22ce334e03e8d9498fc00893a07b204777913122f7b76947850c169c00.txt"
+    },
+    "current": {
+      "length": 6325,
+      "sha256": "cceea03772195a341b852575b1aa39c22ba5958ebed27ad29a5f2823b7f2fb4a",
+      "archive": "docs/evidence/tail-refusals-5d9-20261018/whole/cceea03772195a341b852575b1aa39c22ba5958ebed27ad29a5f2823b7f2fb4a.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 579998,
+      "sha256": "61febafa7f697f68e3534692855d39e39f6e61de364e15b5af0bf9bc731ba5ec",
+      "archive": "docs/evidence/tail-refusals-5d9-20261018/whole/61febafa7f697f68e3534692855d39e39f6e61de364e15b5af0bf9bc731ba5ec.txt"
+    },
+    "current": {
+      "length": 580230,
+      "sha256": "7e0c349f38fbe281509b7e44d3d959cf2d7555c2eda32f056dc021c9ba454fae",
+      "archive": "docs/evidence/tail-refusals-5d9-20261018/whole/7e0c349f38fbe281509b7e44d3d959cf2d7555c2eda32f056dc021c9ba454fae.txt"
+    }
+  }
+]

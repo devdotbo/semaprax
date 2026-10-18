@@ -108,8 +108,12 @@ pub enum Site {
     NumericTurnAdmitted,
     NumericPublishAdmitted,
     BoundaryCompleted,
+    TailMaskAdmitted,
+    TailMarkAdmitted,
+    TailTurnAdmitted,
+    TailWork,
 }
-const SITES: usize = 44;
+const SITES: usize = 48;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Counts {
     pub events: [u64; SITES],

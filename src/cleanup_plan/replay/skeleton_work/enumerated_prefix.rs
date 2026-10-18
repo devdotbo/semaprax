@@ -475,6 +475,7 @@ pub(in crate::cleanup_plan::replay) fn equal(
 }
 
 #[cfg(test)]
+#[rustfmt::skip]
 mod before;
 #[cfg(test)]
 mod source_custody;

@@ -24,6 +24,10 @@ pub(super) struct Row {
     pub value_steps: usize,
     pub value_tails: usize,
     pub tails: usize,
+    pub mask_checks: usize,
+    pub tail_marks: usize,
+    pub fused_turns: usize,
+    pub tail_work: usize,
     pub steps: usize,
     pub shared_checks: usize,
     pub shared_patterns: usize,
@@ -75,6 +79,10 @@ const EMPTY: Row = Row {
     value_steps: 0,
     value_tails: 0,
     tails: 0,
+    mask_checks: 0,
+    tail_marks: 0,
+    fused_turns: 0,
+    tail_work: 0,
     steps: 0,
     shared_checks: 0,
     shared_patterns: 0,
@@ -117,6 +125,7 @@ struct Trace {
 thread_local! {
     static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, generation: 0, serial: 0, rows: [EMPTY; 128] }) };
     static LOST: Cell<usize> = const { Cell::new(0) };
+    static UNWIND_TAIL: Cell<bool> = const { Cell::new(false) };
     static UNWIND_IDENTITY: Cell<bool> = const { Cell::new(false) };
 }
 fn lost() {
@@ -125,7 +134,18 @@ fn lost() {
 pub(super) fn unwind_next_identity_observation() {
     UNWIND_IDENTITY.with(|flag| flag.set(true));
 }
+pub(super) fn unwind_next_tail_work() {
+    UNWIND_TAIL.with(|flag| flag.set(true));
+}
+pub(super) fn maybe_unwind_tail_work() {
+    if UNWIND_TAIL.with(|flag| flag.replace(false)) {
+        std::panic::resume_unwind(Box::new(
+            "test-only unwind after an admitted paired tail work",
+        ));
+    }
+}
 pub(super) fn reset() {
+    UNWIND_TAIL.with(|flag| flag.set(false));
     UNWIND_IDENTITY.with(|flag| flag.set(false));
     LOST.with(|n| n.set(0));
     TRACE.with(|t| {
@@ -380,6 +400,30 @@ impl Guard {
     pub(super) fn load(&self) {
         self.update(|r| match r.loads.checked_add(1) {
             Some(n) => r.loads = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn mask_checks(&self) {
+        self.update(|r| match r.mask_checks.checked_add(1) {
+            Some(n) => r.mask_checks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn tail_marks(&self) {
+        self.update(|r| match r.tail_marks.checked_add(1) {
+            Some(n) => r.tail_marks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn fused_turns(&self) {
+        self.update(|r| match r.fused_turns.checked_add(1) {
+            Some(n) => r.fused_turns = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn tail_work(&self) {
+        self.update(|r| match r.tail_work.checked_add(1) {
+            Some(n) => r.tail_work = n,
             None => r.overflow = true,
         });
     }
@@ -704,6 +748,37 @@ mod controls {
             assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
         }
     }
+    #[test]
+    fn paired_tail_counter_overflow_is_incomplete_and_does_not_spend_work() {
+        for counter in 0..4 {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                match counter {
+                    0 => trace.rows[0].mask_checks = usize::MAX,
+                    1 => trace.rows[0].tail_marks = usize::MAX,
+                    2 => trace.rows[0].fused_turns = usize::MAX,
+                    _ => trace.rows[0].tail_work = usize::MAX,
+                }
+            });
+            match counter {
+                0 => guard.mask_checks(),
+                1 => guard.tail_marks(),
+                2 => guard.fused_turns(),
+                _ => guard.tail_work(),
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
 }
 
 // Sole owning-test observation scope, outside compiler ledgers and allocation
@@ -750,6 +825,10 @@ impl Drop for Scope {
             sum(|r| r.identity_probes),
             sum(|r| r.identity_bodies),
             sum(|r| r.identity_empty_probes),
+            sum(|r| r.mask_checks),
+            sum(|r| r.tail_marks),
+            sum(|r| r.fused_turns),
+            sum(|r| r.tail_work),
         ];
         let total_overflow = totals.iter().any(Option::is_none);
         let complete = self
@@ -807,7 +886,7 @@ impl Drop for Scope {
             lost
         );
         eprintln!(
-            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions and first-head removals) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions, first-head removals, pair-link/unit-driver and paired-tail changes) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
             size_of::<ComparisonOwner<'static>>(),
             size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
             shared_prefix::OWNER,
@@ -841,6 +920,18 @@ impl Drop for Scope {
                 row.unwound,
                 row.overflow,
                 row.truncated
+            );
+            eprintln!(
+                "PLAN paired-tail row={} mask_admissions={} mark_admissions={} turn_admissions={} work_reached={} complete={} ended={} unwound={} overflow={}; reached prefix only; no whole-app gain claim",
+                row.invocation,
+                row.mask_checks,
+                row.tail_marks,
+                row.fused_turns,
+                row.tail_work,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow
             );
             eprintln!(
                 "OPT900902 row={} BASE={} POP={} VIEW_HEAD={} HEAD={} RHS={} FIRST={} Q={} G={} H={} P={} B={} complete={} ended={} unwound={} overflow={} truncated={}; reached-prefix packet admissions only",

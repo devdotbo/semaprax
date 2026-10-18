@@ -1188,3 +1188,14 @@ mod main7e_pair_scope_tests;
 
 #[path = "tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"]
 mod main7e_boundary_sources;
+
+#[path = "main001_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main001_pair_scope_tests;
+
+#[path = "tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"]
+mod main001_link_sources;
+
+#[path = "main_b692_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main_b692_pair_scope_tests;

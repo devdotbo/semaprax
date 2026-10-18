@@ -1,6 +1,7 @@
 //! Private diagnostic attribution, enabled only by the existing codec witness.
 //! Fixed-capacity backing is prepared before observation; it grants no compiler credit.
 use std::cell::{Cell, RefCell};
+mod json_codec_probe;
 const ROWS: usize = 1024;
 const ID_BYTES: usize = 256;
 const ROUTES: usize = 3;
@@ -94,7 +95,9 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan certified numeric run capture"
         | "ordinary plan certified numeric run turn"
         | "ordinary plan certified numeric run publication"
-        | "ordinary plan shared suffix scalar receivers" => Some(8),
+        | "ordinary plan shared suffix scalar receivers"
+        | "ordinary plan paired tail selection"
+        | "ordinary plan paired tail turn" => Some(8),
         "ordinary plan history HIR cursor next" => Some(9),
         "ordinary plan retained drain swap receivers" => Some(10),
         "ordinary plan retained sift swap receivers" => Some(11),
@@ -910,6 +913,39 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         (13, 4, 1)
     );
     assert_eq!(incoming_macro.matches("paid!(").count(), 7);
+    let pair_link_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs"
+    ));
+    let pair_link_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs"
+    ));
+    assert_eq!(
+        (
+            phases(pair_link_owner, "paid!(", 4).len(),
+            pair_link_owner.matches("lexical_plan_next!(").count(),
+            pair_link_owner.matches("shared_plan_pair_step!(").count()
+        ),
+        (13, 4, 1)
+    );
+    assert_eq!(pair_link_macro.matches("paid!(").count(), 15);
+    let tail_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs"
+    ));
+    let tail_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs"
+    ));
+    assert_eq!(
+        (
+            phases(tail_owner, "paid!(", 4).len(),
+            tail_owner.matches("shared_plan_pair_step!(").count()
+        ),
+        (13, 1)
+    );
+    assert_eq!(tail_macro.matches("paid!(").count(), 17);
     let direct = phases(owner, "paid!(", 4);
     let forwarded = phases(owner, "lexical_plan_next!(", 10);
     // The fresh-head continuation covers every aligned nonempty shared segment:
@@ -947,10 +983,27 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             paired.matches("paid!(").count(),
             suffix.matches("paid!(").count()
         ),
-        (3, 3, 3)
+        (3, 5, 3)
+    );
+    let (paired_forward, paired_tail) = paired
+        .split_once("// Five actual new primitive sites:")
+        .unwrap();
+    assert_eq!(
+        (
+            paired_tail.matches("paid!(").count(),
+            paired_tail.matches(".charge(").count()
+        ),
+        (2, 3)
+    );
+    assert_eq!(
+        phases(paired_tail, "paid!(", 4),
+        vec![
+            "ordinary plan paired tail selection",
+            "ordinary plan paired tail turn"
+        ]
     );
     // Both lexical producers forward only the caller's already-checked phase.
-    for lexical in [lexical, paired] {
+    for lexical in [lexical, paired_forward] {
         let sites: Vec<_> = lexical.match_indices("paid!(").collect();
         for (at, _) in sites {
             let body = &lexical[at + "paid!(".len()..];
@@ -1096,16 +1149,24 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             suffix.matches("paid!(").count(),
             suffix.matches(".charge(").count()
         ),
-        (10, 12)
+        (9, 12)
     );
+    assert_eq!(current.matches("fused_plan_tails!(").count(), 1);
     // Old loop: MATCH + four five-site producers + two first-work sites +
     // eight event/suffix sites. New loop: seven-site left + two old producers
-    // + fifteen-site right + nine numeric suffix sites + thirteen boundary sites.
+    // + fifteen-site right + eight numeric suffix sites + thirteen boundary sites.
     // These are real expansions, including every fallback and zero sentinel.
-    assert_eq!((7 + 2 * 5 + 15 + 9 + 13) - (1 + 4 * 5 + 2 + 8), 23);
+    assert_eq!((7 + 2 * 5 + 15 + 8 + 13) - (1 + 4 * 5 + 2 + 8), 22);
+    // Tail selection/turn and three individual work sites are additive; no
+    // existing reachable primitive bank is reduced or charged twice.
+    assert_eq!(
+        22 + paired_tail.matches("paid!(").count() + paired_tail.matches(".charge(").count(),
+        27
+    );
     for phase in phases(heads, "paid!(", 4)
         .into_iter()
         .chain(phases(suffix, "paid!(", 4))
+        .chain(phases(paired_tail, "paid!(", 4))
     {
         assert!(
             comparison_phase(phase).is_some(),

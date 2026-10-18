@@ -23,6 +23,7 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+mod paired_links;
 mod shared_steps;
 pub(super) fn previous_macro(current: &str) -> String {
     previous_macro_stage(&shared_steps::previous_macro(current))

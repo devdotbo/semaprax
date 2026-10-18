@@ -147,3 +147,719 @@ impl HirValidator<'_> {
         Ok(())
     }
 }
+
+// The new witness continuation's explicit transport and local receivers. These
+// are additions to the unchanged full-capacity Storage<Frame> backing invoice;
+// removed type clones receive no separate byte credit.
+type WitnessJoinCall<'a, 'v> = (
+    &'a HirValidator<'v>,
+    &'a mut Option<&'v ResolvedExpr>,
+    &'v ResolvedExpr,
+);
+const PAYMENT: usize =
+    2 * std::mem::size_of::<Option<usize>>() + 2 * std::mem::size_of::<Result<(), Diagnostic>>();
+// A fixed complete helper activation also owns its two reachable delegated
+// call envelopes; it claims no credit for the independently retained old helper.
+type WitnessTypeCall<'a, 'v> = (
+    &'a HirValidator<'v>,
+    &'a ResolvedType,
+    &'a ResolvedType,
+    &'a str,
+);
+const WITNESS_TYPE_CALL: usize = 2 * std::mem::size_of::<WitnessTypeCall<'static, 'static>>()
+    + 2 * std::mem::size_of::<Result<(), Diagnostic>>();
+const WITNESS_ERROR_CALL: usize =
+    2 * std::mem::size_of::<&str>() + 2 * std::mem::size_of::<Diagnostic>();
+pub(super) const WITNESS_JOIN: usize = PAYMENT
+    + WITNESS_TYPE_CALL
+    + WITNESS_ERROR_CALL
+    + 2 * std::mem::size_of::<WitnessJoinCall<'static, 'static>>()
+    + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + std::mem::size_of::<Option<&ResolvedExpr>>() // copied selector value
+    + std::mem::size_of::<&ResolvedExpr>() // selected already-validated witness
+    + std::mem::size_of::<Option<&ResolvedExpr>>() // replacement initializer
+    + 4 * std::mem::size_of::<bool>(); // two Never tests, ownership, replacement test
+// Each immutable Vec field produces its pattern binding, then the actual and
+// formal Deref receiver and returned/received exact old slice view. Subsequent
+// len/index/substitution operations retain their original slice types.
+const ARMS_VIEW: usize = 3 * std::mem::size_of::<&Vec<ResolvedMatchArm>>()
+    + 2 * std::mem::size_of::<&[ResolvedMatchArm]>();
+const ARGUMENTS_VIEW: usize =
+    3 * std::mem::size_of::<&Vec<ResolvedType>>() + 2 * std::mem::size_of::<&[ResolvedType]>();
+pub(super) const VARIANT_VIEWS: usize = PAYMENT
+    + ARMS_VIEW
+    + std::mem::size_of::<&DeclarationId>()
+    + ARGUMENTS_VIEW
+    + 2 * std::mem::size_of::<bool>();
+pub(super) const VARIANT_ARM_VIEW: usize = PAYMENT + ARMS_VIEW + std::mem::size_of::<bool>();
+
+// Result selection is now a borrowed std::Option/Result receiver rather than
+// the old owning tuple. Keep its whole new envelope, projection and error
+// closure roles explicit; no old tuple/payload credit is claimed.
+pub(super) const WITNESS_FINISH: usize = PAYMENT
+    + 2 * std::mem::size_of::<Option<&ResolvedExpr>>()
+    + 2 * std::mem::size_of::<Result<&ResolvedExpr, Diagnostic>>()
+    + std::mem::size_of::<&ResolvedExpr>()
+    + std::mem::size_of::<&ResolvedType>()
+    + std::mem::size_of::<OwnershipMode>()
+    + WITNESS_ERROR_CALL;
+
+impl HirValidator<'_> {
+    /// Called only by AfterArm, after the complete arm body succeeded and the
+    /// original borrow-release and owned-result checks. The immutable expression
+    /// itself witnesses the type; a reconstructed/cached type is never authority.
+    pub(super) fn join_lexical_match_witness<'value>(
+        &self,
+        result: &mut Option<&'value ResolvedExpr>,
+        value: &'value ResolvedExpr,
+    ) -> Result<(), Diagnostic> {
+        let Some(previous) = *result else {
+            *result = Some(value);
+            return Ok(());
+        };
+        if previous.ty != ResolvedType::Never && value.ty != ResolvedType::Never {
+            self.require_type(&value.ty, &previous.ty, "match arm")?;
+            if value.ownership != previous.ownership {
+                return Err(hir_error("resolved match arms have inconsistent ownership"));
+            }
+        }
+        if previous.ty == ResolvedType::Never {
+            *result = Some(value);
+        }
+        Ok(())
+    }
+}
+
+#[cfg(test)]
+#[derive(Clone, Copy, Debug)]
+struct Frontier {
+    remaining: usize,
+    amount: usize,
+}
+#[cfg(test)]
+#[derive(Clone, Copy, Debug, Default)]
+struct FrameRequests {
+    size: usize,
+    alignment: usize,
+    requested_capacity: usize,
+    requests: usize,
+    acquired_capacity: usize,
+    joins: usize,
+    variant_views: usize,
+    arm_views: usize,
+    finishes: usize,
+    first_join: Option<Frontier>,
+    first_variant: Option<Frontier>,
+    first_arm: Option<Frontier>,
+    first_finish: Option<Frontier>,
+    overflow: bool,
+}
+#[cfg(test)]
+thread_local! {
+    static FRAME_REQUESTS: std::cell::Cell<Option<FrameRequests>> = const { std::cell::Cell::new(None) };
+    static PANIC_AFTER_WITNESS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+#[cfg(test)]
+pub(in crate::hir::validation) fn observe_frame_layout(size: usize, alignment: usize) {
+    FRAME_REQUESTS.with(|cell| {
+        if let Some(mut report) = cell.get() {
+            if report.size != 0 && (report.size != size || report.alignment != alignment) {
+                report.overflow = true;
+            }
+            report.size = size;
+            report.alignment = alignment;
+            cell.set(Some(report));
+        }
+    });
+}
+#[cfg(test)]
+pub(in crate::hir::validation) fn observe_frame_request<T>(capacity: usize) {
+    // Diagnostic type label only; it neither selects an algorithm nor funds a
+    // receiver. The charged Storage<T> request and its allocation remain intact.
+    if !std::any::type_name::<T>().ends_with("::validate_expr_iterative_effects::Frame") {
+        return;
+    }
+    FRAME_REQUESTS.with(|cell| {
+        if let Some(mut report) = cell.get() {
+            match (
+                report.requested_capacity.checked_add(capacity),
+                report.requests.checked_add(1),
+            ) {
+                (Some(total), Some(requests)) => {
+                    report.requested_capacity = total;
+                    report.requests = requests;
+                }
+                _ => report.overflow = true,
+            }
+            cell.set(Some(report));
+        }
+    });
+}
+
+#[cfg(test)]
+pub(in crate::hir::validation) fn observe_frame_acquired<T>(capacity: usize) {
+    if !std::any::type_name::<T>().ends_with("::validate_expr_iterative_effects::Frame") {
+        return;
+    }
+    FRAME_REQUESTS.with(|cell| {
+        if let Some(mut report) = cell.get() {
+            match report.acquired_capacity.checked_add(capacity) {
+                Some(total) => report.acquired_capacity = total,
+                None => report.overflow = true,
+            }
+            cell.set(Some(report));
+        }
+    });
+}
+#[cfg(test)]
+pub(in crate::hir::validation) fn observe_witness_role(role: &'static str) {
+    FRAME_REQUESTS.with(|cell| {
+        if let Some(mut report) = cell.get() {
+            let count = match role {
+                "join" => &mut report.joins,
+                "variant" => &mut report.variant_views,
+                "arm" => &mut report.arm_views,
+                "finish" => &mut report.finishes,
+                _ => {
+                    report.overflow = true;
+                    cell.set(Some(report));
+                    return;
+                }
+            };
+            match count.checked_add(1) {
+                Some(total) => *count = total,
+                None => report.overflow = true,
+            }
+            cell.set(Some(report));
+        }
+    });
+}
+
+#[cfg(test)]
+pub(in crate::hir::validation) fn observe_witness_frontier(role: &'static str, amount: usize) {
+    let Some(remaining) = crate::bounded_output::active_remaining() else {
+        return;
+    };
+    FRAME_REQUESTS.with(|cell| {
+        if let Some(mut report) = cell.get() {
+            let first = match role {
+                "join" => &mut report.first_join,
+                "variant" => &mut report.first_variant,
+                "arm" => &mut report.first_arm,
+                "finish" => &mut report.first_finish,
+                _ => {
+                    report.overflow = true;
+                    cell.set(Some(report));
+                    return;
+                }
+            };
+            if first.is_none() {
+                *first = Some(Frontier { remaining, amount });
+            }
+            cell.set(Some(report));
+        }
+    });
+}
+
+#[cfg(test)]
+pub(in crate::hir::validation) fn witness_unwind_point() {
+    if PANIC_AFTER_WITNESS.with(|flag| flag.replace(false)) {
+        std::panic::resume_unwind(Box::new(()));
+    }
+}
+
+#[cfg(test)]
+mod witness_tests {
+    use super::*;
+    const SCALAR: &str = "module witness; @id(\"w.f\") fn f(x:i64)->i64 {match x {0=>1, n=>n}} @id(\"w.main\") fn main()->i64 {f(0)}";
+    fn sources() -> Vec<String> {
+        let mut nested = "0".to_owned();
+        for _ in 0..16 {
+            nested = format!("match 0 {{0=>{nested}, _=>0}}");
+        }
+        let calls = std::iter::repeat_n("f(0)", 64)
+            .collect::<Vec<_>>()
+            .join("+");
+        let mut binary = "1".to_owned();
+        for _ in 0..64 {
+            binary = format!("({binary}+1)");
+        }
+        vec![
+            format!("module deep_binary; @id(\"main\") fn main()->i64 {{{binary}}}"),
+            "module tiny; @id(\"t.main\") fn main()->i64 {1}".to_owned(),
+            SCALAR.to_owned(),
+            "module guarded; @id(\"main\") fn main()->i64 {match 0 {0 if true=>1, n=>n}}".to_owned(),
+            "module never; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>{return 2;}}}".to_owned(),
+            "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>2}}".to_owned(),
+            "module borrowed; @id(\"consume\") fn consume(value:own Result<Bytes,Bytes>)->i64 {let borrowed=match borrow value {Result::Ok {value:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{1},Result::Err {error:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{2},}; match own value {Result::Ok {value:payload}=>borrowed,Result::Err {error:payload}=>borrowed,}} @id(\"main\") fn main()->i64 {0}".to_owned(),
+            format!("module nested; @id(\"main\") fn main()->i64 {{{nested}}}"),
+            format!("module calls; @id(\"f\") fn f(x:i64)->i64 {{x}} @id(\"main\") fn main()->i64 {{{calls}}}"),
+            "module variant_witness; @id(\"shape.type\") variant Shape {@id(\"shape.dot\") Dot,@id(\"shape.box\") Box {width:i64,},} @id(\"main\") fn main()->i64 {match Shape::Box {width:4} {Shape::Dot {}=>0,Shape::Box {width}=>width,}}".to_owned(),
+        ]
+    }
+
+    #[test]
+    fn borrowed_join_keeps_first_normal_latest_never_and_complete_old_errors() {
+        let checked = crate::check(SCALAR, "witness.spx").unwrap();
+        let program = crate::hir::resolve(&checked).unwrap();
+        let validator = HirValidator::new(&program).unwrap();
+        let base = &program
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "w.f")
+            .unwrap()
+            .body;
+        for types in [
+            vec![ResolvedType::Never],
+            vec![ResolvedType::Never, ResolvedType::Never],
+            vec![ResolvedType::Never, ResolvedType::I64, ResolvedType::Never],
+            vec![ResolvedType::I64, ResolvedType::Never, ResolvedType::I64],
+            vec![ResolvedType::I64, ResolvedType::Bool],
+        ] {
+            for ownership_mismatch in [false, true] {
+                let values: Vec<_> = types
+                    .iter()
+                    .cloned()
+                    .enumerate()
+                    .map(|(i, ty)| {
+                        let mut value = base.clone();
+                        value.ty = ty;
+                        value.ownership = if ownership_mismatch && i != 0 {
+                            OwnershipMode::Own
+                        } else {
+                            OwnershipMode::Value
+                        };
+                        value
+                    })
+                    .collect();
+                let mut old = None;
+                let mut witness = None;
+                let mut selected = None;
+                for (i, value) in values.iter().enumerate() {
+                    let before = old.clone();
+                    let old_outcome = validator.join_lexical_match(&mut old, value);
+                    let new_outcome = validator.join_lexical_match_witness(&mut witness, value);
+                    assert_eq!(format!("{old_outcome:?}"), format!("{new_outcome:?}"));
+                    if old_outcome.is_err() {
+                        break;
+                    }
+                    if before
+                        .as_ref()
+                        .is_none_or(|(ty, _)| *ty == ResolvedType::Never)
+                    {
+                        selected = Some(i);
+                    }
+                    let picked = witness.unwrap();
+                    assert!(std::ptr::eq(picked, &values[selected.unwrap()]));
+                    assert_eq!(old.as_ref(), Some(&(picked.ty.clone(), picked.ownership)));
+                }
+            }
+        }
+    }
+
+    #[test]
+    fn complete_recursive_validator_keeps_forged_cached_types_and_late_arm_failures_independent() {
+        fn match_arms(expression: &mut ResolvedExpr) -> Option<&mut Vec<ResolvedMatchArm>> {
+            match &mut expression.kind {
+                ResolvedExprKind::Match { arms, .. } => Some(arms),
+                ResolvedExprKind::Block { tail, .. }
+                | ResolvedExprKind::VecConstructor { tail, .. } => match_arms(tail),
+                _ => None,
+            }
+        }
+        let mut late_attacks = [0; 2];
+        for source in sources() {
+            let checked = crate::check(&source, "witness-oracle.spx").unwrap();
+            let program = crate::hir::resolve(&checked).unwrap();
+            let function = program.functions.iter().find(|f| f.name == "main").unwrap();
+            for attack in 0..5 {
+                let mut expression = function.body.clone();
+                match attack {
+                    0 => {}
+                    1 => expression.ty = ResolvedType::Bool,
+                    2 => expression.ownership = OwnershipMode::Own,
+                    3 => {
+                        let Some(arms) = match_arms(&mut expression) else {
+                            continue;
+                        };
+                        arms.last_mut().unwrap().value.ty = ResolvedType::Bool;
+                        late_attacks[0] += 1;
+                    }
+                    4 => {
+                        let Some(arms) = match_arms(&mut expression) else {
+                            continue;
+                        };
+                        arms.pop().unwrap();
+                        late_attacks[1] += 1;
+                    }
+                    _ => unreachable!(),
+                }
+                let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+                let mut iterative = HirValidator::new(&program).unwrap();
+                let mut recursive = HirValidator::new(&program).unwrap();
+                let mut iterative_scope = BTreeMap::new();
+                let mut recursive_scope = BTreeMap::new();
+                let actual = iterative.validate_expr(
+                    &execution,
+                    &expression,
+                    &mut iterative_scope,
+                    "body",
+                    true,
+                    None,
+                );
+                let old = recursive.validate_expr_recursive_reference_body(
+                    &execution,
+                    &expression,
+                    &mut recursive_scope,
+                    "body",
+                    true,
+                    None,
+                );
+                HirValidator::assert_validation_oracle(
+                    &actual,
+                    &old,
+                    &iterative,
+                    &recursive,
+                    &iterative_scope,
+                    &recursive_scope,
+                    "body",
+                );
+                if attack == 0 {
+                    assert!(actual.is_ok());
+                } else {
+                    assert!(
+                        actual.is_err(),
+                        "attack {attack} must be genuinely malformed"
+                    );
+                }
+            }
+        }
+        assert!(late_attacks.into_iter().all(|count| count > 0));
+    }
+
+    struct Capture;
+    impl Capture {
+        fn begin() -> Self {
+            FRAME_REQUESTS
+                .with(|cell| assert!(cell.replace(Some(FrameRequests::default())).is_none()));
+            Self
+        }
+        fn finish(self) -> FrameRequests {
+            let report = FRAME_REQUESTS.with(|cell| cell.take().unwrap());
+            drop(self);
+            report
+        }
+    }
+    impl Drop for Capture {
+        fn drop(&mut self) {
+            FRAME_REQUESTS.with(|cell| {
+                cell.take();
+            });
+            PANIC_AFTER_WITNESS.with(|flag| flag.set(false));
+        }
+    }
+
+    fn run_public(
+        checked: &crate::ast::Program,
+        limit: usize,
+        floor: usize,
+    ) -> (
+        bool,
+        crate::test_allocation_observer::Metrics,
+        bool,
+        usize,
+        Option<crate::bounded_output::ReservationRefusal>,
+        FrameRequests,
+    ) {
+        let capture = Capture::begin();
+        let ((success, metrics), refused, paid, receipt) =
+            crate::bounded_output::with_limit_usage_refusal(limit, || {
+                assert!(crate::bounded_output::set_active_floor(floor));
+                let measured =
+                    crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
+                        let resolved = match crate::hir::resolve(checked) {
+                            Ok(resolved) => resolved,
+                            Err(errors) => {
+                                assert!(errors.iter().all(|error| error.code == "SPX-H006"));
+                                drop(errors);
+                                return false;
+                            }
+                        };
+                        let outcome = crate::hir::validate(&resolved);
+                        if let Err(error) = &outcome {
+                            assert_eq!(error.code, "SPX-H006");
+                        }
+                        let success = outcome.is_ok();
+                        drop(outcome);
+                        drop(resolved);
+                        success
+                    });
+                let ledger = crate::bounded_output::classifier_string::ClassifierLedger::capture();
+                let first = ledger.first_refusal();
+                let remaining = crate::bounded_output::active_remaining();
+                if first.is_some() {
+                    assert!(scope_checkpoint::charge::reserve(Some(0)).is_err());
+                    assert_eq!(ledger.first_refusal(), first);
+                    assert_eq!(crate::bounded_output::active_remaining(), remaining);
+                }
+                crate::bounded_output::clear_active_floor();
+                measured
+            });
+        (success, metrics, refused, paid, receipt, capture.finish())
+    }
+
+    #[test]
+    fn real_new_witness_frontiers_exact_short_zero_floor_sticky_and_drop_are_not_layout_guesses() {
+        let mut seen = [false; 4];
+        for source in sources() {
+            let checked = crate::check(&source, "witness-frontiers.spx").unwrap();
+            let (success, metrics, refused, _, receipt, full) = run_public(&checked, 64 << 20, 0);
+            assert!(
+                success && !refused && receipt.is_none() && !metrics.invalid && metrics.live == 0
+            );
+            for (i, frontier) in [
+                full.first_join,
+                full.first_variant,
+                full.first_arm,
+                full.first_finish,
+            ]
+            .into_iter()
+            .enumerate()
+            {
+                let Some(frontier) = frontier else {
+                    continue;
+                };
+                seen[i] = true;
+                let before = (64usize << 20).checked_sub(frontier.remaining).unwrap();
+                let exact = before.checked_add(frontier.amount).unwrap();
+                for (limit, floor, target_acquired) in
+                    [(exact, 0, true), (exact - 1, 0, false), (exact, 1, false)]
+                {
+                    let (success, metrics, refused, _, receipt, prefix) =
+                        run_public(&checked, limit, floor);
+                    assert!(
+                        !metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed
+                    );
+                    let acquired = [
+                        prefix.joins,
+                        prefix.variant_views,
+                        prefix.arm_views,
+                        prefix.finishes,
+                    ][i];
+                    assert_eq!(acquired != 0, target_acquired);
+                    if !target_acquired {
+                        assert!(refused && !success);
+                        assert_eq!(receipt.unwrap().requested, frontier.amount);
+                    } else if success {
+                        assert!(!refused && receipt.is_none());
+                    } else {
+                        assert!(refused && receipt.is_some());
+                    }
+                }
+            }
+        }
+        assert!(
+            seen.into_iter().all(|seen| seen),
+            "every actual new role must be reached"
+        );
+        let checked = crate::check(SCALAR, "witness-zero.spx").unwrap();
+        let (success, metrics, refused, _, receipt, _) = run_public(&checked, 0, 0);
+        assert!(!success && refused && receipt.is_some() && !metrics.invalid && metrics.live == 0);
+    }
+
+    #[test]
+    fn complete_public_caller_reports_real_backing_replacement_bill_and_drop_for_matched_sources() {
+        for source in sources() {
+            let checked = crate::check(&source, "matched-frame.spx").unwrap();
+            let (outcome, metrics, refused, paid, receipt, report) =
+                run_public(&checked, 64 << 20, 0);
+            assert!(outcome && !refused && receipt.is_none());
+            assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
+            assert!(!report.overflow && report.size > 0 && report.requests > 0);
+            assert_eq!(report.requested_capacity, report.acquired_capacity);
+            let backing = report.acquired_capacity.checked_mul(report.size).unwrap();
+            let replacement = report
+                .joins
+                .checked_mul(WITNESS_JOIN)
+                .unwrap()
+                .checked_add(report.variant_views.checked_mul(VARIANT_VIEWS).unwrap())
+                .unwrap()
+                .checked_add(report.arm_views.checked_mul(VARIANT_ARM_VIEW).unwrap())
+                .unwrap()
+                .checked_add(report.finishes.checked_mul(WITNESS_FINISH).unwrap())
+                .unwrap();
+            eprintln!(
+                "OPT904 full-public-caller source_sha={} source_bytes={} complete=true layout={report:?} full_frame_backing={backing} actual_replacement_bill={replacement} paid={paid} allocations={metrics:?}; no inferred old layout, no clone payload credit, no shipping/app-fit claim",
+                {
+                    use sha2::Digest;
+                    format!(
+                        "{:x}",
+                        crate::digest_hex::LowerHex(sha2::Sha256::digest(source.as_bytes()))
+                    )
+                },
+                source.len()
+            );
+            eprintln!(
+                "OPT904_JSON {}",
+                serde_json::json!({
+                    "source_sha256": {use sha2::Digest; format!("{:x}", crate::digest_hex::LowerHex(sha2::Sha256::digest(source.as_bytes())))} ,
+                    "source_bytes": source.len(), "complete": true,
+                    "frame_size": report.size, "frame_align": report.alignment,
+                    "requested_capacity": report.requested_capacity,
+                    "acquired_capacity": report.acquired_capacity, "requests": report.requests,
+                    "replacement_bill": replacement, "paid": paid,
+                    "joins": report.joins, "variant_views": report.variant_views,
+                    "arm_views": report.arm_views, "finishes": report.finishes,
+                    "live": metrics.live, "allocated": metrics.allocated, "freed": metrics.freed,
+                    "invalid": metrics.invalid, "overflow": report.overflow
+                })
+            );
+        }
+    }
+
+    #[test]
+    fn real_complete_frame_layout_and_every_capacity_request_are_reported_without_248_assumption() {
+        for source in sources() {
+            let checked = crate::check(&source, "frame-invoice.spx").unwrap();
+            let capture = Capture::begin();
+            let program = crate::hir::resolve(&checked).unwrap();
+            crate::hir::validate(&program).unwrap();
+            let report = capture.finish();
+            assert!(!report.overflow);
+            assert!(report.size > 0 && report.alignment.is_power_of_two());
+            assert_eq!(report.size % report.alignment, 0);
+            assert!(report.requests > 0 && report.requested_capacity > 0);
+            let backing = report.requested_capacity.checked_mul(report.size).unwrap();
+            eprintln!(
+                "OPT904 actual_complete_frame size={} alignment={} ALL_requested_capacities={} requests={} full_backing={} includes_failed_requests=true no_248_or_clone_payload_credit",
+                report.size, report.alignment, report.requested_capacity, report.requests, backing
+            );
+        }
+    }
+    #[test]
+    fn actual_live_witness_unwind_and_counter_overflow_preserve_full_owner_drop() {
+        let checked = crate::check(SCALAR, "witness-unwind.spx").unwrap();
+        let capture = Capture::begin();
+        PANIC_AFTER_WITNESS.with(|flag| flag.set(true));
+        let (((), metrics), refused, _, receipt) =
+            crate::bounded_output::with_limit_usage_refusal(64 << 20, || {
+                crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
+                    let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                        let resolved = crate::hir::resolve(&checked).unwrap();
+                        drop(resolved);
+                    }));
+                    assert!(caught.is_err());
+                    drop(caught);
+                })
+            });
+        let report = capture.finish();
+        assert!(!refused && receipt.is_none() && report.joins > 0);
+        assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
+        let ordinary = crate::hir::resolve(&checked).unwrap();
+        let capture = Capture::begin();
+        FRAME_REQUESTS.with(|cell| {
+            let mut report = cell.get().unwrap();
+            report.requested_capacity = usize::MAX;
+            cell.set(Some(report));
+        });
+        let observed = crate::hir::resolve(&checked).unwrap();
+        let overflow = capture.finish();
+        assert!(overflow.overflow);
+        assert_eq!(
+            format!("{ordinary:?}"),
+            format!("{observed:?}"),
+            "overflow is diagnostic, never authority"
+        );
+    }
+
+    #[test]
+    fn whole_immediate_production_frame_dispatch_helper_and_invoice_restore_and_refuse_drift() {
+        use sha2::{Digest, Sha256};
+        fn hash(bytes: &[u8]) -> String {
+            format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
+        }
+        fn restore(row: &serde_json::Value, current: &[u8]) -> Option<Vec<u8>> {
+            if current.len() as u64 != row["current_length"].as_u64()?
+                || hash(current) != row["current_sha256"].as_str()?
+            {
+                return None;
+            }
+            let mut bytes = current.to_vec();
+            for edit in row["edits"].as_array()?.iter().rev() {
+                let start = usize::try_from(edit["current_start"].as_u64()?).ok()?;
+                let end = usize::try_from(edit["current_end"].as_u64()?).ok()?;
+                if bytes.get(start..end)? != edit["current"].as_str()?.as_bytes() {
+                    return None;
+                }
+                bytes.splice(
+                    start..end,
+                    edit["before"].as_str()?.as_bytes().iter().copied(),
+                );
+            }
+            Some(bytes)
+        }
+        let inverse: serde_json::Value =
+            serde_json::from_str(include_str!("match_witness_inverse.json")).unwrap();
+        let sources = [
+            include_str!("../validation.rs"),
+            include_str!("lexical_exit.rs"),
+            include_str!("scope_checkpoint/storage.rs"),
+        ];
+        let before = [
+            (
+                399157,
+                "85a730c701db6b3031fecd84499aa1f2dff5f5c07d0498612bdcd1284dd0b271",
+            ),
+            (
+                5536,
+                "5b1655ec915ba15347dcaaea9914a4f53ee3e922df4e32e424fc3d53775ea869",
+            ),
+            (
+                4073,
+                "b6bdc77ba0bbacf17d7481a0cf5028ed17c795e5f44b361079fc4d1d31e6d64f",
+            ),
+        ];
+        assert_eq!(inverse["rows"].as_array().unwrap().len(), sources.len());
+        for ((row, current), (length, expected)) in inverse["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .zip(sources)
+            .zip(before)
+        {
+            let old = restore(row, current.as_bytes()).unwrap();
+            assert_eq!((old.len(), hash(&old)), (length, expected.to_owned()));
+            assert!(
+                restore(row, &old).is_none(),
+                "already-old is not current authority"
+            );
+            let mut drift = current.as_bytes().to_vec();
+            drift[0] ^= 1;
+            assert!(restore(row, &drift).is_none());
+        }
+        let body = sources[0]
+            .split_once("    fn validate_expr_iterative_effects(")
+            .unwrap()
+            .1;
+        let frame = body
+            .split_once("        enum Frame<'e> {")
+            .unwrap()
+            .1
+            .split_once("        const {")
+            .unwrap()
+            .0;
+        assert!(
+            !frame.contains("#[cfg"),
+            "instrumentation cannot change shipping frame layout"
+        );
+        assert_eq!(frame.matches("result: Option<&'e ResolvedExpr>").count(), 5);
+        let storage = sources[2]
+            .split_once("struct Storage<T> {")
+            .unwrap()
+            .1
+            .split_once('}')
+            .unwrap()
+            .0;
+        assert_eq!(storage, "\n    values: Vec<T>,\n");
+    }
+}

@@ -2,40 +2,43 @@
 use super::{Ordering, PAYMENT_HEADER, Rc, Segment, SkeletonObservation, size_of};
 // Additional actual reserve/work sites relative to the complete d458 owner:
 // split right producer +4, relocated MATCH +3, first-head certificate +1.
-pub(super) const OWNER: usize = 23 * PAYMENT_HEADER;
+pub(super) const OWNER: usize = 22 * PAYMENT_HEADER;
 // Additional actual sites beyond the first-head split: thirteen boundary
-// sites (six payments and seven work calls), and two numeric-run payments.
+// sites (six payments and seven work calls), and one numeric-driver payment.
 pub(super) const BOUNDARY_CHECK: usize = 3 * size_of::<bool>();
 pub(super) const BOUNDARY_EMPTY: usize = size_of::<bool>();
-pub(super) const BOUNDARY_LINKS: usize = 4 * size_of::<&Vec<usize>>()
-    + 4 * size_of::<&[usize]>()
-    + 4 * size_of::<usize>()
-    + 3 * size_of::<bool>();
+pub(super) const BOUNDARY_LINKS: usize =
+    2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();
 pub(super) const BOUNDARY_VIEW: usize = 2 * size_of::<&[Segment]>()
     + 2 * size_of::<usize>()
     + size_of::<&Segment>()
     + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
     + 3 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<bool>();
-// Retain the complete main7e body invoice, including its two remembered-link
-// assignments; this branch physically has no such retained fields.
-pub(super) const BOUNDARY_BODY: usize = 4 * size_of::<&mut Vec<usize>>()
-    + 2 * size_of::<Option<usize>>()
-    + 10 * size_of::<usize>()
-    + 6 * size_of::<bool>()
+// Retain the complete incoming pair-link body invoice, including its two
+// remembered-link assignments; this branch has no such retained fields.
+pub(super) const BOUNDARY_BODY: usize = 2 * size_of::<&[usize]>()
+    + 8 * size_of::<usize>()
+    + 4 * size_of::<bool>()
     + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<Ordering>();
-pub(super) const RUN_CAPTURE: usize =
-    2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>();
-pub(super) const RUN_TURN: usize = 4 * size_of::<usize>() + size_of::<bool>();
+pub(super) type SharedUnitDriver = std::iter::Take<std::iter::Repeat<()>>;
+// Exact closed unit-only run transport, including constructor/IntoIterator and
+// one retained next frame with its sole terminal None. No observation payload.
+pub(super) const RUN_CAPTURE: usize = 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 4 * size_of::<usize>()
+    + 6 * size_of::<SharedUnitDriver>()
+    + 2 * size_of::<&mut SharedUnitDriver>()
+    + 2 * size_of::<Option<()>>();
+#[cfg(test)]
+pub(super) const RUN_TURN: usize = 0;
+const _: () = assert!(size_of::<()>() == 0 && !std::mem::needs_drop::<SharedUnitDriver>());
 pub(super) const RUN_PUBLISH: usize =
     4 * size_of::<&[Rc<SkeletonObservation>]>() + 4 * size_of::<usize>() + size_of::<Ordering>();
 pub(super) const BASE: usize =
     2 * size_of::<usize>() + 3 * size_of::<bool>() + super::paired_value::EMPTY;
-pub(super) const POP: usize = 2 * size_of::<&mut Vec<usize>>()
-    + size_of::<Option<usize>>()
-    + size_of::<usize>()
-    + 2 * size_of::<bool>();
+pub(super) const POP: usize =
+    2 * size_of::<&[usize]>() + size_of::<usize>() + 2 * size_of::<bool>();
 pub(super) const VIEW_HEAD: usize = 2 * size_of::<&[Segment]>()
     + 2 * size_of::<usize>()
     + size_of::<&Segment>()
@@ -73,7 +76,7 @@ macro_rules! certified_match {
     }};
 }
 macro_rules! certified_right_value {
-    ($owner:ident, $left_head:ident, $left_link:ident, $tail:ident,
+    ($owner:ident, $left_head:ident, $left_link:ident, $tail:ident, $links:ident,
      $function:ident, $budget:ident, $census:ident, $paired:lifetime, $certificate:lifetime) => {{
         // Original observation receiving slots, formed only on fallback. There
         // is no new Option, tuple, callback, result or Rc alias transport.
@@ -110,9 +113,10 @@ macro_rules! certified_right_value {
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::CertifiedPopAdmitted,
                         certified_heads::POP);
-                    let Some(right_link) = $owner.right_cursor.links.pop() else {
+                    let &[ref right_links_rest @ .., right_link] = $links else {
                         unreachable!("prepared ordinary plan links");
                     };
+                    $links = right_links_rest;
                     paid!($budget, $function, shared_prefix::DETECTOR,
                         "ordinary plan fresh segment identity event")?;
                     #[cfg(test)] $census.identity_detector();
@@ -187,8 +191,13 @@ macro_rules! certified_right_value {
                     }
                 }
             }
-            paid!($budget, $function, paired_value::TAIL,
+            paid!($budget, $function, paired_value::TAIL + paired_value::TAIL_MARK,
                 "ordinary plan history paired cursor next")?;
+            mark_plan_tail!($owner, right_cursor);
+            #[cfg(test)] $census.tail_marks();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailMarkAdmitted, paired_value::TAIL_MARK);
             #[cfg(test)] $census.value_tail();
             certified_match!($budget, $function, $census);
             match $tail {
@@ -210,7 +219,7 @@ macro_rules! certified_right_value {
 // Left first-head continuation retains the original Rc pattern loan.
 macro_rules! certified_left_value {
     ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident, $link:ident, [$($head_value:ident => $entry:block)?],
-     $tail:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
+     $tail:ident, $links:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
             loop {
@@ -241,19 +250,20 @@ macro_rules! certified_left_value {
                     paid!(
                         $budget,
                         $function,
-                        paired_value::LOAD,
+                        paired_value::PAIR_LOAD,
                         $phase
                     )?;
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
-                        paired_value::LOAD,
+                        paired_value::PAIR_LOAD,
                     );
                     #[cfg(test)]
                     $census.load();
-                    let Some($link) = $owner.$cursor.links.pop() else {
+                    let &[ref links_rest @ .., $link] = $links else {
                         unreachable!("prepared ordinary plan links");
                     };
+                    $links = links_rest;
                     $owner.$items = $owner.arena[$link].items.as_slice();
                     $owner.$loaded = true;
                     $(
@@ -305,7 +315,12 @@ macro_rules! certified_left_value {
                     }
                 }
             }
-            paid!($budget, $function, paired_value::TAIL, $phase)?;
+            paid!($budget, $function, paired_value::TAIL + paired_value::TAIL_MARK, $phase)?;
+            mark_plan_tail!($owner, $cursor);
+            #[cfg(test)] $census.tail_marks();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailMarkAdmitted, paired_value::TAIL_MARK);
             #[cfg(test)]
             $census.value_tail();
             #[cfg(feature = "unstable-workflow-profiling")]
@@ -358,16 +373,15 @@ macro_rules! certified_suffix {
                         $crate::workflow_profile::plan_comparison::Site::NumericCaptureAdmitted,
                         certified_heads::RUN_CAPTURE);
                     let shared_length = $owner.left_items.len();
-                    let mut shared_remaining = shared_length;
-                    loop {
-                        paid!($budget, $function, certified_heads::RUN_TURN,
-                            "ordinary plan certified numeric run turn")?;
+                    #[allow(clippy::manual_repeat_n, reason = "closed Take<Repeat<()>> invoice and independent original driver")]
+                    let shared_work_driver: certified_heads::SharedUnitDriver =
+                        std::iter::repeat(()).take(shared_length);
+                    for () in shared_work_driver {
                         #[cfg(test)] $census.shared_turns();
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::NumericTurnAdmitted,
-                        certified_heads::RUN_TURN);
-                        if shared_remaining == 0 { break; }
+                        0);
                         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
                         #[cfg(test)] $census.identity_work();
                         #[cfg(feature = "unstable-workflow-profiling")]
@@ -403,8 +417,11 @@ macro_rules! certified_suffix {
                             $crate::workflow_profile::plan_comparison::event(
                                 $crate::workflow_profile::plan_comparison::Site::Round, 0);
                         }
-                        shared_remaining -= 1;
                     }
+                    #[cfg(test)] $census.shared_turns(); // the retained driver's sole terminal None
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::NumericTurnAdmitted, 0);
                     paid!($budget, $function, certified_heads::RUN_PUBLISH,
                         "ordinary plan certified numeric run publication")?;
                     #[cfg(test)] $census.shared_publishes();
@@ -435,7 +452,7 @@ macro_rules! certified_suffix {
 // stacks identify the SAME next nonempty segment, including on paths whose
 // previous segments differed. Empty/different successors take the old route.
 macro_rules! certified_boundary {
-    ($owner:ident, $function:ident, $budget:ident, $census:ident, $certificate:lifetime) => {{
+    ($owner:ident, $left_links:ident, $right_links:ident, $function:ident, $budget:ident, $census:ident, $certificate:lifetime) => {{
         paid!(
             $budget,
             $function,
@@ -491,10 +508,8 @@ macro_rules! certified_boundary {
                         $crate::workflow_profile::plan_comparison::Site::BoundaryLinksAdmitted,
                         certified_heads::BOUNDARY_LINKS,
                     );
-                    let left_links = $owner.left_cursor.links.as_slice();
-                    let right_links = $owner.right_cursor.links.as_slice();
-                    if let &[.., left_next] = left_links {
-                        if let &[.., right_next] = right_links {
+                    if let &[ref left_links_rest @ .., left_next] = $left_links {
+                        if let &[ref right_links_rest @ .., right_next] = $right_links {
                             if left_next == right_next {
                                 paid!(
                                     $budget,
@@ -540,9 +555,7 @@ macro_rules! certified_boundary {
                                         1,
                                         "ordinary plan history forward segment traversal",
                                     )?;
-                                    let Some(_left_link) = $owner.left_cursor.links.pop() else {
-                                        unreachable!("validated ordinary plan next segment");
-                                    };
+                                    $left_links = left_links_rest;
                                     $owner.left_items = rest;
                                     $owner.left_loaded = true;
                                     $owner.left_cursor.item = 1;
@@ -564,9 +577,7 @@ macro_rules! certified_boundary {
                                         1,
                                         "ordinary plan history forward segment traversal",
                                     )?;
-                                    let Some(_right_link) = $owner.right_cursor.links.pop() else {
-                                        unreachable!("validated ordinary plan next segment");
-                                    };
+                                    $right_links = right_links_rest;
                                     $owner.right_items = rest;
                                     $owner.right_loaded = true;
                                     $owner.right_cursor.item = 1;

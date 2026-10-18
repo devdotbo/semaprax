@@ -372,3 +372,63 @@ feature observer records every successful work charge at that charge's own
 frontier, including partial runs. Cold/short losses remain disclosed; matched
 application admission, paid savings, allocator or RSS gains remain unqualified
 until actual current execution.
+
+## Pair-local links and the certified unit driver
+
+The combined successor borrows each prepared link vector once at the existing
+pair-local acquisition. A reverse suffix pattern and its assignment consume one
+shared lexical cursor on ordinary, first-head and loaded-empty boundary paths;
+the prepared vector remains immutable until the next ordinary preparation.
+Each actual suffix pattern, copied link, assignment and arena view is prepaid.
+The independent final HIR walk retains the complete original Option producer.
+The two fresh head identities still refer to the same immutable arena; no saved
+verdict, source hash or owner identity flag replaces their checks.
+
+The actual certified numeric suffix uses the closed `Take<Repeat<()>>` unit
+carrier. Its complete constructor, IntoIterator transfers and one retained next
+frame are acquired before construction. Only unit Some/terminal None transport
+is retained; no observation, Diagnostic or reference is transported by it.
+Every original left step, left segment, right step, right segment and comparison
+work request remains individually fallible and observed in its original order.
+Private cursor publication remains after the whole numeric run. Partial work or
+physical prefixes are not complete-net measurements. Removing the dynamic turn
+payment removes exactly one primitive header; all other current headers and
+both original complete tariffs remain independently represented.
+
+Complete fd4c and pure001 owners/macros and every original pure001 pair test
+remain independently compiled with exact whole-source inverses. Current success,
+work-cut, malformed, physical exact/short/zero/floor/sticky and full Drop controls
+exercise both HIR representations and both original generations. Short/cold
+losses remain visible. No test, application admission, cost or RSS improvement is
+claimed before the next combined qualification.
+
+### Composed ordinary PLAN tails
+
+The borrowed-link certified-entry route also uses the paired-tail continuation.
+A paid `u8` mask is reset for each genuine pair and marked only at an ordinary
+left or right tail frontier, after the original TAIL plus three `u8` roles have
+been admitted. The detector pays its two `u8` operands and boolean result. Both
+bits prove that neither immutable prepared chain can supply another segment;
+they grant no HIR, source, provider, or revision authority.
+
+The complete tail-turn payload is admitted before either individual forward
+work charge. The original left step, right step, and (only after equal values)
+next observation comparison work remain separate, ordered, sticky boundaries.
+As in the pure-main paired-tail route, the left tail/item publication can occur
+after the right work charge; internal cursor prefixes on refusal are not an
+old-generation equivalence claim. Complete values, every individual work-cut
+six-field diagnostic, swap order, and full teardown remain independent controls.
+The final distinct HIR comparison is unchanged.
+
+Five actual new primitive sites and the mask initializer are paid in the cold
+owner bank, with a separate mask-reset byte per pair. The complete current
+`sizeof(ComparisonOwner)` is charged directly. Each admitted turn pays all
+pattern/rest/reference/comparison/assignment roles before formation. Complete
+invoice controls remove only that turn's genuinely replaced old MATCH and two
+STEP+EMPTY+TAIL packets; they claim no LOAD credit. Refused-prefix telemetry
+reports actual selection, mark, turn, and individual work admissions without
+using complete-turn credits. Short or zero-pair losses remain visible. Genuine
+complete 8102 and pure-main eb819 comparators, raw macros, and original main
+pair tests stay compiled independently; neither is a fabricated intermediate.
+No application admission, RAM benefit, or universal paid saving follows from
+these source equations.

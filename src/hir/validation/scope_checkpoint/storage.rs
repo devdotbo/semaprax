@@ -16,8 +16,12 @@ impl<T> Storage<T> {
         Self { values: Vec::new() }
     }
     fn reserve(values: &mut Vec<T>, count: usize, request: Request) -> Result<(), Diagnostic> {
+        #[cfg(test)]
+        super::super::lexical_exit::observe_frame_request::<T>(count);
         let bytes = count.checked_mul(std::mem::size_of::<T>());
         charge::reserve(bytes)?;
+        #[cfg(test)]
+        super::super::lexical_exit::observe_frame_acquired::<T>(count);
         let bytes = bytes.expect("checked continuation request");
         #[cfg(test)]
         if matches!(request, Request::AllocationFailure) {

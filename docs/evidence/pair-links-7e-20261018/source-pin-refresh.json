@@ -1,0 +1,55 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "7e4326d86ca432d582ef239a9360f4a2d5789c35",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "95c066eb7cc9f4aede7b2338d44c0669ad71cb7254a49a581d8d25151ce8b82f",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/95c066eb7cc9f4aede7b2338d44c0669ad71cb7254a49a581d8d25151ce8b82f.txt"
+  },
+  "before_config": {
+    "length": 136459,
+    "sha256": "7cf2e0a8ca55827d386d89d9fa77c624cfbf8032e7fcfa216ef3c5af8054c270",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/7cf2e0a8ca55827d386d89d9fa77c624cfbf8032e7fcfa216ef3c5af8054c270.txt"
+  },
+  "before_helper": {
+    "length": 41016,
+    "sha256": "75d793cd0851a3944b5254caa0ecaee65f8a2822a18072cfd41820f4a67e733f",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/75d793cd0851a3944b5254caa0ecaee65f8a2822a18072cfd41820f4a67e733f.txt"
+  },
+  "before_python_overlay": {
+    "length": 13523,
+    "sha256": "2efd1a20c11e7596b790a98bf7be1dc322649fb1d3a9ef6979c479b5fcc9c97b",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/2efd1a20c11e7596b790a98bf7be1dc322649fb1d3a9ef6979c479b5fcc9c97b.txt"
+  },
+  "before_policy": {
+    "length": 15876,
+    "sha256": "72bd135a3b6ba6be578412e9fb08ed8e117ecc1907d0f934e96b9bc35d230f84",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/72bd135a3b6ba6be578412e9fb08ed8e117ecc1907d0f934e96b9bc35d230f84.txt"
+  },
+  "before_page": {
+    "length": 175928,
+    "sha256": "0ce47b51336922b4475f6af9797db3981d03ef61fd84dbc3dd4d7a2857ea0097",
+    "archive": "docs/evidence/pair-links-7e-20261018/whole/0ce47b51336922b4475f6af9797db3981d03ef61fd84dbc3dd4d7a2857ea0097.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 177144,
+  "policy_bytes": 15876,
+  "raw_owners": 342
+}

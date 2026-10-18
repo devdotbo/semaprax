@@ -7,6 +7,8 @@ mod historical_json_data;
 #[cfg(test)]
 #[path = "main_e177_historical_before_data.rs"]
 mod historical_before_data;
+#[path = "main_e177_packet_lookup.rs"]
+mod packet_lookup;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 const SOURCE_CAP: usize = 9753094;
@@ -823,54 +825,10 @@ fn file_4a6eb(path: &Path, length: usize, expected: &str) -> Option<String> {
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
-    // Current and prior logical-table views retain their complete scope before
-    // the separately authenticated historical Clippy-stage acquisition.
-    let direct = value_4a6eb(source, expected, supplied);
-    if digest(direct.as_bytes()) == expected {
-        return direct;
-    }
-    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
-        let _ = packet();
-        return value;
-    }
-    let normalized = clippy_stage::normalize(source, supplied);
-    let result = value_4a6eb(source, expected, normalized.as_ref());
-    if normalized.as_ref() != supplied
-        && result == normalized.as_ref()
-        && digest(result.as_bytes()) != expected
-    {
-        supplied.to_owned()
-    } else {
-        result
-    }
+    packet_lookup::with_packet(&packet(), source, expected, supplied)
 }
 fn value_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
-    let packet = packet();
-    let Some(row) = packet["rows"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|r| r["source"] == source)
-    else {
-        return crate::source_reflows_merge::next_big_batch_inputs::value_local(
-            source, expected, supplied,
-        );
-    };
-    let Some(prior) = row["views"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|v| v["sha256"] == expected)
-    else {
-        return supplied.to_owned();
-    };
-    let current = actual(row);
-    let previous = read_view(prior);
-    if supplied == current || supplied == previous {
-        previous
-    } else {
-        supplied.to_owned()
-    }
+    packet_lookup::from_packet(&packet(), source, expected, supplied)
 }
 #[test]
 fn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wrong_stages() {
@@ -1101,7 +1059,7 @@ fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
         .iter()
         .any(|row| row["source"] == source)
     {
-        value(source, expected, supplied)
+        packet_lookup::with_packet(&current, source, expected, supplied)
     } else {
         supplied.to_owned()
     }

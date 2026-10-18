@@ -137,6 +137,17 @@ fn heads_run_generation(
         }
         expected.sort();
     }
+    if shape == 6 {
+        // Genuine same values and identities, represented solely by ordinary
+        // authored tails. No arena padding is introduced to earn the win.
+        let common = actual.arena[0].items.clone();
+        for path in &mut actual.paths {
+            let mut tail = common.clone();
+            tail.extend(path.history.tail.iter().cloned());
+            path.history.previous = None;
+            path.history.tail = tail;
+        }
+    }
     if hir_shared {
         for path in &mut expected {
             path.observations.prefix = path.observations.freeze();
@@ -165,6 +176,10 @@ fn heads_run_generation(
                     0 => compare(function, &mut budget, actual, &expected),
                     1 => before_certified_heads::compare(function, &mut budget, actual, &expected),
                     2 => before_shared_runs::compare(function, &mut budget, actual, &expected),
+                    3 => before_pair_links::compare(function, &mut budget, actual, &expected),
+                    4 => before_main001::compare(function, &mut budget, actual, &expected),
+                    5 => before_paired_tail::compare(function, &mut budget, actual, &expected),
+                    6 => before_main_b692::compare(function, &mut budget, actual, &expected),
                     _ => unreachable!("closed test generations"),
                 }
             })();
@@ -218,6 +233,11 @@ fn heads_run_generation(
         row,
     }
 }
+
+#[path = "pair_link_composition_tests.rs"]
+mod pair_link_composition_tests;
+#[path = "paired_tail_composition_tests.rs"]
+mod paired_tail_composition_tests;
 // This is the genuine immediate suffix-only generation, not a hypothetical
 // first-head-only stage. Every coefficient names an actual old or new packet.
 fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
@@ -234,10 +254,7 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
     assert_eq!((header, matching), (PAYMENT_HEADER, PAIR_MATCH));
     let base =
         2 * size_of::<usize>() + 3 * size_of::<bool>() + 2 * size_of::<usize>() + size_of::<bool>();
-    let pop = 2 * size_of::<&mut Vec<usize>>()
-        + size_of::<Option<usize>>()
-        + size_of::<usize>()
-        + 2 * size_of::<bool>();
+    let pop = 2 * size_of::<&[usize]>() + size_of::<usize>() + 2 * size_of::<bool>();
     let head = size_of::<&Rc<SkeletonObservation>>()
         + 2 * size_of::<&[Rc<SkeletonObservation>]>()
         + 2 * size_of::<&Rc<SkeletonObservation>>()
@@ -299,18 +316,21 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         "foreign right views retain the complete old STEP and LOAD, including empty segments"
     );
     (
-        23 * header
+        22 * header
+            + 2 * paired_value::LINK_VIEW * r.pairs
             + base * r.certified_bases
             + pop * r.certified_pops
             + head * r.certified_heads
             + view * r.certified_views
             + rhs * r.certified_rhs_assignments
             + first * r.certified_firsts
-            + super::boundary_run_added(r),
+            + super::boundary_run_added(r)
+            + super::paired_tail_added(r),
         old_step * r.certified_bases
             + old_load * r.certified_pops
             + matching * r.certified_firsts
-            + r.shared_boundary_complete * (matching + 4 * old_step + 2 * old_load),
+            + r.shared_boundary_complete * (matching + 4 * old_step + 2 * old_load)
+            + r.fused_turns * (matching + 2 * (old_step + paired_value::TAIL)),
     )
 }
 fn observe_heads(
@@ -411,6 +431,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     current.row.value_steps
                         + current.row.certified_bases
                         + 4 * current.row.shared_boundary_complete
+                        + 2 * current.row.fused_turns
                 );
                 assert_eq!(
                     old.row.loads,
@@ -423,6 +444,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     current.row.pair_matches_admitted
                         + current.row.certified_firsts
                         + current.row.shared_boundary_complete
+                        + current.row.fused_turns
                 );
                 let (new, removed) = invoice(&current.row);
                 assert_eq!(
@@ -447,8 +469,15 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     assert_eq!(
                         current.observed.2,
                         old.observed.2
-                            + 23 * PAYMENT_HEADER
+                            + 22 * PAYMENT_HEADER
+                            + 2 * paired_value::LINK_VIEW * current.row.pairs
                             + super::boundary_run_added(&current.row)
+                            + super::paired_tail_added(&current.row)
+                            - current.row.fused_turns
+                                * (PAIR_MATCH
+                                    + 2 * (paired_value::STEP
+                                        + paired_value::EMPTY
+                                        + paired_value::TAIL))
                     );
                 }
                 if shape == 4 && length == 128 {
@@ -468,7 +497,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     "OPT900902 length={length} depth={depth} shared={shared} shape={shape} hir_shared={hir_shared} old_d458={} current={} cold={} base={} pop={} view={} head={} rhs={} first={} old_Q={} current_Q={} G={} H={}; full individual work and Drop; source candidate only, no shipping gain claim",
                     old.observed.2,
                     current.observed.2,
-                    23 * PAYMENT_HEADER,
+                    22 * PAYMENT_HEADER + 2 * paired_value::LINK_VIEW * current.row.pairs,
                     current.row.certified_bases,
                     current.row.certified_pops,
                     current.row.certified_views,
@@ -557,7 +586,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
 fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_controls() {
     let program = super::super::super::super::tests::program();
     let function = &program.functions[0];
-    let mut reached = [false; 18];
+    let mut reached = [false; 17];
     let phases = [
         "ordinary plan fresh right segment base",
         "ordinary plan fresh right link pop",
@@ -575,7 +604,6 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         "ordinary plan certified boundary next view",
         "ordinary plan certified boundary transition",
         "ordinary plan certified numeric run capture",
-        "ordinary plan certified numeric run turn",
         "ordinary plan certified numeric run publication",
     ];
     for (shared, shape) in [
@@ -1019,7 +1047,14 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
             0,
             false,
             units,
-            matching.before + 23 * PAYMENT_HEADER + certified_heads::BOUNDARY_CHECK + PAIR_MATCH
+            matching.before
+                + paired_value::TAIL_OWNER
+                + size_of::<u8>()
+                + paired_value::TAIL_SELECT
+                + 22 * PAYMENT_HEADER
+                + 2 * paired_value::LINK_VIEW
+                + certified_heads::BOUNDARY_CHECK
+                + PAIR_MATCH
                 - 1,
             0,
             false,
@@ -1133,6 +1168,14 @@ fn certified_heads_opt_in_counts_every_real_new_packet_after_complete_teardown()
             && report.row_count == 1
     );
     for (site, count, amount) in [
+        (
+            Site::PairScopeAdmitted,
+            r.row.pairs,
+            PAIR_SCOPE
+                + 2 * paired_value::TAIL_VIEW
+                + 2 * paired_value::LINK_VIEW
+                + size_of::<u8>(),
+        ),
         (
             Site::CertifiedBaseAdmitted,
             r.row.certified_bases,

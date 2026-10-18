@@ -1,0 +1,28 @@
+[
+  {
+    "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "before": {
+      "length": 10296,
+      "sha256": "c6d8278d46bd023dded4807b5f41e2674c9f4d6a296bb00531e486ef13db69c1",
+      "archive": "docs/evidence/browser-cli-31e-20261018/whole/c6d8278d46bd023dded4807b5f41e2674c9f4d6a296bb00531e486ef13db69c1.txt"
+    },
+    "current": {
+      "length": 10342,
+      "sha256": "c9dee68d0134f11a3ba10634895795f0b6f1c3b11022e2e56982851ec7b85fce",
+      "archive": "docs/evidence/browser-cli-31e-20261018/whole/c9dee68d0134f11a3ba10634895795f0b6f1c3b11022e2e56982851ec7b85fce.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 580230,
+      "sha256": "7e0c349f38fbe281509b7e44d3d959cf2d7555c2eda32f056dc021c9ba454fae",
+      "archive": "docs/evidence/browser-cli-31e-20261018/whole/7e0c349f38fbe281509b7e44d3d959cf2d7555c2eda32f056dc021c9ba454fae.txt"
+    },
+    "current": {
+      "length": 580538,
+      "sha256": "30dfc09a2baeadd4e2d990e03813cd362ba2c1267032aeecdfa54e31066d8fa1",
+      "archive": "docs/evidence/browser-cli-31e-20261018/whole/30dfc09a2baeadd4e2d990e03813cd362ba2c1267032aeecdfa54e31066d8fa1.txt"
+    }
+  }
+]

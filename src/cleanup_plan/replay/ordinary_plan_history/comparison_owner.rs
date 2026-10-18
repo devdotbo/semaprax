@@ -14,6 +14,18 @@ mod shared_prefix;
 mod certified_heads;
 #[cfg(test)]
 #[rustfmt::skip]
+mod before_paired_tail;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_main_b692;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_pair_links;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_main001;
+#[cfg(test)]
+#[rustfmt::skip]
 mod before_certified_heads;
 #[cfg(test)]
 mod before_event_prefix;
@@ -60,6 +72,7 @@ struct ComparisonOwner<'history> {
     right_items: &'history [Rc<SkeletonObservation>],
     left_loaded: bool,
     right_loaded: bool,
+    tail_mask: u8,
     left_cursor: Cursor,
     right_cursor: Cursor,
     left_segments: usize,
@@ -173,7 +186,7 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 2 * size_of::<usize>() // initial retained segment extents
     + 3 * size_of::<Step>() // copied state transports at return/schedule sites
-    + shared_prefix::OWNER + certified_heads::OWNER; // actual initializers and new lexical primitive sites
+    + shared_prefix::OWNER + certified_heads::OWNER + paired_value::TAIL_OWNER; // actual initializers and new lexical primitive sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
     + 2 * size_of::<&History>()
@@ -246,6 +259,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
         right_items: &[],
         left_loaded: false,
         right_loaded: false,
+        tail_mask: 0,
         left_cursor: Cursor {
             links: Vec::new(),
             segment: 0,
@@ -429,22 +443,33 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PAIR_SCOPE + 2 * paired_value::TAIL_VIEW,
+                    PAIR_SCOPE
+                        + 2 * paired_value::TAIL_VIEW
+                        + 2 * paired_value::LINK_VIEW
+                        + size_of::<u8>(),
                     "ordinary plan history pair-local paths"
                 )?;
                 #[cfg(feature = "unstable-workflow-profiling")]
                 crate::workflow_profile::plan_comparison::event(
                     crate::workflow_profile::plan_comparison::Site::PairScopeAdmitted,
-                    PAIR_SCOPE,
+                    PAIR_SCOPE
+                        + 2 * paired_value::TAIL_VIEW
+                        + 2 * paired_value::LINK_VIEW
+                        + size_of::<u8>(),
                 );
                 {
+                    owner.tail_mask = 0;
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
                     let mut left_tail = left_path.history.tail.as_slice();
                     let mut right_tail = right_path.history.tail.as_slice();
+                    let mut left_links = owner.left_cursor.links.as_slice();
+                    let mut right_links = owner.right_cursor.links.as_slice();
                     'paired: loop {
+                        fused_plan_tails!(owner, left_path, right_path, left_tail, right_tail,
+                            function, budget, census, 'paired);
                         'certificate: {
-                            certified_boundary!(owner, function, budget, census, 'certificate);
+                            certified_boundary!(owner, left_links, right_links, function, budget, census, 'certificate);
                             // Both Some paths converge at the bare reference yield;
                             // no Option/tuple or owner payload crosses this frontier.
                             let left = certified_left_value!(
@@ -456,9 +481,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                 fresh_left_link,
                                 [left_head => {
                                     certified_right_value!(owner, left_head, fresh_left_link,
-                                        right_tail, function, budget, census, 'paired, 'certificate);
+                                        right_tail, right_links, function, budget, census, 'paired, 'certificate);
                                 }],
                                 left_tail,
+                                left_links,
                                 function,
                                 budget,
                                 "ordinary plan history paired cursor next",
@@ -478,6 +504,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                         exhausted_right_link,
                                         [],
                                         right_tail,
+                                        right_links,
                                         function,
                                         budget,
                                         "ordinary plan history paired cursor next",
@@ -505,6 +532,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                 ordinary_right_link,
                                 [],
                                 right_tail,
+                                right_links,
                                 function,
                                 budget,
                                 "ordinary plan history paired cursor next",
