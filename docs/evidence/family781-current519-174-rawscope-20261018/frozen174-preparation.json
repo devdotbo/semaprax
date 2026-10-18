@@ -1,0 +1,56 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      187935,
+      "7b91a25c74891cde619fb142e13da7ee4408bb4b87f1546941521dd8a7bd8be0"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": [
+      36875,
+      "829ec5782619043f3651cf56982c3668cbadd55906690de9f50aa5800cf24a9b"
+    ],
+    "tests/hir_module_boundaries.rs": [
+      130347,
+      "d550b900ad4629be5bdb9e22b966b1d563d04b31384e49df8e8737696f222aea"
+    ],
+    "tests/workspace/semantic_graph/source_inventory.rs": [
+      147023,
+      "c0bc1507f41c0e498b836f525474a311f504ce84501f173f01676adf38783774"
+    ]
+  },
+  "strict_dependencies": 2179,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    }
+  ],
+  "logical_rows": 519,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "ea5064734bd1d9c47a428d9fa360ec245c4d1cebecac0d095d743213756071e7",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
