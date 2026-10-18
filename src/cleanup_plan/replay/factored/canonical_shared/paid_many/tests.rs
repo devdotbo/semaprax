@@ -469,9 +469,9 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
     use std::fmt::Write as _;
     for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
         // Preserve the complete historical anchor transport and its exact-source
-        // assertions. These loop probes are non-static: use the existing owning
-        // production linker for the ORIGINAL source, not the closed static-text
-        // test receiver. Each measured old/current arm still funds its phase lease.
+        // assertions. Original non-static oracle/work probes keep the production
+        // linker. The separate anchored physical probes below use the existing
+        // authenticated preparation; each arm still funds its own phase lease.
         const INVENTORY_ANCHOR: &str = r#"
 @id("paid_many.replay.inventory") fn replay_inventory_anchor()->i64 {
     let key=str"memo-fixture-key";
@@ -501,6 +501,30 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
             (old.remaining, old.skeleton_remaining)
         );
         assert_eq!(expected, Ok(Some(true)));
+        // The complete linked provider is intentionally too broad for the
+        // closed selected flat-record lease. Preserve its exact refusal.
+        let mut closed = ReplayBudget::with_physical(&function, 1 << 26).unwrap();
+        let error = match crate::cleanup_plan::replay::selected_context::Context::new(
+            program, &function, &mut closed,
+        ) {
+            Ok(_) => panic!("full compiler prelude is outside the selected flat-record profile"),
+            Err(error) => error,
+        };
+        assert_eq!(error, crate::diagnostic::Diagnostic::io(
+            "SPX-H006",
+            "selected flat-record inventory has unauthenticated or unsupported fields",
+        ));
+        drop(closed);
+        // A real source anchor selects the existing authenticated preparation.
+        // Keep the original whole comparison above and work oracle below on
+        // their original unanchored source and complete linked provider.
+        let prepared_fixture = crate::workspace_graph::SourceRecordReplayFixture::new(&anchored);
+        prepared_fixture.with_prepared_context(|prepared| {
+        let prepared_functions = prepared.functions();
+        let prepared_function = prepared_functions.iter().find(|f| f.id.as_str() == "probe").unwrap();
+        assert_eq!(prepared_function, function, "complete original probe body, inventory and plan");
+        let program = prepared;
+        let function = prepared_function;
         for old in [true, false] {
             let observe = |limit| {
                 let mut failure = ComparisonFailureReport::new();
@@ -565,6 +589,7 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
                 );
             }
         }
+        });
         let work = initial - old.remaining;
         for remaining in [0, work.saturating_sub(1), work] {
             let mut old = ReplayBudget::unobserved();
