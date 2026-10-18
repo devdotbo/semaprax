@@ -105,8 +105,38 @@ def expand_old519_refs(before, policy, page):
  assert all('old519' not in row for row in result['additions'])
  return expand_fragment_refs(before,policy,result)
 
+V5_SCHEMA = 'semaprax.finite-source-overlay-page.v5'
+V5_EXTRA519 = (
+ ('src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs','e9f1208c4daeeb93e1200a127c9dee49e57c3ee370c10c5c0305c8c4266d1443'),
+ ('src/cleanup_plan/replay.rs','85efc15e0205f0f2c4070c9d80b6f30b50f73bc6e4070854484bdd75e8fb9a8a'))
+def expand_extra519_refs(before, policy, page):
+ assert page['schema']==V5_SCHEMA and len(before['rows'])==519
+ result=copy.deepcopy(page); result['schema']=V4_SCHEMA; seen=set()
+ for i,row in enumerate(result['replacements']):
+  if 'old519' not in row:
+   assert row['source'] not in {p for p,_ in V5_EXTRA519}, 'missing literal inheritance'
+   continue
+  assert keys(row,('old519',)) and type(row['old519']) is list and len(row['old519'])==4
+  index,length,sha,extra=row['old519']
+  assert type(index) is int and 0<=index<4
+  if index<2:continue
+  assert index not in seen; seen.add(index); source,old_sha=V5_EXTRA519[index-2]
+  matches=[r for r in before['rows'] if r['source']==source]
+  assert len(matches)==1 and H(canonical(matches[0]))==old_sha, 'complete old row drift'
+  assert type(sha) is str
+  current=dict(length=length,sha256=sha,archive='e/'+sha); pin(current)
+  prior=matches[0]; assert current!=prior['current'] and type(extra) is list
+  for view in extra:pin(view)
+  full=copy.deepcopy(prior); full['current']=current
+  full['views'].append(dict(prior['current'],name='whole-pre-overlay-v2-current'))
+  full['views'].extend(copy.deepcopy(extra)); result['replacements'][i]=full
+ assert seen=={2,3}, 'missing literal reference'
+ assert all('old519' not in row for row in result['additions'])
+ return expand_old519_refs(before,policy,result)
+
 def compose_values(before, policy, page):
- if page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
+ if page['schema']==V5_SCHEMA:page=expand_extra519_refs(before,policy,page)
+ elif page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
  elif page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
  return compose_values_v2(before,policy,page)
 

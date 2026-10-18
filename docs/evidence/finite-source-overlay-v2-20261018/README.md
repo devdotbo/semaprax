@@ -17,3 +17,5 @@ and appends the supplied view suffix. The current archive is exactly
 The complete rows expand before the unchanged v3 fragment expansion and v2
 inverse/current-admission checks. Prior v2/v3 pages and controls remain supported;
 this encoding supplies no source admission or runtime qualification.
+
+V5 adds exactly two fixed original519 row references: retained arena tests and replay. Each full immutable original row is authenticated by its literal canonical digest and cloned with every field and prior view before new current/view channels are appended. V5 expands these two records before the complete unchanged V4, V3, and V2 readers; the one-page cap remains 262144 bytes. No referenced path is opened or admitted by this metadata codec.

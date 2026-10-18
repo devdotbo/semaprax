@@ -3,6 +3,17 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 pub(super) const SCHEMA: &str = "semaprax.finite-source-overlay-page.v3";
 pub(super) const SCHEMA_V4: &str = "semaprax.finite-source-overlay-page.v4";
+pub(super) const SCHEMA_V5: &str = "semaprax.finite-source-overlay-page.v5";
+const EXTRA519: &[(&str, &str)] = &[
+    (
+        "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+        "e9f1208c4daeeb93e1200a127c9dee49e57c3ee370c10c5c0305c8c4266d1443",
+    ),
+    (
+        "src/cleanup_plan/replay.rs",
+        "85efc15e0205f0f2c4070c9d80b6f30b50f73bc6e4070854484bdd75e8fb9a8a",
+    ),
+];
 const OLD519: &[(&str, &str)] = &[
     (
         "src/source_reflows_merge.rs",
@@ -168,6 +179,79 @@ pub(super) fn expand_v4(
         return Err("v4 reference in additions");
     }
     expand(before, policy, &expanded)
+}
+
+// Exactly two additional immutable rows; the complete V4 reader below remains
+// the authority for its original two references and every downstream check.
+pub(super) fn expand_v5(
+    before: &Value,
+    policy: &Value,
+    page: &Value,
+) -> Result<Value, &'static str> {
+    if page["schema"] != SCHEMA_V5 {
+        return Err("v5 schema");
+    }
+    let old = before["rows"].as_array().ok_or("v5 old rows")?;
+    if old.len() != 519 {
+        return Err("v5 whole old519");
+    }
+    let mut expanded = page.clone();
+    expanded["schema"] = SCHEMA_V4.into();
+    let mut seen = BTreeSet::new();
+    for row in expanded["replacements"]
+        .as_array_mut()
+        .ok_or("v5 replacements")?
+    {
+        let Some(reference) = row.get("old519") else {
+            if EXTRA519.iter().any(|(source, _)| row["source"] == *source) {
+                return Err("v5 missing literal inheritance");
+            }
+            continue;
+        };
+        let tuple = reference.as_array().ok_or("v5 tuple")?;
+        if tuple.len() != 4 {
+            return Err("v5 tuple fields");
+        }
+        let index = usize::try_from(tuple[0].as_u64().ok_or("v5 literal index")?)
+            .map_err(|_| "v5 literal index")?;
+        if index < 2 {
+            continue;
+        } // V4 validates these complete records, unchanged.
+        if row.as_object().ok_or("v5 record")?.len() != 1 {
+            return Err("v5 reference fields");
+        }
+        let (source, sha) = *EXTRA519.get(index - 2).ok_or("v5 foreign literal index")?;
+        if !seen.insert(index) {
+            return Err("v5 duplicate literal index");
+        }
+        let mut matches = old.iter().filter(|r| r["source"] == source);
+        let prior = matches.next().ok_or("v5 missing old row")?;
+        if matches.next().is_some() || super::digest(&super::canonical(prior)) != sha {
+            return Err("v5 complete old row drift");
+        }
+        let hash = tuple[2].as_str().ok_or("v5 current hash")?;
+        let current = serde_json::json!({"length":tuple[1].clone(),"sha256":hash,"archive":format!("e/{hash}")});
+        super::pin(&current)?;
+        if current == prior["current"] {
+            return Err("v5 unchanged replacement");
+        }
+        let extra = tuple[3].as_array().ok_or("v5 appended views")?;
+        for view in extra {
+            super::pin(view)?;
+        }
+        let mut full = prior.clone();
+        full["current"] = current;
+        let mut retained = prior["current"].clone();
+        retained["name"] = "whole-pre-overlay-v2-current".into();
+        let views = full["views"].as_array_mut().ok_or("v5 old views")?;
+        views.push(retained);
+        views.extend(extra.iter().cloned());
+        *row = full;
+    }
+    if seen.len() != EXTRA519.len() {
+        return Err("v5 missing literal reference");
+    }
+    expand_v4(before, policy, &expanded)
 }
 
 #[cfg(test)]
@@ -429,5 +513,132 @@ mod tests {
         let mut p = full;
         p["replacements"][0]["unknown"] = true.into();
         assert!(compose_values_v2(before, &policy, &p).is_err());
+    }
+    fn v5_fixture() -> (Value, Value, Value, Value) {
+        let (before, mut policy, mut full, mut compact) = v4_fixture();
+        compact["schema"] = SCHEMA_V5.into();
+        for (offset, (source, _)) in EXTRA519.iter().enumerate() {
+            let prior = before["rows"]
+                .as_array()
+                .unwrap()
+                .iter()
+                .find(|r| r["source"] == *source)
+                .unwrap();
+            let hash = digest(format!("fixed-v5-current-{offset}").as_bytes());
+            let mut row = prior.clone();
+            row["current"] =
+                serde_json::json!({"length":1,"sha256":hash,"archive":format!("e/{hash}")});
+            let mut retained = prior["current"].clone();
+            retained["name"] = "whole-pre-overlay-v2-current".into();
+            row["views"].as_array_mut().unwrap().push(retained);
+            let extra = serde_json::json!([{"name":"v5-extra","length":1,"sha256":hash,"archive":format!("e/{hash}"),"opaque":{"kept":[8,3,1]}}]);
+            row["views"]
+                .as_array_mut()
+                .unwrap()
+                .extend(extra.as_array().unwrap().iter().cloned());
+            policy["replacements"]
+                .as_array_mut()
+                .unwrap()
+                .push((*source).into());
+            full["replacements"].as_array_mut().unwrap().push(row);
+            compact["replacements"]
+                .as_array_mut()
+                .unwrap()
+                .push(serde_json::json!({"old519":[offset + 2,1,hash,extra]}));
+        }
+        (before, policy, full, compact)
+    }
+    #[test]
+    fn v5_fixed_extra_rows_expand_exactly_and_keep_complete_v4_and_old_inverse() {
+        let (before, policy, full, compact) = v5_fixture();
+        assert_eq!(expand_v5(&before, &policy, &compact).unwrap(), full);
+        let result = compose_values(before.clone(), &policy, &compact).unwrap();
+        assert_eq!(
+            result,
+            compose_values_v2(before.clone(), &policy, &full).unwrap()
+        );
+        for (row, prior) in result["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .zip(before["rows"].as_array().unwrap())
+        {
+            assert_eq!(row["source"], prior["source"]);
+            let mut restored = row.clone();
+            restored["current"] = prior["current"].clone();
+            restored["views"] = prior["views"].clone();
+            assert_eq!(restored, *prior, "complete unknown fields and row order");
+            let count = prior["views"].as_array().unwrap().len();
+            assert_eq!(
+                &row["views"].as_array().unwrap()[..count],
+                prior["views"].as_array().unwrap()
+            );
+        }
+        // V4 is still independently accepted with its original exact two rows.
+        let (old, policy, whole, v4) = v4_fixture();
+        assert_eq!(expand_v4(&old, &policy, &v4).unwrap(), whole);
+    }
+    #[test]
+    fn v5_refuses_missing_foreign_duplicate_tampered_drift_and_unknown_version() {
+        let (before, policy, full, compact) = v5_fixture();
+        let at = compact["replacements"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|r| r["old519"][0] == 2)
+            .unwrap();
+        for mode in 0..15 {
+            let mut b = before.clone();
+            let mut p = compact.clone();
+            match mode {
+                0 => {
+                    p["replacements"].as_array_mut().unwrap().remove(at);
+                }
+                1 => p["replacements"][at]["old519"][0] = 4.into(),
+                2 => {
+                    let item = p["replacements"][at].clone();
+                    p["replacements"].as_array_mut().unwrap().push(item);
+                }
+                3 => p["replacements"][at]["extra"] = true.into(),
+                4 => p["replacements"][at]["old519"][2] = "bad".into(),
+                5 => p["replacements"][at]["old519"][1] = 9753095.into(),
+                6 => p["replacements"][at]["old519"][3] = Value::Null,
+                7 => p["replacements"][at]["old519"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(true.into()),
+                8 => p["schema"] = "semaprax.finite-source-overlay-page.v500".into(),
+                9 | 10 => {
+                    let row = b["rows"]
+                        .as_array_mut()
+                        .unwrap()
+                        .iter_mut()
+                        .find(|r| r["source"] == EXTRA519[0].0)
+                        .unwrap();
+                    if mode == 9 {
+                        row["unknown"] = true.into();
+                    } else {
+                        row["current"]["length"] = 1.into();
+                    }
+                }
+                11 => {
+                    let item = p["replacements"][at].clone();
+                    p["additions"].as_array_mut().unwrap().push(item);
+                }
+                12 => p["replacements"][at] = full["replacements"][at].clone(),
+                13 => p["replacements"][at]["old519"][0] = true.into(),
+                _ => {
+                    let item = b["rows"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .find(|r| r["source"] == EXTRA519[0].0)
+                        .unwrap()
+                        .clone();
+                    b["rows"].as_array_mut().unwrap().push(item);
+                }
+            }
+            assert!(compose_values(b, &policy, &p).is_err(), "mode={mode}");
+        }
     }
 }
