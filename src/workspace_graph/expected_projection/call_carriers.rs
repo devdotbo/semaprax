@@ -17,8 +17,8 @@ impl Proof {
         self.bytes = self
             .bytes
             .saturating_add(std::mem::size_of_val(value))
-            .saturating_add(std::mem::size_of_val(&self))
-            .saturating_add(std::mem::size_of_val(&value));
+            .saturating_add(std::mem::size_of::<&mut Self>())
+            .saturating_add(std::mem::size_of::<&T>());
     }
 }
 
