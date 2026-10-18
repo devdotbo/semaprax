@@ -156,6 +156,17 @@ Future matched runs may opt into a pinned dependency-only TypeScript toolchain
 with `--typescript-bootstrap-receipt`; setup instructions and provenance limits
 are in [LIVE-CAMPAIGN.md](LIVE-CAMPAIGN.md). Historical trials remain unchanged.
 
+Fresh campaign source snapshots include the TypeScript bootstrap helper and its
+shared dependency inventory helper, including runs that omit the optional setup.
+Both files are copied byte for byte and checked against the immutable plan;
+missing or changed helper files refuse snapshot creation.
+
+The seeded checkout and prompt prohibit reading other solutions, but the
+`workspace-write` setting does not by itself establish read confinement from
+other checkouts or campaign artifacts. A retained compiler proxy configuration
+also names the real compiler path. These controls do not establish an OS-enforced
+solution-excluded environment; such a claim needs separate read-boundary evidence.
+
 Fresh Codex plans require `--compiler-build-receipt` to bind the selected compiler
 source, binary, actual build command and retained log. This is a byte binding;
 independent hosted-build provenance still needs verification. See

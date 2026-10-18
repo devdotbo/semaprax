@@ -53,6 +53,8 @@ HARNESS_SOURCE_FILES = (
     "benchmarks/cli-tokens-v1/qualification.py",
     "benchmarks/cli-tokens-v1/selected_file_setup.py",
     "benchmarks/live_campaign_common.py",
+    "benchmarks/cli_typescript_bootstrap.py",
+    "benchmarks/webapp-tokens-v2/dependency_bundle.py",
     "benchmarks/campaign_resources.py",
     "benchmarks/compiler_input_capture.py",
     "benchmarks/compiler_retained_receipt.py",
