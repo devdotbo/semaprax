@@ -40,8 +40,6 @@ macro_rules! admit_initial {
         }
     }};
 }
-#[cfg(test)]
-pub(super) use admit_initial;
 pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
     program: &dyn ReplayContext,
     function: &ResolvedFunction,

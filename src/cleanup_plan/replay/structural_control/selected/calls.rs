@@ -4,7 +4,6 @@ use super::super::call_receiving::{Kind as CallKind, Policy};
 use super::*;
 use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
 use crate::cleanup_plan::CallArgumentTransfer;
-use crate::hir::lexical_exit::ChildCursor;
 
 pub(super) use super::super::calls::CallCursor;
 

@@ -1,6 +1,7 @@
 //! Exact selected structural twin; complete original remains in the parent owner.
 use super::*;
 use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
+use crate::cleanup_plan::{CLEANUP_PLAN_SCHEMA_V18, CLEANUP_PLAN_SCHEMA_V19};
 pub(in crate::cleanup_plan::replay) fn validate_place(
     function: &ResolvedFunction,
     place: &CleanupPlace,

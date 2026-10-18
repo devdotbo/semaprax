@@ -398,13 +398,13 @@ fn unknown_place_full_iterator_frame_exact_short_zero_keeps_old_six_fields_befor
         assert!(!observed.invalid);
         match result.unwrap_err() {
             Error::Structural(receipt) if semantic => {
-                assert_eq!(receipt.legacy(function), expected);
                 assert_eq!(budget.physical.as_ref().unwrap().charged(), setup + request);
                 assert_eq!(budget.remaining, 0);
                 assert_eq!(
                     receipt.source().as_str().as_ptr(),
                     function.body.id.as_str().as_ptr()
                 );
+                assert_eq!(receipt.legacy(function), expected);
             }
             Error::Owned(_) if !semantic => {
                 let ledger = budget.physical.as_deref_mut().unwrap();
@@ -481,13 +481,13 @@ fn unknown_place_full_iterator_frame_exact_short_zero_keeps_old_six_fields() {
         assert!(!observed.invalid);
         match result.unwrap_err() {
             Error::Structural(receipt) if semantic => {
-                assert_eq!(receipt.legacy(function), expected);
                 assert_eq!(budget.physical.as_ref().unwrap().charged(), setup + request);
                 assert_eq!(budget.remaining, 0);
                 assert_eq!(
                     receipt.source().as_str().as_ptr(),
                     function.body.id.as_str().as_ptr()
                 );
+                assert_eq!(receipt.legacy(function), expected);
             }
             Error::Owned(_) if !semantic => {
                 let ledger = budget.physical.as_deref_mut().unwrap();
@@ -591,7 +591,7 @@ fn genuine_nominal_zero_one_many_scan_pays_every_next_including_terminal_none_be
             ] {
                 let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();
                 budget.remaining = available;
-                let result = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                let result = crate::cleanup_plan::replay::inventory_coverage::paid::receive_observed!(
                     budget,
                     function,
                     PlaceCaller<'_>,
@@ -747,7 +747,7 @@ fn genuine_nominal_zero_one_many_scan_pays_every_next_including_terminal_none() 
             ] {
                 let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();
                 budget.remaining = available;
-                let result = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                let result = crate::cleanup_plan::replay::inventory_coverage::paid::receive_observed!(
                     budget,
                     function,
                     PlaceCaller<'_>,

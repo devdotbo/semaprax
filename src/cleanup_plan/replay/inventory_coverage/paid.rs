@@ -16,6 +16,25 @@ macro_rules! receive {
     }};
 }
 pub(in crate::cleanup_plan::replay) use receive;
+// Unit-valued test loops observe admission refusal in this existing call's
+// Result instead of escaping through `?`. No extra closure, function, argument
+// bank or Result ABI is formed. The same reserve and work debit precede every
+// original call argument, including short/zero rows. Production keeps `receive`.
+#[cfg(test)]
+macro_rules! receive_observed {
+    ($budget:ident, $function:ident, $roles:ty, $fields:expr, $phase:literal, $call:expr) => {{
+        match $budget.reserve_array::<$roles>($function, 1, $phase) {
+            Err(error) => Err(error.into()),
+            Ok(()) => match $budget.charge($function, $fields, $phase) {
+                Err(error) => Err(error.into()),
+                Ok(()) => $call,
+            },
+        }
+    }};
+}
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) use receive_observed;
+
 // Actual wrapper callee formals are owned by this lexical CALLER frontier.
 // Retain the original actual-argument/result packet independently below it.
 macro_rules! receive_wrapper {

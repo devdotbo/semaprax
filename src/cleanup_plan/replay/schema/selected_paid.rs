@@ -313,7 +313,7 @@ fn owner_admission(
                 ()
             );
             let (expression, next) = stack[len].take().expect("owner admission frame retained");
-            if next == 0 && super::super::owner_admission::required(program, expression) {
+            if next == 0 && crate::cleanup_plan::owner_admission::required(program, expression) {
                 return Ok(true);
             }
             if let Some(child) = replay_expression_child(expression, next) {

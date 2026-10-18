@@ -53,7 +53,7 @@ pub(crate) struct FactReceipt {
     physical: bool,
 }
 impl FactReceipt {
-    pub(super) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
+    pub(in crate::cleanup_plan::replay) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
         if let Some(expression) = self.expression {
             replay_error(
                 function,

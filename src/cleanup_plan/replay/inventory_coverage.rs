@@ -466,4 +466,4 @@ pub(in crate::cleanup_plan::replay) mod paid;
 mod typed_tests;
 
 #[cfg(test)]
-mod paid_before;
+pub(super) mod paid_before;

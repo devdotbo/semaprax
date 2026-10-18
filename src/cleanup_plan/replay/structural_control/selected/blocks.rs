@@ -3,6 +3,7 @@
 use super::super::call_receiving::Policy;
 use super::*;
 use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
+use crate::cleanup_plan::ExitTargetId;
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
@@ -864,9 +865,12 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
             budget,
             function,
             fact_entries,
-            expression_facts::Entries<'_>,
-            (&ExpressionId, &Option<CallFact<'_>>),
-            (&ExpressionId, &Option<CallFact<'_>>),
+            (
+                &mut expression_facts::Entries<'_>,
+                Option<(&ExpressionId, &Option<CallFact<'_>>)>,
+                &ExpressionId,
+                &Option<CallFact<'_>>,
+            ),
             4
         ) {
             budget.charge(function, 1, "structural call coverage")?;
