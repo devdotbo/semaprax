@@ -1,0 +1,104 @@
+{
+  "status": "PASS_SOURCE_ONLY_EXISTING328_REFRESH",
+  "head": "bd09274433d451e9df1ca0b7780ea3f938f8ed36",
+  "baseline": "96b34484c34983c681c3547f975c613a2fb2c2be",
+  "owners": 328,
+  "edge_changes": [
+    {
+      "domain": "hir",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 25834,
+      "after": 27665,
+      "text": "include_str!(\"../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\")"
+    },
+    {
+      "domain": "hir",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 25834,
+      "after": 27665,
+      "text": "include_str!(\"../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\")"
+    },
+    {
+      "domain": "hir",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 25640,
+      "after": 27471,
+      "text": "include_str!(\"../../../tests/workspace/semantic_graph/source_inventory.rs\")"
+    },
+    {
+      "domain": "projection",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 25834,
+      "after": 27665,
+      "text": "include_str!(\"../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\")"
+    },
+    {
+      "domain": "projection",
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": 25834,
+      "after": 27665,
+      "text": "include_str!(\"../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\")"
+    },
+    {
+      "domain": "projection",
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "parent": "src/hir/ids/declaration_tag.rs",
+      "child": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": 25640,
+      "after": 27471,
+      "text": "include_str!(\"../../../tests/workspace/semantic_graph/source_inventory.rs\")"
+    }
+  ],
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "records": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "archive": "docs/evidence/merge-f94-selected519-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt",
+      "before_sha256": "8bc2d80ac4f6a8f637a2b3a651d65d3a3abe51bed0bac73051c0c7c87932062e",
+      "after_sha256": "6f3d6601c03294ae2a58dc42cb2ec4ca36ee319bda96e51270d254bba9499f4b"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "archive": "docs/evidence/merge-f94-selected519-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt",
+      "before_sha256": "71c6ab0b4fc47b2a1e7230b6cb7e1b25a7b07cea894d0858cd3d36a11172255b",
+      "after_sha256": "f5035693041f6f52cf8311cbd0baa1cc45dcb5550c1a6a5289db18465938f10f"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "archive": "docs/evidence/merge-f94-selected519-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt",
+      "before_sha256": "1e091108e9cf7bfba903b1c8ff0bf65cc88512f68010e2d38f8e918fb7dee9f3",
+      "after_sha256": "f3c93c9c6e4c1984e81a7ad8ccfed1bc24977d9b63c5af3edb881031e2489c2e"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "archive": "docs/evidence/merge-f94-selected519-20261018/models-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt",
+      "before_sha256": "920e0784b5a6b8f51d27006feb0d7479f3bc05070139d5fb8569d984e3e55422",
+      "after_sha256": "cbad2fca5111f8920f429657343694809e5f9ac2fc43ae758437dd4be5b3cc32"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "archive": "docs/evidence/merge-f94-selected519-20261018/models-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt",
+      "before_sha256": "8b092ee5dee9aa4ffdd63977a4ba088ce4e2a0f44a419985749fc23aa1eede43",
+      "after_sha256": "a48417f0b752c9b117dd9588d1a62c83259f110904c7c027c1d8ff9a0260e16f"
+    }
+  ],
+  "written": true,
+  "Cargo": false
+}

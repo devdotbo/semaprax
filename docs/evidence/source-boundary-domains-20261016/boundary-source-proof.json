@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 99,
       "full_role_production": 531,
       "full_role_test_only": 952,
-      "full_raw_sha256": "94b4439da90475aa582afad0c2b729865f6cf1b0bfe6c7c959c42d48e15c2a95",
+      "full_raw_sha256": "bcf5723b3274a2224474cebd0d20d63f5c52a3e9b30fa2fa17a000705b187a08",
       "boundary_production_sha256": "093d4a5819582a487fc5d9a7d9a42f216ffd488cb0d90ec81fb2fe079724434f",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 580,
       "full_role_production": 653,
       "full_role_test_only": 1010,
-      "full_raw_sha256": "4f0292a00a331f1d82077cd2a41c4f8eee0d8b5350e70f2c23b7db7649394817",
+      "full_raw_sha256": "6db16072aac6e7b7a4cce3edd9171264ef53ebbde42807156b0b84ece79d5740",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -64,6 +64,6 @@
     "whole_raw_drift_refused": true,
     "foreign_path_child_cannot_escape": true
   },
-  "status": "SOURCE_ONLY_FINITE_EXISTING328_HASH_AND_TWO_EDGE_OFFSET_SUCCESSOR",
-  "registration_update": "No parser reenumeration; complete prior328 classes/chunks retained with two exact declaration offsets relocated."
+  "status": "SOURCE_ONLY_FINITE_EXISTING328_HASH_AND_TYPED_OFFSET_SUCCESSOR",
+  "registration_update": "No parser reenumeration; complete prior328 classes/chunks retained and every actual declaration edge revalidated."
 }
