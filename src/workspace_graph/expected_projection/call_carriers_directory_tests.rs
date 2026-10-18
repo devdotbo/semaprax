@@ -306,9 +306,13 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
         let maximum = Some(dependency_identity_max(program, &index, &programs).unwrap());
         let before_directory = super::super::before_directory::count(program, &index, true);
         let current_proof = count(program, &index, true);
-        for retention in [Retention::Parsed, Retention::Semantic] {
+        for (mode, retention) in [
+            (5, Retention::Parsed),
+            (6, Retention::Parsed),
+            (7, Retention::Semantic),
+        ] {
             let old = call_carriers_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
-                program, &index, &programs, maximum, true, (5, retention), None,
+                program, &index, &programs, maximum, true, (mode, retention), None,
             ).unwrap();
             let current =
                 held_projection::synthetic_builder_bytes_scoped_with_retention_with_registry(
@@ -317,7 +321,7 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
                     &programs,
                     maximum,
                     true,
-                    (5, retention),
+                    (mode, retention),
                     None,
                 )
                 .unwrap();
@@ -347,7 +351,7 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
             // immediate linear proof. Negative rows remain explicit; neither
             // test supplies application adoption authority or cap changes.
             eprintln!(
-                "AUTHORED_HEADER_DIRECTORY headers={headers} groups={groups} warm={warm} copies={copies} roots={} pre898={} immediate_linear={} current={} old_proof={} current_proof={} auxiliary={auxiliary}",
+                "AUTHORED_HEADER_DIRECTORY mode={mode} retention={retention:?} headers={headers} groups={groups} warm={warm} copies={copies} roots={} pre898={} immediate_linear={} current={} old_proof={} current_proof={} auxiliary={auxiliary}",
                 current_proof.roots,
                 old.retained_clone_and_hir,
                 current.retained_clone_and_hir - current_proof.bytes + before_directory.bytes,
