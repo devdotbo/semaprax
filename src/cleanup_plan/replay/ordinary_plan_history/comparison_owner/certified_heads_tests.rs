@@ -258,6 +258,16 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         (old_step, old_load),
         (paired_value::STEP + paired_value::EMPTY, paired_value::LOAD)
     );
+    assert_eq!(
+        base + head,
+        old_step,
+        "loaded and exhausted noncertified right envelopes retain the whole old STEP"
+    );
+    assert_eq!(
+        base + pop + view,
+        old_step + old_load,
+        "foreign right views retain the complete old STEP and LOAD, including empty segments"
+    );
     (
         8 * header
             + base * r.certified_bases
