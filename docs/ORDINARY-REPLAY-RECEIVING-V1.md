@@ -65,8 +65,10 @@ one possible full terminal Diagnostic/Some/Cow initializer, actual/formal
 prepare and collector frames, exact callback capture/reborrow fields, captured
 ledger, small funded results and callback references. It does not assume a
 constant target layout. The query invoice prices its actual/formal self,
-expression, output and failure loans and bool result, plus literal caller
-reborrows. Every query pays its complete invoice anew. Scratch acquisition and
+expression, output and failure loans and bool result. Literal caller aliases
+were removed; restricted identifier/field-place lexical operands acquire these
+packets before new reference aliases form. The status callee likewise forms its
+function/budget aliases only after its local invoice. Every query pays its complete invoice anew. Scratch acquisition and
 all old work/caps remain unchanged.
 
 For a complete successful composition, let C be reached ordinary setup owners,
@@ -111,3 +113,33 @@ complete old caller children, and their owning registrations before any
 qualification. The external immutable packet supplies whole base sources and
 exact inverse patches. Source-custody integration is deliberately separate
 from this implementation lane.
+
+## Finite review correction (source only)
+
+The unchanged `RenewalBindings::empty()` factory now has an additive typed
+initializer/return/receiving bank: two full Self carriers, the return/receiving
+pair for each concrete BTreeMap initializer, the HelperBindings default pair and
+its concrete empty Vec field pair, and the HelperSites Owned initializer.
+`Prepared` storage does not substitute for those carriers. This increases every
+reached ordinary setup invoice, including no-index setup; no old fee/cap changes.
+
+The frozen c86 ten reserve-callback reference invoice remains conservative legacy
+billing, not ten newly formed physical references. New collector actual/formal
+tuples have twelve callback reference roles: renewal reserve/work twice (four),
+moving and reads reserve each twice (four), requires reserve twice (two),
+conditional owner reserve twice (two). No old invoice credit claims a gain.
+
+Let I=`RenewalBindings::empty_receiving_bytes()` and
+A=`2*sizeof(&mut ReplayBudget)+sizeof(&mut Failure)` (three removed status caller
+alias-only roles). Relative to bfa, current B1 is old B1+I; current Ls is old Ls-A;
+Le and E stay unchanged. The complete-success equation above uses those current
+types. No layout/runtime/dense-program or application-fit gain is claimed.
+
+The existing exact/short/zero constructor selector now includes an admitted
+monomorphic LexicalExit/owner-positive fixture. It also adds typed-HIR missing
+and ambiguous-owner contexts with full old diagnostics, ordered funding calls
+and every refusal cut. They make no source-admission claim; T226 generic lexical
+restrictions stay unchanged. The source/payer selector retains sticky retry and
+separately reaches a fresh foreign-function check on the same physical payer,
+asserting six fields, paid String pointer, no new allocation, unchanged charged
+bytes and terminal sticky refusal. All controls remain unrun.

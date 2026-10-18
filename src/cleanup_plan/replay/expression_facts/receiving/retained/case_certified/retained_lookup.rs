@@ -1,9 +1,9 @@
 //! Closed first-lookup continuation. No callbacks, ACTIVE switch or guard bank.
 use super::directory::HeldPrefix;
 use super::*;
-use crate::cleanup_plan::replay::expression_facts::arena::{retained::Session, Arena};
+use crate::cleanup_plan::replay::expression_facts::arena::{Arena, retained::Session};
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    prepare_into, refuse_into, reserve_into, Failure,
+    Failure, prepare_into, refuse_into, reserve_into,
 };
 use std::mem::size_of;
 
@@ -90,16 +90,14 @@ pub(super) fn complete_rows<'hir, 'facts>(
     loop {
         let source = &function.cleanup_plan.status_sources[*ordinal];
         {
-            let budget = &mut *session.budget;
-            let slot = &mut failure;
             if !reserve_into!(
-                budget,
+                session.budget,
                 function,
-                slot,
+                failure,
                 Session::into_query_bytes(),
                 "ordinary fact query actual and formal receiving"
             ) {
-                return Err(slot
+                return Err(failure
                     .error
                     .take()
                     .expect("query frontier selected first error"));

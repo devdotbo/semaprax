@@ -2,7 +2,7 @@
 use super::tests::{acquire, arena, program};
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    prepare_into, refuse_into, reserve_into, Failure,
+    Failure, prepare_into, refuse_into, reserve_into,
 };
 use crate::test_allocation_observer::measure;
 
@@ -11,9 +11,8 @@ fn prepay_query(
     function: &ResolvedFunction,
     slot: &mut Failure<'_>,
 ) -> bool {
-    let budget = &mut *session.budget;
     reserve_into!(
-        budget,
+        session.budget,
         function,
         slot,
         Session::into_query_bytes(),

@@ -2,7 +2,7 @@
 //! constructor's; no common traversal or producer verdict is reused.
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    prepare_into, refuse_into, reserve_into, Failure,
+    Failure, prepare_into, refuse_into, reserve_into,
 };
 use crate::hir::funded::FundedError;
 use std::mem::size_of;
@@ -22,6 +22,7 @@ pub(in crate::cleanup_plan::replay) struct Prepared<'a> {
 // No original Result or local-header fee is subtracted from this expression.
 pub(in crate::cleanup_plan::replay) const fn acquisition_bytes() -> usize {
     size_of::<Prepared<'_>>()
+        + crate::cleanup_plan::renewal_profile::RenewalBindings::empty_receiving_bytes()
         + size_of::<Failure<'_>>()
         + Failure::terminal_bytes()
         + 2 * size_of::<(
@@ -48,6 +49,9 @@ pub(in crate::cleanup_plan::replay) const fn acquisition_bytes() -> usize {
         + 2 * size_of::<bool>()
         + 2 * size_of::<crate::bounded_output::classifier_string::ClassifierLedger>()
         + 10 * size_of::<Result<(), FundedError<()>>>()
+        // Frozen c86 conservative reserve-callback invoice, retained unchanged.
+        // Not ten extra physically formed refs; the following new actual/formal
+        // collector tuples separately describe their12 callback reference roles.
         + 10 * size_of::<&mut dyn FnMut(usize) -> Result<(), ()>>()
         + 2 * size_of::<(
             &dyn crate::cleanup::ReplayContext,

@@ -1,7 +1,7 @@
 //! Direct full-error-slot successor of the complete immediate retained query.
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    charge_into, prepare_into, refuse_into, reserve_into, Failure,
+    Failure, charge_into, prepare_into, refuse_into, reserve_into,
 };
 impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
     pub(in crate::cleanup_plan::replay::expression_facts) const fn into_query_bytes() -> usize {
@@ -11,8 +11,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             &mut Option<&Option<CallFact<'_>>>,
             &mut Failure<'_>,
             bool,
-        )>() + 2 * size_of::<&mut ReplayBudget>()
-            + size_of::<&mut Failure<'_>>()
+        )>()
     }
     pub(in crate::cleanup_plan::replay::expression_facts) const fn into_edge_query_bytes() -> usize
     {
@@ -49,8 +48,8 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         )>() + 2 * size_of::<&mut ReplayBudget>()
     }
     #[cfg(test)]
-    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_status_query_bytes(
-    ) -> usize {
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_status_query_bytes()
+    -> usize {
         Self::into_query_bytes() + Self::into_local_bytes() - Self::query_bytes()
     }
     #[cfg(test)]
@@ -66,8 +65,6 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
     ) -> bool {
         #[cfg(test)]
         crate::cleanup_plan::replay::ordinary_receiving::observe_site(2);
-        let function = self.function;
-        let budget = &mut *self.budget;
         if slot.error.is_some() {
             return false;
         }
@@ -76,8 +73,8 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         // function/budget/current ledger on EVERY row; the closed continuation
         // cannot switch ACTIVE or invoke a callback between guard and query.
         if !reserve_into!(
-            budget,
-            function,
+            self.budget,
+            self.function,
             slot,
             0,
             "expression-fact arena lookup authentication"
@@ -85,8 +82,8 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             return false;
         }
         if !charge_into!(
-            budget,
-            function,
+            self.budget,
+            self.function,
             slot,
             0,
             "expression-fact arena lookup authentication"
@@ -96,14 +93,16 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         // The two wide Result objects cease to exist. All inherited query
         // borrowers and the new output/error loans remain paid on each query.
         if !reserve_into!(
-            budget,
-            function,
+            self.budget,
+            self.function,
             slot,
             Self::into_local_bytes(),
             "retained expression-fact query result controls"
         ) {
             return false;
         }
+        let function = self.function;
+        let budget = &mut *self.budget;
         *output = None;
         // Original ordered work and complete query reset. No verdict is reused. Slice loans remain bound to the held immutable
         // function/arena; every field is reset before the next query.
@@ -168,7 +167,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
                             slot,
                             "expression-fact prefix comparison work overflow",
                             ""
-                        )
+                        );
                     }
                 };
                 if !charge_into!(
@@ -348,7 +347,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
                             slot,
                             "expression-fact prefix comparison work overflow",
                             ""
-                        )
+                        );
                     }
                 };
                 if !charge_into!(

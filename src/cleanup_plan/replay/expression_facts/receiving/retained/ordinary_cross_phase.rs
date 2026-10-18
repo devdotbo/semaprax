@@ -177,16 +177,14 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             loop {
                                 let source = &function.cleanup_plan.status_sources[ordinal];
                                 {
-                                    let budget = &mut *session.budget;
-                                    let slot = &mut failure;
                                     if !reserve_into!(
-                                        budget,
+                                        session.budget,
                                         function,
-                                        slot,
+                                        failure,
                                         Session::into_query_bytes(),
                                         "ordinary fact query actual and formal receiving"
                                     ) {
-                                        return Err(slot
+                                        return Err(failure
                                             .error
                                             .take()
                                             .expect("query frontier selected first error"));

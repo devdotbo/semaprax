@@ -55,6 +55,14 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
     for source in [
         "module receiving.scalar; @id(\"main\") fn main()->i64 {0}",
         include_str!("../../../../tests/owned_data/byte_helper_renewal.spx"),
+        r#"module receiving.lexical;
+@id("probe") fn probe(flag:bool)->i64 {
+ let key=str"x";let view=str_as_bytes(key);let mut next=0;
+ while next<3 {next=next+1;if flag {continue;};if next==2 {return if byte_len(view)==1usize {7}else{0};};0}
+ 9
+}
+@id("main") fn main()->i64 {probe(false)}
+"#,
         r#"module receiving.string;
 @id("main") fn main()->i64 {
  let mut text=string_from_i64(1); let mut count=0;
@@ -70,6 +78,17 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
                 // Full immediate funded constructor, not pre-funding predecessor.
                 let old =
                     SkeletonWork::with_index(&program, function, &mut old_budget, index).unwrap();
+                let expected_requires = crate::hir::lexical_exit::requires(function).unwrap();
+                if function.id.as_str() == "probe" {
+                    assert!(
+                        expected_requires,
+                        "genuine admitted LexicalExit reaches owner_into"
+                    );
+                    assert!(matches!(
+                        &old.owner,
+                        Some(crate::hir::FunctionExecutionId::Monomorphic(_))
+                    ));
+                }
                 let mut expression_ids = Vec::new();
                 crate::hir::function_value::walk(function, |expression| {
                     expression_ids.push(expression.id.clone())
@@ -106,6 +125,13 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
                                         &mut slot,
                                     ) {
                                         return Err(slot.error.take().unwrap());
+                                    }
+                                    assert_eq!(prepared.requires, expected_requires);
+                                    if expected_requires {
+                                        assert!(
+                                            prepared.owner.is_some(),
+                                            "owner_into writes the actual execution owner"
+                                        );
                                     }
                                     let current = SkeletonWork {
                                         function,
@@ -190,6 +216,82 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
             }
         }
     }
+
+    // Typed-HIR adversarial owner contexts: no frontend admission is asserted.
+    let lexical = program(
+        r#"module receiving.lexical;
+@id("probe") fn probe(flag:bool)->i64 {
+ let key=str"x";let view=str_as_bytes(key);let mut next=0;
+ while next<3 {next=next+1;if flag {continue;};if next==2 {return if byte_len(view)==1usize {7}else{0};};0}
+ 9
+}
+@id("main") fn main()->i64 {probe(false)}
+"#,
+    );
+    let function = lexical
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "probe")
+        .unwrap()
+        .clone();
+    assert!(crate::hir::lexical_exit::requires(&function).unwrap());
+    for ambiguous in [false, true] {
+        let mut context = lexical.clone();
+        if ambiguous {
+            context.functions.push(function.clone());
+        } else {
+            context.functions.retain(|f| f.id != function.id);
+        }
+        let mut old_requests = Vec::new();
+        let old = crate::hir::lexical_exit::owner_funded(&context, &function, &mut |bytes| {
+            old_requests.push(bytes);
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        let verdict = old.as_ref().unwrap_err();
+        let expected = verdict.diagnostic();
+        assert_eq!(
+            crate::hir::lexical_exit::owner(&context, &function).unwrap_err(),
+            expected
+        );
+        let mut requests = Vec::new();
+        let mut output = None;
+        crate::hir::lexical_exit::owner_into(&context, &function, &mut output, &mut |bytes| {
+            requests.push(bytes);
+            Ok::<_, ()>(())
+        })
+        .unwrap();
+        assert_eq!(output, old.ok());
+        assert_eq!(
+            requests, old_requests,
+            "ordered zero/payload guard frontiers"
+        );
+        for cut in 0..old_requests.len() {
+            let mut old_at = 0;
+            let old = crate::hir::lexical_exit::owner_funded(&context, &function, &mut |_| {
+                let at = old_at;
+                old_at += 1;
+                if at == cut { Err(()) } else { Ok(()) }
+            });
+            let mut current_at = 0;
+            let mut output = None;
+            let current =
+                crate::hir::lexical_exit::owner_into(&context, &function, &mut output, &mut |_| {
+                    let at = current_at;
+                    current_at += 1;
+                    if at == cut { Err(()) } else { Ok(()) }
+                });
+            assert!(matches!(
+                old,
+                Err(crate::hir::funded::FundedError::Refused(()))
+            ));
+            assert!(matches!(
+                current,
+                Err(crate::hir::funded::FundedError::Refused(()))
+            ));
+            assert_eq!(current_at, old_at);
+        }
+    }
 }
 
 #[test]
@@ -216,4 +318,39 @@ fn different_budget_and_source_cannot_rebind_a_receiving_slot() {
     let function = &program.functions[1];
     assert!(!charge_into!(budget, function, slot, 0, "foreign source"));
     assert_eq!(slot.error.as_ref().unwrap().message.as_ptr(), first);
+
+    // A fresh same-payer slot must reach the source check, not the sticky guard.
+    let owner = &program.functions[0];
+    let foreign = &program.functions[1];
+    let mut current = ReplayBudget::with_physical(owner, 64 * 1024 * 1024).unwrap();
+    let original_charged = current.physical.as_ref().unwrap().charged();
+    let text_pointer = current.refusal_text.as_ref().unwrap().as_ptr();
+    let text_capacity = current.refusal_text.as_ref().unwrap().capacity();
+    let mut fresh = Failure {
+        error: None,
+        function: owner,
+        budget: &current,
+    };
+    let expected = replay_error(
+        foreign,
+        "ordinary replay receiving source or payer is outside its current invocation",
+    );
+    let (accepted, heap) = measure(|| {
+        let budget = &mut current;
+        let function = foreign;
+        charge_into!(budget, function, fresh, 0, "fresh foreign source")
+    });
+    assert!(!accepted);
+    assert_eq!(fresh.error.as_ref(), Some(&expected)); // complete six fields
+    assert_eq!(fresh.error.as_ref().unwrap().message.as_ptr(), text_pointer);
+    assert!(fresh.error.as_ref().unwrap().message.len() <= text_capacity);
+    assert_eq!(
+        current.physical.as_ref().unwrap().charged(),
+        original_charged
+    );
+    assert_eq!((current.remaining, current.skeleton_remaining), (0, 0));
+    assert!(current.refusal_spent);
+    assert!(current.physical.as_deref_mut().unwrap().reserve(0).is_err());
+    assert!(current.refusal_text.is_none());
+    assert!(!heap.invalid && heap.allocated == 0 && heap.live == 0);
 }
