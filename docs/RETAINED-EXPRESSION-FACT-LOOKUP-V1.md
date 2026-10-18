@@ -203,7 +203,11 @@ The actual edge-site ledger is `Session::EDGE_QUERY_BYTES`:
 | Mutable Session and query actual/formal pair | `2 * size_of::<(&mut Session, &ExpressionId)>()` |
 | Internal arena/function/budget/control/comparison field loans | `size_of::<(&Arena, &ResolvedFunction, &mut ReplayBudget, &mut Control, &mut Compared)>()` |
 | Budget reborrow and receiver | `2 * size_of::<&mut ReplayBudget>()` |
-| New predicate result/receiving | `2 * size_of::<bool>()` |
+
+The unknown-expression check uses a bare `if let None` pattern, with a targeted
+Clippy attribute documenting why no Option method is called. No Option-method
+receiver pair or bool-returning predicate is formed or charged. Both full old
+Result terms remain unchanged.
 
 There is no new Session acquisition, selector, scan, callback, Option<Session>,
 returned Session, or continuation argument/result. The lexical `facts`/`proof`

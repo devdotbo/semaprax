@@ -245,8 +245,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             &mut Control,
             &mut Compared<'_>,
         )>()
-        + 2 * size_of::<&mut ReplayBudget>()
-        + 2 * size_of::<bool>();
+        + 2 * size_of::<&mut ReplayBudget>();
     pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =
         RESULTS + Self::EDGE_QUERY_BYTES;
     pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(

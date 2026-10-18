@@ -361,7 +361,11 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                             Session::EDGE_RECEIVING_BYTES,
                                             "retained expression-fact query result controls",
                                         )?;
-                                        if session.fact_edge_prepaid(expression)?.is_none() {
+                                        #[allow(
+                                            clippy::redundant_pattern_matching,
+                                            reason = "bare pattern avoids a new Option method receiving boundary"
+                                        )]
+                                        if let None = session.fact_edge_prepaid(expression)? {
                                             return Err(replay_error(function,
                         format_args!("cleanup plan references unknown expression `{expression}`")));
                                         }

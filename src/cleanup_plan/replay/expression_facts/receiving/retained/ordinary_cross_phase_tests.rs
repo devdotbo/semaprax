@@ -262,6 +262,8 @@ fn exact_source_inverses_restore_every_whole_immediate_owner() {
         ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",include_str!("case_certified.rs")),
         ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",include_str!("case_certified/retained_lookup.rs")),
     ] {
+        let restored_c336 = before_bare_pattern_source(path, current);
+        let current = restored_c336.as_str();
         let row=records["sources"].as_array().unwrap().iter().find(|r|r["path"]==path).unwrap();
         assert_eq!(current.len(),row["after"]["length"].as_u64().unwrap()as usize);
         assert_eq!(format!("{:x}",sha2::Sha256::digest(current.as_bytes())),row["after"]["sha256"].as_str().unwrap());
@@ -280,4 +282,55 @@ fn exact_source_inverses_restore_every_whole_immediate_owner() {
         Session::OLD_SCRATCH,
         Session::EDGE_QUERY_BYTES
     );
+    let path = "src/cleanup_plan/replay/expression_facts/arena/retained.rs";
+    let raw = include_str!("../../arena/retained.rs");
+    for bad in [
+        raw[..raw.len() - 1].to_owned(),
+        format!("{raw}//foreign\n"),
+        format!("{raw}{raw}"),
+    ] {
+        assert_ne!(bad, raw);
+        assert!(std::panic::catch_unwind(|| before_bare_pattern_source(path, &bad)).is_err());
+    }
+}
+
+// Compose only the exact independently reviewed post-c336 source delta before
+// the immutable c336 whole-source controls above. Other owners stay unchanged.
+fn before_bare_pattern_source(path: &str, current: &str) -> String {
+    let records: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/retained-expression-fact-cross-phase-bare-pattern-20261018/inverses.json"
+    )))
+    .unwrap();
+    let Some(row) = records["sources"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["path"] == path)
+    else {
+        return current.to_owned();
+    };
+    assert_eq!(
+        current.len(),
+        row["after"]["length"].as_u64().unwrap() as usize
+    );
+    assert_eq!(
+        format!("{:x}", sha2::Sha256::digest(current.as_bytes())),
+        row["after"]["sha256"].as_str().unwrap()
+    );
+    let mut restored = current.to_owned();
+    for edit in row["edits"].as_array().unwrap().iter().rev() {
+        let after = edit["after"].as_str().unwrap();
+        assert_eq!(restored.matches(after).count(), 1);
+        restored = restored.replacen(after, edit["before"].as_str().unwrap(), 1);
+    }
+    assert_eq!(
+        restored.len(),
+        row["before"]["length"].as_u64().unwrap() as usize
+    );
+    assert_eq!(
+        format!("{:x}", sha2::Sha256::digest(restored.as_bytes())),
+        row["before"]["sha256"].as_str().unwrap()
+    );
+    restored
 }
