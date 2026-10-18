@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 28273,
-      "sha256": "ff45e4ec289829d44d0d55022961ab41bb8bfb18c14a68872ce0bfcf675f91d9"
+      "length": 28084,
+      "sha256": "197a4add6f4ab9654be4eeac51ee8f47379ad9485b72a9fd2b596f9868a96796"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 42671,
-      "sha256": "f0419b0dcfbd435f28607635364f99e6cd9b35bf36acb81de5aa43161bfea2ae"
+      "length": 43826,
+      "sha256": "fb1c8cbcd52c0052722aa8f0ed4b3c659769bd11c6b5b7f3bd730606ba37143d"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -153,8 +153,8 @@
       "sha256": "dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991"
     },
     "src/source_reflows_merge/main_e177_final_inputs.rs": {
-      "length": 112941,
-      "sha256": "f54de13e43dac66731594a43b9f8320524beb975ab6ee75505f5510233d0b8f3"
+      "length": 112962,
+      "sha256": "625356e058a3ca8c452c08564134e1b3680688f63bf1c4529f004330477b17ce"
     },
     "src/source_reflows_merge/main_e177_inputs.rs": {
       "length": 38749,
@@ -261,8 +261,8 @@
       "sha256": "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
-      "length": 6323,
-      "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
+      "length": 6431,
+      "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22"
     },
     "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs": {
       "length": 11775,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 13499,
-      "sha256": "985b03816f25a3f5da56ab149401fc188a91aad18c88cbc4a7cedf8675b51511"
+      "length": 14157,
+      "sha256": "c698e7060b861f02ad4a42729861450e93b8ff547214c95aa23c85b236fb3ee1"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 56245,
-      "sha256": "360b7efb9cc8cc2e1bdcb4b16debe6f59c7d1f07a91af8d4809b0493282bc7f9"
+      "length": 56335,
+      "sha256": "59afa3f12d2f7913cb43990ca48fb424c4d2a85da0aabd7d65cd68330cc3470c"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -409,8 +409,8 @@
       "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs": {
-      "length": 30752,
-      "sha256": "e1ba5dfa897aecf0e10bc80ce5042adb55fd5ecfb01ecfa9cacd68b4fe8d13b2"
+      "length": 34358,
+      "sha256": "b83b862a58b8339802c69d45511e801af32d97f5d77196ff7f94b538e00c3921"
     },
     "src/cleanup_plan/replay/inventory_coverage.rs": {
       "length": 17186,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 58759,
-      "sha256": "3b111d67ec20990f0276e51a3c79a8271f8f9d505cbde51078aa23d80110441c"
+      "length": 64829,
+      "sha256": "660efbe8bfbde901f0cb7e402c3e3291a6f56a5d2ad27a0c47965d4513f7b8d0"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -793,28 +793,28 @@
       "sha256": "7ba820da6e65243527976b6bee0ea1920440144c9c5c416a6d8e0d10d180698c"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
-      "length": 20724,
-      "sha256": "01bf8c0e7937199a7d4cef58a469bd3406eb0e3ec2c6825bfbbe407f6bc9d886"
+      "length": 20736,
+      "sha256": "cbabeca225942f20ffe4d4cd675199eb0200934c8be06940ddbfff1b05f74bb3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
-      "length": 6683,
-      "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
+      "length": 6486,
+      "sha256": "00d201f24d0a4a598093075e2b5a8dce94302c6ab21265a7b37392d5995ff159"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
-      "length": 27435,
-      "sha256": "931f8ad4919700e6a5cf6e9d4379b63716ed10d0c508dc3034c215a198d97838"
+      "length": 27459,
+      "sha256": "0914628a7c67cacb5798eb52eb8b5afb1e44a9e9560a825bc8222480aa9171af"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs": {
-      "length": 21370,
-      "sha256": "4f2e7390a54621cbe5a4363d0322b8f30676aa01a4c0f0e9065d18815051fc58"
+      "length": 21382,
+      "sha256": "de6628881d539bd95eb53d7ba260be5d7865babf59432890a4d6e91a2f6964f3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
-      "length": 55470,
-      "sha256": "cb695b8abb92b747d037b46af45a2ff79c8dad2c8eb8cb54120cc6a92100487f"
+      "length": 57044,
+      "sha256": "220697292f765bb9a1069be77bb959944106b07baaf169bd230baccfb551fe87"
     },
     "src/ast/program_source/function_alias/scalar_signature.rs": {
-      "length": 2988,
-      "sha256": "b1a20b62516a7847357cd2e6cf1d3b466af0ced651446718329a90138e69fdee"
+      "length": 3398,
+      "sha256": "adbcb76a1b4c20c44f2543eba4fe5cfa262a11dd0f6ceb02ba5cd05312bbd287"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs": {
       "length": 79461,
@@ -829,27 +829,103 @@
       "sha256": "90cf27667fe64714fdc3d5196406d0eec2ad59cbd12d1a07b16a23810eda066a"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs": {
-      "length": 18356,
-      "sha256": "1c2321043b1d07870e34e2cacf6fa4791de51214b6df9d0e840690e3fd63e6f7"
+      "length": 22427,
+      "sha256": "24607db07dfce24677610d69f7073b44cb01fe47893f3f90bcfaab474c18ecdf"
+    },
+    "src/ast/program_source/function_alias/before_string.rs": {
+      "length": 1898,
+      "sha256": "3de6f80391541e690f04879f7f1b15ed0917870b1c54f2321f7d43d8bea639ea"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs": {
+      "length": 21754,
+      "sha256": "2e41bd44a89c7a15957228600f8350aa83c7c6de9f9f78483f1d77539d2832b3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs": {
+      "length": 6323,
+      "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs": {
+      "length": 47903,
+      "sha256": "d11463da2bf2bba7e0f3f659edbd714d43ccd44ff307e02f5dd3a3dc14ae16da"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs": {
+      "length": 6683,
+      "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs": {
+      "length": 52476,
+      "sha256": "32d764df49070a2dfb8e6bf130c1f719a98d60da9855e0a18bb51222c628779c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs": {
+      "length": 5601,
+      "sha256": "75daf950d1b9ac32325b57809453c771f9b3f4fe24ff13454346da9d5a89abd0"
+    },
+    "src/source_reflows_merge/main_e177_historical_before_data.rs": {
+      "length": 25356,
+      "sha256": "05ecc0163fa3593182d2044c5f2029e3c1dd0cd7143ed9904eccfd6e6b751a3d"
+    },
+    "src/source_reflows_merge/main_e177_historical_data.rs": {
+      "length": 1902,
+      "sha256": "67bfa3bf6ca2151ba8f99ae6390099fa9fcdfef7fb752ecbb831b150ce111310"
+    },
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs": {
+      "length": 5632,
+      "sha256": "801fbc98fde6f24256ecdc478bd978597a8d5db922452ea62d5e3bb4f85470d8"
+    },
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
+      "length": 9601,
+      "sha256": "cc74a22a2590cf7ac7fc8bb428c77355f767d5a1bf90c936d7827209b017c99d"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
+      "length": 19877,
+      "sha256": "e392af9c4f7bf39edfa9850d759e5d8a805e9c53cfb280633017afb64d112eb7"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs": {
+      "length": 17171,
+      "sha256": "73742290da203264ad5410057c1787b921e051e456ace291d167a584f801fb3c"
+    },
+    "src/workspace_graph/expected_projection/call_carriers.rs": {
+      "length": 12230,
+      "sha256": "21d2f0daca470d1bf08a75a8cf954b90e7988dd4d4350990aeba1f900833a799"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs": {
+      "length": 29930,
+      "sha256": "e88cb5b33a88dc9395d88fbf409d09a9258de3bd4bd9121009c85e83426424ab"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs": {
+      "length": 4106,
+      "sha256": "5a0c22d81a09e58528af9e394df7313cb79198961b6de14a9159af360666f62f"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_original.rs": {
+      "length": 23564,
+      "sha256": "90f8c704f7a8eeb72cfc5318123b27febe80ce5bbba39b7b6a1952ec6e058f58"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs": {
+      "length": 19171,
+      "sha256": "fee1e38967bcd4ac45b6e21043ec02e52cdad971880a6ee742ddbaadb58c976d"
+    },
+    "src/ast/program_source/decl_slices.rs": {
+      "length": 9428,
+      "sha256": "3e6cbf1036e73125905bdf4ac705e876929d24cd626eb365db2ae08434f33e12"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 133689,
-      "sha256": "db0a3298a99a0a95016a58a203dbf3a437cfaa9d55e84131009136f20a6970b5",
+      "length": 135672,
+      "sha256": "c42e04b5b3290422d0584ed2b4ef25f46ea2781e4e9d4391140179a98dea7836",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 150468,
-      "sha256": "735c4c11206c8436c3f3312731e9964b85233600416c267693231d029fb64e06",
+      "length": 152385,
+      "sha256": "fa7d8f180a3db7df9f668ac305b2bd2c55b395167bcf0da331319ac30aa382ef",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 191685,
-      "sha256": "b336cb1f0651b85541367aaa865ebb98c7d7f79761ceb6255da360009b255d6e",
+      "length": 193908,
+      "sha256": "797cedc59adcdfa220227bfcfd75d35d049015c9251723e8e0390c3907ebb5dd",
       "base": "../../../../../"
     }
   },
@@ -877,8 +953,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 56372,
-    "sha256": "0ae3509d733d28e95c2ee7f4e2991001169448e8efb2a14d7219c7493ddffc67",
+    "length": 57366,
+    "sha256": "fad7dea67edfeb8148688202ae98c88be5eaba10bd5eb167a3e906d88ee45903",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3336,9 +3412,61 @@
       {
         "at": 1038,
         "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"
+      },
+      {
+        "at": 1039,
+        "path": "src/ast/program_source/function_alias/before_string.rs"
+      },
+      {
+        "at": 1040,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs"
+      },
+      {
+        "at": 1041,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs"
+      },
+      {
+        "at": 1042,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs"
+      },
+      {
+        "at": 1043,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs"
+      },
+      {
+        "at": 1044,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs"
+      },
+      {
+        "at": 1045,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs"
+      },
+      {
+        "at": 1046,
+        "path": "src/source_reflows_merge/main_e177_historical_before_data.rs"
+      },
+      {
+        "at": 1047,
+        "path": "src/source_reflows_merge/main_e177_historical_data.rs"
+      },
+      {
+        "at": 1048,
+        "path": "src/source_reflows_merge/main_e177_historical_data_tests.rs"
+      },
+      {
+        "at": 1049,
+        "path": "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs"
+      },
+      {
+        "at": 1050,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs"
+      },
+      {
+        "at": 1051,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs"
       }
     ],
-    "rows": 1039
+    "rows": 1052
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -3939,7 +4067,25 @@
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
     "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
-    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
+    "src/ast/program_source/function_alias/before_string.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "src/source_reflows_merge/main_e177_historical_before_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers.rs",
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
+    "src/workspace_graph/expected_projection/call_carriers_original.rs",
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",
