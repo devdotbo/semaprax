@@ -1,0 +1,20 @@
+{
+  "base_head": "b66f9255cb6526b3c3b647a1c880f1e8c57f9643",
+  "logical_changed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "nonlogical_existing": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+    "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md"
+  ],
+  "new_test_only_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+  "every_prior_source_physical_Drop_diagnostic_and_work_cut_control_retained": true,
+  "private_nonowning_cursor_metadata_only_deferred_until_success": true,
+  "authoritative_HistorySet_and_owning_Drop_unchanged": true,
+  "limits_and_oracles_unchanged": true,
+  "source_and_models_not_full_compiler_application_qualification": true
+}

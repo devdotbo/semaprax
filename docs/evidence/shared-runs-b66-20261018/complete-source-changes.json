@@ -1,0 +1,93 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "before": {
+      "length": 17308,
+      "sha256": "4a5f8e69c53b7b71a1a297f422168860aaf1b539e5aa81dd0d97544826d93259",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/4a5f8e69c53b7b71a1a297f422168860aaf1b539e5aa81dd0d97544826d93259.txt"
+    },
+    "current": {
+      "length": 17993,
+      "sha256": "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "before": {
+      "length": 47414,
+      "sha256": "dbd006e0ad3409f5c2adc88e4af2ce80b3f32741dbb2eb5686907d42fe7bc3e9",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/dbd006e0ad3409f5c2adc88e4af2ce80b3f32741dbb2eb5686907d42fe7bc3e9.txt"
+    },
+    "current": {
+      "length": 49614,
+      "sha256": "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "before": {
+      "length": 15306,
+      "sha256": "07422696b4c547d69e6a382783377daac2abfd3b9a3e70a061f1a057642ce4d7",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/07422696b4c547d69e6a382783377daac2abfd3b9a3e70a061f1a057642ce4d7.txt"
+    },
+    "current": {
+      "length": 16853,
+      "sha256": "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+    "before": {
+      "length": 22312,
+      "sha256": "76232f3d446198775b5b4d903331107556fb474c64e3e2f49f1d666cf176ed89",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/76232f3d446198775b5b4d903331107556fb474c64e3e2f49f1d666cf176ed89.txt"
+    },
+    "current": {
+      "length": 22995,
+      "sha256": "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16.txt"
+    }
+  },
+  {
+    "source": "src/bounded_output/stage_debits/route_debits.rs",
+    "before": {
+      "length": 35044,
+      "sha256": "26bc7b632a6b5265a2478adabda8f7e86ecd630ea1e2b4d4df7c168d040ffd18",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/26bc7b632a6b5265a2478adabda8f7e86ecd630ea1e2b4d4df7c168d040ffd18.txt"
+    },
+    "current": {
+      "length": 35279,
+      "sha256": "4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d.txt"
+    }
+  },
+  {
+    "source": "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md",
+    "before": {
+      "length": 8146,
+      "sha256": "b622e2607918b37b85223818465abca3505d70cd5a77b61c737acdfce305867f",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/b622e2607918b37b85223818465abca3505d70cd5a77b61c737acdfce305867f.txt"
+    },
+    "current": {
+      "length": 10070,
+      "sha256": "4978dd6bcd103f3a727dd32a7b1f29be95ee086400b814ff01ab10882fd5a44a",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/4978dd6bcd103f3a727dd32a7b1f29be95ee086400b814ff01ab10882fd5a44a.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 578304,
+      "sha256": "5e3c64a2a8e9e91712b9706b012f0d2b51643a1a234bb7729cb6fde8e3d0c5bb",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/5e3c64a2a8e9e91712b9706b012f0d2b51643a1a234bb7729cb6fde8e3d0c5bb.txt"
+    },
+    "current": {
+      "length": 578640,
+      "sha256": "e0ba3d445d1c59e9be2798a059564af149af93a9a3287c4ac1982fff6bef360a",
+      "archive": "docs/evidence/shared-runs-b66-20261018/whole/e0ba3d445d1c59e9be2798a059564af149af93a9a3287c4ac1982fff6bef360a.txt"
+    }
+  }
+]

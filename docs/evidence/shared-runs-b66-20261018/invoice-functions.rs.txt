@@ -1,0 +1,115 @@
+#![allow(dead_code)]
+use std::{cmp::Ordering,mem::size_of,rc::Rc};
+struct ResolvedFunction; struct ReplayBudget; struct Segment;
+struct SkeletonObservation; struct SkeletonTerminal;
+struct Span {start:usize,end:usize,line:usize,column:usize}
+enum Severity {Error,Warning}
+struct Diagnostic {code:&'static str,severity:Severity,message:std::borrow::Cow<'static,str>,path:Option<String>,span:Option<Span>,help:Option<String>}
+mod pair_scope_census {
+ #[derive(Default)] pub struct Row {
+ pub loads:usize,pub shared_checks:usize,pub shared_patterns:usize,pub shared_runs:usize,pub shared_turns:usize,
+ pub shared_metadata:usize,pub shared_steps:usize,pub shared_empty_checks:usize,
+ pub shared_links:usize,pub shared_queries:usize,pub shared_boundaries:usize,
+ }
+}
+fn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+        + 6 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>();
+    let step = 2 * size_of::<usize>()
+        + 3 * size_of::<bool>()
+        + 3 * size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+        + 3 * size_of::<usize>()
+        + size_of::<bool>();
+    let load = 2 * size_of::<&mut Vec<usize>>()
+        + size_of::<Option<usize>>()
+        + 4 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<&[Segment]>()
+        + size_of::<&Segment>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    let links = 4 * size_of::<&Vec<usize>>()
+        + 4 * size_of::<&[usize]>()
+        + 4 * size_of::<usize>()
+        + 3 * size_of::<bool>();
+    let query = 2 * size_of::<&[Segment]>()
+        + 2 * size_of::<usize>()
+        + size_of::<&Segment>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<bool>();
+    let advance = 4 * size_of::<&mut Vec<usize>>()
+        + 2 * size_of::<Option<usize>>()
+        + 10 * size_of::<usize>()
+        + 6 * size_of::<bool>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<Ordering>();
+    (
+        (pair + 4 * step + 2 * load) * row.shared_boundaries,
+        if paths >= 2 { 11 * header } else { 0 }
+            + size_of::<bool>() * row.shared_empty_checks
+            + links * row.shared_links
+            + query * row.shared_queries
+            + advance * row.shared_boundaries,
+    )
+}
+fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+        + 6 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>();
+    let step = 2 * size_of::<usize>()
+        + 3 * size_of::<bool>()
+        + 3 * size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+        + size_of::<usize>()
+        + 2 * size_of::<usize>()
+        + size_of::<bool>();
+    let retained = 4 * size_of::<usize>()
+        + if paths >= 2 { 11 * header } else { 0 }
+        + size_of::<usize>() * row.loads
+        + 3 * size_of::<bool>() * row.shared_checks
+        + size_of::<bool>() * row.shared_patterns
+        + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata
+        + (2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>()) * row.shared_runs
+        + (4 * size_of::<usize>() + size_of::<bool>()) * row.shared_turns
+        + (4 * size_of::<&[Rc<SkeletonObservation>]>()
+            + 4 * size_of::<usize>()
+            + size_of::<Ordering>())
+            * row.shared_runs;
+    let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
+    (
+        (pair + 2 * step) * row.shared_steps + boundary_removed,
+        retained + boundary_retained,
+    )
+}
+fn main(){
+ assert_eq!(size_of::<Result<(),Diagnostic>>(),136);
+ let empty=pair_scope_census::Row::default();
+ assert_eq!(shared_step_prices(0,&empty),(0,32)); assert_eq!(shared_step_prices(1,&empty),(0,32));
+ for n in 0..10 {
+ let row=pair_scope_census::Row {loads:2*n,shared_checks:n,shared_patterns:n,
+ shared_empty_checks:n,shared_links:n,shared_queries:n,shared_boundaries:n,..Default::default()};
+ assert_eq!(shared_step_prices(2,&row),(902*n,32+22*352+456*n));
+ }
+ let row=pair_scope_census::Row {loads:2,shared_checks:1,shared_patterns:1,shared_metadata:1,shared_runs:1,shared_turns:4,shared_steps:3,..Default::default()};
+ assert_eq!(shared_step_prices(2,&row),(1038,8116));
+ println!("Complete actual additive invoice functions and independent run/boundary scalar cases pass; six-field opaque Diagnostic/reference carriers only; no real compiler/allocator qualification");
+}

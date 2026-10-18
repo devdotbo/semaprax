@@ -262,3 +262,60 @@ empty Q, cold headers, whole owner widths, both HIR representations and full
 Drop are included. Refused prefixes use only reached successful admissions;
 no complete-input count or future empty probe is credited. Native and whole
 application gains require later matched execution and are not claimed here.
+
+
+## Shared immutable segment boundary continuation
+
+When both loaded slices are empty, inspect only the next already validated
+link from each prepared cursor. Equal next indices and a nonempty immutable
+segment prove that both next observations are identical. No prefix scan or new
+traversal is introduced. An empty, absent or different successor keeps the
+complete original fallback. Both original prepares and final HIR comparison
+remain independent. No source, hash or pointer claim grants admission authority.
+
+The successful branch retains the original seven work requests in order:
+left forward/current segment/next segment, then right forward/current segment/
+next segment, then the equal-observation continuation. Each cursor's exhausted
+segment, item, loaded flag and consumed link move at their old work boundaries.
+No observation Option, paired tuple or content-cmp payload is formed on this
+branch. New link views, pattern decisions, arena query, pop slots, scalar
+transports and retained slices are paid before formation. Four payment and seven
+work sites add eleven full primitive headers only to the multipath bank.
+Zero/one-path banks and all original limits stay unchanged. Failed lookahead
+pays its real selectors; short or divergent paths can cost more.
+
+Additive source-type invoices and checked diagnostic cells retain every older
+invoice and control. An actual compiler test exercises one-item and empty
+segments against the complete883 comparator at every work cut. Complete bounded
+models additionally cover shared/divergent and alternating empty segments.
+Source/model results remain separate from full compiler, physical allocator,
+application, native64MiB, STD-08, browser and current hosted qualification.
+
+## Immutable shared run continuation
+
+Equal loaded segment identities and equal item offsets prove that the complete
+remaining immutable slices are identical. The comparator captures their length
+once and replays the original five work requests for every observation in the
+same order. It forms numeric loop carriers instead of repeated borrowed slice
+patterns, comparison selectors, cursor increments or Ordering assignments.
+The nonempty selector forms no unused rest binding. Every new length receiver,
+condition/decrement envelope (including its zero sentinel), empty view and final
+scalar transport is paid before formation. Two extra full primitive headers
+cover the replacement three-payment/five-work run sites; other banks stay exact.
+
+Only private, non-owning cursor views, item positions and ordering are published
+when the whole run succeeds. During the run they remain self-consistent at its
+start. A work or byte failure returns immediately: neither the budget nor a
+Diagnostic can inspect these private fields, borrowed views have no owning Drop
+or Rc effect, and the authoritative HistorySet is unchanged. The original owned
+Drop order, reference counts, all work-error cuts and six diagnostic fields stay
+observable contracts. No cleanup action, result publication, workspace source
+transaction or capability is deferred or authorized by this equality proof.
+
+Both original prepares, empty/different-segment fallbacks, heap scheduling and
+independent final HIR comparison remain intact. Checked run/turn counters are
+observation only. Complete current and immutable883 models cover interior run
+failure cuts; a real compiler fixture checks every cut of a multi-step run.
+Every predecessor invoice, exact-source inverse and hostile control remains.
+These source and bounded model results do not establish full compiler, physical
+allocator, application, native64MiB, STD-08, browser or hosted qualification.
