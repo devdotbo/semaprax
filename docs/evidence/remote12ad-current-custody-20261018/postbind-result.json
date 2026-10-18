@@ -1,0 +1,92 @@
+{
+  "status": "SOURCE_ONLY_TWO_BINDER_OUTPUT_SOURCE_ROWS_UNAPPLIED",
+  "source_head": "69b026c0e66bd64e7b9bd14a355e0a819061354d",
+  "changed_sources": [
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows_merge/ordinary_plan_inputs.rs"
+  ],
+  "logical_rows": 441,
+  "base433_unchanged_sha256": "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc",
+  "whole_extension_before_sha256": "c9f1675fc9cfead816db0874b01778686c39859711b37366e4e7c99139c32097",
+  "extension_after_sha256": "2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d",
+  "old_extension_rows": 183,
+  "new_extension_rows": 183,
+  "helper_pin_edit": {
+    "before": "(208108,\"c9f1675fc9cfead816db0874b01778686c39859711b37366e4e7c99139c32097\".to_owned())",
+    "after": "(208632,\"2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d\".to_owned())"
+  },
+  "guard_pin_edits": [
+    {
+      "before": "91525",
+      "after": "91525"
+    },
+    {
+      "before": "'2e3c584645ad53b9ed869c1d2c54d1c67826a2141986c6eb768dd7688074f9fe'",
+      "after": "'ae0d4157d718ba22703f6a2a5dc2f50b7f52b38b7404f2432f0b5f1e84d28c1f'"
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "length": 2253,
+      "sha256": "89ad7f443f2744e30db5bba53a0231709e003e04cc282ac51c4b48ad676f1006",
+      "before_sha256": "3bbe6055721689bdbb8f293c686f55dd73e2c5fa8be2170d3236554e17784321"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "length": 5322,
+      "sha256": "905c6f87f44700a7cc6e85de3dfba0f93da4a9904f50bd181ea0c2040961402c",
+      "before_sha256": "c9a2e1e758a2d10560f93a0e3d7598e69fe62c1cd3f66c40ccc8f3d34b30d666"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "length": 61718,
+      "sha256": "5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd",
+      "before_sha256": "353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "length": 208632,
+      "sha256": "2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d",
+      "before_sha256": "c9f1675fc9cfead816db0874b01778686c39859711b37366e4e7c99139c32097"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/67daafbc387f420b4372ab4d5c59d301cae72fcdfd96cb8803533823db0cb8b3.txt",
+      "length": 19742,
+      "sha256": "67daafbc387f420b4372ab4d5c59d301cae72fcdfd96cb8803533823db0cb8b3",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/77aec79d1e5eea8bbfebc4ee70c516027851d0d4003137e6e3f5364341a3b882.txt",
+      "length": 49904,
+      "sha256": "77aec79d1e5eea8bbfebc4ee70c516027851d0d4003137e6e3f5364341a3b882",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 10642,
+      "sha256": "2d214e9eda5c43a850545ce96bbd5ceda56335c5e224e4016324be73aafe4586",
+      "before_sha256": "12e341f2c50d5d25e90dae3ffce569f5585f888f7621db1aed0bbdb5baac6ec5"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "length": 2766,
+      "sha256": "301a30f5cc7cb45b7c1cc265c532263edbad2b90b90c0c1ddf3cb29dc5fb4d8b",
+      "before_sha256": "06806379b20c76a0f12bdee9fff38e330969367bf88a82e8cac5f5fc6d4aac6b"
+    },
+    {
+      "path": "docs/evidence/remote12ad-checkpoint-20261018/guard-config.json",
+      "length": 91525,
+      "sha256": "ae0d4157d718ba22703f6a2a5dc2f50b7f52b38b7404f2432f0b5f1e84d28c1f",
+      "before_sha256": "2e3c584645ad53b9ed869c1d2c54d1c67826a2141986c6eb768dd7688074f9fe"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 97847,
+      "sha256": "2a900f74a322b205c9c160fa939b578e7cafc4fd3890d205464e3967dfb825cb",
+      "before_sha256": "bd5e33b3bda4791832735fe3e5bf2ed433992c5f5040f8bc44479bbbc25c4e3f"
+    }
+  ],
+  "prior174_and_FINAL6_producers_not_replayed": true,
+  "Cargo": false
+}
