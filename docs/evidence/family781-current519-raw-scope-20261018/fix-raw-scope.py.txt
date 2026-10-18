@@ -1,0 +1,22 @@
+from pathlib import Path
+import ast,hashlib,json,subprocess
+R=Path('/Volumes/Semaprax/worktrees/next-large-combined-20261017');D=Path(__file__).parent/'raw-scope-fix';assert not D.exists();D.mkdir();G=lambda p:subprocess.check_output(['git','show','HEAD:'+p],cwd=R);H=lambda b:hashlib.sha256(b).hexdigest();assert not subprocess.check_output(['git','status','--porcelain'],cwd=R).strip()
+CFG='docs/evidence/merge-2e92-browser-20261018/guard-config.json';GUARD='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';before={};out={}
+def held(p):
+ b=(R/p).read_bytes();assert b==G(p);before[p]=b;return b
+old=held(CFG);c=json.loads(old);prior=json.loads(subprocess.check_output(['git','show','c86d466a:'+CFG],cwd=R));excluded={}
+for p in list(c['modules']):
+ counts=[(R/k).read_text().count('include_str!("'+v['base']+p+'")')for k,v in c['carriers'].items()]
+ if counts!=[1,1,1]:assert counts==[0,0,0]and p not in prior['modules'];excluded[p]=c['modules'].pop(p)
+assert set(excluded)=={'src/cleanup_plan/renewal_history.rs','src/iterator_ops.rs','src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs'};assert c['logical_rows']==519 and len(c['modules'])==166
+for p,pin in prior['modules'].items():assert p in c['modules']
+out[CFG]=(json.dumps(c,separators=(',',':'))+'\n').encode();s=held(GUARD).decode()
+for name,value in [('_CONFIG_LENGTH',len(out[CFG])),('_CONFIG_SHA256',H(out[CFG]))]:
+ n=next(n.value for n in ast.parse(s).body if isinstance(n,ast.Assign)and isinstance(n.targets[0],ast.Name)and n.targets[0].id==name);ls=s.splitlines(True);a=sum(map(len,ls[:n.lineno-1]))+n.col_offset;b=sum(map(len,ls[:n.end_lineno-1]))+n.end_col_offset;s=s[:a]+repr(value)+s[b:]
+ast.parse(s);out[GUARD]=s.encode()
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ b=held(p);assert b.count(H(before[GUARD]).encode())==1;b=b.replace(H(before[GUARD]).encode(),H(out[GUARD]).encode());prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';x=(prefix+str(len(before[GUARD]))).encode();assert b.count(x)==1;b=b.replace(x,(prefix+str(len(out[GUARD]))).encode());ast.parse(b);out[p]=b
+for p,b in before.items():assert (R/p).read_bytes()==b
+for p,b in out.items():
+ q=D/'whole-before'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(before[p]);q=D/'after'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b);(R/p).write_bytes(b)
+(D/'receipt.json').write_text(json.dumps(dict(status='SOURCE_ONLY_SCOPE_CORRECTION',logical_rows=519,raw_modules=166,original94_preserved=True,excluded_only_new_nonraw=excluded,before_sha256={p:H(b)for p,b in before.items()},after_sha256={p:H(b)for p,b in out.items()},guard_algorithm_changed=False),indent=2)+'\n');print(D/'receipt.json')

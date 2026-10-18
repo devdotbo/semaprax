@@ -1,0 +1,35 @@
+{
+  "status": "SOURCE_ONLY_SCOPE_CORRECTION",
+  "logical_rows": 519,
+  "raw_modules": 166,
+  "original94_preserved": true,
+  "excluded_only_new_nonraw": {
+    "src/cleanup_plan/renewal_history.rs": {
+      "length": 3684,
+      "sha256": "113cd778f08ebed9899afc9412d3c8e84b1a3f934e3fc22b345096e3f7328889"
+    },
+    "src/iterator_ops.rs": {
+      "length": 18709,
+      "sha256": "6e702c1143ee946c4eab0acc1c67355e3074916c5e40e503979cefaa9e95c8cd"
+    },
+    "src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs": {
+      "length": 7778,
+      "sha256": "eac6047fda6d2335030e59afaf793f7d3fb4f8db586bbd017a3bda754990e4d8"
+    }
+  },
+  "before_sha256": {
+    "docs/evidence/merge-2e92-browser-20261018/guard-config.json": "8aade6e5c2cfb45334a920b6dfc55b5784b79cadbd7a8bae9e62175f72ab379a",
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py": "3ac89e8f18bf486e2c295364980272a2690a525877b1d79210a78cd23d752187",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py": "8d921e231508add570db6dace4edc46c2d058ace35cbf1171555f8f5fcda413f",
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": "637b826c99429767c2bc4f8081c9452e92ee670fbd815f2bb598c40e6708cd5f",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py": "313dc2053cb24296ba720b14b7223e1beef08a3c0f081ab7e671d9dfebda44b1"
+  },
+  "after_sha256": {
+    "docs/evidence/merge-2e92-browser-20261018/guard-config.json": "2a0f7b8256e20e21a36d06e4d08ec5511c8b9a582c788ede09a01f19f19b0f80",
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py": "fc7355609bf86d74b40f36bd4940bba327172dfe40daa9e5166af9f8ff2f18dc",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py": "c3ef34bf46ed68cf790b72fc648133f7346d3520ffe7ea0c4dd4e0b2cfa9f0ad",
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": "fdc4c28ffc1267a3cdb686bc8e4e183ed963673e562972e5c1da5c9b75bcc702",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py": "3edd5b8b4e6278358613f3eccdfbd46c7f578d3dca3491db17d54536de333b1e"
+  },
+  "guard_algorithm_changed": false
+}
