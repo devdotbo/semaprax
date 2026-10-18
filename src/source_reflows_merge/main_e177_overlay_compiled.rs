@@ -210,6 +210,9 @@ mod tests {
         assert_eq!(actual_lookup, lookup(before), "ENTIRE old lookup body");
         assert_eq!(root.matches(GLUE).count(), 1);
         let mut restored = root.replacen(GLUE, &actual_lookup, 1);
+        let v7_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {\n        let expanded = fragments_v3::expand_v7(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V6 {";
+        assert_eq!(restored.matches(v7_dispatch).count(), 1);
+        restored = restored.replacen(v7_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V6 {", 1);
         // Only the existing generated literal source lists and policy pins
         // are normalized; every other predecessor byte remains compared.
         for name in [
