@@ -1,0 +1,60 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      182268,
+      "9f709a06c198dc7d024c14984c0d30c9fbbede425663f68b0da8eda6f5b7b6d9"
+    ],
+    "src/cleanup_plan/replay.rs": [
+      321849,
+      "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": [
+      36862,
+      "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b"
+    ],
+    "tests/hir_module_boundaries.rs": [
+      125400,
+      "8cbba49ac56c132842b7d661d6c8505589cf68a66667d48ad3235cff38c8821a"
+    ],
+    "tests/workspace/semantic_graph/source_inventory.rs": [
+      141896,
+      "8ec1264e85c2952d40d6c31d9971a259c500bb4657ae4974828478b0c5ec218b"
+    ]
+  },
+  "strict_dependencies": 1982,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    }
+  ],
+  "logical_rows": 444,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "1d82fa8a88fe8eaa8057870ae58b3e474577d68b87d2af1b8d4a2fef9a07e1f4",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
