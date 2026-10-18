@@ -12,6 +12,12 @@ pub(super) struct Row {
     pub payer: &'static str,
     pub selected: bool,
     pub owner_admitted: bool,
+    pub certified_bases: usize,
+    pub certified_pops: usize,
+    pub certified_rhs_assignments: usize,
+    pub certified_views: usize,
+    pub certified_heads: usize,
+    pub certified_firsts: usize,
     pub pair_matches_admitted: usize,
     pub pairs: usize,
     pub rounds: usize,
@@ -49,6 +55,12 @@ const EMPTY: Row = Row {
     payer: "",
     selected: false,
     owner_admitted: false,
+    certified_bases: 0,
+    certified_pops: 0,
+    certified_rhs_assignments: 0,
+    certified_views: 0,
+    certified_heads: 0,
+    certified_firsts: 0,
     pair_matches_admitted: 0,
     pairs: 0,
     rounds: 0,
@@ -220,6 +232,42 @@ impl Guard {
     pub(in crate::cleanup_plan::replay::ordinary_plan_history) fn round(&self) {
         self.update(|r| match r.rounds.checked_add(1) {
             Some(n) => r.rounds = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_base(&self) {
+        self.update(|r| match r.certified_bases.checked_add(1) {
+            Some(n) => r.certified_bases = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_pop(&self) {
+        self.update(|r| match r.certified_pops.checked_add(1) {
+            Some(n) => r.certified_pops = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_rhs(&self) {
+        self.update(|r| match r.certified_rhs_assignments.checked_add(1) {
+            Some(n) => r.certified_rhs_assignments = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_view(&self) {
+        self.update(|r| match r.certified_views.checked_add(1) {
+            Some(n) => r.certified_views = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_head(&self) {
+        self.update(|r| match r.certified_heads.checked_add(1) {
+            Some(n) => r.certified_heads = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_first(&self) {
+        self.update(|r| match r.certified_firsts.checked_add(1) {
+            Some(n) => r.certified_firsts = n,
             None => r.overflow = true,
         });
     }
@@ -619,14 +667,28 @@ impl Drop for Scope {
         // pair/round counts are not the number of identity-replayed observations.
         eprintln!(
             "OPT899 suffix whole-caller complete={} partial_prefix={} M={} G={:?} H={:?} Q={:?} probes_P={:?} admitted_bodies_B={:?} empty_probes={:?} replayed_work={:?} overflow={} lost={}; actual fresh/fresh events and reached suffixes, no segment-distribution inference or LOAD credit",
-            complete, !complete, rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
-            totals[9], totals[8], totals[7], totals[13], totals[14], totals[15], totals[10], total_overflow, lost
+            complete,
+            !complete,
+            rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
+            totals[9],
+            totals[8],
+            totals[7],
+            totals[13],
+            totals[14],
+            totals[15],
+            totals[10],
+            total_overflow,
+            lost
         );
         eprintln!(
-            "OPT899 suffix typed-invoice owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only old-new=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
-            size_of::<ComparisonOwner<'static>>(), size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
-            shared_prefix::OWNER, PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
-            shared_prefix::REPLAY, shared_prefix::DETECTOR, shared_prefix::PROBE
+            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions and first-head removals) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            size_of::<ComparisonOwner<'static>>(),
+            size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
+            shared_prefix::OWNER,
+            PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
+            shared_prefix::REPLAY,
+            shared_prefix::DETECTOR,
+            shared_prefix::PROBE
         );
         for row in rows {
             let function = std::str::from_utf8(&row.function[..row.function_len])
@@ -648,6 +710,26 @@ impl Drop for Scope {
                 row.value_tails,
                 row.steps,
                 row.loads,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow,
+                row.truncated
+            );
+            eprintln!(
+                "OPT900902 row={} BASE={} POP={} VIEW_HEAD={} HEAD={} RHS={} FIRST={} Q={} G={} H={} P={} B={} complete={} ended={} unwound={} overflow={} truncated={}; reached-prefix packet admissions only",
+                row.invocation,
+                row.certified_bases,
+                row.certified_pops,
+                row.certified_views,
+                row.certified_heads,
+                row.certified_rhs_assignments,
+                row.certified_firsts,
+                row.identity_detectors,
+                row.identity_observations,
+                row.identity_hits,
+                row.identity_probes,
+                row.identity_bodies,
                 row.complete,
                 row.ended,
                 row.unwound,

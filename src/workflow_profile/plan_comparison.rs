@@ -92,8 +92,14 @@ pub enum Site {
     IdentityCapture,
     IdentityProbeAdmitted,
     IdentityEmptyProbe,
+    CertifiedBaseAdmitted,
+    CertifiedPopAdmitted,
+    CertifiedRhsAdmitted,
+    CertifiedViewAdmitted,
+    CertifiedHeadAdmitted,
+    CertifiedFirstAdmitted,
 }
-const SITES: usize = 28;
+const SITES: usize = 34;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Counts {
     pub events: [u64; SITES],
