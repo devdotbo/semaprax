@@ -4,12 +4,24 @@ use super::*;
 mod lexical_cursor;
 #[macro_use]
 mod paired_value;
+#[allow(
+    unused_macros,
+    reason = "complete immediate suffix macro remains available to frozen generations"
+)]
 #[macro_use]
 mod shared_prefix;
+#[macro_use]
+mod certified_heads;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_certified_heads;
 #[cfg(test)]
 mod before_event_prefix;
 #[cfg(test)]
 mod before_shared_steps;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_shared_runs;
 #[cfg(test)]
 #[allow(unused_imports, reason = "complete frozen generation retains its exact original namespace imports")]
 #[rustfmt::skip]
@@ -137,19 +149,19 @@ const SCALAR_TRANSPORT: usize = size_of::<usize>() // initial build quotient
 const MISMATCH_CALL: usize =
     2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&str>() + size_of::<Diagnostic>(); // direct helper actual/formal + Diagnostic return, no closure
 const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,Eq,sibling,root
-                                                  // Retained primitive caller slots, not dynamic compound payload credit:
-                                                  // four charge sites + six original paid sites + three direct HIR reserve sites
-                                                  // + two swap payment sites + one Zip-next payment site = sixteen original sites.
-                                                  // The new flat-view payment adds a seventeenth site. Each is a
-                                                  // nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
-                                                  // no owned payload, failure leaves the invocation immediately with one owned
-                                                  // Diagnostic. Function/budget places never change and no Result escapes or
-                                                  // overlaps another activation of its lexical site. Distinct compound Option,
-                                                  // tuple, comparison/index/swap payloads below are paid on EVERY execution.
-                                                  // Two explicit backing sites have distinct prepaid primitive frames; no
-                                                  // iterator, IterMut::next or Option<&mut Cursor> initializer remains.
-                                                  // The first acquisition replaces the identical old compare-entry call and is
-                                                  // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
+// Retained primitive caller slots, not dynamic compound payload credit:
+// four charge sites + six original paid sites + three direct HIR reserve sites
+// + two swap payment sites + one Zip-next payment site = sixteen original sites.
+// The new flat-view payment adds a seventeenth site. Each is a
+// nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
+// no owned payload, failure leaves the invocation immediately with one owned
+// Diagnostic. Function/budget places never change and no Result escapes or
+// overlaps another activation of its lexical site. Distinct compound Option,
+// tuple, comparison/index/swap payloads below are paid on EVERY execution.
+// Two explicit backing sites have distinct prepaid primitive frames; no
+// iterator, IterMut::next or Option<&mut Cursor> initializer remains.
+// The first acquisition replaces the identical old compare-entry call and is
+// already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + lexical_cursor::PRIMITIVE_SELECTION + paired_value::ADDITIONAL_PRIMITIVES
     + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
@@ -161,7 +173,7 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 2 * size_of::<usize>() // initial retained segment extents
     + 3 * size_of::<Step>() // copied state transports at return/schedule sites
-    + shared_prefix::OWNER; // actual initializers and new lexical primitive sites
+    + shared_prefix::OWNER + certified_heads::OWNER; // actual initializers and new lexical primitive sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
     + 2 * size_of::<&History>()
@@ -431,129 +443,101 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     let mut left_tail = left_path.history.tail.as_slice();
                     let mut right_tail = right_path.history.tail.as_slice();
                     'paired: loop {
-                        paid!(
-                            budget,
-                            function,
-                            PAIR_MATCH,
-                            "ordinary plan history paired cursor next"
-                        )?;
-                        #[cfg(test)]
-                        census.pair_match_admitted();
-                        #[cfg(feature = "unstable-workflow-profiling")]
-                        crate::workflow_profile::plan_comparison::event(
-                            crate::workflow_profile::plan_comparison::Site::MatchAdmitted,
-                            PAIR_MATCH,
-                        );
-                        // Both Some paths converge at the bare reference yield;
-                        // no Option/tuple or owner payload crosses this frontier.
-                        let left = lexical_plan_value!(
-                            owner,
-                            left_cursor,
-                            left_items,
-                            left_loaded,
-                            left_segments,
-                            fresh_left_link,
-                            [left => {
-                                let right = lexical_plan_value!(
-                                    owner, right_cursor, right_items, right_loaded,
-                                    right_segments, fresh_right_link,
-                                    [right => {
-                                        shared_prefix_first_comparison!(owner, left, right,
-                                            function, budget, census, 'paired, {
-                                                replay_shared_prefix!(owner, fresh_left_link,
-                                                    fresh_right_link, function, budget, census, 'paired);
-                                            });
-                                    }],
-                                    right_tail, function, budget,
-                                    "ordinary plan history paired cursor next", census,
-                                    {
-                                        #[cfg(feature = "unstable-workflow-profiling")]
-                                        crate::workflow_profile::plan_comparison::event(
-                                            crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
-                                        owner.ordering = Ordering::Greater; break 'paired;
-                                    }
-                                );
-                                shared_prefix_first_comparison!(owner, left, right,
-                                    function, budget, census, 'paired, { continue 'paired; });
-                            }],
-                            left_tail,
-                            function,
-                            budget,
-                            "ordinary plan history paired cursor next",
-                            census,
-                            {
-                                #[cfg(feature = "unstable-workflow-profiling")]
-                                crate::workflow_profile::plan_comparison::event(
-                                    crate::workflow_profile::plan_comparison::Site::LeftExhausted,
-                                    0,
-                                );
-                                let _right = lexical_plan_value!(
-                                    owner,
-                                    right_cursor,
-                                    right_items,
-                                    right_loaded,
-                                    right_segments,
-                                    exhausted_right_link,
-                                    [],
-                                    right_tail,
-                                    function,
-                                    budget,
-                                    "ordinary plan history paired cursor next",
-                                    census,
-                                    {
-                                        #[cfg(feature = "unstable-workflow-profiling")]
-                                        crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
-                                        #[cfg(feature = "unstable-workflow-profiling")]
-                                        crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::TerminalCompared, 0);
-                                        owner.ordering =
-                                            left_path.terminal.cmp(&right_path.terminal);
-                                        break 'paired;
-                                    }
-                                );
-                                owner.ordering = Ordering::Less;
-                                break 'paired;
-                            }
-                        );
-                        let right = lexical_plan_value!(
-                            owner,
-                            right_cursor,
-                            right_items,
-                            right_loaded,
-                            right_segments,
-                            ordinary_right_link,
-                            [],
-                            right_tail,
-                            function,
-                            budget,
-                            "ordinary plan history paired cursor next",
-                            census,
-                            {
-                                #[cfg(feature = "unstable-workflow-profiling")]
+                        'certificate: {
+                            certified_boundary!(owner, function, budget, census, 'certificate);
+                            // Both Some paths converge at the bare reference yield;
+                            // no Option/tuple or owner payload crosses this frontier.
+                            let left = certified_left_value!(
+                                owner,
+                                left_cursor,
+                                left_items,
+                                left_loaded,
+                                left_segments,
+                                fresh_left_link,
+                                [left_head => {
+                                    certified_right_value!(owner, left_head, fresh_left_link,
+                                        right_tail, function, budget, census, 'paired, 'certificate);
+                                }],
+                                left_tail,
+                                function,
+                                budget,
+                                "ordinary plan history paired cursor next",
+                                census,
+                                {
+                                    #[cfg(feature = "unstable-workflow-profiling")]
+                                    crate::workflow_profile::plan_comparison::event(
+                                        crate::workflow_profile::plan_comparison::Site::LeftExhausted,
+                                        0,
+                                    );
+                                    let _right = lexical_plan_value!(
+                                        owner,
+                                        right_cursor,
+                                        right_items,
+                                        right_loaded,
+                                        right_segments,
+                                        exhausted_right_link,
+                                        [],
+                                        right_tail,
+                                        function,
+                                        budget,
+                                        "ordinary plan history paired cursor next",
+                                        census,
+                                        {
+                                            #[cfg(feature = "unstable-workflow-profiling")]
+                                            crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
+                                            #[cfg(feature = "unstable-workflow-profiling")]
+                                            crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::TerminalCompared, 0);
+                                            owner.ordering =
+                                                left_path.terminal.cmp(&right_path.terminal);
+                                            break 'paired;
+                                        }
+                                    );
+                                    owner.ordering = Ordering::Less;
+                                    break 'paired;
+                                }
+                            );
+                            let right = lexical_plan_value!(
+                                owner,
+                                right_cursor,
+                                right_items,
+                                right_loaded,
+                                right_segments,
+                                ordinary_right_link,
+                                [],
+                                right_tail,
+                                function,
+                                budget,
+                                "ordinary plan history paired cursor next",
+                                census,
+                                {
+                                    #[cfg(feature = "unstable-workflow-profiling")]
                                 crate::workflow_profile::plan_comparison::event(
                                     crate::workflow_profile::plan_comparison::Site::RightExhausted,
                                     0,
                                 );
-                                owner.ordering = Ordering::Greater;
-                                break 'paired;
-                            }
-                        );
-                        owner.ordering = left.cmp(right);
-                        if owner.ordering == Ordering::Equal {
-                            budget.charge(
-                                function,
-                                1,
-                                "ordinary plan history observation comparison",
-                            )?;
-                            #[cfg(test)]
-                            census.round();
-                            #[cfg(feature = "unstable-workflow-profiling")]
-                            crate::workflow_profile::plan_comparison::event(
-                                crate::workflow_profile::plan_comparison::Site::Round,
-                                0,
+                                    owner.ordering = Ordering::Greater;
+                                    break 'paired;
+                                }
                             );
-                            continue;
+                            owner.ordering = left.cmp(right);
+                            if owner.ordering == Ordering::Equal {
+                                budget.charge(
+                                    function,
+                                    1,
+                                    "ordinary plan history observation comparison",
+                                )?;
+                                #[cfg(test)]
+                                census.round();
+                                #[cfg(feature = "unstable-workflow-profiling")]
+                                crate::workflow_profile::plan_comparison::event(
+                                    crate::workflow_profile::plan_comparison::Site::Round,
+                                    0,
+                                );
+                                continue;
+                            }
+                            break 'paired;
                         }
-                        break;
+                        certified_suffix!(owner, function, budget, census, 'paired);
                     }
                 } // Both PlanPath loans end BEFORE any scheduling or swap.
                 owner.step = owner.after_pair;

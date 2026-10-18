@@ -202,3 +202,173 @@ second per-round poll would be redundant. Its fields, load copies, polling
 payments and nine headers are physically absent from shipping, not credited to
 its invoice. Complete generation comparisons retain separate counters and costs;
 no application or whole-caller improvement follows from this source argument.
+
+## Certified first-head funding order v2 (#900, #902)
+
+This source candidate replaces only the paired PLAN sorting producer. The
+complete immediate d458 suffix-only comparator and all three of its actual
+macro files remain independently compiled; earlier generations remain intact.
+The final ordinary HIR comparison, preparation, depth/link validation, paths,
+heapsort swaps, original work limits and each individual work request are
+unchanged. Source-only controls are not compilation, runtime or application
+qualification.
+
+A left fresh nonempty slice pattern keeps its actual Rc head and popped arena
+index lexical. Its right continuation performs the original forward work,
+BASE, original segment work, POP, then a funded index comparison Q. Both popped
+indices belong to the same immutable prepared arena. Equal indices prove the
+right first item and post-head slice equal the left ones. The right post-head
+slice is assigned from the left slice, its loaded flag and item are updated,
+and a funded Equal is published without right arena/index/slice/head/rest views
+or either observation as_ref/content comparison. The original next observation
+work then runs before the existing fully paid suffix loop. No certificate,
+index, borrowed head or observation crosses preparation, sort or swap boundaries.
+
+Different indices (including a foreign empty segment), already-loaded right
+segments, tails and exhaustion retain ordinary comparison. Equal contents at
+different indices grant no identity authority. Each foreign fresh segment pays
+Q even if its subsequently admitted slice is empty. No new owner fields,
+Result, Option observation, tuple, callback, saved extent or per-round poll is
+introduced. Old as_ref admission remains conservative on the certified right
+branch; it is not described as a physical call.
+
+This version deliberately changes physical-versus-work refusal order. The
+following table states the actual frontiers; with sufficient physical bytes,
+all original individual work events and six diagnostic fields retain their
+order. These mixed-limit differences must not be hidden by phantom old fees.
+
+| Reached path | Physical and work order in v2 |
+| --- | --- |
+| Pair entry | Original comparison work, pair scope, left forward work; no unconditional MATCH |
+| Left segment | Original STEP/EMPTY, original segment work, original LOAD before views |
+| Fresh right segment | Right forward work, BASE, original segment work, POP, Q before arena views |
+| Certified right | RHS before slice/loaded/item publication; FIRST before Equal; original comparison work before suffix |
+| Foreign/loaded right | VIEW_HEAD before fresh views or HEAD before loaded pattern; item/slice updates, then MATCH before as_ref/content comparison |
+| Left fallback/tail | MATCH immediately before left observation as_ref or tail match (including exhaustion); ordinary right advance follows |
+| Right tail under fresh left | BASE and the retained unused old HEAD/as_ref envelope before original TAIL admission, MATCH, original tail pattern/state updates and comparison |
+| Suffix | Original probe/body admission, left step/segment work and state, right step/segment work and state, Equal, comparison work; empty probe remains paid |
+
+The real expanded producer adds eight complete PAYMENT_HEADER sites: four for
+the split right producer, three additional MATCH positions replacing the old
+one, and one first-head certificate site. The terminal-limit branch retains the complete old unused HEAD/as_ref envelope; no unrelated fallback tariff is credited. All old cold fees remain; no fee,
+limit or cap is reduced. Typed BASE, POP, RHS, VIEW_HEAD, HEAD and FIRST packets
+are acquired before their named formations. Acquired FIRST and completed first
+work are separate counters, as are suffix acquired bodies and completed items.
+
+Complete old/new invoice controls retain every short loss and use actual
+reached packet counts and both old/new Q counts. They do not add hypothetical
+#900 and #902 headline savings or infer an intermediate generation. Foreign
+empty Q, cold headers, whole owner widths, both HIR representations and full
+Drop are included. Refused prefixes use only reached successful admissions;
+no complete-input count or future empty probe is credited. Native and whole
+application gains require later matched execution and are not claimed here.
+
+
+## Shared immutable segment boundary continuation
+
+When both loaded slices are empty, inspect only the next already validated
+link from each prepared cursor. Equal next indices and a nonempty immutable
+segment prove that both next observations are identical. No prefix scan or new
+traversal is introduced. An empty, absent or different successor keeps the
+complete original fallback. Both original prepares and final HIR comparison
+remain independent. No source, hash or pointer claim grants admission authority.
+
+The successful branch retains the original seven work requests in order:
+left forward/current segment/next segment, then right forward/current segment/
+next segment, then the equal-observation continuation. Each cursor's exhausted
+segment, item, loaded flag and consumed link move at their old work boundaries.
+No observation Option, paired tuple or content-cmp payload is formed on this
+branch. New link views, pattern decisions, arena query, pop slots, scalar
+transports and retained slices are paid before formation. Four payment and seven
+work sites add eleven full primitive headers only to the multipath bank.
+Zero/one-path banks and all original limits stay unchanged. Failed lookahead
+pays its real selectors; short or divergent paths can cost more.
+
+Additive source-type invoices and checked diagnostic cells retain every older
+invoice and control. An actual compiler test exercises one-item and empty
+segments against the complete883 comparator at every work cut. Complete bounded
+models additionally cover shared/divergent and alternating empty segments.
+Source/model results remain separate from full compiler, physical allocator,
+application, native64MiB, STD-08, browser and current hosted qualification.
+
+## Immutable shared run continuation
+
+Equal loaded segment identities and equal item offsets prove that the complete
+remaining immutable slices are identical. The comparator captures their length
+once and replays the original five work requests for every observation in the
+same order. It forms numeric loop carriers instead of repeated borrowed slice
+patterns, comparison selectors, cursor increments or Ordering assignments.
+The nonempty selector forms no unused rest binding. Every new length receiver,
+condition/decrement envelope (including its zero sentinel), empty view and final
+scalar transport is paid before formation. Two extra full primitive headers
+cover the replacement three-payment/five-work run sites; other banks stay exact.
+
+Only private, non-owning cursor views, item positions and ordering are published
+when the whole run succeeds. During the run they remain self-consistent at its
+start. A work or byte failure returns immediately: neither the budget nor a
+Diagnostic can inspect these private fields, borrowed views have no owning Drop
+or Rc effect, and the authoritative HistorySet is unchanged. The original owned
+Drop order, reference counts, all work-error cuts and six diagnostic fields stay
+observable contracts. No cleanup action, result publication, workspace source
+transaction or capability is deferred or authorized by this equality proof.
+
+Both original prepares, empty/different-segment fallbacks, heap scheduling and
+independent final HIR comparison remain intact. Checked run/turn counters are
+observation only. Complete current and immutable883 models cover interior run
+failure cuts; a real compiler fixture checks every cut of a multi-step run.
+Every predecessor invoice, exact-source inverse and hostile control remains.
+These source and bounded model results do not establish full compiler, physical
+allocator, application, native64MiB, STD-08, browser or hosted qualification.
+
+
+## Complementary fresh heads, next boundaries, and immutable numeric runs (v3)
+
+The shipping composition retains the v2 fresh-head proof and adds main7e's
+loaded-empty boundary transition and numeric immutable-suffix loop. It does
+not retain remembered owner link IDs or a nonempty loaded-item poll. Such a
+poll is redundant after a successful fresh-head certificate has consumed its
+whole suffix. Both independently compiled complete generations remain controls:
+the immediate d458 suffix-only owner and the complete main7e owner, macro,
+all original owner tests, and each finite source inverse.
+
+At every ordinary paired round a paid three-boolean guard tests the two loaded
+fields and their lazy conjunction. Its separate paid left-empty and right-empty
+patterns precede the exact prepared next-link and immutable next-view packets.
+Only equal next IDs in the same prepared immutable arena and a nonempty next
+segment enter the boundary body. Empty, absent, and different successors take
+the unchanged ordinary fallback. The body retains the complete main7e invoice,
+including its conservative two remembered-assignment slots, although no such
+fields are physically stored in this composition.
+
+A successful boundary executes the original seven work requests individually:
+left step, exhausted left segment, next left segment, right step, exhausted
+right segment, next right segment, and observation comparison. Cursor mutation
+and link pops retain that order. The two fresh-head path and this boundary path
+then leave a zero-payload lexical block for one shared suffix expansion. No
+Option, callback, flag, copied link certificate, or extra observation receiver
+transports the proof between those lexical positions.
+
+The suffix retains the complete old paid pattern envelope on every entry and
+terminal empty probe. A nonempty suffix acquires the exact numeric capture,
+turn (including zero sentinel), and publication packets. Every observation
+still executes left step/segment, right step/segment, and comparison work in
+that order. Private non-owning slice/item fields publish only after the entire
+numeric run and its publication packet succeed. Thus adequate-physical work
+cuts preserve sticky six diagnostic fields, remaining work, swaps, complete
+behavior, and owned Drop; they do not assert identical intermediate private
+cursor fields on refusal. Physical-versus-work cuts additionally distinguish
+new guard, capture, turn, and publication refusals. No old work is merged and
+no backend or final independent HIR comparison is skipped.
+
+The complete expanded cold-site difference is 23 PAYMENT_HEADER frames beyond
+the retained d458 suffix bank: eight first-head split sites, six boundary
+payment plus seven boundary work sites, and two additional numeric payment
+sites. The current owner directly pays its actual width. Every old cold fee
+remains. The typed independent whole invoices count actual admitted boundary
+checks, patterns, links, views, bodies, completed boundaries, numeric captures,
+turns, and publications. Body admission can precede a work refusal; completed
+boundary and completed observation counters must not substitute for it. The
+feature observer records every successful work charge at that charge's own
+frontier, including partial runs. Cold/short losses remain disclosed; matched
+application admission, paid savings, allocator or RSS gains remain unqualified
+until actual current execution.

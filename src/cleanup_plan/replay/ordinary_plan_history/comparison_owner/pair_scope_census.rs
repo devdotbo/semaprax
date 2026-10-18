@@ -12,6 +12,12 @@ pub(super) struct Row {
     pub payer: &'static str,
     pub selected: bool,
     pub owner_admitted: bool,
+    pub certified_bases: usize,
+    pub certified_pops: usize,
+    pub certified_rhs_assignments: usize,
+    pub certified_views: usize,
+    pub certified_heads: usize,
+    pub certified_firsts: usize,
     pub pair_matches_admitted: usize,
     pub pairs: usize,
     pub rounds: usize,
@@ -23,6 +29,14 @@ pub(super) struct Row {
     pub shared_patterns: usize,
     pub shared_metadata: usize,
     pub shared_steps: usize,
+    pub shared_empty_checks: usize,
+    pub shared_links: usize,
+    pub shared_queries: usize,
+    pub shared_boundaries: usize,
+    pub shared_runs: usize,
+    pub shared_boundary_complete: usize,
+    pub shared_publishes: usize,
+    pub shared_turns: usize,
     pub loads: usize,
     pub identity_empty_probes: usize,
     pub identity_bodies: usize,
@@ -49,6 +63,12 @@ const EMPTY: Row = Row {
     payer: "",
     selected: false,
     owner_admitted: false,
+    certified_bases: 0,
+    certified_pops: 0,
+    certified_rhs_assignments: 0,
+    certified_views: 0,
+    certified_heads: 0,
+    certified_firsts: 0,
     pair_matches_admitted: 0,
     pairs: 0,
     rounds: 0,
@@ -60,6 +80,14 @@ const EMPTY: Row = Row {
     shared_patterns: 0,
     shared_metadata: 0,
     shared_steps: 0,
+    shared_empty_checks: 0,
+    shared_links: 0,
+    shared_queries: 0,
+    shared_boundaries: 0,
+    shared_runs: 0,
+    shared_boundary_complete: 0,
+    shared_publishes: 0,
+    shared_turns: 0,
     loads: 0,
     identity_empty_probes: 0,
     identity_bodies: 0,
@@ -223,6 +251,42 @@ impl Guard {
             None => r.overflow = true,
         });
     }
+    pub(super) fn certified_base(&self) {
+        self.update(|r| match r.certified_bases.checked_add(1) {
+            Some(n) => r.certified_bases = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_pop(&self) {
+        self.update(|r| match r.certified_pops.checked_add(1) {
+            Some(n) => r.certified_pops = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_rhs(&self) {
+        self.update(|r| match r.certified_rhs_assignments.checked_add(1) {
+            Some(n) => r.certified_rhs_assignments = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_view(&self) {
+        self.update(|r| match r.certified_views.checked_add(1) {
+            Some(n) => r.certified_views = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_head(&self) {
+        self.update(|r| match r.certified_heads.checked_add(1) {
+            Some(n) => r.certified_heads = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn certified_first(&self) {
+        self.update(|r| match r.certified_firsts.checked_add(1) {
+            Some(n) => r.certified_firsts = n,
+            None => r.overflow = true,
+        });
+    }
     pub(super) fn value_step(&self) {
         self.update(|r| match r.value_steps.checked_add(1) {
             Some(n) => r.value_steps = n,
@@ -262,6 +326,54 @@ impl Guard {
     pub(super) fn shared_steps(&self) {
         self.update(|r| match r.shared_steps.checked_add(1) {
             Some(n) => r.shared_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_empty_checks(&self) {
+        self.update(|r| match r.shared_empty_checks.checked_add(1) {
+            Some(n) => r.shared_empty_checks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_links(&self) {
+        self.update(|r| match r.shared_links.checked_add(1) {
+            Some(n) => r.shared_links = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_queries(&self) {
+        self.update(|r| match r.shared_queries.checked_add(1) {
+            Some(n) => r.shared_queries = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_boundaries(&self) {
+        self.update(|r| match r.shared_boundaries.checked_add(1) {
+            Some(n) => r.shared_boundaries = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_publishes(&self) {
+        self.update(|r| match r.shared_publishes.checked_add(1) {
+            Some(n) => r.shared_publishes = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_boundary_complete(&self) {
+        self.update(|r| match r.shared_boundary_complete.checked_add(1) {
+            Some(n) => r.shared_boundary_complete = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_runs(&self) {
+        self.update(|r| match r.shared_runs.checked_add(1) {
+            Some(n) => r.shared_runs = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_turns(&self) {
+        self.update(|r| match r.shared_turns.checked_add(1) {
+            Some(n) => r.shared_turns = n,
             None => r.overflow = true,
         });
     }
@@ -530,6 +642,68 @@ mod controls {
             assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
         }
     }
+    #[test]
+    fn shared_boundary_counter_overflow_is_incomplete_without_spending_work() {
+        for counter in 0..4 {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                match counter {
+                    0 => trace.rows[0].shared_empty_checks = usize::MAX,
+                    1 => trace.rows[0].shared_links = usize::MAX,
+                    2 => trace.rows[0].shared_queries = usize::MAX,
+                    _ => trace.rows[0].shared_boundaries = usize::MAX,
+                }
+            });
+            match counter {
+                0 => guard.shared_empty_checks(),
+                1 => guard.shared_links(),
+                2 => guard.shared_queries(),
+                _ => guard.shared_boundaries(),
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
+    #[test]
+    fn shared_run_counter_overflow_is_incomplete_without_work_or_identity_aliasing() {
+        for counter in 0..4 {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                match counter {
+                    0 => trace.rows[0].shared_runs = usize::MAX,
+                    1 => trace.rows[0].shared_turns = usize::MAX,
+                    2 => trace.rows[0].shared_publishes = usize::MAX,
+                    _ => trace.rows[0].shared_boundary_complete = usize::MAX,
+                }
+            });
+            match counter {
+                0 => guard.shared_runs(),
+                1 => guard.shared_turns(),
+                2 => guard.shared_publishes(),
+                _ => guard.shared_boundary_complete(),
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
 }
 
 // Sole owning-test observation scope, outside compiler ledgers and allocation
@@ -619,14 +793,28 @@ impl Drop for Scope {
         // pair/round counts are not the number of identity-replayed observations.
         eprintln!(
             "OPT899 suffix whole-caller complete={} partial_prefix={} M={} G={:?} H={:?} Q={:?} probes_P={:?} admitted_bodies_B={:?} empty_probes={:?} replayed_work={:?} overflow={} lost={}; actual fresh/fresh events and reached suffixes, no segment-distribution inference or LOAD credit",
-            complete, !complete, rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
-            totals[9], totals[8], totals[7], totals[13], totals[14], totals[15], totals[10], total_overflow, lost
+            complete,
+            !complete,
+            rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
+            totals[9],
+            totals[8],
+            totals[7],
+            totals[13],
+            totals[14],
+            totals[15],
+            totals[10],
+            total_overflow,
+            lost
         );
         eprintln!(
-            "OPT899 suffix typed-invoice owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only old-new=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
-            size_of::<ComparisonOwner<'static>>(), size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
-            shared_prefix::OWNER, PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
-            shared_prefix::REPLAY, shared_prefix::DETECTOR, shared_prefix::PROBE
+            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions and first-head removals) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            size_of::<ComparisonOwner<'static>>(),
+            size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
+            shared_prefix::OWNER,
+            PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
+            shared_prefix::REPLAY,
+            shared_prefix::DETECTOR,
+            shared_prefix::PROBE
         );
         for row in rows {
             let function = std::str::from_utf8(&row.function[..row.function_len])
@@ -653,6 +841,40 @@ impl Drop for Scope {
                 row.unwound,
                 row.overflow,
                 row.truncated
+            );
+            eprintln!(
+                "OPT900902 row={} BASE={} POP={} VIEW_HEAD={} HEAD={} RHS={} FIRST={} Q={} G={} H={} P={} B={} complete={} ended={} unwound={} overflow={} truncated={}; reached-prefix packet admissions only",
+                row.invocation,
+                row.certified_bases,
+                row.certified_pops,
+                row.certified_views,
+                row.certified_heads,
+                row.certified_rhs_assignments,
+                row.certified_firsts,
+                row.identity_detectors,
+                row.identity_observations,
+                row.identity_hits,
+                row.identity_probes,
+                row.identity_bodies,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow,
+                row.truncated
+            );
+            eprintln!(
+                "PLAN main7e-composite row={} boundary_checks={} left_empty={} right_empty={} links={} queries={} body_admitted={} boundary_complete={} run_capture={} turns={} run_publish={}; actual reached physical packets, no future work credit",
+                row.invocation,
+                row.shared_checks,
+                row.shared_metadata,
+                row.shared_empty_checks,
+                row.shared_links,
+                row.shared_queries,
+                row.shared_boundaries,
+                row.shared_boundary_complete,
+                row.shared_runs,
+                row.shared_turns,
+                row.shared_publishes
             );
             eprintln!(
                 "OPT899 row={} generation={} serial={} function={:?} old={} owner_admitted={} K={} hits={} detectors_D={} captures_C={} extent_captures_E={} replayed_work={} complete={} ended={} unwound={} overflow={} truncated={}",

@@ -1181,3 +1181,10 @@ mod shared_prefix_before_event_tests;
 
 #[path = "main99_pair_scope_tests.rs"]
 mod main99_pair_scope_tests;
+
+#[path = "main7e_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main7e_pair_scope_tests;
+
+#[path = "tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"]
+mod main7e_boundary_sources;

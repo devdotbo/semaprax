@@ -1,0 +1,623 @@
+#![allow(dead_code, unused_imports, clippy::result_large_err)]
+use std::{borrow::Cow, cmp::Ordering, mem::size_of, rc::Rc};
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+struct Span {
+    start: usize,
+    end: usize,
+    line: usize,
+    column: usize,
+}
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum Severity {
+    Error,
+    Warning,
+}
+#[derive(Clone, Debug, Eq, PartialEq)]
+struct Diagnostic {
+    code: &'static str,
+    severity: Severity,
+    message: Cow<'static, str>,
+    path: Option<String>,
+    span: Option<Span>,
+    help: Option<String>,
+}
+struct ResolvedFunction;
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+struct SkeletonObservation(u32);
+#[derive(Clone, Debug, Eq, PartialEq, Ord, PartialOrd)]
+enum SkeletonTerminal {
+    Success,
+    Failure,
+}
+struct Observations {
+    prefix: Option<Rc<Vec<Rc<SkeletonObservation>>>>,
+    items: Vec<Rc<SkeletonObservation>>,
+}
+impl std::ops::Deref for Observations {
+    type Target = [Rc<SkeletonObservation>];
+    fn deref(&self) -> &Self::Target {
+        assert!(self.prefix.is_none());
+        &self.items
+    }
+}
+struct SkeletonPath {
+    observations: Observations,
+    terminal: SkeletonTerminal,
+}
+struct ReplayBudget {
+    remaining: usize,
+    paid: usize,
+    work: Vec<&'static str>,
+    fees: Vec<(&'static str, usize)>,
+}
+impl ReplayBudget {
+    fn charge(
+        &mut self,
+        f: &ResolvedFunction,
+        n: usize,
+        phase: &'static str,
+    ) -> Result<(), Diagnostic> {
+        self.work.push(phase);
+        if self.remaining < n {
+            return Err(replay_error(f, phase));
+        }
+        self.remaining -= n;
+        Ok(())
+    }
+    fn reserve_bytes(
+        &mut self,
+        _f: &ResolvedFunction,
+        n: usize,
+        p: &'static str,
+    ) -> Result<(), Diagnostic> {
+        self.paid += n;
+        self.fees.push((p, n));
+        Ok(())
+    }
+    fn reserve_vec<T>(
+        &mut self,
+        f: &ResolvedFunction,
+        v: &mut Vec<T>,
+        n: usize,
+        p: &'static str,
+    ) -> Result<(), Diagnostic> {
+        self.reserve_bytes(f, size_of::<T>() * n, p)?;
+        v.reserve_exact(n);
+        Ok(())
+    }
+}
+fn replay_error(_f: &ResolvedFunction, message: &'static str) -> Diagnostic {
+    Diagnostic {
+        code: "SPX-H006",
+        severity: Severity::Error,
+        message: Cow::Borrowed(message),
+        path: None,
+        span: None,
+        help: None,
+    }
+}
+macro_rules! paid {
+    ($b:expr,$f:expr,$n:expr,$p:literal $(,)?) => {{
+        $b.reserve_bytes($f, $n, $p)
+    }};
+}
+macro_rules! backing {
+    ($b:expr,$f:expr,$v:expr,$n:expr,$p:literal $(,)?) => {{
+        $b.reserve_vec($f, $v, $n, $p)
+    }};
+}
+mod skeleton_work {
+    use super::*;
+    pub(super) mod enumerated_prefix {
+        use super::*;
+        // The shared-HIR operation is type-checked but never invoked by these flat cases.
+        pub const HIR_QUERY_CONTROLS: usize = 0;
+        pub const CURSOR_STORAGE: usize = 0;
+        pub const CURSOR_CALL: usize = 0;
+        pub struct Cursor<'a> {
+            items: &'a [Rc<SkeletonObservation>],
+            at: usize,
+        }
+        impl<'a> Cursor<'a> {
+            pub fn new() -> Self {
+                Self { items: &[], at: 0 }
+            }
+            pub fn prepare(
+                &mut self,
+                v: &'a Observations,
+                _f: &ResolvedFunction,
+                _b: &mut ReplayBudget,
+            ) -> Result<(), Diagnostic> {
+                assert!(v.prefix.is_none());
+                self.items = &v.items;
+                Ok(())
+            }
+            pub fn next(
+                &mut self,
+                _f: &ResolvedFunction,
+                _b: &mut ReplayBudget,
+            ) -> Result<Option<&'a SkeletonObservation>, Diagnostic> {
+                let r = self.items.get(self.at);
+                if r.is_some() {
+                    self.at += 1;
+                }
+                Ok(r.map(Rc::as_ref))
+            }
+        }
+    }
+}
+mod cleanup_plan {
+    pub(super) mod replay {
+        use super::super::*;
+        struct Segment {
+            previous: Option<usize>,
+            items: Vec<Rc<SkeletonObservation>>,
+            depth: usize,
+        }
+        struct History {
+            previous: Option<usize>,
+            tail: Vec<Rc<SkeletonObservation>>,
+        }
+        struct PlanPath {
+            history: History,
+            terminal: SkeletonTerminal,
+        }
+        pub(super) struct HistorySet {
+            arena: Vec<Segment>,
+            paths: Vec<PlanPath>,
+            max_depth: usize,
+        }
+
+        struct Cursor {
+            links: Vec<usize>,
+            segment: usize,
+            item: usize,
+        }
+        impl Cursor {
+            fn prepare(
+                &mut self,
+                history: &History,
+                arena: &[Segment],
+                function: &ResolvedFunction,
+                budget: &mut ReplayBudget,
+            ) -> Result<(), Diagnostic> {
+                self.links.clear();
+                self.segment = 0;
+                self.item = 0;
+                let mut previous = history.previous;
+                while let Some(index) = previous {
+                    budget.charge(function, 1, "ordinary plan history cursor traversal")?;
+                    let segment = arena.get(index).ok_or_else(|| {
+                        replay_error(function, "ordinary plan history link is invalid")
+                    })?;
+                    if self.links.len() == self.links.capacity()
+                        || segment.previous.is_some_and(|parent| parent >= index)
+                        || segment.depth
+                            != self.links.first().map_or(segment.depth, |first| {
+                                arena[*first].depth.saturating_sub(self.links.len())
+                            })
+                        || segment.depth == 0
+                    {
+                        return Err(replay_error(
+                            function,
+                            "ordinary plan history depth is invalid",
+                        ));
+                    }
+                    self.links.push(index);
+                    previous = segment.previous;
+                }
+                if let Some(first) = self.links.first() {
+                    if arena[*first].depth != self.links.len() {
+                        return Err(replay_error(
+                            function,
+                            "ordinary plan history depth is invalid",
+                        ));
+                    }
+                }
+                Ok(())
+            }
+            fn next<'a>(
+                &mut self,
+                history: &'a History,
+                arena: &'a [Segment],
+                function: &ResolvedFunction,
+                budget: &mut ReplayBudget,
+            ) -> Result<Option<&'a SkeletonObservation>, Diagnostic> {
+                budget.charge(function, 1, "ordinary plan history forward cursor step")?;
+                while self.segment < self.links.len() {
+                    budget.charge(
+                        function,
+                        1,
+                        "ordinary plan history forward segment traversal",
+                    )?;
+                    let items = &arena[self.links[self.links.len() - self.segment - 1]].items;
+                    if let Some(value) = items.get(self.item) {
+                        self.item += 1;
+                        return Ok(Some(value));
+                    }
+                    self.segment += 1;
+                    self.item = 0;
+                }
+                let value = history.tail.get(self.item);
+                if value.is_some() {
+                    self.item += 1;
+                }
+                Ok(value.map(|value| value.as_ref()))
+            }
+        }
+
+        mod pair_scope_census {
+            use super::*;
+            pub struct Guard;
+            pub fn begin(_f: &ResolvedFunction, _b: &ReplayBudget, _old: bool) -> Guard {
+                Guard
+            }
+            impl Guard {
+                pub fn pair(&self) {}
+                pub fn round(&self) {}
+                pub fn success(&self) {}
+            }
+        }
+        fn tail_receiver_prices() -> (usize, usize, usize) {
+            let old = size_of::<&History>()
+                + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+                + 2 * size_of::<usize>()
+                + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
+                + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
+                + size_of::<bool>()
+                + size_of::<usize>()
+                + size_of::<&Rc<SkeletonObservation>>()
+                + 2 * size_of::<&Rc<SkeletonObservation>>()
+                + size_of::<&SkeletonObservation>()
+                + 2 * size_of::<Option<&SkeletonObservation>>();
+            let current = size_of::<&Rc<SkeletonObservation>>()
+                + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+                + 2 * size_of::<&Rc<SkeletonObservation>>()
+                + size_of::<&SkeletonObservation>()
+                + 2 * size_of::<Option<&SkeletonObservation>>()
+                + size_of::<usize>();
+            let view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+            (old, current, view)
+        }
+
+        #[path = "/Volumes/Semaprax/tmp/ci-38383508340/shared-boundaries-99b/baseline-probe/after/mod.rs"]
+        mod after;
+        #[path = "/Volumes/Semaprax/tmp/ci-38383508340/shared-boundaries-99b/baseline-probe/before/mod.rs"]
+        mod before;
+
+        fn fixture(
+            paths: usize,
+            segments: usize,
+            width: usize,
+            tail: usize,
+            mutation: usize,
+        ) -> (HistorySet, Vec<SkeletonPath>) {
+            let mut arena = Vec::new();
+            let mut actual = Vec::new();
+            let mut expected = Vec::new();
+            let mut common: Option<(Option<usize>, Vec<Rc<SkeletonObservation>>)> = None;
+            for path in (0..paths).rev() {
+                let key = if mutation >= 3 { 0 } else { path };
+                let mut previous = None;
+                let mut all = Vec::new();
+                if let Some((p, items)) = common.as_ref().filter(|_| mutation >= 5 && mutation != 9)
+                {
+                    previous = *p;
+                    all = items.clone();
+                } else {
+                    for depth in 0..segments {
+                        let segment_width = if (mutation == 7 && depth % 2 == 1)
+                            || (mutation == 8 && depth % 2 == 0)
+                            || (mutation == 9 && (path + depth) % 2 == 0)
+                        {
+                            0
+                        } else {
+                            width
+                        };
+                        let items: Vec<_> = (0..segment_width)
+                            .map(|i| {
+                                Rc::new(SkeletonObservation((key * 10000 + depth * 100 + i) as u32))
+                            })
+                            .collect();
+                        all.extend(items.iter().cloned());
+                        let at = arena.len();
+                        arena.push(Segment {
+                            previous,
+                            items,
+                            depth: depth + 1,
+                        });
+                        previous = Some(at);
+                    }
+                    if mutation >= 5 && mutation != 9 {
+                        common = Some((previous, all.clone()));
+                    }
+                }
+                let values: Vec<_> = (0..tail)
+                    .map(|i| {
+                        Rc::new(SkeletonObservation(
+                            (key * 10000
+                                + 5000
+                                + i
+                                + if (mutation == 4 || mutation == 6) && i + 1 == tail {
+                                    path
+                                } else {
+                                    0
+                                }) as u32,
+                        ))
+                    })
+                    .collect();
+                all.extend(values.iter().cloned());
+                actual.push(PlanPath {
+                    history: History {
+                        previous,
+                        tail: values,
+                    },
+                    terminal: SkeletonTerminal::Success,
+                });
+                expected.push(SkeletonPath {
+                    observations: Observations {
+                        prefix: None,
+                        items: all,
+                    },
+                    terminal: SkeletonTerminal::Success,
+                });
+            }
+            expected.sort_by(|a, b| a.observations.items.cmp(&b.observations.items));
+            if paths > 0 && mutation == 1 {
+                let last = expected.last_mut().unwrap();
+                if last.observations.items.pop().is_none() {
+                    last.observations
+                        .items
+                        .push(Rc::new(SkeletonObservation(42)));
+                }
+            }
+            if paths > 0 && mutation == 2 {
+                expected.last_mut().unwrap().terminal = SkeletonTerminal::Failure;
+            }
+            (
+                HistorySet {
+                    arena,
+                    paths: actual,
+                    max_depth: segments,
+                },
+                expected,
+            )
+        }
+        fn observe(
+            new: bool,
+            paths: usize,
+            segments: usize,
+            width: usize,
+            tail: usize,
+            mutation: usize,
+            cut: usize,
+        ) -> (Result<(), Diagnostic>, ReplayBudget, usize) {
+            let (actual, expected) = fixture(paths, segments, width, tail, mutation);
+            let mut b = ReplayBudget {
+                remaining: cut,
+                paid: 0,
+                work: Vec::new(),
+                fees: Vec::new(),
+            };
+            let f = ResolvedFunction;
+            let result = if new {
+                after::compare(&f, &mut b, actual, &expected)
+            } else {
+                before::compare(&f, &mut b, actual, &expected)
+            };
+            let held = expected
+                .iter()
+                .flat_map(|p| p.observations.items.iter())
+                .map(Rc::strong_count)
+                .sum();
+            (result, b, held)
+        }
+        pub(crate) fn run() {
+            let (old_tail, _) = before::tariff_terms();
+            let (new_tail, view) = after::tariff_terms();
+            assert_eq!(tail_receiver_prices(), (old_tail, new_tail, view));
+            let mut cases = 0;
+            let mut cut_cases = 0;
+            for paths in [0, 1, 2, 3, 8] {
+                for segments in [0, 1, 3, 16] {
+                    for width in [0, 1, 2, 16, 256] {
+                        for tail in [0, 1, 16, 64, 256] {
+                            for mutation in 0..10 {
+                                let (a, old, old_held) = observe(
+                                    false,
+                                    paths,
+                                    segments,
+                                    width,
+                                    tail,
+                                    mutation,
+                                    usize::MAX,
+                                );
+                                let (b, new, new_held) = observe(
+                                    true,
+                                    paths,
+                                    segments,
+                                    width,
+                                    tail,
+                                    mutation,
+                                    usize::MAX,
+                                );
+                                assert_eq!(a, b);
+                                assert_eq!(old.work, new.work);
+                                assert_eq!(old.remaining, new.remaining);
+                                assert_eq!(old_held, new_held);
+                                let count = |budget: &ReplayBudget, amount| {
+                                    budget
+                                        .fees
+                                        .iter()
+                                        .filter(|(phase, n)| {
+                                            *n == amount
+                                                && (*phase
+                                                    == "ordinary plan history paired cursor next"
+                                                    || *phase
+                                                        == "ordinary plan history HIR cursor next")
+                                        })
+                                        .count()
+                                };
+                                let old_queries = count(&old, old_tail);
+                                let new_queries = count(&new, new_tail);
+                                assert_eq!(old_queries, new_queries);
+                                let pairs = new
+                                    .fees
+                                    .iter()
+                                    .filter(|(p, _)| *p == "ordinary plan history pair-local paths")
+                                    .count();
+                                let final_paths = new
+                                    .fees
+                                    .iter()
+                                    .filter(|(p, _)| {
+                                        *p == "ordinary plan history HIR cursor prepare"
+                                    })
+                                    .count();
+                                let (
+                                    path_index,
+                                    pair_scope,
+                                    pair_primitive,
+                                    payment_header,
+                                    flat_match,
+                                ) = after::cost_terms();
+                                let pair_count = |amount| {
+                                    new.fees
+                                        .iter()
+                                        .filter(|(p, n)| {
+                                            *p == "ordinary plan history paired cursor next"
+                                                && *n == amount
+                                        })
+                                        .count()
+                                };
+                                let flags = 3 * size_of::<bool>();
+                                let pattern =
+                                    size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>();
+                                let meta = 4 * size_of::<usize>() + 3 * size_of::<bool>();
+                                let advance = 3 * size_of::<&[Rc<SkeletonObservation>]>()
+                                    + 2 * size_of::<usize>()
+                                    + size_of::<Ordering>()
+                                    + size_of::<bool>();
+                                let fast = pair_count(advance);
+                                let links = 4 * size_of::<&Vec<usize>>()
+                                    + 4 * size_of::<&[usize]>()
+                                    + 4 * size_of::<usize>()
+                                    + 3 * size_of::<bool>();
+                                let query = 2 * size_of::<&[Segment]>()
+                                    + 2 * size_of::<usize>()
+                                    + size_of::<&Segment>()
+                                    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                                    + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+                                    + size_of::<bool>();
+                                let boundary_advance = 4 * size_of::<&mut Vec<usize>>()
+                                    + 2 * size_of::<Option<usize>>()
+                                    + 10 * size_of::<usize>()
+                                    + 6 * size_of::<bool>()
+                                    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+                                    + size_of::<Ordering>();
+                                assert_eq!((links, query, boundary_advance), (131, 121, 183));
+                                let boundaries = pair_count(boundary_advance);
+                                let boundary_retained =
+                                    if paths >= 2 { 11 * payment_header } else { 0 }
+                                        + size_of::<bool>() * pair_count(size_of::<bool>())
+                                        + links * pair_count(links)
+                                        + query * pair_count(query)
+                                        + boundary_advance * boundaries;
+
+                                let checks = pair_count(flags);
+                                let patterns = pair_count(pattern);
+                                let metadata = pair_count(meta);
+                                let rounds = pair_count(98) + fast + boundaries;
+                                let flat_rounds = new
+                                    .fees
+                                    .iter()
+                                    .filter(|(p, n)| {
+                                        *p == "ordinary plan history HIR cursor next"
+                                            && *n == flat_match
+                                    })
+                                    .count();
+                                let removed_view = 2 * size_of::<&Observations>()
+                                    + size_of::<&[Rc<SkeletonObservation>]>();
+                                let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                                    + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+                                let (step, load, limit) = after::link_terms();
+                                assert_eq!(
+                                    (step, load, limit),
+                                    (124, 146 + size_of::<usize>(), 32)
+                                );
+                                let steps = count(&new, step) + 2 * fast + 4 * boundaries;
+                                let loads = count(&new, load) + 2 * boundaries;
+                                let preparations = new
+                                    .fees
+                                    .iter()
+                                    .filter(|(p, _)| {
+                                        [
+                                            "ordinary plan history left cursor prepare",
+                                            "ordinary plan history right cursor prepare",
+                                            "ordinary plan history HIR cursor prepare",
+                                        ]
+                                        .contains(p)
+                                    })
+                                    .count();
+                                let removed = 4 * path_index * rounds
+                                    + removed_view * flat_rounds
+                                    + (old_tail - new_tail) * new_queries
+                                    + (132 - step) * steps
+                                    + (273 - 146) * loads
+                                    + (98 + 2 * step) * fast
+                                    + (98 + 4 * step + 2 * load) * boundaries;
+                                let retained = boundary_retained
+                                    + 4 * size_of::<usize>()
+                                    + if paths >= 2 { 9 * payment_header } else { 0 }
+                                    + size_of::<usize>() * loads
+                                    + flags * checks
+                                    + pattern * patterns
+                                    + meta * metadata
+                                    + advance * fast
+                                    + pair_scope * pairs
+                                    + pair_primitive
+                                    + payment_header
+                                    + retained_view * final_paths
+                                    + view * (2 * pairs + final_paths)
+                                    + 4 * size_of::<usize>()
+                                    + limit * preparations;
+                                let selected = match paths {
+                                    0 => 0,
+                                    1 => 5 * payment_header,
+                                    _ => 20 * payment_header,
+                                };
+                                let selector =
+                                    payment_header + 3 * size_of::<usize>() + 2 * size_of::<bool>();
+                                assert_eq!(
+                                    new.paid + removed + 20 * payment_header,
+                                    old.paid + retained + selector + selected
+                                );
+                                cases += 1;
+                                if paths <= 3 && segments <= 3 && tail <= 16 && width <= 2 {
+                                    for cut in 0..=old.work.len() {
+                                        let (x, ob, oh) = observe(
+                                            false, paths, segments, width, tail, mutation, cut,
+                                        );
+                                        let (y, nb, nh) = observe(
+                                            true, paths, segments, width, tail, mutation, cut,
+                                        );
+                                        assert_eq!(x, y);
+                                        assert_eq!(ob.work, nb.work);
+                                        assert_eq!(ob.remaining, nb.remaining);
+                                        assert_eq!(oh, nh);
+                                        cut_cases += 1;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+            println!("complete_883_and_current_flat_owner_cases={cases} complete_883_and_current_work_cut_cases={cut_cases} old_tail={old_tail} new_tail={new_tail} retained_view={view}; complete shipping bodies compiled with opaque observations and recording payer; shared-HIR body only type-checked; no full compiler/application/allocator-fit claim");
+        }
+    }
+}
+fn main() {
+    cleanup_plan::replay::run();
+}

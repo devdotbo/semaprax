@@ -144,9 +144,11 @@ fn fresh_entry_suffix_has_independent_full_old_new_invoices_and_real_q_g_h() {
             assert_eq!(swaps(&old), swaps(&current));
             assert!(old.row.complete && current.row.complete);
             assert_eq!(current.row.identity_probes,
-                current.row.identity_observations + current.row.identity_hits);
-            assert_eq!(current.row.identity_bodies, current.row.identity_observations);
-            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits);
+                current.row.shared_runs + current.row.identity_hits + current.row.shared_boundary_complete);
+            assert_eq!(current.row.identity_bodies, 0);
+            assert_eq!(current.row.shared_turns, current.row.identity_observations + current.row.shared_runs);
+            assert_eq!(current.row.shared_runs, current.row.shared_publishes);
+            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits + current.row.shared_boundary_complete);
             if length == 1 && shape == 0 {
                 assert!(current.row.identity_hits > 0);
                 assert_eq!(current.row.identity_observations, 0, "same-ID singleton is a paid empty suffix, never G");
@@ -205,8 +207,15 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
         assert_eq!(bytes("ordinary plan shared suffix scalar receivers"),
             current.row.identity_bodies * (2 * size_of::<&SkeletonObservation>()
                 + 2 * size_of::<usize>() + size_of::<Ordering>()));
-        assert!(current.row.identity_bodies >= current.row.identity_observations);
-        if current.row.identity_bodies > current.row.identity_observations {
+        assert_eq!(bytes("ordinary plan certified numeric run capture"),
+            current.row.shared_runs * certified_heads::RUN_CAPTURE);
+        assert_eq!(bytes("ordinary plan certified numeric run turn"),
+            current.row.shared_turns * certified_heads::RUN_TURN);
+        assert_eq!(bytes("ordinary plan certified numeric run publication"),
+            current.row.shared_publishes * certified_heads::RUN_PUBLISH);
+        assert_eq!(current.row.identity_bodies, 0);
+        assert!(current.row.shared_turns >= current.row.identity_observations);
+        if current.row.shared_turns > current.row.identity_observations {
             assert!(!current.row.complete && current.observed.0 .0.result.is_err());
             partial_body = true;
         }
@@ -320,9 +329,10 @@ fn fresh_suffix_supersedes_complete_shared_step_generation_without_polling() {
                 assert_eq!(swaps(&old), swaps(&current));
                 assert_eq!((old.observed.0 .1.live, current.observed.0 .1.live), (0, 0));
                 assert!(old.row.complete && current.row.complete);
-                assert_eq!((current.row.shared_checks, current.row.shared_patterns,
-                    current.row.shared_metadata, current.row.shared_steps), (0, 0, 0, 0),
-                    "the superseded per-round poll is physically absent");
+                assert_eq!((current.row.shared_patterns, current.row.shared_steps), (0, 0),
+                    "the superseded nonempty loaded-item poll is physically absent");
+                assert!(current.row.shared_checks >= current.row.shared_metadata,
+                    "the distinct loaded-empty boundary checks are actually observed");
                 if length > 1 && shape == 0 {
                     assert!(old.row.shared_steps > 0, "genuine incoming loaded-item route executes");
                     assert!(current.row.identity_observations > 0,

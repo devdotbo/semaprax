@@ -1,0 +1,14 @@
+{
+  "status": "BOUNDED_COMPLETE_COMPARISON_MODELS_AND_SOURCE_GUARDS_ONLY",
+  "cases_per_complete_comparison": 6000,
+  "work_failure_cuts_per_complete_comparison": 86118,
+  "all_previous_5000_cases_and_57885_cuts_retained": true,
+  "additional_multi_step_interior_run_cuts": true,
+  "shared_runs_in_current_model": 28320,
+  "logical_shared_steps_in_current_model": 1939920,
+  "private_nonowning_cursor_metadata_deferred_until_success": true,
+  "owned_Drop_Rc_work_trace_remaining_and_six_field_diagnostics_preserved": true,
+  "shared_HIR_only_typechecked": true,
+  "actual_compiler_physical_allocator_and_application_qualification": false,
+  "all_limits_and_original_controls_retained": true
+}
