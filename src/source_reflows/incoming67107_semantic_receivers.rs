@@ -77,7 +77,7 @@ fn digest(source: &str) -> String {
 }
 
 pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> String {
-    // Only these six exact Main67107 entry tuples changed after this packet.
+    // Only these nine exact Main67107 entry tuples changed after this packet.
     // The full existing MAIN21 acquisition and every inverse below still run.
     let path = proof["path"].as_str().unwrap();
     let expected = proof["after_sha256"].as_str().unwrap();
@@ -105,6 +105,18 @@ pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> Strin
         | (
             "src/cleanup_plan/replay/factored.rs",
             "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6",
+        )
+        | (
+            "src/cleanup_plan/replay/factored/oracle_hook.rs",
+            "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
+        )
+        | (
+            "src/hir/validation.rs",
+            "f89e882a3d8ed796b8b8b864247e4e7eb19631d6299cd0dd94ddcc6b5ca17eba",
+        )
+        | (
+            "src/hir/expr_nodes.rs",
+            "e2291267786bdec4371b969031209b4e77aa6876f4564048ad1c7561b004b73f",
         ) => Some(
             crate::source_reflows_merge::main_e177_final_inputs::value_direct(
                 path, expected, current,

@@ -525,6 +525,8 @@ fn complete_preformat_transport(current: &str) -> String {
 // no archived source is substituted and no old assertion/hash is retargeted.
 #[rustfmt::skip]
 fn complete_receiver_entry_glue(source: &str, current: &str) -> String {
+    let current = complete_receiver_followup_glue(source, current);
+    let current = current.as_str();
     let (length, current_sha, old_length, old_sha, edits): (usize, [u8; 32], usize, [u8; 32], &[(&str, &str)]) = match source {
         "src/source_reflows_merge.rs" => (
             54109, [220, 244, 224, 223, 238, 175, 36, 141, 79, 190, 146, 91, 141, 163, 27, 142, 129, 150, 45, 135, 252, 98, 241, 82, 51, 110, 137, 62, 124, 114, 39, 213],
@@ -592,4 +594,48 @@ fn complete_receiver_entry_glue(source: &str, current: &str) -> String {
     assert_eq!(original.len(), old_length, "whole original ENTRY extent: {source}");
     assert_eq!(digest(original.as_bytes()), old_sha, "whole original ENTRY bytes: {source}");
     original
+}
+
+// Later ENTRY and compiled-receiver repairs bind each whole current input before
+// restoring its complete predecessor. Every original transport proof still runs.
+#[rustfmt::skip]
+fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
+    let (length, current_sha, old_length, old_sha, edits): (usize, [u8; 32], usize, [u8; 32], &[(&str, &str)]) = match source {
+        "src/source_reflows_merge/runtime_json.rs" => (
+            14850, [17, 115, 177, 54, 54, 33, 83, 220, 205, 108, 29, 104, 98, 21, 62, 73, 220, 80, 151, 248, 17, 188, 36, 73, 27, 97, 68, 61, 239, 17, 148, 61],
+            14714, [167, 211, 139, 31, 139, 210, 147, 221, 132, 58, 13, 174, 159, 107, 39, 111, 55, 78, 173, 69, 151, 130, 153, 143, 180, 1, 53, 67, 17, 2, 106, 99],
+            &[
+                ("    // These eleven exact entry images belong to the unchanged SelectedCalls\n", "    // These ten exact entry images belong to the unchanged SelectedCalls\n"),
+                ("        \"src/cleanup_plan/replay/structural_control.rs\" => Some(\"84c9d537b31a2f24e0f4c977ea0341bf4a4a6a738c299f5e7e35976a4946a037\"),\n", ""),
+            ],
+        ),
+        "src/source_reflows/incoming67107_semantic_receivers.rs" => (
+            36765, [222, 83, 109, 234, 39, 106, 78, 24, 1, 168, 223, 6, 247, 196, 92, 190, 217, 22, 177, 184, 97, 231, 199, 133, 154, 47, 4, 14, 227, 119, 89, 200],
+            36321, [138, 197, 176, 188, 130, 183, 72, 150, 237, 233, 145, 134, 57, 185, 6, 147, 13, 52, 132, 244, 187, 179, 145, 232, 28, 116, 228, 171, 81, 196, 145, 42],
+            &[
+                ("    // Only these nine exact Main67107 entry tuples changed after this packet.\n", "    // Only these six exact Main67107 entry tuples changed after this packet.\n"),
+                ("        )\n        | (\n            \"src/cleanup_plan/replay/factored/oracle_hook.rs\",\n            \"0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae\",\n        )\n        | (\n            \"src/hir/validation.rs\",\n            \"f89e882a3d8ed796b8b8b864247e4e7eb19631d6299cd0dd94ddcc6b5ca17eba\",\n        )\n        | (\n            \"src/hir/expr_nodes.rs\",\n            \"e2291267786bdec4371b969031209b4e77aa6876f4564048ad1c7561b004b73f\",\n", ""),
+            ],
+        ),
+        "src/loan_plan/paid_live/reuse_tests.rs" => (
+            25265, [103, 34, 182, 254, 37, 184, 65, 0, 103, 25, 244, 122, 254, 182, 97, 13, 24, 128, 252, 94, 221, 111, 122, 114, 55, 223, 218, 122, 63, 22, 171, 181],
+            23070, [11, 82, 121, 23, 118, 57, 133, 4, 26, 80, 11, 217, 215, 7, 45, 35, 141, 33, 3, 215, 144, 161, 83, 129, 160, 44, 213, 202, 5, 239, 120, 144],
+            &[
+                ("    let old_live = original_test_receiver(\n        \"src/loan_plan/paid_live/original.rs\",\n        include_str!(\"original.rs\"),\n    );\n", "    let old_live = include_str!(\"original.rs\");\n"),
+                ("    let mut before_facade = original_test_receiver(\n        \"src/loan_plan/paid_live/funded_before.rs\",\n        include_str!(\"funded_before.rs\"),\n    );\n", "    let mut before_facade = include_str!(\"funded_before.rs\").to_owned();\n"),
+                ("\n// Only test-module lint/namespace glue separates these compiled receivers from\n// their complete original bodies. Authenticate current bytes before inversion.\nfn original_test_receiver(source: &str, compiled: &str) -> String {\n    use sha2::{Digest, Sha256};\n    let (length, current_hash, count, schema_import, old_length, old_hash) = match source {\n        \"src/loan_plan/paid_live/original.rs\" => (\n            2893,\n            \"53f1bf0c833c8bf88d391938c958e05b4210a78f7a26fd787cd7e06e0f27c210\",\n            1,\n            false,\n            2786,\n            \"9315163a396ddc3f3905dc8b56dd220ccbb6d852dd270d18f59a171308af4c26\",\n        ),\n        \"src/loan_plan/paid_live/funded_before.rs\" => (\n            3628,\n            \"9934c14303d48cf9f221065b9525628edc69919a65e8002e85444d03d7eee918\",\n            3,\n            true,\n            3264,\n            \"8acbf4f2aef5cb26524261c8ac27a9d0b6adce6334d43e11eb972fb88ef61401\",\n        ),\n        _ => panic!(\"unknown complete receiver source\"),\n    };\n    let mut original = crate::source_reflows_merge::main_e177_final_inputs::value_direct(\n        source,\n        current_hash,\n        compiled,\n    );\n    assert_eq!(original.len(), length);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n        ),\n        current_hash\n    );\n    let lint = \"#[allow(\\n    clippy::duplicate_mod,\\n    reason = \\\"Run the same controls against independent receivers.\\\"\\n)]\\n\";\n    assert_eq!(original.matches(lint).count(), count);\n    original = original.replace(lint, \"\");\n    if schema_import {\n        let import = \"use crate::loan_plan::LOAN_PLAN_SCHEMA_V3;\\n\";\n        assert_eq!(original.matches(import).count(), 1);\n        original = original.replacen(import, \"\", 1);\n    }\n    assert_eq!(original.len(), old_length);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))\n        ),\n        old_hash\n    );\n    original\n}\n", ""),
+            ],
+        ),
+        _ => return current.to_owned(),
+    };
+    assert_eq!(current.len(), length, "complete later ENTRY helper extent: {source}");
+    assert_eq!(digest(current.as_bytes()), current_sha, "complete later ENTRY helper source: {source}");
+    let mut before = current.to_owned();
+    for (after, prior) in edits {
+        assert_eq!(before.matches(after).count(), 1, "exact later ENTRY helper edit: {source}");
+        before = before.replacen(after, prior, 1);
+    }
+    assert_eq!(before.len(), old_length, "complete prior ENTRY helper extent: {source}");
+    assert_eq!(digest(before.as_bytes()), old_sha, "complete prior ENTRY helper body: {source}");
+    before
 }

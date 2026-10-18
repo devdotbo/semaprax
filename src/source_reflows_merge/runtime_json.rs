@@ -223,7 +223,7 @@ pub(crate) fn receiver_fixture(fixture: ReceiverFixture) -> String {
 // The original selected-call assertion audits its own complete source. Restore
 // exactly the two transport edits before applying its unchanged original inverse.
 pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {
-    // These ten exact entry images belong to the unchanged SelectedCalls
+    // These eleven exact entry images belong to the unchanged SelectedCalls
     // inverse packet. Acquire them only after current physical/compiled/archive
     // authentication; the original self-transport inverse below stays intact.
     let expected = match source {
@@ -234,6 +234,7 @@ pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> Str
         "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs" => Some("2b27003287b4e325ed126b4e26f9f933fc039e42f66739242b63759d3d713b05"),
         "src/cleanup_plan/replay/semantic_refusal.rs" => Some("fc1a6f41a225e0936ede78ff9923eb0eea1e93ce5c8e37fbde9709e6ee78c823"),
         "src/cleanup_plan/replay/semantic_refusal/tests.rs" => Some("aca69e92356ddfb4d7bbb774ca647a981cf86d402d9b0dff71108adef777b1ad"),
+        "src/cleanup_plan/replay/structural_control.rs" => Some("84c9d537b31a2f24e0f4c977ea0341bf4a4a6a738c299f5e7e35976a4946a037"),
         "src/cleanup_plan/replay/structural_control/calls.rs" => Some("17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000"),
         "tests/hir_module_boundaries.rs" => Some("055a8f7ddd8b9f5b2d12122154de053a0a6823b75c298580cd4770628c4e8851"),
         "tests/workspace/semantic_graph/source_inventory.rs" => Some("4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14"),
