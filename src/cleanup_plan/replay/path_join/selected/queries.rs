@@ -400,10 +400,22 @@ macro_rules! flag_at {
 pub(super) use flag_at;
 macro_rules! plan_at {
     ($budget:ident,$function:ident,$plan:ident,blocks,$index:expr) => {
-        index!($budget, $function, $plan.blocks, $index, CleanupBlock)
+        index!(
+            $budget,
+            $function,
+            $plan.blocks,
+            $index,
+            crate::cleanup_plan::CleanupBlock
+        )
     };
     ($budget:ident,$function:ident,$plan:ident,edges,$index:expr) => {
-        index!($budget, $function, $plan.edges, $index, CleanupEdge)
+        index!(
+            $budget,
+            $function,
+            $plan.edges,
+            $index,
+            crate::cleanup_plan::CleanupEdge
+        )
     };
     ($budget:ident,$function:ident,$plan:ident,exits,$index:expr) => {
         index!($budget, $function, $plan.exits, $index, ExitTarget)

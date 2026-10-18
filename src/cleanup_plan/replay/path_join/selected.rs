@@ -1,6 +1,7 @@
 //! Paid selected path-state and transition family, never new replay authority.
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError as Error;
+use crate::cleanup_plan::replay::lexical_cert::LexicalAuth;
 use crate::cleanup_plan::replay::selected_context::child::Permit;
 use crate::cleanup_plan::replay::structural_control::selected::{
     dynamic_get, dynamic_next, existing_structural_error,
@@ -83,8 +84,9 @@ mod receiving;
 use queries::{
     clone_state, clone_value, control_key, counter_at, equal_without_flag, exact_join,
     filtered_flag_next, find, flag_all, flag_any, flag_at, group_at, incoming_at, index, index_mut,
-    leaf_at, lexical_lookup, map_index, map_insert, mutable_get, owned_provenance, place_flags,
-    plan_at, retain_flags, retained_units, scan, selected_renewals, variant_any, variant_position,
+    leaf_at, lexical_lookup, map_index, map_insert, mutable_get, owned_provenance, pair_at,
+    place_flags, plan_at, retain_flags, retained_units, scan, selected_renewals, slice_index,
+    variant_any, variant_position,
 };
 mod renewal;
 mod strings;
@@ -180,7 +182,7 @@ fn successors(
                         ),
                         3,
                         "selected successor latch lookup receiving",
-                        lexical_cert::latch_resume(plan, *exit)
+                        lexical_cert::latch_resume(plan, exit)
                     ),
                     None,
                 ],

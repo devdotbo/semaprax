@@ -57,18 +57,19 @@ pub(in crate::cleanup_plan::replay) fn reserve_append(
         "selected append arithmetic receiving",
         ()
     );
+    let lookup_work = (appends.len() + 1)
+        .checked_mul(at.as_str().len() + 1)
+        .and_then(|n| n.checked_mul(2))
+        .ok_or_else(path_refusal!(
+            budget,
+            function,
+            permit,
+            usize,
+            Kind::SelectedAppendLookupOverflow
+        ))?;
     budget.charge(
         function,
-        (appends.len() + 1)
-            .checked_mul(at.as_str().len() + 1)
-            .and_then(|n| n.checked_mul(2))
-            .ok_or_else(path_refusal!(
-                budget,
-                function,
-                permit,
-                usize,
-                Kind::SelectedAppendLookupOverflow
-            ))?,
+        lookup_work,
         "selected append exact current lookup",
     )?;
     if matches!(source.storage, StorageId::Value(_))
@@ -210,17 +211,18 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
                 usize,
                 Kind::AppendPublicationLengthOverflow
             ))?;
+        let publication_work = capacity
+            .checked_mul(capacity + 1)
+            .ok_or_else(path_refusal!(
+                budget,
+                function,
+                permit,
+                usize,
+                Kind::AppendPublicationWorkOverflow
+            ))?;
         budget.charge(
             function,
-            capacity
-                .checked_mul(capacity + 1)
-                .ok_or_else(path_refusal!(
-                    budget,
-                    function,
-                    permit,
-                    usize,
-                    Kind::AppendPublicationWorkOverflow
-                ))?,
+            publication_work,
             "selected append publication exact history",
         )?;
         budget.reserve_array::<LivenessFlagId>(

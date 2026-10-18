@@ -483,7 +483,8 @@ pub(super) fn renew(
     )?;
     let flag = flag_at!(budget, function, flags, 0);
     if !budget.selected() && crate::string_ops::replacement::binding(function, at).is_some() {
-        return string_replacement::finish(function, flag, &history, state);
+        string_replacement::finish(function, flag, &history, state)?;
+        return Ok(());
     }
     if !history.contains(&flag)
         || !equal_without_flag!(budget, function, history, state.live_order, flag)
@@ -610,9 +611,10 @@ pub(super) fn validate_join_compatibility<'a>(
         budget,
         function,
         counted,
-        std::collections::btree_set::Range<'_, Box<PathState>>,
-        &Box<PathState>,
-        (),
+        (
+            &mut std::collections::btree_set::Range<'_, Box<PathState>>,
+            Option<&Box<PathState>>,
+        ),
         2
     ) {
         count += 1;
@@ -633,9 +635,11 @@ pub(super) fn validate_join_compatibility<'a>(
         budget,
         function,
         collected,
-        std::collections::btree_set::Range<'_, Box<PathState>>,
-        &Box<PathState>,
-        (&Box<PathState>),
+        (
+            &mut std::collections::btree_set::Range<'_, Box<PathState>>,
+            Option<&Box<PathState>>,
+            &Box<PathState>,
+        ),
         3
     ) {
         receive!(
