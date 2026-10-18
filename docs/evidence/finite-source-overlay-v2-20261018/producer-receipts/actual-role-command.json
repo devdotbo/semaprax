@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "python3",
+    "/Volumes/Semaprax/provenance/role892-overlay-actual-children-successor-20261018/refresh-role892-overlay-control-child.py",
+    "--repo",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018",
+    "--expected-head",
+    "71d69da25b7aaa3b62e874fce3fffaf2d9294af0",
+    "--out",
+    "/Volumes/Semaprax/provenance/bound-finite-overlay-893-20261018/actual-role",
+    "--write"
+  ],
+  "head": "71d69da25b7aaa3b62e874fce3fffaf2d9294af0"
+}

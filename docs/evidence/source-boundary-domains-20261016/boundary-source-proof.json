@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1213,
-      "current_boundary_production": 432,
-      "outside_production_still_fully_authenticated": 99,
-      "full_role_production": 531,
-      "full_role_test_only": 952,
-      "full_raw_sha256": "bcf5723b3274a2224474cebd0d20d63f5c52a3e9b30fa2fa17a000705b187a08",
-      "boundary_production_sha256": "093d4a5819582a487fc5d9a7d9a42f216ffd488cb0d90ec81fb2fe079724434f",
+      "current_boundary_members": 1224,
+      "current_boundary_production": 438,
+      "outside_production_still_fully_authenticated": 100,
+      "full_role_production": 538,
+      "full_role_test_only": 959,
+      "full_raw_sha256": "25f5fe92bdb8dd8fce67adafb1c5ba57cb91b22fe0a7553a91e042f114bbe853",
+      "boundary_production_sha256": "239acf7ccef6c835bdb388662b3b87749cb87e21d91468fbbb3c449ae1489187",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -33,10 +33,10 @@
       "original_roots": 179,
       "current_boundary_members": 198,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 580,
-      "full_role_production": 653,
-      "full_role_test_only": 1010,
-      "full_raw_sha256": "6db16072aac6e7b7a4cce3edd9171264ef53ebbde42807156b0b84ece79d5740",
+      "outside_production_still_fully_authenticated": 584,
+      "full_role_production": 657,
+      "full_role_test_only": 1016,
+      "full_raw_sha256": "99862117ef599aae9472c60d2553e70e0b1a23607916dfd22830ae982a7b9b8b",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -64,6 +64,7 @@
     "whole_raw_drift_refused": true,
     "foreign_path_child_cannot_escape": true
   },
-  "status": "SOURCE_ONLY_FINITE_EXISTING328_HASH_AND_TYPED_OFFSET_SUCCESSOR",
-  "registration_update": "No parser reenumeration; complete prior328 classes/chunks retained and every actual declaration edge revalidated."
+  "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
+  "registration_update": "FINITE_INCOMING328_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_ORIGINAL_PARSER_ACTUAL_CHILDREN",
+  "global_polluted_purity_result_not_claimed": true
 }

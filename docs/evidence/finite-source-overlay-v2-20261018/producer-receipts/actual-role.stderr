@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Volumes/Semaprax/provenance/role892-overlay-actual-children-successor-20261018/refresh-role892-overlay-control-child.py", line 180, in <module>
+    for e in c['edges']:e['start']=remap(e['parent'],e['start'],e['text'].encode())
+                                   ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/Semaprax/provenance/role892-overlay-actual-children-successor-20261018/refresh-role892-overlay-control-child.py", line 175, in remap
+    assert len(found)==1,(path,text);assert current[found[0]:found[0]+len(text)]==text;return found[0]
+           ^^^^^^^^^^^^^
+AssertionError: ('src/cleanup_plan/replay/inventory_coverage.rs', b'#[cfg(test)]\nmod paid_before;')

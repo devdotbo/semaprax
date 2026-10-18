@@ -1,0 +1,14 @@
+{
+  "argv": [
+    "python3",
+    "/Volumes/Semaprax/provenance/role892-overlay-actual-children-successor-20261018/refresh-role892-overlay-reviewed-visibility.py",
+    "--repo",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018",
+    "--expected-head",
+    "6f73d3463ab0835efba6803675e61361880295e6",
+    "--out",
+    "/Volumes/Semaprax/provenance/bound-finite-overlay-893-20261018/actual-role-visibility",
+    "--write"
+  ],
+  "head": "6f73d3463ab0835efba6803675e61361880295e6"
+}

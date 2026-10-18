@@ -1,0 +1,1744 @@
+[
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::arena::retained::into_tests::current_query_exact_short_zero_floor_and_unwind_release_all_storage",
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 120,
+    "name": "current_query_exact_short_zero_floor_and_unwind_release_all_storage",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 3,
+        "module": "arena",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+        "line": 392,
+        "module": "into_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "b5a35bfb08a084671f70a86c73331cef736da7e7384690c4fe5350c07bc05452",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::arena::retained::into_tests::current_slot_zero_one_many_utf8_nul_hit_miss_noncall_and_exact_old_work",
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 24,
+    "name": "current_slot_zero_one_many_utf8_nul_hit_miss_noncall_and_exact_old_work",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 3,
+        "module": "arena",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+        "line": 392,
+        "module": "into_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "b5a35bfb08a084671f70a86c73331cef736da7e7384690c4fe5350c07bc05452",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::arena::retained::into_tests::every_current_query_work_cut_matches_all_six_old_fields_and_sticky_slot",
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 79,
+    "name": "every_current_query_work_cut_matches_all_six_old_fields_and_sticky_slot",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 3,
+        "module": "arena",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+        "line": 392,
+        "module": "into_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "b5a35bfb08a084671f70a86c73331cef736da7e7384690c4fe5350c07bc05452",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::arena::retained::into_tests::genuine_arena_producer_keeps_call_and_noncall_payload_addresses",
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 212,
+    "name": "genuine_arena_producer_keeps_call_and_noncall_payload_addresses",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 3,
+        "module": "arena",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+        "line": 392,
+        "module": "into_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "b5a35bfb08a084671f70a86c73331cef736da7e7384690c4fe5350c07bc05452",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::receiving::earlier_schema_and_hostile_status_keep_complete_old_first_error",
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 108,
+    "name": "earlier_schema_and_hostile_status_keep_complete_old_first_error",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 8,
+        "module": "receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "line": 708,
+        "module": "case_certified",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "line": 388,
+        "module": "lookup_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+        "line": 362,
+        "module": "receiving",
+        "attributes": []
+      }
+    ],
+    "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::receiving::exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are_independent",
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 185,
+    "name": "exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are_independent",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 8,
+        "module": "receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "line": 708,
+        "module": "case_certified",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "line": 388,
+        "module": "lookup_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+        "line": 362,
+        "module": "receiving",
+        "attributes": []
+      }
+    ],
+    "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::receiving::real_foreign_helper_index_guard_still_precedes_any_receiving_owner",
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 138,
+    "name": "real_foreign_helper_index_guard_still_precedes_any_receiving_owner",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 8,
+        "module": "receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "line": 708,
+        "module": "case_certified",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "line": 388,
+        "module": "lookup_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+        "line": 362,
+        "module": "receiving",
+        "attributes": []
+      }
+    ],
+    "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::receiving::whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed",
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 43,
+    "name": "whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 19,
+        "module": "expression_facts",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+        "line": 8,
+        "module": "receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+        "line": 5,
+        "module": "retained",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+        "line": 708,
+        "module": "case_certified",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+        "line": 388,
+        "module": "lookup_tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+        "line": 362,
+        "module": "receiving",
+        "attributes": []
+      }
+    ],
+    "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::ordinary_receiving::tests::complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_cuts",
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 54,
+    "name": "complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_cuts",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 149,
+        "module": "ordinary_receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/ordinary_receiving.rs",
+        "line": 391,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "414a46ebe8d6f5204e67c306b8e087a0ecf922755595e61bf9e3903843f804ee",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::ordinary_receiving::tests::different_budget_and_source_cannot_rebind_a_receiving_slot",
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 298,
+    "name": "different_budget_and_source_cannot_rebind_a_receiving_slot",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 149,
+        "module": "ordinary_receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/ordinary_receiving.rs",
+        "line": 391,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "414a46ebe8d6f5204e67c306b8e087a0ecf922755595e61bf9e3903843f804ee",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "cleanup_plan::replay::ordinary_receiving::tests::lexical_work_producer_keeps_complete_old_first_error_and_sticky_payload",
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 13,
+    "name": "lexical_work_producer_keeps_complete_old_first_error_and_sticky_payload",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 114,
+        "module": "cleanup_plan",
+        "attributes": [
+          "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+        ]
+      },
+      {
+        "source_path": "src/cleanup_plan.rs",
+        "line": 32,
+        "module": "replay",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay.rs",
+        "line": 149,
+        "module": "ordinary_receiving",
+        "attributes": []
+      },
+      {
+        "source_path": "src/cleanup_plan/replay/ordinary_receiving.rs",
+        "line": 391,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "414a46ebe8d6f5204e67c306b8e087a0ecf922755595e61bf9e3903843f804ee",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 872,
+    "name": "finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 836,
+    "name": "finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 862,
+    "name": "finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 930,
+    "name": "finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 767,
+    "name": "finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 811,
+    "name": "finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 718,
+    "name": "finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 700,
+    "name": "finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "lib",
+    "selector": "source_reflows_merge::main_e177_final_inputs::overlay_v2::tests::finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 850,
+    "name": "finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "src/lib.rs",
+        "line": 19,
+        "module": "source_reflows_merge",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge.rs",
+        "line": 1076,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 872,
+    "name": "finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 836,
+    "name": "finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 862,
+    "name": "finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 930,
+    "name": "finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 767,
+    "name": "finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 811,
+    "name": "finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 718,
+    "name": "finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 700,
+    "name": "finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:wasm",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 850,
+    "name": "finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/wasm.rs",
+        "line": 42,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 872,
+    "name": "finite_page_current_compiled_and_archive_channels_are_required_before_history",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 836,
+    "name": "finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 862,
+    "name": "finite_page_literal_policy_replays_the_complete_519_metadata_inverse",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 930,
+    "name": "finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 767,
+    "name": "finite_page_refuses_lost_views_old_current_classification_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 811,
+    "name": "finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 718,
+    "name": "finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 700,
+    "name": "finite_page_retains_the_entire_predecessor_object_and_unknown_fields",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  },
+  {
+    "package": "semaprax",
+    "kind": "test:workspace",
+    "selector": "main_e177_final_inputs::overlay_v2::tests::finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 850,
+    "name": "finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget",
+    "attributes": [
+      "#[test]"
+    ],
+    "registration_chain": [
+      {
+        "source_path": "tests/workspace.rs",
+        "line": 107,
+        "module": "main_e177_final_inputs",
+        "attributes": [
+          "#[path = \"../src/source_reflows_merge/main_e177_final_inputs.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "line": 3,
+        "module": "overlay_v2",
+        "attributes": [
+          "#[path = \"main_e177_overlay_v2.rs\"]"
+        ]
+      },
+      {
+        "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+        "line": 679,
+        "module": "tests",
+        "attributes": [
+          "#[cfg(test)]"
+        ]
+      }
+    ],
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "ignored": false
+  }
+]

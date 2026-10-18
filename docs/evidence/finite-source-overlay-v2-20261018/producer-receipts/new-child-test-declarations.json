@@ -1,0 +1,102 @@
+[
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 24,
+    "name": "current_slot_zero_one_many_utf8_nul_hit_miss_noncall_and_exact_old_work"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 79,
+    "name": "every_current_query_work_cut_matches_all_six_old_fields_and_sticky_slot"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 120,
+    "name": "current_query_exact_short_zero_floor_and_unwind_release_all_storage"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "line": 212,
+    "name": "genuine_arena_producer_keeps_call_and_noncall_payload_addresses"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 43,
+    "name": "whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 108,
+    "name": "earlier_schema_and_hostile_status_keep_complete_old_first_error"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 138,
+    "name": "real_foreign_helper_index_guard_still_precedes_any_receiving_owner"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "line": 185,
+    "name": "exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are_independent"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 13,
+    "name": "lexical_work_producer_keeps_complete_old_first_error_and_sticky_payload"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 54,
+    "name": "complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_cuts"
+  },
+  {
+    "source_path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "line": 298,
+    "name": "different_budget_and_source_cannot_rebind_a_receiving_slot"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 700,
+    "name": "finite_page_retains_the_entire_predecessor_object_and_unknown_fields"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 718,
+    "name": "finite_page_refuses_wrong_schema_predecessor_scope_order_and_unknown_keys"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 767,
+    "name": "finite_page_refuses_lost_views_old_current_classification_and_unknown_fields"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 811,
+    "name": "finite_page_refuses_nonleaf_duplicate_forged_and_undeclared_fragments"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 836,
+    "name": "finite_page_exact_bound_compiled_physical_and_json_hostiles_are_independent"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 850,
+    "name": "finite_page_source_cap_is_per_full_source_and_not_an_aggregate_budget"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 862,
+    "name": "finite_page_literal_policy_replays_the_complete_519_metadata_inverse"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 872,
+    "name": "finite_page_current_compiled_and_archive_channels_are_required_before_history"
+  },
+  {
+    "source_path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+    "line": 930,
+    "name": "finite_page_original_held_reader_keeps_nonregular_and_symlink_refusals"
+  }
+]
