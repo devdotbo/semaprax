@@ -313,8 +313,8 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 18367,
-      "sha256": "29393c10cd9a71c4cfc976a292b212b5efb59120e418dc5326bef3c0de891eb2"
+      "length": 21113,
+      "sha256": "17fb1cd733fc8f0ffa877aaede8c77088a4527bc1080928c1354575049c4e368"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
       "length": 58148,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 70638,
-      "sha256": "b0a6d4f2ff66d7e61b5bee0e04a40118a3e5c097f192005304ee134dd7d015a0"
+      "sha256": "8b55f9f364935108facbe0c979dc6d81af7bc299d4ea060fe9d2da758e78c65c"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
