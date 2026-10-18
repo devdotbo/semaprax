@@ -242,7 +242,20 @@ pub(super) fn commit(
         )
         .expect("reserved provenance accompanies each original leaf");
         debug_assert_eq!(&original, expected);
-        if Some(original) == protected || !consumed.contains(current) {
+        if receive!(
+            budget,
+            function,
+            (
+                Option<LivenessFlagId>,
+                &Option<LivenessFlagId>,
+                &Option<LivenessFlagId>,
+                bool
+            ),
+            4,
+            "selected renewal fresh protected comparison receiving",
+            Some(original) == protected
+        ) || !consumed.contains(current)
+        {
             *receive!(
                 budget,
                 function,
@@ -296,7 +309,20 @@ pub(super) fn commit(
             4
         )
         .expect("epoch index in bounds");
-        if Some(pair.0) == protected || !consumed.contains(&pair.1) {
+        if receive!(
+            budget,
+            function,
+            (
+                Option<LivenessFlagId>,
+                &Option<LivenessFlagId>,
+                &Option<LivenessFlagId>,
+                bool
+            ),
+            4,
+            "selected renewal fresh protected comparison receiving",
+            Some(pair.0) == protected
+        ) || !consumed.contains(&pair.1)
+        {
             *receive!(
                 budget,
                 function,

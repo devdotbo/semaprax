@@ -178,12 +178,11 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
         Vec<LivenessFlagId>,
         usize,
         Vec<LivenessFlagId>,
-        &&mut PathState,
         &Vec<LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
     )>(function, 1, "selected path publish_append body receiving")?;
-    budget.charge(function, 7, "selected path publish_append body receiving")?;
+    budget.charge(function, 6, "selected path publish_append body receiving")?;
     budget.reserve_array::<(
         &ResolvedFunction,
         Option<Vec<LivenessFlagId>>,
