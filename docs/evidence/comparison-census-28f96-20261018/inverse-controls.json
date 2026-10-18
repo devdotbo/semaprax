@@ -1,0 +1,11 @@
+{
+  "status": "SOURCE_INVERSE_PROTOCOL_ONLY_PASS",
+  "checks": [
+    "extent",
+    "known span",
+    "outside drift not hidden"
+  ],
+  "whole_before_recovered": true,
+  "current_sha256": "45dedbabee8059588474b47408cde1c423ca762c0d45a5abdafdee9166e5c3e6",
+  "Rust_and_callback_execution_UNEXECUTED": true
+}

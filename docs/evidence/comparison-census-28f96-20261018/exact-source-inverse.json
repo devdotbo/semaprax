@@ -1,0 +1,27 @@
+{
+  "source": "src/bounded_output/stage_debits/route_debits.rs",
+  "before_length": 29422,
+  "before_sha256": "4949cec4e9d4740093b5c9f6bd209e49570f12dc965445a7c7fbcde6ef165721",
+  "current_length": 31074,
+  "current_sha256": "45dedbabee8059588474b47408cde1c423ca762c0d45a5abdafdee9166e5c3e6",
+  "descending_whole_line_edits": [
+    [
+      29578,
+      "\n// Diagnostic-only first-manifest prefix of the unchanged STD-08 owner.\n// The integration gate and every backend assertion remain on main.\n#[test]\n#[ignore = \"explicit hosted diagnostic; not an application qualification\"]\nfn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {\n    let manifest =\n        std::path::Path::new(env!(\"CARGO_MANIFEST_DIR\")).join(\"std/io-lines/semaprax.toml\");\n    let _observation = observe();\n    super::take_completed();\n    super::take_last_completed();\n    let result = std::panic::catch_unwind(|| {\n        // Same first manifest and authentication/check prefix used by\n        // run_examples_and_conformance; no replacement program or allowance.\n        crate::project::with_authenticated_project(&manifest, |snapshot| snapshot.check()).unwrap()\n    });\n    // Read and print only after all original ledger ownership has settled.\n    let maximum = super::take_completed();\n    let last = super::take_last_completed();\n    eprintln!(\"STD08_PREFIX diagnostic expected source forecast=4345378 layouts=4; unit observation profile, not an integration/backend pass\");\n    eprintln!(\"STD08_PREFIX maximum core trace: {maximum:?}\");\n    eprintln!(\"STD08_PREFIX final core trace: {last:?}\");\n    print_settled();\n    if let Err(original) = result {\n        eprintln!(\n            \"STD08_PREFIX preserved original panic String: {:?}\",\n            original.downcast_ref::<String>()\n        );\n        std::panic::resume_unwind(original);\n    }\n}\n",
+      ""
+    ],
+    [
+      23202,
+      "        for (category, label) in LABELS\n            .into_iter()\n            .enumerate()\n            .chain([(0, \"ordinary plan reachable cursor primitive frames\")])\n        {\n",
+      "        for (category, label) in LABELS.into_iter().enumerate() {\n"
+    ],
+    [
+      1565,
+      "        \"ordinary plan history comparator controls\"\n        | \"ordinary plan retained comparison owner\"\n        | \"ordinary plan reachable cursor primitive frames\" => Some(0),\n",
+      "        \"ordinary plan history comparator controls\" | \"ordinary plan retained comparison owner\" => {\n            Some(0)\n        }\n"
+    ]
+  ],
+  "whole_before_recovered": true,
+  "unknown_outside_drift_not_hidden": true,
+  "protocol_only_not_Rust_runtime": true
+}

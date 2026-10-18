@@ -1,0 +1,17 @@
+{
+  "base_head": "28f96f14ddb38a2584b068771de1f75a13724217",
+  "logical_changed": [
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "nonlogical_existing": [
+    ".github/workflows/ci.yml",
+    "docs/ORDINARY-PLAN-COMPARISON-OWNER-V1.md"
+  ],
+  "new_Rust_files": [],
+  "all_13_categories_indices_backing_capacities_and_39_original_actual_route_cases_retained": true,
+  "three_new_alias_route_cases_added": true,
+  "production_compiler_payments_work_semantics_caps_and_backends_unchanged": true,
+  "original_STD08_gate_and_failure_preserved": true,
+  "ignored_diagnostic_is_unit_prefix_observation_only": true
+}
