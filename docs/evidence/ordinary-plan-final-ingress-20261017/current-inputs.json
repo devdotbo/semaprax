@@ -2,152 +2,152 @@
   {
     "path": "src/cleanup_plan/replay.rs",
     "expected_sha256": "6db5b0ed361258023e3d7cad058c3de6d737b416b67e98e7113ecb0a993c86c1",
-    "current_length": 325741,
-    "current_sha256": "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed.txt",
+    "current_length": 321849,
+    "current_sha256": "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e.txt",
     "checkpoint_length": 318621,
     "checkpoint_sha256": "458260e9a3d66601d731b7bad8737efdfd5a4deb4e52bbb07adf0f0af150777b",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/00.txt",
     "inverse": [
       {
-        "start_byte": 323966,
+        "start_byte": 320074,
         "after": "\n#[cfg(test)]\n#[allow(dead_code)]\nstruct BeforeDirectAnchorBudgetLayout {\n    admission: AdmissionMode,\n    payer: AllocationPayer,\n    remaining: usize,\n    skeleton_remaining: usize,\n    /// Actual successful skeleton debits, including deferred lexical walks.\n    skeleton_spent: usize,\n    /// Ordinary constructors share the temporarily lent skeleton allowance.\n    lent_skeleton: bool,\n    /// Factored replay: merge equal-state skeleton paths (`skeleton_work`).\n    merge_paths: bool,\n    /// Present only for the selected retained lexical replay entry.\n    physical: Option<Box<physical_storage::PhysicalReservation>>,\n    /// Prepaid selected-budget refusal text; consumed without a fresh allocation.\n    refusal_text: Option<String>,\n    refusal_spent: bool,\n    /// One reusable fixed clone census cursor on the ordinary builder path.\n    builder_clone_cursor_paid: bool,\n}\n#[cfg(test)]\nconst _: () = assert!(\n    std::mem::size_of::<ReplayBudget>() == std::mem::size_of::<BeforeDirectAnchorBudgetLayout>()\n);\n// Test diagnostics only. This POD record owns no HIR, text or heap allocation\n// and is never consulted by validation or a budget decision.\n#[cfg(test)]\n#[derive(Clone, Copy, Debug)]\npub(crate) struct ReplayWorkRefusal {\n    pub(crate) caller: &'static std::panic::Location<'static>,\n    pub(crate) requested: usize,\n    pub(crate) remaining: usize,\n    pub(crate) status_sources: usize,\n    pub(crate) first_status_bytes: usize,\n    pub(crate) payer: &'static str,\n}\n#[cfg(test)]\nthread_local! {\n    static REPLAY_WORK_REFUSAL: std::cell::Cell<Option<ReplayWorkRefusal>> = const { std::cell::Cell::new(None) };\n}\n#[cfg(test)]\npub(crate) fn take_replay_work_refusal() -> Option<ReplayWorkRefusal> {\n    REPLAY_WORK_REFUSAL.with(|record| record.take())\n}\n",
         "before": ""
       },
       {
-        "start_byte": 323291,
+        "start_byte": 319399,
         "after": "{EpsilonAppCensus, SuccessorAppCensus}",
         "before": "EpsilonAppCensus"
       },
       {
-        "start_byte": 298261,
+        "start_byte": 294369,
         "after": "                        // Original clone1 is charged above on both true and\n                        // false probe paths; this is a bounded implementation\n                        // detail of that materialization, not a CPU ledger.\n                        if let ReplayBudget {\n                            payer: AllocationPayer::ActiveBuilder,\n                            ..\n                        } = budget\n                        {\n                            budget.reserve_bytes(\n                                function,\n                                branch_clone::TAKE_CALL_CONTROLS,\n                                \"plan final branch probe receiving\",\n                            )?;\n                            branch_clone::production_capacity::produce!(\n                                budget,\n                                function,\n                                observations,\n                                observation,\n                                plan,\n                                edge,\n                                remaining_edges,\n                                edges,\n                                branch,\n                                queue\n                            );\n                        }\n",
         "before": ""
       },
       {
-        "start_byte": 296300,
+        "start_byte": 292408,
         "after": "if let ReplayBudget {\n                        payer: AllocationPayer::ActiveBuilder,\n                        ..\n                    } = budget\n                    {\n                        budget.reserve_bytes(\n                            function,\n                            branch_clone::production_capacity::production_inline_controls::<\n                                std::rc::Rc<SkeletonObservation>,\n                            >(),\n                            \"branch clone receiving controls\",\n                        )?;\n                    } else {\n                        budget.reserve_bytes(\n                            function,\n                            branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),\n                            \"branch clone receiving controls\",\n                        )?;\n                    }",
         "before": "budget.reserve_bytes(\n                        function,\n                        branch_clone::inline_controls::<std::rc::Rc<SkeletonObservation>>(),\n                        \"branch clone receiving controls\",\n                    )?;"
       },
       {
-        "start_byte": 292769,
+        "start_byte": 288877,
         "after": "// Same slice iterator as the original for-loop, now named for the final-edge query.\n                let mut remaining_edges = edges.iter();\n                while let Some(edge) = remaining_edges.next()",
         "before": "for edge in edges"
       },
       {
-        "start_byte": 291708,
+        "start_byte": 287816,
         "after": "                    #[cfg(test)]\n                    branch_clone::note_take();\n",
         "before": ""
       },
       {
-        "start_byte": 290780,
+        "start_byte": 286888,
         "after": "",
         "before": "                        note_skeleton_materialization();\n                        // Original push work precedes every extra backing debit.\n                        budget.charge_skeleton(function, 1, \"plan branch observation push\")?;\n                        note_skeleton_materialization();\n                        let capacity = if observations.is_empty() {\n                            1\n                        } else {\n                            if observations.len() > usize::MAX / 2 {\n                                return Err(budget.budget_refusal(\n                                    function,\n                                    \"cleanup replay branch capacity overflowed\",\n                                    \"\",\n                                ));\n                            }\n                            observations.len() * 2\n                        };\n                        budget.reserve_array::<std::rc::Rc<SkeletonObservation>>(\n                            function,\n                            capacity - observations.len(),\n                            \"plan branch observation push\",\n                        )?;\n                        budget.reserve_bytes(\n                            function,\n                            physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(\n                                &observation,\n                            ),\n                            \"plan branch observation push\",\n                        )?;\n                        branch = Vec::with_capacity(capacity);\n                        branch.extend(observations.iter().cloned());\n                        branch.push(observation.into());\n"
       },
       {
-        "start_byte": 290681,
+        "start_byte": 286789,
         "after": "                            plan,\n                            edge.to,\n",
         "before": ""
       },
       {
-        "start_byte": 290574,
+        "start_byte": 286682,
         "after": "                            observation,\n",
         "before": ""
       },
       {
-        "start_byte": 290413,
+        "start_byte": 286521,
         "after": "ranch = branch_clone::direct::copy_prepaid(\n                            budget,",
         "before": "udget.charge_skeleton(\n                            function,\n                            1,\n                            \"cleanup-plan skeleton branch clone\",\n                        )?;\n                        budget.reserve_clone("
       },
       {
-        "start_byte": 289602,
+        "start_byte": 285710,
         "after": "direct generic call's actual/formal arguments and\n                    // Vec Result are funded above, before their formation",
         "before": "branch producer has no Result<Vec<_>, Diagnostic>\n                    // receiver or owned observation forwarding argument. Its\n                    // nested work/census/payment Results retain their charges"
       },
       {
-        "start_byte": 289325,
+        "start_byte": 285433,
         "after": "direct::inline_controls::<\n                            std::rc::Rc<SkeletonObservation>,\n                            SkeletonObservation,\n                        ",
         "before": "inline_controls::<std::rc::Rc<SkeletonObservation>"
       },
       {
-        "start_byte": 279349,
+        "start_byte": 275457,
         "after": "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::ReplayPlanSkeleton,\n    );\n",
         "before": ""
       },
       {
-        "start_byte": 131452,
+        "start_byte": 127560,
         "after": "match work.budget {\n                ReplayBudget {\n                    payer: AllocationPayer::ActiveBuilder,\n                    lent_skeleton: false,\n                    ..\n                } => continuation_storage::fresh_receiving(function, work.budget)?,\n                // A factored constructor has lent its ordinary allowance to the\n                // original skeleton events. Keep its standalone fixed backing;\n                // incremental relocation needs an independent ordinary account.\n                _ => continuation_storage::fresh(function, work.budget)?,",
         "before": "if work.budget.payer == AllocationPayer::ActiveBuilder {\n                continuation_storage::fresh_receiving(function, work.budget)?\n            } else {\n                continuation_storage::fresh(function, work.budget)?"
       },
       {
-        "start_byte": 126246,
+        "start_byte": 122354,
         "after": "\n            prefix.observations,\n           ",
         "before": " prefix.observations,"
       },
       {
-        "start_byte": 125952,
+        "start_byte": 122060,
         "after": "        skeleton_work::enumerated_prefix::share!(work, prefix);\n",
         "before": ""
       },
       {
-        "start_byte": 121728,
+        "start_byte": 117836,
         "after": "    #[cfg(test)]\n    if skeleton_work::enumerated_prefix::original_selected() {\n        return skeleton_work::enumerated_prefix::old_sequence(prefixes, suffixes, work);\n    }\n",
         "before": ""
       },
       {
-        "start_byte": 121429,
+        "start_byte": 117537,
         "after": "    owned_suffix::dispatch!(prefixes, suffixes, work);\n",
         "before": ""
       },
       {
-        "start_byte": 116805,
+        "start_byte": 112913,
         "after": "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::ReplayHirSkeleton,\n    );\n",
         "before": ""
       },
       {
-        "start_byte": 115225,
+        "start_byte": 111333,
         "after": "\n            expected.sort();\n            actual.sort();\n            actual != expected\n        }\n    }",
         "before": "}\n    }\n    let mut actual = plan_skeleton_paths(function, budget)?;\n    expected.sort();\n    actual.sort();\n    if actual != expected"
       },
       {
-        "start_byte": 115008,
+        "start_byte": 111116,
         "after": "skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;\n            actual.sort();\n            !skeleton_work::enumerated_prefix::equal(&expected, &actual, function, budget)?",
         "before": "if ordinary_plan_history::select(function, budget)? {\n                budget.reserve_bytes(\n                    function,\n                    ordinary_plan_history::PRODUCE_CALL_CONTROLS,\n                    \"ordinary plan history producer call receivers\",\n                )?;\n                let actual = ordinary_plan_history::produce(function, budget)?;\n                expected.sort();\n                budget.reserve_bytes(\n                    function,\n                    ordinary_plan_history::COMPARE_CALL_CONTROLS,\n                    \"ordinary plan history owned comparison call receivers\",\n                )?;\n                return ordinary_plan_history::compare(function, budget, actual, &expected);\n            }"
       },
       {
-        "start_byte": 114862,
+        "start_byte": 110970,
         "after": "2 * skeleton_work::enumerated_prefix::ENTRY_CALL,\n                \"enumerated HIR sort and equality entry",
         "before": "ordinary_plan_history::SELECT_CALL_CONTROLS,\n                \"ordinary plan history selector call"
       },
       {
-        "start_byte": 114674,
+        "start_byte": 110782,
         "after": "            admission: AdmissionMode::Ordinary,\n            lent_skeleton: false,\n",
         "before": ""
       },
       {
-        "start_byte": 112884,
+        "start_byte": 108992,
         "after": "if let ReplayBudget {\n        payer: AllocationPayer::ActiveBuilder,\n        ..\n    } = budget\n    {\n        budget.reserve_bytes(\n            function,\n            ordinary_plan_history::SELECT_CALL_CONTROLS,\n            \"ordinary plan history selector call receivers\",\n        )?;\n        if ordinary_plan_history::select(function, budget)? {\n            #[cfg(test)]\n            let _debit_phase = debit_routes::phase(debit_routes::Phase::HistoryPLAN);\n            budget.reserve_bytes(\n                function,\n                ordinary_plan_history::PRODUCE_CALL_CONTROLS,\n                \"ordinary plan history producer call receivers\",\n            )?;\n            let actual = ordinary_plan_history::produce(function, budget)?;\n            #[cfg(test)]\n            let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);\n            budget.reserve_bytes(\n                function,\n                skeleton_work::enumerated_prefix::ENTRY_CALL,\n                \"enumerated HIR sort entry receivers\",\n            )?;\n            skeleton_work::enumerated_prefix::sort(&mut expected, function, budget)?;\n            budget.reserve_bytes(\n                function,\n                ordinary_plan_history::COMPARE_CALL_CONTROLS,\n                \"ordinary plan history owned comparison call receivers\",\n            )?;\n            return ordinary_plan_history::compare(function, budget, actual, &expected);\n        }\n    }\n    #[cfg(test)]\n    let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);\n    let mut actual = plan_skeleton_paths(function, budget)?;\n    #[cfg(test)]\n    let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);\n    if ",
         "before": ""
       },
       {
-        "start_byte": 112703,
+        "start_byte": 108811,
         "after": "    #[cfg(test)]\n    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);\n",
         "before": ""
       },
       {
-        "start_byte": 112484,
+        "start_byte": 108592,
         "after": "    #[cfg(test)]\n    let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);\n",
         "before": ""
       },
       {
-        "start_byte": 112112,
+        "start_byte": 108220,
         "after": "    #[cfg(test)]\n    let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);\n",
         "before": ""
       },
       {
-        "start_byte": 20509,
-        "after": "    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::ReplayStructure,\n    );\n",
-        "before": ""
+        "start_byte": 20165,
+        "after": "use expression_facts::receiving::validate_structure_with_budget_storage;",
+        "before": "fn validate_structure_with_budget_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,\n    continuations: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    let plan = &function.cleanup_plan;\n    if helpers.is_some_and(|index| {\n        !program\n            .full_program()\n            .is_some_and(|full| index.matches_program(full))\n    }) {\n        return Err(replay_error(\n            function,\n            \"cleanup replay helper index belongs to a different typed program\",\n        ));\n    }\n    // Reconstruct the ordinary schema first, preserving all its current-source\n    // probes/error order. A private source-held projection adds allocation\n    // branches; neither its attached v20 string nor an ordinary context selects it.\n    let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;\n    let expected_schema = if allocation_paths::current(program, function).is_some() {\n        super::CLEANUP_PLAN_SCHEMA_V20\n    } else {\n        ordinary_schema\n    };\n    if plan.schema != expected_schema {\n        return Err(replay_error(\n            function,\n            format_args!(\n                \"uses cleanup-plan schema `{}` instead of HIR-derived `{expected_schema}`\",\n                plan.schema\n            ),\n        ));\n    }\n\n    if lexical_cert::requires_lexical(function) {\n        return lexical_replay::validate_with_index(program, function, budget, helpers);\n    }\n    if plan.lexical_control.is_some() {\n        return Err(replay_error(\n            function,\n            \"function without lexical exits carries a lexical-control certificate\",\n        ));\n    }\n    validate_replay_size_budget(function)?;\n    budget.charge(\n        function,\n        plan_structure_units(plan),\n        \"structural validation\",\n    )?;\n\n    let expression_facts = expression_facts::with_budget(function, budget)?;\n    ordinary_inventory::validate_inventory_coverage(program, function, budget)?;\n    let status_cases =\n        expression_facts::receiving::StatusCases::validate(program, function, budget)?;\n    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    let statuses = expression_facts::receiving::validate_status_sources_certified(\n        function,\n        &expression_facts,\n        budget,\n        &status_cases,\n    )?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges_retained(\n        program,\n        function,\n        &expression_facts,\n        &storage,\n        &leaves,\n        helpers,\n        budget,\n        &statuses,\n    )?;\n    expression_facts::receiving::validate_exits_retained(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n        &statuses,\n    )?;\n    structural_maps::validate_reference_coverage(function, budget)?;\n    structural_control::validate_ordinary_cfg(function, budget)?;\n    if !cleanup_inert_path_product_can_be_summarized(function)?\n        && !status_only_paths_can_be_summarized(function)\n        && !cleanup_inert_large_decisions_can_be_summarized(function)\n    {\n        validate_path_states::<Diagnostic>(\n            program, function, &storage, &leaves, budget, None, helpers,\n        )?;\n        validate_typed_control_skeleton_with_index(\n            program,\n            function,\n            budget,\n            helpers,\n            continuations,\n        )?;\n    }\n    Ok(())\n}"
       },
       {
         "start_byte": 18031,
@@ -778,26 +778,26 @@
   {
     "path": "tests/hir_module_boundaries.rs",
     "expected_sha256": "378d33aba7c844e66352f2eb7dc2c25b5e2f3d7101e7b331ba5bceb359a5d0fe",
-    "current_length": 125075,
-    "current_sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051.txt",
+    "current_length": 125400,
+    "current_sha256": "8cbba49ac56c132842b7d661d6c8505589cf68a66667d48ad3235cff38c8821a",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/8cbba49ac56c132842b7d661d6c8505589cf68a66667d48ad3235cff38c8821a.txt",
     "checkpoint_length": 96844,
     "checkpoint_sha256": "4264ab588af07acb50304d667d09fb8685ab4d82bc1d78c92ea99d00cc825a4b",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/03.txt",
     "inverse": [
       {
-        "start_byte": 107963,
+        "start_byte": 108288,
         "after": "concat!(include_str!(\"../src/hir.rs\"), include_str!(\"../src/hir/items.rs\"), include_str!(\"../src/hir/owned_collection_record.rs\"), include_str!(\"../src/hir/owned_record_subtree.rs\"), include_str!(\"../src/hir/owned_text_record.rs\"), include_str!(\"../src/hir/vec_field.rs\"), include_str!(\"../src/hir/agent_nodes.rs\"), concat!(include_str!(\"../src/hir/agent_validation.rs\"), include_str!(\"../src/hir/agent_validation/embedded.rs\")), concat!(include_str!(\"../src/hir/borrowed_scalar.rs\"), concat!(include_str!(\"../src/hir/borrowed_scalar/option_u8.rs\"), include_str!(\"../src/hir/borrowed_scalar/option_u8/metered.rs\"))), concat!(include_str!(\"../src/hir/byte_capacity.rs\"), include_str!(\"../src/hir/byte_capacity/static_extent.rs\"), include_str!(\"../src/hir/byte_capacity/fused_selection.rs\")), concat!(include_str!(\"../src/hir/byte_slice_provenance.rs\"), include_str!(\"../src/hir/byte_slice_provenance/inline_range.rs\"), include_str!(\"../src/hir/byte_slice_provenance/vec_field.rs\")), concat!(include_str!(\"../src/hir/static_text.rs\"), include_str!(\"../src/hir/static_text/backing.rs\"), include_str!(\"../src/hir/static_text/origin.rs\")), include_str!(\"../src/hir/capacity_probe.rs\"), concat!(include_str!(\"../src/hir/closure.rs\"), include_str!(\"../src/hir/closure/resolve.rs\"), include_str!(\"../src/hir/closure/validation.rs\"), include_str!(\"../src/hir/closure/owning_desugar.rs\"), include_str!(\"../src/hir/closure/materialize.rs\"), include_str!(\"../src/hir/closure/borrowed.rs\"), include_str!(\"../src/hir/closure/mutable.rs\"), include_str!(\"../src/hir/closure/once.rs\"), concat!(include_str!(\"../src/hir/closure/paid.rs\"), include_str!(\"../src/hir/closure/paid/copy.rs\"))), concat!(include_str!(\"../src/hir/fused_construction.rs\"), include_str!(\"../src/hir/fused_construction/correspond.rs\"), include_str!(\"../src/hir/fused_construction/join.rs\"), include_str!(\"../src/hir/fused_construction/shape.rs\"), include_str!(\"../src/hir/fused_construction/suffix.rs\")), concat!(include_str!(\"../src/hir/lexical_exit.rs\"), include_str!(\"../src/hir/lexical_exit/walk.rs\"), include_str!(\"../src/hir/lexical_exit/owner.rs\"), include_str!(\"../src/hir/lexical_exit/rekey.rs\"), include_str!(\"../src/hir/lexical_exit/latch.rs\"), include_str!(\"../src/hir/lexical_exit/wrapper.rs\"), include_str!(\"../src/hir/lexical_exit/validation.rs\"), include_str!(\"../src/hir/lexical_exit/return_operand.rs\")), include_str!(\"../src/hir/byte_partition.rs\"), concat!(include_str!(\"../src/hir/function_value.rs\"), include_str!(\"../src/hir/function_value/resolve.rs\")), concat!(include_str!(\"../src/hir/ids.rs\"), include_str!(\"../src/hir/ids/compiler.rs\"), include_str!(\"../src/hir/ids/streamed.rs\"), include_str!(\"../src/hir/ids/metered_owner.rs\")), concat!(include_str!(\"../src/hir/inspection.rs\"), concat!(include_str!(\"../src/hir/inspection/paid_nul.rs\"), include_str!(\"../src/hir/inspection/paid_nul/pending.rs\"), include_str!(\"../src/hir/inspection/paid_nul/text.rs\"))), concat!(include_str!(\"../src/hir/monomorphize.rs\"), include_str!(\"../src/hir/monomorphize/substitution_saved.rs\")), concat!(include_str!(\"../src/hir/nodes.rs\"), include_str!(\"../src/hir/nodes/import_result_type.rs\")), include_str!(\"../src/hir/owned_result_try.rs\"), include_str!(\"../src/hir/record_evolution.rs\"), concat!(include_str!(\"../src/hir/record_invariants.rs\"), include_str!(\"../src/hir/record_invariants/source.rs\")), concat!(include_str!(\"../src/hir/resolve_box_call.rs\"), include_str!(\"../src/hir/resolve_box_call/iterator.rs\"), include_str!(\"../src/hir/resolve_box_call/list.rs\"), include_str!(\"../src/hir/resolve_box_call/map.rs\")), include_str!(\"../src/hir/resolve_class.rs\"), concat!(include_str!(\"../src/hir/resolve_expr.rs\"), include_str!(\"../src/hir/resolve_expr/byte_ancestry.rs\"), include_str!(\"../src/hir/resolve_expr/byte_view.rs\"), include_str!(\"../src/hir/resolve_expr/capacity.rs\"), include_str!(\"../src/hir/resolve_expr/finish.rs\"), include_str!(\"../src/hir/resolve_expr/lexical_exit.rs\"), include_str!(\"../src/hir/resolve_expr/literal_format.rs\"), include_str!(\"../src/hir/resolve_expr/path_arena.rs\"), include_str!(\"../src/hir/resolve_expr/sort_keys.rs\"), include_str!(\"../src/hir/resolve_expr/super_method.rs\"), include_str!(\"../src/hir/resolve_expr/variable.rs\"), include_str!(\"../src/hir/resolve_expr/vec_constructor.rs\"), include_str!(\"../src/hir/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../src/hir/resolver_scope.rs\"), include_str!(\"../src/hir/resolver_scope/source_audit.rs\")), concat!(include_str!(\"../src/hir/borrowed_root_oracle.rs\"), concat!(include_str!(\"../src/hir/borrowed_root_oracle/resolve_box_call.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\")), concat!(include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../src/hir/borrowed_root_oracle/resolve_for.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_for/record.rs\")), include_str!(\"../src/hir/borrowed_root_oracle/resolve_for_own.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_pattern.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_statement.rs\"), include_str!(\"../src/hir/borrowed_root_oracle/resolve_vec_call.rs\")), concat!(include_str!(\"../src/hir/resolve_expr_frame.rs\"), include_str!(\"../src/hir/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../src/hir/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../src/hir/resolve_expr_reference.rs\"), include_str!(\"../src/hir/resolve_expr_reference/block.rs\"), include_str!(\"../src/hir/resolve_expr_reference/control.rs\"), include_str!(\"../src/hir/resolve_expr_reference/literal_format.rs\"), include_str!(\"../src/hir/resolve_expr_reference/projection.rs\"), include_str!(\"../src/hir/resolve_expr_reference/static_text.rs\")), concat!(include_str!(\"../src/hir/resolve_for.rs\"), include_str!(\"../src/hir/resolve_for/bytes.rs\"), include_str!(\"../src/hir/resolve_for/record.rs\")), include_str!(\"../src/hir/resolve_for_own.rs\"), include_str!(\"../src/hir/resolve_native_rust_result.rs\"), include_str!(\"../src/hir/resolve_pattern.rs\"), concat!(include_str!(\"../src/hir/resolve_program.rs\"), concat!(include_str!(\"../src/hir/resolve_program/initial_loan_plans.rs\"), include_str!(\"../src/hir/resolve_program/initial_loan_plans/staging.rs\")), include_str!(\"../src/hir/resolve_program/reuse_lowered.rs\")), include_str!(\"../src/hir/resolve_statement.rs\"), include_str!(\"../src/hir/resolve_stdin_stream.rs\"), include_str!(\"../src/hir/resolve_variant_or.rs\"), include_str!(\"../src/hir/resolve_vec_call.rs\"), include_str!(\"../src/hir/resolve_yield.rs\"), include_str!(\"../src/hir/selected_fused_candidate.rs\"), concat!(include_str!(\"../src/hir/type_reachability.rs\"), include_str!(\"../src/hir/type_reachability/inventory.rs\"), include_str!(\"../src/hir/type_reachability/nested_generic_function.rs\"), concat!(include_str!(\"../src/hir/type_reachability/owned_oracle.rs\"), concat!(include_str!(\"../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"), include_str!(\"../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"))), include_str!(\"../src/hir/type_reachability/leaf_saved.rs\"), include_str!(\"../src/hir/type_reachability/nominal_saved.rs\")), include_str!(\"../src/hir/variant_equality.rs\"), concat!(include_str!(\"../src/hir/workspace_link.rs\"), include_str!(\"../src/hir/workspace_link/compiler_prelude.rs\"), include_str!(\"../src/hir/workspace_link/profile_diagnostics.rs\"), include_str!(\"../src/hir/workspace_link/stdin_stream.rs\"), include_str!(\"../src/hir/workspace_link/stream_collection_record.rs\"), include_str!(\"../src/hir/workspace_link/stream_nested_outcome.rs\"), include_str!(\"../src/hir/workspace_link/stream_owned.rs\"), include_str!(\"../src/hir/workspace_link/stream_record.rs\")), include_str!(\"../src/hir/yield_aggregate.rs\"), include_str!(\"../src/hir/cache_codec.rs\"), concat!(include_str!(\"../src/hir/declaration_index.rs\"), concat!(include_str!(\"../src/hir/declaration_index/flags.rs\"), concat!(include_str!(\"../src/hir/declaration_index/flags/nominal_key.rs\"), include_str!(\"../src/hir/declaration_index/flags/nominal_key/compound.rs\")), include_str!(\"../src/hir/declaration_index/flags/owned_key_oracle.rs\")), include_str!(\"../src/hir/declaration_index/owned_builtin.rs\"), include_str!(\"../src/hir/declaration_index/owner_name.rs\"), concat!(include_str!(\"../src/hir/declaration_index/primitive_replay.rs\"), include_str!(\"../src/hir/declaration_index/primitive_replay/flat_record.rs\"), include_str!(\"../src/hir/declaration_index/primitive_replay/helper_signature.rs\"), include_str!(\"../src/hir/declaration_index/primitive_replay/option_u8.rs\"), include_str!(\"../src/hir/declaration_index/primitive_replay/vector.rs\")), include_str!(\"../src/hir/declaration_index/projection.rs\"), include_str!(\"../src/hir/declaration_index/source.rs\")), include_str!(\"../src/hir/identity_resolution.rs\"), include_str!(\"../src/hir/ordinary_identity.rs\"), include_str!(\"../src/hir/vec_field_origin.rs\"), include_str!(\"../src/hir/row_loan.rs\"), include_str!(\"../src/hir/copy_record_collection.rs\"), include_str!(\"../src/hir/generic_collection.rs\"), include_str!(\"../src/hir/generic_inference.rs\"), include_str!(\"../src/hir/owned_leaf_collection.rs\"), include_str!(\"../src/hir/owned_record_collection.rs\"), include_str!(\"../src/hir/generic_variant.rs\")",
         "before": "include_str!(\"../src/hir.rs\""
       },
       {
-        "start_byte": 98436,
+        "start_byte": 98761,
         "after": "        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"), include_str!(\"../src/source_reflows/semantic_receivers/status_inline.rs\"),\n",
         "before": ""
       },
       {
         "start_byte": 97279,
-        "after": "        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\"),\n",
+        "after": "        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"),\n        include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\"),\n",
         "before": ""
       },
       {
@@ -895,81 +895,81 @@
   {
     "path": "tests/workspace/semantic_graph/source_inventory.rs",
     "expected_sha256": "29a6c3be08485c93251c2c58a1eef2be4de905b21f54865f85356d3a85bdf21b",
-    "current_length": 141562,
-    "current_sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e.txt",
+    "current_length": 141896,
+    "current_sha256": "8ec1264e85c2952d40d6c31d9971a259c500bb4657ae4974828478b0c5ec218b",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/8ec1264e85c2952d40d6c31d9971a259c500bb4657ae4974828478b0c5ec218b.txt",
     "checkpoint_length": 89937,
     "checkpoint_sha256": "a8468859b79dd47e9ef6a77e1803e2942fcce4c4a41e6a2436e51691a495bae7",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/04.txt",
     "inverse": [
       {
-        "start_byte": 126726,
+        "start_byte": 127060,
         "after": "audit_source_join!(include_str!(\"../../src/workspace_graph/shape_identity.rs\"), include_str!(\"../../src/workspace_graph/shape_identity/before785.rs\"), include_str!(\"../../src/workspace_graph/shape_identity/before_caller785.rs\"), include_str!(\"../../src/workspace_graph/shape_identity/before_validation785.rs\"), include_str!(\"../../src/workspace_graph/shape_identity/source_controls.rs\"), include_str!(\"../../src/workspace_graph/shape_identity/tests.rs\")",
         "before": "include_str!(\"../../src/workspace_graph/shape_identity.rs\""
       },
       {
-        "start_byte": 119523,
+        "start_byte": 119857,
         "after": "concat!(include_str!(\"../../src/semantic_workspace_operations.rs\"), include_str!(\"../../src/semantic_workspace_operations/evidence_artifact.rs\"), include_str!(\"../../src/semantic_workspace_operations/evidence_verification.rs\"), include_str!(\"../../src/semantic_workspace_operations/instrumentation.rs\"), include_str!(\"../../src/semantic_workspace_operations/nominal_rename.rs\")",
         "before": "include_str!(\"../../src/semantic_workspace_operations.rs\""
       },
       {
-        "start_byte": 118986,
+        "start_byte": 119320,
         "after": "concat!(include_str!(\"../../src/semantic_workspace_structural_change.rs\"), include_str!(\"../../src/semantic_workspace_structural_change/artifact.rs\"), include_str!(\"../../src/semantic_workspace_structural_change/verification.rs\")",
         "before": "include_str!(\"../../src/semantic_workspace_structural_change.rs\""
       },
       {
-        "start_byte": 118369,
+        "start_byte": 118703,
         "after": "concat!(include_str!(\"../../src/semantic_workspace_change.rs\"), include_str!(\"../../src/semantic_workspace_change/json_depth.rs\"), concat!(include_str!(\"../../src/semantic_workspace_change/artifact.rs\"), include_str!(\"../../src/semantic_workspace_change/artifact/json.rs\")), include_str!(\"../../src/semantic_workspace_change/verification.rs\")",
         "before": "include_str!(\"../../src/semantic_workspace_change.rs\""
       },
       {
-        "start_byte": 117321,
+        "start_byte": 117655,
         "after": "concat!(include_str!(\"../../src/workspace_graph/identity_resolution/tests.rs\"), include_str!(\"../../src/workspace_graph/identity_resolution/tests/oracle_owner_before.rs\")",
         "before": "include_str!(\"../../src/workspace_graph/identity_resolution/tests.rs\""
       },
       {
-        "start_byte": 115930,
+        "start_byte": 116264,
         "after": " include_str!(\"../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../src/hir/ids/declaration_tag/before.rs\"),",
         "before": ""
       },
       {
-        "start_byte": 106056,
+        "start_byte": 106390,
         "after": "concat!(include_str!(\"../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\"), include_str!(\"../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/arena.rs\"), concat!(include_str!(\"../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy.rs\"), include_str!(\"../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy/nominal.rs\"))",
         "before": "include_str!(\"../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\""
       },
       {
-        "start_byte": 104280,
+        "start_byte": 104614,
         "after": "concat!(include_str!(\"../../src/cleanup_plan/replay/structural_control.rs\"), include_str!(\"../../src/cleanup_plan/replay/structural_control/borrowed_branch.rs\"), concat!(include_str!(\"../../src/cleanup_plan/replay/structural_control/cfg.rs\"), include_str!(\"../../src/cleanup_plan/replay/structural_control/cfg/ordinary.rs\")), include_str!(\"../../src/cleanup_plan/replay/structural_control/entry.rs\"), include_str!(\"../../src/cleanup_plan/replay/structural_control/exits.rs\")",
         "before": "include_str!(\"../../src/cleanup_plan/replay/structural_control.rs\""
       },
       {
-        "start_byte": 102703,
+        "start_byte": 103037,
         "after": "concat!(include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving.rs\"), concat!(include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/helpers.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs\"))",
         "before": "include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving.rs\""
       },
       {
-        "start_byte": 85503,
+        "start_byte": 85837,
         "after": "concat!(include_str!(\"../../src/hir/lexical_exit/owner_funded.rs\"), include_str!(\"../../src/hir/lexical_exit/owner_funded/work.rs\")),\nconcat!(include_str!(\"../../src/literal_format/funded.rs\"), include_str!(\"../../src/literal_format/funded/work.rs\")),\nconcat!(include_str!(\"../../src/string_ops/concat_funded.rs\"), include_str!(\"../../src/string_ops/concat_funded/work.rs\")),\nconcat!(include_str!(\"../../src/string_ops/conditions/funded.rs\"), include_str!(\"../../src/string_ops/conditions/funded/work.rs\")",
         "before": "include_str!(\"../../src/hir/lexical_exit/owner_funded.rs\"),\ninclude_str!(\"../../src/literal_format/funded.rs\"),\ninclude_str!(\"../../src/string_ops/concat_funded.rs\"),\ninclude_str!(\"../../src/string_ops/conditions/funded.rs\""
       },
       {
-        "start_byte": 85092,
+        "start_byte": 85426,
         "after": "concat!(include_str!(\"../../src/hir/funded.rs\"), include_str!(\"../../src/hir/funded/work.rs\")),\nconcat!(include_str!(\"../../src/hir/function_value/funded.rs\"), include_str!(\"../../src/hir/function_value/funded/work.rs\")",
         "before": "include_str!(\"../../src/hir/funded.rs\"),\ninclude_str!(\"../../src/hir/function_value/funded.rs\""
       },
       {
-        "start_byte": 82278,
+        "start_byte": 82612,
         "after": "        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/factored/canonical_shared/unit_weight.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/factored/canonical_shared/unit_weight/tests.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/factored/canonical_shared/unit_weight_tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/path_array/completed_tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/path_array/final_before.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/path_array/sequence.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/path_array/sequence/before.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/path_array/sequence/tests.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/path_join/grouping.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/path_join/grouping/source_custody.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/path_join/grouping/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/sequence_prefix.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/sequence_prefix/before.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/sequence_prefix/before_wrapper.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/sequence_prefix/before_wrapper_tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/sequence_prefix/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/sequence_vector.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/sequence_vector/before.rs\"),\n        semantic_graph_legacy_main_source!(\"src/cleanup_plan/replay/sequence_vector/tests.rs\"),\n        include_str!(\"../../src/loan_plan/paid_live/funded_before.rs\"),\n        include_str!(\"../../src/loan_plan/paid_live/original.rs\"),\n",
         "before": ""
       },
       {
-        "start_byte": 81194,
+        "start_byte": 81528,
         "after": "        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"), include_str!(\"../../src/source_reflows/semantic_receivers/status_inline.rs\"),\n",
         "before": ""
       },
       {
         "start_byte": 80039,
-        "after": "include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\"),\n",
+        "after": "include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"),\ninclude_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\"),\n",
         "before": ""
       },
       {
@@ -1062,141 +1062,141 @@
   {
     "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
     "expected_sha256": "754b81a88c3b698f7098524bd76cf0726d189632c44cf9027e6724e314cd7d53",
-    "current_length": 181907,
-    "current_sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab.txt",
+    "current_length": 182268,
+    "current_sha256": "9f709a06c198dc7d024c14984c0d30c9fbbede425663f68b0da8eda6f5b7b6d9",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/9f709a06c198dc7d024c14984c0d30c9fbbede425663f68b0da8eda6f5b7b6d9.txt",
     "checkpoint_length": 154870,
     "checkpoint_sha256": "68f460f783a905ec3b35fbe0152b8353875ea0de23973dea8cf430e2b0a1c88f",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/05.txt",
     "inverse": [
       {
-        "start_byte": 165689,
+        "start_byte": 166050,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena.rs\""
       },
       {
-        "start_byte": 164889,
+        "start_byte": 165250,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/ordinary_before.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts.rs\""
       },
       {
-        "start_byte": 163374,
+        "start_byte": 163735,
         "after": " include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs\"),",
         "before": ""
       },
       {
-        "start_byte": 142415,
+        "start_byte": 142776,
         "after": "concat!(include_str!(\"../../../../../src/source_verify.rs\"), include_str!(\"../../../../../src/source_verify/field_update.rs\")",
         "before": "include_str!(\"../../../../../src/source_verify.rs\""
       },
       {
-        "start_byte": 124905,
+        "start_byte": 125266,
         "after": "concat!(concat!(include_str!(\"../../../../../src/hir.rs\"), concat!(include_str!(\"../../../../../src/hir/monomorphize.rs\"), include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\")), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\")), concat!(include_str!(\"../../../../../src/hir/type_reachability.rs\"), include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"), include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"))), include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"), include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"))), include_str!(\"../../../../../src/hir/vec_field_origin.rs\")",
         "before": "include_str!(\"../../../../../src/hir.rs\""
       },
       {
-        "start_byte": 116340,
+        "start_byte": 116701,
         "after": "concat!(include_str!(\"../../../../../src/hir/declaration_index.rs\"), concat!(include_str!(\"../../../../../src/hir/declaration_index/legacy_drop.rs\"), include_str!(\"../../../../../src/hir/declaration_index/legacy_drop/before.rs\"))",
         "before": "include_str!(\"../../../../../src/hir/declaration_index.rs\""
       },
       {
-        "start_byte": 114364,
+        "start_byte": 114725,
         "after": "concat!(include_str!(\"../../../../../src/hir/ids/metered_owner.rs\"), include_str!(\"../../../../../src/hir/ids/metered_owner/oracle.rs\")",
         "before": "include_str!(\"../../../../../src/hir/ids/metered_owner.rs\""
       },
       {
-        "start_byte": 109222,
+        "start_byte": 109583,
         "after": "concat!(include_str!(\"../../../../../src/hir/resolve_program.rs\"), include_str!(\"../../../../../src/hir/resolve_program_methods.rs\")",
         "before": "include_str!(\"../../../../../src/hir/resolve_program.rs\""
       },
       {
-        "start_byte": 104495,
+        "start_byte": 104856,
         "after": "concat!(include_str!(\"../../../../../src/hir/function_value/funded.rs\"), include_str!(\"../../../../../src/hir/function_value/funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/function_value/funded.rs\""
       },
       {
-        "start_byte": 102151,
+        "start_byte": 102512,
         "after": "concat!(include_str!(\"../../../../../src/hir/lexical_exit/owner_funded.rs\"), include_str!(\"../../../../../src/hir/lexical_exit/owner_funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/lexical_exit/owner_funded.rs\""
       },
       {
-        "start_byte": 98739,
+        "start_byte": 99100,
         "after": "concat!(include_str!(\"../../../../../src/hir/funded.rs\"), include_str!(\"../../../../../src/hir/funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/funded.rs\""
       },
       {
-        "start_byte": 90362,
+        "start_byte": 90723,
         "after": "concat!(concat!(include_str!(\"../../../../../src/hir.rs\"), concat!(include_str!(\"../../../../../src/hir/monomorphize.rs\"), include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\")), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\")), concat!(include_str!(\"../../../../../src/hir/type_reachability.rs\"), include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"), include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"))), include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"), include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"))), include_str!(\"../../../../../src/hir/vec_field_origin.rs\")",
         "before": "include_str!(\"../../../../../src/hir.rs\""
       },
       {
-        "start_byte": 89999,
+        "start_byte": 90360,
         "after": "include!(\"source_inventory_leaf_views.rs\");",
         "before": "macro_rules! substitution_leaf_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/monomorphize.rs\"),\n            include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\"),\n            include_str!(\"../../../../../src/hir/monomorphize/substitution_leaf_tests.rs\"),\n        )\n    };\n}\nmacro_rules! reachability_leaf_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/type_reachability.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nested_generic_function.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/leaf_tests.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nominal_tests.rs\"),\n        )\n    };\n}\n// Complete borrowed-root oracle owners and their relocated children.\nmacro_rules! hir_borrowed_root_oracle_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"\n            ),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"\n            ),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\"),\n        )\n    };\n}"
       },
       {
-        "start_byte": 87267,
+        "start_byte": 87628,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_operations.rs\"),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_operations/evidence_artifact.rs\"\n                ),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_operations/evidence_verification.rs\"\n                ),\n                include_str!(\"../../../../../src/semantic_workspace_operations/instrumentation.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_operations/nominal_rename.rs\")\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_operations.rs\""
       },
       {
-        "start_byte": 86562,
+        "start_byte": 86923,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_structural_change.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_structural_change/artifact.rs\"),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_structural_change/verification.rs\"\n                )\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_structural_change.rs\""
       },
       {
-        "start_byte": 85753,
+        "start_byte": 86114,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_change.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_change/json_depth.rs\"),\n                concat!(\n                    include_str!(\"../../../../../src/semantic_workspace_change/artifact.rs\"),\n                    include_str!(\"../../../../../src/semantic_workspace_change/artifact/json.rs\")\n                ),\n                include_str!(\"../../../../../src/semantic_workspace_change/verification.rs\")\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_change.rs\""
       },
       {
-        "start_byte": 82892,
+        "start_byte": 83253,
         "after": "audit_source_join!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs\""
       },
       {
-        "start_byte": 81969,
+        "start_byte": 82330,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/diagnostic.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/diagnostic/metered.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/invocation.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle.rs\""
       },
       {
-        "start_byte": 81551,
+        "start_byte": 81912,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage/representative_measurements.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage/representative_measurements/applications.rs\"))",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage.rs\""
       },
       {
-        "start_byte": 80408,
+        "start_byte": 80769,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget/setup.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget.rs\""
       },
       {
-        "start_byte": 64593,
+        "start_byte": 64954,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/ordered_alias.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/merge_census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/owned_suffix_878.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/owned_suffix_878_vector.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/merge_keys_878.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/merge_search.rs\"), include_str!(\"../../../../../src/source_reflows/main_e177_controllers.rs\"), include_str!(\"../../../../../src/source_reflows/main_e177_support.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main_e177_final_inputs.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main_e177_inputs.rs\"), include_str!(\"../../../../../tests/workspace/pin_capture.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\"), include_str!(\"../../../../../src/source_reflows/main99f_controllers.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main99f_inputs.rs\"), include_str!(\"../../../../../src/source_reflows_merge/next_big_batch_inputs.rs\"), include_str!(\"../../../../../src/workspace_graph/tests/core_attempt_trace.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_3e66.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/selected_labels.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs\"), include_str!(\"../../../../../src/source_reflows/main_f247_controllers.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/historical_main2600.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/browser_custody.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_2600.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/funded_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/before_singleton.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/singleton_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/closure_receiving.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/unit_receiving_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/historical_main2600.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/browser_custody.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_2600.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/funded_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/before_singleton.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/singleton_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/closure_receiving.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/unit_receiving_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs\""
       },
       {
-        "start_byte": 59448,
+        "start_byte": 59809,
         "after": "concat!(include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/ledger.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/names.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/roots.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/shape.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/sorting.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/owner_index.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/before_registry.rs\")",
         "before": "include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout.rs\""
       },
       {
-        "start_byte": 58932,
+        "start_byte": 59293,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy/nominal.rs\"))",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\""
       },
       {
-        "start_byte": 56968,
+        "start_byte": 57329,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/structural_control.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/borrowed_branch.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/cfg.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/cfg/ordinary.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/entry.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/exits.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/structural_control.rs\""
       },
       {
-        "start_byte": 33010,
+        "start_byte": 33371,
         "after": " include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"), include_str!(\"../../../../../src/source_reflows/semantic_receivers/status_inline.rs\"),",
         "before": ""
       },
       {
         "start_byte": 31636,
-        "after": "audit_source_join!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\")",
+        "after": "audit_source_join!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\""
       },
       {
