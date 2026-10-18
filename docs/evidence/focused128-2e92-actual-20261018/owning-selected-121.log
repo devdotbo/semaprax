@@ -1,0 +1,10 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::whole_caller_drop_releases_actual_backing_on_success_and_refusal ... cross-phase physical old=true cap=0 Metrics { allocations: 1, reallocations: 0, allocated: 88, freed: 88, live: 0, highwater: 88, invalid: false }
+cross-phase physical old=false cap=0 Metrics { allocations: 1, reallocations: 0, allocated: 88, freed: 88, live: 0, highwater: 88, invalid: false }
+cross-phase physical old=true cap=67108864 Metrics { allocations: 32926, reallocations: 4689, allocated: 5089773, freed: 5089773, live: 0, highwater: 1311562, invalid: false }
+cross-phase physical old=false cap=67108864 Metrics { allocations: 32926, reallocations: 4689, allocated: 5089773, freed: 5089773, live: 0, highwater: 1311562, invalid: false }
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 1.69s
+

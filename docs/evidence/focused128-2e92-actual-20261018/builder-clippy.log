@@ -1,0 +1,13 @@
+    Checking semaprax-native-rust-interop-platform-sys v0.1.0 (/Volumes/Semaprax/worktrees/next-large-combined-20261017/crates/semaprax-native-rust-interop-platform-sys)
+   Compiling semaprax v0.9.0 (/Volumes/Semaprax/worktrees/next-large-combined-20261017)
+    Checking semaprax-native-rust-interop-platform v0.1.0 (/Volumes/Semaprax/worktrees/next-large-combined-20261017/crates/semaprax-native-rust-interop-platform)
+error: unused import: `validate_status_sources_certified`
+ --> src/cleanup_plan/replay/expression_facts/receiving.rs:9:66
+  |
+9 |     validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_certified,
+  |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `-D unused-imports` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(unused_imports)]`
+
+error: could not compile `semaprax` (lib) due to 1 previous error

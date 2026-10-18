@@ -1,0 +1,7 @@
+
+running 1 test
+test hir::validation::owned_iterative_oracle::frame_layout::historical_and_current_full_frames_keep_exact_typed_payload_equation_and_tariff ... OPT891 validator_frame old=248 current=240 old_align=8 current_align=8 old_type=48 current_type=40 old_type_align=8 current_type_align=8 old_result=56 current_result=48 old_id=24 current_id=16 old_id_align=8 current_id_align=8 old_cow=48 current_cow=40 tariff=248
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 0.00s
+
