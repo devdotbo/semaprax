@@ -461,8 +461,8 @@
       "sha256": "76315ca0506d052f6fd3e68cbd54359d921da512b57bda13b1dd159185b1bec9"
     },
     "src/cleanup_plan/replay/path_join/selected.rs": {
-      "length": 6999,
-      "sha256": "878fb6affb4f5e37d7f623ec546a0da2c84131524920e6a6a62f52419d710ee7"
+      "length": 7000,
+      "sha256": "3d27283dc95fa368aecc0bb8714633e54b2d1ffc772ce07e5a209d531d891d97"
     },
     "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs": {
       "length": 2952,
@@ -557,8 +557,8 @@
       "sha256": "8db0e39a5ed2b200c8a3f0b18607e1bae9c485253137c20e5728679c84ddae70"
     },
     "src/cleanup_plan/replay/path_join/selected/walk.rs": {
-      "length": 61537,
-      "sha256": "eda1637733f7786afb07cd3672925d94a9840e22c3629c15b5e9a38db11d62cc"
+      "length": 61141,
+      "sha256": "3c611356a7ea7248e9723b78ac6986f9afebfbee5798c6712ed7aac2c76fef1e"
     },
     "src/cleanup_plan/replay/record_destructure/update.rs": {
       "length": 8042,
@@ -629,8 +629,8 @@
       "sha256": "4c1f11609aab86b845013b820a4a9557c85e216251200b7308fe0147d6e8fdec"
     },
     "src/cleanup_plan/replay/structural_control/selected.rs": {
-      "length": 4945,
-      "sha256": "7cc864553f771319f97aacc37280775c3ee5221177fd9b3817f0083fcb7de55e"
+      "length": 4854,
+      "sha256": "e1916f10ad3d93433c90260b076897ed2586987aefd6540d64f6e4dce0458211"
     },
     "src/cleanup_plan/replay/structural_control/selected/blocks.rs": {
       "length": 42825,
@@ -725,8 +725,8 @@
       "sha256": "b175076b23d77341e790c2780a1d9925063dec0728076cdea53babc261921a97"
     },
     "src/cleanup_plan/replay/ordinary_receiving.rs": {
-      "length": 17417,
-      "sha256": "8f8bc5807c4ca3595c8270762ba05a2f8d0a813816677b090e8a2bd478003621"
+      "length": 17897,
+      "sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12"
     },
     "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs": {
       "length": 4692,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 39997,
-      "sha256": "670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80"
+      "length": 40055,
+      "sha256": "a973fa5e2df3ab392de00c768a944f5fd97e3235cf05196a6362215679ce9975"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

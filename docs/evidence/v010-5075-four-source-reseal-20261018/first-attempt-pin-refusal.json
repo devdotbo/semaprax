@@ -1,0 +1,6 @@
+{
+  "status": "REFUSED_CURRENT_SOURCE_PIN_MISMATCH",
+  "source": "src/cleanup_plan/replay/path_join/selected/walk.rs",
+  "cause": "inherited original519 row required a new literal page replacement; fixed in reseal.py successor",
+  "first_attempt_never_qualified": true
+}

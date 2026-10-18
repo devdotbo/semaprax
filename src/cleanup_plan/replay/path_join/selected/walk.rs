@@ -541,11 +541,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             index!(budget, function, edges, 0, EdgeId).0 as usize
                         );
                         let retained = retained_units!(budget, function, &state);
-                        budget.charge(
-                            function,
-                            retained,
-                            "renewal branch history clone",
-                        )?;
+                        budget.charge(function, retained, "renewal branch history clone")?;
                         let cloned = {
                             retained_child!(
                                 budget,
@@ -610,11 +606,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             index!(budget, function, edges, 1, EdgeId).0 as usize
                         );
                         let retained = retained_units!(budget, function, &state);
-                        budget.charge(
-                            function,
-                            retained,
-                            "renewal branch history clone",
-                        )?;
+                        budget.charge(function, retained, "renewal branch history clone")?;
                         let next = path_child!(
                             budget,
                             function,
@@ -665,11 +657,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                         ) {
                             let edge = plan_at!(budget, function, plan, edges, edge.0 as usize);
                             let retained = retained_units!(budget, function, &state);
-                            budget.charge(
-                                function,
-                                retained,
-                                "renewal branch history clone",
-                            )?;
+                            budget.charge(function, retained, "renewal branch history clone")?;
                             let cloned = {
                                 retained_child!(
                                     budget,
@@ -1114,11 +1102,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             index!(budget, function, edges, 0, EdgeId).0 as usize
                         );
                         let retained = retained_units!(budget, function, &state);
-                        budget.charge(
-                            function,
-                            retained,
-                            "renewal branch history clone",
-                        )?;
+                        budget.charge(function, retained, "renewal branch history clone")?;
                         let cloned = {
                             retained_child!(
                                 budget,
@@ -1183,11 +1167,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             index!(budget, function, edges, 1, EdgeId).0 as usize
                         );
                         let retained = retained_units!(budget, function, &state);
-                        budget.charge(
-                            function,
-                            retained,
-                            "renewal branch history clone",
-                        )?;
+                        budget.charge(function, retained, "renewal branch history clone")?;
                         let next = path_child!(
                             budget,
                             function,
@@ -1238,11 +1218,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                         ) {
                             let edge = plan_at!(budget, function, plan, edges, edge.0 as usize);
                             let retained = retained_units!(budget, function, &state);
-                            budget.charge(
-                                function,
-                                retained,
-                                "renewal branch history clone",
-                            )?;
+                            budget.charge(function, retained, "renewal branch history clone")?;
                             let cloned = {
                                 retained_child!(
                                     budget,

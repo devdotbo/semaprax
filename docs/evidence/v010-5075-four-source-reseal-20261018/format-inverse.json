@@ -1,0 +1,12 @@
+{
+  "source": "src/cleanup_plan/replay/path_join/selected/walk.rs",
+  "before_length": 61839,
+  "before_sha256": "a5941f6e77da4cc1b46927ff4f3a26e059885be50604ea9ceb5cbb2a28ba0701",
+  "after_length": 61141,
+  "after_sha256": "3c611356a7ea7248e9723b78ac6986f9afebfbee5798c6712ed7aac2c76fef1e",
+  "before_lines": 1497,
+  "after_lines": 1473,
+  "edits": 6,
+  "exact_only": "six literal paid charge-call whitespace collapses; complete inverse retained",
+  "tokens_and_literal_contents_unchanged": true
+}

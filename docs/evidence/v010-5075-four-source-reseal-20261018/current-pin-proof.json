@@ -1,0 +1,30 @@
+{
+  "status": "SOURCE_PIN_RESEAL_CHECK_ONLY",
+  "head": "5afdbd78a9d2bf6b77f7ce3d67b874288ac487d3",
+  "rows": 543,
+  "whole_prior543_per_row_inverse": true,
+  "all_prior_view_prefixes": true,
+  "channels": 1668,
+  "modeled_edges": 15578,
+  "raw_modules": 180,
+  "closed_sources": 579,
+  "owners": 342,
+  "ordered_rows": 1020,
+  "page": {
+    "length": 139589,
+    "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+    "sha256": "b93045520489eed7fd111b58a5bcb12c9f6d972763f9de2b10127470bc7f47c6"
+  },
+  "raw_changes": [
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/walk.rs",
+    "src/cleanup_plan/replay/structural_control/selected.rs",
+    "src/cleanup_plan/replay/ordinary_receiving.rs"
+  ],
+  "model_source_pin_changes": 9,
+  "typed_edge_offset_changes": 62,
+  "walk_lines": 1473,
+  "root_lines": 1499,
+  "no_source_producer_or_Rust_test_run": true,
+  "Cargo": false
+}

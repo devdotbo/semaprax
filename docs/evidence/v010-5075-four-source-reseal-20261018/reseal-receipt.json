@@ -1,0 +1,782 @@
+{
+  "status": "SOURCE_ONLY_FOUR_COMPILE_REPAIRS_RESEALED",
+  "source_head": "5afdbd78a9d2bf6b77f7ce3d67b874288ac487d3",
+  "failed_source_head": "5075eadf9f2ab382d5a94e24b0defce46b64c1a6",
+  "changed_sources": [
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/walk.rs",
+    "src/cleanup_plan/replay/structural_control/selected.rs",
+    "src/cleanup_plan/replay/ordinary_receiving.rs"
+  ],
+  "rows": 543,
+  "old_rows": 543,
+  "whole_old543_object_inverse": true,
+  "whole_original519_object_inverse": true,
+  "all_prior_view_prefixes": true,
+  "modules": 180,
+  "owners": 342,
+  "ordered_rows": 1020,
+  "page": {
+    "length": 139589,
+    "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+    "sha256": "b93045520489eed7fd111b58a5bcb12c9f6d972763f9de2b10127470bc7f47c6"
+  },
+  "model_source_changes": [
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "before": {
+        "length": 17417,
+        "sha256": "8f8bc5807c4ca3595c8270762ba05a2f8d0a813816677b090e8a2bd478003621"
+      },
+      "after": {
+        "length": 17897,
+        "sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/path_join/selected.rs",
+      "before": {
+        "length": 6999,
+        "sha256": "878fb6affb4f5e37d7f623ec546a0da2c84131524920e6a6a62f52419d710ee7"
+      },
+      "after": {
+        "length": 7000,
+        "sha256": "3d27283dc95fa368aecc0bb8714633e54b2d1ffc772ce07e5a209d531d891d97"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/path_join/selected/walk.rs",
+      "before": {
+        "length": 61537,
+        "sha256": "eda1637733f7786afb07cd3672925d94a9840e22c3629c15b5e9a38db11d62cc"
+      },
+      "after": {
+        "length": 61141,
+        "sha256": "3c611356a7ea7248e9723b78ac6986f9afebfbee5798c6712ed7aac2c76fef1e"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "before": {
+        "length": 4945,
+        "sha256": "7cc864553f771319f97aacc37280775c3ee5221177fd9b3817f0083fcb7de55e"
+      },
+      "after": {
+        "length": 4854,
+        "sha256": "e1916f10ad3d93433c90260b076897ed2586987aefd6540d64f6e4dce0458211"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+      "before": {
+        "length": 39997,
+        "sha256": "670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80"
+      },
+      "after": {
+        "length": 40055,
+        "sha256": "a973fa5e2df3ab392de00c768a944f5fd97e3235cf05196a6362215679ce9975"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "before": {
+        "length": 17417,
+        "sha256": "8f8bc5807c4ca3595c8270762ba05a2f8d0a813816677b090e8a2bd478003621"
+      },
+      "after": {
+        "length": 17897,
+        "sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/path_join/selected.rs",
+      "before": {
+        "length": 6999,
+        "sha256": "878fb6affb4f5e37d7f623ec546a0da2c84131524920e6a6a62f52419d710ee7"
+      },
+      "after": {
+        "length": 7000,
+        "sha256": "3d27283dc95fa368aecc0bb8714633e54b2d1ffc772ce07e5a209d531d891d97"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/path_join/selected/walk.rs",
+      "before": {
+        "length": 61537,
+        "sha256": "eda1637733f7786afb07cd3672925d94a9840e22c3629c15b5e9a38db11d62cc"
+      },
+      "after": {
+        "length": 61141,
+        "sha256": "3c611356a7ea7248e9723b78ac6986f9afebfbee5798c6712ed7aac2c76fef1e"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "before": {
+        "length": 4945,
+        "sha256": "7cc864553f771319f97aacc37280775c3ee5221177fd9b3817f0083fcb7de55e"
+      },
+      "after": {
+        "length": 4854,
+        "sha256": "e1916f10ad3d93433c90260b076897ed2586987aefd6540d64f6e4dce0458211"
+      }
+    }
+  ],
+  "typed_edge_offset_changes": [
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs",
+      "text": "#[cfg(test)]\nmod append_before_formals;",
+      "before": 6935,
+      "after": 6936
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
+      "text": "mod blocks;",
+      "before": 4323,
+      "after": 4232
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/calls.rs",
+      "text": "mod calls;",
+      "before": 4335,
+      "after": 4244
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/cfg.rs",
+      "text": "mod cfg;",
+      "before": 4346,
+      "after": 4255
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry.rs",
+      "text": "mod entry;",
+      "before": 4355,
+      "after": 4264
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry_before_dynamic.rs",
+      "text": "#[cfg(test)]\nmod entry_before_dynamic;",
+      "before": 4366,
+      "after": 4275
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry_before_formals.rs",
+      "text": "#[cfg(test)]\nmod entry_before_formals;",
+      "before": 4405,
+      "after": 4314
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/exits.rs",
+      "text": "mod exits;",
+      "before": 4444,
+      "after": 4353
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/helpers.rs",
+      "text": "pub(in crate::cleanup_plan::replay) mod helpers;",
+      "before": 4455,
+      "after": 4364
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs",
+      "text": "#[cfg(test)]\nmod place_before_formals;",
+      "before": 4504,
+      "after": 4413
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/reason.rs",
+      "text": "pub(in crate::cleanup_plan::replay) mod reason;",
+      "before": 4247,
+      "after": 4156
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/status.rs",
+      "text": "mod status;",
+      "before": 4543,
+      "after": 4452
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "child": "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs",
+      "text": "#[cfg(test)]\nmod caller_before;",
+      "before": 15815,
+      "after": 16295
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "child": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 17393,
+      "after": 17873
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs",
+      "text": "#[cfg(test)]\nmod append_before_formals;",
+      "before": 6935,
+      "after": 6936
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/path_join/selected.rs",
+      "child": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 6975,
+      "after": 6976
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
+      "text": "mod blocks;",
+      "before": 4323,
+      "after": 4232
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/calls.rs",
+      "text": "mod calls;",
+      "before": 4335,
+      "after": 4244
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/cfg.rs",
+      "text": "mod cfg;",
+      "before": 4346,
+      "after": 4255
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry.rs",
+      "text": "mod entry;",
+      "before": 4355,
+      "after": 4264
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry_before_dynamic.rs",
+      "text": "#[cfg(test)]\nmod entry_before_dynamic;",
+      "before": 4366,
+      "after": 4275
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/entry_before_formals.rs",
+      "text": "#[cfg(test)]\nmod entry_before_formals;",
+      "before": 4405,
+      "after": 4314
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/exits.rs",
+      "text": "mod exits;",
+      "before": 4444,
+      "after": 4353
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/helpers.rs",
+      "text": "pub(in crate::cleanup_plan::replay) mod helpers;",
+      "before": 4455,
+      "after": 4364
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs",
+      "text": "#[cfg(test)]\nmod place_before_formals;",
+      "before": 4504,
+      "after": 4413
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/reason.rs",
+      "text": "pub(in crate::cleanup_plan::replay) mod reason;",
+      "before": 4247,
+      "after": 4156
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/status.rs",
+      "text": "mod status;",
+      "before": 4543,
+      "after": 4452
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "child": "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 4921,
+      "after": 4830
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "child": "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs",
+      "text": "#[cfg(test)]\nmod caller_before;",
+      "before": 15815,
+      "after": 16295
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "child": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+      "text": "#[cfg(test)]\nmod tests;",
+      "before": 17393,
+      "after": 17873
+    }
+  ],
+  "role_class_chunk_order_unchanged": true,
+  "files": [
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+      "before": {
+        "length": 137615,
+        "sha256": "2e6f6193c6202ca59e7ee2fdd107aa3b568b2c5e5a77d442b9436c0a8bcebe67",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__finite-source-overlay-v2-20261018__page.json.txt"
+      },
+      "after": {
+        "length": 139589,
+        "sha256": "b93045520489eed7fd111b58a5bcb12c9f6d972763f9de2b10127470bc7f47c6"
+      }
+    },
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/policy.json",
+      "before": {
+        "length": 14932,
+        "sha256": "fc01b42a17886089c55a9fe167f4881de17d02db51dc769c42190816286426d1",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__finite-source-overlay-v2-20261018__policy.json.txt"
+      },
+      "after": {
+        "length": 14985,
+        "sha256": "2c08cccdec7cf2db88c1caca9f1f7914853e262360bb0458dc44ca2d799a3f27"
+      }
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+      "before": {
+        "length": 39997,
+        "sha256": "670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/src__source_reflows_merge__main_e177_overlay_v2.rs.txt"
+      },
+      "after": {
+        "length": 40055,
+        "sha256": "a973fa5e2df3ab392de00c768a944f5fd97e3235cf05196a6362215679ce9975"
+      }
+    },
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py",
+      "before": {
+        "length": 12564,
+        "sha256": "48f8838367765279e12020ecf12fcd6f06497ca36f9cb58fd5f1f331af7f9c99",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__finite-source-overlay-v2-20261018__overlay_page.py.txt"
+      },
+      "after": {
+        "length": 12618,
+        "sha256": "08b613031cc9e4c45330cb34b13eb0f772e676ad3a6dc703817728286b554d4a"
+      }
+    },
+    {
+      "path": "docs/evidence/merge-2e92-browser-20261018/guard-config.json",
+      "before": {
+        "length": 136457,
+        "sha256": "8eb750fd67c6a21a17d458be36b8e06b775936aed9de336d6b286bdff6d54ba1",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__merge-2e92-browser-20261018__guard-config.json.txt"
+      },
+      "after": {
+        "length": 136457,
+        "sha256": "40a02627bf8370f7e7d7dcb4488d0374c8375f7fb069e4c759fb15bfc1dc7c7b"
+      }
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before": {
+        "length": 11549,
+        "sha256": "e09d2bccfd9134d947ea1309469adfb3aba442ebf99494eab39ab0b5d7509f5a",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__main-e177-final-source-binding-20261017__guard_payload.py.txt"
+      },
+      "after": {
+        "length": 11549,
+        "sha256": "e555baac62a96c6443c04ecdc60fc67c1065165b41502ce01a1de57352fbfd4f"
+      }
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before": {
+        "length": 5322,
+        "sha256": "b4a8a18ecb79374e96548e8ef9bee547f5f9bcc06cad6754b27ce1f24c77c0bb",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__accepted-strict-guard-generation-20261017__check-source.py.txt"
+      },
+      "after": {
+        "length": 5322,
+        "sha256": "33fa81eed92118742638d3fea351455ac181c2239904d574ec2db368de89c2e1"
+      }
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before": {
+        "length": 2253,
+        "sha256": "e472778eaecad7d331a8df8173bcb408af49d3e2699100313d93185407af4a55",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__accepted-final6-source-binding-20261017__check-source.py.txt"
+      },
+      "after": {
+        "length": 2253,
+        "sha256": "e0e1fecb8c048ddac70d9e026b25fa9693731eaee33deb14b72d8e3d2c3220c0"
+      }
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before": {
+        "length": 2766,
+        "sha256": "afc16ee07c8143a104a10d3c1b9838b54791ed7f8da17a9e974361ca1d311414",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__main043-independent-custody-20261016__verify-or-refresh.py.txt"
+      },
+      "after": {
+        "length": 2766,
+        "sha256": "d8ffb1a3870fb0854f776c6e7ede4cac769b6acc6c99e38f150447943ea8e601"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 3624163,
+        "sha256": "f2abe13c19eb08aed38cb673362861dde24406e658e688af45b38f1e3288da5b",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+      },
+      "after": {
+        "length": 3624163,
+        "sha256": "2f72a8d2ba9759ed4a795fe53f8dec1aeb1c3262067552a9921d428374246b36"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 4007292,
+        "sha256": "865044ccddbc19bdfe683152402e3fe89dced66d08e1984e252a8100a000c3ef",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+      },
+      "after": {
+        "length": 4007292,
+        "sha256": "cf0db6588fd111d93ec0a6de50ebdcab1a8c8a3adf415836723630b9fd98795d"
+      }
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 63760,
+        "sha256": "b203a9d9242ec34adb49ce12b3a7549352e543d85e6cb1e079d31c6cb2bc4dd6",
+        "archive": "docs/evidence/v010-5075-four-source-reseal-20261018/before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+      },
+      "after": {
+        "length": 63760,
+        "sha256": "5e2bead714b05c9a44998226fd80f2afbdca6c76c33bb1b6e677d279edadb476"
+      }
+    }
+  ],
+  "no_current_Rust_or_runtime_PASS": true,
+  "no_producer_rerun": true,
+  "Cargo": false
+}

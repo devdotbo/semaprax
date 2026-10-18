@@ -1,0 +1,59 @@
+{
+  "status": "SOURCE_ACCEPTED_ACTUAL_66_ERRORS_AND_ONE_WARNING_REPAIR",
+  "base": "5075eadf9f2ab382d5a94e24b0defce46b64c1a6",
+  "head": "8a5d14e15deef9fdbad2dc6eed86820fa8314d3c",
+  "diagnostic_counts": {
+    "E0433": 29,
+    "unused_imports": 1,
+    "E0499": 36,
+    "E0507": 1
+  },
+  "six_original_walk_macro_invocation_lines": [
+    545,
+    613,
+    667,
+    1115,
+    1183,
+    1237
+  ],
+  "subjects": [
+    {
+      "source": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "before_sha256": "8f8bc5807c4ca3595c8270762ba05a2f8d0a813816677b090e8a2bd478003621",
+      "after_sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12",
+      "lines": 391,
+      "whole_source_literal_inverse": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected.rs",
+      "before_sha256": "878fb6affb4f5e37d7f623ec546a0da2c84131524920e6a6a62f52419d710ee7",
+      "after_sha256": "3d27283dc95fa368aecc0bb8714633e54b2d1ffc772ce07e5a209d531d891d97",
+      "lines": 201,
+      "whole_source_literal_inverse": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/walk.rs",
+      "before_sha256": "eda1637733f7786afb07cd3672925d94a9840e22c3629c15b5e9a38db11d62cc",
+      "after_sha256": "a5941f6e77da4cc1b46927ff4f3a26e059885be50604ea9ceb5cbb2a28ba0701",
+      "lines": 1497,
+      "whole_source_literal_inverse": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected.rs",
+      "before_sha256": "7cc864553f771319f97aacc37280775c3ee5221177fd9b3817f0083fcb7de55e",
+      "after_sha256": "e1916f10ad3d93433c90260b076897ed2586987aefd6540d64f6e4dce0458211",
+      "lines": 120,
+      "whole_source_literal_inverse": true
+    }
+  ],
+  "semantics": {
+    "ordinary_macros": "Sixteen hygienic enum-name qualifications only; every guard/payment/refusal body otherwise byteexact.",
+    "walk": "Six existing retained_units evaluations precede outer mutable charge; ordered work/call/error events retained. Existing2usize macro roles cover total/result; no new owning/callback storage.",
+    "terminator": "Borrowed match preserves field loans/variant handling; no cloning or moving owned Vec. Existing &EdgeId/&Vec<EdgeId>/&ExitTargetId banks unchanged.",
+    "imports": "Only3unused parent imports removed; children own their needed qualified/imported names."
+  },
+  "Drop_caps_fees_work_and_old_oracles_unchanged": true,
+  "Cargo": false,
+  "ROOT_mutated": false,
+  "compile_pass_claim": false
+}
