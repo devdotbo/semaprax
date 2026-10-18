@@ -1,0 +1,48 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "2c01b409a8db09a0aeb8d03a0ed48948edfc5e02",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "29061501eef2d81bc2de3041d6bf9cc7a8b87b4409b146c8d08a13fc07a9b535",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/29061501eef2d81bc2de3041d6bf9cc7a8b87b4409b146c8d08a13fc07a9b535.txt"
+  },
+  "before_config": {
+    "length": 136459,
+    "sha256": "b0aae963a902687df9f158308b1be1cc8e54fa859f6ac329402adf4cedf80626",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/b0aae963a902687df9f158308b1be1cc8e54fa859f6ac329402adf4cedf80626.txt"
+  },
+  "before_helper": {
+    "length": 41016,
+    "sha256": "fd31031b6153d7975044aed26e6df5409271ec00098f0db72213855a1ef0735b",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/fd31031b6153d7975044aed26e6df5409271ec00098f0db72213855a1ef0735b.txt"
+  },
+  "before_python_overlay": {
+    "length": 13523,
+    "sha256": "43958c3784a84c1ffc1bcbb47611e50d9d5466a1394d0578cc38d2476b062841",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/43958c3784a84c1ffc1bcbb47611e50d9d5466a1394d0578cc38d2476b062841.txt"
+  },
+  "before_policy": {
+    "length": 15876,
+    "sha256": "afdeeed59863731a35b881932f5922e59411921d472e9f3ca86db5761f830af3",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/afdeeed59863731a35b881932f5922e59411921d472e9f3ca86db5761f830af3.txt"
+  },
+  "before_page": {
+    "length": 182897,
+    "sha256": "91c3514fe2dd383c119f9b9794f2e7240b9c3a7eb5cf497de386e68c859317eb",
+    "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/91c3514fe2dd383c119f9b9794f2e7240b9c3a7eb5cf497de386e68c859317eb.txt"
+  },
+  "changed_sources": [
+    "CHANGELOG.md"
+  ],
+  "module_pins_refreshed": [
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 183148,
+  "policy_bytes": 15876,
+  "raw_owners": 342
+}

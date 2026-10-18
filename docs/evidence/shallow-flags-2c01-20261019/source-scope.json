@@ -1,0 +1,13 @@
+{
+  "base_head": "2c01b409a8db09a0aeb8d03a0ed48948edfc5e02",
+  "changed_sources": [
+    "src/hir/validation/ownership_flags.rs",
+    "src/hir/validation/ownership_flags/tests.rs",
+    "CHANGELOG.md"
+  ],
+  "all_original_runtime_tests_and_assertions_preserved": true,
+  "full_original_before_source_recovered_by_one_exact_hook_removal": true,
+  "new_runtime_cases_added": 2,
+  "all_ceilings_and_floors_unchanged": true,
+  "original_native_provider_and_full_CI_still_required": true
+}

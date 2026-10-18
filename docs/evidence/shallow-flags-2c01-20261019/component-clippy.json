@@ -1,0 +1,7 @@
+{
+  "status": "PASS_COMPONENT_ONLY",
+  "peak_KiB": 130800,
+  "result_large_err_inherits_Cargo_toml_allow": true,
+  "uncalled_BTree_adapter_type_parameters_retained_via_PhantomData": true,
+  "current_compiler_gate_still_required": true
+}

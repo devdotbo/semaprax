@@ -1,0 +1,10 @@
+{
+  "status": "PASS_SOURCE_ONLY",
+  "base": "2c01b409a8db09a0aeb8d03a0ed48948edfc5e02",
+  "whole_root_equals_exact_git_predecessor_after_single_new_hook_removal": true,
+  "predecessor_sha256": "6d4fbfec92542eae31a2cc6e8ae19528f4097cca96971de7a8b0aac16f516d30",
+  "hook_sha256": "d9fa4631e7943abc534455b85ed0759e9ad2e43a18e6b0dcebfcadbe64979826",
+  "current_sha256": "42c1781373cab6ed13f4bb5037dfdf1e20d1c69bc9349d0fc2b8f954ca3f7631",
+  "original_clone_payer_fallback_unchanged": true,
+  "original_leaf_branch_and_all_payer_authentication_unchanged": true
+}

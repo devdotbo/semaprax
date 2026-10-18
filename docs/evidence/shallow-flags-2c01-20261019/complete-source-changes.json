@@ -1,0 +1,41 @@
+[
+  {
+    "source": "src/hir/validation/ownership_flags.rs",
+    "before": {
+      "length": 4673,
+      "sha256": "6d4fbfec92542eae31a2cc6e8ae19528f4097cca96971de7a8b0aac16f516d30",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/6d4fbfec92542eae31a2cc6e8ae19528f4097cca96971de7a8b0aac16f516d30.txt"
+    },
+    "current": {
+      "length": 5692,
+      "sha256": "42c1781373cab6ed13f4bb5037dfdf1e20d1c69bc9349d0fc2b8f954ca3f7631",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/42c1781373cab6ed13f4bb5037dfdf1e20d1c69bc9349d0fc2b8f954ca3f7631.txt"
+    }
+  },
+  {
+    "source": "src/hir/validation/ownership_flags/tests.rs",
+    "before": {
+      "length": 32244,
+      "sha256": "9792a72325bd56d54940033a0d95bdb64750b8a4b9274509d02884d0241f76e9",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/9792a72325bd56d54940033a0d95bdb64750b8a4b9274509d02884d0241f76e9.txt"
+    },
+    "current": {
+      "length": 40457,
+      "sha256": "f01dcefeb22e4c403a0aec451fee3a0a131bbd28d6b426235ba61b01a3422124",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/f01dcefeb22e4c403a0aec451fee3a0a131bbd28d6b426235ba61b01a3422124.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 581367,
+      "sha256": "6677ae13cfc6111fc5b19d96a8c113bdaee58ee7a051335a4e35e7d452dc39b5",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/6677ae13cfc6111fc5b19d96a8c113bdaee58ee7a051335a4e35e7d452dc39b5.txt"
+    },
+    "current": {
+      "length": 581603,
+      "sha256": "c4157e5afcfbde0487898a760d1f16ae3f28b1c2f1fd8e6ffb4e06b01555f2e9",
+      "archive": "docs/evidence/shallow-flags-2c01-20261019/whole/c4157e5afcfbde0487898a760d1f16ae3f28b1c2f1fd8e6ffb4e06b01555f2e9.txt"
+    }
+  }
+]

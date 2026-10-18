@@ -723,7 +723,25 @@ fn complete_clone_predecessor_and_recursive_census_fallback_remain_source_bound(
         1,
     );
     assert_eq!(include_str!("before.rs").matches(&archived).count(), 1);
-    let current = include_str!("../ownership_flags.rs");
+    let actual = include_str!("../ownership_flags.rs");
+    let shallow_hook = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/shallow-flags-2c01-20261019/hook.txt"
+    ));
+    assert_eq!(actual.matches(shallow_hook).count(), 1);
+    let current = actual.replacen(shallow_hook, "", 1);
+    let complete_before = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/shallow-flags-2c01-20261019/before-ownership_flags.rs.txt"
+    ));
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(complete_before.as_bytes()))
+        ),
+        "6d4fbfec92542eae31a2cc6e8ae19528f4097cca96971de7a8b0aac16f516d30"
+    );
+    assert_eq!(current, complete_before);
     let hook="        // These variants own no recursive backing. Identity clones retain\n        // their existing Arc, and an empty argument vector clones to no buffer.\n        // Avoid calling the fixed-cursor census at all on this exact shape.\n        if match ty {\n            ResolvedType::Function { .. } => false,\n            ResolvedType::Nominal { arguments, .. } => arguments.is_empty(),\n            ResolvedType::Never\n            | ResolvedType::OnceFunction\n            | ResolvedType::OnceFunctionI64\n            | ResolvedType::OnceFunctionI64Pair\n            | ResolvedType::MutFunctionI64\n            | ResolvedType::Unit\n            | ResolvedType::I64\n            | ResolvedType::I32\n            | ResolvedType::Char\n            | ResolvedType::U8\n            | ResolvedType::Usize\n            | ResolvedType::ArrayU8(_)\n            | ResolvedType::F32\n            | ResolvedType::F64\n            | ResolvedType::Bool\n            | ResolvedType::String\n            | ResolvedType::Bytes\n            | ResolvedType::Str\n            | ResolvedType::SliceU8\n            | ResolvedType::StringMap\n            | ResolvedType::TypeParameter { .. } => true,\n        } {\n            return Ok(ty.clone());\n        }\n";
     let updated = body.replacen(
         "        Self::authenticate()?;\n",
@@ -788,5 +806,183 @@ fn a_leaf_does_not_mark_the_later_recursive_clone_cursor_as_paid() {
             (2 * payload, 2 * payload)
         );
         assert!(!allocation.invalid && allocation.live == 0 && allocation.allocated <= paid);
+    }
+}
+
+#[test]
+fn shallow_nominal_clones_pay_exact_backing_and_keep_nested_cursor_unpaid() {
+    let leaves = [
+        ResolvedType::Never,
+        ResolvedType::OnceFunction,
+        ResolvedType::OnceFunctionI64,
+        ResolvedType::OnceFunctionI64Pair,
+        ResolvedType::MutFunctionI64,
+        ResolvedType::Unit,
+        ResolvedType::I64,
+        ResolvedType::I32,
+        ResolvedType::Char,
+        ResolvedType::U8,
+        ResolvedType::Usize,
+        ResolvedType::ArrayU8(u32::MAX),
+        ResolvedType::F32,
+        ResolvedType::F64,
+        ResolvedType::Bool,
+        ResolvedType::String,
+        ResolvedType::Bytes,
+        ResolvedType::Str,
+        ResolvedType::SliceU8,
+        ResolvedType::StringMap,
+        ResolvedType::TypeParameter {
+            owner: DeclarationId::new("shallow:é\0.owner"),
+            index: u32::MAX,
+        },
+    ];
+    let setup = std::mem::size_of::<Payer>();
+    let cursor = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
+    for first in &leaves {
+        for second in std::iter::once(None).chain(leaves.iter().map(Some)) {
+            let mut arguments = vec![first.clone()];
+            if let Some(second) = second {
+                arguments.push(second.clone());
+            }
+            let payload = arguments.len() * std::mem::size_of::<ResolvedType>();
+            let ty = ResolvedType::Nominal {
+                declaration: DeclarationId::new("shallow:é\0.nominal"),
+                arguments,
+            };
+            assert_eq!(ty.clone_payload_bytes(), Some(payload));
+            let observe = |original, limit| {
+                crate::bounded_output::with_limit_usage_refusal(limit, || {
+                    measure(|| {
+                        let result = (|| {
+                            let mut payer = Payer::new()?;
+                            let copy = if original {
+                                payer.clone_type_before(&ty)?
+                            } else {
+                                payer.clone_type(&ty)?
+                            };
+                            assert_eq!(copy, ty);
+                            assert_eq!(payer.clone_cursor_paid, original);
+                            drop(copy);
+                            Ok::<_, Diagnostic>(())
+                        })();
+                        let ok = result.is_ok();
+                        if !ok {
+                            let before = crate::test_allocation_observer::current_metrics();
+                            let remaining = crate::bounded_output::active_remaining();
+                            assert!(Payer::authenticate().is_err());
+                            assert_eq!(remaining, crate::bounded_output::active_remaining());
+                            assert_eq!(before, crate::test_allocation_observer::current_metrics());
+                        }
+                        drop(result);
+                        ok
+                    })
+                })
+            };
+            let ((ok, allocation), refused, paid, receipt) = observe(false, setup + payload);
+            assert!(ok && !refused && receipt.is_none());
+            assert_eq!(paid, setup + payload);
+            assert_eq!((allocation.allocated, allocation.freed), (payload, payload));
+            assert!(!allocation.invalid && allocation.live == 0);
+            let ((old_ok, old), refused, old_paid, receipt) = observe(true, usize::MAX);
+            assert!(old_ok && !refused && receipt.is_none());
+            assert_eq!(old, allocation);
+            assert_eq!(old_paid - paid, cursor);
+            for limit in [0, setup - 1, setup + payload - 1] {
+                let ((ok, short), refused, paid, receipt) = observe(false, limit);
+                assert!(!ok && refused && receipt.is_some() && paid <= limit);
+                assert_eq!((short.allocated, short.freed), (0, 0));
+                assert!(!short.invalid && short.live == 0);
+            }
+        }
+    }
+    let nested = ResolvedType::Nominal {
+        declaration: DeclarationId::new("nested"),
+        arguments: vec![ResolvedType::Nominal {
+            declaration: DeclarationId::new("inner"),
+            arguments: vec![ResolvedType::I64],
+        }],
+    };
+    let payload = nested.clone_payload_bytes().unwrap();
+    let simple = ResolvedType::Nominal {
+        declaration: DeclarationId::new("simple"),
+        arguments: vec![ResolvedType::I64],
+    };
+    let (((), allocation), refused, paid, receipt) =
+        crate::bounded_output::with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let mut payer = Payer::new().unwrap();
+                let before = crate::bounded_output::active_remaining().unwrap();
+                drop(payer.clone_type(&simple).unwrap());
+                assert!(!payer.clone_cursor_paid);
+                assert_eq!(
+                    before - crate::bounded_output::active_remaining().unwrap(),
+                    std::mem::size_of::<ResolvedType>()
+                );
+                let before = crate::bounded_output::active_remaining().unwrap();
+                drop(payer.clone_type(&nested).unwrap());
+                assert!(payer.clone_cursor_paid);
+                assert_eq!(
+                    before - crate::bounded_output::active_remaining().unwrap(),
+                    cursor + payload
+                );
+                drop(payer.clone_type(&nested).unwrap());
+                assert!(payer.clone_cursor_paid);
+            })
+        });
+    assert!(!refused && receipt.is_none());
+    assert_eq!(
+        paid,
+        setup + std::mem::size_of::<ResolvedType>() + cursor + 2 * payload
+    );
+    assert!(!allocation.invalid && allocation.live == 0);
+    assert_eq!(allocation.allocated, allocation.freed);
+}
+
+#[test]
+fn shallow_nominal_dispatch_retains_recursive_and_wide_census() {
+    let id = DeclarationId::new("shallow:fallback");
+    for arguments in [
+        vec![ResolvedType::I64; 3],
+        vec![ResolvedType::Nominal {
+            declaration: id.clone(),
+            arguments: Vec::new(),
+        }],
+        vec![ResolvedType::Nominal {
+            declaration: id.clone(),
+            arguments: vec![ResolvedType::I64],
+        }],
+        vec![ResolvedType::Function {
+            parameters: Vec::new(),
+            result: Box::new(ResolvedType::Bool),
+        }],
+        vec![
+            ResolvedType::I64,
+            ResolvedType::Nominal {
+                declaration: id.clone(),
+                arguments: vec![ResolvedType::U8],
+            },
+        ],
+    ] {
+        let ty = ResolvedType::Nominal {
+            declaration: id.clone(),
+            arguments,
+        };
+        let payload = ty.clone_payload_bytes().unwrap();
+        let cursor = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
+        let (((), metrics), refused, paid, receipt) =
+            crate::bounded_output::with_limit_usage_refusal(usize::MAX, || {
+                measure(|| {
+                    let mut payer = Payer::new().unwrap();
+                    let copy = payer.clone_type(&ty).unwrap();
+                    assert_eq!(copy, ty);
+                    assert!(payer.clone_cursor_paid);
+                    drop(copy);
+                })
+            });
+        assert!(!refused && receipt.is_none());
+        assert_eq!(paid, std::mem::size_of::<Payer>() + cursor + payload);
+        assert_eq!((metrics.allocated, metrics.freed), (payload, payload));
+        assert!(!metrics.invalid && metrics.live == 0);
     }
 }
