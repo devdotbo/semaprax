@@ -82,11 +82,11 @@ mod lookup;
 mod queries;
 mod receiving;
 use queries::{
-    clone_state, clone_value, control_key, counter_at, equal_without_flag, exact_join,
-    filtered_flag_next, find, flag_all, flag_any, flag_at, group_at, incoming_at, index, index_mut,
-    leaf_at, lexical_lookup, map_index, map_insert, mutable_get, owned_provenance, pair_at,
-    place_flags, plan_at, retain_flags, retained_units, scan, selected_renewals, slice_index,
-    variant_any, variant_position,
+    charge_retained_units, clone_state, clone_value, control_key, counter_at, equal_without_flag,
+    exact_join, filtered_flag_next, find, flag_all, flag_any, flag_at, group_at, incoming_at,
+    index, index_mut, leaf_at, lexical_lookup, map_index, map_insert, mutable_get,
+    owned_provenance, pair_at, place_flags, plan_at, retain_flags, retained_units, scan,
+    selected_renewals, slice_index, variant_any, variant_position,
 };
 mod renewal;
 mod strings;
@@ -115,6 +115,7 @@ fn successors(
     // explicit insertion/payload receiving banks remain separately intact.
     budget.reserve_array::<(
         &crate::cleanup_plan::CleanupPlan,
+        &crate::cleanup_plan::CleanupTerminator,
         &EdgeId,
         &Vec<EdgeId>,
         &crate::cleanup_plan::ExitTargetId,
@@ -122,7 +123,7 @@ fn successors(
         std::array::IntoIter<Option<BlockId>, 2>,
         Successors,
     )>(function, 1, "selected path successors body receiving")?;
-    budget.charge(function, 7, "selected path successors body receiving")?;
+    budget.charge(function, 8, "selected path successors body receiving")?;
     budget.reserve_array::<(
         &ResolvedFunction,
         BlockId,

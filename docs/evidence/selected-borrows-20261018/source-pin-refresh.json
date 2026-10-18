@@ -1,0 +1,67 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "5075eadf9f2ab382d5a94e24b0defce46b64c1a6",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "e09d2bccfd9134d947ea1309469adfb3aba442ebf99494eab39ab0b5d7509f5a",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/e09d2bccfd9134d947ea1309469adfb3aba442ebf99494eab39ab0b5d7509f5a.txt"
+  },
+  "before_config": {
+    "length": 136457,
+    "sha256": "8eb750fd67c6a21a17d458be36b8e06b775936aed9de336d6b286bdff6d54ba1",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/8eb750fd67c6a21a17d458be36b8e06b775936aed9de336d6b286bdff6d54ba1.txt"
+  },
+  "before_helper": {
+    "length": 39997,
+    "sha256": "670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80.txt"
+  },
+  "before_python_overlay": {
+    "length": 12564,
+    "sha256": "48f8838367765279e12020ecf12fcd6f06497ca36f9cb58fd5f1f331af7f9c99",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/48f8838367765279e12020ecf12fcd6f06497ca36f9cb58fd5f1f331af7f9c99.txt"
+  },
+  "before_policy": {
+    "length": 14932,
+    "sha256": "fc01b42a17886089c55a9fe167f4881de17d02db51dc769c42190816286426d1",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/fc01b42a17886089c55a9fe167f4881de17d02db51dc769c42190816286426d1.txt"
+  },
+  "before_page": {
+    "length": 137615,
+    "sha256": "2e6f6193c6202ca59e7ee2fdd107aa3b568b2c5e5a77d442b9436c0a8bcebe67",
+    "archive": "docs/evidence/selected-borrows-20261018/whole/2e6f6193c6202ca59e7ee2fdd107aa3b568b2c5e5a77d442b9436c0a8bcebe67.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected/walk.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "src/cleanup_plan/replay/path_join/selected/tests/history.rs",
+    "src/cleanup_plan/replay/skeleton_work/receiving.rs",
+    "src/cleanup_plan/replay/ordinary_receiving.rs"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected/tests/history.rs",
+    "src/cleanup_plan/replay/path_join/selected/walk.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
+    "src/cleanup_plan/replay/ordinary_receiving.rs",
+    "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/receiving.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "one_literal_replacement_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 144271,
+  "policy_bytes": 14985,
+  "raw_owners": 342
+}

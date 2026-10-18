@@ -1,6 +1,6 @@
 use super::*;
-use crate::cleanup_plan::replay::inventory_coverage::paid::receive_observed as receive;
 use crate::cleanup_plan::renewal_history::RenewalHistory;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive_observed as receive;
 use std::mem::size_of;
 type NewCaller<'a> = (
     &'a ResolvedFunction,

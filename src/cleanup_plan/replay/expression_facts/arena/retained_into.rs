@@ -1,7 +1,7 @@
 //! Direct full-error-slot successor of the complete immediate retained query.
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    Failure, charge_into, prepare_into, refuse_into, reserve_into,
+    charge_into, prepare_into, refuse_into, reserve_into, Failure,
 };
 impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
     pub(in crate::cleanup_plan::replay::expression_facts) const fn into_query_bytes() -> usize {
@@ -48,8 +48,8 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         )>() + 2 * size_of::<&mut ReplayBudget>()
     }
     #[cfg(test)]
-    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_status_query_bytes()
-    -> usize {
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_status_query_bytes(
+    ) -> usize {
         Self::into_query_bytes() + Self::into_local_bytes() - Self::query_bytes()
     }
     #[cfg(test)]

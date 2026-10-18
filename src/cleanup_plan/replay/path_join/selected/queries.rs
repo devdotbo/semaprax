@@ -679,6 +679,25 @@ macro_rules! retained_units {
 }
 pub(super) use retained_units;
 
+// The retained query mutates the same budget as its final work debit. Finish
+// the query before borrowing that receiver; acquire the new usize first.
+// Lexical expansion adds no forwarding activation or Result transport.
+macro_rules! charge_retained_units {
+    ($budget:ident,$function:ident,$state:expr,$phase:expr) => {{
+        receive!(
+            $budget,
+            $function,
+            usize,
+            1,
+            "selected retained work local receiving",
+            ()
+        );
+        let retained_work = retained_units!($budget, $function, $state);
+        $budget.charge($function, retained_work, $phase)
+    }};
+}
+pub(super) use charge_retained_units;
+
 macro_rules! slice_index {
     ($budget:ident,$function:ident,$values:expr,$index:expr,$item:ty) => {
         receive!(

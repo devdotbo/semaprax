@@ -2,7 +2,7 @@
 //! constructor's; no common traversal or producer verdict is reused.
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    Failure, prepare_into, refuse_into, reserve_into,
+    prepare_into, refuse_into, reserve_into, Failure,
 };
 use crate::hir::funded::FundedError;
 use std::mem::size_of;
