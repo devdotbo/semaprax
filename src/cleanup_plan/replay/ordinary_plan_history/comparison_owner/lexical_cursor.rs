@@ -29,20 +29,19 @@ pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[us
     + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy
     + size_of::<bool>(); // loaded=true
-                         // The original exhausted-segment update and fresh tail remain honestly paid.
+                         // The original exhausted-segment update remains above. Each tail scope forms
+                         // one immutable Vec slice; each yielded head/rest, assignment, as_ref output,
+                         // Option transport and original cursor item increment is still paid below.
 pub(super) const EMPTY: usize = 2 * size_of::<usize>() + size_of::<bool>(); // segment increment, item=0, loaded=false
-pub(super) const TAIL: usize = size_of::<&History>()
-    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-    + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-    + 2 * size_of::<usize>()
-    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
-    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
-    + size_of::<bool>()
-    + size_of::<usize>()
-    + size_of::<&Rc<SkeletonObservation>>()
+
+pub(super) const TAIL_VIEW: usize =
+    2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + 2 * size_of::<&Rc<SkeletonObservation>>()
     + size_of::<&SkeletonObservation>()
-    + 2 * size_of::<Option<&SkeletonObservation>>();
+    + 2 * size_of::<Option<&SkeletonObservation>>()
+    + size_of::<usize>();
 // Exact shipping880 literal expression, solely a static counterfactual bound;
 // the actual independently compiled before producer and its tariff stay exact.
 const SHIPPING_NEXT_CALL: usize = 2 * size_of::<&mut Cursor>()
@@ -59,12 +58,12 @@ const _: () = assert!(STEP + EMPTY < SHIPPING_NEXT_CALL);
 // and full exhausted sentinel/tail envelopes. It is not an application result.
 const _: () = assert!(
     2 * 256 * (SHIPPING_NEXT_CALL - STEP - EMPTY)
-        > OWNER_CONTROLS + 2 * LOAD + 2 * RESET + 4 * (STEP + EMPTY) + 2 * TAIL
+        > OWNER_CONTROLS + 2 * LOAD + 2 * RESET + 4 * (STEP + EMPTY) + 2 * TAIL + 4 * TAIL_VIEW
 );
 
 macro_rules! lexical_plan_next {
     ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,
-     $history:expr, $function:ident, $budget:ident, $phase:literal) => {{
+     $tail:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
             loop {
@@ -103,14 +102,15 @@ macro_rules! lexical_plan_next {
                 }
             }
             paid!($budget, $function, lexical_cursor::TAIL, $phase)?;
-            let history = &$history;
-            let value = history.tail.get($owner.$cursor.item);
-            if value.is_some() {
-                $owner.$cursor.item += 1;
-            }
-            match value {
-                Some(value) => Some::<&SkeletonObservation>(value.as_ref()),
-                None => None,
+            #[cfg(test)]
+            $census.tail();
+            match $tail {
+                [head, rest @ ..] => {
+                    $tail = rest;
+                    $owner.$cursor.item += 1;
+                    Some::<&SkeletonObservation>(head.as_ref())
+                }
+                [] => None,
             }
         }
     }};

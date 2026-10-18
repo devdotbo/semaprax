@@ -219,10 +219,11 @@ fn projection344_stage(supplied: &str) -> String {
             let text = if matches!(source,
                 "src/workspace_graph/expected_projection/borrowed_imports.rs"
                 | "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs"
-                | "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs"
-                | "src/workspace_graph/expected_projection/borrowed_imports/typed.rs"
-                | "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs"
-                | "src/ast/program_source/decl_slices.rs")
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs")
+                || matches!((source, length, sha),
+                    ("src/workspace_graph/expected_projection/borrowed_imports/typed.rs", 19540, "2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36")
+                    | ("src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs", 15496, "434640ce68332a1d96840ae10b8e4a500799a567f6d75cc903a6e272196a24b2")
+                    | ("src/ast/program_source/decl_slices.rs", 6910, "7b86d102694e1358c2a5ce00738a882df320d3e4860ba062c855cea56c198397"))
             {
                 // The same exact current-image owner authenticates before
                 // selecting this immutable, named historical part.

@@ -5,15 +5,17 @@ mod lexical_cursor;
 #[macro_use]
 mod paired_value;
 #[cfg(test)]
+mod before_flat_view;
+#[cfg(test)]
+mod before_fused_flat;
+#[cfg(test)]
 mod before_lexical_cursor;
 #[cfg(test)]
 mod before_pair_scope;
 #[cfg(test)]
+mod before_retained_tail;
+#[cfg(test)]
 pub(super) mod pair_scope_census;
-#[cfg(test)]
-mod before_flat_view;
-#[cfg(test)]
-mod before_fused_flat;
 
 #[derive(Clone, Copy)]
 enum Step {
@@ -118,19 +120,19 @@ const SCALAR_TRANSPORT: usize = size_of::<usize>() // initial build quotient
 const MISMATCH_CALL: usize =
     2 * size_of::<&ResolvedFunction>() + 2 * size_of::<&str>() + size_of::<Diagnostic>(); // direct helper actual/formal + Diagnostic return, no closure
 const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,Eq,sibling,root
-                                                  // Retained primitive caller slots, not dynamic compound payload credit:
-                                                  // four charge sites + six original paid sites + three direct HIR reserve sites
-                                                  // + two swap payment sites + one Zip-next payment site = sixteen original sites.
-                                                  // The new flat-view payment adds a seventeenth site. Each is a
-                                                  // nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
-                                                  // no owned payload, failure leaves the invocation immediately with one owned
-                                                  // Diagnostic. Function/budget places never change and no Result escapes or
-                                                  // overlaps another activation of its lexical site. Distinct compound Option,
-                                                  // tuple, comparison/index/swap payloads below are paid on EVERY execution.
-                                                  // Two explicit backing sites have distinct prepaid primitive frames; no
-                                                  // iterator, IterMut::next or Option<&mut Cursor> initializer remains.
-                                                  // The first acquisition replaces the identical old compare-entry call and is
-                                                  // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
+// Retained primitive caller slots, not dynamic compound payload credit:
+// four charge sites + six original paid sites + three direct HIR reserve sites
+// + two swap payment sites + one Zip-next payment site = sixteen original sites.
+// The new flat-view payment adds a seventeenth site. Each is a
+// nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
+// no owned payload, failure leaves the invocation immediately with one owned
+// Diagnostic. Function/budget places never change and no Result escapes or
+// overlaps another activation of its lexical site. Distinct compound Option,
+// tuple, comparison/index/swap payloads below are paid on EVERY execution.
+// Two explicit backing sites have distinct prepaid primitive frames; no
+// iterator, IterMut::next or Option<&mut Cursor> initializer remains.
+// The first acquisition replaces the identical old compare-entry call and is
+// already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + lexical_cursor::PRIMITIVE_FRAMES + paired_value::ADDITIONAL_PRIMITIVES
     + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
@@ -377,7 +379,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PAIR_SCOPE,
+                    PAIR_SCOPE + 2 * paired_value::TAIL_VIEW,
                     "ordinary plan history pair-local paths"
                 )?;
                 #[cfg(feature = "unstable-workflow-profiling")]
@@ -388,6 +390,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 {
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
+                    let mut left_tail = left_path.history.tail.as_slice();
+                    let mut right_tail = right_path.history.tail.as_slice();
                     'paired: loop {
                         paid!(
                             budget,
@@ -409,7 +413,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_cursor,
                             left_items,
                             left_loaded,
-                            left_path.history,
+                            left_tail,
                             function,
                             budget,
                             "ordinary plan history paired cursor next",
@@ -425,7 +429,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     right_cursor,
                                     right_items,
                                     right_loaded,
-                                    right_path.history,
+                                    right_tail,
                                     function,
                                     budget,
                                     "ordinary plan history paired cursor next",
@@ -449,7 +453,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_cursor,
                             right_items,
                             right_loaded,
-                            right_path.history,
+                            right_tail,
                             function,
                             budget,
                             "ordinary plan history paired cursor next",
@@ -534,12 +538,13 @@ pub(in crate::cleanup_plan::replay) fn compare(
         paid!(
             budget,
             function,
-            PREPARE_CALL + lexical_cursor::RESET,
+            PREPARE_CALL + lexical_cursor::RESET + lexical_cursor::TAIL_VIEW,
             "ordinary plan history HIR cursor prepare"
         )?;
         owner
             .left_cursor
             .prepare(&path.history, &actual.arena, function, budget)?;
+        let mut plan_tail = path.history.tail.as_slice();
         owner.left_items = &[];
         owner.left_loaded = false;
         budget.reserve_bytes(
@@ -570,7 +575,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
-                        path.history,
+                        plan_tail,
+                        census,
                         function,
                         budget,
                         "ordinary plan history HIR cursor next"
@@ -581,10 +587,12 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         index += 1;
                     }
                     (None, None) => break,
-                    _ => return Err(replay_error(
-                        function,
-                        "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
-                    )),
+                    _ => {
+                        return Err(replay_error(
+                            function,
+                            "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
+                        ));
+                    }
                 }
             }
         } else {
@@ -615,7 +623,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
-                        path.history,
+                        plan_tail,
+                        census,
                         function,
                         budget,
                         "ordinary plan history HIR cursor next"
@@ -624,10 +633,12 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 ) {
                     (Some(left), Some(right)) if left == right => {}
                     (None, None) => break,
-                    _ => return Err(replay_error(
-                        function,
-                        "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
-                    )),
+                    _ => {
+                        return Err(replay_error(
+                            function,
+                            "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
+                        ));
+                    }
                 }
             }
         }

@@ -9,7 +9,7 @@ pub(super) const STEP: usize = 2 * size_of::<&Vec<usize>>() + size_of::<usize>()
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // rest pattern and assignment copy
     + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>() // as_ref actual/formal/return
     + size_of::<usize>(); // original item increment
-                          // Only entering a new immutable segment forms these views/index receivers.
+// Only entering a new immutable segment forms these views/index receivers.
 pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local
     + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return
     + 2 * size_of::<usize>() // subtraction intermediates
@@ -19,23 +19,19 @@ pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[us
     + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy
     + size_of::<bool>(); // loaded=true
-                         // The original exhausted-segment update and fresh tail remain honestly paid.
+// The original exhausted-segment update and fresh tail remain honestly paid.
 pub(super) const EMPTY: usize = 2 * size_of::<usize>() + size_of::<bool>(); // segment increment, item=0, loaded=false
-pub(super) const TAIL: usize = size_of::<&History>()
-    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-    + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-    + 2 * size_of::<usize>()
-    + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
-    + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
-    + size_of::<bool>()
-    + size_of::<usize>()
-    + size_of::<&Rc<SkeletonObservation>>()
+pub(super) const TAIL_VIEW: usize =
+    2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + 2 * size_of::<&Rc<SkeletonObservation>>()
-    + size_of::<&SkeletonObservation>();
+    + size_of::<&SkeletonObservation>()
+    + size_of::<usize>();
 
 macro_rules! lexical_plan_value {
     ($owner:ident, $cursor:ident, $items:ident, $loaded:ident,
-     $history:expr, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
+     $tail:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
             loop {
@@ -107,23 +103,22 @@ macro_rules! lexical_plan_value {
                 $crate::workflow_profile::plan_comparison::Site::TailAdmitted,
                 paired_value::TAIL,
             );
-            let history = &$history;
-            let value = history.tail.get($owner.$cursor.item);
-            if value.is_some() {
-                #[cfg(feature = "unstable-workflow-profiling")]
-                $crate::workflow_profile::plan_comparison::event(
-                    if stringify!($cursor) == "left_cursor" {
-                        $crate::workflow_profile::plan_comparison::Site::LeftTailSome
-                    } else {
-                        $crate::workflow_profile::plan_comparison::Site::RightTailSome
-                    },
-                    0,
-                );
-                $owner.$cursor.item += 1;
-            }
-            match value {
-                Some(value) => value.as_ref(),
-                None => $empty,
+            match $tail {
+                [head, rest @ ..] => {
+                    $tail = rest;
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        if stringify!($cursor) == "left_cursor" {
+                            $crate::workflow_profile::plan_comparison::Site::LeftTailSome
+                        } else {
+                            $crate::workflow_profile::plan_comparison::Site::RightTailSome
+                        },
+                        0,
+                    );
+                    $owner.$cursor.item += 1;
+                    head.as_ref()
+                }
+                [] => $empty,
             }
         }
     }};

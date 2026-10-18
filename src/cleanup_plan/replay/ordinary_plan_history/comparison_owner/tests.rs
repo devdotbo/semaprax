@@ -1,7 +1,9 @@
 //! Authored current/complete-immediate comparator owners; execution pending.
 use super::*;
-use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
-use crate::test_allocation_observer::{measure, Metrics};
+mod source_format;
+mod tail_source;
+use crate::bounded_output::{ReservationRefusal, with_limit_usage_refusal};
+use crate::test_allocation_observer::{Metrics, measure};
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Failure {
     code: &'static str,
@@ -205,7 +207,10 @@ fn retained_comparator_matches_complete_immediate_work_cuts_sort_and_six_field_f
             let new_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);
             assert_eq!(a, b, "complete output/work/status mutation{mutation}");
             assert_eq!(old_swaps, new_swaps);
-            eprintln!("OPT880 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}", a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater);
+            eprintln!(
+                "OPT880 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}",
+                a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater
+            );
             balanced(ma);
             balanced(mb);
             let spent = MAX_REPLAY_WORK_UNITS - a.remaining;
@@ -351,12 +356,12 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
                 0,
             );
             frontiers::finish();
-            assert_eq!(a.0 .0, b.0 .0);
+            assert_eq!(a.0.0, b.0.0);
             assert_eq!(a.1, b.1);
             assert_eq!(a.2, b.2);
             assert_eq!(a.3, b.3);
-            balanced(a.0 .1);
-            balanced(b.0 .1);
+            balanced(a.0.1);
+            balanced(b.0.1);
             if limit == end && floor == 0 {
                 assert_eq!(trace[ordinal].after, Some(end));
             }
@@ -364,13 +369,13 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
                 || (limit == end && floor == 1)
                 || (limit == event.before && floor == 0)
             {
-                assert!(a.0 .0.result.is_err() && a.1 && a.3.is_some());
+                assert!(a.0.0.result.is_err() && a.1 && a.3.is_some());
                 let first = a.3.unwrap();
                 assert_eq!(first.requested, end - event.before);
                 assert_eq!(first.remaining, limit - event.before);
                 assert_eq!(first.floor, floor);
                 assert_eq!(
-                    a.0 .0.result.as_ref().unwrap_err(),
+                    a.0.0.result.as_ref().unwrap_err(),
                     &primitive_failure(function, event, limit, floor)
                 );
             }
@@ -380,8 +385,14 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
 
 #[test]
 fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_and_exact() {
-    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt880-comparison-owner-v1/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
-    let after = include_str!("../before_comparison.rs");
+    let before = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt880-comparison-owner-v1/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
+    ));
+    let after = source_format::restore(
+        source_format::Kind::OldCompare,
+        include_str!("../before_comparison.rs"),
+    );
     let body = before
         .split_once("const COMPARE_CONTROLS:")
         .unwrap()
@@ -389,7 +400,12 @@ fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_an
         .split_once("\n#[cfg(test)]\nmod before_hir_compare;")
         .unwrap()
         .0;
-    assert_eq!(after, format!("//! Complete immediate comparator and original tariffs; no candidate calls.\nuse super::*;\n\nconst COMPARE_CONTROLS:{body}\n"));
+    assert_eq!(
+        after,
+        format!(
+            "//! Complete immediate comparator and original tariffs; no candidate calls.\nuse super::*;\n\nconst COMPARE_CONTROLS:{body}\n"
+        )
+    );
     let cursor = before
         .split_once("struct Cursor {")
         .unwrap()
@@ -397,7 +413,10 @@ fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_an
         .split_once("\nconst COMPARE_CONTROLS:")
         .unwrap()
         .0;
-    let current = include_str!("../../ordinary_plan_history.rs");
+    let current = source_format::restore(
+        source_format::Kind::Root,
+        include_str!("../../ordinary_plan_history.rs"),
+    );
     assert_eq!(
         current
             .matches(&format!("struct Cursor {{{cursor}"))
@@ -527,7 +546,10 @@ fn lexical_plan_cursor_preserves_complete_immediate_sort_work_cuts_and_six_field
             let new_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);
             assert_eq!(a, b, "complete output/work/status mutation{mutation}");
             assert_eq!(old_swaps, new_swaps);
-            eprintln!("OPT883 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}", a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater);
+            eprintln!(
+                "OPT883 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}",
+                a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater
+            );
             balanced(ma);
             balanced(mb);
             let spent = MAX_REPLAY_WORK_UNITS - a.remaining;
@@ -674,12 +696,12 @@ fn lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_
                 0,
             );
             frontiers::finish();
-            assert_eq!(a.0 .0, b.0 .0);
+            assert_eq!(a.0.0, b.0.0);
             assert_eq!(a.1, b.1);
             assert_eq!(a.2, b.2);
             assert_eq!(a.3, b.3);
-            balanced(a.0 .1);
-            balanced(b.0 .1);
+            balanced(a.0.1);
+            balanced(b.0.1);
             if limit == end && floor == 0 {
                 assert_eq!(trace[ordinal].after, Some(end));
             }
@@ -687,13 +709,13 @@ fn lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_
                 || (limit == end && floor == 1)
                 || (limit == event.before && floor == 0)
             {
-                assert!(a.0 .0.result.is_err() && a.1 && a.3.is_some());
+                assert!(a.0.0.result.is_err() && a.1 && a.3.is_some());
                 let first = a.3.unwrap();
                 assert_eq!(first.requested, end - event.before);
                 assert_eq!(first.remaining, limit - event.before);
                 assert_eq!(first.floor, floor);
                 assert_eq!(
-                    a.0 .0.result.as_ref().unwrap_err(),
+                    a.0.0.result.as_ref().unwrap_err(),
                     &primitive_failure(function, event, limit, floor)
                 );
             }
@@ -720,22 +742,38 @@ fn lexical_plan_cursor_reports_complete_immediate_actual_paid_work_and_drop() {
             assert!(outcome.result.is_ok() && !refused && receipt.is_none());
             assert!(paid >= heap.allocated);
             balanced(heap);
-            eprintln!("OPT883 immediate880={old} function={} paid={paid} ordinary_work={} skeleton_spent={} allocated={} peak={} freed={} live={}",
-                function.id, MAX_REPLAY_WORK_UNITS-outcome.remaining, outcome.skeleton_spent,
-                heap.allocated, heap.highwater, heap.freed, heap.live);
+            eprintln!(
+                "OPT883 immediate880={old} function={} paid={paid} ordinary_work={} skeleton_spent={} allocated={} peak={} freed={} live={}",
+                function.id,
+                MAX_REPLAY_WORK_UNITS - outcome.remaining,
+                outcome.skeleton_spent,
+                heap.allocated,
+                heap.highwater,
+                heap.freed,
+                heap.live
+            );
         }
     }
 }
 
 #[test]
 fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_exact() {
-    let root = include_str!("../../ordinary_plan_history.rs");
-    let old_root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
+    let root = source_format::restore(
+        source_format::Kind::Root,
+        include_str!("../../ordinary_plan_history.rs"),
+    );
+    let old_root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
+    ));
     assert_eq!(
         root, old_root,
         "original Cursor and every root caller/control unchanged"
     );
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt"));
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt"
+    ));
     let cursor = root
         .split_once("struct Cursor {")
         .unwrap()
@@ -743,16 +781,32 @@ fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_ex
         .split_once("\n#[cfg(test)]\nmod before_comparison;")
         .unwrap()
         .0;
-    let before = include_str!("before_lexical_cursor.rs");
+    let before = source_format::restore(
+        source_format::Kind::BeforeLexical,
+        include_str!("before_lexical_cursor.rs"),
+    );
     let body = old.strip_prefix("//! One comparison invocation owns sort and pair state. No nested order/sift calls.\nuse super::*;\n").unwrap().strip_suffix("\n#[cfg(test)]\nmod tests;\n").unwrap();
-    assert_eq!(before, format!("//! Complete immediate880 comparator and Cursor; namespace-only test module.\nuse super::*;\n\nstruct Cursor {{{cursor}\n{body}"));
-    let current = include_str!("../comparison_owner.rs");
-    assert_eq!(current.matches("lexical_plan_next!(owner,").count(), 4);
+    assert_eq!(
+        before,
+        format!(
+            "//! Complete immediate880 comparator and Cursor; namespace-only test module.\nuse super::*;\n\nstruct Cursor {{{cursor}\n{body}"
+        )
+    );
+    let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
+        include_str!("../comparison_owner.rs"),
+    );
+    assert_eq!(current.matches("lexical_plan_next!(").count(), 4);
     assert!(!current.contains(".cursors[0].next("));
     assert!(!current.contains(".cursors[1].next("));
-    let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"));
+    let original_tests = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"
+    ));
     assert!(
-        include_str!("tests.rs").starts_with(original_tests),
+        source_format::restore(source_format::Kind::Tests880, include_str!("tests.rs"))
+            .starts_with(original_tests),
         "every prior test is retained verbatim"
     );
 }
@@ -918,7 +972,10 @@ fn lexical_plan_cursor_immutable_hir_deep_empty_tail_and_malformed_composition_k
                             "actual original forward/segment and HIR work priority"
                         );
                     }
-                    eprintln!("OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included", expected[0].observations.prefix.is_some());
+                    eprintln!(
+                        "OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included",
+                        expected[0].observations.prefix.is_some()
+                    );
                 }
             }
         }
@@ -1093,7 +1150,9 @@ fn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_o
         heap.allocated, old_heap.allocated,
         "the retained slice view adds no heap backing"
     );
-    eprintln!("OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim");
+    eprintln!(
+        "OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim"
+    );
 }
 
 #[path = "pair_scope_tests.rs"]
@@ -1101,3 +1160,6 @@ mod pair_scope_tests;
 
 #[path = "combined_pair_scope_tests.rs"]
 mod combined_pair_scope_tests;
+
+#[path = "matched_tail_tests.rs"]
+mod matched_tail_tests;

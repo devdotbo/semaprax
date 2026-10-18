@@ -683,7 +683,7 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         whole_before_format(
             "lexical_cursor.rs",
             "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
-            include_str!("lexical_cursor.rs")
+            include_str!("lexical_cursor_before_tail.rs")
         ),
         cursor,
         "production cursor macro/API/prices unchanged"
@@ -1239,9 +1239,9 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
             false,
         ),
     ] {
-        let mut restored = witness.replace("#[path = \"lexical_cursor.rs\"]\n", "");
+        let mut restored = witness.replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "");
         if paired {
-            restored = restored.replace("#[path = \"paired_value.rs\"]\n", "");
+            restored = restored.replace("#[path = \"paired_value_before_tail.rs\"]\n", "");
         }
         restored = restored.replace(
             "#[cfg(test)]\nuse super::pair_scope_census;",
@@ -1269,7 +1269,7 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
     assert_eq!(before.matches(old_label).count(), 0);
     let restored = before
         .replacen(oracle_label, old_label, 1)
-        .replace("#[path = \"lexical_cursor.rs\"]\n", "")
+        .replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "")
         .replace("#[cfg(test)]\nuse super::comparison_owner::pair_scope_census;\n", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;\n")
         .replace("pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct ComparisonOwner", "struct ComparisonOwner")
         + "\n#[cfg(test)]\nmod tests;\n";
@@ -1285,7 +1285,9 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
     assert_eq!(
         format!(
             "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!("lexical_cursor.rs")))
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!(
+                "lexical_cursor_before_tail.rs"
+            )))
         ),
         "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
     );

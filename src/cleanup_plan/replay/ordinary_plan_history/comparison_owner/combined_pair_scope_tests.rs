@@ -11,6 +11,25 @@ fn flat_delta(expected: &[SkeletonPath]) -> (usize, usize) {
     (PAYMENT_HEADER + retained * count, removed * rounds)
 }
 
+fn tail_delta(row: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize, usize) {
+    let before = size_of::<&History>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+        + 2 * size_of::<usize>()
+        + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
+        + size_of::<bool>()
+        + size_of::<usize>()
+        + size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&Rc<SkeletonObservation>>()
+        + size_of::<&SkeletonObservation>();
+    let views =
+        2 * paired_value::TAIL_VIEW * row.pairs + lexical_cursor::TAIL_VIEW * expected.len();
+    let removed = (before - paired_value::TAIL) * row.value_tails
+        + (before + 2 * size_of::<Option<&SkeletonObservation>>() - lexical_cursor::TAIL)
+            * row.tails;
+    (views, removed)
+}
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{Metrics, measure};
 fn observe_pair(
@@ -694,7 +713,7 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         whole_before_format(
             "lexical_cursor.rs",
             "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
-            include_str!("lexical_cursor.rs")
+            include_str!("lexical_cursor_before_tail.rs")
         ),
         cursor,
         "production cursor macro/API/prices unchanged"
@@ -967,13 +986,17 @@ fn fused_pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_e
         );
         // Source-counted independent coefficients. No measured paid subtraction.
         assert_eq!(
-            paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row) + flat_delta(&expected).1,
+            paid + 4 * PATH_INDEX * row.rounds
+                + fused_removed(&row)
+                + flat_delta(&expected).1
+                + tail_delta(&row, &expected).1,
             old_paid
                 + PAIR_SCOPE * row.pairs
                 + PAIR_PRIMITIVE
                 + paired_value::ADDITIONAL_PRIMITIVES
                 + NEW_PAIR_REFERENCES * row.rounds
                 + flat_delta(&expected).0
+                + tail_delta(&row, &expected).0
         );
         eprintln!(
             "OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
@@ -1054,13 +1077,17 @@ fn fused_pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_
     assert_eq!(heap, old_heap);
     assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
     assert_eq!(
-        paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row) + flat_delta(&expected).1,
+        paid + 4 * PATH_INDEX * row.rounds
+            + fused_removed(&row)
+            + flat_delta(&expected).1
+            + tail_delta(&row, &expected).1,
         old_paid
             + PAIR_SCOPE * row.pairs
             + PAIR_PRIMITIVE
             + paired_value::ADDITIONAL_PRIMITIVES
             + NEW_PAIR_REFERENCES * row.rounds
             + flat_delta(&expected).0
+            + tail_delta(&row, &expected).0
     );
     assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
     assert!(
@@ -1203,11 +1230,12 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
         assert_eq!(heap, old_heap);
         assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
         assert_eq!(
-            paid + fused_removed(&row) + flat_delta(&expected).1,
+            paid + fused_removed(&row) + flat_delta(&expected).1 + tail_delta(&row, &expected).1,
             old_paid
                 + paired_value::ADDITIONAL_PRIMITIVES
                 + NEW_PAIR_REFERENCES * row.rounds
                 + flat_delta(&expected).0
+                + tail_delta(&row, &expected).0
         );
         if left_len <= 1 && right_len <= 1 {
             assert!(
@@ -1248,7 +1276,7 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
     assert_eq!(before.matches(old_label).count(), 0);
     let restored = before
         .replacen(oracle_label, old_label, 1)
-        .replace("#[path = \"lexical_cursor.rs\"]\n", "")
+        .replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "")
         .replace("#[cfg(test)]\nuse super::comparison_owner::pair_scope_census;\n", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;\n")
         .replace("pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct ComparisonOwner", "struct ComparisonOwner")
         + "\n#[cfg(test)]\nmod tests;\n";
@@ -1264,7 +1292,9 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
     assert_eq!(
         format!(
             "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!("lexical_cursor.rs")))
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!(
+                "lexical_cursor_before_tail.rs"
+            )))
         ),
         "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
     );
@@ -1347,6 +1377,7 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
             let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
             frontiers::finish();
             let ((current, heap), refused, paid, receipt) = observe(false);
+            let row = complete_row(false);
             frontiers::finish();
             assert_eq!(
                 current, old,
@@ -1366,18 +1397,23 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                 let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
                     + 2 * size_of::<&[Rc<SkeletonObservation>]>();
                 assert_eq!(
-                    paid + removed * (len + 1),
+                    paid + removed * (len + 1) + tail_delta(&row, &expected).1,
                     old_paid
                         + PAIR_PRIMITIVE
                         + PAYMENT_HEADER
                         + retained
                         + paired_value::ADDITIONAL_PRIMITIVES
+                        + tail_delta(&row, &expected).0
                 );
                 let new = PAIR_PRIMITIVE
                     + PAYMENT_HEADER
                     + retained
                     + paired_value::ADDITIONAL_PRIMITIVES;
-                assert_eq!(paid < old_paid, removed * (len + 1) > new);
+                assert_eq!(
+                    paid < old_paid,
+                    removed * (len + 1) + tail_delta(&row, &expected).1
+                        > new + tail_delta(&row, &expected).0
+                );
                 eprintln!(
                     "combined-flat len={len} old883={old_paid} current={paid}; actual cold tradeoff, no inherited64 gain"
                 );

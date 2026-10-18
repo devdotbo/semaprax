@@ -17,6 +17,7 @@ pub(super) struct Row {
     pub rounds: usize,
     pub value_steps: usize,
     pub value_tails: usize,
+    pub tails: usize,
     pub complete: bool,
     pub ended: bool,
     pub unwound: bool,
@@ -38,6 +39,7 @@ const EMPTY: Row = Row {
     rounds: 0,
     value_steps: 0,
     value_tails: 0,
+    tails: 0,
     complete: false,
     ended: false,
     unwound: false,
@@ -192,6 +194,12 @@ impl Guard {
     pub(super) fn value_tail(&self) {
         self.update(|r| match r.value_tails.checked_add(1) {
             Some(n) => r.value_tails = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn tail(&self) {
+        self.update(|r| match r.tails.checked_add(1) {
+            Some(n) => r.tails = n,
             None => r.overflow = true,
         });
     }
@@ -372,22 +380,54 @@ impl Drop for Scope {
             && rows
                 .iter()
                 .all(|row| row.complete && !row.old && row.owner_admitted);
-        eprintln!("OPT888 whole-caller current_candidate=true unqualified=true bytes={} outcome={:?} unwind={} complete={} partial_prefix={} invocations_reached={} owner_banks_admitted={} pairs_prepared={:?} rounds_reached={:?} match_banks_admitted={:?} step_banks_admitted={:?} tail_banks_admitted={:?} total_overflow={} lost={} row_capacity=128; complete-only equation current+tuple*N+2Option*(STEP+TAIL)=old886+5HEADER*M+2reference*N; no whole-shipping net claim",
-            self.bytes, self.outcome.get(), unwind, complete, !complete,
-            rows.len(), rows.iter().filter(|r| r.owner_admitted).count(),
-            totals[0], totals[1], totals[2], totals[3], totals[4], total_overflow, lost);
-        eprintln!("OPT888 typed-invoice tuple={} option_pair={} added_outer_references={} added_cold_headers={}",
+        eprintln!(
+            "OPT888 whole-caller current_candidate=true unqualified=true bytes={} outcome={:?} unwind={} complete={} partial_prefix={} invocations_reached={} owner_banks_admitted={} pairs_prepared={:?} rounds_reached={:?} match_banks_admitted={:?} step_banks_admitted={:?} tail_banks_admitted={:?} total_overflow={} lost={} row_capacity=128; complete-only equation current+tuple*N+2Option*(STEP+TAIL)=old886+5HEADER*M+2reference*N; no whole-shipping net claim",
+            self.bytes,
+            self.outcome.get(),
+            unwind,
+            complete,
+            !complete,
+            rows.len(),
+            rows.iter().filter(|r| r.owner_admitted).count(),
+            totals[0],
+            totals[1],
+            totals[2],
+            totals[3],
+            totals[4],
+            total_overflow,
+            lost
+        );
+        eprintln!(
+            "OPT888 typed-invoice tuple={} option_pair={} added_outer_references={} added_cold_headers={}",
             size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>(),
-            2 * size_of::<Option<&SkeletonObservation>>(), NEW_PAIR_REFERENCES,
-            paired_value::ADDITIONAL_PRIMITIVES);
+            2 * size_of::<Option<&SkeletonObservation>>(),
+            NEW_PAIR_REFERENCES,
+            paired_value::ADDITIONAL_PRIMITIVES
+        );
         for row in rows {
             let function = std::str::from_utf8(&row.function[..row.function_len])
                 .unwrap_or("<truncated UTF-8>");
-            eprintln!("OPT888 row={} generation={} serial={} function={:?} old={} payer={} selected={} owner_admitted={} pairs={} rounds={} match_admitted={} STEP={} TAIL={} complete={} ended={} unwound={} overflow={} truncated={}",
-                row.invocation, row.generation, row.serial, function, row.old, row.payer,
-                row.selected, row.owner_admitted, row.pairs, row.rounds, row.pair_matches_admitted,
-                row.value_steps, row.value_tails, row.complete, row.ended, row.unwound,
-                row.overflow, row.truncated);
+            eprintln!(
+                "OPT888 row={} generation={} serial={} function={:?} old={} payer={} selected={} owner_admitted={} pairs={} rounds={} match_admitted={} STEP={} TAIL={} complete={} ended={} unwound={} overflow={} truncated={}",
+                row.invocation,
+                row.generation,
+                row.serial,
+                function,
+                row.old,
+                row.payer,
+                row.selected,
+                row.owner_admitted,
+                row.pairs,
+                row.rounds,
+                row.pair_matches_admitted,
+                row.value_steps,
+                row.value_tails,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow,
+                row.truncated
+            );
         }
     }
 }

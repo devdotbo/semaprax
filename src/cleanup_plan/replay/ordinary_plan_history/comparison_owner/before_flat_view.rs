@@ -1,10 +1,10 @@
 //! One comparison invocation owns sort and pair state. No nested order/sift calls.
 use super::*;
 #[macro_use]
-#[path = "lexical_cursor.rs"]
+#[path = "lexical_cursor_before_tail.rs"]
 mod lexical_cursor;
 #[macro_use]
-#[path = "paired_value.rs"]
+#[path = "paired_value_before_tail.rs"]
 mod paired_value;
 #[cfg(test)]
 use super::pair_scope_census;
