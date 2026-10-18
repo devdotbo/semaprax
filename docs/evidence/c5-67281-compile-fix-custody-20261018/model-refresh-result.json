@@ -1,0 +1,86 @@
+{
+  "status": "PASS_SOURCE_ONLY_EXISTING268_REFRESH",
+  "head": "1bf4e133b34773dd66f5a661ead78ba9b2ef3a14",
+  "baseline": "67281d0166b024a0c13e36eb16d271065c1da8f8",
+  "owners": 268,
+  "edge_changes": [
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "before": 76475,
+      "after": 76477,
+      "text": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_before.rs\"]\nmod before;"
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "before": 76543,
+      "after": 76545,
+      "text": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "before": 76475,
+      "after": 76477,
+      "text": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_before.rs\"]\nmod before;"
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "before": 76543,
+      "after": 76545,
+      "text": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_tests.rs\"]\nmod tests;"
+    }
+  ],
+  "negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "records": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "archive": "docs/evidence/c5-67281-compile-fix-custody-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt",
+      "before_sha256": "86bcae126334a8840036b51b98ff37fe547d9d00248b0ef54093bdabb68849df",
+      "after_sha256": "cc810478880aa1502d1745a926c5fcac0c39fe936a4e5c2bc80897c66c33daad"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "archive": "docs/evidence/c5-67281-compile-fix-custody-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt",
+      "before_sha256": "3b84f087e3df2d515e429c32ec1a6f160dd30ca86cd31fce6f446341e11256e1",
+      "after_sha256": "dfcdfb5b03350e23c66e461c92454bf96efefc4d0182708fda97e6e568562af9"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "archive": "docs/evidence/c5-67281-compile-fix-custody-20261018/models-before/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt",
+      "before_sha256": "e3bd81a77fdd733b96e4e262b30315f2f674c589dc1b8f80e1a814038932a340",
+      "after_sha256": "81806e37abd22027f9e9b15c298b8b9797b1a0d0109b4a272183298fce7aa899"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "archive": "docs/evidence/c5-67281-compile-fix-custody-20261018/models-before/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt",
+      "before_sha256": "db7c2f16840ac2c0408feb75c7cd7a697c6cf5a1f212e08a732770ca927e62dc",
+      "after_sha256": "a92dbcb059493e4c69ef248d7efd01df013054c5b58c28834883f428e48c4671"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "archive": "docs/evidence/c5-67281-compile-fix-custody-20261018/models-before/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt",
+      "before_sha256": "da4fd883a51fc955ece940ce40cb65db51db80fb159e6757ba0576c253fea3c9",
+      "after_sha256": "57ffc4b695b0c9a497dd5bd3b2b445961b5fdb194a38609d29030558e5854a69"
+    }
+  ],
+  "written": true,
+  "Cargo": false
+}

@@ -10,8 +10,8 @@
       "outside_production_still_fully_authenticated": 84,
       "full_role_production": 504,
       "full_role_test_only": 919,
-      "full_raw_sha256": "c35f9538369e11b9ab7eccb72c2761e065c0c7c91b4700c5410acba8da5aff99",
-      "boundary_production_sha256": "b5c2d62efd7de9c860eae967ad4f14332be113bdff904f5f645e3a2bd16ec678",
+      "full_raw_sha256": "8c269d53e9696cc8616cde42f5d0b0437dfff8690dc2b6eb5bdb5e8bf6a926b2",
+      "boundary_production_sha256": "c97beaaadc55c072af2336c94b423a766cbd05330fee9086919ad64a29bdd99e",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -64,7 +64,6 @@
     "whole_raw_drift_refused": true,
     "foreign_path_child_cannot_escape": true
   },
-  "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "FINITE_265_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_THREE_ACTUAL_CORE_CHILDREN",
-  "global_polluted_purity_result_not_claimed": true
+  "status": "SOURCE_ONLY_FINITE_EXISTING268_HASH_AND_TWO_EDGE_OFFSET_SUCCESSOR",
+  "registration_update": "No parser reenumeration; complete prior268 classes/chunks retained with two exact declaration offsets relocated."
 }
