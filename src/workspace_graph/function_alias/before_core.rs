@@ -394,3 +394,131 @@ use crate::workspace_graph::before_private_roots::reconstruct_workspace_declarat
 use crate::workspace_graph::validation::before_roots::{
     validate_stub_signatures_authored, WorkspaceValidationIndex,
 };
+
+// Detached test observation of the complete constructor/retention component.
+// No authority or fee is supplied by this report; both genuine producers run.
+#[derive(Clone, Copy, Debug)]
+struct ComponentRow {
+    inputs: usize,
+    identity: [u8; 32],
+    compact: bool,
+    bytes: usize,
+    finished: bool,
+}
+impl ComponentRow {
+    const EMPTY: Self = Self {
+        inputs: 0,
+        identity: [0; 32],
+        compact: false,
+        bytes: 0,
+        finished: false,
+    };
+}
+#[derive(Clone, Copy, Debug)]
+struct ComponentReport {
+    rows: [ComponentRow; 16],
+    len: usize,
+    pending: usize,
+    complete: bool,
+}
+impl ComponentReport {
+    const EMPTY: Self = Self {
+        rows: [ComponentRow::EMPTY; 16],
+        len: 0,
+        pending: 0,
+        complete: true,
+    };
+}
+thread_local! {
+    static COMPONENTS: std::cell::Cell<Option<ComponentReport>> = const { std::cell::Cell::new(None) };
+}
+pub(in crate::workspace_graph) struct ComponentObservation(Option<(usize, usize)>);
+pub(in crate::workspace_graph) fn observe_component(
+    programs: &[Program],
+    compact: Option<&[usize]>,
+) -> ComponentObservation {
+    use sha2::{Digest, Sha256};
+    COMPONENTS.with(|cell| {
+        let Some(mut report) = cell.get() else {
+            return ComponentObservation(None);
+        };
+        let Some(before) = crate::bounded_output::active_remaining() else {
+            report.complete = false;
+            cell.set(Some(report));
+            return ComponentObservation(None);
+        };
+        if report.len == report.rows.len() {
+            report.complete = false;
+            cell.set(Some(report));
+            return ComponentObservation(None);
+        }
+        if report.pending != 0 {
+            report.complete = false;
+        }
+        let mut identity = Sha256::new();
+        for program in programs {
+            identity.update((program.path.len() as u64).to_le_bytes());
+            identity.update(program.path.as_bytes());
+        }
+        if let Some(order) = compact {
+            for &index in order {
+                identity.update((index as u64).to_le_bytes());
+            }
+        }
+        let slot = report.len;
+        report.rows[slot] = ComponentRow {
+            inputs: programs.len(),
+            identity: identity.finalize().into(),
+            compact: compact.is_some(),
+            bytes: 0,
+            finished: false,
+        };
+        report.len += 1;
+        report.pending += 1;
+        cell.set(Some(report));
+        ComponentObservation(Some((slot, before)))
+    })
+}
+impl Drop for ComponentObservation {
+    fn drop(&mut self) {
+        let Some((slot, before)) = self.0 else { return };
+        COMPONENTS.with(|cell| {
+            let mut report = cell
+                .get()
+                .expect("component report outlives its constructor");
+            if let Some(bytes) = crate::bounded_output::active_remaining()
+                .and_then(|after| before.checked_sub(after))
+            {
+                report.rows[slot].bytes = bytes;
+                report.rows[slot].finished = !std::thread::panicking();
+            } else {
+                report.complete = false;
+            }
+            report.pending = report
+                .pending
+                .checked_sub(1)
+                .expect("paired component entry");
+            report.complete &= report.rows[slot].finished;
+            cell.set(Some(report));
+        });
+    }
+}
+fn component_run<T>(run: impl FnOnce() -> T) -> (T, ComponentReport) {
+    struct Restore(Option<ComponentReport>);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            COMPONENTS.with(|cell| cell.set(self.0));
+        }
+    }
+    let previous = COMPONENTS.with(|cell| cell.replace(Some(ComponentReport::EMPTY)));
+    let restore = Restore(previous);
+    assert!(
+        previous.is_none(),
+        "detached component calibration cannot nest"
+    );
+    let result = run();
+    let report = COMPONENTS.with(|cell| cell.get().unwrap());
+    drop(restore);
+    assert!(report.complete && report.pending == 0 && report.len > 0);
+    (result, report)
+}

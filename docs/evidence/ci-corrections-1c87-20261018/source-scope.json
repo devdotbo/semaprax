@@ -1,0 +1,15 @@
+{
+  "logical_changed": [
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"
+  ],
+  "nonlogical_existing": [
+    "src/cli/help.rs",
+    "src/cli/help/usages.rs",
+    ".github/workflows/ci.yml",
+    "std/data-json-utf8/src/tests.spx",
+    "std/data-ndjson/src/tests.spx"
+  ],
+  "all_existing_tests_snapshots_caps_and_guards_retained": true,
+  "actual_browser_capture_head": "1c87c0f125d2e02878fff8a1ae568f8a6fad99b3",
+  "full_current_CI_required": true
+}

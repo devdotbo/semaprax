@@ -22,6 +22,21 @@ pub(super) fn added(r: &pair_scope_census::Row) -> usize {
         + extent * r.identity_extent_captures
         + replay * r.identity_observations
 }
+// Separate incoming reachable-site delta; never an identity-replay credit.
+pub(super) fn reachable_delta(paths: usize) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let selector = header + 3 * size_of::<usize>() + 2 * size_of::<bool>();
+    let reachable = match paths {
+        0 => 0,
+        1 => 5 * header,
+        _ => 20 * header,
+    };
+    (20 * header, selector + reachable)
+}
 pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
     // Complete old MATCH, two loaded STEP+EMPTY packets; no LOAD or tail credit.
     let matching = 2 * size_of::<&SkeletonObservation>()
@@ -218,14 +233,14 @@ fn run(
     // The original call frame can refuse before begin; that is genuinely no row.
     let row = if rows.is_empty() {
         assert!(observed.1);
-        assert!(observed.0.0.result.is_err());
+        assert!(observed.0 .0.result.is_err());
         pair_scope_census::empty_for_test()
     } else {
         assert_eq!(rows.len(), 1);
         assert!(rows[0].ended && !rows[0].overflow && !rows[0].truncated && !rows[0].unwound);
         rows[0]
     };
-    balanced(observed.0.1);
+    balanced(observed.0 .1);
     Run {
         observed,
         events,
@@ -273,9 +288,9 @@ fn shared_identity_replay_preserves_every_work_cut_six_fields_remaining_and_swap
                     0,
                     false,
                 );
-                assert_eq!(old.observed.0.0, current.observed.0.0);
+                assert_eq!(old.observed.0 .0, current.observed.0 .0);
                 assert_eq!(swaps(&old), swaps(&current));
-                let spent = MAX_REPLAY_WORK_UNITS - old.observed.0.0.remaining;
+                let spent = MAX_REPLAY_WORK_UNITS - old.observed.0 .0.remaining;
                 for cut in 0..=spent {
                     let old = run(
                         function,
@@ -302,7 +317,7 @@ fn shared_identity_replay_preserves_every_work_cut_six_fields_remaining_and_swap
                         false,
                     );
                     assert_eq!(
-                        old.observed.0.0, current.observed.0.0,
+                        old.observed.0 .0, current.observed.0 .0,
                         "length{length} depth{depth} shared{shared} fault{fault} work{cut}"
                     );
                     assert_eq!(swaps(&old), swaps(&current));
@@ -347,14 +362,15 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 0,
                 hir_shared,
             );
-            assert!(old.observed.0.0.result.is_ok());
-            assert_eq!(old.observed.0.0, current.observed.0.0);
+            assert!(old.observed.0 .0.result.is_ok());
+            assert_eq!(old.observed.0 .0, current.observed.0 .0);
             assert!(old.row.complete && current.row.complete);
-            assert_eq!(old.observed.0.1, current.observed.0.1);
+            assert_eq!(old.observed.0 .1, current.observed.0 .1);
             assert_eq!(swaps(&old), swaps(&current));
+            // fixture() constructs exactly four real paths in both observations.
             assert_eq!(
-                current.observed.2 + removed(&current.row),
-                old.observed.2 + added(&current.row)
+                current.observed.2 + removed(&current.row) + reachable_delta(4).0,
+                old.observed.2 + added(&current.row) + reachable_delta(4).1
             );
             assert_eq!(
                 current.row.identity_work,
@@ -371,7 +387,8 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
             if shared && length > 1 {
                 assert!(current.row.identity_hits > 0 && current.row.identity_observations > 0);
                 assert!(
-                    removed(&current.row) > added(&current.row),
+                    removed(&current.row) + reachable_delta(4).0
+                        > added(&current.row) + reachable_delta(4).1,
                     "real 128-observation hot witness must amortize all new costs"
                 );
             } else {
@@ -411,7 +428,7 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
         0,
         false,
     );
-    assert!(success.observed.0.0.result.is_ok() && success.row.identity_observations > 0);
+    assert!(success.observed.0 .0.result.is_ok() && success.row.identity_observations > 0);
     let total = success.observed.2;
     for limit in [0, total - 1, total] {
         let result = run(
@@ -426,10 +443,10 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
             0,
             false,
         );
-        assert_eq!(result.observed.0.0.result.is_ok(), limit == total);
+        assert_eq!(result.observed.0 .0.result.is_ok(), limit == total);
         assert_eq!(result.observed.1, limit != total);
         if limit != total {
-            assert!(result.observed.0.0.retry.is_some());
+            assert!(result.observed.0 .0.retry.is_some());
         }
     }
     let events: Vec<_> = success
@@ -448,16 +465,12 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
         })
         .copied()
         .collect();
-    assert!(
-        events
-            .iter()
-            .any(|e| e.phase == "ordinary plan shared prefix scalar receivers")
-    );
-    assert!(
-        events
-            .iter()
-            .any(|e| e.phase == "ordinary plan shared prefix identity detector")
-    );
+    assert!(events
+        .iter()
+        .any(|e| e.phase == "ordinary plan shared prefix scalar receivers"));
+    assert!(events
+        .iter()
+        .any(|e| e.phase == "ordinary plan shared prefix identity detector"));
     for event in events {
         let after = event.after.unwrap();
         for (limit, floor) in [(after - 1, 0), (after, 1)] {
@@ -473,8 +486,8 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
                 floor,
                 false,
             );
-            assert!(result.observed.1 && result.observed.0.0.result.is_err());
-            assert!(result.observed.0.0.retry.is_some());
+            assert!(result.observed.1 && result.observed.0 .0.result.is_err());
+            assert!(result.observed.0 .0.retry.is_some());
             let receipt = result.observed.3.unwrap();
             assert_eq!(receipt.requested, after - event.before);
             assert_eq!(receipt.remaining, limit - event.before);
@@ -555,10 +568,10 @@ fn shared_identity_replay_real_producer_and_both_hir_representations_keep_comple
             };
             let old = observe(true);
             let current = observe(false);
-            assert_eq!(old.0.0, current.0.0);
-            assert!(old.0.0.0.is_ok());
-            balanced(old.0.1);
-            balanced(current.0.1);
+            assert_eq!(old.0 .0, current.0 .0);
+            assert!(old.0 .0 .0.is_ok());
+            balanced(old.0 .1);
+            balanced(current.0 .1);
         }
     }
 }
@@ -567,6 +580,32 @@ fn shared_identity_replay_real_producer_and_both_hir_representations_keep_comple
 fn shared_identity_replay_retains_complete_immediate_sources_and_original_invoices() {
     use sha2::{Digest, Sha256};
     let original = include_str!("../comparison_owner.rs");
+    let incoming = reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "ae4705bfe4032ba2674a57c1451ded8c2cf0672f8f91cad07a127e5d599303b2",
+        original,
+    );
+    let frozen = include_str!("before_reachable_primitives.rs")
+        .replace("#[path = \"lexical_cursor_reachable_before.rs\"]\n", "")
+        .replace(
+            "#[cfg(test)]\nuse super::{before_lexical_cursor, before_pair_scope, pair_scope_census};",
+            "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;",
+        )
+        .replace("pub(super) struct ComparisonOwner<", "struct ComparisonOwner<")
+        + "\n#[cfg(test)]\nmod tests;\n";
+    assert_eq!(
+        frozen, incoming,
+        "entire incoming current owner, only explicit namespace glue"
+    );
+    assert_eq!(
+        include_str!("lexical_cursor_reachable_before.rs"),
+        reachable_stage(
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+            "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c",
+            include_str!("lexical_cursor.rs"),
+        ),
+        "entire incoming macro and tariffs remain independently compiled",
+    );
     // The frozen body is complete production code; only module/test namespace
     // glue and one private-type visibility token differ from the immediate root.
     let mut restored = include_str!("before_identity_prefix.rs").to_owned();

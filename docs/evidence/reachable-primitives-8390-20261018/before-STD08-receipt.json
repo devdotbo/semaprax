@@ -1,0 +1,11 @@
+{
+  "status": "ACTUAL_PREDECESSOR_STD08_FAILURE_ONLY",
+  "head": "8390e97c3db3670b110957dcaef2a576db1767e9",
+  "run": 39127501499,
+  "job": 117676137088,
+  "log_encoding": "canonical-base64-with-final-newline",
+  "log_path": "before-STD08.log.base64",
+  "decoded_length": 90944,
+  "decoded_sha256": "41c36ea79bc78d91ec5f949a5fe0714f82519dbb0619fdfdd4f6b6bdf531002d",
+  "current_candidate_execution_UNEXECUTED": true
+}

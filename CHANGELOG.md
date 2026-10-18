@@ -1,4 +1,5 @@
 - Source-only OPT #897 adds four explicit decode-only owned request codec profiles; unchanged full generators feed a closed source projection before whole ordinary candidate validation. Full profiles, decoder semantics, caps and existing application cohorts remain unchanged; executable qualification and net-cost measurements are pending.
+- Fund only reachable ordinary PLAN cursor primitive-site groups for zero/one-path comparisons, after paying the full owner and selector; preserve all twenty headers on larger sets, every dynamic payload debit and complete old controls. Bounded body comparisons pass; full compiler, physical and application qualification remain pending.
 - Select the fully paid inline clone for short two-edge plan histories whose maximum possible backing saving cannot cover the direct query and call receivers. Preserve complete prior enumerators, work/refusal/Drop controls and all compiler limits; focused runtime and application qualification remain pending.
 
 - OPT #888: author paired PLAN bare-reference consumption with complete immediate886 controls and explicit cold/reference costs; qualification pending.

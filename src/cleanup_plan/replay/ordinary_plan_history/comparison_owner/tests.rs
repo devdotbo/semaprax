@@ -2,8 +2,8 @@
 use super::*;
 mod source_format;
 mod tail_source;
-use crate::bounded_output::{ReservationRefusal, with_limit_usage_refusal};
-use crate::test_allocation_observer::{Metrics, measure};
+use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
+use crate::test_allocation_observer::{measure, Metrics};
 #[derive(Clone, Debug, Eq, PartialEq)]
 struct Failure {
     code: &'static str,
@@ -356,12 +356,12 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
                 0,
             );
             frontiers::finish();
-            assert_eq!(a.0.0, b.0.0);
+            assert_eq!(a.0 .0, b.0 .0);
             assert_eq!(a.1, b.1);
             assert_eq!(a.2, b.2);
             assert_eq!(a.3, b.3);
-            balanced(a.0.1);
-            balanced(b.0.1);
+            balanced(a.0 .1);
+            balanced(b.0 .1);
             if limit == end && floor == 0 {
                 assert_eq!(trace[ordinal].after, Some(end));
             }
@@ -369,13 +369,13 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
                 || (limit == end && floor == 1)
                 || (limit == event.before && floor == 0)
             {
-                assert!(a.0.0.result.is_err() && a.1 && a.3.is_some());
+                assert!(a.0 .0.result.is_err() && a.1 && a.3.is_some());
                 let first = a.3.unwrap();
                 assert_eq!(first.requested, end - event.before);
                 assert_eq!(first.remaining, limit - event.before);
                 assert_eq!(first.floor, floor);
                 assert_eq!(
-                    a.0.0.result.as_ref().unwrap_err(),
+                    a.0 .0.result.as_ref().unwrap_err(),
                     &primitive_failure(function, event, limit, floor)
                 );
             }
@@ -696,12 +696,12 @@ fn lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_
                 0,
             );
             frontiers::finish();
-            assert_eq!(a.0.0, b.0.0);
+            assert_eq!(a.0 .0, b.0 .0);
             assert_eq!(a.1, b.1);
             assert_eq!(a.2, b.2);
             assert_eq!(a.3, b.3);
-            balanced(a.0.1);
-            balanced(b.0.1);
+            balanced(a.0 .1);
+            balanced(b.0 .1);
             if limit == end && floor == 0 {
                 assert_eq!(trace[ordinal].after, Some(end));
             }
@@ -709,13 +709,13 @@ fn lexical_plan_cursor_real_payload_frontiers_exact_short_zero_floor_sticky_and_
                 || (limit == end && floor == 1)
                 || (limit == event.before && floor == 0)
             {
-                assert!(a.0.0.result.is_err() && a.1 && a.3.is_some());
+                assert!(a.0 .0.result.is_err() && a.1 && a.3.is_some());
                 let first = a.3.unwrap();
                 assert_eq!(first.requested, end - event.before);
                 assert_eq!(first.remaining, limit - event.before);
                 assert_eq!(first.floor, floor);
                 assert_eq!(
-                    a.0.0.result.as_ref().unwrap_err(),
+                    a.0 .0.result.as_ref().unwrap_err(),
                     &primitive_failure(function, event, limit, floor)
                 );
             }
@@ -1170,3 +1170,7 @@ mod prepared_pairing_tests;
 
 #[path = "shared_prefix_tests.rs"]
 mod shared_prefix_tests;
+
+#[path = "reachable_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod reachable_pair_scope_tests;

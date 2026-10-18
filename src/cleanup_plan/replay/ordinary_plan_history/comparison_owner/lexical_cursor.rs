@@ -6,6 +6,12 @@ use super::*;
 // Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.
 // Every payload below is separately paid on actual execution, never once.
 pub(super) const PRIMITIVE_FRAMES: usize = 20 * PAYMENT_HEADER;
+pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;
+// Before inspecting the already-funded owner length, fund the new payment
+// site's complete primitive frame, match/local usize receivers and both
+// numeric pattern decisions. No dynamic payload uses this primitive bank.
+pub(super) const PRIMITIVE_SELECTION: usize =
+    PAYMENT_HEADER + 3 * size_of::<usize>() + 2 * size_of::<bool>();
 pub(super) const INITIALIZERS: usize = 2 * size_of::<&Vec<Segment>>() + 2 * size_of::<&[Segment]>() // arena as_slice/field initializer
     + 2 * size_of::<&[Rc<SkeletonObservation>]>() // two empty-slice initializers; fields in Owner
     + 2 * size_of::<bool>();
@@ -62,7 +68,13 @@ const _: () = assert!(STEP + EMPTY < SHIPPING_NEXT_CALL);
 // and full exhausted sentinel/tail envelopes. It is not an application result.
 const _: () = assert!(
     2 * 256 * (SHIPPING_NEXT_CALL - STEP - EMPTY)
-        > OWNER_CONTROLS + 2 * LOAD + 2 * RESET + 4 * (STEP + EMPTY) + 2 * TAIL + 4 * TAIL_VIEW
+        > OWNER_CONTROLS
+            + PRIMITIVE_FRAMES
+            + 2 * LOAD
+            + 2 * RESET
+            + 4 * (STEP + EMPTY)
+            + 2 * TAIL
+            + 4 * TAIL_VIEW
 );
 
 macro_rules! lexical_plan_next {

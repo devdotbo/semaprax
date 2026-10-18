@@ -1,0 +1,7 @@
+{
+  "encoding": "canonical-base64-with-final-newline",
+  "path": "job.log.base64",
+  "decoded_bytes": 128381,
+  "decoded_sha256": "bb360ee3e4dbce1ac1d6ab9de5793ddae9032c4773457aa1423d9ec8859f72f6",
+  "reason": "Preserve exact upstream log whitespace without altering any byte."
+}

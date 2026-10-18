@@ -19,8 +19,12 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
-pub(super) fn previous_macro(current: &str) -> String {
+mod reachable_primitives;
+fn previous_macro_stage(current: &str) -> String {
     restore(current, 6457, MACRO)
+}
+pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_stage(&reachable_primitives::previous_macro(current))
 }
 #[rustfmt::skip]
 const MACRO: &[(usize, &str, &str)] = &[
@@ -132,9 +136,11 @@ mod tests {
     }
     #[test]
     fn unknown_span_extent_and_outside_body_drift_never_match_whole_before_sources() {
+        let macro_stage =
+            reachable_primitives::previous_macro(include_str!("../../lexical_cursor.rs"));
         hostile(
-            include_str!("../../lexical_cursor.rs"),
-            previous_macro,
+            &macro_stage,
+            previous_macro_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/prepared-links-ad676-20261018/before-macro.rs.txt"

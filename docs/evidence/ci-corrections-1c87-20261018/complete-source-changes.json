@@ -1,0 +1,80 @@
+[
+  {
+    "source": "src/cli/help.rs",
+    "before": {
+      "length": 89572,
+      "sha256": "eb595f6d341dee8c79314184802cc8ec79d4cea09c886445a299a21b53612602",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/eb595f6d341dee8c79314184802cc8ec79d4cea09c886445a299a21b53612602.txt"
+    },
+    "current": {
+      "length": 89553,
+      "sha256": "1c354d94b2585a6bbf58a03bee69d950a0a763d83efff22d84cc0dce1f820e90",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/1c354d94b2585a6bbf58a03bee69d950a0a763d83efff22d84cc0dce1f820e90.txt"
+    }
+  },
+  {
+    "source": "src/cli/help/usages.rs",
+    "before": {
+      "length": 1419,
+      "sha256": "2e6d4718760b06baf201abf69a0cc31403156220dcf2c7b22a515a7708181378",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/2e6d4718760b06baf201abf69a0cc31403156220dcf2c7b22a515a7708181378.txt"
+    },
+    "current": {
+      "length": 1419,
+      "sha256": "0cf22eca09e868283b10765a49ffc0a680ed1b508dd24e3f3a624a4e0c6bdc3d",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/0cf22eca09e868283b10765a49ffc0a680ed1b508dd24e3f3a624a4e0c6bdc3d.txt"
+    }
+  },
+  {
+    "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "before": {
+      "length": 10297,
+      "sha256": "f50d0a726907daf2e825ddc4c71138421567aac864d3a3d20064ac554e91fca3",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/f50d0a726907daf2e825ddc4c71138421567aac864d3a3d20064ac554e91fca3.txt"
+    },
+    "current": {
+      "length": 10296,
+      "sha256": "c6d8278d46bd023dded4807b5f41e2674c9f4d6a296bb00531e486ef13db69c1",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/c6d8278d46bd023dded4807b5f41e2674c9f4d6a296bb00531e486ef13db69c1.txt"
+    }
+  },
+  {
+    "source": ".github/workflows/ci.yml",
+    "before": {
+      "length": 183360,
+      "sha256": "860ae90a5dec0359dec6aeb0a13d54cb1e3459e1dddb83f1b1d009cd4ed40eb7",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/860ae90a5dec0359dec6aeb0a13d54cb1e3459e1dddb83f1b1d009cd4ed40eb7.txt"
+    },
+    "current": {
+      "length": 183426,
+      "sha256": "5b15919eff6ba324795194c3ff3cd2e95f9b8affa5281d9e1327cdd21c45546d",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/5b15919eff6ba324795194c3ff3cd2e95f9b8affa5281d9e1327cdd21c45546d.txt"
+    }
+  },
+  {
+    "source": "std/data-json-utf8/src/tests.spx",
+    "before": {
+      "length": 8145,
+      "sha256": "c76f8acb8c6d96f5272a2fa8c8974d2d3efcbbf41fb1ae18879eba83dc259fe3",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/c76f8acb8c6d96f5272a2fa8c8974d2d3efcbbf41fb1ae18879eba83dc259fe3.txt"
+    },
+    "current": {
+      "length": 9077,
+      "sha256": "7d159757b23616265f8800373da36973e3d38cb0aaf0dc8f30766b05717cf802",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/7d159757b23616265f8800373da36973e3d38cb0aaf0dc8f30766b05717cf802.txt"
+    }
+  },
+  {
+    "source": "std/data-ndjson/src/tests.spx",
+    "before": {
+      "length": 4175,
+      "sha256": "1034a71ab4e9109f8627db5809da56bcebbec5836a3d3bcacad0d585fa1ffc5d",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/1034a71ab4e9109f8627db5809da56bcebbec5836a3d3bcacad0d585fa1ffc5d.txt"
+    },
+    "current": {
+      "length": 5443,
+      "sha256": "b06b94867b230ed4d2332b9357484ccb0190a5cfb814b037dd5b61bc84d714c3",
+      "archive": "docs/evidence/ci-corrections-1c87-20261018/whole/b06b94867b230ed4d2332b9357484ccb0190a5cfb814b037dd5b61bc84d714c3.txt"
+    }
+  }
+]

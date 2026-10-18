@@ -122,3 +122,26 @@ teardown flags remain unchanged; it is an instrumented production algorithm,
 not default-shipping census. Default builds strip these hooks.
 All new controls are unrun. Neither net savings, application admission at 64 MiB,
 shipping census nor a compiler/runtime performance improvement is established.
+## Reachable primitive-site continuation
+
+The current source continuation funds the complete invocation owner and a new
+primitive payment site plus its length-selector receivers before inspecting
+that owner. Zero paths reach no cursor expansion. One path skips both sorting
+expansions and can enter only one mutually exclusive flat/shared final
+expansion, so it acquires that expansion's five distinct primitive headers.
+Larger sets retain all twenty original primitive headers. The selected bank
+is acquired before backing, work or cursor execution. All dynamic payloads,
+original work events and every independent old control retain their payments.
+The new selector costs extra on larger sets; no universal saving is claimed.
+This preserves the accepted880 primitive criterion and introduces no per-call
+exemption, refund, quota change or authority. Exact whole-source inverse stages
+and independent invoices retain every earlier control. Focused bounded
+whole-body comparisons are not full compiler, physical-allocator or application
+qualification; original native64MiB, STD-08, browser and full CI gates remain.
+
+In the composed paired/identity route this selection replaces only the lexical
+twenty-header bank. The distinct paired fifth expansion still pays its full five
+headers, even on zero/one paths, and identity initializer/detector/replay banks
+remain additive. Thus larger sets retain all twenty-five cursor headers; the
+reachable-selector delta is independently invoiced, not an identity-replay
+credit. Whole incoming and immediate identity-generation controls remain compiled.
