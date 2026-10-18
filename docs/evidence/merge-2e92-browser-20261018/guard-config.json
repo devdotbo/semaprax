@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 62636,
-      "sha256": "c08d3e427c924691d2a7c52d6258d325c41a618f11637bc4eb758d990a86e3ef"
+      "sha256": "d032df8b6d65be0a71882bda9e85edd8619d3d9e83ac338596dcb9ea762be231"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1037,8 +1037,8 @@
       "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
-      "length": 53151,
-      "sha256": "9cafdb4eeb776936a231504599baf7189afa4c908a55ea555aa62c5b442e7265"
+      "length": 53204,
+      "sha256": "14a0e6ea0e450c4eab3fafc4491af240ee455ebc46072384641abff27ef3e259"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
       "length": 6956,
@@ -1105,8 +1105,8 @@
       "sha256": "3bfddfb8c69711d9e5c5b423a3a400e74a1b16572ead764acb340ad8a8bbe417"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs": {
-      "length": 13489,
-      "sha256": "a4d6a61f4d32bc1cdbdebd02b125eb8a9408800f3920fbd418db8bbe1effa38d"
+      "length": 13420,
+      "sha256": "a506a12c22e96ab0e1ae7c48cf0e36276c24aa50de6d6f4a6b40b37e3a34761d"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs": {
       "length": 32019,
@@ -1141,8 +1141,8 @@
       "sha256": "b6f24502e16f6439d59c14ffe8700a84decc8c36876378e557e9245dc58e27bc"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs": {
-      "length": 55574,
-      "sha256": "f20b334110916fcc87fe341dd151ed04c66b372a2eaca3a0d4eccd6272b5a249"
+      "length": 55524,
+      "sha256": "0a76af1059064eaeaef23136068d1a35cdc77e5ad931e28eb0ee304a5a8baaa6"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs": {
       "length": 50866,
@@ -1177,24 +1177,24 @@
       "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs": {
-      "length": 37672,
-      "sha256": "0cc57b0d6f2755e9588ff4d5adcc1e8d6d8513a9ac4bb5e93ded4869ee1b2ae3"
+      "length": 37475,
+      "sha256": "9fb7af33a5df12e64b70bce38e63636abb10f0866e22e485b250ff43550482fa"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs": {
-      "length": 6307,
-      "sha256": "1a91d382cfa3d5937451f9e2d2e4bda15a290d7aeaead1728a4529520bb2e72f"
+      "length": 6098,
+      "sha256": "753fcdc6ea3302c8f33a0355746d7d75b5fdc2c971d95aea6403467a8d8ef810"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs": {
-      "length": 42730,
-      "sha256": "de799c2a80b88a1325c3d0023ce814b9bc81e5f46a8f18a6c4591b2c03243e9f"
+      "length": 42519,
+      "sha256": "e09551afc0701df358eb2a9df2144c71b3908d594417eb415bbdeb76fa53e1ef"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs": {
-      "length": 8081,
-      "sha256": "e3b9feaf7aefcd3c4b37cd3064a2611db56c7e93f060b228fef3b313327cbc02"
+      "length": 7872,
+      "sha256": "d5e2c99c048b76596ffd9e58412cf5a1f2eb467fe5c4855e62c96be80d84768b"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs": {
-      "length": 27404,
-      "sha256": "6a8bfbc1742f8e80afde519c6cd6ffa1ecb7c7fbb59fca250db66e0fc33c14bf"
+      "length": 27194,
+      "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
       "length": 34453,
