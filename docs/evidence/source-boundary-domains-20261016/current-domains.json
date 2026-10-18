@@ -1310,6 +1310,14 @@
         "src/cleanup_plan/replay/factored/canonical_shared/epsilon_alias/tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/held_auth_tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/source.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/tests.rs",
@@ -2367,6 +2375,12 @@
         "src/cleanup_plan/replay/factored/canonical_shared/empty_closure.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
@@ -2753,6 +2767,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_receiving.rs",
         "src/cleanup_plan/replay/ordinary_status.rs",
@@ -2821,9 +2836,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "41226f0e239271cc5d3499781cee80d9e4834c46667ea5576373fbfb22423ca2",
-      "full_raw_sha256": "93882e2ce904ea0961ea33c43c120b2fdb48ba0dddf37cd33dbcaed352a9f6d0",
-      "full_authenticated_production_sha256": "e54f8614b81317429d08563fc279a23b1a2197c7737186e7adbd4c0ab6df8c11"
+      "full_manifest_sha256": "62988a9def9f686c4404891438a5539b018d0820d878fafb05a8715540c9ea79",
+      "full_raw_sha256": "42c78f1e20e45ac2f6489a505a7f4d4ebe29f9ba1e5dd8b5e4782549d34ce2c2",
+      "full_authenticated_production_sha256": "6b5aaefd30e4941a24d8e5a088045ca41ff502f1ebdb59105b47ec8e047f9be5"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3339,6 +3354,12 @@
         "src/cleanup_plan/replay/factored/canonical_shared/empty_closure.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs",
@@ -3388,6 +3409,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_receiving.rs",
         "src/cleanup_plan/replay/ordinary_renewals.rs",
@@ -3870,9 +3892,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "2b3407e65ddc3f05c5ce5ccb991a962b687a26b6fe58295fa85ea48cb22b7e37",
-      "full_raw_sha256": "d0fcb45fd3b128f6654925835444ca14b9606d4b52650d39b056c7c2b8d17d0c",
-      "full_authenticated_production_sha256": "79b4278067fa1d1d1addd796e8c6d7133c42e19fab89390ec9edd7b4f575ae98"
+      "full_manifest_sha256": "854c768d04c4ee53fd9f7885eccfc73c837f8e72301e69206c8bb1cbe96606f5",
+      "full_raw_sha256": "5411ff2070075a86d40b262a5d422c5c49a9c82ac3f20217acc7dddcf5ecf4c6",
+      "full_authenticated_production_sha256": "3ba91bfe1cf769a4c1d022abecc6956d087dd117539ad31cbdd5e1eb1c6ad988"
     }
   }
 }
