@@ -3,6 +3,7 @@ use super::{digest, held_4a6eb, SOURCE_CAP};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
+use std::sync::{Arc, Mutex};
 
 const PAGE_CAP: usize = 262144;
 // Bound from the final original-parser source union; this draft grants no paths.
@@ -218,7 +219,114 @@ fn page_bytes(
     );
     Ok(())
 }
-fn load() -> Result<(Value, Value), &'static str> {
+// One bounded immutable JSON DATA object, never a cached admission verdict.
+// Callers still acquire fresh regular handles and authenticate every live byte
+// before arriving here. Even hits repeat canonical equality on those new bytes.
+struct PageData {
+    page: Option<(String, Arc<Value>)>,
+}
+impl PageData {
+    fn parse(&mut self, raw: &str) -> Result<Arc<Value>, &'static str> {
+        require!(raw.len() <= PAGE_CAP, "page parse bound");
+        if let Some((bytes, parsed)) = &self.page {
+            if bytes == raw {
+                require!(
+                    canonical(parsed) == raw.as_bytes(),
+                    "noncanonical or duplicate JSON"
+                );
+                return Ok(Arc::clone(parsed));
+            }
+        }
+        // Preserve the original complete parser and duplicate/canonical check.
+        // Failed or changed input can never receive the prior parsed object.
+        let parsed = Arc::new(json(raw)?);
+        self.page = Some((raw.to_owned(), Arc::clone(&parsed)));
+        Ok(parsed)
+    }
+}
+fn page_data(raw: &str) -> Result<Arc<Value>, &'static str> {
+    static DATA: Mutex<PageData> = Mutex::new(PageData { page: None });
+    DATA.lock().map_err(|_| "page parse data lock")?.parse(raw)
+}
+fn load() -> Result<(Value, Arc<Value>), &'static str> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let compiled =
+        include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/policy.json");
+    require!(POLICY_LENGTH <= PAGE_CAP, "policy bound");
+    let raw = held_4a6eb(&root.join(POLICY_PATH), POLICY_LENGTH, POLICY_SHA256)?;
+    require!(raw == compiled, "policy compiled/physical");
+    let policy = json(&raw)?;
+    require!(
+        keys(
+            &policy,
+            &[
+                "schema",
+                "page",
+                "predecessor",
+                "replacements",
+                "additions",
+                "new_fragment_edges"
+            ]
+        ),
+        "policy keys"
+    );
+    require!(
+        policy["schema"] == "semaprax.finite-source-overlay-policy.v2",
+        "policy schema"
+    );
+    require!(
+        keys(&policy["page"], &["path", "length", "sha256"]) && policy["page"]["path"] == PAGE_PATH,
+        "one literal page"
+    );
+    require!(
+        keys(
+            &policy["predecessor"],
+            &["extension", "rows", "logical_sha256"]
+        ),
+        "predecessor keys"
+    );
+    require!(policy["predecessor"]["rows"] == 519, "predecessor rows");
+    require!(
+        policy["predecessor"]["extension"]
+            == serde_json::json!({"path":EXTENSION_PATH,"length":EXTENSION_LENGTH,"sha256":EXTENSION_SHA256}),
+        "predecessor extension"
+    );
+    require!(
+        policy["replacements"] == serde_json::json!(REPLACEMENTS),
+        "literal replacement scope"
+    );
+    require!(
+        policy["additions"]
+            .as_array()
+            .ok_or("additions")?
+            .iter()
+            .map(|r| r["source"].as_str())
+            .collect::<Vec<_>>()
+            == ADDITIONS.iter().map(|p| Some(*p)).collect::<Vec<_>>(),
+        "literal addition scope"
+    );
+    // Original metadata is read as metadata. It is never substituted for a
+    // changed physical Rust source, and it retains its original individual cap.
+    let extension = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
+    require!(
+        held_4a6eb(
+            &root.join(EXTENSION_PATH),
+            EXTENSION_LENGTH,
+            EXTENSION_SHA256
+        )? == extension,
+        "predecessor physical/compiled"
+    );
+    let length = usize::try_from(policy["page"]["length"].as_u64().ok_or("page length")?)
+        .map_err(|_| "page length")?;
+    let sha = policy["page"]["sha256"].as_str().ok_or("page digest")?;
+    require!(length <= PAGE_CAP, "page bound");
+    let physical = held_4a6eb(&root.join(PAGE_PATH), length, sha)?;
+    let compiled = include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/page.json");
+    page_bytes(compiled, &physical, length, sha)?;
+    Ok((policy, page_data(&physical)?))
+}
+#[cfg(test)]
+fn load_before_page_data() -> Result<(Value, Value), &'static str> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let compiled =
         include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/policy.json");
@@ -972,6 +1080,139 @@ mod tests {
             assert!(held_4a6eb(&link, 6, &digest(b"actual")).is_err());
         }
         std::fs::remove_dir_all(path).unwrap();
+    }
+    #[test]
+    fn finite_page_parsed_data_reuses_only_exact_complete_bytes_and_rechecks_canonical_form() {
+        let mut data = PageData { page: None };
+        let a = "{\"a\":1}\n";
+        let b = "{\"a\":2}\n";
+        let first = data.parse(a).unwrap();
+        let same = data.parse(a).unwrap();
+        assert!(Arc::ptr_eq(&first, &same));
+        for hostile in [
+            "{\"a\":1,\"a\":1}\n",
+            "{ \"a\":1}\n",
+            "{\"a\":1}\n ",
+            "not JSON",
+        ] {
+            assert_eq!(data.parse(hostile).unwrap_err(), json(hostile).unwrap_err());
+            assert!(Arc::ptr_eq(&first, &data.parse(a).unwrap()));
+        }
+        let changed = data.parse(b).unwrap();
+        assert!(!Arc::ptr_eq(&first, &changed));
+        assert_eq!(*changed, json(b).unwrap());
+        assert_eq!(
+            *first,
+            json(a).unwrap(),
+            "retained callers see immutable old data"
+        );
+        assert_eq!(data.page.as_ref().unwrap().0, b, "one retained entry only");
+        let again = data.parse(a).unwrap();
+        assert!(
+            !Arc::ptr_eq(&first, &again),
+            "evicted bytes really parse again"
+        );
+        // Even a same-key forged DATA object cannot substitute a verdict.
+        data.page = Some((a.to_owned(), Arc::new(serde_json::json!({"a":2}))));
+        assert_eq!(data.parse(a).unwrap_err(), "noncanonical or duplicate JSON");
+        let raw = format!(
+            "{{\"a\":\"{}\"}}\n",
+            "x".repeat(PAGE_CAP - b"{\"a\":\"\"}\n".len())
+        );
+        data.parse(&raw).unwrap();
+        assert_eq!(data.parse(&(raw + " ")).unwrap_err(), "page parse bound");
+    }
+    #[test]
+    fn finite_page_warm_data_never_skips_fresh_regular_read_eof_utf8_or_digest_refusal() {
+        let path =
+            std::env::temp_dir().join(format!("semaprax-overlay-data-{}", std::process::id()));
+        std::fs::create_dir(&path).unwrap();
+        let source = path.join("page.json");
+        let raw = "{\"a\":1}\n";
+        let sha = digest(raw.as_bytes());
+        let read = |data: &mut PageData| -> Result<Arc<Value>, &'static str> {
+            let physical = held_4a6eb(&source, raw.len(), &sha)?;
+            page_bytes(raw, &physical, raw.len(), &sha)?;
+            data.parse(&physical)
+        };
+        let mut data = PageData { page: None };
+        std::fs::write(&source, raw).unwrap();
+        let first = read(&mut data).unwrap();
+        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap()));
+        for bad in [
+            b"{\"a\":2}\n".as_slice(),
+            b"{\"a\":1}",
+            b"{\"a\":1}\n ",
+            &[255; 8],
+        ] {
+            std::fs::write(&source, bad).unwrap();
+            let expected = held_4a6eb(&source, raw.len(), &sha).unwrap_err();
+            assert_eq!(read(&mut data).unwrap_err(), expected);
+        }
+        std::fs::remove_file(&source).unwrap();
+        assert!(
+            read(&mut data).is_err(),
+            "missing source never uses cached data"
+        );
+        std::fs::create_dir(&source).unwrap();
+        assert!(
+            read(&mut data).is_err(),
+            "nonregular source never uses cached data"
+        );
+        std::fs::remove_dir(&source).unwrap();
+        #[cfg(unix)]
+        {
+            let target = path.join("target");
+            std::fs::write(&target, raw).unwrap();
+            std::os::unix::fs::symlink(&target, &source).unwrap();
+            assert!(read(&mut data).is_err(), "warm symlink remains refused");
+            std::fs::remove_file(&source).unwrap();
+        }
+        std::fs::write(&source, raw).unwrap();
+        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap()));
+        // Matching physical bytes with foreign compiled bytes are still refused.
+        assert!(page_bytes("{\"a\":2}\n", raw, raw.len(), &sha).is_err());
+        std::fs::remove_dir_all(path).unwrap();
+    }
+    #[test]
+    fn finite_page_complete_old_load_and_every_live_check_remain_exact() {
+        let source = include_str!("main_e177_overlay_v2.rs");
+        let old = source
+            .split_once("fn load_before_page_data()")
+            .unwrap()
+            .1
+            .split_once("fn edges(")
+            .unwrap()
+            .0;
+        let restored = format!("fn load(){old}");
+        assert_eq!(
+            digest(restored.as_bytes()),
+            "cbb41edc5fda3c84c595601c511bd69ccfbbc160a6793ff4cc4848d1f0e70c9c"
+        );
+        let current = source
+            .split_once("fn load()")
+            .unwrap()
+            .1
+            .split_once("#[cfg(test)]\nfn load_before_page_data()")
+            .unwrap()
+            .0;
+        let inverse = format!("fn load(){current}")
+            .replacen("Result<(Value, Arc<Value>)", "Result<(Value, Value)", 1)
+            .replacen(
+                "Ok((policy, page_data(&physical)?))",
+                "Ok((policy, json(&physical)?))",
+                1,
+            );
+        assert_eq!(
+            inverse, restored,
+            "all live I/O/config/policy/hash/version checks remain at their original frontiers"
+        );
+        let (old_policy, old_page) = load_before_page_data().unwrap();
+        for _ in 0..3 {
+            let (policy, page) = load().unwrap();
+            assert_eq!(policy, old_policy);
+            assert_eq!(*page, old_page);
+        }
     }
 }
 
