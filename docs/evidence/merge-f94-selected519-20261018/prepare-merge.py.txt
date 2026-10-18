@@ -1,0 +1,97 @@
+from pathlib import Path
+import ast,copy,hashlib,json,subprocess,argparse
+A=argparse.ArgumentParser();A.add_argument('--head',required=True);A.add_argument('--out',type=Path,required=True);a=A.parse_args();R=Path('/Volumes/Semaprax/worktrees/next-large-combined-20261017');H=lambda b:hashlib.sha256(b).hexdigest();E=lambda x:(json.dumps(x,separators=(',',':'))+'\n').encode();git=lambda *x:subprocess.check_output(['git',*x],cwd=R);cache={};out={};snap={}
+def G(rev,p):
+ k=(rev,p)
+ if k not in cache:cache[k]=git('show',rev+':'+p)
+ return cache[k]
+def held(p):
+ q=R/p;assert not q.is_symlink()and q.is_file();b=q.read_bytes();assert b==G(a.head,p)
+ if p in snap:assert snap[p]==b
+ else:snap[p]=b
+ return b
+def clean():assert git('rev-parse','HEAD').decode().strip()==a.head and not git('status','--porcelain','--untracked-files=all').strip()
+clean();assert not a.out.exists();UP='f94caf76425121697dfcb2a9e26cf4ba4a1de914';BEFORE='96b34484c34983c681c3547f975c613a2fb2c2be';PUB='c86d466a';EXT='docs/evidence/fmt-local-441-20261018/extension.json';PACK='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json';CFG='docs/evidence/merge-2e92-browser-20261018/guard-config.json';HELP='src/source_reflows_merge/main_e177_final_inputs.rs';GUARD='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';old={p:held(p)for p in [EXT,PACK,CFG,HELP,GUARD]};e=json.loads(old[EXT]);base=json.loads(old[PACK]);c=json.loads(old[CFG]);up=json.loads(G(UP,EXT));pub=json.loads(G(PUB,EXT));by={r['source']:copy.deepcopy(r)for r in base['rows']};by.update({r['source']:r for r in e['rows']});prior=copy.deepcopy(by);protected={r['source']:r for r in base['rows']};protected.update({r['source']:r for r in pub['rows']});incoming={r['source']:r for r in up['rows']};assert len(by)==519 and len(c['modules'])==166 and c['table']['rows']==1010
+# Free labels introduced only in our unpublished generation; old433/133/444 and incoming labels are immutable.
+label_edits=[]
+# All existing names and views remain exact, including unpublished names.
+for ir in up['rows']:
+ r=by[ir['source']]
+ for v in ir['views']:
+  if v not in r['views']:r['views'].append(copy.deepcopy(v))
+ actual=held(r['source']);pair=(len(actual),H(actual));cp=ir['current']
+ if pair!=(cp['length'],cp['sha256'])and not any((v['length'],v['sha256'])==(cp['length'],cp['sha256'])for v in r['views']):r['views'].append(dict(name='i',**cp))
+ if pair!=(r['current']['length'],r['current']['sha256']):
+  assert r['source'] in {'src/hir/ids/declaration_backing_tests.rs','src/hir/ids/declaration_tag.rs','src/hir/ids/fixed_operation_tests.rs'}
+  before=copy.deepcopy(r['current'])
+  if not any({k:v for k,v in v.items()if k!='name'}==before for v in r['views']):r['views'].append(dict(name='p',**before))
+  target='e/'+H(actual);out[target]=actual;r['current']=dict(length=len(actual),sha256=H(actual),archive=target)
+# Only current-image addresses created in our unpublished scope get shorter full-SHA aliases.
+# All original archives, incoming records, and every view archive field remain untouched.
+aliases=[]
+for p,r in by.items():
+ pin=r['current'];eligible=pin['archive'].startswith('docs/evidence/w/')
+ eligible=eligible or(p in incoming and pin==incoming[p]['current']and pin!=prior[p]['current'])
+ if not eligible:continue
+ if p in protected and pin==protected[p]['current']:continue
+ b=held(pin['archive']);assert(len(b),H(b))==(pin['length'],pin['sha256']);target='e/'+pin['sha256'];assert len(Path(target).name)==64
+ if (R/target).exists():assert held(target)==b
+ out[target]=b;aliases.append(dict(source=p,before=copy.deepcopy(pin),after=dict(pin,archive=target)));pin['archive']=target
+# Only newly introduced merge-current views may use the same full-SHA aliases.
+# All prior and every incoming named view descriptor remain exactly unchanged.
+new_view_aliases=[]
+for p,r in by.items():
+ for i,v in enumerate(r['views']):
+  if v in prior[p]['views'] or v in incoming.get(p,{}).get('views',[]):continue
+  if v['name'] not in ['i','p']:continue
+  raw=out[v['archive']] if v['archive'] in out else held(v['archive']);assert(len(raw),H(raw))==(v['length'],v['sha256'])
+  target='e/'+v['sha256'];out[target]=raw;new_view_aliases.append(dict(source=p,index=i,before=copy.deepcopy(v),after=dict(v,archive=target)));v['archive']=target
+for p,r in by.items():
+ if 'fragments'in r:r['fragments']=[copy.deepcopy(by[x['source']])for x in r['fragments']]
+oldorder=[r['source']for r in e['rows']]
+for r in base['rows']:
+ if by[r['source']]!=r and r['source']not in oldorder:e['rows'].append(by[r['source']])
+assert [r['source']for r in e['rows']][:len(oldorder)]==oldorder
+# Preserve both immutable inverse protocols and every incoming named view exactly.
+for tag,packet in [('whole-fmt433-current',base),('whole-local133-current',json.loads(held(e['whole_local133']['archive'])))]:
+ for r in packet['rows']:
+  if by[r['source']]['current']!=r['current']:assert dict(name=tag,**r['current'])in by[r['source']]['views']
+for p,r in incoming.items():assert all(v in by[p]['views']for v in r['views'])
+ext=E(e);assert len(ext)<=262144,('extension cap',len(ext));out[EXT]=ext
+helper=old[HELP].decode();x=f'({len(old[EXT])},"{H(old[EXT])}".to_owned())';y=f'({len(ext)},"{H(ext)}".to_owned())';assert helper.count(x)==1;helper=helper.replace(x,y)
+stage=c['source_successor']['path'];old[stage]=held(stage);sv=json.loads(old[stage]);usv=json.loads(G(UP,stage));assert len(sv['rows'])==len(usv['rows'])==121;stage_diff=[]
+for row,ur in zip(sv['rows'],usv['rows']):
+ assert row['source']==ur['source'];r=copy.deepcopy(row);r['current']=ur['current'];
+ if 'views'in ur:r['views']=ur['views']
+ else:r.pop('views',None)
+ assert r==ur
+ for v in ur.get('views',[]):
+  if v not in row.setdefault('views',[]):row['views'].append(copy.deepcopy(v))
+ p=row['source'];b=held(p);pair=(len(b),H(b))
+ if pair!=(row['current']['length'],row['current']['sha256']):
+  prev=dict(name='a',**row['current'])
+  if prev not in row.setdefault('views',[]):row['views'].append(prev)
+  assert p in by;row['current']=copy.deepcopy(by[p]['current']);stage_diff.append(p)
+ if pair!=(ur['current']['length'],ur['current']['sha256']):
+  v=dict(name='i',**ur['current'])
+  if v not in row.setdefault('views',[]):row['views'].append(v)
+st=E(sv);assert len(st)<=262144;out[stage]=st;assert helper.count(H(old[stage]))==2;helper=helper.replace(H(old[stage]),H(st));needle='assert_eq!(data.len(), '+str(len(old[stage]))+');';assert helper.count(needle)==1;helper=helper.replace(needle,'assert_eq!(data.len(), '+str(len(st))+');');out[HELP]=helper.encode();assert len(helper.splitlines())==1482;c['source_successor'].update(length=len(st),sha256=H(st));c['extension'].update(length=len(ext),sha256=H(ext))
+for p,pin in c['modules'].items():b=out[p]if p in out else held(p);pin.update(length=len(b),sha256=H(b))
+for p,pin in c['carriers'].items():b=held(p);assert(len(b),H(b))==(pin['length'],pin['sha256'])
+cfg=E(c);assert len(cfg)<=262144;out[CFG]=cfg;s=old[GUARD].decode()
+for name,value in [('_CONFIG_LENGTH',len(cfg)),('_CONFIG_SHA256',H(cfg))]:
+ n=next(n.value for n in ast.parse(s).body if isinstance(n,ast.Assign)and isinstance(n.targets[0],ast.Name)and n.targets[0].id==name);ls=s.splitlines(True);a0=sum(map(len,ls[:n.lineno-1]))+n.col_offset;a1=sum(map(len,ls[:n.end_lineno-1]))+n.end_col_offset;s=s[:a0]+repr(value)+s[a1:]
+ast.parse(s);assert len(s.encode())<=65536;out[GUARD]=s.encode()
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ b=held(p);old[p]=b;assert b.count(H(old[GUARD]).encode())==1;b=b.replace(H(old[GUARD]).encode(),H(out[GUARD]).encode());prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';x=(prefix+str(len(old[GUARD]))).encode();assert b.count(x)==1;b=b.replace(x,(prefix+str(len(out[GUARD]))).encode());ast.parse(b);out[p]=b
+for p,r in by.items():
+ b=held(p);assert(len(b),H(b))==(r['current']['length'],r['current']['sha256'])
+ for pin in [r['current']]+r['views']:
+  b=out[pin['archive']]if pin['archive']in out else held(pin['archive']);assert(len(b),H(b))==(pin['length'],pin['sha256'])
+for p,b in list(snap.items()):assert held(p)==b
+clean();a.out.mkdir();files=[]
+for p,b in sorted(out.items()):
+ q=a.out/'candidate'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+ if (R/p).exists():q=a.out/'before'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(held(p))
+ files.append(dict(path=p,length=len(b),sha256=H(b)))
+(a.out/'receipt.json').write_text(json.dumps(dict(status='BOUNDED_MERGE_COMPOSITION_NOT_APPLIED',head=a.head,upstream=git('rev-parse',UP).decode().strip(),logical_rows=len(by),raw_modules=len(c['modules']),ordered_rows=c['table']['rows'],extension_bytes=len(ext),extension_spare=262144-len(ext),labels=label_edits,current_image_aliases=aliases,stage_changed=stage_diff,files=files,all_old_view_archive_fields_unchanged=True,all_incoming_named_views_preserved=True,no_source_or_classification_changes=True,Cargo=False),indent=2)+'\n');print(a.out/'receipt.json',len(ext),len(aliases))
