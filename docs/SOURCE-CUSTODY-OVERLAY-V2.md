@@ -2,8 +2,8 @@
 
 This specification owns OPT#893's proof-only successor of the complete 519-row
 source-custody loader. It changes no compiler, target, ledger or application
-admission. The authored empty page is **unbound** to the pending compiler repair
-batch. No Rust qualification or inherited PASS follows from this document.
+admission. Each source batch requires its own binding and executable qualification. No Rust
+qualification or inherited PASS follows from this document.
 
 There is exactly one literal policy and one literal page, each at most 262144
 bytes. Rust authenticates policy and page as compiled text, held physical bytes,
@@ -67,3 +67,27 @@ lists and policy pins, updates actual guard/module/carrier/table bindings, and
 retains the existing 519 extension byte-for-byte. No producer or role gate may
 claim the authored unbound page as qualified current compiler evidence. Rust
 runtime controls and the original source gates run on the eventual frozen head.
+
+## Canonical fragment references (page V3)
+
+V3 uses the same one literal page, policy, paths, and unchanged 262144-byte
+physical bounds. It changes only redundant fragment metadata for the three
+literal audit roots: `tests/hir_module_boundaries.rs`,
+`tests/workspace/semantic_graph/source_inventory.rs`, and the existing native
+interop `ledger_capacity/source_inventory.rs`.
+
+Within those roots' `fragments`, the exact object
+`{"canonical_source":"<source>"}` may replace a complete duplicate canonical
+row. The source must already occur in the complete predecessor or this same
+page, be compiled and leaf-only, and have that exact root/child edge in the old
+edge set or literal policy. References cannot open paths, select archives,
+recurse, add roots, change a scope, or confer Rust namespace ownership. Duplicate,
+foreign, missing, noncompiled, nested, and extra-field references refuse.
+
+Both readers reconstruct the complete V2 page before the unchanged whole-row
+inverse, ordering, edge checks, and current-source authentication. Unknown fields
+and every original image/view remain exact. Binding mechanically proves expanded
+V3 equals the entire uncompressed V2 candidate. The original V2 composer remains
+executable and its complete body is checked; frozen full V2 page/policy fixtures
+exercise the old branch and exact canonical expansion. All original I/O,
+physical/compiled/archive, old-view, and hostile controls remain in force.

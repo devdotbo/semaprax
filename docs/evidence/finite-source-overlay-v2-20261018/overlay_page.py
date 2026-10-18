@@ -50,7 +50,38 @@ def edges(packet):
    assert by[child['source']]==child and row['source']!=child['source']
    edge=(row['source'],child['source']); assert edge not in result; result.append(edge)
  return result
+V3_SCHEMA = 'semaprax.finite-source-overlay-page.v3'
+V3_ROOTS = ('tests/hir_module_boundaries.rs',
+ 'tests/workspace/semantic_graph/source_inventory.rs',
+ 'crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs')
+def expand_fragment_refs(before, policy, page):
+ assert page['schema']==V3_SCHEMA
+ by={r['source']:r for r in before['rows']}; assert len(by)==len(before['rows'])
+ seen=set()
+ for group in ('replacements','additions'):
+  for row in page[group]:
+   source=row['source']; assert source not in seen; seen.add(source); by[source]=row
+ allowed=set(edges(before))
+ for edge in policy['new_fragment_edges']:
+  assert keys(edge,('parent','child')); allowed.add((edge['parent'],edge['child']))
+ result=copy.deepcopy(page); result['schema']='semaprax.finite-source-overlay-page.v2'
+ for group in ('replacements','additions'):
+  for row in result[group]:
+   parent=row['source']; seen=set()
+   for i,fragment in enumerate(row.get('fragments',[])):
+    if 'canonical_source' not in fragment:continue
+    assert parent in V3_ROOTS and keys(fragment,('canonical_source',))
+    child=fragment['canonical_source']; assert type(child) is str
+    edge=(parent,child); assert parent!=child and edge in allowed and edge not in seen; seen.add(edge)
+    target=by[child]; assert target['compiled'] is True and 'fragments' not in target
+    row['fragments'][i]=copy.deepcopy(target)
+ return result
+
 def compose_values(before, policy, page):
+ if page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
+ return compose_values_v2(before,policy,page)
+
+def compose_values_v2(before, policy, page):
  assert keys(page, ('schema','index','total_pages','predecessor','replacements','additions'))
  assert page['schema']=='semaprax.finite-source-overlay-page.v2' and type(page['index']) is int and page['index']==1 and type(page['total_pages']) is int and page['total_pages']==1
  assert page['predecessor']==policy['predecessor']
