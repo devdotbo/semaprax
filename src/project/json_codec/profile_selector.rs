@@ -10,6 +10,22 @@ pub fn parse_json_codec_profile(
         (Some("identifier-views.v1"), None, None) => Some(JsonCodecProfile::IdentifierViews),
         (Some("request-views.v1"), None, None) => Some(JsonCodecProfile::RequestViews),
         (Some("stream-request-views.v1"), None, None) => Some(JsonCodecProfile::StreamRequestViews),
+        (Some("owned-request-decode-only.v1"), None, None) => {
+            Some(JsonCodecProfile::OwnedRequestDecodeOnlyV1)
+        }
+        (Some("stream-owned-request-decode-only.v1"), None, None) => {
+            Some(JsonCodecProfile::StreamOwnedRequestDecodeOnlyV1)
+        }
+        (Some("utf8-owned-request-decode-only.v1"), Some(raw), None) => {
+            Some(JsonCodecProfile::Utf8OwnedRequestDecodeOnlyV1 {
+                max_string_bytes: parse_json_codec_bound(raw, 64)?,
+            })
+        }
+        (Some("stream-utf8-owned-request-decode-only.v1"), Some(raw), None) => {
+            Some(JsonCodecProfile::StreamUtf8OwnedRequestDecodeOnlyV1 {
+                max_string_bytes: parse_json_codec_bound(raw, 64)?,
+            })
+        }
         (Some("owned-request.v1"), None, None) => Some(JsonCodecProfile::OwnedRequest),
         (Some("stream-owned-request.v1"), None, None) => Some(JsonCodecProfile::StreamOwnedRequest),
         (Some("utf8-owned-request.v1"), Some(raw), None) => {

@@ -421,3 +421,62 @@ String records remain outside these profiles. Full ShiftSim scheduling and all
 fifteen unchanged obligations, another complete application and physical
 allocation-failure coverage are still required before closing #724. These
 source tranches establish no executed current-head acceptance or token gain.
+
+## Explicit decode-only owned requests v1 (#897)
+
+The new selectors are `owned-request-decode-only.v1`,
+`stream-owned-request-decode-only.v1`, `utf8-owned-request-decode-only.v1` and
+`stream-utf8-owned-request-decode-only.v1`. Select one explicitly through
+`--profile` or a codec-plan entry. The UTF-8 pair requires the same canonical
+`--max-string-bytes 1..64`; extra/missing bounds refuse. Rust uses the distinct
+`JsonCodecProfile::{OwnedRequestDecodeOnlyV1, StreamOwnedRequestDecodeOnlyV1,
+Utf8OwnedRequestDecodeOnlyV1 { max_string_bytes },
+StreamUtf8OwnedRequestDecodeOnlyV1 { max_string_bytes }}` variants. Existing
+full profiles, default scalar output, bundle/receipt schemas and the closed
+suitability-v1 twelve-row inventory remain unchanged. The new explicit selectors
+do not silently alter an existing plan, application, Task specification or
+benchmark cohort.
+
+Each new profile uses the unchanged corresponding full generator and original
+shape/bound/permit checks. It prepares fresh discard-binding names across that
+complete fragment using the exact authored source identifier inventory before
+projection, so removing earlier encoder declarations cannot renumber later
+decoder locals. A bounded generation-stage AST projection verifies unique
+identities/names and its exact schema-derived encoder/helper/import inventory,
+checks every retained function/type dependency before dropping declarations,
+and removes only that closed inventory. It is independent of caller reachability
+or runtime inputs. Every retained decoder/carrier/normalizer node, identity,
+literal and relative order remains the same; formatting only canonicalizes the
+new source projection. The original source/plan route still builds and validates
+the WHOLE candidate through ordinary Project/HIR/profile admission. A new profile
+is no exemption for malformed source, ownership, cleanup, capabilities or fuel.
+
+Identifier profiles omit twelve encoder/render/length-only functions, the row's
+`JsonViewEncode` result type, and the two encode-only numeric-size imports.
+UTF-8 profiles omit seven encoder/text-render/length-only functions, that same
+result type, and four encode-only imports. Decode policy is unchanged: identifier
+uniqueness/alphabet/1..16-byte values and 8/256 cardinalities, or UTF-8 decoded-byte
+bounds and its existing empty/repeated-value policy. Decoder `code/offset/field`,
+first grammar/schema failure, left-to-right materialization, allocation failure,
+physical storage and fuel contracts remain authoritative. Stream profiles retain
+the entire existing normalizer and require the original stdin permit. Raw and
+normalized offsets retain their separate domains.
+
+The new generated interface contains the same owned decode result and
+`json_<Request>_owned_decode` or `json_<Request>_utf8_owned_decode`; stream also
+contains `json_<Request>_stream_normalize`. It provides no request encode or
+encoded-length function and no encode result type. An application requiring those
+interfaces must explicitly select the unchanged full profile. Public derivation
+replay binds the selected profile and complete bytes; a full/lean substitution or
+forged source/receipt refuses. Collection-response encoding is independently
+selected and remains unchanged.
+
+`project::json_codec::decode_only::tests::` owns exact retained-node/golden and
+closed omission/dependency/selector/bound controls; the existing `project`
+application-JSON harness owns public replay and interpreter/native O0/O2/Wasm
+controls. Existing complete full-profile suites remain required. These controls
+are authored and unrun. Extra full generation, source parsing/AST projection,
+comparison and temporary/Drop costs remain real. Fewer admitted declarations are
+source exposure, not evidence of request-encoding hot-loop savings or net gain.
+Current source/HIR/whole-project measurements and real application acceptance
+are required before fit, latency, allocation, runtime or efficiency claims.

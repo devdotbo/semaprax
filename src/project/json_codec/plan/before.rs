@@ -37,6 +37,10 @@ pub(super) fn profile_fields(
         IdentifierViews => ("identifier-views.v1", None, None),
         RequestViews => ("request-views.v1", None, None),
         StreamRequestViews => ("stream-request-views.v1", None, None),
+        new @ (OwnedRequestDecodeOnlyV1
+        | StreamOwnedRequestDecodeOnlyV1
+        | Utf8OwnedRequestDecodeOnlyV1 { .. }
+        | StreamUtf8OwnedRequestDecodeOnlyV1 { .. }) => super::profile_fields(new),
         OwnedRequest => ("owned-request.v1", None, None),
         StreamOwnedRequest => ("stream-owned-request.v1", None, None),
         Utf8OwnedRequest { max_string_bytes } => {

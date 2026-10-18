@@ -38,6 +38,12 @@ and binds its distinct generated identities in the existing entry receipt.
 Its source contract is [nested response v2](APPLICATION-JSON-NESTED-RESPONSE-V2.md);
 the plan envelope, replay and publication authority remain unchanged.
 
+`profile` also accepts the four explicitly selected decode-only request v1
+profiles in [the codec contract](APPLICATION-JSON-CODECS-V1.md#explicit-decode-only-owned-requests-v1-897).
+Their bounds, complete ordinary candidate validation, independent replay and
+exact profile receipt remain required. A full-profile bundle cannot be replayed
+as a decode-only bundle or vice versa. No existing plan is silently changed.
+
 `profile` uses the existing closed selector spellings; `flat-scalars.v1` explicitly
 selects the original default. `max_string_bytes` and `max_array_items` are JSON
 integers present only when required by the selected profile. All existing schema,

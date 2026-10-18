@@ -1267,6 +1267,10 @@ retain checked replay, and command activation retains its distinct final build.
 It retains authored sources separately from the
 complete candidate and exact per-entry evidence; no new semantic index, hidden
 helper admission or managed publication authority is introduced.
+Its `decode_only` child is an explicit versioned generation-stage projection:
+it checks a closed encoder/helper/import omission inventory and retained AST
+dependencies before removing source declarations; full old generators stay
+unchanged and the complete projected candidate follows ordinary admission.
 It emits ordinary source and rebuilds the original
 Project/profile; generated names have no HIR authority. Its `template` module
 expands compiler-owned markers once, keeping authored names and identities opaque

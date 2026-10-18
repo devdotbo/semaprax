@@ -1,3 +1,4 @@
+- Source-only OPT #897 adds four explicit decode-only owned request codec profiles; unchanged full generators feed a closed source projection before whole ordinary candidate validation. Full profiles, decoder semantics, caps and existing application cohorts remain unchanged; executable qualification and net-cost measurements are pending.
 - Select the fully paid inline clone for short two-edge plan histories whose maximum possible backing saving cannot cover the direct query and call receivers. Preserve complete prior enumerators, work/refusal/Drop controls and all compiler limits; focused runtime and application qualification remain pending.
 
 - OPT #895: source-only private starter codec regeneration compares full unverified drafts before one ordinary checked codec candidate; public replay and the final activated build remain complete. Qualification and net-cost measurement are pending.

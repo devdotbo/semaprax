@@ -78,6 +78,18 @@ pub(super) fn profile_fields(
         IdentifierViews => ("identifier-views.v1", None, None),
         RequestViews => ("request-views.v1", None, None),
         StreamRequestViews => ("stream-request-views.v1", None, None),
+        OwnedRequestDecodeOnlyV1 => ("owned-request-decode-only.v1", None, None),
+        StreamOwnedRequestDecodeOnlyV1 => ("stream-owned-request-decode-only.v1", None, None),
+        Utf8OwnedRequestDecodeOnlyV1 { max_string_bytes } => (
+            "utf8-owned-request-decode-only.v1",
+            Some(max_string_bytes),
+            None,
+        ),
+        StreamUtf8OwnedRequestDecodeOnlyV1 { max_string_bytes } => (
+            "stream-utf8-owned-request-decode-only.v1",
+            Some(max_string_bytes),
+            None,
+        ),
         OwnedRequest => ("owned-request.v1", None, None),
         StreamOwnedRequest => ("stream-owned-request.v1", None, None),
         Utf8OwnedRequest { max_string_bytes } => {
