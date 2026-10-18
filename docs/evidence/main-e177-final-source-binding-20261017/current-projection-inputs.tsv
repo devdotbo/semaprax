@@ -1032,3 +1032,8 @@ tests/workspace/semantic_graph/source_inventory.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs
+src/ast/program_source/function_alias/scalar_signature.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs
+src/workspace_graph/constructor_failure/before_scalar_dispatch.rs
+src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs
+src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs

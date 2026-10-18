@@ -353,8 +353,8 @@
       "sha256": "0c261c6c9148990f48149c6e87bd0cf2410ea28ceaf80dd90870c0e11670c498"
     },
     "src/hir/resolve_program_methods.rs": {
-      "length": 62433,
-      "sha256": "8b68aa63384ec2f05c38c05daa5b320f4b79f5e8060a547384519fa23d2cef8b"
+      "length": 62307,
+      "sha256": "f30dceeebb3777525afbef57858974fd5058acd0347483c8856fea62ae9bad96"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs": {
       "length": 14862,
@@ -401,16 +401,16 @@
       "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs": {
-      "length": 79447,
-      "sha256": "e920a1dd63770419dd6bb5459cfbfd7bd5f72c7e594b6c6c0e6ecd337a5dc739"
+      "length": 84828,
+      "sha256": "38b68b4ed1e2d0fcd85c4865650ed0c7e648d4264dda1c593a3d78999e8383c7"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs": {
       "length": 4051,
       "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs": {
-      "length": 14795,
-      "sha256": "eba9e17ad42de748c18fd93ecbb8c897aa93ceb82ecb01f9b6484aabca8d2449"
+      "length": 30752,
+      "sha256": "e1ba5dfa897aecf0e10bc80ce5042adb55fd5ecfb01ecfa9cacd68b4fe8d13b2"
     },
     "src/cleanup_plan/replay/inventory_coverage.rs": {
       "length": 17186,
@@ -725,8 +725,8 @@
       "sha256": "e10b27ba0620c915d5434bd63a8205cd2ebfa6240dc57703fbb26eed9383b986"
     },
     "src/cleanup_plan/replay/ordinary_receiving.rs": {
-      "length": 17897,
-      "sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12"
+      "length": 17990,
+      "sha256": "55d8ea74cba9410ab2c71d712d396331b2dd59e27e7013677623c231d960e5f6"
     },
     "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs": {
       "length": 4692,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 57012,
-      "sha256": "4f8485f6ace9f42d9abeb170ba99827b009ff81fab97b03a133f5d2273d08927"
+      "length": 58661,
+      "sha256": "2159bcaebf4d98433e18eb5bee357e8295cd0e40c87f31f968a380692ebedb2d"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -811,25 +811,45 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
       "length": 55470,
       "sha256": "cb695b8abb92b747d037b46af45a2ff79c8dad2c8eb8cb54120cc6a92100487f"
+    },
+    "src/ast/program_source/function_alias/scalar_signature.rs": {
+      "length": 2988,
+      "sha256": "b1a20b62516a7847357cd2e6cf1d3b466af0ced651446718329a90138e69fdee"
+    },
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs": {
+      "length": 79461,
+      "sha256": "4f0edf4d0ce83f6519240778eb45417329d6f30954c9e0d7d1177bd8197628ab"
+    },
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs": {
+      "length": 7855,
+      "sha256": "5714624d03743341b609d3e1fb85bf575a1648d84c1c88d6f8324dd2f02fbfbc"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs": {
+      "length": 15446,
+      "sha256": "90cf27667fe64714fdc3d5196406d0eec2ad59cbd12d1a07b16a23810eda066a"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs": {
+      "length": 18230,
+      "sha256": "1eff692e97a3ed279d0161882829963cf7dde9251539ce8e220007f9556a7dd5"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 133161,
-      "sha256": "8c8a24986949d6d7c646f815f16f93b22131da896d6536a7206febeca15c5a88",
+      "length": 133689,
+      "sha256": "db0a3298a99a0a95016a58a203dbf3a437cfaa9d55e84131009136f20a6970b5",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 149925,
-      "sha256": "76be1b65e1dacf6688e47e448f36b97f49c2966caa066a01c8fe027be88eeb39",
+      "length": 150468,
+      "sha256": "735c4c11206c8436c3f3312731e9964b85233600416c267693231d029fb64e06",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 191097,
-      "sha256": "27112b83149e5c8ef4f9f5b6e95d5351460b5e569cf19f43e795083446f0fa3f",
+      "length": 191685,
+      "sha256": "b336cb1f0651b85541367aaa865ebb98c7d7f79761ceb6255da360009b255d6e",
       "base": "../../../../../"
     }
   },
@@ -857,8 +877,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 55984,
-    "sha256": "1cdf77fa6aeba101e1eb2385d9657a6ec0f901d001e5778f0021fdfc099782b6",
+    "length": 56372,
+    "sha256": "0ae3509d733d28e95c2ee7f4e2991001169448e8efb2a14d7219c7493ddffc67",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3296,9 +3316,29 @@
       {
         "at": 1033,
         "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"
+      },
+      {
+        "at": 1034,
+        "path": "src/ast/program_source/function_alias/scalar_signature.rs"
+      },
+      {
+        "at": 1035,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs"
+      },
+      {
+        "at": 1036,
+        "path": "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs"
+      },
+      {
+        "at": 1037,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs"
+      },
+      {
+        "at": 1038,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"
       }
     ],
-    "rows": 1034
+    "rows": 1039
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -3894,7 +3934,12 @@
     "src/source_reflows_merge/runtime_json/sealed_io.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
-    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
+    "src/ast/program_source/function_alias/scalar_signature.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

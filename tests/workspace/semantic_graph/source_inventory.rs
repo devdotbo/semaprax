@@ -266,6 +266,11 @@ semantic_graph_private_layout_owned_source_inventory!(core),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"),
+        include_str!("../../src/ast/program_source/function_alias/scalar_signature.rs"),
+        include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs"),
+        include_str!("../../src/workspace_graph/constructor_failure/before_scalar_dispatch.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"),
     ) };
 }
 

@@ -41,6 +41,8 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/physical_budget.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
+    "src/hir/resolve_program.rs",
+    "src/hir/resolve_program_methods.rs",
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
@@ -48,6 +50,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/main8a_historical.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "src/source_reflows_merge/runtime_json.rs",
+    "src/source_verify/declaration.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "src/workspace_graph/test_replay_context.rs",
     "tests/project/standard_library/application_json.rs",
@@ -60,6 +63,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/hir/ids/declaration_tag/before.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid_before.rs",
     "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs",
@@ -82,6 +86,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs",
     "src/cleanup_plan/replay/inventory_coverage.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid.rs",
+    "src/iterator_ops.rs",
 ];
 const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/renewal_profile.rs",
@@ -123,11 +128,16 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
+    "src/ast/program_source/function_alias/scalar_signature.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 25198; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "72e43f5bdf03796cca1c85759d01842b855ff393c4eb9e44619d5f247c0ce553";
+const POLICY_LENGTH: usize = 28390; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "d6b32c0fa20a83e787fe2626d4a0d575f682741f684f74583c06636595254449";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -798,6 +808,11 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/ast/program_source/function_alias/scalar_signature.rs" => Some(include_str!("../../src/ast/program_source/function_alias/scalar_signature.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs")),
+        "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs" => Some(include_str!("../../src/workspace_graph/constructor_failure/before_scalar_dispatch.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs")),
