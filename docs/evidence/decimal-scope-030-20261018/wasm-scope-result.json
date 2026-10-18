@@ -1,0 +1,6 @@
+{
+  "status": "ORIGINAL_SPX_W111_REFUSAL_RETAINED",
+  "no_output_published": true,
+  "full_original_decimal_wasm_probe_source_retained": true,
+  "scope": "No Core Wasm or public native ABI promotion"
+}

@@ -10,6 +10,13 @@ fn digit(text: borrow str, index: i64) -> i64
     match str_byte_at(text, usize_from_i64(index)) { Option::Some { value: byte } => i64_from_u8(byte) - 48, Option::None {} => -48, }
 }
 
+// Return zero for an exhausted digit cursor; positive indices retain digit's contract.
+@id("std.int.decimal.digit_or_zero")
+fn digit_or_zero(text: borrow str, index: i64) -> i64
+{
+    if index < 0 { 0 } else { digit(text, index) }
+}
+
 // Nonempty ASCII digits, including leading zeros, are accepted for normalization.
 @id("std.int.decimal.digits")
 fn digits(text: borrow str) -> bool
@@ -19,7 +26,7 @@ fn digits(text: borrow str) -> bool
     let mut ok = n > 0;
     while i < n {
         let byte = digit(text, i);
-        ok = ok && byte >= 0 && byte <= 9;
+        ok = digit_ok(ok, byte);
         i = i + 1;
         0
     }
@@ -30,7 +37,7 @@ fn digits(text: borrow str) -> bool
 @id("std.int.decimal.valid")
 fn valid(text: borrow str) -> bool
 {
-    digits(text) && (str_len_bytes(text) == 1 || digit(text, 0) != 0)
+    digits(text) && canonical_head(text)
 }
 
 // Call digits first for untrusted input. Malformed input fails its precondition.
@@ -41,7 +48,7 @@ fn canonicalize(text: string) -> string
 {
     let n = string_len(text);
     let mut i = 0;
-    while i < n - 1 && digit(string_as_str(text), i) == 0 {
+    while leading_zero(string_as_str(text), i, n) {
         i = i + 1;
         0
     }
@@ -55,7 +62,7 @@ fn compare(left: borrow str, right: borrow str) -> i64
 {
     let n = str_len_bytes(left);
     let m = str_len_bytes(right);
-    if n < m { -1 } else { if n > m { 1 } else { let mut i = 0; let mut out = 0; while i < n { let x = digit(left, i); let y = digit(right, i); if out == 0 && x < y { out = -1; } if out == 0 && x > y { out = 1; } i = i + 1; 0 } out } }
+    if n < m { -1 } else { if n > m { 1 } else { let mut i = 0; let mut out = 0; while comparison_pending(i, n, out) { let x = digit(left, i); let y = digit(right, i); out = x - y; i = i + 1; 0 } comparison_sign(out) } }
 }
 
 @id("std.int.decimal.add")
@@ -67,9 +74,9 @@ fn add(left: string, right: string) -> string
     let mut j = string_len(right) - 1;
     let mut carry = 0;
     let mut out = "";
-    while i >= 0 || j >= 0 || carry > 0 {
-        let x = if i >= 0 { digit(string_as_str(left), i) } else { 0 };
-        let y = if j >= 0 { digit(string_as_str(right), j) } else { 0 };
+    while addition_pending(i, j, carry) {
+        let x = digit_or_zero(string_as_str(left), i);
+        let y = digit_or_zero(string_as_str(right), j);
         let sum = x + y + carry;
         out = string_concat(string_from_i64(sum % 10), out);
         carry = sum / 10;
@@ -94,7 +101,7 @@ fn subtract(left: string, right: borrow str) -> string
     let mut out = "";
     while i >= 0 {
         let mut x = digit(string_as_str(left), i) - debt;
-        let y = if j >= 0 { digit(right, j) } else { 0 };
+        let y = digit_or_zero(right, j);
         if x < y { x = x + 10; debt = 1; } else { debt = 0; }
         out = string_concat(string_from_i64(x - y), out);
         i = i - 1;
@@ -131,4 +138,41 @@ fn divide(dividend: string, divisor: borrow str) -> string
         0
     }
     canonicalize(out)
+}
+
+// Internal scalar decisions keep each caller's proof paths local to its loop.
+@id("std.int.decimal.internal-digit-ok")
+fn digit_ok(previous: bool, byte: i64) -> bool
+{
+    previous && byte >= 0 && byte <= 9
+}
+
+@id("std.int.decimal.internal-canonical-head")
+fn canonical_head(text: borrow str) -> bool
+{
+    str_len_bytes(text) == 1 || digit(text, 0) != 0
+}
+
+@id("std.int.decimal.internal-leading-zero")
+fn leading_zero(text: borrow str, index: i64, limit: i64) -> bool
+{
+    index < limit - 1 && digit(text, index) == 0
+}
+
+@id("std.int.decimal.internal-addition-pending")
+fn addition_pending(left: i64, right: i64, carry: i64) -> bool
+{
+    left >= 0 || right >= 0 || carry > 0
+}
+
+@id("std.int.decimal.internal-comparison-pending")
+fn comparison_pending(index: i64, limit: i64, out: i64) -> bool
+{
+    index < limit && out == 0
+}
+
+@id("std.int.decimal.internal-comparison-sign")
+fn comparison_sign(value: i64) -> i64
+{
+    if value < 0 { -1 } else { if value > 0 { 1 } else { 0 } }
 }

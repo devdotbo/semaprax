@@ -20,6 +20,9 @@ mod before_paired_tail;
 mod before_main_b692;
 #[cfg(test)]
 #[rustfmt::skip]
+mod before_main487;
+#[cfg(test)]
+#[rustfmt::skip]
 mod before_pair_links;
 #[cfg(test)]
 #[rustfmt::skip]
@@ -108,15 +111,11 @@ const PAIR_SCOPE: usize = 2 * PATH_INDEX + 2 * size_of::<&PlanPath>();
 const PAIR_PRIMITIVE: usize = 2 * PAYMENT_HEADER;
 const PATH_SWAP: usize =
     2 * size_of::<&mut Vec<PlanPath>>() + 3 * size_of::<&mut [PlanPath]>() + 4 * size_of::<usize>();
-// Keep the complete original successful-pattern bank as conservative legacy
-// admission; it is not a claim those removed pattern bindings still form.
-// Bare yields add distinct outer reference receivers across the right advance.
-const NEW_PAIR_REFERENCES: usize = 2 * size_of::<&SkeletonObservation>();
-const PAIR_MATCH: usize = 2 * size_of::<&SkeletonObservation>() // retained original pattern invoice
-    + NEW_PAIR_REFERENCES // actual new lexical reference bindings
-    + 4 * size_of::<&SkeletonObservation>() // content cmp actual/formal pairs
-    + 4 * size_of::<&SkeletonTerminal>() // terminal cmp actual/formal pairs
-    + 2 * size_of::<Ordering>(); // two lexical cmp returns, received in owner
+// Both ordinary and certified fallback publish content through genuine main487
+// Rc loans. The left producer's legacy head/as_ref envelope remains paid.
+const PAIR_MATCH: usize = paired_value::PAIR_CONTENT;
+#[cfg(any(test, feature = "unstable-workflow-profiling"))]
+const NEW_PAIR_REFERENCES: usize = 2 * size_of::<&Rc<SkeletonObservation>>();
 type FinalZip =
     std::iter::Zip<std::slice::Iter<'static, PlanPath>, std::slice::Iter<'static, SkeletonPath>>;
 const FINAL_ITERATORS: usize = 2 * size_of::<std::slice::Iter<'static, PlanPath>>()
@@ -495,75 +494,39 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                         crate::workflow_profile::plan_comparison::Site::LeftExhausted,
                                         0,
                                     );
-                                    let _right = lexical_plan_value!(
-                                        owner,
-                                        right_cursor,
-                                        right_items,
-                                        right_loaded,
-                                        right_segments,
-                                        exhausted_right_link,
-                                        [],
-                                        right_tail,
-                                        right_links,
-                                        function,
-                                        budget,
-                                        "ordinary plan history paired cursor next",
-                                        census,
-                                        {
+                                    borrowed_right_value!(owner, right_tail, right_links,
+                                        function, budget, "ordinary plan history paired cursor next", census,
+                                        [_ => {
+                                            owner.ordering = Ordering::Less;
+                                            break 'paired;
+                                        }], {
                                             #[cfg(feature = "unstable-workflow-profiling")]
                                             crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
                                             #[cfg(feature = "unstable-workflow-profiling")]
                                             crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::TerminalCompared, 0);
-                                            owner.ordering =
-                                                left_path.terminal.cmp(&right_path.terminal);
+                                            owner.ordering = left_path.terminal.cmp(&right_path.terminal);
                                             break 'paired;
-                                        }
-                                    );
-                                    owner.ordering = Ordering::Less;
-                                    break 'paired;
+                                        });
                                 }
                             );
-                            let right = lexical_plan_value!(
-                                owner,
-                                right_cursor,
-                                right_items,
-                                right_loaded,
-                                right_segments,
-                                ordinary_right_link,
-                                [],
-                                right_tail,
-                                right_links,
-                                function,
-                                budget,
-                                "ordinary plan history paired cursor next",
-                                census,
-                                {
+                            borrowed_right_value!(owner, right_tail, right_links,
+                            function, budget, "ordinary plan history paired cursor next", census,
+                            [right => {
+                                owner.ordering = left.as_ref().cmp(right.as_ref());
+                                if owner.ordering == Ordering::Equal {
+                                    budget.charge(function, 1, "ordinary plan history observation comparison")?;
+                                    #[cfg(test)] census.round();
                                     #[cfg(feature = "unstable-workflow-profiling")]
-                                crate::workflow_profile::plan_comparison::event(
-                                    crate::workflow_profile::plan_comparison::Site::RightExhausted,
-                                    0,
-                                );
-                                    owner.ordering = Ordering::Greater;
-                                    break 'paired;
+                                    crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::Round, 0);
+                                    continue 'paired;
                                 }
-                            );
-                            owner.ordering = left.cmp(right);
-                            if owner.ordering == Ordering::Equal {
-                                budget.charge(
-                                    function,
-                                    1,
-                                    "ordinary plan history observation comparison",
-                                )?;
-                                #[cfg(test)]
-                                census.round();
+                                break 'paired;
+                            }], {
                                 #[cfg(feature = "unstable-workflow-profiling")]
-                                crate::workflow_profile::plan_comparison::event(
-                                    crate::workflow_profile::plan_comparison::Site::Round,
-                                    0,
-                                );
-                                continue 'paired;
-                            }
-                            break 'paired;
+                                crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
+                                owner.ordering = Ordering::Greater;
+                                break 'paired;
+                            });
                         }
                         certified_suffix!(owner, function, budget, census, 'paired);
                     }

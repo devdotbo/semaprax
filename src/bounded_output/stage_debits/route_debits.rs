@@ -946,6 +946,23 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         (13, 1)
     );
     assert_eq!(tail_macro.matches("paid!(").count(), 17);
+    // Genuine complete incoming487 remains independently compiled. Its fused
+    // reader's larger old bare-reader replacement is not charged to shipping
+    // a second time: current already has three lexical certified readers.
+    let fused_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs"
+    ));
+    let fused_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs"
+    ));
+    assert_eq!(phases(fused_owner, "paid!(", 4).len(), 12);
+    assert_eq!(fused_owner.matches("lexical_plan_next!(").count(), 4);
+    assert_eq!(fused_owner.matches("shared_plan_pair_step!(").count(), 1);
+    assert_eq!(fused_macro.matches("paid!(").count(), 24);
+    assert!(!fused_macro.contains("lexical_pair_plan_next!"));
+
     let direct = phases(owner, "paid!(", 4);
     let forwarded = phases(owner, "lexical_plan_next!(", 10);
     // The fresh-head continuation covers every aligned nonempty shared segment:
@@ -1121,7 +1138,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         (
             phases(current, "paid!(", 4).len(),
             current.matches("lexical_plan_next!(").count(),
-            current.matches("lexical_plan_value!(").count(),
+            current.matches("borrowed_right_value!(").count(),
             current.matches("certified_left_value!(").count(),
             current.matches("certified_right_value!(").count()
         ),
@@ -1152,6 +1169,24 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         (9, 12)
     );
     assert_eq!(current.matches("fused_plan_tails!(").count(), 1);
+    let right_calls = macro_arguments(current, "borrowed_right_value!(");
+    assert_eq!(right_calls.len(), 2);
+    let mut supplied_success_work = Vec::new();
+    for call in right_calls {
+        assert_eq!(call.len(), 9);
+        assert_eq!(call[5], "\"ordinary plan history paired cursor next\"");
+        supplied_success_work.push(call[7].matches(".charge(").count());
+    }
+    assert_eq!(supplied_success_work, [0, 1]);
+    // The success body has two actual expansions (segment and tail), not an
+    // unpriced callback or a helper return. This is the sole new work site
+    // relative to the old single comparison after its right bare yield.
+    assert_eq!(paired_forward.matches("                $some").count(), 2);
+    assert_eq!(paired_forward.matches(".charge(").count(), 2);
+    assert_eq!(paired_forward.matches("paid!(").count(), 3);
+    assert!(!paired_forward.contains("as_ref("));
+    assert!(!paired_forward.contains("Some::<"));
+
     // Old loop: MATCH + four five-site producers + two first-work sites +
     // eight event/suffix sites. New loop: seven-site left + two old producers
     // + fifteen-site right + eight numeric suffix sites + thirteen boundary sites.
@@ -1160,8 +1195,10 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
     // Tail selection/turn and three individual work sites are additive; no
     // existing reachable primitive bank is reduced or charged twice.
     assert_eq!(
-        22 + paired_tail.matches("paid!(").count() + paired_tail.matches(".charge(").count(),
-        27
+        22 + paired_tail.matches("paid!(").count()
+            + paired_tail.matches(".charge(").count()
+            + (2 - 1), // real right-success work expansions minus old common work site
+        28
     );
     for phase in phases(heads, "paid!(", 4)
         .into_iter()

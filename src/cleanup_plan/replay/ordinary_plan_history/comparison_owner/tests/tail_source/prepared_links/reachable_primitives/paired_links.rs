@@ -1,3 +1,5 @@
+/Volumes/Semaprax/worktrees/v010-eb819-custody-union-20261018/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs:
+
 //! Exact pair-local link and sealed unit-driver successor.
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
@@ -18,7 +20,7 @@ pub(super) fn previous_owner(current: &str) -> String {
     let stage = incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-        "4d2e0d16ce30a9ce7c6f8aea3d5e09ba8d7d111f285a6c4c1d3055603dca17ca",
+        "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
@@ -42,7 +44,7 @@ pub(super) fn previous_macro(current: &str) -> String {
     let stage = incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-        "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c",
+        "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
@@ -83,7 +85,7 @@ pub(super) fn previous_pair_tests(current: &str) -> String {
     let stage = incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-        "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
@@ -115,7 +117,7 @@ pub(super) fn previous_route(current: &str) -> String {
     let stage = incoming_stage(
         current,
         "src/bounded_output/stage_debits/route_debits.rs",
-        "1c9e90d871a0fb368fbba49ac96aa44cfe3e397186d0284b6c59b996fa917beb",
+        "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/bounded_output/stage_debits/route_debits.rs"
@@ -231,6 +233,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -415,4 +419,191 @@ fn incoming_stage(current: &str, path: &str, sha: &str, live: &str) -> String {
     } else {
         current.to_owned()
     }
+}
+
+// Closed current-first acquisition precedes mutations at genuine historical offsets.
+fn incoming_current_stage(current: &str) -> String {
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/bounded_output/stage_debits/route_debits.rs",
+                "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+                "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+                "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+                "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+                "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+                "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+                "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+                "9dc41df52f983bad1552fd556c0af3db2622a8e7eb1328356db230db906520ae",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+                "4e01eab3ec8c582b781958702d3a82e044e959c93a49ba94e02c4be65ce8fa63",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+                "9bcdf29f73430c509a567889238b552be190de2d5b11bfb7ee6c22c21fae62e5",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+                "0c0437fd827d8461cdda760700ce7d8186c79b49a6242cd30eb909c2d9044002",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+                "db28863e00f2732ab65d3322bbebe3bf2f5f9928f8cad813260d6e5ab6890b85",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+                "084e3c34169f471e5cc7a2f9b2b1593da9ce0b447a17178799877762f4c8e92d",
+                live,
+            );
+        }
+    }
+    current.to_owned()
 }

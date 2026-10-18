@@ -1,0 +1,59 @@
+{
+  "status": "BOUNDED_SOURCE_AND_MODEL_CHECKS_ONLY",
+  "compiler_runtime_qualification": "PENDING_NEW_HEAD_BUILD",
+  "head_before": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
+  "unchanged_process_tree_guard_mib": 200,
+  "all_work_and_cache_paths_on_external_ssd": true,
+  "checks": {
+    "source-audits-compile": 153568,
+    "source-audits-run": 6512,
+    "route-source-compile": 172768,
+    "route-source-run": 32,
+    "owner-model-compile": 129008,
+    "owner-model-run": 124992
+  },
+  "format": {
+    "peak_kib": 32304,
+    "status": "pass",
+    "scope": "all changed Rust sources and the new helper"
+  },
+  "model_log": "fused reader prototype best_saving=4744096 worst_saving=-1712\ncomplete_pair_link_unit_driver_cases=6000 work_cuts=86118 shared_runs=1588417; exact work/status/Rc and independent invoices; opaque model types; shared-HIR only typechecked; no full compiler/allocator/application fit claim\n",
+  "source_audit_result": [
+    "test result: ok. 26 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.02s",
+    ""
+  ],
+  "closed_phase_audit": [
+    "test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s",
+    ""
+  ],
+  "source_files": {
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
+      "sha256": "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+      "lines": 538
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
+      "sha256": "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+      "lines": 687
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
+      "sha256": "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
+      "lines": 646
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
+      "sha256": "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+      "lines": 1330
+    },
+    "src/bounded_output/stage_debits/route_debits.rs": {
+      "sha256": "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+      "lines": 925
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs": {
+      "sha256": "9bcdf29f73430c509a567889238b552be190de2d5b11bfb7ee6c22c21fae62e5",
+      "lines": 321
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs": {
+      "sha256": "765985bf6033ecc25483f7b00a91fb665078b9172c17a9dba396b0c4d121e7db",
+      "lines": 298
+    }
+  }
+}

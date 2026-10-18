@@ -1,0 +1,12 @@
+{
+  "status": "ACTUAL_DOC_MODEL_PRESERVES_COMPLETE_ORIGINAL_SUPPORTED_CATALOG",
+  "supported_declarations": 8,
+  "all_public_catalog_fields_identical": true,
+  "all_fifteen_source_declarations_in_document": true,
+  "raw_library_source_sha256": "7d7e4aa9acc8e9f225221fa15076d5248a01b9b24b78f1c8ed8b74cccc5175d3",
+  "producer_source_digest": "sha256:1587aca8ce181826947f9ac2b320ffe0f979d9deb04303daaadc23cde3caf3f9",
+  "producer_source_digest_matches_final_graph_module": true,
+  "catalog_files_unchanged": true,
+  "project_doc_top_level_was_before_regression_scope_split": true,
+  "library_source_bytes_unchanged_since_doc_capture": true
+}

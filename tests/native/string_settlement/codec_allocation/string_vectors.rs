@@ -43,6 +43,9 @@ if accepted && same && required=={length}usize{{724}}else{{0}}
 // This labels the fixture bytes, not an authenticated repository revision.
 #[cfg(feature = "unstable-workflow-profiling")]
 fn observed_generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
+    eprintln!(
+        "PLAN_GENERATED_PROJECT_SOURCE_EXPECTED checkpoints=initial-written,request-codec-written,response-codec-written,final-app-written; only reached checkpoints emit four actual byte hashes; absent checkpoints remain unobserved"
+    );
     use semaprax::workflow_profile::plan_comparison::{Binding, Capture};
     use sha2::{Digest, Sha256};
     let mut digest = Sha256::new();
@@ -90,6 +93,39 @@ fn observed_generated_v2(response: project::JsonCodecProfile, invalid: bool) -> 
         Err(payload) => std::panic::resume_unwind(payload),
     }
 }
+// Host-fixture diagnostics only: hash actual written bytes before each compiler
+// admission. Unreached checkpoints have no equality claim. This does not emit
+// compiler events, change generated source, or enter the generated-C allocator.
+#[cfg(feature = "unstable-workflow-profiling")]
+fn generated_project_fingerprints(
+    root: &std::path::Path,
+    checkpoint: &'static str,
+    response: project::JsonCodecProfile,
+    invalid: bool,
+) {
+    use sha2::{Digest, Sha256};
+    for relative_path in [
+        "semaprax.toml",
+        "src/schema.spx",
+        "src/app.spx",
+        "src/tests.spx",
+    ] {
+        let bytes = fs::read(root.join(relative_path)).expect("written native fixture source");
+        let sha256 = Sha256::digest(&bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        eprintln!(
+            "PLAN_GENERATED_PROJECT_SOURCE {}",
+            serde_json::json!({
+                "checkpoint": checkpoint, "response_profile": format!("{response:?}"),
+                "invalid": invalid, "relative_path": relative_path,
+                "byte_length": bytes.len(), "sha256": sha256,
+                "scope": "reached-written-source-only; absent stages unobserved"
+            })
+        );
+    }
+}
 fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
     let root = std::env::temp_dir().join(format!(
         "native-codec-allocation-{}-{}-{}",
@@ -125,6 +161,8 @@ fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
     ] {
         fs::write(root.join(path), canonical(source)).unwrap();
     }
+    #[cfg(feature = "unstable-workflow-profiling")]
+    generated_project_fingerprints(&root, "initial-written", response, invalid);
     for policy in [
         project::JsonCodecProfile::NestedRequest {
             max_string_bytes: 64,
@@ -152,8 +190,21 @@ fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
         })
         .unwrap();
         fs::write(root.join("src/schema.spx"), source).unwrap();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        generated_project_fingerprints(
+            &root,
+            if matches!(&policy, project::JsonCodecProfile::NestedRequest { .. }) {
+                "request-codec-written"
+            } else {
+                "response-codec-written"
+            },
+            response,
+            invalid,
+        );
     }
     fs::write(root.join("src/app.spx"), canonical(&app_v2(invalid))).unwrap();
+    #[cfg(feature = "unstable-workflow-profiling")]
+    generated_project_fingerprints(&root, "final-app-written", response, invalid);
     let result = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         let first = codegen::emit_hir_c(snapshot.entry_program()).map_err(|error| vec![error])?;

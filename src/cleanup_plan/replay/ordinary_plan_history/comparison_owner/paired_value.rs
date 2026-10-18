@@ -1,8 +1,9 @@
 //! Bare pair-local reference yields; exhaustion consumes its lexical branch.
 use super::*;
-// One additional right expansion; all five real primitive frontiers are paid
-// even for zero pairs. No frozen old invoice is credited or changed.
-pub(super) const ADDITIONAL_PRIMITIVES: usize = 5 * PAYMENT_HEADER;
+// Original additional right expansion retains all five primitive frames;
+// duplicating the ordinary right-success continuation adds one work frame.
+// All six are paid even for zero pairs; no frozen old bank is credited.
+pub(super) const ADDITIONAL_PRIMITIVES: usize = 6 * PAYMENT_HEADER;
 pub(super) const STEP: usize = 2 * size_of::<usize>() + size_of::<bool>() // retained segment extent and condition
     + 2 * size_of::<bool>() // loaded condition and negation
     + size_of::<&Rc<SkeletonObservation>>() // head pattern
@@ -43,134 +44,149 @@ pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
     + size_of::<&SkeletonObservation>()
     + size_of::<usize>();
 
-macro_rules! lexical_plan_value {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident, $link:ident, [$($head_value:ident => $entry:block)?],
-     $tail:ident, $links:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
+// Exact replacement within the original left head-yield frontier only:
+// the retired as_ref actual/formal plus returned Observation reference bank
+// funds the bare loop-break Rc reference and its distinct outer let receiver.
+// It is not reused by PAIR_CONTENT's actual as_ref calls at comparison. The
+// remaining old word is conservatively retained; no left fee is discounted.
+#[cfg(test)]
+pub(super) const LEFT_RETIRED_AS_REF: usize =
+    2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>();
+#[cfg(test)]
+pub(super) const LEFT_YIELD_AND_RECEIVE: usize = 2 * size_of::<&Rc<SkeletonObservation>>();
+const _: () = assert!(
+    2 * size_of::<&Rc<SkeletonObservation>>()
+        <= 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
+);
+
+// The left producer retains its entire old envelope. A right branch now keeps
+// only its Rc pattern until the actual content comparison; exhaustion produces
+// no observation reference, Option, return value, or ignored right local.
+pub(super) const RIGHT_STEP: usize = 2 * size_of::<usize>()
+    + 3 * size_of::<bool>()
+    + size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<usize>()
+    + EMPTY;
+pub(super) const RIGHT_TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<usize>();
+// Complete genuine main487 content transport: both Rc reborrows and received
+// observation views, then the unchanged content/terminal comparison envelopes.
+pub(super) const PAIR_CONTENT: usize = 4 * size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonTerminal>()
+    + 2 * size_of::<Ordering>();
+macro_rules! borrowed_right_value {
+    ($owner:ident, $tail:ident, $links:ident, $function:ident, $budget:ident,
+     $phase:literal, $census:ident, [$head:pat => $some:block], $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-        'plan_yield: {
-            loop {
-                paid!(
-                    $budget,
-                    $function,
-                    paired_value::STEP + paired_value::EMPTY,
-                    $phase
-                )?;
-                #[cfg(test)]
+        loop {
+            paid!($budget, $function, paired_value::RIGHT_STEP, $phase)?;
+            #[cfg(test)]
+            {
                 $census.value_step();
-                #[cfg(test)]
                 $census.step();
+                $census.pair_right_steps();
+            }
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::StepAdmitted,
+                paired_value::RIGHT_STEP,
+            );
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::BorrowedRightStep,
+                0,
+            );
+            if $owner.right_cursor.segment >= $owner.right_segments {
+                break;
+            }
+            $budget.charge(
+                $function,
+                1,
+                "ordinary plan history forward segment traversal",
+            )?;
+            if !$owner.right_loaded {
+                paid!($budget, $function, paired_value::PAIR_LOAD, $phase)?;
+                #[cfg(test)]
+                $census.load();
                 #[cfg(feature = "unstable-workflow-profiling")]
                 $crate::workflow_profile::plan_comparison::event(
-                    $crate::workflow_profile::plan_comparison::Site::StepAdmitted,
-                    paired_value::STEP + paired_value::EMPTY,
+                    $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
+                    paired_value::PAIR_LOAD,
                 );
-                if $owner.$cursor.segment >= $owner.$limit {
-                    break;
-                }
-                $budget.charge(
-                    $function,
-                    1,
-                    "ordinary plan history forward segment traversal",
-                )?;
-                if !$owner.$loaded {
-                    paid!(
-                        $budget,
-                        $function,
-                        paired_value::PAIR_LOAD,
-                        $phase
-                    )?;
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
-                        paired_value::PAIR_LOAD,
-                    );
-                    #[cfg(test)]
-                    $census.load();
-                    let &[ref links_rest @ .., $link] = $links else {
-                        unreachable!("prepared ordinary plan links");
-                    };
-                    $links = links_rest;
-                    $owner.$items = $owner.arena[$link].items.as_slice();
-                    $owner.$loaded = true;
-                    $(
-                        // First-head provenance and the already-paid pop's link
-                        // remain lexical. The continuation always leaves this
-                        // successful head; [] still takes the original path.
-                        match $owner.$items {
-                            [head, rest @ ..] => {
-                                #[cfg(feature = "unstable-workflow-profiling")]
-                                $crate::workflow_profile::plan_comparison::event(
-                                    if stringify!($cursor) == "left_cursor" {
-                                        $crate::workflow_profile::plan_comparison::Site::LeftHead
-                                    } else {
-                                        $crate::workflow_profile::plan_comparison::Site::RightHead
-                                    }, 0);
-                                $owner.$items = rest;
-                                $owner.$cursor.item += 1;
-                                let $head_value = head.as_ref();
-                                $entry
-                            }
-                            [] => {}
-                        }
-                    )?
-                }
-                match $owner.$items {
-                    [head, rest @ ..] => {
-                        #[cfg(feature = "unstable-workflow-profiling")]
-                        $crate::workflow_profile::plan_comparison::event(
-                            if stringify!($cursor) == "left_cursor" {
-                                $crate::workflow_profile::plan_comparison::Site::LeftHead
-                            } else {
-                                $crate::workflow_profile::plan_comparison::Site::RightHead
-                            },
-                            0,
-                        );
-                        $owner.$items = rest;
-                        $owner.$cursor.item += 1;
-                        break 'plan_yield head.as_ref();
-                    }
-                    [] => {
-                        #[cfg(feature = "unstable-workflow-profiling")]
-                        $crate::workflow_profile::plan_comparison::event(
-                            $crate::workflow_profile::plan_comparison::Site::EmptySegment,
-                            0,
-                        );
-                        $owner.$cursor.segment += 1;
-                        $owner.$cursor.item = 0;
-                        $owner.$loaded = false;
-                    }
-                }
+                let &[ref links_rest @ .., link] = $links else {
+                    unreachable!("prepared ordinary plan links");
+                };
+                $links = links_rest;
+                $owner.right_items = $owner.arena[link].items.as_slice();
+                $owner.right_loaded = true;
             }
-            paid!($budget, $function, paired_value::TAIL + paired_value::TAIL_MARK, $phase)?;
-            mark_plan_tail!($owner, $cursor);
-            #[cfg(test)] $census.tail_marks();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::TailMarkAdmitted, paired_value::TAIL_MARK);
-            #[cfg(test)]
-            $census.value_tail();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::TailAdmitted,
-                paired_value::TAIL,
-            );
-            match $tail {
-                [head, rest @ ..] => {
-                    $tail = rest;
+            match $owner.right_items {
+                [$head, rest @ ..] => {
+                    $owner.right_items = rest;
+                    $owner.right_cursor.item += 1;
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
-                        if stringify!($cursor) == "left_cursor" {
-                            $crate::workflow_profile::plan_comparison::Site::LeftTailSome
-                        } else {
-                            $crate::workflow_profile::plan_comparison::Site::RightTailSome
-                        },
+                        $crate::workflow_profile::plan_comparison::Site::RightHead,
                         0,
                     );
-                    $owner.$cursor.item += 1;
-                    head.as_ref()
+                    $some
                 }
-                [] => $empty,
+                [] => {
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::EmptySegment,
+                        0,
+                    );
+                    $owner.right_cursor.segment += 1;
+                    $owner.right_cursor.item = 0;
+                    $owner.right_loaded = false;
+                }
             }
+        }
+        paid!(
+            $budget,
+            $function,
+            paired_value::RIGHT_TAIL + paired_value::TAIL_MARK,
+            $phase
+        )?;
+        mark_plan_tail!($owner, right_cursor);
+        #[cfg(test)]
+        {
+            $census.tail_marks();
+            $census.value_tail();
+            $census.pair_right_tails();
+        }
+        #[cfg(feature = "unstable-workflow-profiling")]
+        {
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailMarkAdmitted,
+                paired_value::TAIL_MARK,
+            );
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailAdmitted,
+                paired_value::RIGHT_TAIL,
+            );
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::BorrowedRightTail,
+                0,
+            );
+        }
+        match $tail {
+            [$head, rest @ ..] => {
+                $tail = rest;
+                $owner.right_cursor.item += 1;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                $crate::workflow_profile::plan_comparison::event(
+                    $crate::workflow_profile::plan_comparison::Site::RightTailSome,
+                    0,
+                );
+                $some
+            }
+            [] => $empty,
         }
     }};
 }

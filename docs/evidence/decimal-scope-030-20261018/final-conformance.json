@@ -1,0 +1,21 @@
+{
+  "status": "FINAL_FULL_ORIGINAL_CASES_PLUS_INDEPENDENT_REGRESSIONS_INTERPRETER_AND_NATIVE_C11_O0_O2_PASS",
+  "compiler_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "source_inputs": {
+    "std/int-decimal/src/decimal.spx": "7d7e4aa9acc8e9f225221fa15076d5248a01b9b24b78f1c8ed8b74cccc5175d3",
+    "std/int-decimal/src/tests.spx": "e82e2f5c80dd164e61b78261f5f1643ed9bdc5e1f62ee13f4e7376d11762f25b"
+  },
+  "memory": {
+    "capture": 149856,
+    "compile-O0": 48416,
+    "run-O0": 32,
+    "compile-O2": 85984,
+    "run-O2": 32,
+    "project-tests": 64816
+  },
+  "interpreter_max_steps": 1000000,
+  "interpreter_steps": 469445,
+  "native_C_sha256": "bf9fb5480aab71bf2a3353ed7a80fce7454f57021ad5051d4e4425ce0ee07f6c",
+  "process_tree_cap_mib": 200,
+  "qualification": "Local candidate sources only; bundled current-head hosted CI remains required"
+}

@@ -53,6 +53,7 @@ pub(super) fn tail_delta(
             + setup
             + limit * (2 * row.pairs + expected.len())
             + shared_prefix_tests::added(row)
+            - PAYMENT_HEADER // ADDITIONAL_PRIMITIVES below already includes this reader site
             + shared_prefix_tests::reachable_delta(expected.len()).1,
         removed
             + (old_step - new_step) * (super::shared_prefix_tests::old_steps(row))
@@ -1193,7 +1194,7 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
             + 2 * size_of::<usize>(),
         "exact two retained segment fields; their initial values are separately invoiced"
     );
-    assert_eq!(paired_value::ADDITIONAL_PRIMITIVES, 5 * PAYMENT_HEADER);
+    assert_eq!(paired_value::ADDITIONAL_PRIMITIVES, 6 * PAYMENT_HEADER);
     assert_eq!(
         lexical_cursor::STEP,
         paired_value::STEP + 2 * size_of::<Option<&SkeletonObservation>>()

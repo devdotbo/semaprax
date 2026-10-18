@@ -19,9 +19,13 @@ fn tail_run(
 }
 fn delta(row: &pair_scope_census::Row) -> (usize, usize) {
     let current = super::super::paired_tail_added(row) + size_of::<ComparisonOwner<'static>>()
-        - size_of::<before_paired_tail::ComparisonOwner<'static>>();
+        - size_of::<before_paired_tail::ComparisonOwner<'static>>()
+        + PAYMENT_HEADER
+        + super::super::reader_payload_added(row);
     let removed = row.fused_turns
-        * (PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL));
+        * (super::super::legacy_matching()
+            + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
+        + super::super::reader_removed(row);
     (current, removed)
 }
 #[test]
@@ -417,6 +421,8 @@ fn paired_tail_composition_feature_counts_actual_admitted_banks_and_each_work_fr
             paired_value::TAIL_TURN,
         ),
         (Site::TailWork, r.row.tail_work, 0),
+        (Site::BorrowedRightStep, r.row.pair_right_steps, 0),
+        (Site::BorrowedRightTail, r.row.pair_right_tails, 0),
     ] {
         assert!(n > 0);
         assert_eq!(report.counts.at(site), n as u64);
@@ -449,6 +455,8 @@ fn paired_tail_composition_feature_counts_actual_admitted_banks_and_each_work_fr
                 paired_value::TAIL_TURN,
             ),
             (Site::TailWork, prefix.row.tail_work, 0),
+            (Site::BorrowedRightStep, prefix.row.pair_right_steps, 0),
+            (Site::BorrowedRightTail, prefix.row.pair_right_tails, 0),
         ] {
             assert_eq!(report.counts.at(site), count as u64);
             assert_eq!(

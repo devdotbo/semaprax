@@ -2,6 +2,41 @@
 use super::*;
 
 // Independent typed site equation. No coefficient is inferred from paid totals.
+// Complete pre-reader matching bank, retained as the genuine old coefficient.
+pub(super) fn legacy_matching() -> usize {
+    2 * size_of::<&SkeletonObservation>()
+        + 2 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>()
+}
+// New reader component only: one newly expanded observation-work primitive,
+// content transport difference, and physically removed right as_ref packets.
+// No coefficient comes from observed debit differences or future reservations.
+pub(super) fn reader_payload_added(r: &pair_scope_census::Row) -> usize {
+    let current = 4 * size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>();
+    assert_eq!(current, PAIR_MATCH);
+    (current - legacy_matching()) * r.pair_matches_admitted
+}
+pub(super) fn reader_removed(r: &pair_scope_census::Row) -> usize {
+    let retired = 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>();
+    assert_eq!(
+        paired_value::RIGHT_STEP + retired,
+        paired_value::STEP + paired_value::EMPTY
+    );
+    assert_eq!(paired_value::RIGHT_TAIL + retired, paired_value::TAIL);
+    assert_eq!(paired_value::LEFT_RETIRED_AS_REF, retired);
+    assert_eq!(
+        paired_value::LEFT_YIELD_AND_RECEIVE,
+        2 * size_of::<&Rc<SkeletonObservation>>()
+    );
+    assert!(paired_value::LEFT_YIELD_AND_RECEIVE <= retired);
+    retired * (r.pair_right_steps + r.pair_right_tails)
+}
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
@@ -23,6 +58,8 @@ pub(super) fn added(r: &pair_scope_census::Row) -> usize {
         + certified_heads::FIRST * r.certified_firsts
         + boundary_run_added(r)
         + paired_tail_added(r)
+        + PAYMENT_HEADER
+        + reader_payload_added(r)
 }
 // Complete tail-fusion receiving roles. All counts are actual successful bank
 // admissions; complete-only removed packets are kept separately below.
@@ -121,6 +158,7 @@ pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
         + r.certified_firsts * matching
         + r.shared_boundary_complete * (matching + 4 * (step + empty) + 2 * paired_value::LOAD)
         + r.fused_turns * (matching + 2 * (step + empty + paired_value::TAIL))
+        + reader_removed(r)
 }
 
 fn observation(n: usize, value: bool) -> Rc<SkeletonObservation> {

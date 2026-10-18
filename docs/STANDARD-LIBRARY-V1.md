@@ -194,6 +194,10 @@ invocation's ordinary memory/fuel limits. Front-prepending addition and
 subtraction copy strings and are quadratic in digits; long division performs
 at most nine subtractions per dividend digit and also copies decimal strings.
 No operand is narrowed to a machine integer.
+Comparison stops at the first unequal digit. Scalar implementation helpers
+keep loop decisions separate; the supported inventory retains the original
+eight operations. The helpers remain ordinary declarations, not a source
+privacy boundary.
 
 Arithmetic postconditions express nonempty results. The source verifier
 refuses borrowing the synthetic `result` place (`SPX-T266`), so the stronger

@@ -1,0 +1,22 @@
+{
+  "status": "ACTUAL_LOCAL_CANDIDATE_SOURCE_CONFORMANCE_ONLY",
+  "compiler_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "normal_compiler_profile": true,
+  "source_inputs": {
+    "std/int-decimal/src/decimal.spx": "7d7e4aa9acc8e9f225221fa15076d5248a01b9b24b78f1c8ed8b74cccc5175d3",
+    "std/int-decimal/src/tests.spx": "e82e2f5c80dd164e61b78261f5f1643ed9bdc5e1f62ee13f4e7376d11762f25b"
+  },
+  "full_original_project_check_and_interpreter_tests_passed": true,
+  "full_original_examples_and_tests_plus_regression_native_C11_O0_O2_passed": true,
+  "original_project_publication_refusal": "SPX-I308",
+  "no_public_native_ABI_or_Core_Wasm_claim_added": true,
+  "process_tree_cap_mib": 200,
+  "all_paths_external_SSD": true,
+  "complete_current_head_hosted_CI_still_required": true,
+  "all_fifteen_library_functions_verified_and_in_graph": true,
+  "final_builder_bytes": 66873555,
+  "unchanged_cap": 67108864,
+  "final_regressions_run_as_independent_scopes_without_dropping_any_predicate": true,
+  "native_test_role_final_source_exact": true,
+  "old_native_example_source_unchanged": true
+}

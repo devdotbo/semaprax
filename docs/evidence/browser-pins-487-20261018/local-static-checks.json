@@ -1,0 +1,6 @@
+{
+  "status": "PASS",
+  "only_two_code_literals_and_capture_attribution_comments_changed": true,
+  "node_syntax_passed": true,
+  "all_input_revision_and_assertion_code_bytes_preserved": true
+}

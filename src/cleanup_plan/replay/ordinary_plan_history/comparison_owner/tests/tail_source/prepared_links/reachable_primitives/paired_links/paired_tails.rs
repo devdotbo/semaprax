@@ -1,4 +1,8 @@
+/Volumes/Semaprax/worktrees/v010-eb819-custody-union-20261018/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs:
+
 //! Whole paired-tail successor inverses; every prior assertion remains.
+#[path = "fused_readers.rs"]
+mod fused_readers;
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
     let mut result = current.to_owned();
@@ -18,13 +22,16 @@ pub(super) fn previous_owner(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-        "4d2e0d16ce30a9ce7c6f8aea3d5e09ba8d7d111f285a6c4c1d3055603dca17ca",
+        "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
         )),
     );
     let current = stage.as_str();
+    previous_owner_before_fused(&fused_readers::previous_owner(current))
+}
+fn previous_owner_before_fused(current: &str) -> String {
     restore(current, 24302, OWNER)
 }
 #[rustfmt::skip]
@@ -40,13 +47,16 @@ pub(super) fn previous_macro(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-        "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c",
+        "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
         )),
     );
     let current = stage.as_str();
+    previous_macro_before_fused(&fused_readers::previous_macro(current))
+}
+fn previous_macro_before_fused(current: &str) -> String {
     restore(current, 25469, MACRO)
 }
 #[rustfmt::skip]
@@ -60,13 +70,16 @@ pub(super) fn previous_census(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
-        "271da1ba63267eda74d709d8f722ba365be0522c5544a50237de06bea9bf3c63",
+        "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
         )),
     );
     let current = stage.as_str();
+    previous_census_before_fused(&fused_readers::previous_census(current))
+}
+fn previous_census_before_fused(current: &str) -> String {
     restore(current, 18711, CENSUS)
 }
 #[rustfmt::skip]
@@ -80,13 +93,16 @@ pub(super) fn previous_pair_tests(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-        "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
         )),
     );
     let current = stage.as_str();
+    previous_pair_tests_before_fused(&fused_readers::previous_pair_tests(current))
+}
+fn previous_pair_tests_before_fused(current: &str) -> String {
     restore(current, 50721, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -100,13 +116,16 @@ pub(super) fn previous_route(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/bounded_output/stage_debits/route_debits.rs",
-        "1c9e90d871a0fb368fbba49ac96aa44cfe3e397186d0284b6c59b996fa917beb",
+        "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/bounded_output/stage_debits/route_debits.rs"
         )),
     );
     let current = stage.as_str();
+    previous_route_before_fused(&fused_readers::previous_route(current))
+}
+fn previous_route_before_fused(current: &str) -> String {
     restore(current, 35859, ROUTE)
 }
 #[rustfmt::skip]
@@ -205,6 +224,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -308,13 +329,8 @@ mod tests {
     #[test]
     fn paired_tail_sources_refuse_span_extent_and_outside_drift() {
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../../../../../../comparison_owner.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-                "4d2e0d16ce30a9ce7c6f8aea3d5e09ba8d7d111f285a6c4c1d3055603dca17ca",
-                include_str!("../../../../../../comparison_owner.rs"),
-            ),
-            previous_owner,
+            &fused_readers::previous_owner(include_str!("../../../../../../comparison_owner.rs")),
+            previous_owner_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-owner.rs.txt"
@@ -322,13 +338,8 @@ mod tests {
             OWNER,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../../../../../lexical_cursor.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-                "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c",
-                include_str!("../../../../../lexical_cursor.rs"),
-            ),
-            previous_macro,
+            &fused_readers::previous_macro(include_str!("../../../../../lexical_cursor.rs")),
+            previous_macro_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-macro.rs.txt"
@@ -336,13 +347,8 @@ mod tests {
             MACRO,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../../../../../pair_scope_census.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
-                "271da1ba63267eda74d709d8f722ba365be0522c5544a50237de06bea9bf3c63",
-                include_str!("../../../../../pair_scope_census.rs"),
-            ),
-            previous_census,
+            &fused_readers::previous_census(include_str!("../../../../../pair_scope_census.rs")),
+            previous_census_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-census.rs.txt"
@@ -350,13 +356,8 @@ mod tests {
             CENSUS,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../../../../../pair_scope_tests.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-                "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae",
-                include_str!("../../../../../pair_scope_tests.rs"),
-            ),
-            previous_pair_tests,
+            &fused_readers::previous_pair_tests(include_str!("../../../../../pair_scope_tests.rs")),
+            previous_pair_tests_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-pair_tests.rs.txt"
@@ -364,17 +365,10 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!(
-                    "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
-                ),
-                "src/bounded_output/stage_debits/route_debits.rs",
-                "1c9e90d871a0fb368fbba49ac96aa44cfe3e397186d0284b6c59b996fa917beb",
-                include_str!(
-                    "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
-                ),
-            ),
-            previous_route,
+            &fused_readers::previous_route(include_str!(
+                "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
+            )),
+            previous_route_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-route.rs.txt"
@@ -382,12 +376,7 @@ mod tests {
             ROUTE,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../paired_links.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
-                "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
-                include_str!("../paired_links.rs"),
-            ),
+            include_str!("../paired_links.rs"),
             previous_controls,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -396,12 +385,7 @@ mod tests {
             CONTROLS,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("constructor.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
-                "9dc41df52f983bad1552fd556c0af3db2622a8e7eb1328356db230db906520ae",
-                include_str!("constructor.rs"),
-            ),
+            include_str!("constructor.rs"),
             previous_constructor,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -410,12 +394,7 @@ mod tests {
             CONSTRUCTOR,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("json_ledger.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
-                "4e01eab3ec8c582b781958702d3a82e044e959c93a49ba94e02c4be65ce8fa63",
-                include_str!("json_ledger.rs"),
-            ),
+            include_str!("json_ledger.rs"),
             previous_json,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -424,12 +403,7 @@ mod tests {
             JSON,
         );
         hostile(
-            &super::super::incoming_stage(
-                include_str!("../shared_steps/shared_boundaries/shared_runs.rs"),
-                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
-                "084e3c34169f471e5cc7a2f9b2b1593da9ce0b447a17178799877762f4c8e92d",
-                include_str!("../shared_steps/shared_boundaries/shared_runs.rs"),
-            ),
+            include_str!("../shared_steps/shared_boundaries/shared_runs.rs"),
             previous_runs,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),

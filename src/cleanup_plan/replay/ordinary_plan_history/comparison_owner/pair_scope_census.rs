@@ -28,6 +28,11 @@ pub(super) struct Row {
     pub tail_marks: usize,
     pub fused_turns: usize,
     pub tail_work: usize,
+    pub pair_left_steps: usize,
+    pub pair_right_steps: usize,
+    pub pair_left_tails: usize,
+    pub pair_right_tails: usize,
+    pub pair_receivers: usize,
     pub steps: usize,
     pub shared_checks: usize,
     pub shared_patterns: usize,
@@ -83,6 +88,11 @@ const EMPTY: Row = Row {
     tail_marks: 0,
     fused_turns: 0,
     tail_work: 0,
+    pair_left_steps: 0,
+    pair_right_steps: 0,
+    pair_left_tails: 0,
+    pair_right_tails: 0,
+    pair_receivers: 0,
     steps: 0,
     shared_checks: 0,
     shared_patterns: 0,
@@ -252,6 +262,36 @@ impl Guard {
     }
     pub(super) fn owner_admitted(&self) {
         self.update(|r| r.owner_admitted = true);
+    }
+    pub(super) fn pair_left_steps(&self) {
+        self.update(|r| match r.pair_left_steps.checked_add(1) {
+            Some(n) => r.pair_left_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_right_steps(&self) {
+        self.update(|r| match r.pair_right_steps.checked_add(1) {
+            Some(n) => r.pair_right_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_left_tails(&self) {
+        self.update(|r| match r.pair_left_tails.checked_add(1) {
+            Some(n) => r.pair_left_tails = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_right_tails(&self) {
+        self.update(|r| match r.pair_right_tails.checked_add(1) {
+            Some(n) => r.pair_right_tails = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_receivers(&self) {
+        self.update(|r| match r.pair_receivers.checked_add(1) {
+            Some(n) => r.pair_receivers = n,
+            None => r.overflow = true,
+        });
     }
     pub(super) fn pair_match_admitted(&self) {
         self.update(|r| match r.pair_matches_admitted.checked_add(1) {
@@ -829,7 +869,18 @@ impl Drop for Scope {
             sum(|r| r.tail_marks),
             sum(|r| r.fused_turns),
             sum(|r| r.tail_work),
+            sum(|r| r.pair_left_steps),
+            sum(|r| r.pair_right_steps),
+            sum(|r| r.pair_left_tails),
+            sum(|r| r.pair_right_tails),
+            sum(|r| r.pair_receivers),
         ];
+        eprintln!(
+            "OPT487 reached borrowed-right step={:?} tail={:?} content={:?}; partial counts only, no shipping net claim",
+            sum(|r| r.pair_right_steps),
+            sum(|r| r.pair_right_tails),
+            sum(|r| r.pair_receivers)
+        );
         let total_overflow = totals.iter().any(Option::is_none);
         let complete = self
             .outcome

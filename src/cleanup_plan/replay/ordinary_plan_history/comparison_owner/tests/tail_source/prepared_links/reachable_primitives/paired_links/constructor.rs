@@ -1,3 +1,5 @@
+/Volumes/Semaprax/worktrees/v010-eb819-custody-union-20261018/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs:
+
 //! Preserve the exact Take<Repeat<()>> test with a Clippy-clean constructor.
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
@@ -18,7 +20,7 @@ pub(super) fn previous_pair_tests(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-        "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
@@ -38,7 +40,7 @@ pub(super) fn previous_controls(current: &str) -> String {
     let stage = super::incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
-        "121fab1aa22d4444c547cffd1930efa21c3365c122526ef921cd75b658cf2550",
+        "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
@@ -65,6 +67,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())

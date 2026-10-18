@@ -1,0 +1,22 @@
+{
+  "base_head": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
+  "logical_changed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "new_test_only_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs"
+  ],
+  "production_change": "fused paired fallback readers with direct immutable loans",
+  "independent_full_HIR_unchanged": true,
+  "original_work_request_sequence_preserved": true,
+  "all_prior_physical_and_source_controls_retained": true,
+  "all_graph_and_source_caps_unchanged": true,
+  "all_fixture_inputs_unchanged": true,
+  "local_evidence": "6000 actual-body opaque model cases/86118 work cuts; 26 source audits; closed phase audit; bounded by unchanged 200MiB guard",
+  "real_compiler_and_physical_and_application_gates_still_required": true
+}

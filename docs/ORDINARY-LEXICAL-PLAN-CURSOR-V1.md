@@ -432,3 +432,30 @@ complete 8102 and pure-main eb819 comparators, raw macros, and original main
 pair tests stay compiled independently; neither is a fabricated intermediate.
 No application admission, RAM benefit, or universal paid saving follows from
 these source equations.
+
+### Borrowed ordinary readers in the certified composition
+
+The ordinary fallback keeps the left bare yield as an immutable `&Rc` and
+places the right segment or tail reference directly in its lexical continuation.
+The retained left STEP/TAIL as-ref envelope pays its two actual yield/receive
+reference slots (16 bytes on the observed ABI); the remaining legacy eight bytes
+stay charged. This exact frontier mapping is separate from the new content
+comparison's four Rc actual/formal receivers and their two observation results.
+No retained envelope funds another branch, callback, or allocation.
+
+The right STEP and TAIL packets remove only the old right as-ref receiver/result
+roles. Pattern, rest, slice assignment, item arithmetic, empty controls and each
+original work boundary remain paid. Its two success continuations expand at the
+segment and tail sites, adding one genuine observation-work primitive header to
+the five retained bare-reader headers. The paired-tail five-header owner bank
+remains separate. Every packet is admitted before its actual values are formed;
+there is no refund, speculative reservation, or whole-work aggregate.
+
+Complete pure2c owner, raw lexical macros, and every original pair test remain
+independently compiled. Current typed invoices include the extra header and the
+actual content comparison payload, and remove right receiver roles only at real
+admitted right STEP/TAIL frontiers. Current work-cut, terminal, six-field,
+physical exact/short/zero/floor/sticky and full Drop controls cover both HIR
+representations. Feature capture counts actual reader events and partial
+admissions. No net, RSS, or application-admission claim follows before the
+combined final-source qualification and matched whole-caller measurements.

@@ -180,6 +180,7 @@ fn heads_run_generation(
                     4 => before_main001::compare(function, &mut budget, actual, &expected),
                     5 => before_paired_tail::compare(function, &mut budget, actual, &expected),
                     6 => before_main_b692::compare(function, &mut budget, actual, &expected),
+                    7 => before_main487::compare(function, &mut budget, actual, &expected),
                     _ => unreachable!("closed test generations"),
                 }
             })();
@@ -234,6 +235,8 @@ fn heads_run_generation(
     }
 }
 
+#[path = "borrowed_reader_composition_tests.rs"]
+mod borrowed_reader_composition_tests;
 #[path = "pair_link_composition_tests.rs"]
 mod pair_link_composition_tests;
 #[path = "paired_tail_composition_tests.rs"]
@@ -251,7 +254,10 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         + 4 * size_of::<&SkeletonObservation>()
         + 4 * size_of::<&SkeletonTerminal>()
         + 2 * size_of::<Ordering>();
-    assert_eq!((header, matching), (PAYMENT_HEADER, PAIR_MATCH));
+    assert_eq!(
+        (header, matching),
+        (PAYMENT_HEADER, super::legacy_matching())
+    );
     let base =
         2 * size_of::<usize>() + 3 * size_of::<bool>() + 2 * size_of::<usize>() + size_of::<bool>();
     let pop = 2 * size_of::<&[usize]>() + size_of::<usize>() + 2 * size_of::<bool>();
@@ -325,12 +331,15 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
             + rhs * r.certified_rhs_assignments
             + first * r.certified_firsts
             + super::boundary_run_added(r)
-            + super::paired_tail_added(r),
+            + super::paired_tail_added(r)
+            + header
+            + super::reader_payload_added(r),
         old_step * r.certified_bases
             + old_load * r.certified_pops
             + matching * r.certified_firsts
             + r.shared_boundary_complete * (matching + 4 * old_step + 2 * old_load)
-            + r.fused_turns * (matching + 2 * (old_step + paired_value::TAIL)),
+            + r.fused_turns * (matching + 2 * (old_step + paired_value::TAIL))
+            + super::reader_removed(r),
     )
 }
 fn observe_heads(
@@ -473,8 +482,11 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                             + 2 * paired_value::LINK_VIEW * current.row.pairs
                             + super::boundary_run_added(&current.row)
                             + super::paired_tail_added(&current.row)
+                            + PAYMENT_HEADER
+                            + super::reader_payload_added(&current.row)
+                            - super::reader_removed(&current.row)
                             - current.row.fused_turns
-                                * (PAIR_MATCH
+                                * (super::legacy_matching()
                                     + 2 * (paired_value::STEP
                                         + paired_value::EMPTY
                                         + paired_value::TAIL))

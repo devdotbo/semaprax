@@ -1199,3 +1199,7 @@ mod main001_link_sources;
 #[path = "main_b692_pair_scope_tests.rs"]
 #[rustfmt::skip]
 mod main_b692_pair_scope_tests;
+
+#[path = "main487_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main487_pair_scope_tests;

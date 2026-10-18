@@ -1,0 +1,11 @@
+{
+  "generate-current": 66160,
+  "complete-actual-chains": {
+    "peakKiB": 52896,
+    "minimum_available_percent": 39
+  },
+  "verify-current-ssd": {
+    "peakKiB": 116032,
+    "minimum_available_percent": 40
+  }
+}

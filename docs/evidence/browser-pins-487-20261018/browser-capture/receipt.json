@@ -1,0 +1,62 @@
+{
+  "status": "ACTUAL_GRAPH_CAPTURE_AND_COMPLETE_WIRE_COMPARISON_PASS_ONLY",
+  "head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "run": 39163104281,
+  "job": 117780935995,
+  "job_conclusion": "failure",
+  "capture_step": "success",
+  "prior_actual_compiler_head": "31eaf2f541fdada219a884c28a28f577d9931a7c",
+  "raw_log_sha256": "b0dc7756cf153fa978e268605517acb62b5354aa4bb09d0c5349dc84a520d42d",
+  "raw_log_bytes": 155074,
+  "compiler": {
+    "binary_sha256": "26c22fc5d446d5c8c559d22d1a4e11af9b866955490fdd61d66f2c7b610ddf75",
+    "head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+    "rustc": "rustc 1.88.0 (6b00bc388 2025-06-23)\nbinary: rustc\ncommit-hash: 6b00bc3880198600130e1cf62b8f8a93494488cc\ncommit-date: 2025-06-23\nhost: x86_64-unknown-linux-gnu\nrelease: 1.88.0\nLLVM version: 20.1.5\n"
+  },
+  "subjects": [
+    {
+      "subject": "calculator-baseline.json",
+      "differences": [
+        [
+          "/graph_digest",
+          "sha256:61c625bf081958906c4d5821af774e46a1a6f4db1d6fb8dc01f3c3c8e4b6d9a9",
+          "sha256:f79557926303e7e14932b195fc1cd65e2130ee4433da5aef8fe62fee2d4e9c67"
+        ],
+        [
+          "/budget/used_builder_bytes",
+          8811745,
+          8629481
+        ]
+      ],
+      "previous_builder_bill": 8811745,
+      "actual_builder_bill": 8629481,
+      "bill_delta": -182264,
+      "actual_digest": "sha256:f79557926303e7e14932b195fc1cd65e2130ee4433da5aef8fe62fee2d4e9c67",
+      "length": 9894,
+      "sha256": "12fa25550059c8eaa7e83377ae34c8391869b106ca4dac0af0d65845207a8293"
+    },
+    {
+      "subject": "calculator-renamed.json",
+      "differences": [
+        [
+          "/graph_digest",
+          "sha256:fd5dc64d126a23cc6e80109fb9a81b4acae852296daa3ece2b904a089be1d6f1",
+          "sha256:fa10b6cb2d48a3bffac58afc9b0d893eb34799de1a1134ffee1aae3ef95ae94a"
+        ],
+        [
+          "/budget/used_builder_bytes",
+          8811745,
+          8629481
+        ]
+      ],
+      "previous_builder_bill": 8811745,
+      "actual_builder_bill": 8629481,
+      "bill_delta": -182264,
+      "actual_digest": "sha256:fa10b6cb2d48a3bffac58afc9b0d893eb34799de1a1134ffee1aae3ef95ae94a",
+      "length": 9894,
+      "sha256": "48c839225f82e89f7ea3b515699cec9652a43007752c19cf8adb5991e4b57dd9"
+    }
+  ],
+  "fixture_source_UNCHANGED": true,
+  "no_runtime_or_application_qualification_claimed": true
+}

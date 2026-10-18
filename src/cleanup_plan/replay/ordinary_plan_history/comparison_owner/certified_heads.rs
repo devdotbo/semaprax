@@ -67,7 +67,10 @@ macro_rules! certified_match {
             "ordinary plan history paired cursor next"
         )?;
         #[cfg(test)]
-        $census.pair_match_admitted();
+        {
+            $census.pair_match_admitted();
+            $census.pair_receivers();
+        }
         #[cfg(feature = "unstable-workflow-profiling")]
         $crate::workflow_profile::plan_comparison::event(
             $crate::workflow_profile::plan_comparison::Site::MatchAdmitted,
@@ -199,6 +202,10 @@ macro_rules! certified_right_value {
             $crate::workflow_profile::plan_comparison::event(
                 $crate::workflow_profile::plan_comparison::Site::TailMarkAdmitted, paired_value::TAIL_MARK);
             #[cfg(test)] $census.value_tail();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailAdmitted,
+                paired_value::TAIL);
             certified_match!($budget, $function, $census);
             match $tail {
                 [head, rest @ ..] => {
@@ -301,7 +308,7 @@ macro_rules! certified_left_value {
                         $owner.$items = rest;
                         $owner.$cursor.item += 1;
                         certified_match!($budget, $function, $census);
-                        break 'plan_yield head.as_ref();
+                        break 'plan_yield head;
                     }
                     [] => {
                         #[cfg(feature = "unstable-workflow-profiling")]
@@ -342,7 +349,7 @@ macro_rules! certified_left_value {
                         0,
                     );
                     $owner.$cursor.item += 1;
-                    head.as_ref()
+                    head
                 }
                 [] => $empty,
             }

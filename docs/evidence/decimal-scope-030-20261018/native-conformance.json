@@ -1,0 +1,27 @@
+{
+  "status": "COMPLETE_ORIGINAL_TESTS_PLUS_NEW_REGRESSION_AND_EXAMPLES_NATIVE_C11_O0_O2_PASS",
+  "roles": {
+    "tests": {
+      "memory": {
+        "capture": 150704,
+        "compile-O0": 17120,
+        "run-O0": 32,
+        "compile-O2": 86560,
+        "run-O2": 32
+      },
+      "source_sha256": "bab281bc2e0204e4c1bf4e665d2124b14a1ce365c6930ee459aeffcfbae049f1"
+    },
+    "examples-standalone": {
+      "memory": {
+        "capture": 124064,
+        "compile-O0": 54304,
+        "run-O0": 32,
+        "compile-O2": 81280,
+        "run-O2": 1392
+      }
+    }
+  },
+  "compiler_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "qualification": "Scratch candidate source only; no current bundled CI or performance claim",
+  "publication_scope": "Internal standalone native C11 conformance; original project native publication still refuses SPX-I308; no public native ABI support added"
+}
