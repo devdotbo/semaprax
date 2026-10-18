@@ -20,6 +20,12 @@ pub(super) struct Row {
     pub tails: usize,
     pub steps: usize,
     pub loads: usize,
+    pub identity_detectors: usize,
+    pub identity_hits: usize,
+    pub identity_observations: usize,
+    pub identity_work: usize,
+    pub identity_captures: usize,
+    pub identity_extent_captures: usize,
     pub complete: bool,
     pub ended: bool,
     pub unwound: bool,
@@ -44,12 +50,21 @@ const EMPTY: Row = Row {
     tails: 0,
     steps: 0,
     loads: 0,
+    identity_detectors: 0,
+    identity_hits: 0,
+    identity_observations: 0,
+    identity_work: 0,
+    identity_captures: 0,
+    identity_extent_captures: 0,
     complete: false,
     ended: false,
     unwound: false,
     overflow: false,
     truncated: false,
 };
+pub(super) fn empty_for_test() -> Row {
+    EMPTY
+}
 struct Trace {
     enabled: bool,
     count: usize,
@@ -60,11 +75,16 @@ struct Trace {
 thread_local! {
     static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, generation: 0, serial: 0, rows: [EMPTY; 128] }) };
     static LOST: Cell<usize> = const { Cell::new(0) };
+    static UNWIND_IDENTITY: Cell<bool> = const { Cell::new(false) };
 }
 fn lost() {
     LOST.with(|n| n.set(n.get().saturating_add(1)));
 }
+pub(super) fn unwind_next_identity_observation() {
+    UNWIND_IDENTITY.with(|flag| flag.set(true));
+}
 pub(super) fn reset() {
+    UNWIND_IDENTITY.with(|flag| flag.set(false));
     LOST.with(|n| n.set(0));
     TRACE.with(|t| {
         let Ok(mut t) = t.try_borrow_mut() else {
@@ -210,6 +230,45 @@ impl Guard {
     pub(super) fn load(&self) {
         self.update(|r| match r.loads.checked_add(1) {
             Some(n) => r.loads = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_detector(&self) {
+        self.update(|r| match r.identity_detectors.checked_add(1) {
+            Some(n) => r.identity_detectors = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_hit(&self) {
+        self.update(|r| match r.identity_hits.checked_add(1) {
+            Some(n) => r.identity_hits = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_observation(&self) {
+        self.update(|r| match r.identity_observations.checked_add(1) {
+            Some(n) => r.identity_observations = n,
+            None => r.overflow = true,
+        });
+        if UNWIND_IDENTITY.with(|flag| flag.replace(false)) {
+            panic!("test-only unwind inside live certified PLAN remainder");
+        }
+    }
+    pub(super) fn identity_work(&self) {
+        self.update(|r| match r.identity_work.checked_add(1) {
+            Some(n) => r.identity_work = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_capture(&self) {
+        self.update(|r| match r.identity_captures.checked_add(1) {
+            Some(n) => r.identity_captures = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_extent_capture(&self) {
+        self.update(|r| match r.identity_extent_captures.checked_add(1) {
+            Some(n) => r.identity_extent_captures = n,
             None => r.overflow = true,
         });
     }

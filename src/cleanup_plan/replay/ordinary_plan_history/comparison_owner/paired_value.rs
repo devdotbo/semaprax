@@ -31,7 +31,7 @@ pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
     + size_of::<usize>();
 
 macro_rules! lexical_plan_value {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
+    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident, $link_id:ident, [$($extent:ident)?],
      $tail:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
@@ -60,11 +60,16 @@ macro_rules! lexical_plan_value {
                     "ordinary plan history forward segment traversal",
                 )?;
                 if !$owner.$loaded {
-                    paid!($budget, $function, paired_value::LOAD, $phase)?;
+                    paid!(
+                        $budget,
+                        $function,
+                        paired_value::LOAD + shared_prefix_capture_price!([$($extent)?]),
+                        $phase
+                    )?;
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
-                        paired_value::LOAD,
+                        paired_value::LOAD + shared_prefix_capture_price!([$($extent)?]),
                     );
                     #[cfg(test)]
                     $census.load();
@@ -72,7 +77,18 @@ macro_rules! lexical_plan_value {
                         unreachable!("prepared ordinary plan links");
                     };
                     $owner.$items = $owner.arena[link].items.as_slice();
+                    $owner.$link_id = link;
+                    $(
+                        $owner.$extent = $owner.$items.len();
+                        #[cfg(test)]
+                        $census.identity_extent_capture();
+                    )?
                     $owner.$loaded = true;
+                    #[cfg(test)]
+                    $census.identity_capture();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityCapture, 0);
                 }
                 match $owner.$items {
                     [head, rest @ ..] => {
