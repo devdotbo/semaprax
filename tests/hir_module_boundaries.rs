@@ -828,6 +828,15 @@ include_str!("../src/source_reflows_merge/current344.rs"), include_str!("../src/
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs"),
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs"),
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"),
     );
     let validation = production_source_inventory::production(
         &validation_raw,

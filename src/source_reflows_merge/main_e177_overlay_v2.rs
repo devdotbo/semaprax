@@ -18,6 +18,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
+    "src/source_reflows_merge.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
     "src/source_reflows_merge/next_big_batch_inputs.rs",
@@ -48,6 +49,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/hir/resolve_program_methods.rs",
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows/incoming67107_semantic_receivers.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
     "src/source_reflows_merge/main67107_inputs_tail.rs",
     "src/source_reflows_merge/main8a_historical.rs",
@@ -180,11 +182,20 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 52180; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "28c52e07ecf47a7010be41910eb5ab61f28a90c0ef7837244885154a7e782024";
+const POLICY_LENGTH: usize = 58292; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "b9f2685bd8db2d529027e8671169a67249840a9fe8e691b8cdcc259126e5e120";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -871,6 +882,15 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs")),

@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 31087,
-      "sha256": "5720e0df29c50e82f0059c04dd5747f5ac860f6b419a6fa79a1f2c13564cda67"
+      "length": 32480,
+      "sha256": "8fc451f95305fe21c22e31ad0682549f387b2933ca1a0ac1ed4b651e8bddf114"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 44075,
-      "sha256": "f79a689ff9404a5a2bebe4229533f3d6a395aa45715d08369052311418c2b287"
+      "length": 44248,
+      "sha256": "07e561c7167538f29e3a36d3f1b9fd507740429f3c3061af39cc4173bdf64cdc"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -313,8 +313,8 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 21113,
-      "sha256": "17fb1cd733fc8f0ffa877aaede8c77088a4527bc1080928c1354575049c4e368"
+      "length": 24125,
+      "sha256": "bd4b266bcd4e01c7edf67f5dd6c6115c008b218bfa1165dfc44feb2d8c30249d"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
       "length": 58148,
@@ -713,8 +713,8 @@
       "sha256": "63e1be7b4114be13c261bd19e9a4b673c17cb2a36ea003e89b0ca88198feccfd"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs": {
-      "length": 11175,
-      "sha256": "056b1597667bf84de802965a91afbe68b1c0a6bdd6e5ac18e9b6b2f559c2a926"
+      "length": 11316,
+      "sha256": "ab2c1f29a0442e3784a885811ec6b8babb037d21c22471487b4728e6f46674b4"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs": {
       "length": 7359,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 70638,
-      "sha256": "4d614eb7494d2590c5edb34e155998b2f3136fff2b852a72bcd497af5e1dd0a4"
+      "length": 74137,
+      "sha256": "71a61fc9281e0be4a75292e2a9c97c59c1818d5ab83a9bfc47d064d20243b498"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -797,8 +797,8 @@
       "sha256": "cbabeca225942f20ffe4d4cd675199eb0200934c8be06940ddbfff1b05f74bb3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
-      "length": 7075,
-      "sha256": "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
+      "length": 7656,
+      "sha256": "f68af76308eb729dd805fd1453d23e738fa6cf3aa4ab9bbbe9518d72323c341e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
       "length": 28105,
@@ -873,8 +873,8 @@
       "sha256": "ecc693e67e0a193efec4ddc0e22037fcd99b8626b7fd87e5f11c1123fd65d4f3"
     },
     "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
-      "length": 9601,
-      "sha256": "cc74a22a2590cf7ac7fc8bb428c77355f767d5a1bf90c936d7827209b017c99d"
+      "length": 27940,
+      "sha256": "37e4e308cdcc6a1e72548b1db1d6414b5c78fd5e2db2445033447623b7eccceb"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
       "length": 19877,
@@ -901,8 +901,8 @@
       "sha256": "90f8c704f7a8eeb72cfc5318123b27febe80ce5bbba39b7b6a1952ec6e058f58"
     },
     "src/workspace_graph/expected_projection/call_carriers_tests.rs": {
-      "length": 21632,
-      "sha256": "bbf083f64717c60a9b9d4ae867a7e9d37a52aef86930dc8e95cc84a1d20a5212"
+      "length": 23577,
+      "sha256": "bf17711b9ee9801531b16d3a505163c32df52e2ef13a46d1426eeee2cc8c3934"
     },
     "src/ast/program_source/decl_slices.rs": {
       "length": 9428,
@@ -957,12 +957,12 @@
       "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs": {
-      "length": 6770,
-      "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+      "length": 7383,
+      "sha256": "375d7cfdbb9ea4c2024d2b56a453e9e9cc7a57648057af869f7050a121e072ee"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
-      "length": 33038,
-      "sha256": "c06315604b876851db4bfadc733b6a7f6a11fd6e254170f11d95cc0c5399a6fe"
+      "length": 33777,
+      "sha256": "a02945b3716cef93e0ee7d73bf5c734eac42c3457349678abe7b2f810d5d5867"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs": {
       "length": 23096,
@@ -977,27 +977,63 @@
       "sha256": "04f203385fca56211c99246af45ed7c3ece2787ec7059fa58029b10e5ac105e1"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs": {
-      "length": 11751,
-      "sha256": "57c05319eea9c66104b118d5a94777ef48d7adff687703b88012ae1b6f2587a0"
+      "length": 11132,
+      "sha256": "fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs": {
+      "length": 33537,
+      "sha256": "f151191a847eefa2c4f9ccf9f2406d1e7af8e524bc41003ea3826c334f6fd434"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs": {
+      "length": 25860,
+      "sha256": "1801e6dfb9e77d78c0547b710bda186cb382a022af36d6609901eb5f9020be26"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs": {
+      "length": 10841,
+      "sha256": "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs": {
+      "length": 43884,
+      "sha256": "cd73e40396090ee5fd3cb7a1c7f76e0dc3958e083e32611e4eef3e05432965e3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs": {
+      "length": 7075,
+      "sha256": "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs": {
+      "length": 6770,
+      "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs": {
+      "length": 33132,
+      "sha256": "b98b094774a5acf2245591f2eb5bcd6b5a1224ddb951dc850267bcc277bad69e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs": {
+      "length": 16928,
+      "sha256": "ff89b90b99b672ba0e69648708c4b52a570ba9d6ab8ca4ffd6242b09c25f7e5b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs": {
+      "length": 19394,
+      "sha256": "7ac67ae6bb1df15955efdecc185aff5e266fe62f2ede79797f4b251932a266b2"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 137732,
-      "sha256": "61ee9c63b4243cc4e5c06d969fce663a93be5cc180323fa3435bcadc17cf5e48",
+      "length": 138849,
+      "sha256": "a0af2094e34f040406dafffc9a8f50967f5f7b6252524d61cac38fd7fef9bb42",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 154328,
-      "sha256": "32202a6e97e831ae75dabd625b4f425b1535c3d553cb35b51f30165bbb4e9d3d",
+      "length": 155472,
+      "sha256": "d94e2d4f7c6f8097dd5758f3e6850177e7811583bb75eb2b73099f88e1da0813",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 196184,
-      "sha256": "b56ededdb48a0c5f223632616ef0b5530bf862bd1bdd7055ff873c9609b689cf",
+      "length": 197409,
+      "sha256": "c40bb045d192634c894a858dacf08e03807742decddcb9399b2b168de8215d12",
       "base": "../../../../../"
     }
   },
@@ -1025,8 +1061,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 58813,
-    "sha256": "98101b07309863da8165faa3a115537f40ecb7f31543135e0dfd2b1e4b24df17",
+    "length": 59678,
+    "sha256": "e6b7a84d55d6995e9e2ad5a97ffdad99be41cec1b6c79882940dcf1de9cc74ac",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3600,9 +3636,45 @@
       {
         "at": 1067,
         "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+      },
+      {
+        "at": 1068,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs"
+      },
+      {
+        "at": 1069,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs"
+      },
+      {
+        "at": 1070,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs"
+      },
+      {
+        "at": 1071,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs"
+      },
+      {
+        "at": 1072,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs"
+      },
+      {
+        "at": 1073,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs"
+      },
+      {
+        "at": 1074,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs"
+      },
+      {
+        "at": 1075,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs"
+      },
+      {
+        "at": 1076,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
       }
     ],
-    "rows": 1068
+    "rows": 1077
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -4237,7 +4309,16 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs",
-    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",
