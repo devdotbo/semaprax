@@ -191,11 +191,13 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+    "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs",
+    "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 58292; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "86a760eaca7c588652590813b818f497468cd373253efd34b2d9d589c96b5fce";
+const POLICY_LENGTH: usize = 59434; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "09be6426707e1e399754220edbc36052441eeac5a2498d2535c54e44bcbe2545";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -885,6 +887,8 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs" => Some(include_str!("../../src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs")),
+        "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs")),
