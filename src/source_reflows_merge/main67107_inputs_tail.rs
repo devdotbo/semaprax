@@ -1244,4 +1244,8 @@ pub(crate) fn main_f247_file_raw(
     before_future57::main_f247_file_raw(path, length, expected)
 }
 
+#[allow(
+    unused_imports,
+    reason = "Retain the complete old receiver API in independently compiled source-control harnesses."
+)]
 pub(crate) use before_future57::accepted_physical_compiled;

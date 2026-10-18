@@ -28,6 +28,16 @@ fn authenticate_keys(fixture: Fixture, rows: &serde_json::Value) {
 }
 #[test]
 fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
+    let shared = include_str!("sealed_io.rs");
+    assert_eq!(
+        super::super::main_e177_final_inputs::value_direct(
+            "src/source_reflows_merge/runtime_json/sealed_io.rs",
+            "ade0fceb0ac08cee97176dc91519030b0cd6509cf7669cd1a2c8c761cca18931",
+            shared,
+        ),
+        shared,
+        "complete shared sealed reader before all original I/O hostiles",
+    );
     // Both exact selector arms normalize to the identical common source before
     // any historical source inverse. No arbitrary edited source is accepted.
     let authenticated = super::super::main_e177_final_inputs::value_direct(
