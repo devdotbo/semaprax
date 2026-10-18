@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 84,
       "full_role_production": 504,
       "full_role_test_only": 919,
-      "full_raw_sha256": "8c269d53e9696cc8616cde42f5d0b0437dfff8690dc2b6eb5bdb5e8bf6a926b2",
+      "full_raw_sha256": "d5f9dba77e4f7bc2f4eeb11f73b30af7854122b1283943ad849528e280a831d6",
       "boundary_production_sha256": "c97beaaadc55c072af2336c94b423a766cbd05330fee9086919ad64a29bdd99e",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -56,6 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
+  "actual_acquisition_completion_sha256": "7604984b7a0b7d575d3c7b367a063635868af1ab4331dfcef994d7f7fe190e44",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -64,6 +65,12 @@
     "whole_raw_drift_refused": true,
     "foreign_path_child_cannot_escape": true
   },
-  "status": "SOURCE_ONLY_FINITE_EXISTING268_HASH_AND_TWO_EDGE_OFFSET_SUCCESSOR",
-  "registration_update": "No parser reenumeration; complete prior268 classes/chunks retained with two exact declaration offsets relocated."
+  "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
+  "registration_update": "CURRENT_2E92_CROSS_PHASE_COMPILE_FIXES_WITH_BOTH_SOURCE_HISTORIES",
+  "before_head": "dc0b65780b",
+  "incoming_main": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "global_polluted_purity_result_not_claimed": true,
+  "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
+  "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
+  "storage_implementation_sha256": "653cf683557b582baa60790b78f00ee51c65e48f2bbea75818a888a437749a26"
 }

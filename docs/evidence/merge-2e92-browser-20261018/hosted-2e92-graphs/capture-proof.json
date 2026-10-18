@@ -1,0 +1,27 @@
+{
+  "run": 39090328852,
+  "job": 117565939090,
+  "head": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "records": [
+    {
+      "name": "calculator-baseline.json",
+      "length": 9895,
+      "sha256": "593b1a1699cabae2a8c721d8053faacda3eada74b510800b545f148b45d2aa3e",
+      "whole_wire_identical_to_8db_capture": true
+    },
+    {
+      "name": "calculator-renamed.json",
+      "length": 9895,
+      "sha256": "9006798646ce11b00970907bcf49e257b5f39a9a24714ae1d63ee81d4fffde50",
+      "whole_wire_identical_to_8db_capture": true
+    },
+    {
+      "name": "provenance.json",
+      "length": 354,
+      "sha256": "5e36ceaeda52bf71c8c922ed01980baeaed54702747117cbb0c9afbec6ec418d",
+      "whole_wire_identical_to_8db_capture": false
+    }
+  ],
+  "both_graph_records_byte_identical_to_prior_8db_capture": true,
+  "full_browser_gate_not_claimed": true
+}

@@ -1,0 +1,42 @@
+{
+  "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs": {
+    "length": 10291,
+    "sha256": "263bf4cb67d3979ef0eba86912682ce1b792728f451e9da36a0a4d86c773c9ba",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/263bf4cb67d3979ef0eba86912682ce1b792728f451e9da36a0a4d86c773c9ba.txt"
+  },
+  "docs/evidence/fmt-local-441-20261018/extension.json": {
+    "length": 157497,
+    "sha256": "1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe.txt"
+  },
+  "src/source_reflows_merge/main_e177_final_inputs.rs": {
+    "length": 99271,
+    "sha256": "5896c0b8205ee481bdbc94f63490d1f8f2398cd7da28b558ba54ec55728fc795",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/5896c0b8205ee481bdbc94f63490d1f8f2398cd7da28b558ba54ec55728fc795.txt"
+  },
+  "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py": {
+    "length": 10630,
+    "sha256": "55e3db26ee9ec2fc7a3eeef076e6786a7e341beddd57871feaa1910faa8291eb",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/55e3db26ee9ec2fc7a3eeef076e6786a7e341beddd57871feaa1910faa8291eb.txt"
+  },
+  "docs/evidence/fmt-ec77-20261018/guard-config.json": {
+    "length": 116352,
+    "sha256": "641a6517e3dcadcfa3a6bc42e8c714a54801bdd922cfe62e5f7c424b9434c87c",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/641a6517e3dcadcfa3a6bc42e8c714a54801bdd922cfe62e5f7c424b9434c87c.txt"
+  },
+  "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": {
+    "length": 2253,
+    "sha256": "5e61e2ae90a0f56d5d973ebc2e340bb844ea883af4089577ba8516f2f9ad72b2",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/5e61e2ae90a0f56d5d973ebc2e340bb844ea883af4089577ba8516f2f9ad72b2.txt"
+  },
+  "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py": {
+    "length": 5322,
+    "sha256": "56d2c7d40691e60bf677a48967bc8e65ff81332dc689652607bf7d0ac580dd29",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/56d2c7d40691e60bf677a48967bc8e65ff81332dc689652607bf7d0ac580dd29.txt"
+  },
+  "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py": {
+    "length": 2766,
+    "sha256": "e305dcc5ffdd509afdd7a1e77c0e56bb05c250c7d72e0228f9ef058bd44812d0",
+    "archive": "docs/evidence/browser-graph-pins-8db669070/whole-before/e305dcc5ffdd509afdd7a1e77c0e56bb05c250c7d72e0228f9ef058bd44812d0.txt"
+  }
+}

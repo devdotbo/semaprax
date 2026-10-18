@@ -1,0 +1,11 @@
+{
+  "whole_before_helper": {
+    "length": 98503,
+    "sha256": "9de25fcd0689848572869e0e070a6bc8c14b529d460f65e24704e10afb385bff",
+    "archive": "docs/evidence/merge-2e92-browser-20261018/whole/9de25fcd0689848572869e0e070a6bc8c14b529d460f65e24704e10afb385bff.txt"
+  },
+  "historical_133_loader_body_exactly_retained": true,
+  "current_lines": 1464,
+  "current_sha256": "8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d",
+  "reader_caps_unchanged": true
+}

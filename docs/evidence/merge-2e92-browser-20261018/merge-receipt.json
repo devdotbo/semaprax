@@ -1,0 +1,96 @@
+{
+  "ours": "dc0b65780b",
+  "incoming": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "source_rows": 121,
+  "extension_overrides": 187,
+  "logical_rows": 444,
+  "packet_length": 85979,
+  "packet_sha256": "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a",
+  "extension_length": 228268,
+  "extension_sha256": "762e3c6221da8df3a43a58a941e3b4f17fa4500084971fee6743eb6f09778cd9",
+  "whole_packet_sides": [
+    {
+      "length": 61718,
+      "sha256": "5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd.txt"
+    },
+    {
+      "length": 80040,
+      "sha256": "af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d.txt"
+    },
+    {
+      "length": 64627,
+      "sha256": "751e1126ec33ab4bf9475e46b8bf8b4f23e4ec6b2f770bcae5ba7258758ea74d",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/751e1126ec33ab4bf9475e46b8bf8b4f23e4ec6b2f770bcae5ba7258758ea74d.txt"
+    }
+  ],
+  "whole_extension_sides": [
+    {
+      "length": 208632,
+      "sha256": "2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d.txt"
+    },
+    {
+      "length": 212076,
+      "sha256": "5fec5794582e2c23b013fea8df0f2d012d7c53156758e0a8cb14dc93bdd0cfcc",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/5fec5794582e2c23b013fea8df0f2d012d7c53156758e0a8cb14dc93bdd0cfcc.txt"
+    },
+    {
+      "length": 224526,
+      "sha256": "e96befe77cf774194fc58dd092bc2d4f48d78fd80ccf56213497fd36183308d5",
+      "archive": "docs/evidence/merge-2e92-browser-20261018/whole/e96befe77cf774194fc58dd092bc2d4f48d78fd80ccf56213497fd36183308d5.txt"
+    }
+  ],
+  "before_helper": {
+    "length": 99927,
+    "sha256": "203b24477592c18255547ba6f8ddcf83c2fb4d2a71afba7e5773ef4d935dffdb",
+    "archive": "docs/evidence/merge-2e92-browser-20261018/whole/203b24477592c18255547ba6f8ddcf83c2fb4d2a71afba7e5773ef4d935dffdb.txt"
+  },
+  "before_guard": {
+    "length": 10642,
+    "sha256": "b8e483abfba9d5679bc4d382b8667d589be096e24944db97febd7669e52b3781",
+    "archive": "docs/evidence/merge-2e92-browser-20261018/whole/b8e483abfba9d5679bc4d382b8667d589be096e24944db97febd7669e52b3781.txt"
+  },
+  "before_config": {
+    "length": 92671,
+    "sha256": "4ba17e256533a2cbd0b290866edfbe50b47ad42c1ba4aa54e96f4b6a27f76b48",
+    "archive": "docs/evidence/merge-2e92-browser-20261018/whole/4ba17e256533a2cbd0b290866edfbe50b47ad42c1ba4aa54e96f4b6a27f76b48.txt"
+  },
+  "module_and_carrier_pins_refreshed": [
+    {
+      "kind": "modules",
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before": {
+        "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "length": 98503,
+        "sha256": "9de25fcd0689848572869e0e070a6bc8c14b529d460f65e24704e10afb385bff"
+      },
+      "current": {
+        "length": 99927,
+        "sha256": "8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d",
+        "archive": "docs/evidence/merge-2e92-browser-20261018/whole/8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d.txt"
+      }
+    },
+    {
+      "kind": "modules",
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "before": {
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+        "length": 46018,
+        "sha256": "d29c55faef71142151d9b9d44be970a76245c79bf5405521d8312cb4f3b9b3b6"
+      },
+      "current": {
+        "length": 46151,
+        "sha256": "5c5c77c8409a2d0c029db3494c439cf80f3470b599455bf2c9e5329b164cc19e",
+        "archive": "docs/evidence/merge-2e92-browser-20261018/whole/5c5c77c8409a2d0c029db3494c439cf80f3470b599455bf2c9e5329b164cc19e.txt"
+      }
+    }
+  ],
+  "guard_length": 10640,
+  "guard_sha256": "c2a64c7de118002e4f0e47708c712f23ffafc6487346cf0f725c279ddd86d1fa",
+  "config_length": 117696,
+  "config_sha256": "58ba9380e339397a54f176011500b0db3a293716dbf4359b113b774c5ec69159",
+  "all_before_fields_views_and_current_wires_retained": true,
+  "no_source_reader_or_program_cap_increase": true
+}
