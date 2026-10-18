@@ -139,3 +139,65 @@ pub(super) fn main043_input() -> String {
     read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
         .expect("complete authenticated Main043 helper input")
 }
+
+// RUNTIME848_FIXED_RECEIVERS_BEGIN
+// Two immutable test-runtime dependencies; no discovery, cache or new reader.
+#[derive(Clone, Copy)]
+pub(crate) enum ReceiverFixture {
+    SelectedCalls,
+    Main67107,
+}
+impl ReceiverFixture {
+    fn spec(self) -> Spec {
+        match self {
+            Self::SelectedCalls => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/selected-call-refusal-781/exact-source-inverses.json"
+                ),
+                length: 2614264,
+                sha256: [
+                    74, 253, 119, 191, 254, 162, 249, 198, 84, 36, 10, 18, 217, 177, 53, 7, 205,
+                    95, 186, 130, 189, 110, 193, 196, 36, 139, 88, 217, 220, 125, 245, 209,
+                ],
+            },
+            Self::Main67107 => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/main67107-production-composition-20261017/receiver-main12.json"
+                ),
+                length: 1193191,
+                sha256: [
+                    39, 218, 14, 63, 48, 47, 133, 120, 85, 202, 13, 224, 212, 113, 135, 75, 199,
+                    127, 92, 195, 76, 251, 33, 125, 206, 26, 103, 209, 20, 222, 136, 154,
+                ],
+            },
+        }
+    }
+}
+pub(crate) fn receiver_fixture(fixture: ReceiverFixture) -> String {
+    let spec = fixture.spec();
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated immutable receiver fixture")
+}
+// The original selected-call assertion audits its own complete source. Restore
+// exactly the two transport edits before applying its unchanged original inverse.
+pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {
+    if source != "src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs" {
+        return current.to_owned();
+    }
+    let mut before = current.to_owned();
+    assert_eq!(before.matches("    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,\n        ))\n        .unwrap();").count(), 1, "exact runtime fixture transport edit");
+    before = before.replacen("    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,\n        ))\n        .unwrap();", "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../../../../docs/evidence/selected-call-refusal-781/exact-source-inverses.json\"\n    ))\n    .unwrap();", 1);
+    assert_eq!(before.matches("        let mut current = crate::source_reflows_merge::receiver_fixture_source_before(name, source);").count(), 1, "exact runtime fixture transport edit");
+    before = before.replacen("        let mut current = crate::source_reflows_merge::receiver_fixture_source_before(name, source);", "        let mut current = source.to_owned();", 1);
+    assert_eq!(
+        digest(before.as_bytes()),
+        [
+            122, 25, 222, 23, 184, 16, 230, 100, 106, 120, 205, 160, 9, 162, 204, 93, 38, 84, 161,
+            101, 31, 187, 150, 206, 28, 92, 42, 51, 124, 152, 232, 137
+        ],
+        "complete original selected-call source"
+    );
+    before
+}

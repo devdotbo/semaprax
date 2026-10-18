@@ -263,3 +263,101 @@ fn maina3_known_part_source_refuses_gaps_duplicates_and_foreign_rows() {
     }
     maina3_part_source(r#"[{"source":"known"}]"#, "known");
 }
+
+// RUNTIME848_RECEIVER_CONTROLS_BEGIN
+#[test]
+fn fixed_receiver_json_fixtures_keep_complete_inputs_inverses_and_hostile_io() {
+    let directory = std::env::temp_dir().join(format!(
+        "semaprax-receiver-json-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    std::fs::create_dir(&directory).unwrap();
+    let directory = Directory(directory);
+    let path = directory.0.join("fixture.json");
+    for (fixture, expected_rows) in [
+        (ReceiverFixture::SelectedCalls, 18),
+        (ReceiverFixture::Main67107, 12),
+    ] {
+        let spec = fixture.spec();
+        assert!(spec.length <= OUTPUT_CAP);
+        let text = receiver_fixture(fixture);
+        assert_eq!(text.len(), spec.length);
+        assert_eq!(digest(text.as_bytes()), spec.sha256);
+        let rows: serde_json::Value = serde_json::from_str(&text).unwrap();
+        assert_eq!(rows.as_array().unwrap().len(), expected_rows);
+        std::fs::write(&path, text.as_bytes()).unwrap();
+        assert_eq!(read_fixture(&path, spec.length, spec.sha256).unwrap(), text);
+        assert_eq!(
+            read_fixture(&directory.0.join("missing"), spec.length, spec.sha256),
+            Err(Failure::Input)
+        );
+        std::fs::write(&path, &text.as_bytes()[..spec.length - 1]).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Bound)
+        );
+        let mut extra = text.as_bytes().to_vec();
+        extra.push(0);
+        std::fs::write(&path, &extra).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Bound)
+        );
+        assert_eq!(
+            read_body(&mut Cursor::new(&extra), spec.length, spec.sha256),
+            Err(Failure::Trailing)
+        );
+        extra.truncate(spec.length);
+        extra[0] ^= 1;
+        std::fs::write(&path, &extra).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Digest)
+        );
+    }
+    let name = "src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs";
+    let current =
+        include_str!("../../cleanup_plan/replay/structural_control/calls/custody_tests/source.rs");
+    let original = receiver_fixture_source_before(name, current);
+    assert!(std::panic::catch_unwind(|| receiver_fixture_source_before(name, &original)).is_err());
+    assert!(std::panic::catch_unwind(|| receiver_fixture_source_before(
+        name,
+        &(current.to_owned() + " ")
+    ))
+    .is_err());
+    let runtime = include_str!("../runtime_json.rs");
+    let (runtime_before, _) = runtime
+        .split_once("\n// RUNTIME848_FIXED_RECEIVERS_BEGIN\n")
+        .unwrap();
+    assert_eq!(
+        digest(runtime_before.as_bytes()),
+        [
+            148, 112, 193, 25, 208, 50, 49, 30, 155, 150, 103, 198, 66, 216, 71, 82, 129, 20, 180,
+            161, 173, 36, 105, 237, 225, 125, 49, 19, 77, 149, 155, 236
+        ]
+    );
+    let mut root_before = include_str!("../../source_reflows_merge.rs").to_owned();
+    assert_eq!(&root_before[685..867], ";\n// Closed authenticated repository DATA only; no live-source or compiler authority.\npub(crate) use runtime_json::{receiver_fixture, receiver_fixture_source_before, ReceiverFixture}");
+    root_before.replace_range(685..867, "");
+    assert_eq!(
+        digest(root_before.as_bytes()),
+        [
+            47, 199, 81, 107, 241, 8, 163, 83, 135, 195, 164, 227, 44, 126, 21, 210, 102, 90, 21,
+            60, 154, 237, 154, 234, 103, 203, 114, 174, 218, 132, 112, 225
+        ]
+    );
+    let mut receiver_before =
+        include_str!("../../source_reflows/incoming67107_semantic_receivers.rs").to_owned();
+    assert_eq!(receiver_before.matches("fn proofs() -> &'static [serde_json::Value] {\n    // Preserve the old parsed metadata cache, but authenticate the runtime\n    // dependency on every reached lookup, including an already warm cache.\n    let payload = crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::Main67107,\n    );\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n").count(), 1);
+    receiver_before = receiver_before.replacen("fn proofs() -> &'static [serde_json::Value] {\n    // Preserve the old parsed metadata cache, but authenticate the runtime\n    // dependency on every reached lookup, including an already warm cache.\n    let payload = crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::Main67107,\n    );\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n", "fn proofs() -> &'static [serde_json::Value] {\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n", 1);
+    assert_eq!(receiver_before.matches("const LIVE_AUDITS:").count(), 1);
+    receiver_before = receiver_before.replacen("const LIVE_AUDITS:", "const PROOFS: &str = include_str!(\n    \"../../docs/evidence/main67107-production-composition-20261017/receiver-main12.json\"\n);\nconst LIVE_AUDITS:", 1);
+    assert_eq!(
+        digest(receiver_before.as_bytes()),
+        [
+            39, 65, 174, 128, 29, 207, 74, 77, 46, 65, 104, 18, 87, 107, 203, 246, 159, 102, 233,
+            74, 214, 151, 70, 234, 129, 152, 154, 85, 79, 28, 253, 63
+        ]
+    );
+}

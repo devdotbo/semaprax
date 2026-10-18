@@ -15,6 +15,8 @@ mod final_custody;
 mod metadata_json;
 #[path = "source_reflows_merge/runtime_json.rs"]
 mod runtime_json;
+// Closed authenticated repository DATA only; no live-source or compiler authority.
+pub(crate) use runtime_json::{receiver_fixture, receiver_fixture_source_before, ReceiverFixture};
 // The final compositor authenticates its raw view at this independent owner front.
 pub(crate) fn boxed849_input(source: &str, current: &str) -> String {
     let compile_fixed = compile_fixture_input(source, current);

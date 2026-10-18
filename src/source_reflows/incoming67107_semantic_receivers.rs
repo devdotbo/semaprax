@@ -3,9 +3,6 @@
 //! inventories continue to include the current modules and their new children.
 use super::*;
 
-const PROOFS: &str = include_str!(
-    "../../docs/evidence/main67107-production-composition-20261017/receiver-main12.json"
-);
 const LIVE_AUDITS: &str =
     include_str!("../../docs/evidence/live-source-audit-custody-v1/inverse.json");
 static PROOF_RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
@@ -57,8 +54,13 @@ fn ordinary_helpers() -> &'static [serde_json::Value] {
 }
 
 fn proofs() -> &'static [serde_json::Value] {
+    // Preserve the old parsed metadata cache, but authenticate the runtime
+    // dependency on every reached lookup, including an already warm cache.
+    let payload = crate::source_reflows_merge::receiver_fixture(
+        crate::source_reflows_merge::ReceiverFixture::Main67107,
+    );
     PROOF_RECORDS.get_or_init(|| {
-        let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
+        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();
         let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
         assert_eq!(original.len(), 12);
         assert_eq!(additional.len(), 2);
