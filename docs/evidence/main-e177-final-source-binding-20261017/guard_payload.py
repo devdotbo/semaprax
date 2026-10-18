@@ -15,8 +15,8 @@ def bounded(path,length,digest):
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/remote12ad-checkpoint-20261018/guard-config.json'
-_CONFIG_LENGTH=91525
-_CONFIG_SHA256='ae0d4157d718ba22703f6a2a5dc2f50b7f52b38b7404f2432f0b5f1e84d28c1f'
+_CONFIG_LENGTH=92671
+_CONFIG_SHA256='c76d7fc4f6684e16e0dfb0d4d835f16ef8a900d465d94c4496658b5322987248'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -43,7 +43,7 @@ def packet():
   p=row['source'];assert p not in seen;seen.add(p)
   if p in positions:rows[positions[p]]=row
   else:positions[p]=len(rows);rows.append(row)
- assert len(rows)==441 and len(positions)==441
+ assert len(rows)==444 and len(positions)==444
  for prior,current in zip(base['rows'],rows):
   assert current['source']==prior['source']
   assert current['compiled']==prior['compiled']or(prior['compiled']is False and current['compiled']is True and prior['source']in ext['compiled_upgrades'])

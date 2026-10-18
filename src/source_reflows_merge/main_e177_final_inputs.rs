@@ -9,7 +9,7 @@ fn packet() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(208632,"2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d".to_owned()));
+    assert_eq!((data.len(),digest(data.as_bytes())),(222037,"6e869e2cae17da290bf2b6c753083d7b54962fd681689d94db804620a853c0c0".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
     let ext:serde_json::Value=serde_json::from_str(data).unwrap();
@@ -23,7 +23,7 @@ fn packet() -> serde_json::Value {
         let source=row["source"].as_str().unwrap();assert!(seen.insert(source));
         if let Some(index)=rows.iter().position(|r|r["source"]==source) {rows[index]=row.clone();}else{rows.push(row.clone());}
     }
-    assert_eq!(rows.len(),441);
+    assert_eq!(rows.len(),444);
     for (prior,current) in base["rows"].as_array().unwrap().iter().zip(rows.iter()) {
         assert_eq!(current["source"],prior["source"]);assert!(current["compiled"]==prior["compiled"] || (prior["compiled"]==false && current["compiled"]==true && ext["compiled_upgrades"].as_array().unwrap().contains(&prior["source"])));
         let views=current["views"].as_array().unwrap();let before=prior["views"].as_array().unwrap();assert_eq!(&views[..before.len()],before.as_slice());
@@ -649,6 +649,9 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/factored/compact_nodes/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/compact_nodes/tests.rs")),
         "src/hir/ids/declaration_tag.rs" => Some(include_str!("../../src/hir/ids/declaration_tag.rs")),
         "src/hir/ids/declaration_tag/before.rs" => Some(include_str!("../../src/hir/ids/declaration_tag/before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs")),
         _ => None,
     }
 }
@@ -1000,17 +1003,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 61718);
+        assert_eq!(data.len(), 64093);
         assert_eq!(
             digest(data.as_bytes()),
-            "5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd"
+            "c451280f8d9746fc1c31822cf3969cdba32072ab8e09eab286de281cb2e7e2dd"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd"
+                "c451280f8d9746fc1c31822cf3969cdba32072ab8e09eab286de281cb2e7e2dd"
             )
             .unwrap(),
             data

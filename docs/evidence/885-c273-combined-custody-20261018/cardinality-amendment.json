@@ -1,0 +1,39 @@
+{
+  "status": "SOURCE_ONLY_NECESSARY_THREE_NEW_ROWS_CARDINALITY",
+  "original_packet_check": "FAILED_STALE_441_ASSERTION_NO_BINDER_INVOKED",
+  "edits": [
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before_sha256": "83e249f76639fb57df2a93bc5ec9b73085e537c4a399073e75985cc2aeefa72b",
+      "after_sha256": "7baf407e6be777f4e2badb6628b13e435e1145631fb46047173393af139f87b9",
+      "before": "assert len(rows)==441 and len(positions)==441",
+      "after": "assert len(rows)==444 and len(positions)==444"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before_sha256": "e8ad5b8dd9098761cf7d1edd70848b4e4d87661aa27d17135063adf2dae5eb43",
+      "after_sha256": "fe6bb7dccd3fb9e6aa4262d93880f94dd4d73240ce02b3e36cb7611823725b70",
+      "before": "83e249f76639fb57df2a93bc5ec9b73085e537c4a399073e75985cc2aeefa72b",
+      "after": "7baf407e6be777f4e2badb6628b13e435e1145631fb46047173393af139f87b9"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before_sha256": "7e5d6e9c2879874aaba9946f49eff6ce0463fac20c8a82109a9200562475f81c",
+      "after_sha256": "0885bd28cc9ae6e6a20359610aeb50b627dbc9fbca08ed8790adf67ff519241e",
+      "before": "83e249f76639fb57df2a93bc5ec9b73085e537c4a399073e75985cc2aeefa72b",
+      "after": "7baf407e6be777f4e2badb6628b13e435e1145631fb46047173393af139f87b9"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before_sha256": "224d4714326555b7a2de3cb499515c23439734092e4fd34e646f48184f994291",
+      "after_sha256": "7be915811aa2dddb17ab505d303ea658fafb82f3ebfdaef8f8bd741f4697bb7b",
+      "before": "83e249f76639fb57df2a93bc5ec9b73085e537c4a399073e75985cc2aeefa72b",
+      "after": "7baf407e6be777f4e2badb6628b13e435e1145631fb46047173393af139f87b9"
+    }
+  ],
+  "unchanged_caps": [
+    262144,
+    9753094
+  ],
+  "Cargo": false
+}
