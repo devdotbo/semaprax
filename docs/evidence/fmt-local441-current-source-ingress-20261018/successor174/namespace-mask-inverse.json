@@ -1,0 +1,48 @@
+{
+  "before_sha256": "d5361cc79842929c9d50c08c650f57b1d66ecb9a5af227a1f2b04dc7024200e2",
+  "after_sha256": "0dde12f54fd7c6921c74f312e1c7fae364a70e59e30d5c3a1fbec4b158a8628b",
+  "edits": [
+    {
+      "before": "exec(compile(render(raw),str(D/ 'bind_current.before.py.txt'),'exec'),{",
+      "after": "exec(compile(render_namespace_grammar(render(raw)),str(D/ 'bind_current.before.py.txt'),'exec'),{"
+    },
+    {
+      "before": "def main():",
+      "after": "\ndef render_namespace_grammar(text):\n edits=[('def mask(body):\\n for field,value in ((\\'LEN\\',b\\'<MANIFEST_LENGTH>\\'),(\\'SHA\\',b\\'<MANIFEST_SHA256>\\')):\\n  pattern=(rb\\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\\' if field==\\'LEN\\' else rb\\'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";\\')\\n  body,n=re.subn(pattern,value,body);require(n==1,\\'nonunique namespace pin \\'+field)\\n return body', 'def original_mask(body):\\n for field,value in ((\\'LEN\\',b\\'<MANIFEST_LENGTH>\\'),(\\'SHA\\',b\\'<MANIFEST_SHA256>\\')):\\n  pattern=(rb\\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\\' if field==\\'LEN\\' else rb\\'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";\\')\\n  body,n=re.subn(pattern,value,body);require(n==1,\\'nonunique namespace pin \\'+field)\\n return body\\n\\ndef mask(body):\\n for field,value in ((\\'LEN\\',b\\'<MANIFEST_LENGTH>\\'),(\\'SHA\\',b\\'<MANIFEST_SHA256>\\')):\\n  pattern=(rb\\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\\' if field==\\'LEN\\' else rb\\'const MAIN090_MANIFEST_SHA: &str =(?: |\\\\n    )\"[0-9a-f]{64}\";\\')\\n  body,n=re.subn(pattern,value,body);require(n==1,\\'nonunique namespace pin \\'+field)\\n return body'), (\"source=current(d['module']);require(sha(mask(source))==d['masked_module_sha256'],'namespace body changed beyond two pins')\", \"source=current(d['module']);prior_source=current('docs/evidence/fmt-a110/QVrrvI1QE586vYpZYgkccKu1C-fpfJ47fkN9k0OI4aA.txt');require(len(prior_source)==48349 and sha(prior_source)=='415aebbc8d50139f3abd8a5962091c70abb50be7e97c9e3b7e437d934388e1a0','whole preformat namespace drift');require(sha(original_mask(prior_source))==d['masked_module_sha256'],'original namespace body changed beyond two pins');require(len(source)==49376 and sha(source)=='eb6e0d21b291f6bd5c00455b7bc216dbf3781306f0f7db91b834a4db087020f1' and sha(mask(source))=='a868811ff2c52242c23e6272c420c9298b1d28e3d68a0f3609173152bd51c529','exact formatted namespace drift')\"), ('require((\\'const MAIN090_MANIFEST_LEN: usize = \\'+str(len(before))+\\';\\').encode() in source and (\\'const MAIN090_MANIFEST_SHA: &str = \"\\'+sha(before)+\\'\";\\').encode() in source,\\'old module pins do not authenticate template\\')', 'require((\\'const MAIN090_MANIFEST_LEN: usize = \\'+str(len(before))+\\';\\').encode() in source and ((\\'const MAIN090_MANIFEST_SHA: &str = \"\\'+sha(before)+\\'\";\\').encode() in source or (\\'const MAIN090_MANIFEST_SHA: &str =\\\\n    \"\\'+sha(before)+\\'\";\\').encode() in source),\\'old module pins do not authenticate template\\')'), ('updated,n=re.subn(rb\\'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";\\'', 'updated,n=re.subn(rb\\'const MAIN090_MANIFEST_SHA: &str =(?: |\\\\n    )\"[0-9a-f]{64}\";\\''), ('(\\'const MAIN090_MANIFEST_SHA: &str = \"\\'+sha(after)+\\'\";\\').encode()', '(\\'const MAIN090_MANIFEST_SHA: &str =\\'+(\\'\\\\n    \\' if b\\'const MAIN090_MANIFEST_SHA: &str =\\\\n    \\' in source else \\' \\')+\\'\"\\'+sha(after)+\\'\";\\').encode()')]\n original=text\n for before,after in edits:\n  assert text.count(before)==1,(before,text.count(before));text=text.replace(before,after,1)\n restored=text\n for before,after in reversed(edits):assert restored.count(after)==1;restored=restored.replace(after,before,1)\n assert restored==original\n return text\n\ndef main():"
+    }
+  ],
+  "binder_render_edits": [
+    {
+      "before": "def mask(body):\n for field,value in (('LEN',b'<MANIFEST_LENGTH>'),('SHA',b'<MANIFEST_SHA256>')):\n  pattern=(rb'const MAIN090_MANIFEST_LEN: usize = [0-9]+;' if field=='LEN' else rb'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";')\n  body,n=re.subn(pattern,value,body);require(n==1,'nonunique namespace pin '+field)\n return body",
+      "after": "def original_mask(body):\n for field,value in (('LEN',b'<MANIFEST_LENGTH>'),('SHA',b'<MANIFEST_SHA256>')):\n  pattern=(rb'const MAIN090_MANIFEST_LEN: usize = [0-9]+;' if field=='LEN' else rb'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";')\n  body,n=re.subn(pattern,value,body);require(n==1,'nonunique namespace pin '+field)\n return body\n\ndef mask(body):\n for field,value in (('LEN',b'<MANIFEST_LENGTH>'),('SHA',b'<MANIFEST_SHA256>')):\n  pattern=(rb'const MAIN090_MANIFEST_LEN: usize = [0-9]+;' if field=='LEN' else rb'const MAIN090_MANIFEST_SHA: &str =(?: |\\n    )\"[0-9a-f]{64}\";')\n  body,n=re.subn(pattern,value,body);require(n==1,'nonunique namespace pin '+field)\n return body"
+    },
+    {
+      "before": "source=current(d['module']);require(sha(mask(source))==d['masked_module_sha256'],'namespace body changed beyond two pins')",
+      "after": "source=current(d['module']);prior_source=current('docs/evidence/fmt-a110/QVrrvI1QE586vYpZYgkccKu1C-fpfJ47fkN9k0OI4aA.txt');require(len(prior_source)==48349 and sha(prior_source)=='415aebbc8d50139f3abd8a5962091c70abb50be7e97c9e3b7e437d934388e1a0','whole preformat namespace drift');require(sha(original_mask(prior_source))==d['masked_module_sha256'],'original namespace body changed beyond two pins');require(len(source)==49376 and sha(source)=='eb6e0d21b291f6bd5c00455b7bc216dbf3781306f0f7db91b834a4db087020f1' and sha(mask(source))=='a868811ff2c52242c23e6272c420c9298b1d28e3d68a0f3609173152bd51c529','exact formatted namespace drift')"
+    },
+    {
+      "before": "require(('const MAIN090_MANIFEST_LEN: usize = '+str(len(before))+';').encode() in source and ('const MAIN090_MANIFEST_SHA: &str = \"'+sha(before)+'\";').encode() in source,'old module pins do not authenticate template')",
+      "after": "require(('const MAIN090_MANIFEST_LEN: usize = '+str(len(before))+';').encode() in source and (('const MAIN090_MANIFEST_SHA: &str = \"'+sha(before)+'\";').encode() in source or ('const MAIN090_MANIFEST_SHA: &str =\\n    \"'+sha(before)+'\";').encode() in source),'old module pins do not authenticate template')"
+    },
+    {
+      "before": "updated,n=re.subn(rb'const MAIN090_MANIFEST_SHA: &str = \"[0-9a-f]{64}\";'",
+      "after": "updated,n=re.subn(rb'const MAIN090_MANIFEST_SHA: &str =(?: |\\n    )\"[0-9a-f]{64}\";'"
+    },
+    {
+      "before": "('const MAIN090_MANIFEST_SHA: &str = \"'+sha(after)+'\";').encode()",
+      "after": "('const MAIN090_MANIFEST_SHA: &str ='+('\\n    ' if b'const MAIN090_MANIFEST_SHA: &str =\\n    ' in source else ' ')+'\"'+sha(after)+'\";').encode()"
+    }
+  ],
+  "source_regressions": [
+    "original positive",
+    "original missing refused",
+    "original duplicate refused",
+    "original body drift refused",
+    "formatted positive",
+    "formatted missing refused",
+    "formatted duplicate refused",
+    "formatted body drift refused"
+  ],
+  "original_archive": "docs/evidence/fmt-a110/QVrrvI1QE586vYpZYgkccKu1C-fpfJ47fkN9k0OI4aA.txt",
+  "formatted_source_sha256": "eb6e0d21b291f6bd5c00455b7bc216dbf3781306f0f7db91b834a4db087020f1"
+}

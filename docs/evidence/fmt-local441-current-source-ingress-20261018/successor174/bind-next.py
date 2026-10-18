@@ -80,13 +80,24 @@ def render_raw_guard_successor(text):
  assert rendered.replace(NEW_RAW_GUARD,OLD_RAW_GUARD,1)==text
  return rendered
 
+
+def render_namespace_grammar(text):
+ edits=[('def mask(body):\n for field,value in ((\'LEN\',b\'<MANIFEST_LENGTH>\'),(\'SHA\',b\'<MANIFEST_SHA256>\')):\n  pattern=(rb\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\' if field==\'LEN\' else rb\'const MAIN090_MANIFEST_SHA: &str = "[0-9a-f]{64}";\')\n  body,n=re.subn(pattern,value,body);require(n==1,\'nonunique namespace pin \'+field)\n return body', 'def original_mask(body):\n for field,value in ((\'LEN\',b\'<MANIFEST_LENGTH>\'),(\'SHA\',b\'<MANIFEST_SHA256>\')):\n  pattern=(rb\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\' if field==\'LEN\' else rb\'const MAIN090_MANIFEST_SHA: &str = "[0-9a-f]{64}";\')\n  body,n=re.subn(pattern,value,body);require(n==1,\'nonunique namespace pin \'+field)\n return body\n\ndef mask(body):\n for field,value in ((\'LEN\',b\'<MANIFEST_LENGTH>\'),(\'SHA\',b\'<MANIFEST_SHA256>\')):\n  pattern=(rb\'const MAIN090_MANIFEST_LEN: usize = [0-9]+;\' if field==\'LEN\' else rb\'const MAIN090_MANIFEST_SHA: &str =(?: |\\n    )"[0-9a-f]{64}";\')\n  body,n=re.subn(pattern,value,body);require(n==1,\'nonunique namespace pin \'+field)\n return body'), ("source=current(d['module']);require(sha(mask(source))==d['masked_module_sha256'],'namespace body changed beyond two pins')", "source=current(d['module']);prior_source=current('docs/evidence/fmt-a110/QVrrvI1QE586vYpZYgkccKu1C-fpfJ47fkN9k0OI4aA.txt');require(len(prior_source)==48349 and sha(prior_source)=='415aebbc8d50139f3abd8a5962091c70abb50be7e97c9e3b7e437d934388e1a0','whole preformat namespace drift');require(sha(original_mask(prior_source))==d['masked_module_sha256'],'original namespace body changed beyond two pins');require(len(source)==49376 and sha(source)=='eb6e0d21b291f6bd5c00455b7bc216dbf3781306f0f7db91b834a4db087020f1' and sha(mask(source))=='a868811ff2c52242c23e6272c420c9298b1d28e3d68a0f3609173152bd51c529','exact formatted namespace drift')"), ('require((\'const MAIN090_MANIFEST_LEN: usize = \'+str(len(before))+\';\').encode() in source and (\'const MAIN090_MANIFEST_SHA: &str = "\'+sha(before)+\'";\').encode() in source,\'old module pins do not authenticate template\')', 'require((\'const MAIN090_MANIFEST_LEN: usize = \'+str(len(before))+\';\').encode() in source and ((\'const MAIN090_MANIFEST_SHA: &str = "\'+sha(before)+\'";\').encode() in source or (\'const MAIN090_MANIFEST_SHA: &str =\\n    "\'+sha(before)+\'";\').encode() in source),\'old module pins do not authenticate template\')'), ('updated,n=re.subn(rb\'const MAIN090_MANIFEST_SHA: &str = "[0-9a-f]{64}";\'', 'updated,n=re.subn(rb\'const MAIN090_MANIFEST_SHA: &str =(?: |\\n    )"[0-9a-f]{64}";\''), ('(\'const MAIN090_MANIFEST_SHA: &str = "\'+sha(after)+\'";\').encode()', '(\'const MAIN090_MANIFEST_SHA: &str =\'+(\'\\n    \' if b\'const MAIN090_MANIFEST_SHA: &str =\\n    \' in source else \' \')+\'"\'+sha(after)+\'";\').encode()')]
+ original=text
+ for before,after in edits:
+  assert text.count(before)==1,(before,text.count(before));text=text.replace(before,after,1)
+ restored=text
+ for before,after in reversed(edits):assert restored.count(after)==1;restored=restored.replace(after,before,1)
+ assert restored==original
+ return text
+
 def main():
  raw=held(D/'bind_current.before.py.txt',BINDER_LEN,BINDER_SHA)
  held(D/'input-domains.before.json',BEFORE_LEN,BEFORE_SHA)
  # Complete original CLI, root FD reader, descriptor, namespace mask, old
  # template, raw3 parser, 174 Git acquisitions, race rechecks, O_EXCL archive,
  # staging and publication run from authenticated held code without reopen.
- exec(compile(render(raw),str(D/ 'bind_current.before.py.txt'),'exec'),{
+ exec(compile(render_namespace_grammar(render(raw)),str(D/ 'bind_current.before.py.txt'),'exec'),{
   '__name__':'__main__','__file__':str(D/'bind_current.before.py.txt'),
   'NEXT_REL':REL,'NEXT_BEFORE_LEN':BEFORE_LEN,'NEXT_BEFORE_SHA':BEFORE_SHA,
   'next_guard_physical':guard_physical,
