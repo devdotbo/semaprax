@@ -22,6 +22,15 @@ src/source_verify/iterative/while_rules/before_nested.rs
 src/cleanup_plan/replay/branch_clone.rs
 src/cleanup_plan/replay/branch_clone/tests.rs
 src/cleanup_plan/replay/factored/canonical_shared.rs
+src/cleanup_plan/replay/factored/before_inline_singleton.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs
+src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs
 src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs

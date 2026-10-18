@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 20712,
-      "sha256": "4f9c140083625e08eae643deb36ffc91272c1a23b8fa8f79fbbb737756bf7903"
+      "length": 22089,
+      "sha256": "5bece0186359c6198d7a9e74fd74134d434c5fd62a3c2208210f37a1b080f7da"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 42598,
@@ -153,8 +153,8 @@
       "sha256": "28b86f8c94762f6404aaf048c91c48b41a5ebcdb9951433a35e7da495a56e0c0"
     },
     "src/source_reflows_merge/main_e177_final_inputs.rs": {
-      "length": 113387,
-      "sha256": "e5bba8ed4ce2c5ce0a75c53b5ecbef76e4bc260a266ef88a03f52dafc467a328"
+      "length": 112941,
+      "sha256": "f54de13e43dac66731594a43b9f8320524beb975ab6ee75505f5510233d0b8f3"
     },
     "src/source_reflows_merge/main_e177_inputs.rs": {
       "length": 38749,
@@ -233,8 +233,8 @@
       "sha256": "db06143a7a46c5030fc813b49a7ca7be73a1f9d619a13bb14a198799a5c7c1d8"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs": {
-      "length": 26587,
-      "sha256": "4bfecd5cc338ed82e82fe87904011fcfe6f654d6cb4c024beb8b2681d36729cf"
+      "length": 30030,
+      "sha256": "b139d4bd10fa8244c90a0f8aea56f159771fc2959b0589e1c076682daa69e00a"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs": {
       "length": 18307,
@@ -285,12 +285,12 @@
       "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs": {
-      "length": 13841,
-      "sha256": "7dbd445bd9cc718886d8d99c2811c47f6fedb94815f4ab3f34b02bf8f844d794"
+      "length": 14230,
+      "sha256": "cf871a10ee1e484abfa4b2fbbb1ccf0e170a88a6cd194bc7f91658688897bdaa"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs": {
-      "length": 8342,
-      "sha256": "23f5976983b19e2fd4efff6c2084796208767648e44081543b1a892c1852da8c"
+      "length": 8334,
+      "sha256": "8018932bbd3f51ce2f5e174f75a1803f4b7d59aeadbf008d069d12415ab20a43"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs": {
       "length": 8726,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 8951,
-      "sha256": "f960427eaa572185b7038ad4d9727386bcf54914b3c1a25c9ab98310ce06fb87"
+      "length": 13244,
+      "sha256": "a97051bce913bc2c0ad44e11f62797917f3bf6ce5a09f9208e9edb323b9e2cb2"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 29080,
-      "sha256": "e60f7e92bdab6588cfb2668dca13176687b8986a541034088f9e6d12d3144edc"
+      "length": 47374,
+      "sha256": "77929dc8f15860369b74de3601b14aaccaf95ba19ac23fa1cc14e67d35582569"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -401,8 +401,8 @@
       "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs": {
-      "length": 79199,
-      "sha256": "67e1f9a774b7ff05cd0f4efe6050ee652bf6e34079d10fc2e26351f860214f45"
+      "length": 79447,
+      "sha256": "e920a1dd63770419dd6bb5459cfbfd7bd5f72c7e594b6c6c0e6ecd337a5dc739"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs": {
       "length": 4051,
@@ -445,8 +445,8 @@
       "sha256": "26d0f4158e54651b19cadf39d6f0328e324580c80f8a786b897e38fd2d9e1e5f"
     },
     "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs": {
-      "length": 14629,
-      "sha256": "b8dd57bc7ee5c8a86da2827651d522df67326154683116e7cb3a799f8d6f8ffe"
+      "length": 14622,
+      "sha256": "10be00da2454f5e254447855c8150f96a237ec88d9ad2fa419b137ac10584caf"
     },
     "src/cleanup_plan/replay/lexical_replay.rs": {
       "length": 16313,
@@ -505,8 +505,8 @@
       "sha256": "d0a1faed7d1d9a2d17b8b7983aa6fdc75f95f7636724cadb6bc4433a717e1e7e"
     },
     "src/cleanup_plan/replay/path_join/selected/renewal.rs": {
-      "length": 30585,
-      "sha256": "fda02c011ce59880bc77106f5fd6febb1bc1a067e55594050919fdb1c45a8c46"
+      "length": 31040,
+      "sha256": "ad4e3a0b28775c41b5da5a0573f5064925caaa0ee92addfcfcee212a731614c6"
     },
     "src/cleanup_plan/replay/path_join/selected/strings.rs": {
       "length": 9410,
@@ -585,8 +585,8 @@
       "sha256": "4675bbabcac1a5ea20f670baad75c6e9330b969ab9afeff216c997b0da92cd41"
     },
     "src/cleanup_plan/replay/schema/selected_paid.rs": {
-      "length": 12766,
-      "sha256": "8e4b827eea71136055136a71905e404c5e67abeb0861c334b65d9dae54e7c258"
+      "length": 12912,
+      "sha256": "ef75367f8fc45dff9d85ae572646181fb9a4faf3e16807eb98a9eaf6bc61c8e5"
     },
     "src/cleanup_plan/replay/schema/selected_paid/tests.rs": {
       "length": 5321,
@@ -613,8 +613,8 @@
       "sha256": "e8fea2f8bff5c0edcac9e196e3eb685ea234337c46256723f8461c2b0a744816"
     },
     "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs": {
-      "length": 3717,
-      "sha256": "3603f5406dde3c49801b90f9fea461b4ada975138bd720922c54a7b70f6cc7c0"
+      "length": 3710,
+      "sha256": "853bec2328abebbbbcac3d5096a3b48705c4c099ad1d4c3d6ee252aa28d1955b"
     },
     "src/cleanup_plan/replay/selected_profile/paid_children.rs": {
       "length": 1747,
@@ -713,16 +713,16 @@
       "sha256": "63e1be7b4114be13c261bd19e9a4b673c17cb2a36ea003e89b0ca88198feccfd"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs": {
-      "length": 10853,
-      "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36"
+      "length": 10839,
+      "sha256": "2aa84bda96497c790ebf5a15f295b60f3bdc3d79dd96fd2be0fe4e1930444420"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs": {
       "length": 7359,
       "sha256": "441a074c30cbea0a8fe1d04be162503eb460f43cfdce9fc5ee7979ba60de1836"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs": {
-      "length": 76645,
-      "sha256": "b175076b23d77341e790c2780a1d9925063dec0728076cdea53babc261921a97"
+      "length": 76901,
+      "sha256": "e10b27ba0620c915d5434bd63a8205cd2ebfa6240dc57703fbb26eed9383b986"
     },
     "src/cleanup_plan/replay/ordinary_receiving.rs": {
       "length": 17897,
@@ -749,12 +749,56 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 40174,
-      "sha256": "01a981ff5f03524b15e85a45ce111424d92209b49119b93a372ae0da8b219e31"
+      "length": 56048,
+      "sha256": "bc83f9b0ae57872d13c99080d299ea63b87b4b1992f2d27ade936ff773c0d70c"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
       "sha256": "a5842cc2765416ddd9816e9dd682c511c726308c828431146325e72adb30ada8"
+    },
+    "src/cleanup_plan/replay/factored/before_inline_singleton.rs": {
+      "length": 5781,
+      "sha256": "8810bad4566b3c46b2b3d0b4a7c55679137fd4b82ccf6c975cd59d5271652b1d"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs": {
+      "length": 55495,
+      "sha256": "068fa704132ce75b590289c2ffc2cd10ff680eabd35322f818cb9c905e109df3"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs": {
+      "length": 2405,
+      "sha256": "854e83fcf9ab37726e8927c37bc1f30301f320b7afd50390579ebf7e4fb6c712"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs": {
+      "length": 3466,
+      "sha256": "55a0223985cfa2be898ef1851ae0cd8a2069e6d5db1ec0419c0ff8b2c8457f9e"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs": {
+      "length": 30857,
+      "sha256": "d1c2b6e3fe7b8b43a3c5a66997df775d452d3b584b5fe48e5a7c0d037697cb7f"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs": {
+      "length": 24138,
+      "sha256": "38812131a9425e921880c95f47dfc4df3f6413e220620da0597887281c5b9acf"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs": {
+      "length": 5325,
+      "sha256": "b20fa6833b1d03a2b28fd78b4dbc5be9eb31125dc1616295ab4de1de98570073"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs": {
+      "length": 8316,
+      "sha256": "f1f9d9a57cf518ab4edce3abf5c186c29677a843e0c4fee422e91999ce5c7d98"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs": {
+      "length": 29964,
+      "sha256": "cd1b3b61da3557d31ec25907f10cfdb745b440b093a3e8e687d0d62671678044"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
+      "length": 20725,
+      "sha256": "beda989c9b6d6d541001218d2b031cb0d5dce8400cd1a138a74de12b9c0449cc"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
+      "length": 4568,
+      "sha256": "ffb43c47fdb3be64999d5b19535e6d35d687d27dfad14795470f20abe7b6673c"
     }
   },
   "carriers": {
@@ -801,8 +845,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 54800,
-    "sha256": "0227d9e2079821b6ccbc6fdbc657cbef8c27e8a7a1979482c66d8a3ed442bc5f",
+    "length": 55725,
+    "sha256": "9f1be3bc2c6855447751d87241db805285db89bd0540fad6e7ae82e1a84b49a8",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3184,9 +3228,45 @@
       {
         "at": 955,
         "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs"
+      },
+      {
+        "at": 24,
+        "path": "src/cleanup_plan/replay/factored/before_inline_singleton.rs"
+      },
+      {
+        "at": 25,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs"
+      },
+      {
+        "at": 26,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs"
+      },
+      {
+        "at": 27,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs"
+      },
+      {
+        "at": 28,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs"
+      },
+      {
+        "at": 29,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs"
+      },
+      {
+        "at": 30,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs"
+      },
+      {
+        "at": 31,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs"
+      },
+      {
+        "at": 32,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs"
       }
     ],
-    "rows": 1020
+    "rows": 1031
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -3767,7 +3847,18 @@
     "src/literal_format/funded_receiving.rs",
     "src/source_reflows_merge/main_e177_overlay_v2.rs",
     "src/string_ops/conditions/funded_receiving.rs",
-    "src/hir/ids/declaration_backing_tests.rs"
+    "src/hir/ids/declaration_backing_tests.rs",
+    "src/cleanup_plan/replay/factored/before_inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",
