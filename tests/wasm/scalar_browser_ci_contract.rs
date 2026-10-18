@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "Independent historical browser receivers retain their complete original module trees."
+)]
 use std::fs;
 use std::path::Path;
 

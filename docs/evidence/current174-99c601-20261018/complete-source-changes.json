@@ -1,0 +1,41 @@
+[
+  {
+    "source": "src/source_reflows/incoming090_semantic_receivers.rs",
+    "before": {
+      "length": 49904,
+      "sha256": "2ca41068fe4747b2d658c1df515ad89f94a764f016eca406f80bb8b322b2300f",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/2ca41068fe4747b2d658c1df515ad89f94a764f016eca406f80bb8b322b2300f.txt"
+    },
+    "current": {
+      "length": 49904,
+      "sha256": "3c3ac6c9bf889cf4eb7bf390992629b700c6c0ca81b0e463e01102ac78c8cf08",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/3c3ac6c9bf889cf4eb7bf390992629b700c6c0ca81b0e463e01102ac78c8cf08.txt"
+    }
+  },
+  {
+    "source": "docs/evidence/main09013-source-namespaces-v1/input-domains.json",
+    "before": {
+      "length": 241196,
+      "sha256": "573683a1a02879f8f4516166bade70c680f8c676092697d63666ebc03eeb0fe3",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/573683a1a02879f8f4516166bade70c680f8c676092697d63666ebc03eeb0fe3.txt"
+    },
+    "current": {
+      "length": 241196,
+      "sha256": "5424906d9d7b6515bbe1ea9c380926b6e8d004f840e806b05410bfcceae7fbf6",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/5424906d9d7b6515bbe1ea9c380926b6e8d004f840e806b05410bfcceae7fbf6.txt"
+    }
+  },
+  {
+    "source": "tests/wasm/scalar_browser_ci_contract.rs",
+    "before": {
+      "length": 10421,
+      "sha256": "3dc052f7e5d30b4428738b5611f1c698c1612b5b5b3c1507a16a46b5e3d2ee1a",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/3dc052f7e5d30b4428738b5611f1c698c1612b5b5b3c1507a16a46b5e3d2ee1a.txt"
+    },
+    "current": {
+      "length": 10562,
+      "sha256": "569332cbdaa6bafdcf23e8a7dbdd2feb3e285dca997764da0e199167567cc244",
+      "archive": "docs/evidence/current174-99c601-20261018/whole/569332cbdaa6bafdcf23e8a7dbdd2feb3e285dca997764da0e199167567cc244.txt"
+    }
+  }
+]
