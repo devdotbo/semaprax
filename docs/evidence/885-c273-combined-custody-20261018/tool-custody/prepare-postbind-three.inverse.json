@@ -1,0 +1,14 @@
+{
+  "before_sha256": "2b8a91b6a83fa8b4262cc43b9fcc37c9e64c651225ba914968bde6a0e386fb25",
+  "after_sha256": "421ccb506562067ad0711b4f1cee80c7d7452e2f7539ef21d2453e198b0fd32f",
+  "edits": [
+    {
+      "before": "expected={'src/source_reflows/incoming090_semantic_receivers.rs','src/source_reflows_merge/ordinary_plan_inputs.rs'}",
+      "after": "expected={'src/source_reflows/incoming090_semantic_receivers.rs','src/source_reflows_merge/ordinary_plan_inputs.rs','docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv'}"
+    },
+    {
+      "before": "ext=E(e);assert len(ext)<=262144;out[EXT]=ext",
+      "after": "# Reapply only exact named predecessor pins required by the existing protocol.\nlocal=json.loads(git(e['whole_local133']['archive']))\nfor tag,whole in [('whole-fmt433-current',base),('whole-local133-current',local)]:\n for oldrow in whole['rows']:\n  row=by[oldrow['source']]\n  if row['current']!=oldrow['current']:\n   pin=dict(name=tag,**oldrow['current'])\n   if pin not in row['views']:row['views'].append(pin)\next=E(e);assert len(ext)<=262144;out[EXT]=ext"
+    }
+  ]
+}
