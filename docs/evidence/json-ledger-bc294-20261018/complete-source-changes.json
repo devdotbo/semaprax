@@ -1,0 +1,54 @@
+[
+  {
+    "source": "src/bounded_output/stage_debits/route_debits.rs",
+    "before": {
+      "length": 35701,
+      "sha256": "b125788670ff005f7e6c52453fd573985b3fbc227058f06a5893a84655e7e398",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/b125788670ff005f7e6c52453fd573985b3fbc227058f06a5893a84655e7e398.txt"
+    },
+    "current": {
+      "length": 35723,
+      "sha256": "75f6a22077bc3e016095caaba6ddbed8ce6b10453278bded8ea844ed4d99b235",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/75f6a22077bc3e016095caaba6ddbed8ce6b10453278bded8ea844ed4d99b235.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+    "before": {
+      "length": 24375,
+      "sha256": "a9f7d901f1d99e24b4a39dd06aea14343e15282a8a6c207f8553ada4b591e98a",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/a9f7d901f1d99e24b4a39dd06aea14343e15282a8a6c207f8553ada4b591e98a.txt"
+    },
+    "current": {
+      "length": 24582,
+      "sha256": "121fab1aa22d4444c547cffd1930efa21c3365c122526ef921cd75b658cf2550",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/121fab1aa22d4444c547cffd1930efa21c3365c122526ef921cd75b658cf2550.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+    "before": {
+      "length": 4572,
+      "sha256": "681862fd9daa0a77d3f100d03dcb1432733a599b132c594b44ed800ed9cd125e",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/681862fd9daa0a77d3f100d03dcb1432733a599b132c594b44ed800ed9cd125e.txt"
+    },
+    "current": {
+      "length": 4758,
+      "sha256": "9f5353e7e199653bff6ae92f3ec91ec98eb5736667094129b77b2014114b5367",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/9f5353e7e199653bff6ae92f3ec91ec98eb5736667094129b77b2014114b5367.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 579219,
+      "sha256": "5efd678e5b3b01a6aedd753bcbee29a711e994dcaa9ab8503782f381de69713a",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/5efd678e5b3b01a6aedd753bcbee29a711e994dcaa9ab8503782f381de69713a.txt"
+    },
+    "current": {
+      "length": 579531,
+      "sha256": "43dc43dc5e935dc2bca2c8fdc8d47e1895709ef34d269721ca422a1df1f5b7e3",
+      "archive": "docs/evidence/json-ledger-bc294-20261018/whole/43dc43dc5e935dc2bca2c8fdc8d47e1895709ef34d269721ca422a1df1f5b7e3.txt"
+    }
+  }
+]

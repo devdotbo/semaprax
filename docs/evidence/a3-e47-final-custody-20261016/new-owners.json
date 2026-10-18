@@ -36,8 +36,8 @@
   },
   {
     "source": "src/bounded_output/stage_debits/route_debits.rs",
-    "sha256": "b125788670ff005f7e6c52453fd573985b3fbc227058f06a5893a84655e7e398",
-    "lines": 920
+    "sha256": "75f6a22077bc3e016095caaba6ddbed8ce6b10453278bded8ea844ed4d99b235",
+    "lines": 921
   },
   {
     "source": "src/cleanup/inventory_builder/typed.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "4bf7f8e78fdfb4f163b98f9f23b39b3f3b729ccd47a1be7506e67068aff12351",
+    "sha256": "a408eae4aa848f7a6d0da2f93ab3305b3d7b7aacb4c25013263b52f5a238c938",
     "lines": 970
   },
   {

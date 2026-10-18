@@ -1,6 +1,7 @@
 //! Private diagnostic attribution, enabled only by the existing codec witness.
 //! Fixed-capacity backing is prepared before observation; it grants no compiler credit.
 use std::cell::{Cell, RefCell};
+mod json_codec_probe;
 const ROWS: usize = 1024;
 const ID_BYTES: usize = 256;
 const ROUTES: usize = 3;

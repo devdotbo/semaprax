@@ -1,0 +1,19 @@
+{
+  "base_head": "bc2944556b2ec6be1b3df19bf28cfe95b0a8fbb8",
+  "logical_changed": [
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "new_test_only_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+    "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs"
+  ],
+  "new_workflow": ".github/workflows/json-ledger-diagnostic.yml",
+  "workflow_manual_only": true,
+  "all_original_native_and_main_CI_gates_and_fixture_inputs_unchanged": true,
+  "no_runtime_compiler_or_tariff_change": true,
+  "no_observer_capacity_or_budget_change": true,
+  "all_23_source_tests_passed": true,
+  "opaque_signature_typecheck_not_real_compiler_execution": true,
+  "actual_hosted_measurement_still_required": true
+}

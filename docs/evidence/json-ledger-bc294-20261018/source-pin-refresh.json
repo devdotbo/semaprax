@@ -1,0 +1,49 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "bc2944556b2ec6be1b3df19bf28cfe95b0a8fbb8",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "3598027eab92d292bb4c6f9bb957587ef45514e8a08b1aaaad6aa6d7c7fe3563",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/3598027eab92d292bb4c6f9bb957587ef45514e8a08b1aaaad6aa6d7c7fe3563.txt"
+  },
+  "before_config": {
+    "length": 136459,
+    "sha256": "ced72207d8aecdf1d42d199d99e9c94da0c68dd97f38ae0d35e6ee6d6409f3f2",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/ced72207d8aecdf1d42d199d99e9c94da0c68dd97f38ae0d35e6ee6d6409f3f2.txt"
+  },
+  "before_helper": {
+    "length": 41016,
+    "sha256": "4bf7f8e78fdfb4f163b98f9f23b39b3f3b729ccd47a1be7506e67068aff12351",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/4bf7f8e78fdfb4f163b98f9f23b39b3f3b729ccd47a1be7506e67068aff12351.txt"
+  },
+  "before_python_overlay": {
+    "length": 13523,
+    "sha256": "514d6370359f76d8a97f6ca1f9795f37a01a1ddcce025dd71204972f0215a2d8",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/514d6370359f76d8a97f6ca1f9795f37a01a1ddcce025dd71204972f0215a2d8.txt"
+  },
+  "before_policy": {
+    "length": 15876,
+    "sha256": "58fe6732d0c7a3d9f1f284cb6cff6d33f9ba8d153c7a0d9010962765e1947537",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/58fe6732d0c7a3d9f1f284cb6cff6d33f9ba8d153c7a0d9010962765e1947537.txt"
+  },
+  "before_page": {
+    "length": 177651,
+    "sha256": "23c231419a1bf4fc60bb25ff7af71983ab73c185ad9236f92f5d4942439808e6",
+    "archive": "docs/evidence/json-ledger-bc294-20261018/whole/23c231419a1bf4fc60bb25ff7af71983ab73c185ad9236f92f5d4942439808e6.txt"
+  },
+  "changed_sources": [
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "module_pins_refreshed": [
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 178152,
+  "policy_bytes": 15876,
+  "raw_owners": 342
+}

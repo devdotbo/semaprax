@@ -67,7 +67,11 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (4788, "    let advance = 2 * size_of::<&[usize]>()\n", "    let advance = 4 * size_of::<&mut Vec<usize>>()\n        + 2 * size_of::<Option<usize>>()\n        + 10 * size_of::<usize>()\n        + 6 * size_of::<bool>()\n"),
     (4447, "    let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();\n", "    let links = 4 * size_of::<&Vec<usize>>()\n        + 4 * size_of::<&[usize]>()\n        + 4 * size_of::<usize>()\n        + 3 * size_of::<bool>();\n"),
 ];
+mod json_ledger;
 pub(super) fn previous_route(current: &str) -> String {
+    previous_route_stage(&json_ledger::previous_route(current))
+}
+fn previous_route_stage(current: &str) -> String {
     restore(current, 35701, ROUTE)
 }
 #[rustfmt::skip]
@@ -256,8 +260,10 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../../../../../../../../bounded_output/stage_debits/route_debits.rs"),
-            previous_route,
+            &super::json_ledger::previous_route(include_str!(
+                "../../../../../../../../bounded_output/stage_debits/route_debits.rs"
+            )),
+            previous_route_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/pair-links-7e-20261018/before-route.rs.txt"

@@ -22,6 +22,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (50110, "            let repeating = std::iter::repeat(());\n            let mut driver: SharedUnitDriver = repeating.take(length);\n", "            let mut driver: SharedUnitDriver = std::iter::repeat(()).take(length);\n"),
 ];
 pub(super) fn previous_controls(current: &str) -> String {
+    previous_controls_stage(&super::json_ledger::previous_controls(current))
+}
+fn previous_controls_stage(current: &str) -> String {
     restore(current, 24375, CONTROLS)
 }
 #[rustfmt::skip]
@@ -98,8 +101,8 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../paired_links.rs"),
-            previous_controls,
+            &super::super::json_ledger::previous_controls(include_str!("../paired_links.rs")),
+            previous_controls_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/repeat-constructor-308-20261018/before-controls.rs.txt"

@@ -1,0 +1,55 @@
+{
+  "status": "SOURCE_AND_OPAQUE_SIGNATURE_CHECK_ONLY_NO_RUNTIME_QUALIFICATION",
+  "source_tests_passed": 23,
+  "original_tests_and_hostiles_preserved": true,
+  "unchanged_sources": [
+    {
+      "source": ".github/workflows/ci.yml",
+      "length": 184004,
+      "sha256": "2c8daec65bc9c622c7254232bc6c4b38f3170620f5d52670d25ebd46a6b7e803",
+      "unchanged": true
+    },
+    {
+      "source": "tests/native/string_settlement/codec_allocation.rs",
+      "length": 7357,
+      "sha256": "82b7368428178f592d1de52dd17b175b75b5dfd7ca1543dca9bacbdcb5dc7200",
+      "unchanged": true
+    },
+    {
+      "source": "tests/native/string_settlement/codec_allocation/string_vectors.rs",
+      "length": 15713,
+      "sha256": "8fc18b5920eb5f4a5c5d43c886f327b32e6f0ead6570d1640e43db0e5f0cfddb",
+      "unchanged": true
+    },
+    {
+      "source": "tests/native/string_settlement/bulk_utf8/semaprax.toml",
+      "length": 468,
+      "sha256": "8d709b827d4365bd85c5e41bfd8f6ea1aa89880f5af31e4e77a08f5deb812216",
+      "unchanged": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "length": 23894,
+      "sha256": "c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc",
+      "unchanged": true
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "length": 21368,
+      "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3",
+      "unchanged": true
+    }
+  ],
+  "source_memory": {
+    "compile": 187248,
+    "run": 2672
+  },
+  "opaque_signature_typecheck": {
+    "compile_only": 94256
+  },
+  "workflow_yaml_parse": {
+    "workflow_parse": 26080
+  },
+  "hosted_capture_not_yet_executed": true,
+  "derivation_allocation_native_backend_and_full_CI_still_required": true
+}
