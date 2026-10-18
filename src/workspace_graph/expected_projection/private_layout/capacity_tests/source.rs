@@ -1,10 +1,11 @@
 //! Complete preceding receiver and full source closure, without clipped interiors.
 #[test]
 fn complete_old_receiver_source_and_all_new_joined_sources_stay_exact() {
-    let rows: serde_json::Value = serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
-        crate::source_reflows_merge::ReceiverFixture::PrivateLayoutCapacity,
-    ))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::PrivateLayoutCapacity,
+        ))
+        .unwrap();
     let files = [
         (
             "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",

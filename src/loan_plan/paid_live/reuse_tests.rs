@@ -454,10 +454,11 @@ fn every_small_reused_pending_acquisition_frontier_keeps_the_first_receipt_throu
 
 #[test]
 fn complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remain_exact() {
-    let rows: serde_json::Value = serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
-        crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,
-    ))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,
+        ))
+        .unwrap();
     let inputs = [
         (
             include_str!("../paid_live.rs"),

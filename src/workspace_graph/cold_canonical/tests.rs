@@ -290,10 +290,11 @@ fn whole_cold_preflight_observes_same_cold_setup_reserved_peak_and_complete_drop
 
 #[test]
 fn complete_old_commented_formatter_preflight_sources_and_all_current_children_remain_exact() {
-    let packet: serde_json::Value = serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
-        crate::source_reflows_merge::ReceiverFixture::ColdCanonical,
-    ))
-    .unwrap();
+    let packet: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::ColdCanonical,
+        ))
+        .unwrap();
     for row in packet["owners"].as_array().unwrap() {
         let (mut current, original) = match row["source"].as_str().unwrap() {
             "src/format/comments.rs" => (include_str!("../../format/comments.rs").to_owned(), include_str!("../../../docs/evidence/canonical-comment-comparison-835/original/comments.rs")),

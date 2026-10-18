@@ -85,15 +85,13 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
         pair_custody::normalize("src/source_reflows_merge/runtime_json.rs", &embedded),
         common
     );
-    assert!(
-        std::panic::catch_unwind(|| {
-            pair_custody::normalize(
-                "src/source_reflows_merge/runtime_json.rs",
-                &(common.clone() + " "),
-            )
-        })
-        .is_err()
-    );
+    assert!(std::panic::catch_unwind(|| {
+        pair_custody::normalize(
+            "src/source_reflows_merge/runtime_json.rs",
+            &(common.clone() + " "),
+        )
+    })
+    .is_err());
     let path = std::env::temp_dir().join(format!(
         "semaprax-projection-json-{}-{}",
         std::process::id(),
@@ -377,22 +375,22 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
     for (fixture, expected_rows, source, current, before, after, whole_before) in [
         (ReceiverFixture::PaidLiveReuse, 3, "src/loan_plan/paid_live/reuse_tests.rs",
             include_str!("../../loan_plan/paid_live/reuse_tests.rs"),
-            "include_str!(\n        \"../../../docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,\n    )", [216, 109, 245, 106, 145, 100, 59, 79, 208, 189, 243, 178, 186, 250, 188, 116, 114, 193, 253, 203, 236, 111, 186, 54, 140, 212, 192, 81, 111, 43, 75, 79]),
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json\"\n    ))\n    .unwrap();", "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,\n        ))\n        .unwrap();", [216, 109, 245, 106, 145, 100, 59, 79, 208, 189, 243, 178, 186, 250, 188, 116, 114, 193, 253, 203, 236, 111, 186, 54, 140, 212, 192, 81, 111, 43, 75, 79]),
         (ReceiverFixture::LexicalOperands, 14, "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs",
             include_str!("../../cleanup_plan/replay/lexical_replay/operand_tests/source.rs"),
-            "include_str!(\n        \"../../../../../docs/evidence/ordinary-lexical-return-operands-832/exact-source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::LexicalOperands,\n    )", [87, 95, 116, 97, 251, 102, 36, 248, 223, 223, 30, 213, 17, 203, 173, 225, 34, 122, 71, 53, 138, 189, 8, 88, 117, 83, 150, 217, 73, 226, 147, 27]),
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../../../docs/evidence/ordinary-lexical-return-operands-832/exact-source-inverses.json\"\n    )).unwrap();", "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::LexicalOperands,\n        ))\n        .unwrap();", [87, 95, 116, 97, 251, 102, 36, 248, 223, 223, 30, 213, 17, 203, 173, 225, 34, 122, 71, 53, 138, 189, 8, 88, 117, 83, 150, 217, 73, 226, 147, 27]),
         (ReceiverFixture::PrivateLayoutCapacity, 9, "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs",
             include_str!("../../workspace_graph/expected_projection/private_layout/capacity_tests/source.rs"),
-            "include_str!(\n        \"../../../../../docs/evidence/private-layout-entry-capacity-834/exact-source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::PrivateLayoutCapacity,\n    )", [203, 76, 112, 158, 205, 13, 137, 102, 236, 3, 201, 204, 157, 102, 100, 104, 24, 40, 97, 222, 216, 203, 12, 134, 14, 210, 12, 53, 48, 0, 100, 226]),
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../../../docs/evidence/private-layout-entry-capacity-834/exact-source-inverses.json\"\n    ))\n    .unwrap();", "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::PrivateLayoutCapacity,\n        ))\n        .unwrap();", [203, 76, 112, 158, 205, 13, 137, 102, 236, 3, 201, 204, 157, 102, 100, 104, 24, 40, 97, 222, 216, 203, 12, 134, 14, 210, 12, 53, 48, 0, 100, 226]),
         (ReceiverFixture::RegistryScratch, 5, "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs",
             include_str!("../../workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs"),
-            "include_str!(\n        \"../../../../../docs/evidence/registry-census-scratch-833/source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::RegistryScratch,\n    )", [11, 243, 168, 104, 18, 92, 93, 56, 30, 173, 59, 103, 18, 127, 98, 32, 133, 216, 251, 160, 155, 35, 134, 45, 182, 139, 218, 209, 60, 39, 30, 198]),
+            "    let packet: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../../../docs/evidence/registry-census-scratch-833/source-inverses.json\"\n    ))\n    .unwrap();", "    let packet: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::RegistryScratch,\n        ))\n        .unwrap();", [11, 243, 168, 104, 18, 92, 93, 56, 30, 173, 59, 103, 18, 127, 98, 32, 133, 216, 251, 160, 155, 35, 134, 45, 182, 139, 218, 209, 60, 39, 30, 198]),
         (ReceiverFixture::ColdCanonical, 3, "src/workspace_graph/cold_canonical/tests.rs",
             include_str!("../../workspace_graph/cold_canonical/tests.rs"),
-            "include_str!(\n        \"../../../docs/evidence/canonical-comment-comparison-835/source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::ColdCanonical,\n    )", [236, 194, 160, 122, 195, 102, 173, 234, 221, 201, 134, 197, 191, 28, 103, 96, 0, 233, 94, 201, 143, 93, 213, 38, 195, 124, 120, 246, 84, 6, 214, 44]),
+            "    let packet: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../docs/evidence/canonical-comment-comparison-835/source-inverses.json\"\n    ))\n    .unwrap();", "    let packet: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::ColdCanonical,\n        ))\n        .unwrap();", [236, 194, 160, 122, 195, 102, 173, 234, 221, 201, 134, 197, 191, 28, 103, 96, 0, 233, 94, 201, 143, 93, 213, 38, 195, 124, 120, 246, 84, 6, 214, 44]),
         (ReceiverFixture::BorrowedGeneric, 3, "src/workspace_graph/generic_type_import/borrowed_tests.rs",
             include_str!("../../workspace_graph/generic_type_import/borrowed_tests.rs"),
-            "include_str!(\n        \"../../../docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json\"\n    )", "&crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,\n    )", [211, 49, 200, 85, 196, 27, 40, 98, 133, 132, 189, 37, 118, 201, 60, 15, 114, 34, 110, 208, 123, 235, 28, 254, 37, 39, 46, 23, 138, 10, 155, 49]),
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json\"\n    ))\n    .unwrap();", "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,\n        ))\n        .unwrap();", [211, 49, 200, 85, 196, 27, 40, 98, 133, 132, 189, 37, 118, 201, 60, 15, 114, 34, 110, 208, 123, 235, 28, 254, 37, 39, 46, 23, 138, 10, 155, 49]),
     ] {
         let spec = fixture.spec();
         assert!(spec.length <= OUTPUT_CAP);
@@ -458,10 +456,16 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         ],
         "whole pre-six runtime reader facade"
     );
-    let original_tests = include_str!("tests.rs")
+    let mut original_tests = include_str!("tests.rs")
         .split_once("\n// RUNTIME848_SIX_PACKET_CONTROLS_BEGIN\n")
         .unwrap()
-        .0;
+        .0
+        .to_owned();
+    // Exact formatter-only inverse; preserve every complete preexisting assertion.
+    let formatted = "    assert!(std::panic::catch_unwind(|| {\n        pair_custody::normalize(\n            \"src/source_reflows_merge/runtime_json.rs\",\n            &(common.clone() + \" \"),\n        )\n    })\n    .is_err());\n";
+    let prior = "    assert!(\n        std::panic::catch_unwind(|| {\n            pair_custody::normalize(\n                \"src/source_reflows_merge/runtime_json.rs\",\n                &(common.clone() + \" \"),\n            )\n        })\n        .is_err()\n    );\n";
+    assert_eq!(original_tests.matches(formatted).count(), 1);
+    original_tests = original_tests.replacen(formatted, prior, 1);
     assert_eq!(
         digest(original_tests.as_bytes()),
         [
