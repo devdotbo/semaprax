@@ -1,0 +1,12 @@
+{
+  "argv": [
+    "python3",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018/docs/evidence/finite-source-overlay-v2-20261018/bind-final6-grammar.py",
+    "--repo",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018",
+    "--expected-head",
+    "5133f4b606d1a4e39a74e2880c3222dd8cc2840f",
+    "--write"
+  ],
+  "head": "5133f4b606d1a4e39a74e2880c3222dd8cc2840f"
+}
