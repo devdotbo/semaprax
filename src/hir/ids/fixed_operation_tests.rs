@@ -139,7 +139,18 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         ),
         "6a9bd6dfb76df8707e5cd21ddd4e0ec85b0248cfc1834645c14824d11d775b16",
     );
-    let current = current.as_str();
+    // Acquisition above authenticates the complete current compiled channel
+    // before selecting b00's whole pre-provider view. Only current contains
+    // the declared payload accessor: bind that exact reversible relationship,
+    // then run the original constructor/hook inverse on its genuine generation.
+    let retained_hook = "program\n        .functions()\n        .iter()\n        .any(|function| uses_function(function.payload()))";
+    assert_eq!(actual.matches(retained_hook).count(), 1);
+    assert_eq!(
+        actual.replacen(retained_hook, "program.functions().iter().any(uses_function)", 1),
+        current,
+        "whole current source differs from the authenticated b00 view only by the declared accessor hook"
+    );
+    let current = actual;
     let start = current.find("pub(crate) fn step_shape(").unwrap();
     let end = current.find("pub(crate) fn is_step_rest_field(").unwrap();
     // The later borrowed canonical-Step receiver is a separately qualified
