@@ -1,0 +1,1 @@
+{"status": "PURE_SOURCE_PASS_NOT_RUST_QUALIFIED", "head": "6f8b3c99c6c862a01918092d6e6c4755d8ce75eb", "checkpoint": "787d9810480209532fa645b8cb97f2585ce5f426", "negative_controls": 75, "original_legacy_checkpoint_restored": "BYTE_EXACT", "immutable_packets": "BYTE_EXACT_GIT787", "binder_main_executed": false, "Cargo": false, "Rust_tests": false, "runtime": "UNEXECUTED"}

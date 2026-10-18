@@ -1,0 +1,22 @@
+{
+  "before_sha256": "2923c38b4f93cc608c377473137d11961166a7e3a460254366b5e08a956be347",
+  "after_sha256": "02bf35713cd6fa4c097f1b3c37593e8b78c546d4fd20df5bddce21255654ed25",
+  "edits": [
+    {
+      "before": "/Volumes/Semaprax/worktrees/next-large-combined-20261017",
+      "after": "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018"
+    },
+    {
+      "before": "docs/evidence/mergef94-current519-174-20261018/successor174/bind-next.py",
+      "after": "docs/evidence/finite-overlay542-current174-20261018/successor174/bind-next.py"
+    },
+    {
+      "before": "assert h(current)=='5bd87c75b3742408c1f2643ec99278a10c70353d99c3072b85329241b1fe86d7'",
+      "after": "assert h(current)=='f4a8a6763d26560133b5e0c15a6aa68a5af81efb9332709752eb49f9fe53647a'"
+    },
+    {
+      "before": "sha(source)=='5bd87c75b3742408c1f2643ec99278a10c70353d99c3072b85329241b1fe86d7'",
+      "after": "sha(source)=='f4a8a6763d26560133b5e0c15a6aa68a5af81efb9332709752eb49f9fe53647a'"
+    }
+  ]
+}

@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "python3",
+    "/Volumes/Semaprax/provenance/bound-finite-overlay-893-20261018/check-final6-formatted.py",
+    "--expected-head",
+    "6f8b3c99c6c862a01918092d6e6c4755d8ce75eb",
+    "--output",
+    "/Volumes/Semaprax/provenance/bound-finite-overlay-893-20261018/finalF6qualifier.json"
+  ],
+  "head": "6f8b3c99c6c862a01918092d6e6c4755d8ce75eb"
+}

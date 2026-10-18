@@ -1,0 +1,58 @@
+{
+  "status": "SOURCE_ONLY_FINAL_BOUND_OVERLAY_AND_ROLES",
+  "head": "6f8b3c99c6c862a01918092d6e6c4755d8ce75eb",
+  "rows": 542,
+  "prior_rows": 519,
+  "replacements": 44,
+  "additions": 23,
+  "channels": 1543,
+  "unique_archives": 1309,
+  "old_fragment_edges": 10,
+  "new_audit_edges": 66,
+  "original_stage_tuples_preserved": 55,
+  "whole519_object_inverse": true,
+  "all_current_physical_equals_Git_and_archive": true,
+  "all_current_model_sources_equal_Git": true,
+  "all_current_model_edges_actual": 15578,
+  "Git_batch_paths": 2017,
+  "raw_modules": 180,
+  "old_raw_module_prefix_preserved": 166,
+  "closed_prior_sources": 578,
+  "old_closed_ordered_prefix_preserved": 564,
+  "ordered_rows": 1020,
+  "old_ordered_subsequence": 1010,
+  "owners": 342,
+  "old_owners": 328,
+  "actual_new_modules": 14,
+  "role_reclassifications": [],
+  "role_negative_controls": {
+    "dropped_actual_child_refused": true,
+    "coordinated_class_drop_not_original_generated_output": true,
+    "production_reclassification_refused": true,
+    "actual_source_drift_refused": true,
+    "whole_raw_drift_refused": true,
+    "foreign_path_child_cannot_escape": true
+  },
+  "page": {
+    "length": 99823,
+    "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+    "sha256": "d9658b21a8819d7902a7921a45f7f2f69d1e5b031ecefe6cb6f79777c8cc1512"
+  },
+  "policy": {
+    "length": 14308,
+    "sha256": "db0e9b57a39f390a535402bd9910fd0d44b52f4c1ab0352b501a188615e62049"
+  },
+  "control_child": {
+    "length": 39347,
+    "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e",
+    "lines": 944
+  },
+  "root_lines": 1499,
+  "actual_source_producer_heads": {
+    "subjects174": "8ff442ae01deafae1587b7824ab804eb73353169",
+    "sources6": "5133f4b606d1a4e39a74e2880c3222dd8cc2840f"
+  },
+  "source_producer_status_scope": "source-only; NOT executed174/6Rusttests; final current outputs and predecessor channels independently authenticated",
+  "Rust_tests_executed": false,
+  "Cargo": false
+}

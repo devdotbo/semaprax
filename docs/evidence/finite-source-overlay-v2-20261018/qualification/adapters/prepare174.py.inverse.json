@@ -1,0 +1,26 @@
+{
+  "before_sha256": "3d04be6249be62aee193efc5b080a85a540fe17f0a593322066e36931a5b9f33",
+  "after_sha256": "a391b986a7102cbf4e3ec1e51be7df4eadb91adb67123d642954959a3ea35a2c",
+  "edits": [
+    {
+      "before": "/Volumes/Semaprax/worktrees/next-large-combined-20261017",
+      "after": "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018"
+    },
+    {
+      "before": "REL='docs/evidence/mergef94-current519-174-20261018'",
+      "after": "REL='docs/evidence/finite-overlay542-current174-20261018'"
+    },
+    {
+      "before": "assert cfg['rows']==433 and cfg['logical_rows']==len(packet['rows'])==519",
+      "after": "assert cfg['rows']==433 and cfg['logical_rows']==519 and len(packet['rows'])==542"
+    },
+    {
+      "before": "strict=values['STRICT']",
+      "after": "# The ONE fixed overlay page and its literal dependencies are part of the actual readset.\npage_root='docs/evidence/finite-source-overlay-v2-20261018/'\nneeded.update(page_root+name for name in ('policy.json','page.json','overlay_page.py'))\npage=json.loads((R/(page_root+'page.json')).read_bytes())\nfor row in [*page['replacements'],*page['additions']]:\n if row['current']['length']<=262144:needed.add(row['source'])\n else:excluded.append(dict(path=row['source'],reason='page-current-exceeds-original-Python-perread-bound'))\n for pin in [row['current'],*row['views']]:\n  if pin['length']<=262144:needed.add(pin['archive'])\n  else:excluded.append(dict(path=pin['archive'],reason='page-view-exceeds-original-Python-perread-bound'))\n\nstrict=values['STRICT']"
+    },
+    {
+      "before": "logical_rows=519",
+      "after": "logical_rows=542"
+    }
+  ]
+}
