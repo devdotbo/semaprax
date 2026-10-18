@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 pub(super) const SCHEMA: &str = "semaprax.finite-source-overlay-page.v3";
 pub(super) const SCHEMA_V4: &str = "semaprax.finite-source-overlay-page.v4";
+pub(super) const SCHEMA_V7: &str = "semaprax.finite-source-overlay-page.v7";
 pub(super) const SCHEMA_V6: &str = "semaprax.finite-source-overlay-page.v6";
 pub(super) const SCHEMA_V5: &str = "semaprax.finite-source-overlay-page.v5";
 const EXTRA519: &[(&str, &str)] = &[
@@ -330,6 +331,94 @@ pub(super) fn expand_v6(
     // V3 still restricts reference roots, declared edges and compiled leaf
     // targets. V2 then checks every literal policy row and the complete inverse.
     expand(before, policy, &expanded)
+}
+
+// Numeric names are transport within this one fixed page, never new paths.
+// The table is authenticated whole519 followed by this page's ordered additions.
+// All V6, V3 and V2 row, leaf, edge, predecessor and inverse checks replay.
+pub(super) fn expand_v7(
+    before: &Value,
+    policy: &Value,
+    page: &Value,
+) -> Result<Value, &'static str> {
+    if page["schema"] != SCHEMA_V7 {
+        return Err("v7 schema");
+    }
+    let old = before["rows"].as_array().ok_or("v7 old rows")?;
+    if old.len() != 519
+        || policy["predecessor"]["rows"].as_u64() != Some(519)
+        || before["source_cap"].as_u64() != Some(super::SOURCE_CAP as u64)
+        || policy["predecessor"]["logical_sha256"].as_str()
+            != Some(super::digest(&super::canonical(before)).as_str())
+    {
+        return Err("v7 authenticated old519");
+    }
+    let mut names = Vec::new();
+    let mut unique = BTreeSet::new();
+    for row in old
+        .iter()
+        .chain(page["additions"].as_array().ok_or("v7 additions")?)
+    {
+        let source = row["source"].as_str().ok_or("v7 table source")?;
+        if !unique.insert(source) {
+            return Err("v7 duplicate table source");
+        }
+        names.push(source);
+    }
+    let mut expanded = page.clone();
+    expanded["schema"] = SCHEMA_V6.into();
+    for group in ["replacements", "additions"] {
+        for row in expanded[group].as_array_mut().ok_or("v7 rows")? {
+            let inherited = row.get("old519_index").is_some();
+            let parent = if inherited {
+                let tuple = row["old519_index"].as_array().ok_or("v7 tuple")?;
+                if tuple.len() != 4 {
+                    return Err("v7 tuple fields");
+                }
+                let index = usize::try_from(tuple[0].as_u64().ok_or("v7 old index")?)
+                    .map_err(|_| "v7 old index")?;
+                old.get(index).ok_or("v7 foreign old index")?["source"]
+                    .as_str()
+                    .ok_or("v7 parent")?
+                    .to_owned()
+            } else {
+                row["source"].as_str().ok_or("v7 parent")?.to_owned()
+            };
+            let fragments = if inherited {
+                let tuple = row["old519_index"].as_array_mut().ok_or("v7 tuple")?;
+                if tuple[3].is_null() {
+                    continue;
+                }
+                &mut tuple[3]
+            } else {
+                let Some(fragments) = row.get_mut("fragments") else {
+                    continue;
+                };
+                fragments
+            };
+            for fragment in fragments.as_array_mut().ok_or("v7 fragments")? {
+                let Some(reference) = fragment.get(REFERENCE) else {
+                    continue;
+                };
+                if reference.is_string() {
+                    continue;
+                }
+                if !ROOTS.contains(&parent.as_str())
+                    || fragment.as_object().ok_or("v7 reference")?.len() != 1
+                {
+                    return Err("v7 literal root or reference fields");
+                }
+                let index = usize::try_from(reference.as_u64().ok_or("v7 numeric index")?)
+                    .map_err(|_| "v7 numeric index")?;
+                if index < 519 {
+                    return Err("v7 old numeric index");
+                }
+                let source = names.get(index).ok_or("v7 foreign numeric index")?;
+                fragment[REFERENCE] = (*source).into();
+            }
+        }
+    }
+    expand_v6(before, policy, &expanded)
 }
 
 #[cfg(test)]
@@ -889,6 +978,134 @@ mod tests {
                 _ => b["source_cap"] = 9753095.into(),
             }
             assert!(compose_values(b, &rules, &p).is_err(), "mode={mode}");
+        }
+    }
+
+    fn v7_fixture() -> (Value, Value, Value, Value, usize) {
+        let mut before = super::super::super::packet_before_overlay();
+        let index = before["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|row| row["source"] == ROOTS[2])
+            .unwrap();
+        before["opaque_v7_outer"] = serde_json::json!({"kept":[8,3,1]});
+        before["rows"][index]["opaque_v7_row"] = serde_json::json!({"kept":[true,null]});
+        let prior = &before["rows"][index];
+        let new = vec![record("src/v7_numeric_a.rs"), record("src/v7_numeric_b.rs")];
+        let mut root = prior.clone();
+        root["fragments"]
+            .as_array_mut()
+            .unwrap()
+            .extend(new.iter().cloned());
+        let predecessor =
+            serde_json::json!({"rows":519,"logical_sha256":digest(&canonical(&before))});
+        let full = serde_json::json!({"schema":"semaprax.finite-source-overlay-page.v2","index":1,
+            "total_pages":1,"predecessor":predecessor,"replacements":[root],"additions":new});
+        let policy = serde_json::json!({"predecessor":predecessor,"replacements":[ROOTS[2]],
+            "additions":[{"source":"src/v7_numeric_a.rs","compiled":true},{"source":"src/v7_numeric_b.rs","compiled":true}],
+            "new_fragment_edges":[{"parent":ROOTS[2],"child":"src/v7_numeric_a.rs"},{"parent":ROOTS[2],"child":"src/v7_numeric_b.rs"}]});
+        let mut refs: Vec<_> = prior["fragments"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .map(|row| serde_json::json!({"canonical_source":row["source"]}))
+            .collect();
+        refs.extend([
+            serde_json::json!({"canonical_source":519}),
+            serde_json::json!({"canonical_source":520}),
+        ]);
+        let mut compact = full.clone();
+        compact["schema"] = SCHEMA_V7.into();
+        compact["replacements"] =
+            serde_json::json!([{"old519_index":[index,prior["current"],[],refs]}]);
+        (before, policy, full, compact, index)
+    }
+    #[test]
+    fn v7_numeric_addition_refs_keep_full_rows_unknowns_old_strings_and_complete_inverse() {
+        let (before, policy, full, compact, index) = v7_fixture();
+        assert_eq!(expand_v7(&before, &policy, &compact).unwrap(), full);
+        let result = compose_values(before.clone(), &policy, &compact).unwrap();
+        assert_eq!(
+            result,
+            compose_values_v2(before.clone(), &policy, &full).unwrap()
+        );
+        assert_eq!(result["opaque_v7_outer"], before["opaque_v7_outer"]);
+        assert_eq!(
+            result["rows"][index]["opaque_v7_row"],
+            before["rows"][index]["opaque_v7_row"]
+        );
+        assert_eq!(
+            &result["rows"].as_array().unwrap()[519..],
+            compact["additions"].as_array().unwrap()
+        );
+        let mut restored = result;
+        restored["rows"][index] = before["rows"][index].clone();
+        restored["rows"].as_array_mut().unwrap().truncate(519);
+        assert_eq!(restored, before, "whole predecessor object, not row counts");
+        let mut legacy = compact.clone();
+        legacy["schema"] = SCHEMA_V6.into();
+        let refs = legacy["replacements"][0]["old519_index"][3]
+            .as_array_mut()
+            .unwrap();
+        let n = refs.len();
+        refs[n - 2][REFERENCE] = "src/v7_numeric_a.rs".into();
+        refs[n - 1][REFERENCE] = "src/v7_numeric_b.rs".into();
+        assert_eq!(expand_v6(&before, &policy, &legacy).unwrap(), full);
+        let mut direct = compact.clone();
+        direct["replacements"][0] = full["replacements"][0].clone();
+        direct["replacements"][0]["fragments"] =
+            compact["replacements"][0]["old519_index"][3].clone();
+        assert_eq!(expand_v7(&before, &policy, &direct).unwrap(), full);
+    }
+    #[test]
+    fn v7_numeric_refs_refuse_types_old_foreign_duplicate_reordered_and_uncompiled_targets() {
+        let (before, policy, _, compact, _) = v7_fixture();
+        let n = compact["replacements"][0]["old519_index"][3]
+            .as_array()
+            .unwrap()
+            .len();
+        for mode in 0..18 {
+            let mut old = before.clone();
+            let mut rules = policy.clone();
+            let mut page = compact.clone();
+            match mode {
+                0 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = true.into(),
+                1 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = (-1).into(),
+                2 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = 519.0.into(),
+                3 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = 0.into(),
+                4 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = 518.into(),
+                5 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = 521.into(),
+                6 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = u64::MAX.into(),
+                7 => page["replacements"][0]["old519_index"][3][n - 1]["extra"] = true.into(),
+                8 => page["replacements"][0]["old519_index"][3][n - 1][REFERENCE] = 519.into(),
+                9 => page["replacements"][0]["old519_index"][3]
+                    .as_array_mut()
+                    .unwrap()
+                    .swap(n - 2, n - 1),
+                10 => page["additions"][0]["compiled"] = false.into(),
+                11 => page["additions"][0]["fragments"] = serde_json::json!([]),
+                12 => rules["predecessor"]["logical_sha256"] = "0".repeat(64).into(),
+                13 => page["additions"][1]["source"] = "src/v7_numeric_a.rs".into(),
+                14 => {
+                    page["additions"].as_array_mut().unwrap().pop();
+                }
+                15 => rules["new_fragment_edges"]
+                    .as_array_mut()
+                    .unwrap()
+                    .swap(0, 1),
+                16 => old["source_cap"] = (super::super::SOURCE_CAP + 1).into(),
+                _ => {
+                    let nonroot = old["rows"]
+                        .as_array()
+                        .unwrap()
+                        .iter()
+                        .position(|row| !ROOTS.iter().any(|root| row["source"] == *root))
+                        .unwrap();
+                    page["replacements"][0]["old519_index"][0] = nonroot.into();
+                }
+            }
+            assert!(compose_values(old, &rules, &page).is_err(), "mode={mode}");
         }
     }
 }
