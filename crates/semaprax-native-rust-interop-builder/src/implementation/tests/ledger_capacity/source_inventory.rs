@@ -291,6 +291,15 @@ macro_rules! loan_cfg_source_inventory {
         include_str!("../../../../../src/workspace_graph/expected_projection/call_carriers_tests.rs"),
         include_str!("../../../../../src/ast/program_source/decl_slices.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection/borrowed_imports/typed.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection/call_carriers_before_directory.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection/call_carriers_directory.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection.rs"),
+        include_str!("../../../../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs"),
         )
     };
 }

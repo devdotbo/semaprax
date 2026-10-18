@@ -284,6 +284,13 @@ semantic_graph_private_layout_owned_source_inventory!(core),
         include_str!("../../src/source_reflows_merge/main_e177_overlay_fragments_v3.rs"),
         include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs"),
         include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/call_carriers_before_directory.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/call_carriers_directory.rs"),
+        include_str!("../../src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"),
     ) };
 }
 

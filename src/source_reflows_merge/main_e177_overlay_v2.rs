@@ -158,11 +158,20 @@ const ADDITIONS: &[&str] = &[
     "src/ast/program_source/decl_slices.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "src/workspace_graph/expected_projection/call_carriers_before_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs",
+    "src/workspace_graph/expected_projection.rs",
+    "src/workspace_graph/expected_projection/prelude_forecast_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 40592; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "0c57e7a5669ed7ff3a2b105b09a53180a741d4a7e0baa799ddb641a0c0306215";
+const POLICY_LENGTH: usize = 46020; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "637d752ae4cebc2fe008001538f3462871328682f154c72ac31b209479fe68eb";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -843,6 +852,15 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_before_directory.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_before_directory.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_directory.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_directory.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_directory_tests.rs")),
+        "src/workspace_graph/expected_projection.rs" => Some(include_str!("../../src/workspace_graph/expected_projection.rs")),
+        "src/workspace_graph/expected_projection/prelude_forecast_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs")),
         "src/ast/program_source/function_alias/before_string.rs" => Some(include_str!("../../src/ast/program_source/function_alias/before_string.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs")),
