@@ -250,7 +250,10 @@ fn complete_old_constructor_and_actual_dispatch_remain_independent_and_same_widt
     assert_eq!(old.matches(glue).count(), 1);
     let restored=old.replace(glue,"#[cfg(test)]\n#[path = \"alias/owned_growth_tests.rs\"]\npub(super) mod owned_growth_tests;");
     assert_eq!(
-        format!("{:x}", Sha256::digest(restored.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
         "434640ce68332a1d96840ae10b8e4a500799a567f6d75cc903a6e272196a24b2"
     );
     #[allow(dead_code)]
@@ -285,7 +288,10 @@ fn complete_old_constructor_and_actual_dispatch_remain_independent_and_same_widt
     assert_eq!(restored.matches(glue).count(), 1);
     let restored = restored.replace(glue, "borrowed_imports::typed::construct_transient(");
     assert_eq!(
-        format!("{:x}", Sha256::digest(restored.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
         "955f367930ff21369599457a8fabdf8330144ca000920d5ec594cb48a445f84a"
     );
     // Whole immediate old actual selector remains compiled, with only the

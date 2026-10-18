@@ -548,7 +548,7 @@ fn lazy_previous_source(source: &str, current: &str) -> String {
 
 // Restore only exact authenticated complete immediate predecessor inputs before
 // the original 847 source closure's independent inverses run. Tables unchanged.
-pub(super) fn previous_source(source: &str, current: &str) -> String {
+pub(in super::super) fn previous_source(source: &str, current: &str) -> String {
     let current = lazy_previous_source(source, current);
     let manifest: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
@@ -652,7 +652,7 @@ fn complete_immediate_directory_producer_and_expanded_acquisition_remain_source_
 /// receiver and is never inside its paid/allocation observation window. Every
 /// declaration produced by the old route is authenticated completely before
 /// any original provider payload can stand in for its local binding spelling.
-pub(super) fn provider_binding_oracle<'p>(
+pub(in super::super) fn provider_binding_oracle<'p>(
     old: &dyn ProgramSource,
     programs: &'p [Program],
 ) -> crate::ast::program_source::function_alias::TransientFunctions<'p> {
@@ -737,7 +737,7 @@ pub(super) fn provider_binding_oracle<'p>(
 /// Retain the old receiver's actual limitation as a complete diagnostic oracle.
 /// Local import aliases are valid syntax; their old owning materialization
 /// changed reserved declaration names and was not a successful HIR subject.
-pub(super) fn assert_old_alias_refusal(
+pub(in super::super) fn assert_old_alias_refusal(
     old: &dyn ProgramSource,
     diagnostics: &[crate::diagnostic::Diagnostic],
 ) {
