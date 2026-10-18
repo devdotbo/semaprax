@@ -157,6 +157,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
         OWNER_CONTROLS,
         "ordinary plan retained comparison owner"
     )?;
+    #[cfg(test)]
+    census.owner_admitted();
     let mut owner = ComparisonOwner {
         arena: actual.arena.as_slice(),
         left_items: &[],
@@ -310,6 +312,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             PAIR_MATCH,
                             "ordinary plan history paired cursor next"
                         )?;
+                        #[cfg(test)]
+                        census.pair_match_admitted();
                         // Both Some paths converge at the bare reference yield;
                         // no Option/tuple or owner payload crosses this frontier.
                         let left = lexical_plan_value!(

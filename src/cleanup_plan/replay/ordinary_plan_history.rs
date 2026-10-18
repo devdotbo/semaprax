@@ -321,6 +321,8 @@ mod before_comparison;
 mod before_paired;
 mod comparison_owner;
 pub(super) use comparison_owner::compare;
+#[cfg(test)]
+pub(super) use comparison_owner::pair_scope_census::Scope as PairScopeCensus;
 
 // Frozen HIR comparator inherits these original test-only lexical helpers.
 #[cfg(test)]

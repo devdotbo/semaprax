@@ -11,6 +11,8 @@ pub(super) struct Row {
     pub function_len: usize,
     pub payer: &'static str,
     pub selected: bool,
+    pub owner_admitted: bool,
+    pub pair_matches_admitted: usize,
     pub pairs: usize,
     pub rounds: usize,
     pub value_steps: usize,
@@ -30,6 +32,8 @@ const EMPTY: Row = Row {
     function_len: 0,
     payer: "",
     selected: false,
+    owner_admitted: false,
+    pair_matches_admitted: 0,
     pairs: 0,
     rounds: 0,
     value_steps: 0,
@@ -152,6 +156,15 @@ impl Guard {
             } else {
                 lost();
             }
+        });
+    }
+    pub(super) fn owner_admitted(&self) {
+        self.update(|r| r.owner_admitted = true);
+    }
+    pub(super) fn pair_match_admitted(&self) {
+        self.update(|r| match r.pair_matches_admitted.checked_add(1) {
+            Some(n) => r.pair_matches_admitted = n,
+            None => r.overflow = true,
         });
     }
     pub(super) fn pair(&self) {
@@ -307,5 +320,70 @@ mod controls {
         assert!(lost_count > 0);
         assert!(rows.is_empty());
         TRACE.with(|t| t.borrow_mut().generation = 0);
+    }
+}
+
+// Sole owning-test observation scope, outside compiler ledgers and allocation
+// windows. It prints after every measured value/guard has dropped, including
+// unwind, without converting an incomplete refused prefix into a full result.
+pub(in crate::cleanup_plan::replay) struct Scope {
+    bytes: usize,
+    outcome: Cell<Option<(bool, bool)>>,
+}
+impl Scope {
+    pub(in crate::cleanup_plan::replay) fn whole_caller(bytes: usize) -> Self {
+        reset();
+        Self {
+            bytes,
+            outcome: Cell::new(None),
+        }
+    }
+    pub(in crate::cleanup_plan::replay) fn observed(&self, success: bool, refused: bool) {
+        self.outcome.set(Some((success, refused)));
+    }
+}
+impl Drop for Scope {
+    fn drop(&mut self) {
+        let (rows, lost) = finish();
+        let unwind = std::thread::panicking();
+        let sum = |field: fn(&Row) -> usize| {
+            rows.iter()
+                .try_fold(0usize, |n, row| n.checked_add(field(row)))
+        };
+        let totals = [
+            sum(|r| r.pairs),
+            sum(|r| r.rounds),
+            sum(|r| r.pair_matches_admitted),
+            sum(|r| r.value_steps),
+            sum(|r| r.value_tails),
+        ];
+        let total_overflow = totals.iter().any(Option::is_none);
+        let complete = self
+            .outcome
+            .get()
+            .is_some_and(|(ok, refused)| ok && !refused)
+            && !unwind
+            && lost == 0
+            && !total_overflow
+            && rows
+                .iter()
+                .all(|row| row.complete && !row.old && row.owner_admitted);
+        eprintln!("OPT888 whole-caller current_candidate=true unqualified=true bytes={} outcome={:?} unwind={} complete={} partial_prefix={} invocations_reached={} owner_banks_admitted={} pairs_prepared={:?} rounds_reached={:?} match_banks_admitted={:?} step_banks_admitted={:?} tail_banks_admitted={:?} total_overflow={} lost={} row_capacity=128; complete-only equation current+tuple*N+2Option*(STEP+TAIL)=old886+5HEADER*M+2reference*N; no whole-shipping net claim",
+            self.bytes, self.outcome.get(), unwind, complete, !complete,
+            rows.len(), rows.iter().filter(|r| r.owner_admitted).count(),
+            totals[0], totals[1], totals[2], totals[3], totals[4], total_overflow, lost);
+        eprintln!("OPT888 typed-invoice tuple={} option_pair={} added_outer_references={} added_cold_headers={}",
+            size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>(),
+            2 * size_of::<Option<&SkeletonObservation>>(), NEW_PAIR_REFERENCES,
+            paired_value::ADDITIONAL_PRIMITIVES);
+        for row in rows {
+            let function = std::str::from_utf8(&row.function[..row.function_len])
+                .unwrap_or("<truncated UTF-8>");
+            eprintln!("OPT888 row={} generation={} serial={} function={:?} old={} payer={} selected={} owner_admitted={} pairs={} rounds={} match_admitted={} STEP={} TAIL={} complete={} ended={} unwound={} overflow={} truncated={}",
+                row.invocation, row.generation, row.serial, function, row.old, row.payer,
+                row.selected, row.owner_admitted, row.pairs, row.rounds, row.pair_matches_admitted,
+                row.value_steps, row.value_tails, row.complete, row.ended, row.unwound,
+                row.overflow, row.truncated);
+        }
     }
 }

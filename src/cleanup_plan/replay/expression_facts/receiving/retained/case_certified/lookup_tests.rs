@@ -192,8 +192,15 @@ fn original_exact_owner_guards_reject_nested_ledger_foreign_budget_and_stale_fun
 fn complete_caller_success_and_refusal_drop_remain_observed_at_unchanged_cap() {
     let program = checked_program(32);
     for bytes in [0, 4096, 64 * 1024 * 1024] {
+        // Construct before the measured window; Drop prints only after full
+        // value/observer teardown, also when the unchanged assertion unwinds.
+        let census =
+            crate::cleanup_plan::replay::ordinary_plan_history::PairScopeCensus::whole_caller(
+                bytes,
+            );
         let (_, metrics) = crate::test_allocation_observer::measure(|| {
             let result = ordinary(&program, false, bytes);
+            census.observed(result.0.is_ok(), result.1);
             assert_eq!(
                 result.0.is_ok(),
                 bytes == 64 * 1024 * 1024,
@@ -206,6 +213,7 @@ fn complete_caller_success_and_refusal_drop_remain_observed_at_unchanged_cap() {
         });
         assert!(!metrics.invalid && metrics.live == 0);
         assert_eq!(metrics.allocated, metrics.freed);
+        drop(census);
     }
 }
 
