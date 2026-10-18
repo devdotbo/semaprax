@@ -271,7 +271,11 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
             let old = crate::hir::lexical_exit::owner_funded(&context, &function, &mut |_| {
                 let at = old_at;
                 old_at += 1;
-                if at == cut { Err(()) } else { Ok(()) }
+                if at == cut {
+                    Err(())
+                } else {
+                    Ok(())
+                }
             });
             let mut current_at = 0;
             let mut output = None;
@@ -279,7 +283,11 @@ fn complete_direct_collectors_match_full_immediate_constructor_and_drop_at_all_c
                 crate::hir::lexical_exit::owner_into(&context, &function, &mut output, &mut |_| {
                     let at = current_at;
                     current_at += 1;
-                    if at == cut { Err(()) } else { Ok(()) }
+                    if at == cut {
+                        Err(())
+                    } else {
+                        Ok(())
+                    }
                 });
             assert!(matches!(
                 old,

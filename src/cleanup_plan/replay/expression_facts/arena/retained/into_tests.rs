@@ -2,7 +2,7 @@
 use super::tests::{acquire, arena, program};
 use super::*;
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    Failure, prepare_into, refuse_into, reserve_into,
+    prepare_into, refuse_into, reserve_into, Failure,
 };
 use crate::test_allocation_observer::measure;
 

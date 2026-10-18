@@ -40,8 +40,8 @@ macro_rules! refuse_into {
             if let Some(lease) = $budget$(.$budget_field)*.oracle_lease().filter(|lease| !lease.refused()) {
                 lease.fail_physical("oracle replay budget refused physical construction");
             }
-            if $budget$(.$budget_field)*.payer == AllocationPayer::LegacyUnobserved
-                || ($budget$(.$budget_field)*.payer == AllocationPayer::SelectedReservation
+            if $budget$(.$budget_field)*.payer == $crate::cleanup_plan::replay::AllocationPayer::LegacyUnobserved
+                || ($budget$(.$budget_field)*.payer == $crate::cleanup_plan::replay::AllocationPayer::SelectedReservation
                     && $budget$(.$budget_field)*.refusal_text.is_none()
                     && !$budget$(.$budget_field)*.refusal_spent)
             {
@@ -125,7 +125,7 @@ macro_rules! prepare_into {
             if $budget$(.$budget_field)*.refusal_spent
                 || match $budget$(.$budget_field)*.payer {
                     #[cfg(test)]
-                    AllocationPayer::Oracle(lease) => lease.refused(),
+                    $crate::cleanup_plan::replay::AllocationPayer::Oracle(lease) => lease.refused(),
                     _ => crate::bounded_output::active_refused(),
                 }
             {
@@ -197,21 +197,21 @@ macro_rules! reserve_into {
                         "ordinary replay receiving source or payer is outside its current invocation", "");
                 }
                 let admitted = match $budget$(.$budget_field)*.payer {
-                    AllocationPayer::LegacyUnobserved => true,
-                    AllocationPayer::ActiveBuilder => {
+                    $crate::cleanup_plan::replay::AllocationPayer::LegacyUnobserved => true,
+                    $crate::cleanup_plan::replay::AllocationPayer::ActiveBuilder => {
                         if $budget$(.$budget_field)*.refusal_spent || crate::bounded_output::active_refused() {
                             break 'reserve refuse_into!($budget$(.$budget_field)*, $function$(.$function_field)*, $slot, "ordinary builder already failed", "");
                         }
                         crate::bounded_output::reserve_active_required(0)
                     }
                     #[cfg(test)]
-                    AllocationPayer::Oracle(lease) => {
+                    $crate::cleanup_plan::replay::AllocationPayer::Oracle(lease) => {
                         if $budget$(.$budget_field)*.refusal_spent || lease.refused() {
                             break 'reserve refuse_into!($budget$(.$budget_field)*, $function$(.$function_field)*, $slot, "ordinary builder already failed", "");
                         }
                         lease.charge(0).is_ok()
                     }
-                    AllocationPayer::SelectedReservation => $budget$(.$budget_field)*.physical.as_deref_mut()
+                    $crate::cleanup_plan::replay::AllocationPayer::SelectedReservation => $budget$(.$budget_field)*.physical.as_deref_mut()
                         .expect("selected reservation payer").reserve(0).is_ok(),
                 };
                 break 'reserve if admitted { true } else {
@@ -223,14 +223,14 @@ macro_rules! reserve_into {
                 break 'reserve false;
             }
             let accepted = match $budget$(.$budget_field)*.payer {
-                AllocationPayer::LegacyUnobserved => true,
-                AllocationPayer::ActiveBuilder => !$budget$(.$budget_field)*.refusal_spent
+                $crate::cleanup_plan::replay::AllocationPayer::LegacyUnobserved => true,
+                $crate::cleanup_plan::replay::AllocationPayer::ActiveBuilder => !$budget$(.$budget_field)*.refusal_spent
                     && !crate::bounded_output::active_refused()
                     && crate::bounded_output::reserve_active_required(bytes),
                 #[cfg(test)]
-                AllocationPayer::Oracle(lease) => !$budget$(.$budget_field)*.refusal_spent && !lease.refused()
+                $crate::cleanup_plan::replay::AllocationPayer::Oracle(lease) => !$budget$(.$budget_field)*.refusal_spent && !lease.refused()
                     && lease.charge(bytes).is_ok(),
-                AllocationPayer::SelectedReservation => $budget$(.$budget_field)*.physical.as_deref_mut()
+                $crate::cleanup_plan::replay::AllocationPayer::SelectedReservation => $budget$(.$budget_field)*.physical.as_deref_mut()
                     .expect("selected reservation payer").reserve(bytes).is_ok(),
             };
             if accepted { true } else {
@@ -262,7 +262,7 @@ macro_rules! charge_into {
             let units: usize = $units;
             let phase: &str = $phase;
             #[cfg(test)]
-            if let AllocationPayer::Oracle(lease) = $budget$(.$budget_field)*.payer {
+            if let $crate::cleanup_plan::replay::AllocationPayer::Oracle(lease) = $budget$(.$budget_field)*.payer {
                 if lease.charge_work(units).is_err() {
                     break 'charge refuse_into!(
                         $budget$(.$budget_field)*,
@@ -310,10 +310,10 @@ macro_rules! charge_into {
                             .first()
                             .map_or(0, |source| source.id.expression.as_str().len()),
                         payer: match $budget$(.$budget_field)*.payer {
-                            AllocationPayer::LegacyUnobserved => "unobserved",
-                            AllocationPayer::ActiveBuilder => "builder",
-                            AllocationPayer::SelectedReservation => "selected",
-                            AllocationPayer::Oracle(_) => "oracle",
+                            $crate::cleanup_plan::replay::AllocationPayer::LegacyUnobserved => "unobserved",
+                            $crate::cleanup_plan::replay::AllocationPayer::ActiveBuilder => "builder",
+                            $crate::cleanup_plan::replay::AllocationPayer::SelectedReservation => "selected",
+                            $crate::cleanup_plan::replay::AllocationPayer::Oracle(_) => "oracle",
                         },
                     }))
                 });

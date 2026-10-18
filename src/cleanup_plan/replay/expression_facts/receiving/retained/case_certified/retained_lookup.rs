@@ -1,9 +1,9 @@
 //! Closed first-lookup continuation. No callbacks, ACTIVE switch or guard bank.
 use super::directory::HeldPrefix;
 use super::*;
-use crate::cleanup_plan::replay::expression_facts::arena::{Arena, retained::Session};
+use crate::cleanup_plan::replay::expression_facts::arena::{retained::Session, Arena};
 use crate::cleanup_plan::replay::ordinary_receiving::{
-    Failure, prepare_into, refuse_into, reserve_into,
+    prepare_into, refuse_into, reserve_into, Failure,
 };
 use std::mem::size_of;
 

@@ -1,0 +1,24 @@
+[
+  {
+    "stage": "before",
+    "genuine_missing_enum_name_reproduced": true
+  },
+  {
+    "stage": "after",
+    "rust": "188",
+    "compile_peak_kib": 146448,
+    "runtime_peak_kib": 32,
+    "caller_without_payer_import_passed": true,
+    "legacy_builder_selected_and_sticky_first_slot_cases": true,
+    "actual_whole_macro_with_explicit_surrounding_test_types_not_full_compiler_qualification": true
+  },
+  {
+    "stage": "after",
+    "rust": "198",
+    "compile_peak_kib": 116656,
+    "runtime_peak_kib": 32,
+    "caller_without_payer_import_passed": true,
+    "legacy_builder_selected_and_sticky_first_slot_cases": true,
+    "actual_whole_macro_with_explicit_surrounding_test_types_not_full_compiler_qualification": true
+  }
+]
