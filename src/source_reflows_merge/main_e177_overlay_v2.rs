@@ -6,12 +6,79 @@ use std::path::Path;
 
 const PAGE_CAP: usize = 262144;
 // Bound from the final original-parser source union; this draft grants no paths.
-const REPLACEMENTS: &[&str] = &[];
-const ADDITIONS: &[&str] = &[];
+const REPLACEMENTS: &[&str] = &[
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "src/cleanup_plan/replay.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "src/cleanup_plan/replay/skeleton_work.rs",
+    "src/source_reflows_merge/main67107_inputs.rs",
+    "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph/source_inventory.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
+    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "src/cleanup_plan/replay/physical_budget.rs",
+    "src/hir/lexical_exit.rs",
+    "src/hir/resolve_program.rs",
+    "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+    "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
+    "src/cleanup_plan/replay/inventory_coverage/paid_before.rs",
+    "src/cleanup_plan/replay/path_join/selected.rs",
+    "src/cleanup_plan/replay/path_join/selected/joins.rs",
+    "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs",
+    "src/cleanup_plan/replay/path_join/selected/queries.rs",
+    "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+    "src/cleanup_plan/replay/path_join/selected/strings.rs",
+    "src/cleanup_plan/replay/path_join/selected/tests/history.rs",
+    "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs",
+    "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
+    "src/cleanup_plan/replay/structural_control/selected/calls.rs",
+    "src/cleanup_plan/replay/structural_control/selected/helpers.rs",
+    "src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs",
+    "src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs",
+    "src/cleanup_plan/replay/inventory_coverage.rs",
+    "src/cleanup_plan/replay/inventory_coverage/paid.rs",
+];
+const ADDITIONS: &[&str] = &[
+    "src/cleanup_plan/renewal_profile.rs",
+    "src/cleanup_plan/renewal_profile/funded.rs",
+    "src/cleanup_plan/renewal_profile/funded_receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
+    "src/cleanup_plan/replay/ordinary_receiving.rs",
+    "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs",
+    "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/dag_storage.rs",
+    "src/cleanup_plan/replay/skeleton_work/receiving.rs",
+    "src/hir/lexical_exit/owner_funded.rs",
+    "src/hir/lexical_exit/owner_funded_receiving.rs",
+    "src/literal_format.rs",
+    "src/literal_format/funded.rs",
+    "src/literal_format/funded_receiving.rs",
+    "src/string_ops/conditions.rs",
+    "src/string_ops/conditions/funded.rs",
+    "src/string_ops/conditions/funded_receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/errors.rs",
+    "docs/ORDINARY-REPLAY-RECEIVING-V1.md",
+];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 554; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "76f080a9e7b21aa25e317a0b41e75c2c40f3fcda6e2b3b59d82ba76f4516a175";
+const POLICY_LENGTH: usize = 14202; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "745d7175c9f9da2d594ce4bb68179ce592ce84ce2c97dccc5e2bdb4a45065e4e";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -581,6 +648,27 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/expression_facts/errors.rs" => Some(include_str!(
             "../../src/cleanup_plan/replay/expression_facts/errors.rs"
         )),
+        "src/cleanup_plan/renewal_profile.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile.rs")),
+        "src/cleanup_plan/renewal_profile/funded.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile/funded.rs")),
+        "src/cleanup_plan/renewal_profile/funded_receiving.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile/funded_receiving.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained_into.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs")),
+        "src/cleanup_plan/replay/ordinary_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving.rs")),
+        "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving/caller_before.rs")),
+        "src/cleanup_plan/replay/ordinary_receiving/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving/tests.rs")),
+        "src/cleanup_plan/replay/skeleton_work/dag_storage.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs")),
+        "src/cleanup_plan/replay/skeleton_work/receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/receiving.rs")),
+        "src/hir/lexical_exit/owner_funded.rs" => Some(include_str!("../../src/hir/lexical_exit/owner_funded.rs")),
+        "src/hir/lexical_exit/owner_funded_receiving.rs" => Some(include_str!("../../src/hir/lexical_exit/owner_funded_receiving.rs")),
+        "src/literal_format.rs" => Some(include_str!("../../src/literal_format.rs")),
+        "src/literal_format/funded.rs" => Some(include_str!("../../src/literal_format/funded.rs")),
+        "src/literal_format/funded_receiving.rs" => Some(include_str!("../../src/literal_format/funded_receiving.rs")),
+        "src/string_ops/conditions.rs" => Some(include_str!("../../src/string_ops/conditions.rs")),
+        "src/string_ops/conditions/funded.rs" => Some(include_str!("../../src/string_ops/conditions/funded.rs")),
+        "src/string_ops/conditions/funded_receiving.rs" => Some(include_str!("../../src/string_ops/conditions/funded_receiving.rs")),
         _ => None,
     }
 }

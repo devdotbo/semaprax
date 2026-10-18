@@ -1,0 +1,10 @@
+{
+  "status": "PASS_BOUND_METADATA_ALL_CURRENT_AND_VIEWS",
+  "logical_rows": 542,
+  "channels": 1539,
+  "raw_modules": 180,
+  "raw_carriers": 3,
+  "source_cap": 9753094,
+  "page_cap": 262144,
+  "Rust_executed": false
+}
