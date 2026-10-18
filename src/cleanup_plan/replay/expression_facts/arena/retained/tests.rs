@@ -454,3 +454,159 @@ fn all_seven_retained_lookup_modules_have_exact_role_edges_and_complete_raw_join
         );
     }
 }
+
+#[test]
+fn prepaid_edge_entry_keeps_all_old_work_cuts_and_complete_payload_identity() {
+    let program = program();
+    let function = &program.functions[0];
+    let keys = (0..33)
+        .map(|n| ExpressionId::from_owned(format!("edge.λ.{n:03}")))
+        .collect::<Vec<_>>();
+    let arena = arena(function, &keys);
+    for query in [&keys[0], &keys[17], &keys[32]] {
+        let mut complete = ReplayBudget::unobserved();
+        prefix::retained_before::find_receiving(&arena, function, query, &mut complete).unwrap();
+        for work in 0..=MAX_REPLAY_WORK_UNITS - complete.remaining {
+            let mut old_budget = ReplayBudget::unobserved();
+            old_budget.remaining = work;
+            let old =
+                prefix::retained_before::find_receiving(&arena, function, query, &mut old_budget);
+            let mut budget = ReplayBudget::unobserved();
+            let mut session = acquire(&arena, function, &mut budget).unwrap();
+            session.budget.remaining = work;
+            let current = (|| {
+                session.budget.reserve_bytes(
+                    function,
+                    0,
+                    "expression-fact arena lookup authentication",
+                )?;
+                session.budget.charge(
+                    function,
+                    0,
+                    "expression-fact arena lookup authentication",
+                )?;
+                session.budget.reserve_bytes(
+                    function,
+                    Session::EDGE_RECEIVING_BYTES,
+                    "retained expression-fact query result controls",
+                )?;
+                session.fact_edge_prepaid(query)
+            })();
+            assert_eq!(
+                current.as_ref().err(),
+                old.as_ref().err(),
+                "all six fields work={work}"
+            );
+            if let (Ok(Some(current)), Ok(Some(old))) = (current, old) {
+                assert!(std::ptr::eq(current, old));
+            }
+            assert_eq!(session.budget.remaining, old_budget.remaining);
+        }
+    }
+}
+
+#[test]
+fn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {
+    let program = program();
+    let function = &program.functions[0];
+    let arena = arena(function, &[function.body.id.clone()]);
+    let observe = |bytes, count| {
+        let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();
+        let result = (|| {
+            let mut session = acquire(&arena, function, &mut budget)?;
+            for _ in 0..count {
+                session.budget.reserve_bytes(
+                    function,
+                    0,
+                    "expression-fact arena lookup authentication",
+                )?;
+                session.budget.charge(
+                    function,
+                    0,
+                    "expression-fact arena lookup authentication",
+                )?;
+                session.budget.reserve_bytes(
+                    function,
+                    Session::EDGE_RECEIVING_BYTES,
+                    "retained expression-fact query result controls",
+                )?;
+                session.fact_edge_prepaid(&function.body.id)?;
+            }
+            Ok::<_, Diagnostic>(())
+        })();
+        let paid = budget.physical.as_ref().unwrap().charged();
+        if result.is_err() {
+            let work = budget.remaining;
+            assert!(budget
+                .reserve_bytes(function, 0, "sticky prepaid edge")
+                .is_err());
+            assert_eq!(budget.remaining, work);
+            assert_eq!(budget.physical.as_ref().unwrap().charged(), paid);
+        }
+        (result.is_ok(), paid)
+    };
+    for count in [1, 2, 7] {
+        let (ok, paid) = observe(usize::MAX, count);
+        assert!(ok);
+        assert_eq!(observe(paid, count), (true, paid));
+        assert!(!observe(paid - 1, count).0);
+    }
+    crate::bounded_output::with_limit_usage(1 << 20, || {
+        let mut budget = ReplayBudget::new();
+        let session = acquire(&arena, function, &mut budget).unwrap();
+        let remaining = crate::bounded_output::active_remaining().unwrap();
+        assert!(crate::bounded_output::set_active_floor(remaining));
+        assert!(session
+            .budget
+            .reserve_bytes(
+                function,
+                Session::EDGE_RECEIVING_BYTES,
+                "retained expression-fact query result controls"
+            )
+            .is_err());
+        crate::bounded_output::clear_active_floor();
+        assert!(session
+            .budget
+            .reserve_bytes(function, 0, "prepaid edge after floor restoration")
+            .is_err());
+    });
+}
+
+#[test]
+fn prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing() {
+    let program = program();
+    let function = &program.functions[0];
+    let arena = arena(function, &[function.body.id.clone()]);
+    let mut budget = ReplayBudget::unobserved();
+    let (_, metrics) = measure(|| {
+        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+            let mut session = acquire(&arena, function, &mut budget).unwrap();
+            session
+                .budget
+                .reserve_bytes(function, 0, "expression-fact arena lookup authentication")
+                .unwrap();
+            session
+                .budget
+                .charge(function, 0, "expression-fact arena lookup authentication")
+                .unwrap();
+            session
+                .budget
+                .reserve_bytes(
+                    function,
+                    Session::EDGE_RECEIVING_BYTES,
+                    "retained expression-fact query result controls",
+                )
+                .unwrap();
+            session.fact_edge_prepaid(&function.body.id).unwrap();
+            std::panic::resume_unwind(Box::new(()));
+        }));
+        assert!(result.is_err());
+        drop(result);
+        budget
+            .reserve_bytes(function, 0, "after prepaid edge unwind")
+            .unwrap();
+    });
+    assert!(!metrics.invalid);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(metrics.allocated, metrics.freed);
+}

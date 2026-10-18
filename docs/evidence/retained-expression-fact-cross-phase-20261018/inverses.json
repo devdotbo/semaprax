@@ -1,0 +1,159 @@
+{
+  "status": "SOURCE_ONLY_NOT_EXECUTED",
+  "base": "8478981af4421237cbf06424252ca85d561eddf9",
+  "sources": [
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay.rs.txt",
+        "length": 325741,
+        "sha256": "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed"
+      },
+      "after": {
+        "length": 321849,
+        "sha256": "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e"
+      },
+      "edits": [
+        {
+          "before": "    function: &ResolvedFunction,\n    budget: &mut ReplayBudget,\n    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,\n) -> Result<(), Diagnostic> {\n    validate_structure_with_budget_storage(program, function, budget, helpers, None)\n}\nfn validate_structure_with_budget_storage<'hir>(\n    program: &'hir dyn crate::cleanup::ReplayContext,\n    function: &'hir ResolvedFunction,\n    budget: &mut ReplayBudget,\n    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,\n    continuations: Option<&mut continuation_storage::Storage<'hir>>,\n) -> Result<(), Diagnostic> {\n    #[cfg(test)]\n    let _operation = crate::bounded_output::stage_debits::operation_guard(\n        crate::bounded_output::stage_debits::Operation::ReplayStructure,\n    );\n    let plan = &function.cleanup_plan;\n    if helpers.is_some_and(|index| {\n        !program\n            .full_program()\n            .is_some_and(|full| index.matches_program(full))\n    }) {\n        return Err(replay_error(\n            function,\n            \"cleanup replay helper index belongs to a different typed program\",\n        ));\n    }\n    // Reconstruct the ordinary schema first, preserving all its current-source\n    // probes/error order. A private source-held projection adds allocation\n    // branches; neither its attached v20 string nor an ordinary context selects it.\n    let ordinary_schema =\n        schema::paid_summary::selected_with_budget(program, function, helpers, budget)?;\n    let expected_schema = if allocation_paths::current(program, function).is_some() {\n        super::CLEANUP_PLAN_SCHEMA_V20\n    } else {\n        ordinary_schema\n    };\n    if plan.schema != expected_schema {\n        return Err(replay_error(\n            function,\n            format_args!(\n                \"uses cleanup-plan schema `{}` instead of HIR-derived `{expected_schema}`\",\n                plan.schema\n            ),\n        ));\n    }\n\n    if lexical_cert::requires_lexical(function) {\n        return lexical_replay::validate_with_index(program, function, budget, helpers);\n    }\n    if plan.lexical_control.is_some() {\n        return Err(replay_error(\n            function,\n            \"function without lexical exits carries a lexical-control certificate\",\n        ));\n    }\n    validate_replay_size_budget(function)?;\n    budget.charge(\n        function,\n        plan_structure_units(plan),\n        \"structural validation\",\n    )?;\n\n    let expression_facts = expression_facts::with_budget(function, budget)?;\n    ordinary_inventory::validate_inventory_coverage(program, function, budget)?;\n    let status_cases =\n        expression_facts::receiving::StatusCases::validate(program, function, budget)?;\n    let storage = validate_slots_paid(function, budget)?;\n    let leaves = collect_leaves_paid(function, budget)?;\n    let statuses = expression_facts::receiving::validate_status_sources_certified(\n        function,\n        &expression_facts,\n        budget,\n        &status_cases,\n    )?;\n    expression_facts::receiving::validate_regions(function, &storage, budget)?;\n    expression_facts::receiving::validate_entry(function, &storage, &leaves, budget)?;\n    expression_facts::receiving::validate_blocks_and_edges_retained(\n        program,\n        function,\n        &expression_facts,\n        &storage,\n        &leaves,\n        helpers,\n        budget,\n        &statuses,\n    )?;\n    expression_facts::receiving::validate_exits_retained(\n        program,\n        function,\n        &storage,\n        &leaves,\n        &BTreeSet::new(),\n        budget,\n        &statuses,\n    )?;\n    structural_maps::validate_reference_coverage(function, budget)?;\n    structural_control::validate_ordinary_cfg(function, budget)?;\n    if !cleanup_inert_path_product_can_be_summarized(function)?\n        && !status_only_paths_can_be_summarized(function)\n        && !cleanup_inert_large_decisions_can_be_summarized(function)\n    {\n        validate_path_states::<Diagnostic>(\n            program, function, &storage, &leaves, budget, None, helpers,\n        )?;\n        validate_typed_control_skeleton_with_index(\n            program,\n            function,\n            budget,\n            helpers,\n            continuations,\n        )?;\n    }\n    Ok(())\n}\n\nstruct CfgReplayBounds {\n    terminal_paths: usize,\n    work: usize,\n    skeleton_work: usize,\n}\n",
+          "after": "    function: &ResolvedFunction,\n    budget: &mut ReplayBudget,\n    helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'_>>,\n) -> Result<(), Diagnostic> {\n    validate_structure_with_budget_storage(program, function, budget, helpers, None)\n}\nuse expression_facts::receiving::validate_structure_with_budget_storage;\n\nstruct CfgReplayBounds {\n    terminal_paths: usize,\n    work: usize,\n    skeleton_work: usize,\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/arena/retained.rs.txt",
+        "length": 9869,
+        "sha256": "6cbe7fcb25702bb3ab005b64e8175cb8a0c7dfdf594532dc393d25b5def1d031"
+      },
+      "after": {
+        "length": 15619,
+        "sha256": "bc4116826224bf73e88ffbe6832f9951ce0d20104919d83a7614541178139bb2"
+      },
+      "edits": [
+        {
+          "before": "                    control.at = node.right;\n                }\n            }\n        }\n        Ok(None)\n    }\n}\n\n#[cfg(test)]\npub(in crate::cleanup_plan::replay::expression_facts) mod tests;\n",
+          "after": "                    control.at = node.right;\n                }\n            }\n        }\n        Ok(None)\n    }\n    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_QUERY_BYTES: usize = 2\n        * size_of::<(&mut Self, &ExpressionId)>()\n        + size_of::<(\n            &Arena<'_>,\n            &ResolvedFunction,\n            &mut ReplayBudget,\n            &mut Control,\n            &mut Compared<'_>,\n        )>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<bool>();\n    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =\n        RESULTS + Self::EDGE_QUERY_BYTES;\n    pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(\n        &mut self,\n        query: &'arena ExpressionId,\n    ) -> Result<Option<&'arena Option<CallFact<'hir>>>, Diagnostic> {\n        // Only the same-ABI closed initial-edge continuation calls this method.\n        // Original frozen-directory guards execute first; immutable function and\n        // arena loans plus exclusive budget custody span every query. No callback\n        // or ACTIVE switch occurs before this owner is dropped.\n        // Original ordered work and complete query reset. No verdict is reused. Slice loans remain bound to the held immutable\n        // function/arena; every field is reset before the next query.\n        self.budget.charge(\n            self.function,\n            4,\n            \"expression-fact lookup control initialization\",\n        )?;\n        self.control.lower = 0;\n        self.control.upper = 0;\n        self.control.at = self.arena.root;\n        self.control.last = self.arena.root;\n        self.budget.charge(\n            self.function,\n            8,\n            \"expression-fact receiving state initialization\",\n        )?;\n        self.compared.bytes.left = query.as_str().as_bytes();\n        self.compared.bytes.right = &[];\n        self.compared.bytes.end = 0;\n        self.compared.bytes.common = 0;\n        self.compared.order = Ordering::Equal;\n        self.compared.units = 0;\n        self.compared.a = 0;\n        self.compared.b = 0;\n        let arena = self.arena;\n        let function = self.function;\n        let budget = &mut *self.budget;\n        let control = &mut self.control;\n        let compared = &mut self.compared;\n        macro_rules! compare_into {\n            ($candidate:expr, $prefix:expr) => {{\n                budget.charge(function, 10, \"expression-fact prefix control bookkeeping\")?;\n                compared.bytes.right = ($candidate).as_str().as_bytes();\n                compared.bytes.end = compared.bytes.left.len().min(compared.bytes.right.len());\n                compared.bytes.common = $prefix;\n                compared.units = compared\n                    .bytes\n                    .end\n                    .checked_sub(compared.bytes.common)\n                    .and_then(|n| n.checked_add(1))\n                    .ok_or_else(|| {\n                        budget.budget_refusal(\n                            function,\n                            \"expression-fact prefix comparison work overflow\",\n                            \"\",\n                        )\n                    })?;\n                budget.charge(\n                    function,\n                    compared.units,\n                    \"expression-fact certified suffix lookup\",\n                )?;\n                loop {\n                    if compared.bytes.common == compared.bytes.end {\n                        compared.order = compared.bytes.left.len().cmp(&compared.bytes.right.len());\n                        break;\n                    }\n                    compared.a = compared.bytes.left[compared.bytes.common];\n                    compared.b = compared.bytes.right[compared.bytes.common];\n                    if compared.a != compared.b {\n                        compared.order = compared.a.cmp(&compared.b);\n                        break;\n                    }\n                    compared.bytes.common += 1;\n                }\n            }};\n        }\n        if arena.nodes.len() >= 16 {\n            budget.charge(function, 3, \"expression-fact minimum key access\")?;\n            let first = &arena.nodes[arena.first];\n            compare_into!(&first.key, 0);\n            match compared.order {\n                Ordering::Less => return Ok(None),\n                Ordering::Equal => return Ok(Some(&first.fact)),\n                Ordering::Greater => control.lower = compared.bytes.common,\n            }\n            loop {\n                budget.charge(function, 3, \"expression-fact maximum key access\")?;\n                let node = &arena.nodes[control.last];\n                if node.right == NIL {\n                    compare_into!(&node.key, 0);\n                    match compared.order {\n                        Ordering::Greater => return Ok(None),\n                        Ordering::Equal => return Ok(Some(&node.fact)),\n                        Ordering::Less => control.upper = compared.bytes.common,\n                    }\n                    break;\n                }\n                control.last = node.right;\n            }\n        }\n        while control.at != NIL {\n            let prefix = control.lower.min(control.upper);\n            budget.charge(function, 3, \"expression-fact certified node access\")?;\n            let node = &arena.nodes[control.at];\n            compare_into!(&node.key, prefix);\n            match compared.order {\n                Ordering::Equal => return Ok(Some(&node.fact)),\n                Ordering::Less => {\n                    control.upper = compared.bytes.common;\n                    control.at = node.left;\n                }\n                Ordering::Greater => {\n                    control.lower = compared.bytes.common;\n                    control.at = node.right;\n                }\n            }\n        }\n        Ok(None)\n    }\n}\n\n#[cfg(test)]\npub(in crate::cleanup_plan::replay::expression_facts) mod tests;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs.txt",
+        "length": 21088,
+        "sha256": "32514218b0d85745ed14d8d1b73a82ea303519ac63e6883bd5a26681e0bceff8"
+      },
+      "after": {
+        "length": 27225,
+        "sha256": "8368b0a218ceedd2e55dcd4c9176ccd4579b6a8389a9bc6b875c906688d0799f"
+      },
+      "edits": [
+        {
+          "before": "                .count(),\n            1,\n            \"one complete new source in the existing native raw owner: {path}\"\n        );\n    }\n}\n",
+          "after": "                .count(),\n            1,\n            \"one complete new source in the existing native raw owner: {path}\"\n        );\n    }\n}\n\n#[test]\nfn prepaid_edge_entry_keeps_all_old_work_cuts_and_complete_payload_identity() {\n    let program = program();\n    let function = &program.functions[0];\n    let keys = (0..33)\n        .map(|n| ExpressionId::from_owned(format!(\"edge.\u03bb.{n:03}\")))\n        .collect::<Vec<_>>();\n    let arena = arena(function, &keys);\n    for query in [&keys[0], &keys[17], &keys[32]] {\n        let mut complete = ReplayBudget::unobserved();\n        prefix::retained_before::find_receiving(&arena, function, query, &mut complete).unwrap();\n        for work in 0..=MAX_REPLAY_WORK_UNITS - complete.remaining {\n            let mut old_budget = ReplayBudget::unobserved();\n            old_budget.remaining = work;\n            let old =\n                prefix::retained_before::find_receiving(&arena, function, query, &mut old_budget);\n            let mut budget = ReplayBudget::unobserved();\n            let mut session = acquire(&arena, function, &mut budget).unwrap();\n            session.budget.remaining = work;\n            let current = (|| {\n                session.budget.reserve_bytes(\n                    function,\n                    0,\n                    \"expression-fact arena lookup authentication\",\n                )?;\n                session.budget.charge(\n                    function,\n                    0,\n                    \"expression-fact arena lookup authentication\",\n                )?;\n                session.budget.reserve_bytes(\n                    function,\n                    Session::EDGE_RECEIVING_BYTES,\n                    \"retained expression-fact query result controls\",\n                )?;\n                session.fact_edge_prepaid(query)\n            })();\n            assert_eq!(\n                current.as_ref().err(),\n                old.as_ref().err(),\n                \"all six fields work={work}\"\n            );\n            if let (Ok(Some(current)), Ok(Some(old))) = (current, old) {\n                assert!(std::ptr::eq(current, old));\n            }\n            assert_eq!(session.budget.remaining, old_budget.remaining);\n        }\n    }\n}\n\n#[test]\nfn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, &[function.body.id.clone()]);\n    let observe = |bytes, count| {\n        let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();\n        let result = (|| {\n            let mut session = acquire(&arena, function, &mut budget)?;\n            for _ in 0..count {\n                session.budget.reserve_bytes(\n                    function,\n                    0,\n                    \"expression-fact arena lookup authentication\",\n                )?;\n                session.budget.charge(\n                    function,\n                    0,\n                    \"expression-fact arena lookup authentication\",\n                )?;\n                session.budget.reserve_bytes(\n                    function,\n                    Session::EDGE_RECEIVING_BYTES,\n                    \"retained expression-fact query result controls\",\n                )?;\n                session.fact_edge_prepaid(&function.body.id)?;\n            }\n            Ok::<_, Diagnostic>(())\n        })();\n        let paid = budget.physical.as_ref().unwrap().charged();\n        if result.is_err() {\n            let work = budget.remaining;\n            assert!(budget\n                .reserve_bytes(function, 0, \"sticky prepaid edge\")\n                .is_err());\n            assert_eq!(budget.remaining, work);\n            assert_eq!(budget.physical.as_ref().unwrap().charged(), paid);\n        }\n        (result.is_ok(), paid)\n    };\n    for count in [1, 2, 7] {\n        let (ok, paid) = observe(usize::MAX, count);\n        assert!(ok);\n        assert_eq!(observe(paid, count), (true, paid));\n        assert!(!observe(paid - 1, count).0);\n    }\n    crate::bounded_output::with_limit_usage(1 << 20, || {\n        let mut budget = ReplayBudget::new();\n        let session = acquire(&arena, function, &mut budget).unwrap();\n        let remaining = crate::bounded_output::active_remaining().unwrap();\n        assert!(crate::bounded_output::set_active_floor(remaining));\n        assert!(session\n            .budget\n            .reserve_bytes(\n                function,\n                Session::EDGE_RECEIVING_BYTES,\n                \"retained expression-fact query result controls\"\n            )\n            .is_err());\n        crate::bounded_output::clear_active_floor();\n        assert!(session\n            .budget\n            .reserve_bytes(function, 0, \"prepaid edge after floor restoration\")\n            .is_err());\n    });\n}\n\n#[test]\nfn prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, &[function.body.id.clone()]);\n    let mut budget = ReplayBudget::unobserved();\n    let (_, metrics) = measure(|| {\n        let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {\n            let mut session = acquire(&arena, function, &mut budget).unwrap();\n            session\n                .budget\n                .reserve_bytes(function, 0, \"expression-fact arena lookup authentication\")\n                .unwrap();\n            session\n                .budget\n                .charge(function, 0, \"expression-fact arena lookup authentication\")\n                .unwrap();\n            session\n                .budget\n                .reserve_bytes(\n                    function,\n                    Session::EDGE_RECEIVING_BYTES,\n                    \"retained expression-fact query result controls\",\n                )\n                .unwrap();\n            session.fact_edge_prepaid(&function.body.id).unwrap();\n            std::panic::resume_unwind(Box::new(()));\n        }));\n        assert!(result.is_err());\n        drop(result);\n        budget\n            .reserve_bytes(function, 0, \"after prepaid edge unwind\")\n            .unwrap();\n    });\n    assert!(!metrics.invalid);\n    assert_eq!(metrics.live, 0);\n    assert_eq!(metrics.allocated, metrics.freed);\n}\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/receiving.rs.txt",
+        "length": 27937,
+        "sha256": "d3955dba84fc669c56362ab5c0b37f9f5b62b363a255c7b04e07bf606a276209"
+      },
+      "after": {
+        "length": 27977,
+        "sha256": "67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44"
+      },
+      "edits": [
+        {
+          "before": "mod helpers;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_certified,\n    StatusCases,\n};\nmod regions_entry;\nmod remaining;\nmod return_operands;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\n",
+          "after": "mod helpers;\nmod retained;\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::before_status_retention;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_certified,\n    validate_structure_with_budget_storage, StatusCases,\n};\nmod regions_entry;\nmod remaining;\nmod return_operands;\nuse directory::Directory;\npub(in crate::cleanup_plan::replay) use regions_entry::{validate_entry, validate_regions};\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/receiving/retained.rs.txt",
+        "length": 36733,
+        "sha256": "1161e0a666820d35bf0365ecf4b7f871cf463693a413db14871e3a0349a3a74e"
+      },
+      "after": {
+        "length": 36862,
+        "sha256": "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b"
+      },
+      "edits": [
+        {
+          "before": "        ledger: ClassifierLedger::capture(),\n        ids: Some(ids),\n    })\n}\n\nmod inline_status;\n",
+          "after": "        ledger: ClassifierLedger::capture(),\n        ids: Some(ids),\n    })\n}\n\nmod inline_status;\n\nmod ordinary_cross_phase;\npub(in crate::cleanup_plan::replay) use ordinary_cross_phase::validate_structure_with_budget_storage;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs.txt",
+        "length": 18466,
+        "sha256": "a79372220ba07fc7833a46c0bf5346e0ab29c3734292264ed583873782a85da9"
+      },
+      "after": {
+        "length": 18477,
+        "sha256": "d9826beee4de70f840309b81447450a4e0373cdee3bb4a7c1a7f8e4f14e77709"
+      },
+      "edits": [
+        {
+          "before": "#[cfg(test)]\npub(in crate::cleanup_plan::replay) mod lookup_before;\n#[cfg(test)]\nmod lookup_caller_before;\n#[cfg(test)]\nmod lookup_tests;\nmod retained_lookup;\n",
+          "after": "#[cfg(test)]\npub(in crate::cleanup_plan::replay) mod lookup_before;\n#[cfg(test)]\nmod lookup_caller_before;\n#[cfg(test)]\nmod lookup_tests;\npub(super) mod retained_lookup;\n"
+        }
+      ]
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+      "before": {
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-20261018/whole-before/src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs.txt",
+        "length": 7190,
+        "sha256": "4444834e368473fb3a213c900280cd7777a93fc64c423f88ca9ffe3985199e3d"
+      },
+      "after": {
+        "length": 7342,
+        "sha256": "c567429125b11ddaa563be75a0bfbb93330f581279bcd68544a2033e3dc6cbfc"
+      },
+      "edits": [
+        {
+          "before": "    &Arena<'_>,\n    &mut ReplayBudget,\n    &case_proof::StatusCases<'_>,\n    &mut HeldPrefix<'_, '_>,\n    &mut usize,\n)>(); // complete helper actual/formal transports\npub(super) const SELECT_BYTES: usize = PAYER_TAG\n    + ROW_LENGTH\n    + ROW_BOUND\n    + SHORT_CIRCUIT\n    + FACTS_ARM\n    + NONEMPTY\n    + PAYMENT_AND_RETURN\n",
+          "after": "    &Arena<'_>,\n    &mut ReplayBudget,\n    &case_proof::StatusCases<'_>,\n    &mut HeldPrefix<'_, '_>,\n    &mut usize,\n)>(); // complete helper actual/formal transports\npub(in crate::cleanup_plan::replay::expression_facts::receiving::retained) const SELECT_BYTES:\n    usize = PAYER_TAG\n    + ROW_LENGTH\n    + ROW_BOUND\n    + SHORT_CIRCUIT\n    + FACTS_ARM\n    + NONEMPTY\n    + PAYMENT_AND_RETURN\n"
+        },
+        {
+          "before": "    + CONTINUATION;\nconst A: usize = SELECT_BYTES + Session::acquisition_bytes();\nconst S: usize = Session::OLD_SCRATCH;\nconst R: usize = Session::query_bytes();\n// Conservative full-composition break-even; no success-count claim for an\n// early semantic error. Preserve the complete first old scratch tariff too.\npub(super) const MIN_ROWS: usize = if S > R {\n    (A + S) / (S - R) + 1\n} else {\n    usize::MAX\n};\n\npub(super) fn complete_rows<'hir, 'facts>(\n    function: &'hir ResolvedFunction,\n    arena: &Arena<'facts>,\n    budget: &mut ReplayBudget,\n    proof: &case_proof::StatusCases<'hir>,\n",
+          "after": "    + CONTINUATION;\nconst A: usize = SELECT_BYTES + Session::acquisition_bytes();\nconst S: usize = Session::OLD_SCRATCH;\nconst R: usize = Session::query_bytes();\n// Conservative full-composition break-even; no success-count claim for an\n// early semantic error. Preserve the complete first old scratch tariff too.\npub(in crate::cleanup_plan::replay::expression_facts::receiving::retained) const MIN_ROWS: usize =\n    if S > R {\n        (A + S) / (S - R) + 1\n    } else {\n        usize::MAX\n    };\n\npub(super) fn complete_rows<'hir, 'facts>(\n    function: &'hir ResolvedFunction,\n    arena: &Arena<'facts>,\n    budget: &mut ReplayBudget,\n    proof: &case_proof::StatusCases<'hir>,\n"
+        }
+      ]
+    }
+  ],
+  "new_modules": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "role": "production",
+      "length": 76322,
+      "sha256": "72f4b74e7be6848c673e6bd3a3b81cfa39b381757e101b59bbc4ae5b7c4b1081",
+      "lines": 1323
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "role": "test-only",
+      "length": 4051,
+      "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3",
+      "lines": 111
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "role": "test-only",
+      "length": 11069,
+      "sha256": "1033ff9b12b272c6ebcdaeea7c8c463fa8bb6a7f939be951969586f36209e024",
+      "lines": 283
+    }
+  ]
+}

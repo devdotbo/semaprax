@@ -5,8 +5,9 @@ Audience: compiler contributors and source-accounting reviewers.
 
 ## Boundary
 
-This candidate implements only the dense certified ordinary status-source loop.
-It does not retain search state into block/edge validation or across invocations.
+This candidate retains the dense certified ordinary status-source scratch through
+the same invocation's pure initial edge-condition loop. It releases mutable
+custody before program-dependent block transitions and never crosses invocations.
 The owning issue is #885. No runtime gain, application admission, public API,
 hosted support or completion-matrix promotion is established by source analysis.
 The existing 67,108,864-byte application cap is unchanged.
@@ -22,8 +23,8 @@ status count at least the target-layout `MIN_ROWS`. That constant conservatively
 requires a positive source fee difference on full successful traversal; actual
 query count can be smaller on an early error. Short, empty and LegacyUnobserved
 routes keep their old lookup algorithm after the paid first-frontier selector.
-SelectedReservation, Tree, fewer-than-three status rows, and edge lookups keep
-their original dispatch. Selector overhead on ineligible held-prefix routes is
+SelectedReservation, Tree, fewer-than-three status rows, and block-transition
+lookups keep their original dispatch. Selector overhead on ineligible held-prefix routes is
 a real cold-path cost, not a saving.
 
 ## Custody
@@ -32,7 +33,7 @@ The session holds immutable arena and function loans and an exclusive mutable
 ReplayBudget loan. The arena's fact-payload lifetime is independent of the
 function/proof/status-directory lifetime. Only their common local session loan
 is shared; no `Facts`-inner-outlives-function bound is added to the validator. Its query identity loan must last for that entire session:
-production queries come from the held function's immutable status table. The
+production queries come from the held function's immutable status and edge tables. The
 actual slice-bearing comparison frame persists; it is neither a paid-once flag
 nor a recreated full local comparison. Every field is reset on each query.
 Returned facts borrow the original arena and never mutable scratch. There is no
@@ -172,3 +173,71 @@ reserved floors, allocator allocated/reserved/reallocated/peak/live metrics and
 Drop. Require a positive measured whole-composition difference and disclose
 cold, tiny, early-error, dense/miss and fallback costs. Edge-spanning retention
 and the remaining broad #885 acceptance controls stay open.
+
+## Same-ABI initial-edge continuation (source only)
+
+The ordinary validator's existing signature is directly reexported from
+`receiving/retained/ordinary_cross_phase.rs`. Its lexical status receiver is the
+complete current certified receiver. The eligible branch inlines the complete
+`complete_rows` body, preserving every acquisition, receiving, insertion,
+producer, proof, ordinal, work and refusal payment. The Session is formed only
+at the existing first lookup frontier. The full immediate ordinary caller is
+independently compiled in `ordinary_cross_phase_before.rs`; all original status,
+region, entry and edge APIs also remain independently callable.
+
+After the last status query, the original held prefix freezes, the original
+status control payment executes, and the affine attempt completes. The published
+StatusSources retains the original function/budget pointers and captured ledger.
+The original region and entry validators run before the original edge receiver
+binding/current-ledger checks. The initial edge IDs/endpoints precede each
+condition exactly as before. Always and status conditions retain their complete
+old paths. Only BooleanResult, VariantCase and ArmSelected use retained search
+scratch. Their original zero-byte/work authentication and query payment occur
+before the new mutable Session/query actual arguments form. Both complete old
+compound Result layouts remain in that payment.
+
+The actual edge-site ledger is `Session::EDGE_QUERY_BYTES`:
+
+| Role | Complete typed payment |
+| --- | --- |
+| Mutable Session and query actual/formal pair | `2 * size_of::<(&mut Session, &ExpressionId)>()` |
+| Internal arena/function/budget/control/comparison field loans | `size_of::<(&Arena, &ResolvedFunction, &mut ReplayBudget, &mut Control, &mut Compared)>()` |
+| Budget reborrow and receiver | `2 * size_of::<&mut ReplayBudget>()` |
+| New predicate result/receiving | `2 * size_of::<bool>()` |
+
+There is no new Session acquisition, selector, scan, callback, Option<Session>,
+returned Session, or continuation argument/result. The lexical `facts`/`proof`
+references correspond to the exact old certified receiver formals. The tail's
+storage/leaves/status references correspond to the exact old edge receiver
+formals. No removed call or unused old charge is credited: all original charges,
+including the complete selector/helper frame, remain unchanged. Moving the
+existing `session.budget` field into the old budget binding consumes exclusive
+custody before the first transition callback without constructing a drop-call
+frame or another owner. The Session cannot be queried after that partial move.
+
+The completed LexicalAttempt remains live longer. Its unchanged Drop reads
+Finished and makes no mutation; no external callback receives the private proof.
+Its already initialized, fully paid original carrier is retained, not copied or
+recreated. This extends the physical overlap of the existing guard and Session
+with region/entry state. The owning test reports actual requested heap backing,
+and the layout observation reports the retained guard width. No stack-peak or
+CPU saving is claimed. Treat a change that copies/returns that guard, adds a
+wrapper, or creates a fresh carrier as a new A obligation.
+
+Let Ns be actual status queries, Q actual expression-bearing initial-edge
+queries, S the complete old scratch, A the unchanged existing status acquisition
+and selector, Rs the existing status-query receiver, and Re EDGE_QUERY_BYTES.
+The full old-prefix equation is:
+
+`(Ns + Q - 1) * S - A - Ns * Rs - Q * Re`.
+
+Against the complete immediate status-retained caller the incremental equation
+is exactly `Q * (S - Re)`: M_new=0, no new acquisition/transport carrier is
+formed, and the original Session acquisition remains paid in both arms. The
+owning caller test requires S > Re and derives Q from actual resolved conditions.
+Q=0 executes no new edge payment and must preserve the complete old bill; early
+region/entry/edge-ID errors likewise retain complete original tuples. A target
+layout or later source change that invalidates that equality fails the owning
+control; it does not authorize a tariff adjustment. All measurements and controls
+are authored but unrun. General source custody/recursive joins are deferred to
+the next combined batch, and #885 remains open pending actual qualification.

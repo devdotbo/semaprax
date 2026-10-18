@@ -35,7 +35,8 @@ const CONTINUATION: usize = 2 * size_of::<(
     &mut HeldPrefix<'_, '_>,
     &mut usize,
 )>(); // complete helper actual/formal transports
-pub(super) const SELECT_BYTES: usize = PAYER_TAG
+pub(in crate::cleanup_plan::replay::expression_facts::receiving::retained) const SELECT_BYTES:
+    usize = PAYER_TAG
     + ROW_LENGTH
     + ROW_BOUND
     + SHORT_CIRCUIT
@@ -49,11 +50,12 @@ const S: usize = Session::OLD_SCRATCH;
 const R: usize = Session::query_bytes();
 // Conservative full-composition break-even; no success-count claim for an
 // early semantic error. Preserve the complete first old scratch tariff too.
-pub(super) const MIN_ROWS: usize = if S > R {
-    (A + S) / (S - R) + 1
-} else {
-    usize::MAX
-};
+pub(in crate::cleanup_plan::replay::expression_facts::receiving::retained) const MIN_ROWS: usize =
+    if S > R {
+        (A + S) / (S - R) + 1
+    } else {
+        usize::MAX
+    };
 
 pub(super) fn complete_rows<'hir, 'facts>(
     function: &'hir ResolvedFunction,

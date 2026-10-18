@@ -236,6 +236,137 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         }
         Ok(None)
     }
+    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_QUERY_BYTES: usize = 2
+        * size_of::<(&mut Self, &ExpressionId)>()
+        + size_of::<(
+            &Arena<'_>,
+            &ResolvedFunction,
+            &mut ReplayBudget,
+            &mut Control,
+            &mut Compared<'_>,
+        )>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<bool>();
+    pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =
+        RESULTS + Self::EDGE_QUERY_BYTES;
+    pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(
+        &mut self,
+        query: &'arena ExpressionId,
+    ) -> Result<Option<&'arena Option<CallFact<'hir>>>, Diagnostic> {
+        // Only the same-ABI closed initial-edge continuation calls this method.
+        // Original frozen-directory guards execute first; immutable function and
+        // arena loans plus exclusive budget custody span every query. No callback
+        // or ACTIVE switch occurs before this owner is dropped.
+        // Original ordered work and complete query reset. No verdict is reused. Slice loans remain bound to the held immutable
+        // function/arena; every field is reset before the next query.
+        self.budget.charge(
+            self.function,
+            4,
+            "expression-fact lookup control initialization",
+        )?;
+        self.control.lower = 0;
+        self.control.upper = 0;
+        self.control.at = self.arena.root;
+        self.control.last = self.arena.root;
+        self.budget.charge(
+            self.function,
+            8,
+            "expression-fact receiving state initialization",
+        )?;
+        self.compared.bytes.left = query.as_str().as_bytes();
+        self.compared.bytes.right = &[];
+        self.compared.bytes.end = 0;
+        self.compared.bytes.common = 0;
+        self.compared.order = Ordering::Equal;
+        self.compared.units = 0;
+        self.compared.a = 0;
+        self.compared.b = 0;
+        let arena = self.arena;
+        let function = self.function;
+        let budget = &mut *self.budget;
+        let control = &mut self.control;
+        let compared = &mut self.compared;
+        macro_rules! compare_into {
+            ($candidate:expr, $prefix:expr) => {{
+                budget.charge(function, 10, "expression-fact prefix control bookkeeping")?;
+                compared.bytes.right = ($candidate).as_str().as_bytes();
+                compared.bytes.end = compared.bytes.left.len().min(compared.bytes.right.len());
+                compared.bytes.common = $prefix;
+                compared.units = compared
+                    .bytes
+                    .end
+                    .checked_sub(compared.bytes.common)
+                    .and_then(|n| n.checked_add(1))
+                    .ok_or_else(|| {
+                        budget.budget_refusal(
+                            function,
+                            "expression-fact prefix comparison work overflow",
+                            "",
+                        )
+                    })?;
+                budget.charge(
+                    function,
+                    compared.units,
+                    "expression-fact certified suffix lookup",
+                )?;
+                loop {
+                    if compared.bytes.common == compared.bytes.end {
+                        compared.order = compared.bytes.left.len().cmp(&compared.bytes.right.len());
+                        break;
+                    }
+                    compared.a = compared.bytes.left[compared.bytes.common];
+                    compared.b = compared.bytes.right[compared.bytes.common];
+                    if compared.a != compared.b {
+                        compared.order = compared.a.cmp(&compared.b);
+                        break;
+                    }
+                    compared.bytes.common += 1;
+                }
+            }};
+        }
+        if arena.nodes.len() >= 16 {
+            budget.charge(function, 3, "expression-fact minimum key access")?;
+            let first = &arena.nodes[arena.first];
+            compare_into!(&first.key, 0);
+            match compared.order {
+                Ordering::Less => return Ok(None),
+                Ordering::Equal => return Ok(Some(&first.fact)),
+                Ordering::Greater => control.lower = compared.bytes.common,
+            }
+            loop {
+                budget.charge(function, 3, "expression-fact maximum key access")?;
+                let node = &arena.nodes[control.last];
+                if node.right == NIL {
+                    compare_into!(&node.key, 0);
+                    match compared.order {
+                        Ordering::Greater => return Ok(None),
+                        Ordering::Equal => return Ok(Some(&node.fact)),
+                        Ordering::Less => control.upper = compared.bytes.common,
+                    }
+                    break;
+                }
+                control.last = node.right;
+            }
+        }
+        while control.at != NIL {
+            let prefix = control.lower.min(control.upper);
+            budget.charge(function, 3, "expression-fact certified node access")?;
+            let node = &arena.nodes[control.at];
+            compare_into!(&node.key, prefix);
+            match compared.order {
+                Ordering::Equal => return Ok(Some(&node.fact)),
+                Ordering::Less => {
+                    control.upper = compared.bytes.common;
+                    control.at = node.left;
+                }
+                Ordering::Greater => {
+                    control.lower = compared.bytes.common;
+                    control.at = node.right;
+                }
+            }
+        }
+        Ok(None)
+    }
 }
 
 #[cfg(test)]
