@@ -909,6 +909,15 @@ old eleven-field acquire bank is unchanged. Full permit work is
 All physical layouts use actual Rust types, including ID layouts, padding,
 Results, Option, iterators, cursor and owned headers; no old-fee credit is used.
 
+Finite-error option closures have an additional lexical capture/typed-Result
+debit before closure formation, on every reached formation, independent of the
+terminal receipt bank. Control and call option closures each add two actual
+roles/work units; call integer-conversion closures add three; the control index
+closure additionally carries its borrowed Kind and adds four. The CFG successor
+map/transpose is an explicit match with five typed transport roles, preserving
+successor lookup order. These costs are included even when the option succeeds;
+no pre-existing closure or error header is subtracted as credit.
+
 Pure signature queries expand inline with typed match/query roles, including
 actual double-reference pattern bindings. Their explicit Some matches preserve
 parameter lookup before ownership classification and avoid adding closure

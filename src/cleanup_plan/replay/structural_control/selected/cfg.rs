@@ -34,7 +34,13 @@ fn successor(
     let item = plan
         .blocks
         .get(block.0 as usize)
-        .ok_or_else(|| permit.control(Reason::Finite(Kind::CleanupCfgReferencesAnUnknownBlock)))?;
+        .ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &crate::cleanup_plan::CleanupBlock,
+            Kind::CleanupCfgReferencesAnUnknownBlock
+        ))?;
     let edge = match &item.terminator {
         CleanupTerminator::Goto(edge) => (index == 0).then_some(*edge),
         CleanupTerminator::Branch(edges) => {
@@ -46,9 +52,16 @@ fn successor(
             edges.get(index).copied()
         }
         CleanupTerminator::Exit(exit) => {
-            let target = plan.exits.get(exit.0 as usize).ok_or_else(|| {
-                permit.control(Reason::Finite(Kind::CleanupCfgReferencesAnUnknownExit))
-            })?;
+            let target = plan
+                .exits
+                .get(exit.0 as usize)
+                .ok_or_else(control_refusal!(
+                    budget,
+                    function,
+                    permit,
+                    &ExitTarget,
+                    Kind::CleanupCfgReferencesAnUnknownExit
+                ))?;
             match &target.continuation {
                 ExitContinuation::Continue(edge)
                 | ExitContinuation::LoopBreak { edge, .. }
@@ -66,13 +79,28 @@ fn successor(
             }
         }
     };
-    edge.map(|id| {
-        plan.edges
-            .get(id.0 as usize)
-            .map(|edge| edge.to)
-            .ok_or_else(|| permit.control(Reason::Finite(Kind::CleanupCfgReferencesAnUnknownEdge)))
-    })
-    .transpose()
+    // Exact former map/transpose transport; no new captured closure aliases.
+    budget.reserve_array::<(
+        Option<EdgeId>,
+        EdgeId,
+        &crate::cleanup_plan::CleanupEdge,
+        Option<BlockId>,
+        Result<Option<BlockId>, Error>,
+    )>(function, 1, "selected CFG successor transport")?;
+    budget.charge(function, 5, "selected CFG successor transport")?;
+    match edge {
+        None => Ok(None),
+        Some(id) => {
+            let item = plan.edges.get(id.0 as usize).ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                &crate::cleanup_plan::CleanupEdge,
+                Kind::CleanupCfgReferencesAnUnknownEdge
+            ))?;
+            Ok(Some(item.to))
+        }
+    }
 }
 
 pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
@@ -125,9 +153,13 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
     while let Some((block, expanded)) = stack.pop() {
         budget.charge(function, 1, "structural CFG traversal")?;
         let index = block.0 as usize;
-        let color = colors.get_mut(index).ok_or_else(|| {
-            permit.control(Reason::Finite(Kind::CleanupCfgReferencesAnUnknownBlock))
-        })?;
+        let color = colors.get_mut(index).ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &mut u8,
+            Kind::CleanupCfgReferencesAnUnknownBlock
+        ))?;
         if expanded {
             *color = 2;
             continue;
@@ -159,9 +191,13 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
             else {
                 continue;
             };
-            let color = colors.get(target.0 as usize).ok_or_else(|| {
-                permit.control(Reason::Finite(Kind::CleanupCfgReferencesAnUnknownBlock))
-            })?;
+            let color = colors.get(target.0 as usize).ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                &u8,
+                Kind::CleanupCfgReferencesAnUnknownBlock
+            ))?;
             if *color == 1 {
                 return Err(permit.control(Reason::Finite(Kind::CleanupCfgContainsACycle)));
             }

@@ -778,9 +778,13 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
         )? {
             budget.charge(function, 1, "structural call coverage")?;
             if fact.is_some() {
-                expected_count = expected_count
-                    .checked_add(1)
-                    .ok_or_else(|| permit.control(Reason::Finite(Kind::TooManyCallExpressions)))?;
+                expected_count = expected_count.checked_add(1).ok_or_else(control_refusal!(
+                    budget,
+                    function,
+                    permit,
+                    usize,
+                    Kind::TooManyCallExpressions
+                ))?;
                 #[cfg(test)]
                 let present = match &borrowed_commits {
                     Some(ids) => {

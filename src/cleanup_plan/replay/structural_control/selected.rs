@@ -2,6 +2,19 @@
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError as Error;
 use crate::cleanup_plan::replay::selected_context::child::Permit;
+// The closure capture and its new typed Result are admitted before the
+// closure is formed. Macro expansion adds no forwarding helper activation.
+macro_rules! control_refusal {
+    ($budget:ident,$function:ident,$permit:ident,$value:ty,$kind:expr) => {{
+        $budget.reserve_array::<(&Permit<'_>, Result<$value, Error>)>(
+            $function,
+            1,
+            "selected control closure receiving",
+        )?;
+        $budget.charge($function, 2, "selected control closure receiving")?;
+        || $permit.control(Reason::Finite($kind))
+    }};
+}
 pub(in crate::cleanup_plan::replay) mod reason;
 use reason::{Kind, Reason};
 mod blocks;

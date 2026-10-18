@@ -119,6 +119,20 @@ fn direct_block_edge_status_and_call_children_keep_immediate_old_six_fields() {
                     &mut budget,
                 )
             };
+            if !old && case == 3 {
+                let Err(Error::Structural(receipt)) = &result else {
+                    panic!("actual missing status must remain typed: {result:?}")
+                };
+                let (_, Reason::UnknownStatus(held)) = receipt.borrowed_control_receipt().unwrap()
+                else {
+                    panic!("missing status retains its actual operand")
+                };
+                let EdgeCondition::StatusZero(source) = &function.cleanup_plan.edges[0].condition
+                else {
+                    unreachable!()
+                };
+                assert_eq!(held.as_str().as_ptr(), source.expression.as_str().as_ptr());
+            }
             results.push(result.map_err(|e| render(e, function)));
         }
         assert_eq!(results[0], results[1], "full block/call/status case {case}");

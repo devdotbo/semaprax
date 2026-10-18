@@ -7,6 +7,27 @@ use crate::hir::lexical_exit::ChildCursor;
 
 pub(super) use super::super::calls::CallCursor;
 
+macro_rules! call_refusal {
+    ($budget:ident,$function:ident,$permit:ident,$value:ty,$kind:expr) => {{
+        $budget.reserve_array::<(
+            &super::super::call_receiving::Permit<'_, Error>,
+            Result<$value, Error>,
+        )>($function, 1, "selected call closure receiving")?;
+        $budget.charge($function, 2, "selected call closure receiving")?;
+        || Error::static_error(&$permit, $kind)
+    }};
+}
+macro_rules! call_index_refusal {
+    ($budget:ident,$function:ident,$permit:ident,$value:ty,$kind:expr) => {{
+        $budget.reserve_array::<(
+            &super::super::call_receiving::Permit<'_, Error>,
+            std::num::TryFromIntError,
+            Result<$value, Error>,
+        )>($function, 1, "selected call index closure receiving")?;
+        $budget.charge($function, 3, "selected call index closure receiving")?;
+        |_| Error::static_error(&$permit, $kind)
+    }};
+}
 enum Signature<'a> {
     Byte(crate::byte_ops::ByteOp),
     String(crate::string_ops::StringOp),
@@ -318,9 +339,13 @@ fn signature<'a>(
                 "selected control string_operand child receiving",
                 Error::string_operand(function, expression, budget)
             )?
-            .ok_or_else(|| {
-                Error::static_error(&permit, CallKind::SelectedStringTransferCallIdentityDiffers)
-            })?;
+            .ok_or_else(call_refusal!(
+                budget,
+                function,
+                permit,
+                &ResolvedExpr,
+                CallKind::SelectedStringTransferCallIdentityDiffers
+            ))?;
         }
         return Ok(Signature::String(op));
     }
@@ -445,14 +470,24 @@ pub(super) fn validate<'a>(
     let expression = match &held {
         Some((expression, _)) => *expression,
         None => cursor
-            .ok_or_else(|| {
-                Error::static_error(&permit, CallKind::SelectedCallLacksItsLookupCursor)
-            })?
+            .ok_or_else(call_refusal!(
+                budget,
+                function,
+                permit,
+                &mut CallCursor<'_>,
+                CallKind::SelectedCallLacksItsLookupCursor
+            ))?
             .find::<Error>(function, call, budget)?,
     };
     #[cfg(not(test))]
     let expression = cursor
-        .ok_or_else(|| Error::static_error(&permit, CallKind::SelectedCallLacksItsLookupCursor))?
+        .ok_or_else(call_refusal!(
+            budget,
+            function,
+            permit,
+            &mut CallCursor<'_>,
+            CallKind::SelectedCallLacksItsLookupCursor
+        ))?
         .find::<Error>(function, call, budget)?;
     let (callee, type_arguments, instance, args) = match &expression.kind {
         ResolvedExprKind::Call {
@@ -634,8 +669,13 @@ pub(super) fn validate<'a>(
             ));
         }
         if mode == OwnershipMode::Own && drop {
-            let expected = u32::try_from(index)
-                .map_err(|_| Error::static_error(&permit, CallKind::TooManyCallParameters))?;
+            let expected = u32::try_from(index).map_err(call_index_refusal!(
+                budget,
+                function,
+                permit,
+                u32,
+                CallKind::TooManyCallParameters
+            ))?;
             if actual
                 .next()
                 .is_none_or(|arg| arg.parameter_index != expected)
@@ -664,12 +704,20 @@ pub(super) fn validate<'a>(
             ));
         }
         previous = Some(argument.parameter_index);
-        let index = usize::try_from(argument.parameter_index).map_err(|_| {
-            Error::static_error(&permit, CallKind::CallCommitParameterIndexDoesNotFitUsize)
-        })?;
-        let expected = fact.arguments.get(index).ok_or_else(|| {
-            Error::static_error(&permit, CallKind::CallCommitParameterIndexExceedsCallArity)
-        })?;
+        let index = usize::try_from(argument.parameter_index).map_err(call_index_refusal!(
+            budget,
+            function,
+            permit,
+            usize,
+            CallKind::CallCommitParameterIndexDoesNotFitUsize
+        ))?;
+        let expected = fact.arguments.get(index).ok_or_else(call_refusal!(
+            budget,
+            function,
+            permit,
+            &ExpressionId,
+            CallKind::CallCommitParameterIndexExceedsCallArity
+        ))?;
         if !matches!(&argument.source.storage,StorageId::CallArgument{call:storage_call,parameter_index,value_expression} if storage_call==call && parameter_index==&argument.parameter_index && value_expression==expected && argument.source.projections.is_empty())
         {
             return Err(Error::static_error(

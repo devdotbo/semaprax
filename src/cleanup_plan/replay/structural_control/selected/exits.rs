@@ -341,9 +341,13 @@ fn owned_edge(
         .cleanup_plan
         .edges
         .get(edge.0 as usize)
-        .ok_or_else(|| {
-            permit.control(Reason::Finite(Kind::CleanupTerminatorReferencesUnknownEdge))
-        })?;
+        .ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &crate::cleanup_plan::CleanupEdge,
+            Kind::CleanupTerminatorReferencesUnknownEdge
+        ))?;
     if item.id != edge || item.from != owner {
         return Err(permit.control(Reason::Finite(
             Kind::CleanupEdgeHasTheWrongOwnerOrIsReferencedRepeatedly,
@@ -402,18 +406,24 @@ fn ancestor_contains(
     let mut found = false;
     while let Some(region) = current {
         budget.charge(function, 1, "structural target ancestry")?;
-        remaining = remaining
-            .checked_sub(1)
-            .ok_or_else(|| permit.control(Reason::Finite(Kind::CleanupRegionTreeContainsACycle)))?;
+        remaining = remaining.checked_sub(1).ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            usize,
+            Kind::CleanupRegionTreeContainsACycle
+        ))?;
         let item = function
             .cleanup_plan
             .regions
             .get(region.0 as usize)
-            .ok_or_else(|| {
-                permit.control(Reason::Finite(
-                    Kind::CleanupRegionChainReferencesAnUnknownRegion,
-                ))
-            })?;
+            .ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                &crate::cleanup_plan::CleanupRegion,
+                Kind::CleanupRegionChainReferencesAnUnknownRegion
+            ))?;
         found |= region == wanted;
         current = item.parent;
     }
@@ -458,7 +468,13 @@ pub(super) fn regions_match(
     let source = plan
         .blocks
         .get(exit.from.0 as usize)
-        .ok_or_else(|| permit.control(Reason::Finite(Kind::CleanupExitHasAnUnknownSourceBlock)))?
+        .ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &crate::cleanup_plan::CleanupBlock,
+            Kind::CleanupExitHasAnUnknownSourceBlock
+        ))?
         .region;
     let mut latch = None;
     let mut target = None;
@@ -479,9 +495,14 @@ pub(super) fn regions_match(
                     Kind::SelectedPrimitiveExitsDoNotAdmitOwnedIteratorScopes,
                 )));
             }
-            let region = lexical_cert::loop_region(plan, control_target).ok_or_else(|| {
-                permit.control(Reason::Finite(Kind::LoopLatchNamesAnUnknownLexicalLoop))
-            })?;
+            let region =
+                lexical_cert::loop_region(plan, control_target).ok_or_else(control_refusal!(
+                    budget,
+                    function,
+                    permit,
+                    CleanupRegionId,
+                    Kind::LoopLatchNamesAnUnknownLexicalLoop
+                ))?;
             if !crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
                 budget,
                 function,
@@ -509,9 +530,13 @@ pub(super) fn regions_match(
                 plan.edges
                     .get(edge.0 as usize)
                     .and_then(|edge| plan.blocks.get(edge.to.0 as usize))
-                    .ok_or_else(|| {
-                        permit.control(Reason::Finite(Kind::CleanupContinuationHasAnUnknownTarget))
-                    })?
+                    .ok_or_else(control_refusal!(
+                        budget,
+                        function,
+                        permit,
+                        &crate::cleanup_plan::CleanupBlock,
+                        Kind::CleanupContinuationHasAnUnknownTarget
+                    ))?
                     .region,
             );
         }
@@ -525,14 +550,23 @@ pub(super) fn regions_match(
     let mut stopped = false;
     while let Some(region) = current {
         budget.charge(function, 1, "structural source ancestry")?;
-        remaining = remaining
-            .checked_sub(1)
-            .ok_or_else(|| permit.control(Reason::Finite(Kind::CleanupRegionTreeContainsACycle)))?;
-        let item = plan.regions.get(region.0 as usize).ok_or_else(|| {
-            permit.control(Reason::Finite(
-                Kind::CleanupRegionChainReferencesAnUnknownRegion,
-            ))
-        })?;
+        remaining = remaining.checked_sub(1).ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            usize,
+            Kind::CleanupRegionTreeContainsACycle
+        ))?;
+        let item = plan
+            .regions
+            .get(region.0 as usize)
+            .ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                &crate::cleanup_plan::CleanupRegion,
+                Kind::CleanupRegionChainReferencesAnUnknownRegion
+            ))?;
         stopped |= latch == Some(region);
         if let Some(target) = target {
             stopped |= crate::cleanup_plan::replay::inventory_coverage::paid::receive!(

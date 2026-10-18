@@ -409,5 +409,14 @@ pub(super) fn index(
         "selected control permit call receiving",
         Permit::control_receiver::<u32>(function, budget)
     )?;
+    // Actual changed closure capture bank, distinct from the helper's Kind
+    // argument and terminal receipt roles; acquired before closure formation.
+    budget.reserve_array::<(
+        &Permit<'_>,
+        &Kind,
+        std::num::TryFromIntError,
+        Result<u32, Error>,
+    )>(function, 1, "selected control index closure receiving")?;
+    budget.charge(function, 4, "selected control index closure receiving")?;
     u32::try_from(index).map_err(|_| permit.control(Reason::Finite(kind)))
 }
