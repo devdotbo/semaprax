@@ -153,6 +153,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
             ACTIVE.with(|active| {
                 active.replace(previous.clone());
             });
+            #[cfg(feature = "unstable-workflow-profiling")]
+            crate::workflow_profile::plan_comparison::observe_ledger_transition();
             if let Some(parent) = previous {
                 if !reserve(Some(&parent), consumed) {
                     record_refusal(&parent, consumed);
@@ -184,6 +186,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
         stage: Cell::new(None),
     });
     let previous = ACTIVE.with(|active| active.replace(Some(Rc::clone(&budget))));
+    #[cfg(feature = "unstable-workflow-profiling")]
+    crate::workflow_profile::plan_comparison::observe_ledger_transition();
     let restore = Restore {
         previous,
         current: Rc::clone(&budget),
@@ -404,6 +408,20 @@ pub(crate) fn clear_active_floor() {
     if let Some(budget) = active() {
         budget.floor.set(0);
     }
+}
+
+// Read-only feature evidence; no ledger reference or reservation authority escapes.
+#[cfg(feature = "unstable-workflow-profiling")]
+pub(crate) fn active_ledger_snapshot()
+-> Option<crate::workflow_profile::plan_comparison::LedgerSnapshot> {
+    ACTIVE.with(|active| {
+        let active = active.try_borrow().ok()?;
+        let budget = active.as_ref()?;
+        crate::workflow_profile::plan_comparison::LedgerSnapshot::observe(
+            Rc::as_ptr(budget) as usize,
+            budget.remaining.get(),
+        )
+    })
 }
 
 pub(crate) fn active_remaining() -> Option<usize> {

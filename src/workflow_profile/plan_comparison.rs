@@ -171,6 +171,37 @@ impl Invoice {
         tail: 0,
     };
 }
+// Fixed TLS only; the opaque pointer is never dereferenced or accepted by
+// compiler operations. Every install AND restore invalidates earlier snapshots.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct LedgerSnapshot {
+    identity: usize,
+    epoch: u64,
+    remaining: usize,
+}
+thread_local! {
+    static OBSERVED_LEDGER_EPOCH: Cell<Option<u64>> = const { Cell::new(Some(0)) };
+}
+pub(crate) fn observe_ledger_transition() {
+    OBSERVED_LEDGER_EPOCH.with(|epoch| epoch.set(epoch.get().and_then(|v| v.checked_add(1))));
+}
+impl LedgerSnapshot {
+    pub(crate) fn observe(identity: usize, remaining: usize) -> Option<Self> {
+        OBSERVED_LEDGER_EPOCH.with(|epoch| {
+            Some(Self {
+                identity,
+                epoch: epoch.get()?,
+                remaining,
+            })
+        })
+    }
+    fn paid_until(self, after: Self) -> Option<usize> {
+        if self.identity != after.identity || self.epoch != after.epoch {
+            return None;
+        }
+        self.remaining.checked_sub(after.remaining)
+    }
+}
 #[derive(Clone, Copy, Debug)]
 pub struct Row {
     pub serial: u64,
@@ -180,6 +211,13 @@ pub struct Row {
     pub selected: bool,
     pub invoice: Invoice,
     pub counts: Counts,
+    /// Active ordinary ledger at guard entry/exit; not allocator/RSS bytes.
+    pub ledger_entry_remaining: Option<usize>,
+    pub ledger_exit_remaining: Option<usize>,
+    /// Inclusive successful debit within this guard, only for an unchanged
+    /// ActiveBuilder ledger. Missing/changed scopes and underflow are unknown.
+    pub ledger_paid: Option<usize>,
+    ledger_before: Option<LedgerSnapshot>,
 }
 impl Row {
     const EMPTY: Self = Self {
@@ -195,6 +233,10 @@ impl Row {
         selected: false,
         invoice: Invoice::EMPTY,
         counts: Counts::EMPTY,
+        ledger_entry_remaining: None,
+        ledger_exit_remaining: None,
+        ledger_paid: None,
+        ledger_before: None,
     };
 }
 #[derive(Debug)]
@@ -372,6 +414,11 @@ pub(crate) fn begin(
         let row = if s.row_count < ROW_CAPACITY {
             let index = s.row_count;
             s.row_count += 1;
+            let ledger_before = if payer == Payer::ActiveBuilder {
+                crate::bounded_output::active_ledger_snapshot()
+            } else {
+                None
+            };
             s.rows[index] = Row {
                 serial,
                 function: TextIdentity::new(function),
@@ -380,6 +427,10 @@ pub(crate) fn begin(
                 selected,
                 invoice,
                 counts: Counts::EMPTY,
+                ledger_entry_remaining: ledger_before.map(|v| v.remaining),
+                ledger_exit_remaining: None,
+                ledger_paid: None,
+                ledger_before,
             };
             Some(index)
         } else {
@@ -436,6 +487,25 @@ impl Drop for Invocation {
                 s.complete = false;
                 return;
             }
+            if let Some(index) = s
+                .depth
+                .checked_sub(1)
+                .and_then(|i| s.stack.get(i))
+                .copied()
+                .flatten()
+            {
+                let row = &mut s.rows[index];
+                let after = if row.payer == Payer::ActiveBuilder {
+                    crate::bounded_output::active_ledger_snapshot()
+                } else {
+                    None
+                };
+                row.ledger_exit_remaining = after.map(|v| v.remaining);
+                row.ledger_paid = row
+                    .ledger_before
+                    .zip(after)
+                    .and_then(|(before, after)| before.paid_until(after));
+            }
             s.each(|c, overflow| {
                 State::add(&mut c.ended, 1, overflow);
                 if self.succeeded {
@@ -469,6 +539,107 @@ mod tests {
             true,
             Invoice::EMPTY,
         )
+    }
+    #[test]
+    fn ordinary_ledger_paid_is_observed_not_inferred_and_scope_changes_stay_unknown() {
+        let capture = Capture::begin(binding()).unwrap();
+        let (_, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
+            {
+                let mut guard = invocation("same-ledger-success");
+                assert!(crate::bounded_output::reserve_active_required(13));
+                guard.success();
+            }
+            {
+                let _guard = invocation("restored-child-is-not-continuous");
+                let (_, refused, child_paid) = crate::bounded_output::with_limit_usage(20, || {
+                    assert!(crate::bounded_output::reserve_active_required(7));
+                });
+                assert!(!refused);
+                assert_eq!(child_paid, 7);
+            }
+            {
+                let _guard = invocation("same-ledger-refusal-prefix");
+                assert!(crate::bounded_output::reserve_active_required(3));
+                assert!(!crate::bounded_output::reserve_active_required(100));
+            }
+        });
+        assert!(refused);
+        assert_eq!(paid, 23);
+        {
+            let _guard = invocation("no-active-ledger");
+        }
+        let report = capture.finish().unwrap();
+        assert!(report.counts_complete && report.detail_complete && !report.overflow);
+        assert_eq!(report.rows[0].ledger_entry_remaining, Some(100));
+        assert_eq!(report.rows[0].ledger_exit_remaining, Some(87));
+        assert_eq!(report.rows[0].ledger_paid, Some(13));
+        assert_eq!(report.rows[1].ledger_entry_remaining, Some(87));
+        assert_eq!(report.rows[1].ledger_exit_remaining, Some(80));
+        assert_eq!(report.rows[1].ledger_paid, None);
+        assert_eq!(report.rows[2].ledger_paid, Some(3));
+        assert_eq!(report.rows[2].counts.succeeded, 0);
+        assert_eq!(report.rows[3].ledger_paid, None);
+        let before = LedgerSnapshot {
+            identity: 1,
+            epoch: 2,
+            remaining: 10,
+        };
+        assert_eq!(
+            before.paid_until(LedgerSnapshot {
+                identity: 2,
+                ..before
+            }),
+            None
+        );
+        assert_eq!(
+            before.paid_until(LedgerSnapshot {
+                remaining: 11,
+                ..before
+            }),
+            None
+        );
+        // Isolate intentional sticky exhaustion from all other test threads.
+        std::thread::spawn(|| {
+            OBSERVED_LEDGER_EPOCH.with(|epoch| epoch.set(Some(u64::MAX)));
+            observe_ledger_transition();
+            assert!(LedgerSnapshot::observe(1, 10).is_none());
+            observe_ledger_transition();
+            assert!(LedgerSnapshot::observe(1, 10).is_none());
+        })
+        .join()
+        .unwrap();
+    }
+    #[test]
+    fn non_builder_payers_never_claim_ordinary_ledger_paid() {
+        let capture = Capture::begin(binding()).unwrap();
+        let (_, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
+            for payer in [Payer::Unobserved, Payer::SelectedReservation, Payer::Oracle] {
+                let _guard = begin(
+                    "other-payer",
+                    crate::ast::Span {
+                        start: 0,
+                        end: 0,
+                        line: 0,
+                        column: 0,
+                    },
+                    payer,
+                    false,
+                    Invoice::EMPTY,
+                );
+                assert!(crate::bounded_output::reserve_active_required(1));
+            }
+        });
+        assert!(!refused);
+        assert_eq!(paid, 3);
+        let report = capture.finish().unwrap();
+        assert_eq!(report.row_count, 3);
+        assert!(
+            report.rows[..3]
+                .iter()
+                .all(|r| r.ledger_entry_remaining.is_none()
+                    && r.ledger_exit_remaining.is_none()
+                    && r.ledger_paid.is_none())
+        );
     }
     #[test]
     fn reached_prefix_and_success_have_separate_exact_counts() {
