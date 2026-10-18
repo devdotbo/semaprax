@@ -30,6 +30,8 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/factored.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/workspace_graph/expected_projection/held_projection.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
@@ -134,11 +136,32 @@ const ADDITIONS: &[&str] = &[
     "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
+    "src/ast/program_source/function_alias/before_string.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "src/source_reflows_merge/main_e177_historical_before_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers.rs",
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
+    "src/workspace_graph/expected_projection/call_carriers_original.rs",
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs",
+    "src/ast/program_source/decl_slices.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 28483; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "1d3bcd7ebbb484f1909e120b8c2f1e9af399d5b4306e0f9789371df8154f7965";
+const POLICY_LENGTH: usize = 40592; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "0c57e7a5669ed7ff3a2b105b09a53180a741d4a7e0baa799ddb641a0c0306215";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -819,6 +842,27 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/ast/program_source/function_alias/before_string.rs" => Some(include_str!("../../src/ast/program_source/function_alias/before_string.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs")),
+        "src/source_reflows_merge/main_e177_historical_before_data.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_historical_before_data.rs")),
+        "src/source_reflows_merge/main_e177_historical_data.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_historical_data.rs")),
+        "src/source_reflows_merge/main_e177_historical_data_tests.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_historical_data_tests.rs")),
+        "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_fragments_v3.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs")),
+        "src/workspace_graph/expected_projection/call_carriers.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_historical_tests.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_inverse.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_inverse.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_original.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_original.rs")),
+        "src/workspace_graph/expected_projection/call_carriers_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers_tests.rs")),
+        "src/ast/program_source/decl_slices.rs" => Some(include_str!("../../src/ast/program_source/decl_slices.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed.rs")),
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs")),
         "src/ast/program_source/function_alias/scalar_signature.rs" => Some(include_str!("../../src/ast/program_source/function_alias/scalar_signature.rs")),
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs")),
         "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs" => Some(include_str!("../../src/workspace_graph/constructor_failure/before_scalar_dispatch.rs")),

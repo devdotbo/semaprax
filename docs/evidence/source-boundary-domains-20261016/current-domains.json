@@ -1064,6 +1064,7 @@
         "src/ast/program_source/decl_slices/alias_tests.rs",
         "src/ast/program_source/decl_slices/before_alias.rs",
         "src/ast/program_source/function_alias.rs",
+        "src/ast/program_source/function_alias/before_string.rs",
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
         "src/ast/program_source/function_alias/presentation/metadata/tests.rs",
@@ -2174,7 +2175,11 @@
         "src/source_reflows_merge/main99f_inputs.rs",
         "src/source_reflows_merge/main_c883_inputs.rs",
         "src/source_reflows_merge/main_e177_final_inputs.rs",
+        "src/source_reflows_merge/main_e177_historical_before_data.rs",
+        "src/source_reflows_merge/main_e177_historical_data.rs",
+        "src/source_reflows_merge/main_e177_historical_data_tests.rs",
         "src/source_reflows_merge/main_e177_inputs.rs",
+        "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
         "src/source_reflows_merge/main_e177_overlay_v2.rs",
         "src/source_reflows_merge/main_eb2_inputs.rs",
         "src/source_reflows_merge/maina3_custody.rs",
@@ -2738,6 +2743,7 @@
         "src/workspace_report/initial.rs"
       ],
       "fully_authenticated_outside_production": [
+        "src/ast/program_source/decl_slices.rs",
         "src/bounded_output/identity_reservation/function_cells.rs",
         "src/bounded_output/identity_reservation/source_abort.rs",
         "src/bounded_output/invocation_binding.rs",
@@ -2838,11 +2844,13 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs",
         "src/source_verify/function_map.rs",
-        "src/source_verify/funding.rs"
+        "src/source_verify/funding.rs",
+        "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
+        "src/workspace_graph/expected_projection/call_carriers.rs"
       ],
-      "full_manifest_sha256": "b444f743922d879a981330bc7366ee553d317fd405724672f5ac5427963b91cb",
-      "full_raw_sha256": "a1334d586f2887e1e58db5465f330fdc3e396ea2a8af633e36667c481b736195",
-      "full_authenticated_production_sha256": "79813322b69e4f0f11b9d54d012d5ce7cbcf193fc265efd21ba93c93182a89ef"
+      "full_manifest_sha256": "137c8662861ecd59d9db9f6bc2700436699465ca2e8abb541101b58182d9ea3c",
+      "full_raw_sha256": "3991c5d4c2653acbb1924f183184faf0dc471fe2aaa92952e632e8860244660c",
+      "full_authenticated_production_sha256": "636858729dd66c91c36124886283bf56f5c67e48083595249b6eab2de36ac4cb"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3040,6 +3048,7 @@
         "src/ast/program_source/decl_slices/before_alias.rs",
         "src/ast/program_source/decl_slices_original.rs",
         "src/ast/program_source/function_alias.rs",
+        "src/ast/program_source/function_alias/before_string.rs",
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
         "src/ast/program_source/function_alias/presentation/metadata/tests.rs",
@@ -3136,8 +3145,10 @@
         "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/before_alias.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/name_equal.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs",
         "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
         "src/workspace_graph/expected_projection/borrowed_leaf.rs",
@@ -3147,6 +3158,11 @@
         "src/workspace_graph/expected_projection/cached_exact.rs",
         "src/workspace_graph/expected_projection/cached_exact/tests.rs",
         "src/workspace_graph/expected_projection/call_absence_tests.rs",
+        "src/workspace_graph/expected_projection/call_carriers.rs",
+        "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
+        "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
+        "src/workspace_graph/expected_projection/call_carriers_original.rs",
+        "src/workspace_graph/expected_projection/call_carriers_tests.rs",
         "src/workspace_graph/expected_projection/call_identity.rs",
         "src/workspace_graph/expected_projection/call_sites.rs",
         "src/workspace_graph/expected_projection/carrier_absence_tests.rs",
@@ -3265,6 +3281,7 @@
         "src/workspace_graph/expected_projection/borrowed_leaf.rs",
         "src/workspace_graph/expected_projection/borrowed_leaf/checked_key.rs",
         "src/workspace_graph/expected_projection/cached_exact.rs",
+        "src/workspace_graph/expected_projection/call_carriers.rs",
         "src/workspace_graph/expected_projection/call_identity.rs",
         "src/workspace_graph/expected_projection/call_sites.rs",
         "src/workspace_graph/expected_projection/cost.rs",
@@ -3900,9 +3917,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "579cf46cb5845b873e4e3e5d1caa934c0a8f846e22c4d40de5a394503ba3f77b",
-      "full_raw_sha256": "010fc689f90270da601ef5b521823301d6e77e2dcbfc72ce5a1870536da1f99b",
-      "full_authenticated_production_sha256": "55358178b7afafafee3c89ed036f94615fbc25783f1aa444201455a1fdea15d6"
+      "full_manifest_sha256": "48e069657ed15a9758e52ef1089e1ba087c77b18e242a4c98fa1f4eacd5d9b8e",
+      "full_raw_sha256": "f2a9141a0eafd7e01e781642c09257d9173dc0ede8a1694293848f8d7de2bfbc",
+      "full_authenticated_production_sha256": "f31db431aac614343f4f7981508e2ac1b66cfa46f8ff18b7d45f7af28706ca59"
     }
   }
 }
