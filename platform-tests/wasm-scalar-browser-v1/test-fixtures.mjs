@@ -32,9 +32,10 @@ const expectedFunctions = [
   parameters,
   result,
 }));
-// Exact hosted compiler records from 1c87c0f125, including the complete builder
-// bill. Full prior/current graphs and wire-domain digest checks are retained in
-// docs/evidence/ci-corrections-1c87-20261018; browser runtime remains a CI gate.
+// Original hosted records remain in docs/evidence/ci-corrections-1c87-20261018.
+// Current digests replay the exact 31eaf2f541 builder bills; complete graph and
+// wire checks are in docs/evidence/browser-cli-31e-20261018/browser-capture.
+// Browser runtime remains an executable CI gate.
 const fixtureSpecs = [
   { name: "direct-source", schema: "semaprax.web.v4" },
   {
@@ -42,14 +43,14 @@ const fixtureSpecs = [
     schema: "semaprax.web-project.v1",
     project_revision: "sha256:8576caa566cb7f0d265354927c5bc7b481146f05e616f76917f340b4af26f053",
     workspace_revision: "sha256:f0454397a2b339677bc49c9ccd8e8491917426202c6aba2475221879e02ae3f6",
-    project_graph_digest: "sha256:90fe83168da26c6630b0531a055dd995f1ccc1346b8459e8fccb5a43905a5d57",
+    project_graph_digest: "sha256:61c625bf081958906c4d5821af774e46a1a6f4db1d6fb8dc01f3c3c8e4b6d9a9",
   },
   {
     name: "project-renamed",
     schema: "semaprax.web-project.v1",
     project_revision: "sha256:afa7b35b6b057eaa1cbf89c68ccd1e19a8d988f4168049f70717f80c28218fb7",
     workspace_revision: "sha256:8fcf973950f10bf9393ff5597484333b178e5f93c5d2a1847f6ccc18d6185f71",
-    project_graph_digest: "sha256:67c8311f6a759047e38659371d847235c10b6b181d689b79355ca1382a68fe30",
+    project_graph_digest: "sha256:fd5dc64d126a23cc6e80109fb9a81b4acae852296daa3ece2b904a089be1d6f1",
   },
 ];
 const expectedArtifacts = [

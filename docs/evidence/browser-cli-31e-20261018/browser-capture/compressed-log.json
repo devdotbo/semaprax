@@ -1,0 +1,9 @@
+{
+  "encoding": "gzip",
+  "uncompressed_name": "job.log",
+  "uncompressed_length": 143239,
+  "uncompressed_sha256": "986f9de7e73bf1d1d4b2f8571036e15125c526f9004f2c179f8d57a2a134de51",
+  "compressed_length": 26687,
+  "compressed_sha256": "6e895b5a9c9c372b7b9c02b8e37a375809c8f9c204cf82b1474e6caa916cb626",
+  "raw_evidence_bytes_unchanged": true
+}
