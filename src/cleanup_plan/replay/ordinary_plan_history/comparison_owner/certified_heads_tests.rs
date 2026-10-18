@@ -598,7 +598,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
 fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_controls() {
     let program = super::super::super::super::tests::program();
     let function = &program.functions[0];
-    let mut reached = [false; 17];
+    let mut reached = [false; 18];
     let phases = [
         "ordinary plan fresh right segment base",
         "ordinary plan fresh right link pop",
@@ -617,6 +617,7 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         "ordinary plan certified boundary transition",
         "ordinary plan certified numeric run capture",
         "ordinary plan certified numeric run publication",
+        "ordinary plan shared suffix pattern probe",
     ];
     for (shared, shape) in [
         (true, 0),
