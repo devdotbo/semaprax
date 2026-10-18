@@ -1,0 +1,9 @@
+{
+  "status": "SOURCE_ONLY_ALL_CURRENT_AND_HISTORY_CHANNELS_AUTHENTICATED",
+  "rows": 542,
+  "channels": 1541,
+  "raw_modules": 180,
+  "closed_sources": 578,
+  "producer_output_historical_tuple_replay": true,
+  "Rust_executed": false
+}
