@@ -77,8 +77,37 @@ def expand_fragment_refs(before, policy, page):
     row['fragments'][i]=copy.deepcopy(target)
  return result
 
+V4_SCHEMA = 'semaprax.finite-source-overlay-page.v4'
+V4_OLD519 = (
+ ('src/source_reflows_merge.rs','3ef2bb440f23c573007567c98b4bfc608b555bd2cc8f2591d365476b850bd46a'),
+ ('src/source_reflows/incoming67107_semantic_receivers.rs','383eff4edb39826861991d6dcd84dc0c489471e90e66ed214b4d5ad46a907ac1'))
+def expand_old519_refs(before, policy, page):
+ assert page['schema']==V4_SCHEMA and len(before['rows'])==519
+ result=copy.deepcopy(page); result['schema']=V3_SCHEMA; seen=set()
+ for i,row in enumerate(result['replacements']):
+  if 'old519' not in row:
+   assert row['source'] not in {p for p,_ in V4_OLD519}, 'missing literal inheritance'
+   continue
+  assert keys(row,('old519',)) and type(row['old519']) is list and len(row['old519'])==4
+  index,length,sha,extra=row['old519']
+  assert type(index) is int and 0<=index<len(V4_OLD519) and index not in seen
+  seen.add(index); source,old_sha=V4_OLD519[index]
+  matches=[r for r in before['rows'] if r['source']==source]
+  assert len(matches)==1 and H(canonical(matches[0]))==old_sha, 'complete old row drift'
+  assert type(sha) is str
+  current=dict(length=length,sha256=sha,archive='e/'+sha); pin(current)
+  prior=matches[0]; assert current!=prior['current'] and type(extra) is list
+  for view in extra:pin(view)
+  full=copy.deepcopy(prior); full['current']=current
+  full['views'].append(dict(prior['current'],name='whole-pre-overlay-v2-current'))
+  full['views'].extend(copy.deepcopy(extra)); result['replacements'][i]=full
+ assert seen==set(range(len(V4_OLD519))), 'missing literal reference'
+ assert all('old519' not in row for row in result['additions'])
+ return expand_fragment_refs(before,policy,result)
+
 def compose_values(before, policy, page):
- if page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
+ if page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
+ elif page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
  return compose_values_v2(before,policy,page)
 
 def compose_values_v2(before, policy, page):
