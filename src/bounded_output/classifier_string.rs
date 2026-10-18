@@ -273,17 +273,63 @@ impl ClassifierLedger {
             }
         })
     }
-    /// Complete fresh borrowed parent check, including closure capture,
-    /// match tuple and caller booleans. Paid on the known parent BEFORE a
-    /// callback; checking its return spends no ACTIVE funds.
-    pub(crate) const STORAGE_PARENT_CURRENT_CONTROLS: usize = 3 * std::mem::size_of::<&Self>()
-        + std::mem::size_of::<&std::cell::RefCell<Option<Rc<Budget>>>>()
-        + std::mem::size_of::<std::cell::Ref<'_, Option<Rc<Budget>>>>()
-        + 2 * std::mem::size_of::<&Option<Rc<Budget>>>()
-        + 5 * std::mem::size_of::<&Rc<Budget>>()
-        + std::mem::size_of::<Option<&Rc<Budget>>>()
-        + std::mem::size_of::<(&Option<Rc<Budget>>, &Option<Rc<Budget>>)>()
-        + 4 * std::mem::size_of::<bool>();
+    /// Complete fresh borrowed parent check. Every named term belongs to an
+    /// actual lexical boundary above; no Option<&Rc<Budget>> is constructed.
+    /// The known parent prepays both arms BEFORE the callback. The later check
+    /// never spends ACTIVE funds, including when ACTIVE is a foreign ledger.
+    pub(crate) const STORAGE_PARENT_CURRENT_CONTROLS: usize = {
+        use std::cell::{Cell, Ref, RefCell};
+        use std::thread::LocalKey;
+        type Active = RefCell<Option<Rc<Budget>>>;
+        type Loan = Ref<'static, Option<Rc<Budget>>>;
+        // Caller/formal self and helper return/caller boolean, plus caller !.
+        let helper = 2 * size_of::<&Self>() + 3 * size_of::<bool>();
+        // The closure captures only self. Its actual/formal environments each
+        // contain that one borrow; with returns the closure's boolean.
+        let tls = 2 * size_of::<&LocalKey<Active>>() + 2 * size_of::<&Self>() + size_of::<bool>();
+        // with supplies active to the closure: actual/formal active, then the
+        // distinct actual/formal RefCell::borrow receiver and owned Ref result.
+        let callback = 2 * size_of::<&Active>() + size_of::<bool>();
+        let borrow = 2 * size_of::<&Active>() + size_of::<Loan>();
+        // &*active.borrow(): Ref::deref actual/formal and returned option loan.
+        let option_loan = 2 * size_of::<&Loan>() + size_of::<&Option<Rc<Budget>>>();
+        // &self.0, the actual two-field match tuple, and the successful Some
+        // bindings are separate roles, not an Option::as_ref return.
+        let pattern = size_of::<&Option<Rc<Budget>>>()
+            + size_of::<(&Option<Rc<Budget>>, &Option<Rc<Budget>>)>()
+            + 2 * size_of::<&Rc<Budget>>();
+        let pointer_test = 4 * size_of::<&Rc<Budget>>() + size_of::<bool>();
+        // held.overflowed: Rc::deref actual/formal/output, Cell::get receiver
+        // actual/formal, returned bool and its lexical negation.
+        let successful = 2 * size_of::<&Rc<Budget>>()
+            + size_of::<&Budget>()
+            + 2 * size_of::<&Cell<bool>>()
+            + 2 * size_of::<bool>();
+        // The mismatch if-let has its own option loan and held binding. Its two
+        // Rc dereferences belong respectively to record_refusal's coercion and
+        // the subsequent overflowed field; neither borrows the success bank.
+        let mismatch = size_of::<&Option<Rc<Budget>>>()
+            + size_of::<&Rc<Budget>>()
+            + 4 * size_of::<&Rc<Budget>>()
+            + 2 * size_of::<&Budget>()
+            + 2 * size_of::<&Budget>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<bool>>()
+            + 2 * size_of::<bool>();
+        // The empty-parent true and mismatch false are actual distinct literal
+        // producers. Unit returns at record_refusal/Cell::set have zero width.
+        let terminal_literals = 2 * size_of::<bool>();
+        helper
+            + tls
+            + callback
+            + borrow
+            + option_loan
+            + pattern
+            + pointer_test
+            + successful
+            + mismatch
+            + terminal_literals
+    };
 
     /// Actual new callers of current() prepay its cloned ACTIVE return/local,
     /// match tuple and arm receiver, TLS borrow, borrowed predicates and bools.
