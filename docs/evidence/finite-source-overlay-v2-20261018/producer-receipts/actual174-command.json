@@ -1,0 +1,11 @@
+{
+  "argv": [
+    "python3",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018/docs/evidence/finite-overlay542-current174-20261018/successor174/bind-next.py",
+    "--root",
+    "/Volumes/Semaprax/worktrees/focused146-structural-repairs-20261018",
+    "--expected-head",
+    "8ff442ae01deafae1587b7824ab804eb73353169"
+  ],
+  "head": "8ff442ae01deafae1587b7824ab804eb73353169"
+}
