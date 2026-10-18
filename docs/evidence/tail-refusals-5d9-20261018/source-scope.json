@@ -1,0 +1,15 @@
+{
+  "base_head": "5d9eaad8ca1ff1be9263d80cd75db7482c8167f8",
+  "logical_changed": [
+    "CHANGELOG.md"
+  ],
+  "test_changed": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests/paired_tails.rs",
+  "valid_case_requires_success_and_complete_evidence": true,
+  "all_three_invalid_cases_require_original_error_and_incomplete_evidence": true,
+  "all_original_six_field_diagnostics_and_work_cuts_preserved": true,
+  "all_old_test_cases_and_source_inverses_preserved": true,
+  "no_compiler_implementation_or_pricing_change": true,
+  "no_new_registered_classes": true,
+  "all_budget_and_source_caps_unchanged": true,
+  "real_current_head_CI_still_required": true
+}

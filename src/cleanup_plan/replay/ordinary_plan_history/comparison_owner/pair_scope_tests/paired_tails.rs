@@ -151,7 +151,17 @@ fn paired_tail_complete_values_keep_every_883_work_cut_and_diagnostic() {
         pair_scope_census::reset();
         let (new, heap, _) =
             observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-        let row = complete_row(false);
+        let (rows, lost) = pair_scope_census::finish();
+        assert_eq!(lost, 0);
+        assert_eq!(rows.len(), 1);
+        let row = rows[0];
+        assert!(!row.old && row.ended && !row.unwound && !row.truncated && !row.overflow);
+        assert_eq!(new.result.is_ok(), mutation == 0);
+        assert_eq!(
+            row.complete,
+            mutation == 0,
+            "rejected inputs cannot certify completion"
+        );
         assert!(row.fused_turns > 0, "exercise real borrowed tail loop");
         assert_eq!(new, old);
         assert_eq!(heap, old_heap);
