@@ -510,8 +510,8 @@ mod missing_lexical_authority {
         let mut pending = vec![&module.function_templates[0].body];
         while let Some(expression) = pending.pop() {
             found |= matches!(expression.kind, hir::ResolvedExprKind::LexicalExit { .. });
-            let mut children = hir::lexical_exit::ChildCursor::new(expression);
-            while let Some(child) = children.next() {
+            let children = hir::lexical_exit::ChildCursor::new(expression);
+            for child in children {
                 pending.push(child);
             }
         }

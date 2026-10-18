@@ -83,7 +83,7 @@ pub(super) fn complete_rows<'hir, 'facts>(
     let mut failure = Failure {
         error: None,
         function,
-        budget: budget,
+        budget,
     };
     let mut received = None;
     let mut session = Session::new_prepaid(arena, function, budget);

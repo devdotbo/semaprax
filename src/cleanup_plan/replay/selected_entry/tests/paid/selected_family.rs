@@ -5,7 +5,7 @@ use crate::cleanup_plan::replay::{inventory_coverage, selected_context::child::P
 
 fn exercise(program: &crate::hir::ResolvedProgram, observe_publish: bool) {
     let mut subject = members(program)[0].clone();
-    subject.cleanup.schema = "hostile.selected.inventory".into();
+    subject.cleanup.schema = "hostile.selected.inventory";
     let mut preparation = prepared(&subject);
     let backing = preparation.report_backing();
     let ledger = std::ptr::from_ref(preparation.budget.physical.as_deref().unwrap());

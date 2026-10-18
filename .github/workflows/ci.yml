@@ -2129,6 +2129,20 @@ jobs:
           cargo test --locked --offline -p semaprax --all-features --test useful_data \
             task_service_project::task_service_frontend_byte_audit -- \
             --exact --ignored --nocapture
+      - name: Capture the unchanged native preparation ledger after the heavy shard fails
+        if: failure() && runner.os == 'Linux' && matrix.shard == 'unit-heavy' && steps.workspace_target_shard_unix.outcome == 'failure'
+        timeout-minutes: 20
+        shell: bash
+        env:
+          CARGO_BUILD_JOBS: "1"
+          SEMAPRAX_REQUIRE_KERNEL_ZERO_RUNG_TWO_TARGETS: "1"
+          SEMAPRAX_REQUIRE_RESUMABLE_BACKENDS: "1"
+        run: |
+          set -euo pipefail
+          python3 scripts/ci-msrv.py checked --label "unchanged native preparation ledger" \
+            --package semaprax --lib --all-features --offline \
+            --exact workspace_graph::tests::codec808_frontier::primitive_string_codec_actual_preparation_reports_existing_first_operation_without_replacing_failure \
+            --nocapture --test-threads 1
       - name: Trace the unchanged low-stack case after the Linux unit shard fails
         if: failure() && runner.os == 'Linux' && matrix.shard == 'unit' && steps.workspace_target_shard_unix.outcome == 'failure'
         timeout-minutes: 20

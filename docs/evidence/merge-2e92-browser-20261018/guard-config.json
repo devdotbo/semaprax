@@ -289,8 +289,8 @@
       "sha256": "7dbd445bd9cc718886d8d99c2811c47f6fedb94815f4ab3f34b02bf8f844d794"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs": {
-      "length": 8342,
-      "sha256": "23f5976983b19e2fd4efff6c2084796208767648e44081543b1a892c1852da8c"
+      "length": 8334,
+      "sha256": "8018932bbd3f51ce2f5e174f75a1803f4b7d59aeadbf008d069d12415ab20a43"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs": {
       "length": 8726,
@@ -401,8 +401,8 @@
       "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs": {
-      "length": 79199,
-      "sha256": "67e1f9a774b7ff05cd0f4efe6050ee652bf6e34079d10fc2e26351f860214f45"
+      "length": 79447,
+      "sha256": "e920a1dd63770419dd6bb5459cfbfd7bd5f72c7e594b6c6c0e6ecd337a5dc739"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs": {
       "length": 4051,
@@ -445,8 +445,8 @@
       "sha256": "26d0f4158e54651b19cadf39d6f0328e324580c80f8a786b897e38fd2d9e1e5f"
     },
     "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs": {
-      "length": 14629,
-      "sha256": "b8dd57bc7ee5c8a86da2827651d522df67326154683116e7cb3a799f8d6f8ffe"
+      "length": 14622,
+      "sha256": "10be00da2454f5e254447855c8150f96a237ec88d9ad2fa419b137ac10584caf"
     },
     "src/cleanup_plan/replay/lexical_replay.rs": {
       "length": 16313,
@@ -505,8 +505,8 @@
       "sha256": "d0a1faed7d1d9a2d17b8b7983aa6fdc75f95f7636724cadb6bc4433a717e1e7e"
     },
     "src/cleanup_plan/replay/path_join/selected/renewal.rs": {
-      "length": 30585,
-      "sha256": "fda02c011ce59880bc77106f5fd6febb1bc1a067e55594050919fdb1c45a8c46"
+      "length": 30989,
+      "sha256": "f95f204698e30191fee48f29ed45c97df0611ba959e928f491705fb05a3ce653"
     },
     "src/cleanup_plan/replay/path_join/selected/strings.rs": {
       "length": 9410,
@@ -585,8 +585,8 @@
       "sha256": "4675bbabcac1a5ea20f670baad75c6e9330b969ab9afeff216c997b0da92cd41"
     },
     "src/cleanup_plan/replay/schema/selected_paid.rs": {
-      "length": 12766,
-      "sha256": "8e4b827eea71136055136a71905e404c5e67abeb0861c334b65d9dae54e7c258"
+      "length": 12902,
+      "sha256": "55af572e01cb28857920171445045f926a5f94ccf519784656e28e703d05e131"
     },
     "src/cleanup_plan/replay/schema/selected_paid/tests.rs": {
       "length": 5321,
@@ -613,8 +613,8 @@
       "sha256": "e8fea2f8bff5c0edcac9e196e3eb685ea234337c46256723f8461c2b0a744816"
     },
     "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs": {
-      "length": 3717,
-      "sha256": "3603f5406dde3c49801b90f9fea461b4ada975138bd720922c54a7b70f6cc7c0"
+      "length": 3710,
+      "sha256": "853bec2328abebbbbcac3d5096a3b48705c4c099ad1d4c3d6ee252aa28d1955b"
     },
     "src/cleanup_plan/replay/selected_profile/paid_children.rs": {
       "length": 1747,
@@ -713,16 +713,16 @@
       "sha256": "63e1be7b4114be13c261bd19e9a4b673c17cb2a36ea003e89b0ca88198feccfd"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs": {
-      "length": 10853,
-      "sha256": "9a01b63450bc31b2936968eeb60bf194f7a11515f26e161ee16a88456f024b36"
+      "length": 10839,
+      "sha256": "2aa84bda96497c790ebf5a15f295b60f3bdc3d79dd96fd2be0fe4e1930444420"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs": {
       "length": 7359,
       "sha256": "441a074c30cbea0a8fe1d04be162503eb460f43cfdce9fc5ee7979ba60de1836"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs": {
-      "length": 76645,
-      "sha256": "b175076b23d77341e790c2780a1d9925063dec0728076cdea53babc261921a97"
+      "length": 76901,
+      "sha256": "e10b27ba0620c915d5434bd63a8205cd2ebfa6240dc57703fbb26eed9383b986"
     },
     "src/cleanup_plan/replay/ordinary_receiving.rs": {
       "length": 17897,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 40055,
-      "sha256": "6ec458676fa9b68f603c1907876083f2b08aa429690f207fd01367c5a62eff24"
+      "length": 40337,
+      "sha256": "ba15280abad503e35818145e87bb737dd984220745b38b2d701976256106045c"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

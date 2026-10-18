@@ -73,7 +73,7 @@ fn complete_selected_inventory_hostile_base_entry_and_supplemental_match_six_fie
     for case in 0..6 {
         let mut forged = function.clone();
         match case {
-            0 => forged.cleanup.schema = "hostile.inventory".into(),
+            0 => forged.cleanup.schema = "hostile.inventory",
             1 => forged.cleanup_plan.slots.clear(),
             2 => forged.cleanup_plan.slots[0].storage_index ^= 1,
             3 => forged.cleanup_plan.slots[base].storage_index ^= 1,

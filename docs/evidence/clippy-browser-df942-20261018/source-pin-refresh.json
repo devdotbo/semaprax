@@ -1,0 +1,65 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "df942b53e9947be1f4f388f3d744310a4ad52060",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "5fd689eba0196c2fff9dd64a57c7c741e61595a5f5bdfe7194fc19c371ad99f0",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/5fd689eba0196c2fff9dd64a57c7c741e61595a5f5bdfe7194fc19c371ad99f0.txt"
+  },
+  "before_config": {
+    "length": 136457,
+    "sha256": "8714d67cf6e5f1124545d021fe9ee408bad0fcbe3d6a397eb4289f6ddb302088",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/8714d67cf6e5f1124545d021fe9ee408bad0fcbe3d6a397eb4289f6ddb302088.txt"
+  },
+  "before_helper": {
+    "length": 40055,
+    "sha256": "6ec458676fa9b68f603c1907876083f2b08aa429690f207fd01367c5a62eff24",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/6ec458676fa9b68f603c1907876083f2b08aa429690f207fd01367c5a62eff24.txt"
+  },
+  "before_python_overlay": {
+    "length": 12618,
+    "sha256": "3bd4a381f389bfc3000b0cb0f1731f18e922dddc9d5f4e0326a81b66f067c443",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/3bd4a381f389bfc3000b0cb0f1731f18e922dddc9d5f4e0326a81b66f067c443.txt"
+  },
+  "before_policy": {
+    "length": 14985,
+    "sha256": "908ca28e22d82bb0105acb979928dd742a5af06a55c3aa1c9e34702f7eb2c0db",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/908ca28e22d82bb0105acb979928dd742a5af06a55c3aa1c9e34702f7eb2c0db.txt"
+  },
+  "before_page": {
+    "length": 144518,
+    "sha256": "7c93e48005d59b992e5a7b5c8d745c82c2e993cde408e8eb31070ea6b46f5b95",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/7c93e48005d59b992e5a7b5c8d745c82c2e993cde408e8eb31070ea6b46f5b95.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
+    "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+    "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs",
+    "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs",
+    "src/workspace_graph/source_schema/static_text/tests.rs",
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+    "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs",
+    "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+    "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 152240,
+  "policy_bytes": 15247,
+  "raw_owners": 342
+}

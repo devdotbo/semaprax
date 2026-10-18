@@ -1321,8 +1321,16 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage_be
 }
 
 #[cfg(test)]
+#[allow(
+    clippy::duplicate_mod,
+    reason = "independent historical receivers retain their own before and test modules"
+)]
 #[path = "ordinary_cross_phase_before.rs"]
 mod before;
 #[cfg(test)]
+#[allow(
+    clippy::duplicate_mod,
+    reason = "independent historical receivers retain their own before and test modules"
+)]
 #[path = "ordinary_cross_phase_tests.rs"]
 mod tests;

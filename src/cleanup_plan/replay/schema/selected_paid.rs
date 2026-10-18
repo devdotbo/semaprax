@@ -4,6 +4,10 @@
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError;
 use crate::cleanup_plan::replay::selected_context::{child::Permit, family::Reason};
+#[allow(
+    clippy::blocks_in_conditions,
+    reason = "the receiving frontier must stay inside the lazily evaluated schema branch"
+)]
 pub(in crate::cleanup_plan::replay) fn selected(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,

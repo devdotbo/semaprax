@@ -183,6 +183,10 @@ pub(super) fn reject_unmarked_finish(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the complete audited receiving argument packet stays explicit"
+)]
 pub(super) fn reserve(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -344,6 +348,10 @@ pub(super) fn reserve(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "the complete audited receiving argument packet stays explicit"
+)]
 pub(super) fn renew(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -607,6 +615,10 @@ pub(super) fn validate_join_compatibility<'a>(
         existing,
         std::collections::btree_set::Range<'_, Box<PathState>>
     );
+    #[allow(
+        clippy::redundant_pattern_matching,
+        reason = "inspect the prepaid Option directly without adding a method receiving boundary"
+    )]
     while let Some(_) = dynamic_next!(
         budget,
         function,

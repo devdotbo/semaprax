@@ -1,0 +1,19 @@
+{
+  "source": ".github/workflows/ci.yml",
+  "before": {
+    "length": 182522,
+    "sha256": "148ab4d1f131af6b45be6fe98d1a046e0ca961b34b4fe11d39d9c19e3efbda61",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/148ab4d1f131af6b45be6fe98d1a046e0ca961b34b4fe11d39d9c19e3efbda61.txt"
+  },
+  "current": {
+    "length": 183360,
+    "sha256": "860ae90a5dec0359dec6aeb0a13d54cb1e3459e1dddb83f1b1d009cd4ed40eb7",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/860ae90a5dec0359dec6aeb0a13d54cb1e3459e1dddb83f1b1d009cd4ed40eb7.txt"
+  },
+  "added_step": {
+    "length": 838,
+    "sha256": "17fc85178a858b3e72fae0b7952294566330c17fe5d77ddbd340c20464651021",
+    "archive": "docs/evidence/clippy-browser-df942-20261018/whole/17fc85178a858b3e72fae0b7952294566330c17fe5d77ddbd340c20464651021.txt"
+  },
+  "all_original_workflow_bytes_restored_exactly": true
+}
