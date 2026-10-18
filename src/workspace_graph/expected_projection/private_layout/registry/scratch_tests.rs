@@ -354,7 +354,10 @@ fn complete_old_registry_census_derivation_and_current_scratch_sources_remain_bo
         "../../../../../docs/evidence/registry-census-scratch-833/original/registry.rs"
     );
     assert_eq!(
-        include_str!("../before_registry.rs"),
+        crate::source_reflows_merge::receiver_child_entry(
+            "src/workspace_graph/expected_projection/private_layout/before_registry.rs",
+            include_str!("../before_registry.rs"),
+        ),
         old_registry
             .replace(
                 "LayoutClosure::derive_with_work(",

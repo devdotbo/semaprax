@@ -340,7 +340,9 @@ fn complete_old_commented_formatter_preflight_sources_and_all_current_children_r
         "pub(super) fn build_owned_retaining_sources_with_frontend_limit(",
         1,
     );
-    assert_eq!(include_str!("before.rs"),format!("//! Complete immutable940 cold preflight; no comparison-sink delegation.\nuse super::super::*;\n{body}\n{wrapper}"));
+    assert_eq!(crate::source_reflows_merge::receiver_child_entry(
+        "src/workspace_graph/cold_canonical/before.rs", include_str!("before.rs")
+    ),format!("//! Complete immutable940 cold preflight; no comparison-sink delegation.\nuse super::super::*;\n{body}\n{wrapper}"));
     assert_eq!(
         include_str!("../../format.rs"),
         include_str!("../../../docs/evidence/canonical-comment-comparison-835/original/format.rs")

@@ -482,7 +482,11 @@ fn complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remai
         ),
     ];
     for (index, (input, original)) in inputs.into_iter().enumerate() {
-        let mut restored = input.to_owned();
+        let mut restored = crate::source_reflows_merge::receiver_fixture_entry(
+            crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,
+            rows[index]["source"].as_str().unwrap(),
+            input,
+        );
         for hook in rows[index]["hooks"].as_array().unwrap() {
             let after = hook["after"].as_str().unwrap();
             let before = hook["before"].as_str().unwrap();

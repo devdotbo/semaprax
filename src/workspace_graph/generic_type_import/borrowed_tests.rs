@@ -521,7 +521,11 @@ fn complete_original_receiver_and_all_joined_source_inverses_remain_byte_exact()
         (include_str!("../../../tests/workspace/semantic_graph/source_inventory.rs"),include_str!("../../../docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt")),
     ];
     for (index, (input, before)) in inputs.into_iter().enumerate() {
-        let mut restored = input.to_owned();
+        let mut restored = crate::source_reflows_merge::receiver_fixture_entry(
+            crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,
+            rows[index]["source"].as_str().unwrap(),
+            input,
+        );
         for hook in rows[index]["hooks"].as_array().unwrap() {
             let after = hook["after"].as_str().unwrap();
             let old = hook["before"].as_str().unwrap();

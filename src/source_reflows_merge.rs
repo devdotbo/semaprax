@@ -136,6 +136,42 @@ fn post21_input(source: &str, current: &str) -> String {
     let current = joined.as_str();
     metadata_json::project(metadata_json::Fixture::M24, source, current)
 }
+// Only literal historical ENTRY stages are acquired here. The complete existing
+// compile35f front and every intermediate inverse below still execute in order.
+fn historical_project_entry(source: &str, expected: &str, current: &str) -> String {
+    let admitted = matches!(
+        (source, expected),
+        (
+            "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+            "ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca"
+        ) | (
+            "src/workspace_graph.rs",
+            "b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31"
+        ) | (
+            "tests/workspace/semantic_graph/source_inventory.rs",
+            "aa4e1844d2e867c519bd24fdb560535c9f07b7daa790e343c1b4b04e978d0989"
+        ) | (
+            "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs",
+            "0bf3a868125c5d381ead3b67127f622085d8fba09b23862db68bdad13c271ec6"
+        ) | (
+            "src/workspace_graph/cold_canonical/tests.rs",
+            "ecc2a07ac366adeaddc986c5bf1c676000e95ec98f5dd526c37c78f65406d62c"
+        )
+    );
+    if !admitted {
+        return current.to_owned();
+    }
+    let entry = main_e177_final_inputs::value_direct(source, expected, current);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+        ),
+        expected,
+        "complete fixed historical projector entry: {source}"
+    );
+    entry
+}
 fn project(rows: &str, source: &str, current: &str) -> String {
     let rows: serde_json::Value = serde_json::from_str(rows).expect("fixed merge projections");
     let matching: Vec<_> = rows
@@ -148,10 +184,11 @@ fn project(rows: &str, source: &str, current: &str) -> String {
     let Some(row) = matching.first() else {
         return current.to_owned();
     };
+    let entry = historical_project_entry(source, row["current_sha256"].as_str().unwrap(), current);
     let acquired = main67107_inputs::compile35f_expected_input(
         source,
         row["current_sha256"].as_str().unwrap(),
-        current,
+        &entry,
     );
     let current = acquired.as_str();
     assert_eq!(
@@ -304,7 +341,43 @@ fn consumer_previous(source: &str, current: &str) -> String {
     let current = predecessor.as_str();
     runtime_json::project(runtime_json::Fixture::F16, source, current)
 }
+// Closed packet/source pairs only. This acquires the original consumer INPUT,
+// never its final inverse output; all caller hooks and full-byte checks remain.
+pub(crate) fn receiver_fixture_entry(
+    fixture: ReceiverFixture,
+    source: &str,
+    current: &str,
+) -> String {
+    let expected = match (fixture, source) {
+        (ReceiverFixture::PaidLiveReuse, "src/loan_plan/paid_live.rs") => "bcb520a64f14a76f2bac1e6053ce40f424d15e11e8b1e70f8c67d4406c450374",
+        (ReceiverFixture::PaidLiveReuse, "src/loan_plan/paid_plan.rs") => "0eb3df7863a61410f5a4547831aa399ffd03d460dad86f1f40caf626de0f2be7",
+        (ReceiverFixture::PaidLiveReuse, "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs") => "d764e8d6fbd373a2dbb40953baabf688fb4459562760fd5e1545cb9b73b9e6b0",
+        (ReceiverFixture::BorrowedGeneric, "src/workspace_graph/generic_type_import.rs") => "e4aaa275d0b6d79539a30b496844388ba9fc3b4b793499b907b803f759ee8dc9",
+        (ReceiverFixture::BorrowedGeneric, "src/workspace_graph/expected_projection/cost.rs") => "ddf8dc2e74e4c0cc193e4e592671ffcfd9118b8bfe91cef2d0cf19eca3a635ce",
+        (ReceiverFixture::BorrowedGeneric, "tests/workspace/semantic_graph/source_inventory.rs") => "4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14",
+        (ReceiverFixture::LexicalOperands, "src/cleanup_plan/replay/expression_facts/receiving.rs") => "db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7",
+        (ReceiverFixture::LexicalOperands, "src/cleanup_plan/replay/expression_facts/receiving/directory.rs") => "d161622003e500b3b9197c0f463b88eee388d9447c5a87ba75f464d3aa2a59cc",
+        _ => return current.to_owned(),
+    };
+    let entry = main_e177_final_inputs::value_direct(source, expected, current);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+        ),
+        expected,
+        "complete fixed receiver input: {source}"
+    );
+    entry
+}
+
 pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> String {
+    let entry = if domain == "lexical832" {
+        receiver_fixture_entry(ReceiverFixture::LexicalOperands, source, current)
+    } else {
+        current.to_owned()
+    };
+    let current = entry.as_str();
     let predecessor = corrected_consumers_previous(source, current);
     let current = predecessor.as_str();
     let data = match domain {
@@ -334,7 +407,34 @@ fn corrected_consumers_previous(source: &str, current: &str) -> String {
     fixes
 }
 
+pub(crate) fn receiver_child_entry(source: &str, current: &str) -> String {
+    let expected = match source {
+        "src/workspace_graph/expected_projection/private_layout/before_registry.rs" => {
+            "0d6e2e30c78d040eafcd7c11e66a4696d17e949aa09eac7d79d6d1b6634721cd"
+        }
+        "src/workspace_graph/cold_canonical/before.rs" => {
+            "78fbcd95f4430f0750b4ae1e8b2cfdc5277c3bf9ef02fe4776cea96bc5a494e2"
+        }
+        "src/format/comments/compare/tests.rs" => {
+            "7adedbc8fc515199d21e71a93fbe7a1624c5500e46278f4ddf834050ef0a7b38"
+        }
+        _ => return current.to_owned(),
+    };
+    let entry = main_e177_final_inputs::value_direct(source, expected, current);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+        ),
+        expected,
+        "complete fixed historical child input: {source}"
+    );
+    entry
+}
+
 pub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {
+    let entry = receiver_child_entry(source, current);
+    let current = entry.as_str();
     let branch = final_fix_input(source, current);
     let current = branch.as_str();
     let rows = match domain {
