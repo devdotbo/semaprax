@@ -14,7 +14,11 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+mod shared_runs;
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_stage(&shared_runs::previous_macro(current))
+}
+fn previous_macro_stage(current: &str) -> String {
     restore(current, 17308, MACRO)
 }
 #[rustfmt::skip]
@@ -24,6 +28,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (489, "pub(super) const PRIMITIVE_FRAMES: usize = 40 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 29 * PAYMENT_HEADER;\n"),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_stage(&shared_runs::previous_pair_tests(current))
+}
+fn previous_pair_tests_stage(current: &str) -> String {
     restore(current, 47414, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -33,6 +40,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (3116, "// Independent additive invoice for the boundary branch. Original invoices\n// and every older physical/work/diagnostic assertion remain complete.\nfn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {\n    let header = 2 * size_of::<&ResolvedFunction>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<&str>()\n        + 2 * size_of::<usize>()\n        + 2 * size_of::<Result<(), Diagnostic>>();\n    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()\n        + 6 * size_of::<&SkeletonObservation>()\n        + 4 * size_of::<&SkeletonTerminal>()\n        + 2 * size_of::<Ordering>();\n    let step = 2 * size_of::<usize>()\n        + 3 * size_of::<bool>()\n        + 3 * size_of::<&Rc<SkeletonObservation>>()\n        + 2 * size_of::<&[Rc<SkeletonObservation>]>()\n        + size_of::<&SkeletonObservation>()\n        + 2 * size_of::<Option<&SkeletonObservation>>()\n        + 3 * size_of::<usize>()\n        + size_of::<bool>();\n    let load = 2 * size_of::<&mut Vec<usize>>()\n        + size_of::<Option<usize>>()\n        + 4 * size_of::<usize>()\n        + 2 * size_of::<bool>()\n        + 2 * size_of::<&[Segment]>()\n        + size_of::<&Segment>()\n        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()\n        + 2 * size_of::<&[Rc<SkeletonObservation>]>();\n    let links = 4 * size_of::<&Vec<usize>>()\n        + 4 * size_of::<&[usize]>()\n        + 4 * size_of::<usize>()\n        + 3 * size_of::<bool>();\n    let query = 2 * size_of::<&[Segment]>()\n        + 2 * size_of::<usize>()\n        + size_of::<&Segment>()\n        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()\n        + 3 * size_of::<&[Rc<SkeletonObservation>]>()\n        + size_of::<bool>();\n    let advance = 4 * size_of::<&mut Vec<usize>>()\n        + 2 * size_of::<Option<usize>>()\n        + 10 * size_of::<usize>()\n        + 6 * size_of::<bool>()\n        + 2 * size_of::<&[Rc<SkeletonObservation>]>()\n        + size_of::<Ordering>();\n    (\n        (pair + 4 * step + 2 * load) * row.shared_boundaries,\n        if paths >= 2 { 11 * header } else { 0 }\n            + size_of::<bool>() * row.shared_empty_checks\n            + links * row.shared_links\n            + query * row.shared_queries\n            + advance * row.shared_boundaries,\n    )\n}\n", ""),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    previous_census_stage(&shared_runs::previous_census(current))
+}
+fn previous_census_stage(current: &str) -> String {
     restore(current, 15306, CENSUS)
 }
 #[rustfmt::skip]
@@ -56,6 +66,9 @@ const SHARED_STEPS: &[(usize, &str, &str)] = &[
     (718, "mod shared_boundaries;\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    previous_route_stage(&shared_runs::previous_route(current))
+}
+fn previous_route_stage(current: &str) -> String {
     restore(current, 35044, ROUTE)
 }
 #[rustfmt::skip]
@@ -144,8 +157,8 @@ mod tests {
     #[test]
     fn every_boundary_source_refuses_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../../lexical_cursor.rs"),
-            previous_macro,
+            &shared_runs::previous_macro(include_str!("../../../../../lexical_cursor.rs")),
+            previous_macro_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-macro.rs.txt"
@@ -153,8 +166,8 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &shared_runs::previous_pair_tests(include_str!("../../../../../pair_scope_tests.rs")),
+            previous_pair_tests_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-pair-tests.rs.txt"
@@ -162,8 +175,8 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../../../../../pair_scope_census.rs"),
-            previous_census,
+            &shared_runs::previous_census(include_str!("../../../../../pair_scope_census.rs")),
+            previous_census_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-census.rs.txt"
@@ -180,8 +193,10 @@ mod tests {
             SHARED_STEPS,
         );
         hostile(
-            include_str!("../../../../../../../../../bounded_output/stage_debits/route_debits.rs"),
-            previous_route,
+            &shared_runs::previous_route(include_str!(
+                "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
+            )),
+            previous_route_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-route.rs.txt"

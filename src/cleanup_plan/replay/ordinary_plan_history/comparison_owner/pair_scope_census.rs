@@ -23,6 +23,8 @@ pub(super) struct Row {
     pub shared_links: usize,
     pub shared_queries: usize,
     pub shared_boundaries: usize,
+    pub shared_runs: usize,
+    pub shared_turns: usize,
     pub loads: usize,
     pub complete: bool,
     pub ended: bool,
@@ -51,6 +53,8 @@ const EMPTY: Row = Row {
     shared_links: 0,
     shared_queries: 0,
     shared_boundaries: 0,
+    shared_runs: 0,
+    shared_turns: 0,
     loads: 0,
     complete: false,
     ended: false,
@@ -235,6 +239,18 @@ impl Guard {
     pub(super) fn shared_boundaries(&self) {
         self.update(|r| match r.shared_boundaries.checked_add(1) {
             Some(n) => r.shared_boundaries = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_runs(&self) {
+        self.update(|r| match r.shared_runs.checked_add(1) {
+            Some(n) => r.shared_runs = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_turns(&self) {
+        self.update(|r| match r.shared_turns.checked_add(1) {
+            Some(n) => r.shared_turns = n,
             None => r.overflow = true,
         });
     }
@@ -463,6 +479,35 @@ mod controls {
                 1 => guard.shared_links(),
                 2 => guard.shared_queries(),
                 _ => guard.shared_boundaries(),
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
+    #[test]
+    fn shared_run_counter_overflow_is_incomplete_without_work_or_identity_aliasing() {
+        for turn in [false, true] {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                if turn {
+                    trace.rows[0].shared_turns = usize::MAX;
+                } else {
+                    trace.rows[0].shared_runs = usize::MAX;
+                }
+            });
+            if turn {
+                guard.shared_turns();
+            } else {
+                guard.shared_runs();
             }
             guard.success();
             drop(guard);

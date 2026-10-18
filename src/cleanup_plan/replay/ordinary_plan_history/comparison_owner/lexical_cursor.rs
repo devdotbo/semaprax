@@ -4,9 +4,9 @@ use super::*;
 // Exactly the accepted880 narrow primitive criterion: same function/budget,
 // sequential nonescaping nonrecursive ZST-success/one-terminal-Diagnostic slots.
 // Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.
-// The shared immutable-step branch adds four payment and five work sites.
+// The shared immutable-step branch adds six payment and five work sites.
 // Every payload below is separately paid on actual execution, never once.
-pub(super) const PRIMITIVE_FRAMES: usize = 40 * PAYMENT_HEADER;
+pub(super) const PRIMITIVE_FRAMES: usize = 42 * PAYMENT_HEADER;
 pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;
 // Before inspecting the already-funded owner length, fund the new payment
 // site's complete primitive frame, match/local usize receivers and both
@@ -152,7 +152,7 @@ macro_rules! remember_plan_segment {
     };
 }
 
-// Four payment and five work sites have distinct complete primitive frames in
+// Six payment and five work sites have distinct complete primitive frames in
 // the multipath bank. Every actual selector, slice receiver and scalar copy
 // remains separately paid before formation. No observation Option/tuple/cmp
 // payload is formed on this branch. Original left-before-right work is exact.
@@ -162,15 +162,10 @@ macro_rules! shared_plan_pair_step {
         #[cfg(test)]
         $census.shared_checks();
         if $owner.left_loaded && $owner.right_loaded {
-            paid!(
-                $budget,
-                $function,
-                size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>(),
-                $phase
-            )?;
+            paid!($budget, $function, size_of::<bool>(), $phase)?;
             #[cfg(test)]
             $census.shared_patterns();
-            if let [_, left_rest @ ..] = $owner.left_items {
+            if let [_, ..] = $owner.left_items {
                 paid!(
                     $budget,
                     $function,
@@ -182,45 +177,7 @@ macro_rules! shared_plan_pair_step {
                 if $owner.left_link == $owner.right_link
                     && $owner.left_cursor.item == $owner.right_cursor.item
                 {
-                    paid!(
-                        $budget,
-                        $function,
-                        3 * size_of::<&[Rc<SkeletonObservation>]>()
-                            + 2 * size_of::<usize>()
-                            + size_of::<Ordering>()
-                            + size_of::<bool>(),
-                        $phase
-                    )?;
-                    #[cfg(test)]
-                    $census.shared_steps();
-                    let [_, right_rest @ ..] = $owner.right_items else {
-                        unreachable!("identical immutable ordinary plan segment and offset");
-                    };
-                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-                    #[cfg(test)]
-                    $census.step();
-                    $budget.charge(
-                        $function,
-                        1,
-                        "ordinary plan history forward segment traversal",
-                    )?;
-                    $owner.left_items = left_rest;
-                    $owner.left_cursor.item += 1;
-                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-                    #[cfg(test)]
-                    $census.step();
-                    $budget.charge(
-                        $function,
-                        1,
-                        "ordinary plan history forward segment traversal",
-                    )?;
-                    $owner.right_items = right_rest;
-                    $owner.right_cursor.item += 1;
-                    $owner.ordering = Ordering::Equal;
-                    $budget.charge($function, 1, "ordinary plan history observation comparison")?;
-                    #[cfg(test)]
-                    $census.round();
-                    continue;
+                    shared_plan_segment_run!($owner, $census, $function, $budget, $phase);
                 }
             } else {
                 shared_plan_boundary!($owner, $census, $function, $budget, $phase);
@@ -359,5 +316,75 @@ macro_rules! shared_plan_boundary {
                 }
             }
         }
+    };
+}
+
+// Both retained views name the same immutable segment at the same offset.
+// Replay every original work request, but form only numeric loop carriers.
+// Private borrowed views/item positions publish after the whole run. An error
+// returns immediately: these non-owning fields cannot affect a Diagnostic,
+// owned Drop, Rc count or any externally visible state before that return.
+macro_rules! shared_plan_segment_run {
+    ($owner:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
+        paid!(
+            $budget,
+            $function,
+            2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>(),
+            $phase
+        )?;
+        #[cfg(test)]
+        $census.shared_runs();
+        let shared_length = $owner.left_items.len();
+        let mut shared_remaining = shared_length;
+        loop {
+            // Full condition/decrement envelope, including the zero sentinel.
+            paid!(
+                $budget,
+                $function,
+                4 * size_of::<usize>() + size_of::<bool>(),
+                $phase
+            )?;
+            #[cfg(test)]
+            $census.shared_turns();
+            if shared_remaining == 0 {
+                break;
+            }
+            #[cfg(test)]
+            $census.shared_steps();
+            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+            #[cfg(test)]
+            $census.step();
+            $budget.charge(
+                $function,
+                1,
+                "ordinary plan history forward segment traversal",
+            )?;
+            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+            #[cfg(test)]
+            $census.step();
+            $budget.charge(
+                $function,
+                1,
+                "ordinary plan history forward segment traversal",
+            )?;
+            $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+            #[cfg(test)]
+            $census.round();
+            shared_remaining -= 1;
+        }
+        paid!(
+            $budget,
+            $function,
+            4 * size_of::<&[Rc<SkeletonObservation>]>()
+                + 4 * size_of::<usize>()
+                + size_of::<Ordering>(),
+            $phase
+        )?;
+        $owner.left_items = &[];
+        $owner.right_items = &[];
+        $owner.left_cursor.item += shared_length;
+        $owner.right_cursor.item += shared_length;
+        $owner.ordering = Ordering::Equal;
+        continue;
     };
 }

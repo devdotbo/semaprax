@@ -139,16 +139,17 @@ fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usi
         + 2 * size_of::<usize>()
         + size_of::<bool>();
     let retained = 4 * size_of::<usize>()
-        + if paths >= 2 { 9 * header } else { 0 }
+        + if paths >= 2 { 11 * header } else { 0 }
         + size_of::<usize>() * row.loads
         + 3 * size_of::<bool>() * row.shared_checks
-        + (size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>()) * row.shared_patterns
+        + size_of::<bool>() * row.shared_patterns
         + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata
-        + (3 * size_of::<&[Rc<SkeletonObservation>]>()
-            + 2 * size_of::<usize>()
-            + size_of::<Ordering>()
-            + size_of::<bool>())
-            * row.shared_steps;
+        + (2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>()) * row.shared_runs
+        + (4 * size_of::<usize>() + size_of::<bool>()) * row.shared_turns
+        + (4 * size_of::<&[Rc<SkeletonObservation>]>()
+            + 4 * size_of::<usize>()
+            + size_of::<Ordering>())
+            * row.shared_runs;
     let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
     (
         (pair + 2 * step) * row.shared_steps + boundary_removed,
@@ -1126,6 +1127,67 @@ fn shared_boundary_one_item_and_empty_segments_preserve_real_883_status_and_work
         assert_eq!(
             new, old,
             "all six diagnostic fields and exact remaining work at cut {cut}"
+        );
+    }
+}
+
+#[test]
+fn shared_run_replays_every_real_883_work_cut_before_private_cursor_publication() {
+    let program = super::super::super::tests::program();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "f")
+        .unwrap();
+    let item = Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(),
+        value: true,
+    });
+    let expected = vec![
+        SkeletonPath {
+            observations: vec![item.clone(); 4].into(),
+            terminal: SkeletonTerminal::Success
+        };
+        2
+    ];
+    let actual = || HistorySet {
+        arena: vec![Segment {
+            previous: None,
+            depth: 1,
+            items: vec![item.clone(); 4],
+        }],
+        paths: (0..2)
+            .map(|_| PlanPath {
+                history: History {
+                    previous: Some(0),
+                    tail: Vec::new(),
+                },
+                terminal: SkeletonTerminal::Success,
+            })
+            .collect(),
+        max_depth: 1,
+    };
+    pair_scope_census::reset();
+    let (old, old_heap, _) =
+        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    pair_scope_census::reset();
+    let (new, new_heap, _) =
+        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(false);
+    assert!(row.shared_runs > 0 && row.shared_steps > row.shared_runs);
+    assert_eq!(row.shared_turns, row.shared_steps + row.shared_runs);
+    assert_eq!(new, old);
+    assert!(new.result.is_ok());
+    assert_eq!(new_heap, old_heap);
+    let spent = MAX_REPLAY_WORK_UNITS - old.remaining;
+    for cut in 0..=spent {
+        pair_scope_census::reset();
+        let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
+        pair_scope_census::reset();
+        let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
+        assert_eq!(
+            new, old,
+            "complete six-field diagnostics and exact remaining work at cut {cut}"
         );
     }
 }

@@ -122,3 +122,32 @@ segments against the complete883 comparator at every work cut. Complete bounded
 models additionally cover shared/divergent and alternating empty segments.
 Source/model results remain separate from full compiler, physical allocator,
 application, native64MiB, STD-08, browser and current hosted qualification.
+
+## Immutable shared run continuation
+
+Equal loaded segment identities and equal item offsets prove that the complete
+remaining immutable slices are identical. The comparator captures their length
+once and replays the original five work requests for every observation in the
+same order. It forms numeric loop carriers instead of repeated borrowed slice
+patterns, comparison selectors, cursor increments or Ordering assignments.
+The nonempty selector forms no unused rest binding. Every new length receiver,
+condition/decrement envelope (including its zero sentinel), empty view and final
+scalar transport is paid before formation. Two extra full primitive headers
+cover the replacement three-payment/five-work run sites; other banks stay exact.
+
+Only private, non-owning cursor views, item positions and ordering are published
+when the whole run succeeds. During the run they remain self-consistent at its
+start. A work or byte failure returns immediately: neither the budget nor a
+Diagnostic can inspect these private fields, borrowed views have no owning Drop
+or Rc effect, and the authoritative HistorySet is unchanged. The original owned
+Drop order, reference counts, all work-error cuts and six diagnostic fields stay
+observable contracts. No cleanup action, result publication, workspace source
+transaction or capability is deferred or authorized by this equality proof.
+
+Both original prepares, empty/different-segment fallbacks, heap scheduling and
+independent final HIR comparison remain intact. Checked run/turn counters are
+observation only. Complete current and immutable883 models cover interior run
+failure cuts; a real compiler fixture checks every cut of a multi-step run.
+Every predecessor invoice, exact-source inverse and hostile control remains.
+These source and bounded model results do not establish full compiler, physical
+allocator, application, native64MiB, STD-08, browser or hosted qualification.
