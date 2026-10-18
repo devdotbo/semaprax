@@ -13,5 +13,21 @@
   "original_decl_revision": "7a87b33115c0cd45b14cac64d7b37e5742503159",
   "original_decl_sha256": "2dbd704d16e38656ccd8b7aa035a1b2e2ddf6b5bfaf74ab7fe572cff858f7681",
   "actual_projected_method": "    pub(super) fn projected(\n        authored: &'a [T],\n        directory: &'a dyn DeclarationDirectory<T>,\n    ) -> Option<Self> {\n        authored.len().checked_add(directory.len())?;\n        Some(Self::Projected {\n            authored,\n            directory,\n            start: 0,\n        })\n    }",
-  "target_domain": "All actualcurrent joined sources retained, with exactly complete pre847 DeclSlices file restored for the unchanged older current-facade-list assertion; raw production purity and actual projected method audited separately"
+  "target_domain": "All actualcurrent joined sources retained, with exactly complete pre847 DeclSlices file restored for the unchanged older current-facade-list assertion; raw production purity and actual projected method audited separately",
+  "decl_profile_successor": {
+    "current_decl_sha256": "3e6cbf1036e73125905bdf4ac705e876929d24cd626eb365db2ae08434f33e12",
+    "current_decl_length": 9428,
+    "previous_decl_sha256": "7b86d102694e1358c2a5ce00738a882df320d3e4860ba062c855cea56c198397",
+    "previous_decl_length": 6910,
+    "edits": [
+      {
+        "old": "    fn get(&self, index: usize) -> Option<&T>;\n",
+        "new": "    fn get(&self, index: usize) -> Option<&T>;\n    fn profile_get(&self, index: usize) -> Option<&T> {\n        self.get(index)\n    }\n"
+      },
+      {
+        "old": "#[cfg(test)]\n#[path = \"decl_slices/before_alias.rs\"]\nmod before_alias;\n",
+        "new": "#[cfg(test)]\n#[path = \"decl_slices/before_alias.rs\"]\nmod before_alias;\n\n/// Feature-only projection. The complete metadata/HIR directory is unchanged.\n/// A checked scalar signature contributes false to every prelude predicate.\n/// This has exactly the original iterator's fields and transports its original\n/// Option<&Function>; it introduces no row presentation or fallible scan ABI.\npub(crate) struct ProfileIter<'a> {\n    view: DeclSlices<'a, crate::ast::Function>,\n    front: usize,\n    back: usize,\n}\nimpl<'a> DeclSlices<'a, crate::ast::Function> {\n    pub(crate) fn profile_iter(&self) -> ProfileIter<'a> {\n        ProfileIter {\n            view: match self {\n                Self::Ordinary {\n                    authored,\n                    indices,\n                    generated,\n                } => Self::Ordinary {\n                    authored,\n                    indices: *indices,\n                    generated,\n                },\n                Self::Projected {\n                    authored,\n                    directory,\n                    start,\n                } => Self::Projected {\n                    authored,\n                    directory: *directory,\n                    start: *start,\n                },\n            },\n            front: 0,\n            back: self.len(),\n        }\n    }\n}\nimpl<'a> Iterator for ProfileIter<'a> {\n    type Item = &'a crate::ast::Function;\n    fn next(&mut self) -> Option<Self::Item> {\n        while self.front < self.back {\n            // This is the original get() receiver/field-loan boundary, moved\n            // into next, with the original output Option. The caller's Some\n            // pattern/false-predicate continuation is consumed here for an\n            // exact finite scalar; no new row view or index tuple is formed.\n            let next = match &self.view {\n                DeclSlices::Projected {\n                    authored,\n                    directory,\n                    start,\n                } if self.front >= authored.len() => {\n                    directory.profile_get(start + self.front - authored.len())\n                }\n                _ => self.view.get(self.front),\n            };\n            self.front += 1;\n            match next {\n                None => continue,\n                _ => return next,\n            }\n        }\n        None\n    }\n    fn size_hint(&self) -> (usize, Option<usize>) {\n        (0, Some(self.back - self.front))\n    }\n}\nimpl std::iter::FusedIterator for ProfileIter<'_> {}\n"
+      }
+    ]
+  }
 }

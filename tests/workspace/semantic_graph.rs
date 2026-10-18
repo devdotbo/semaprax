@@ -1420,48 +1420,37 @@ fn current_projection_facade_input(current: &str) -> String {
     let row: serde_json::Value = serde_json::from_str(include_str!(
         "../../docs/evidence/actual50-fixture-and-facade-corrections-20261016/current-facade-input.json"
     )).unwrap();
+    let sha = |text: &str| format!("{:x}", semaprax::digest_hex::LowerHex(Sha256::digest(text.as_bytes())));
     let actual = include_str!("../../src/ast/program_source/decl_slices.rs");
-    assert_eq!(
-        format!(
-            "{:x}",
-            semaprax::digest_hex::LowerHex(Sha256::digest(actual.as_bytes()))
-        ),
-        row["current_decl_sha256"]
-    );
-    assert_eq!(
-        current.matches(actual).count(),
-        1,
-        "complete actual declaration owner in raw facade union"
-    );
+    let stage = &row["decl_profile_successor"];
+    assert_eq!(sha(actual), stage["current_decl_sha256"]);
+    assert_eq!(actual.len(), stage["current_decl_length"].as_u64().unwrap() as usize);
+    assert_eq!(current.matches(actual).count(), 1, "complete actual declaration owner in raw facade union");
     assert!(actual.contains("impl<'a, T> DeclSlices<'a, T> {"));
     let method = row["actual_projected_method"].as_str().unwrap();
     assert!(method.starts_with("    pub(super) fn projected("));
-    assert_eq!(
-        actual.matches(method).count(),
-        1,
-        "complete current parent-private projected method"
-    );
-    assert_eq!(
-        format!(
-            "{:x}",
-            semaprax::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
-        ),
-        row["current_sha256"]
-    );
-    let mut previous = current.to_owned();
+    assert_eq!(actual.matches(method).count(), 1, "complete current parent-private projected method");
+    // Undo only the complete authenticated profile extension; never retarget
+    // the actual50 source pin or omit either generation from the audit.
+    let mut declaration = actual.to_owned();
+    for edit in stage["edits"].as_array().unwrap() {
+        let new = edit["new"].as_str().unwrap();
+        assert_eq!(declaration.matches(new).count(), 1, "unique profile source inverse");
+        declaration = declaration.replacen(new, edit["old"].as_str().unwrap(), 1);
+    }
+    assert_eq!(declaration.len(), stage["previous_decl_length"].as_u64().unwrap() as usize);
+    assert_eq!(sha(&declaration), stage["previous_decl_sha256"]);
+    assert_eq!(sha(&declaration), row["current_decl_sha256"]);
+    assert_eq!(declaration, row["edits"][0]["new"].as_str().unwrap(), "complete actual50 declaration bytes");
+    let mut previous = current.replacen(actual, &declaration, 1);
+    assert_eq!(sha(&previous), row["current_sha256"], "complete actual50 facade union before pre847 inverse");
     for edit in row["edits"].as_array().unwrap() {
         let new = edit["new"].as_str().unwrap();
-        assert_eq!(new, actual, "complete current declaration source input");
+        assert_eq!(new, declaration, "complete actual50 declaration source input");
         assert_eq!(previous.matches(new).count(), 1);
         previous = previous.replacen(new, edit["old"].as_str().unwrap(), 1);
     }
-    assert_eq!(
-        format!(
-            "{:x}",
-            semaprax::digest_hex::LowerHex(Sha256::digest(previous.as_bytes()))
-        ),
-        row["original_sha256"]
-    );
+    assert_eq!(sha(&previous), row["original_sha256"]);
     previous
 }
 
