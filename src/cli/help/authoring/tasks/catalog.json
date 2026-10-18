@@ -166,19 +166,19 @@
         "path": "semaprax.toml"
       },
       {
-        "content": "module example.app;\npermit { process.args.read, process.stderr.write, process.stdin.read, process.stdout.write }\n@id(\"example.command\")\nfn command() -> i64 uses { process.stdin.read, process.stdout.write, process.stderr.write } { 0 }\n@id(\"example.main\")\nfn main() -> i64 uses { process.stdin.read, process.stdout.write, process.stderr.write } { command() }\n",
+        "content": "module example.app;\n\npermit { process.args.read, process.stderr.write, process.stdin.read, process.stdout.write }\n\n@id(\"example.command\")\nfn command() -> i64\n    uses { process.stdin.read, process.stdout.write, process.stderr.write }\n{\n    0\n}\n\n@id(\"example.main\")\nfn main() -> i64\n    uses { process.stdin.read, process.stdout.write, process.stderr.write }\n{\n    command()\n}\n",
         "path": "src/app.spx"
       },
       {
-        "content": "module example.request_schema;\npermit { process.stdin.read }\n@id(\"example.item\")\nrecord Item {\n    @id(\"example.item.key\") key: string,\n    @id(\"example.item.value\") value: i64,\n}\n@id(\"example.request\")\nrecord Request {\n    @id(\"example.request.labels\") labels: Vec<string>,\n    @id(\"example.request.items\") items: Vec<Item>,\n}\n@id(\"example.request.anchor\")\nfn request_anchor() -> i64 { 0 }\n",
+        "content": "module example.request_schema;\n\npermit { process.stdin.read }\n\n@id(\"example.item\")\nrecord Item {\n    @id(\"example.item.key\")\n    key: string,\n    @id(\"example.item.value\")\n    value: i64,\n}\n\n@id(\"example.request\")\nrecord Request {\n    @id(\"example.request.labels\")\n    labels: Vec<string>,\n    @id(\"example.request.items\")\n    items: Vec<Item>,\n}\n\n@id(\"example.request.anchor\")\nfn request_anchor() -> i64\n{\n    0\n}\n",
         "path": "src/request.spx"
       },
       {
-        "content": "module example.response_schema;\n@id(\"example.row\")\nrecord Row { @id(\"example.row.value\") value: i64, }\n@id(\"example.summary\")\nrecord Summary { @id(\"example.summary.count\") count: i64, }\n@id(\"example.response\")\nrecord Response {\n    @id(\"example.response.rows\") rows: Vec<Row>,\n    @id(\"example.response.summary\") summary: Summary,\n}\n@id(\"example.response.anchor\")\nfn response_anchor() -> i64 { 0 }\n",
+        "content": "module example.response_schema;\n\n@id(\"example.row\")\nrecord Row {\n    @id(\"example.row.value\")\n    value: i64,\n}\n\n@id(\"example.summary\")\nrecord Summary {\n    @id(\"example.summary.count\")\n    count: i64,\n}\n\n@id(\"example.response\")\nrecord Response {\n    @id(\"example.response.rows\")\n    rows: Vec<Row>,\n    @id(\"example.response.summary\")\n    summary: Summary,\n}\n\n@id(\"example.response.anchor\")\nfn response_anchor() -> i64\n{\n    0\n}\n",
         "path": "src/response.spx"
       },
       {
-        "content": "module example.tests;\n@id(\"example.tests.main\")\nfn main() -> i64 { 0 }\n",
+        "content": "module example.tests;\n\n@id(\"example.tests.main\")\nfn main() -> i64\n{\n    0\n}\n",
         "path": "src/tests.spx"
       }
     ],
@@ -225,14 +225,14 @@
     "input": "argv-utf8-256+selected-file.follow.v1",
     "manifest": "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"selected-file-tool\"\nversion = \"0.1.0\"\nprofile = \"source-command.selected-file.resource-output.v1\"\n\n[modules]\nentry = \"selected_file\"\nsources = [\"main.spx\", \"tests.spx\"]\ntests = [\"selected_file.tests\"]\n\n[exports]\nweb = []\n\n[command]\nfunction = \"selected_file.main\"\ninput = \"argv-utf8-256+selected-file.follow.v1\"\n\n[capabilities]\nrequired = [\"fs.read\", \"process.args.read\", \"process.stderr.write\", \"process.stdout.write\"]\n\n[targets]\nmatrix = [\"native64\"]\n",
     "project_profile": "source-command.selected-file.resource-output.v1",
-    "source": "module selected_file;\npermit { fs.read, process.args.read, process.stderr.write, process.stdout.write }\n@id(\"selected_file.main\")\nfn main() -> i64 uses { fs.read, process.args.read, process.stderr.write, process.stdout.write }\n{ 0 }\n",
+    "source": "module selected_file;\n\npermit { fs.read, process.args.read, process.stderr.write, process.stdout.write }\n\n@id(\"selected_file.main\")\nfn main() -> i64\n    uses { fs.read, process.args.read, process.stderr.write, process.stdout.write }\n{\n    0\n}\n",
     "sources": [
       "main.spx",
       "tests.spx"
     ],
     "target": "native64",
     "task": "selected-file",
-    "test_source": "module selected_file.tests;\n@id(\"selected_file.tests.main\")\nfn main() -> i64 { 0 }\n"
+    "test_source": "module selected_file.tests;\n\n@id(\"selected_file.tests.main\")\nfn main() -> i64\n{\n    0\n}\n"
   },
   "tasks": [
     {

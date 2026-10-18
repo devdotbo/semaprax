@@ -458,6 +458,32 @@ fn selected_file_task_refuses_foreign_profiles_stale_ids_and_malformed_continuat
 }
 
 #[test]
+fn neutral_task_sources_are_canonical_before_ordinary_admission() {
+    let descriptors: Value = serde_json::from_str(DESCRIPTORS).unwrap();
+    let selected = &descriptors["selected_file_task"];
+    let mut sources = vec![
+        ("main.spx", text(selected, "source")),
+        ("tests.spx", text(selected, "test_source")),
+    ];
+    for file in descriptors["json_task"]["files"].as_array().unwrap() {
+        let path = text(file, "path");
+        if path.ends_with(".spx") {
+            sources.push((path, text(file, "content")));
+        }
+    }
+    assert_eq!(sources.len(), 6, "every emitted neutral SPX source");
+    for (path, source) in sources {
+        let (_, canonical) = semaprax::parse_canonical(source, path).unwrap();
+        assert_eq!(source, canonical, "canonical neutral task source: {path}");
+        assert_eq!(
+            semaprax::parse_canonical(&canonical, path).unwrap().1,
+            canonical,
+            "canonical neutral task source is stable: {path}"
+        );
+    }
+}
+
+#[test]
 fn neutral_task_examples_pass_ordinary_project_checks_and_independent_codec_plan_replay() {
     use semaprax::project;
     use std::sync::atomic::{AtomicU64, Ordering};

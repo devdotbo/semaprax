@@ -204,7 +204,12 @@ fn json_descriptor(catalog: &Value) -> Value {
     for file in route["files"].as_array().unwrap() {
         let path = file["path"].as_str().unwrap();
         if path.ends_with(".spx") {
-            let program = semaprax::parse(file["content"].as_str().unwrap(), path).unwrap();
+            let source = file["content"].as_str().unwrap();
+            let (program, canonical) = semaprax::parse_canonical(source, path).unwrap();
+            assert_eq!(
+                source, canonical,
+                "canonical neutral JSON task source: {path}"
+            );
             let hir = semaprax::hir::resolve(&program).unwrap();
             semaprax::hir::validate(&hir).unwrap();
         }
@@ -236,7 +241,12 @@ fn selected_file_descriptor() -> Value {
     assert_eq!(route["command"], neutral.command().unwrap());
     assert!(neutral.dependencies().is_empty());
     for (key, path) in [("source", "main.spx"), ("test_source", "tests.spx")] {
-        let program = semaprax::parse(route[key].as_str().unwrap(), path).unwrap();
+        let source = route[key].as_str().unwrap();
+        let (program, canonical) = semaprax::parse_canonical(source, path).unwrap();
+        assert_eq!(
+            source, canonical,
+            "canonical neutral selected-file task source: {path}"
+        );
         assert!(program.module_uses.is_empty());
         let hir = semaprax::hir::resolve(&program).unwrap();
         semaprax::hir::validate(&hir).unwrap();
