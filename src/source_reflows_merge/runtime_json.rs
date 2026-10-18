@@ -95,6 +95,71 @@ pub(super) fn load(fixture: Fixture) -> String {
     read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
         .expect("complete authenticated immutable projection JSON fixture")
 }
+// Fixed repository payloads use the same sealed one-handle reader. Their
+// complete immutable bytes remain required at test runtime; no global cache.
+#[derive(Clone, Copy)]
+pub(super) enum AdditionalFixture {
+    HistoricalCompact7,
+    HistoricalReceivers12,
+    OrdinaryPlanHistory,
+    OrdinaryPlanIntegrated,
+}
+impl AdditionalFixture {
+    fn spec(self) -> Spec {
+        match self {
+            Self::HistoricalCompact7 => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/main8a-historical-readers-257-268-20261016/Compact7.json"
+                ),
+                length: 1084990,
+                sha256: [
+                    0, 149, 173, 86, 200, 253, 74, 28, 73, 247, 87, 156, 250, 159, 42, 179, 31, 58,
+                    58, 117, 45, 255, 18, 239, 111, 255, 168, 184, 62, 65, 150, 117,
+                ],
+            },
+            Self::HistoricalReceivers12 => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/main8a-historical-readers-257-268-20261016/Receivers12.json"
+                ),
+                length: 2125481,
+                sha256: [
+                    223, 155, 190, 240, 51, 198, 246, 133, 193, 29, 115, 33, 18, 160, 218, 247,
+                    198, 191, 36, 101, 22, 191, 240, 124, 254, 242, 172, 36, 136, 208, 145, 167,
+                ],
+            },
+            Self::OrdinaryPlanHistory => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/ordinary-plan-history-c8740045-v1/inputs.json"
+                ),
+                length: 784669,
+                sha256: [
+                    165, 217, 149, 202, 212, 213, 236, 255, 110, 168, 30, 179, 16, 88, 10, 154, 44,
+                    170, 246, 49, 80, 113, 141, 73, 146, 114, 108, 185, 155, 135, 114, 120,
+                ],
+            },
+            Self::OrdinaryPlanIntegrated => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/ordinary-plan-integrated-e24-v1/stages.json"
+                ),
+                length: 1539271,
+                sha256: [
+                    218, 153, 227, 185, 89, 159, 100, 232, 121, 186, 67, 100, 106, 239, 75, 105,
+                    249, 39, 245, 102, 178, 80, 7, 201, 108, 214, 208, 201, 50, 168, 21, 189,
+                ],
+            },
+        }
+    }
+}
+pub(super) fn additional(fixture: AdditionalFixture) -> String {
+    let spec = fixture.spec();
+    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)
+        .expect("complete authenticated fixed historical repository payload")
+}
+
 // The compiled index proves absence against these exact immutable fixture specs.
 // An unused fixture is not opened on this route; the all-fixture owner separately
 // authenticates availability, complete bytes and exact key multiplicity.

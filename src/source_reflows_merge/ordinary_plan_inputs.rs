@@ -1,9 +1,5 @@
 //! Exact new-source acquisition before every unchanged historical raw guard.
 use sha2::{Digest, Sha256};
-const PACKET: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/docs/evidence/ordinary-plan-history-c8740045-v1/inputs.json"
-));
 fn digest(text: &str) -> String {
     format!(
         "{:x}",
@@ -13,13 +9,20 @@ fn digest(text: &str) -> String {
 const PACKET_LENGTH: usize = 784669; // sealed by the source binding recipe
 const PACKET_SHA256: &str = "a5d995cad4d5ecff6ea81eb310580a9a2caaf63150718d4992726cb99b877278";
 fn records() -> serde_json::Value {
+    let packet = super::runtime_json::additional(
+        super::runtime_json::AdditionalFixture::OrdinaryPlanHistory,
+    );
     assert!(
-        PACKET.len() <= 2 * 1024 * 1024,
+        packet.len() <= 2 * 1024 * 1024,
         "fixed custody packet exceeds cap"
     );
-    assert_eq!(PACKET.len(), PACKET_LENGTH, "whole custody packet length");
-    assert_eq!(digest(PACKET), PACKET_SHA256, "whole custody packet digest");
-    serde_json::from_str(PACKET).unwrap()
+    assert_eq!(packet.len(), PACKET_LENGTH, "whole custody packet length");
+    assert_eq!(
+        digest(&packet),
+        PACKET_SHA256,
+        "whole custody packet digest"
+    );
+    serde_json::from_str(&packet).unwrap()
 }
 const CURRENT: [(&str, &str); 6] = [
     (
@@ -42,8 +45,12 @@ const CURRENT: [(&str, &str); 6] = [
         "tests/workspace/semantic_graph/source_inventory.rs",
         include_str!("../../tests/workspace/semantic_graph/source_inventory.rs"),
     ),
-    ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-        include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),
+    (
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        include_str!(
+            "../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+        ),
+    ),
 ];
 fn restore(row: &serde_json::Value, current: &str) -> String {
     assert_eq!(
@@ -116,17 +123,16 @@ fn complete_originals_inverse_and_foreign_inputs_remain_independent() {
 
 // Distinct expected namespace for the finite integrated six-source successor.
 // The original packet, restore and acquire above remain independent controls.
-const INTEGRATED: &str = include_str!(concat!(
-    env!("CARGO_MANIFEST_DIR"),
-    "/docs/evidence/ordinary-plan-integrated-e24-v1/stages.json"
-));
 const INTEGRATED_LENGTH: usize = 1539271;
 const INTEGRATED_SHA256: &str = "da99e3b9599f64e879ba43646aef4b69f927f566b25007c96cd6d0c932a815bd";
 fn integrated_records() -> serde_json::Value {
-    assert!(INTEGRATED.len() <= 2 * 1024 * 1024);
-    assert_eq!(INTEGRATED.len(), INTEGRATED_LENGTH);
-    assert_eq!(digest(INTEGRATED), INTEGRATED_SHA256);
-    let rows: serde_json::Value = serde_json::from_str(INTEGRATED).unwrap();
+    let integrated = super::runtime_json::additional(
+        super::runtime_json::AdditionalFixture::OrdinaryPlanIntegrated,
+    );
+    assert!(integrated.len() <= 2 * 1024 * 1024);
+    assert_eq!(integrated.len(), INTEGRATED_LENGTH);
+    assert_eq!(digest(&integrated), INTEGRATED_SHA256);
+    let rows: serde_json::Value = serde_json::from_str(&integrated).unwrap();
     assert_eq!(rows.as_array().unwrap().len(), 6);
     rows
 }
@@ -203,11 +209,15 @@ fn legacy_checkpoint(source: &str, expected: &str, current: &str) -> String {
     legacy
 }
 pub(super) fn acquire_expected(source: &str, expected: &str, current: &str) -> String {
-    if !matches!(source,
-        "src/cleanup_plan/replay.rs" | "src/source_reflows_merge.rs"
-        | "src/source_reflows_merge/main67107_inputs.rs" | "tests/hir_module_boundaries.rs"
-        | "tests/workspace/semantic_graph/source_inventory.rs"
-        | "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs") {
+    if !matches!(
+        source,
+        "src/cleanup_plan/replay.rs"
+            | "src/source_reflows_merge.rs"
+            | "src/source_reflows_merge/main67107_inputs.rs"
+            | "tests/hir_module_boundaries.rs"
+            | "tests/workspace/semantic_graph/source_inventory.rs"
+            | "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs"
+    ) {
         return current.to_owned();
     }
     let old = records();

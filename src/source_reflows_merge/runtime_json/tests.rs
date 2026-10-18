@@ -30,9 +30,14 @@ fn authenticate_keys(fixture: Fixture, rows: &serde_json::Value) {
 fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
     // Both exact selector arms normalize to the identical common source before
     // any historical source inverse. No arbitrary edited source is accepted.
+    let authenticated = super::super::main_e177_final_inputs::value_direct(
+        "src/source_reflows_merge/runtime_json.rs",
+        "5a95fa1f07fac99c62f6572817df247695a4d2e274d5accc5ce231d7dc150bc4",
+        include_str!("../runtime_json.rs"),
+    );
     let current = super::super::release_current_input(
         "src/source_reflows_merge/runtime_json.rs",
-        include_str!("../runtime_json.rs"),
+        &authenticated,
     );
     let release = super::super::release_custody::input(
         super::super::release_custody::Fixture::Previous2c,
@@ -70,13 +75,15 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
         pair_custody::normalize("src/source_reflows_merge/runtime_json.rs", &embedded),
         common
     );
-    assert!(std::panic::catch_unwind(|| {
-        pair_custody::normalize(
-            "src/source_reflows_merge/runtime_json.rs",
-            &(common.clone() + " "),
-        )
-    })
-    .is_err());
+    assert!(
+        std::panic::catch_unwind(|| {
+            pair_custody::normalize(
+                "src/source_reflows_merge/runtime_json.rs",
+                &(common.clone() + " "),
+            )
+        })
+        .is_err()
+    );
     let path = std::env::temp_dir().join(format!(
         "semaprax-projection-json-{}-{}",
         std::process::id(),
@@ -112,6 +119,22 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
         assert_eq!(selected_transport::load(fixture), payload);
         let rows: serde_json::Value = serde_json::from_str(&payload).unwrap();
         authenticate_keys(fixture, &rows);
+    }
+    // New bindings traverse the unchanged reader before their owning JSON/source
+    // assertions. Every original fixture and all hostile-I/O controls stay above
+    // and below this loop unchanged.
+    for (fixture, rows) in [
+        (AdditionalFixture::HistoricalCompact7, 7),
+        (AdditionalFixture::HistoricalReceivers12, 12),
+        (AdditionalFixture::OrdinaryPlanHistory, 6),
+        (AdditionalFixture::OrdinaryPlanIntegrated, 6),
+    ] {
+        let spec = fixture.spec();
+        let payload = additional(fixture);
+        assert_eq!(payload.len(), spec.length);
+        assert_eq!(digest(payload.as_bytes()), spec.sha256);
+        let parsed: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(parsed.as_array().unwrap().len(), rows);
     }
     // Compiled presence must reach the original duplicate-row refusal, never
     // choose one row or turn a duplicate into an unchanged-input success.
