@@ -1,0 +1,124 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      181883,
+      "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8"
+    ],
+    "src/cleanup_plan/replay.rs": [
+      325741,
+      "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed"
+    ],
+    "src/cleanup_plan/replay/branch_clone.rs": [
+      17122,
+      "7f639da343b5b88c60751510a27cd4f7cd8c97bccfa454d662e9c179057e9a4c"
+    ],
+    "src/cleanup_plan/replay/branch_clone/tests.rs": [
+      33988,
+      "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3"
+    ],
+    "src/cleanup_plan/replay/expression_facts/arena/prefix.rs": [
+      11767,
+      "dd227ffdfe6bccda89dbce95c99f3ed7d6106d54a4be3f89de319311e8a1d1b7"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs": [
+      39631,
+      "5238d8d20d294365c9af2804b718beb3a79fe9df1e71e07a20c5163c25c273fd"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs": [
+      54774,
+      "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e"
+    ],
+    "src/cleanup_plan/replay/factored.rs": [
+      47242,
+      "da77f31291ee670ec84a7aeb18fc7ae470a88b1b803b7791e6884d1af6826a2a"
+    ],
+    "src/cleanup_plan/replay/factored/oracle_hook.rs": [
+      12128,
+      "6e66cc082468494f902cc490e53e655bbeb369a36b511e42a292592e6b37c26e"
+    ],
+    "src/cleanup_plan/replay/skeleton_work.rs": [
+      48091,
+      "daf80d75a2b54337da2c687fc8deb2e2c69f7b97226ae4a947239d0cc31c7031"
+    ],
+    "src/hir/expr_nodes.rs": [
+      38151,
+      "83b966066744c034bee88a717094f08891df2c6a813bbee17126ddc458b37666"
+    ],
+    "src/hir/function_value.rs": [
+      14218,
+      "f2fa8fd365608e1c31dd834f51940f95c92415c9625efbd0528c39782f82b56c"
+    ],
+    "src/hir/iterator_loop/renewal.rs": [
+      14822,
+      "433c862ad4565552ff8d6c357728d25b010a99ef7ac98e820269b860dd0ed834"
+    ],
+    "src/hir/lexical_exit.rs": [
+      6957,
+      "ef9fdd2f4d38c41ea78c61e8fb0555055298db38c3770dcdca7028a743b7f897"
+    ],
+    "src/hir/validation.rs": [
+      399157,
+      "85a730c701db6b3031fecd84499aa1f2dff5f5c07d0498612bdcd1284dd0b271"
+    ],
+    "src/loop_calls/byte_writer.rs": [
+      8051,
+      "7c35e7fba596f0c9a999190092cedd78238d11940e40ab6ed43d2c39ace63b74"
+    ],
+    "src/loop_calls/byte_writer/resolved.rs": [
+      23214,
+      "72f38ae029e55568d374fc5f037cb30759da3d88575655b877efdedc3f14cb1d"
+    ],
+    "src/source_reflows/semantic_receivers.rs": [
+      38705,
+      "5926337017992c1f9081f4632214736f6e34182334b2591b482e119fa5d4df22"
+    ],
+    "src/source_verify/declaration.rs": [
+      15876,
+      "5d31e7ff4f7127e8bd347ce2bb4470c74e7ef47355ba7cdd8f54dc9363076526"
+    ],
+    "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs": [
+      30254,
+      "8ca91a97b040d3386d07715660cf5d43aa8f916e1b81fed8d38a28f526e87b5a"
+    ],
+    "tests/hir_module_boundaries.rs": [
+      125075,
+      "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051"
+    ],
+    "tests/workspace/semantic_graph/source_inventory.rs": [
+      141562,
+      "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e"
+    ],
+    "src/source_reflows/incoming67107_semantic_receivers.rs": [
+      34564,
+      "bece004991e952b9e0a5249aba35f66d320a50be19385ffd757f963131712a7f"
+    ]
+  },
+  "strict_dependencies": 1581,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    }
+  ],
+  "logical_rows": 441,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "d5361cc79842929c9d50c08c650f57b1d66ecb9a5af227a1f2b04dc7024200e2",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
