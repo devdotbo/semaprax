@@ -32,8 +32,8 @@ new=" payload=_definition_payload(R,row,read)"
 source=original.decode();assert source.count(old)==1
 current=source.replace(old,new,1)
 assert current.replace(new,old,1).encode()==original
-guard_helper=R/'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';guard_raw=held(guard_helper,6011)
-assert sha(guard_raw)=='e540a09dad4ee5395eb509fe8492a55249b0125456025ce031a7d7be30b3ab9c'
+guard_helper=R/'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';guard_raw=held(guard_helper,8226)
+assert sha(guard_raw)=='043d184a8912a1792ce7224899c9ed4ea2b625acdf713664b6ce656cf4791e10'
 g=types.ModuleType('accepted_main043_strict_guard');g.__file__=str(guard_helper);g._AUTHENTICATED_PROGRAM=guard_raw
 exec(compile(guard_raw,str(guard_helper),'exec'),g.__dict__)
 m._next_raw_source=g.source

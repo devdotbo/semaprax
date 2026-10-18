@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/fmt-a110/guard-config.json'
-_CONFIG_LENGTH=86480
-_CONFIG_SHA256='e6312f4af17854c28542cdaa42cf3e34d954d9be8a00dffe657cd425c408a24a'
+_CONFIG_PATH=R/'docs/evidence/fmt-local-441-20261018/guard-config.json'
+_CONFIG_LENGTH=88676
+_CONFIG_SHA256='c214f307ece69a1534db5818e4df17cbb3c23ed0102520f5f3e38a6eca5108d0'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -25,12 +25,47 @@ def _configuration_current():
 def read(pin):
  _configuration_current()
  return bounded(R/pin['archive'],pin['length'],pin['sha256'])
-def packet():
+def packet_fmt433():
  _configuration_current()
  p=CONFIG['packet'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
  assert v['schema']=='semaprax.main-e177-final-whole-inputs.v1'and len(v['rows'])==CONFIG['rows']
  assert len(v['rows'])==len({x['source']for x in v['rows']})
  return v
+
+def packet():
+ base=packet_fmt433()
+ extension=CONFIG['extension'];ext=json.loads(bounded(R/extension['path'],extension['length'],extension['sha256']))
+ assert ext['schema']=='semaprax.fmt433-local133-extension.v1'
+ assert ext['base_sha256']==CONFIG['packet']['sha256']
+ assert ext['compiled_upgrades']==['src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs']
+ rows=list(base['rows']);old={r['source']:r for r in base['rows']};positions={r['source']:i for i,r in enumerate(rows)};seen=set()
+ for row in ext['rows']:
+  p=row['source'];assert p not in seen;seen.add(p)
+  if p in positions:rows[positions[p]]=row
+  else:positions[p]=len(rows);rows.append(row)
+ assert len(rows)==441 and len(positions)==441
+ for prior,current in zip(base['rows'],rows):
+  assert current['source']==prior['source']
+  assert current['compiled']==prior['compiled']or(prior['compiled']is False and current['compiled']is True and prior['source']in ext['compiled_upgrades'])
+  assert current['views'][:len(prior['views'])]==prior['views']
+  if current['current']!=prior['current']:assert dict(name='whole-fmt433-current',**prior['current'])in current['views']
+  restored=dict(current);restored['compiled']=prior['compiled'];restored['current']=prior['current'];restored['views']=prior['views']
+  if 'fragments'in prior:restored['fragments']=prior['fragments']
+  assert restored==prior
+ logical=dict(base);logical['rows']=rows
+ restored=dict(logical);restored['rows']=base['rows'];assert restored==base
+ by={r['source']:r for r in rows};edges=0
+ for row in rows:
+  for child in row.get('fragments',[]):
+   assert not child.get('fragments') and child['compiled']is True and child==by[child['source']];edges+=1
+ assert edges==10
+ local=json.loads(read(ext['whole_local133']));assert len(local['rows'])==133
+ for prior in local['rows']:
+  row=by[prior['source']];assert row['compiled']==prior['compiled']
+  assert all(v in row['views']for v in prior['views'])
+  assert row['current']==prior['current']or dict(name='whole-local133-current',**prior['current'])in row['views']
+  a=dict(row);a.pop('fragments',None);a['current']=prior['current'];a['views']=prior['views'];assert a==prior
+ return logical
 
 def latest_source(path,length,digest):
  assert path in CONFIG['closed_prior_sources'],('foreign named source acquisition',path)
