@@ -10,7 +10,7 @@ fn packet() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(228268,"762e3c6221da8df3a43a58a941e3b4f17fa4500084971fee6743eb6f09778cd9".to_owned()));
+    assert_eq!((data.len(),digest(data.as_bytes())),(260876,"5ff27ae4d2236b5459164782a9291c5bfbac3a6a8800fd602215a708e1797a19".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
     let ext:serde_json::Value=serde_json::from_str(data).unwrap();
@@ -24,7 +24,7 @@ fn packet() -> serde_json::Value {
         let source=row["source"].as_str().unwrap();assert!(seen.insert(source));
         if let Some(index)=rows.iter().position(|r|r["source"]==source) {rows[index]=row.clone();}else{rows.push(row.clone());}
     }
-    assert_eq!(rows.len(),444);
+    assert_eq!(rows.len(),519);
     for (prior,current) in base["rows"].as_array().unwrap().iter().zip(rows.iter()) {
         assert_eq!(current["source"],prior["source"]);assert!(current["compiled"]==prior["compiled"] || (prior["compiled"]==false && current["compiled"]==true && ext["compiled_upgrades"].as_array().unwrap().contains(&prior["source"])));
         let views=current["views"].as_array().unwrap();let before=prior["views"].as_array().unwrap();assert_eq!(&views[..before.len()],before.as_slice());
@@ -510,6 +510,7 @@ fn table_compiled(source: &str) -> Option<&'static str> {
         _ => None,
     }
 }
+#[rustfmt::skip] // Keep this complete literal source whitelist bounded and byte-preserved.
 fn compiled(source: &str) -> Option<&'static str> {
     match source {
         "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs" => Some(include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs")),
@@ -654,6 +655,81 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs")),
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs")),
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid/queries.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid/shape.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid/shape.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid/supplemental.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid/supplemental.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid/supplemental/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid/supplemental/tests.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid_before.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs")),
+        "src/cleanup_plan/replay/lexical_replay/before_selected_control.rs" => Some(include_str!("../../src/cleanup_plan/replay/lexical_replay/before_selected_control.rs")),
+        "src/cleanup_plan/replay/lexical_replay/before_selected_path.rs" => Some(include_str!("../../src/cleanup_plan/replay/lexical_replay/before_selected_path.rs")),
+        "src/cleanup_plan/replay/path_join/selected.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected.rs")),
+        "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/append_before_formals.rs")),
+        "src/cleanup_plan/replay/path_join/selected/execution.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/execution.rs")),
+        "src/cleanup_plan/replay/path_join/selected/finish.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/finish.rs")),
+        "src/cleanup_plan/replay/path_join/selected/history.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/history.rs")),
+        "src/cleanup_plan/replay/path_join/selected/joins.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/joins.rs")),
+        "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/lexical_flow.rs")),
+        "src/cleanup_plan/replay/path_join/selected/lookup.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/lookup.rs")),
+        "src/cleanup_plan/replay/path_join/selected/queries.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/queries.rs")),
+        "src/cleanup_plan/replay/path_join/selected/reason.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/reason.rs")),
+        "src/cleanup_plan/replay/path_join/selected/receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/receiving.rs")),
+        "src/cleanup_plan/replay/path_join/selected/renewal.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/renewal.rs")),
+        "src/cleanup_plan/replay/path_join/selected/strings.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/strings.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/boundary.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/boundary.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/history.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/history.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/layout.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/layout.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/lookup.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/mod.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/mod.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/nominal.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/nominal.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/reason_before_path.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/reason_before_path.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/renewal.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/renewal.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/session.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/session.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/strings.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/strings.rs")),
+        "src/cleanup_plan/replay/path_join/selected/tests/whole.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/tests/whole.rs")),
+        "src/cleanup_plan/replay/path_join/selected/walk.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/selected/walk.rs")),
+        "src/cleanup_plan/replay/scalar_replay/before_selected_control.rs" => Some(include_str!("../../src/cleanup_plan/replay/scalar_replay/before_selected_control.rs")),
+        "src/cleanup_plan/replay/scalar_replay/before_selected_path.rs" => Some(include_str!("../../src/cleanup_plan/replay/scalar_replay/before_selected_path.rs")),
+        "src/cleanup_plan/replay/scalar_replay/paid_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/scalar_replay/paid_before.rs")),
+        "src/cleanup_plan/replay/scalar_replay/selected_family_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/scalar_replay/selected_family_tests.rs")),
+        "src/cleanup_plan/replay/schema/selected_paid.rs" => Some(include_str!("../../src/cleanup_plan/replay/schema/selected_paid.rs")),
+        "src/cleanup_plan/replay/schema/selected_paid/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/schema/selected_paid/tests.rs")),
+        "src/cleanup_plan/replay/selected_context/family.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_context/family.rs")),
+        "src/cleanup_plan/replay/selected_entry/tests/paid/selected_control.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_entry/tests/paid/selected_control.rs")),
+        "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs")),
+        "src/cleanup_plan/replay/structural_control/selected.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/blocks.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/blocks.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/calls.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/calls.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/cfg.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/cfg.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/entry.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/entry.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/entry_before_dynamic.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/entry_before_dynamic.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/entry_before_formals.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/entry_before_formals.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/exits.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/exits.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/helpers.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/helpers.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/reason.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/reason.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/status.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/status.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/children.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/children.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/mod.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/mod.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/nominal.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/nominal.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/renewal.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/renewal.rs")),
+        "src/cleanup_plan/replay/structural_control/selected/tests/whole.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/selected/tests/whole.rs")),
+        "src/cleanup_plan/renewal_history.rs" => Some(include_str!("../../src/cleanup_plan/renewal_history.rs")),
+        "src/cleanup_plan/replay/inventory_coverage.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/paid.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/paid.rs")),
+        "src/cleanup_plan/replay/inventory_coverage/typed_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/inventory_coverage/typed_tests.rs")),
+        "src/cleanup_plan/replay/lexical_replay.rs" => Some(include_str!("../../src/cleanup_plan/replay/lexical_replay.rs")),
+        "src/cleanup_plan/replay/record_destructure/update.rs" => Some(include_str!("../../src/cleanup_plan/replay/record_destructure/update.rs")),
+        "src/cleanup_plan/replay/scalar_replay.rs" => Some(include_str!("../../src/cleanup_plan/replay/scalar_replay.rs")),
+        "src/cleanup_plan/replay/selected_context.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_context.rs")),
+        "src/cleanup_plan/replay/selected_context/child.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_context/child.rs")),
+        "src/cleanup_plan/replay/selected_entry/tests/paid.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_entry/tests/paid.rs")),
+        "src/cleanup_plan/replay/selected_profile/paid_children.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_profile/paid_children.rs")),
+        "src/cleanup_plan/replay/structural_control.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control.rs")),
+        "src/cleanup_plan/replay/structural_control/calls/cursor.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/calls/cursor.rs")),
+        "src/iterator_ops.rs" => Some(include_str!("../../src/iterator_ops.rs")),
+        "src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs" => Some(include_str!("../../src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs")),
         _ => None,
     }
 }
@@ -1028,17 +1104,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 85979);
+        assert_eq!(data.len(), 70730);
         assert_eq!(
             digest(data.as_bytes()),
-            "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a"
+            "e4453029ce3d39ff3fe9f2d54d6cc5065a5a650e6f36df046bb9cfd18cf38824"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a"
+                "e4453029ce3d39ff3fe9f2d54d6cc5065a5a650e6f36df046bb9cfd18cf38824"
             )
             .unwrap(),
             data

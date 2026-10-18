@@ -15,8 +15,8 @@ def bounded(path,length,digest):
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/merge-2e92-browser-20261018/guard-config.json'
-_CONFIG_LENGTH=117696
-_CONFIG_SHA256='58ba9380e339397a54f176011500b0db3a293716dbf4359b113b774c5ec69159'
+_CONFIG_LENGTH=111425
+_CONFIG_SHA256='8aade6e5c2cfb45334a920b6dfc55b5784b79cadbd7a8bae9e62175f72ab379a'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -43,7 +43,7 @@ def packet():
   p=row['source'];assert p not in seen;seen.add(p)
   if p in positions:rows[positions[p]]=row
   else:positions[p]=len(rows);rows.append(row)
- assert len(rows)==444 and len(positions)==444
+ assert len(rows)==519 and len(positions)==519
  for prior,current in zip(base['rows'],rows):
   assert current['source']==prior['source']
   assert current['compiled']==prior['compiled']or(prior['compiled']is False and current['compiled']is True and prior['source']in ext['compiled_upgrades'])
