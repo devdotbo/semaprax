@@ -305,7 +305,7 @@ fn projection344_live_descriptor() -> serde_json::Value {
     assert_eq!(data.len(), 8735);
     assert_eq!(
         digest(data),
-        "4467c717fb5efd95c65d7f827c545e8ed473549114f917a8c62253c67702c03f"
+        "857a6d3fe5307b60176452a2be1d6ed78109aa87ac51b4044df7aa45ba66defc"
     );
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
         "docs/evidence/current339-source-custody-repair-20261017/projection344-live-join.json",
