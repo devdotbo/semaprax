@@ -6,6 +6,8 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton
     pub arity: [usize; 3],
     pub unit_drops: usize,
     pub general_drops: usize,
+    pub signature_hits: usize,
+    pub signature_misses: usize,
     pub complete: bool,
     pub overflowed: bool,
 }
@@ -17,7 +19,7 @@ struct State {
     row: Row,
 }
 thread_local! {
-    static STATE: Cell<State> = const { Cell::new(State { active: false, function: 0, budget: 0, row: Row { arity: [0;3], unit_drops: 0, general_drops: 0, complete: false, overflowed: false } }) };
+    static STATE: Cell<State> = const { Cell::new(State { active: false, function: 0, budget: 0, row: Row { arity: [0;3], unit_drops: 0, general_drops: 0, signature_hits: 0, signature_misses: 0, complete: false, overflowed: false } }) };
 }
 pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) struct Guard;
 pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) fn observe(
@@ -51,7 +53,9 @@ fn update(function: &ResolvedFunction, budget: &ReplayBudget, field: usize) {
         let value = match field {
             0..=2 => &mut s.row.arity[field],
             3 => &mut s.row.unit_drops,
-            _ => &mut s.row.general_drops,
+            4 => &mut s.row.general_drops,
+            5 => &mut s.row.signature_hits,
+            _ => &mut s.row.signature_misses,
         };
         if let Some(next) = value.checked_add(1) {
             *value = next;
@@ -75,6 +79,14 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton
 ) {
     update(function, budget, if unit { 3 } else { 4 });
 }
+pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) fn signature(
+    hit: bool,
+    function: &ResolvedFunction,
+    budget: &ReplayBudget,
+) {
+    update(function, budget, if hit { 5 } else { 6 });
+}
+
 impl Guard {
     pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) fn finish(
         &self,

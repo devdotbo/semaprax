@@ -744,3 +744,62 @@ fn cached_root_with_no_new_singleton_keeps_the_complete_additive_cold_bank() {
         inline_exit::PRIMITIVES
     );
 }
+
+#[test]
+fn distinct_states_with_one_equal_language_exercise_real_signature_miss_then_hit() {
+    let f = function();
+    let mut a = Automaton::default();
+    let mut setup = ReplayBudget::unobserved();
+    let sink = a.node(&f, &mut setup).unwrap();
+    let first = a.node(&f, &mut setup).unwrap();
+    let second = a.node(&f, &mut setup).unwrap();
+    let label = Label::End(super::super::super::SkeletonTerminal::Success);
+    a.movement(&f, &mut setup, first, label.clone(), sink)
+        .unwrap();
+    a.movement(&f, &mut setup, second, label, sink).unwrap();
+    assert_ne!(first, second);
+    let (_, refused, _, _) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+        let mut x = ReplayBudget::new();
+        let mut y = ReplayBudget::new();
+        x.reserve_bytes(
+            &f,
+            super::super::Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * OLD_CALL,
+            "889 signature old owner",
+        )
+        .unwrap();
+        y.reserve_bytes(
+            &f,
+            Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * NEW_CALL,
+            "889 signature current owner",
+        )
+        .unwrap();
+        let mut old = super::super::Canonicalizer::new(&a, sink);
+        let mut current = Canonicalizer::new(&a, sink);
+        let observer = shape_census::observe(&f, &y);
+        let mut previous = None;
+        for root in [first, second] {
+            x.reserve_array::<(usize, u64)>(&f, 1, "889 signature old root")
+                .unwrap();
+            y.reserve_array::<(usize, u64)>(&f, 1, "889 signature current root")
+                .unwrap();
+            let expected = old.id(&f, vec![(root, 1)], &mut x).unwrap();
+            let actual = current.id(&f, vec![(root, 1)], &mut y).unwrap();
+            assert_eq!(actual, expected);
+            assert!(actual.is_some());
+            if let Some(prior) = previous {
+                assert_eq!(actual, prior);
+            }
+            previous = Some(actual);
+            assert!(old.ids.iter().eq(current.ids.iter()));
+            assert!(old.states.iter().eq(current.states.iter()));
+        }
+        let row = observer.finish(true);
+        assert!(row.complete && !row.overflowed);
+        assert!(row.signature_hits > 0 && row.signature_misses > 0);
+        eprintln!(
+            "OPT889 actual distinct-state signature hits={} misses={}",
+            row.signature_hits, row.signature_misses
+        );
+    });
+    assert!(!refused);
+}

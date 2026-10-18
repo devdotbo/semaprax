@@ -189,11 +189,15 @@ impl Canonicalizer<'_> {
                         Some(id) => {
                             #[cfg(test)]
                             arena_tests::signature_lookup(true);
+                            #[cfg(test)]
+                            inline_exit::census::signature(true, function, budget);
                             *id
                         }
                         None => {
                             #[cfg(test)]
                             arena_tests::signature_lookup(false);
+                            #[cfg(test)]
+                            inline_exit::census::signature(false, function, budget);
                             attempt!(budget.reserve_array::<(Label, usize)>(
                                 function,
                                 1,
@@ -276,11 +280,15 @@ impl Canonicalizer<'_> {
                                 Some(id) => {
                                     #[cfg(test)]
                                     arena_tests::signature_lookup(true);
+                                    #[cfg(test)]
+                                    inline_exit::census::signature(true, function, budget);
                                     *id
                                 }
                                 None => {
                                     #[cfg(test)]
                                     arena_tests::signature_lookup(false);
+                                    #[cfg(test)]
+                                    inline_exit::census::signature(false, function, budget);
                                     attempt!(budget.reserve_array::<(Label, usize)>(
                                         function,
                                         1,
@@ -351,11 +359,15 @@ impl Canonicalizer<'_> {
                             Some(id) => {
                                 #[cfg(test)]
                                 arena_tests::signature_lookup(true);
+                                #[cfg(test)]
+                                inline_exit::census::signature(true, function, budget);
                                 *id
                             }
                             None => {
                                 #[cfg(test)]
                                 arena_tests::signature_lookup(false);
+                                #[cfg(test)]
+                                inline_exit::census::signature(false, function, budget);
                                 intern_arena::prepare_insert!(
                                     self.ids,
                                     intern_arena::Signature,
@@ -413,11 +425,15 @@ impl Canonicalizer<'_> {
                         Some(id) => {
                             #[cfg(test)]
                             arena_tests::signature_lookup(true);
+                            #[cfg(test)]
+                            inline_exit::census::signature(true, function, budget);
                             *id
                         }
                         None => {
                             #[cfg(test)]
                             arena_tests::signature_lookup(false);
+                            #[cfg(test)]
+                            inline_exit::census::signature(false, function, budget);
                             attempt!(budget.reserve_array::<(Label, usize)>(
                                 function,
                                 successors.len(),
