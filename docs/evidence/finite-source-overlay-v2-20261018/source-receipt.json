@@ -1,0 +1,71 @@
+{
+  "status": "SOURCE_ONLY_UNBOUND_PROTOCOL",
+  "baseline": "b5a7f2ba01b2a17a943603e57e9fa8a3b0988a56",
+  "whole_inverses": [
+    {
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before_sha256": "4c88fbf910220cf35b425e3fb8a2f7d644ba7e88075630d1f112172f8f4650f8",
+      "after_sha256": "e5bba8ed4ce2c5ce0a75c53b5ecbef76e4bc260a266ef88a03f52dafc467a328",
+      "lines": 1499,
+      "full_inverse": true
+    },
+    {
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before_sha256": "4b37a7356881976afd8168a4bd8029796a083f1463d6c040ce5b986592745332",
+      "after_sha256": "bd0e0749fc1cc39398e57cf2e00b4408bc576acb37a356399e30815b417d646f",
+      "lines": 191,
+      "full_inverse": true
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "before_sha256": "d550b900ad4629be5bdb9e22b966b1d563d04b31384e49df8e8737696f222aea",
+      "after_sha256": "aac569c507fe79b648378423eae953f73d85c76818d4c3fb9c64522080e80509",
+      "lines": 915,
+      "full_inverse": true
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before_sha256": "c0bc1507f41c0e498b836f525474a311f504ce84501f173f01676adf38783774",
+      "after_sha256": "81efd2bbf7d72489b2cc10eff804100bc37ca6e48f445ae756c391cb5553849c",
+      "lines": 823,
+      "full_inverse": true
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before_sha256": "7b91a25c74891cde619fb142e13da7ee4408bb4b87f1546941521dd8a7bd8be0",
+      "after_sha256": "e8f33eb6514dabd6757b59f9734ae3d06766fe2d8f254bac96af5f0ecb5aef55",
+      "lines": 1455,
+      "full_inverse": true
+    }
+  ],
+  "root_lines": 1499,
+  "child_lines": 794,
+  "new_physical_rust_modules": 1,
+  "raw_unions_complete_once": 3,
+  "predecessor_extension_unchanged": "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6",
+  "old_scope": [
+    519,
+    433,
+    133,
+    444
+  ],
+  "page_count": 1,
+  "page_bound": 262144,
+  "Rust_per_source_bound": 9753094,
+  "Python_per_read_bound": 262144,
+  "bound_to_repair_sources": false,
+  "original_strict174_FINAL6_hostiles_retained": true,
+  "Cargo": false,
+  "Rust_tests_executed": false,
+  "pending_final_source_coupling": true,
+  "auth_order": "metadata519 -> composepage -> physicalcurrent+compiled+archive -> historical selection",
+  "self_control_sources_excluded_from_page": true,
+  "Python_protocol_fixture_checks": 34,
+  "Python_protocol_fixture_scope": "synthetic page and exact original IO reader; no full source guard, binder, Rust or current compiler execution",
+  "root_rustfmt_check": "PASS_SKIP_CHILDREN",
+  "child_rustfmt_check": "PASS",
+  "new_page_rows": 0,
+  "policy_replacement_scope": [],
+  "policy_addition_scope": [],
+  "source_classification_note": "errors.rs existing production; new logical audit candidate only, no raw166 promotion"
+}

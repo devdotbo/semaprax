@@ -1,12 +1,17 @@
 //! Closed final-batch historical acquisition. No production authority or raw-audit projection.
+#[path = "main_e177_overlay_v2.rs"]
+mod overlay_v2;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 const SOURCE_CAP: usize = 9753094;
 fn digest(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
-#[rustfmt::skip] // Preserve this exact bounded historical packet loader.
 fn packet() -> serde_json::Value {
+    overlay_v2::compose(packet_before_overlay())
+}
+#[rustfmt::skip] // Preserve this exact bounded historical packet loader.
+fn packet_before_overlay() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
@@ -436,6 +441,9 @@ fn same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
     true
 }
 fn held(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
+    if let Some(value) = overlay_v2::held_source(path, length, expected) {
+        return value;
+    }
     if let Some(result) = clippy_stage::read(path, length, expected) {
         return result;
     }
@@ -730,7 +738,7 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/structural_control/calls/cursor.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/calls/cursor.rs")),
         "src/iterator_ops.rs" => Some(include_str!("../../src/iterator_ops.rs")),
         "src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs" => Some(include_str!("../../src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs")),
-        _ => None,
+        _ => overlay_v2::compiled(source),
     }
 }
 fn read_view(view: &serde_json::Value) -> String {
@@ -1102,7 +1110,7 @@ fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
 mod clippy_stage {
     use super::*;
     use std::borrow::Cow;
-    fn rows() -> serde_json::Value {
+    pub(super) fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
         assert_eq!(data.len(), 74925);
         assert_eq!(
@@ -1217,6 +1225,9 @@ mod clippy_stage {
         .unwrap()
     }
     fn current(row: &serde_json::Value) -> String {
+        if let Some(value) = overlay_v2::stage_current(row) {
+            return value;
+        }
         let source = row["source"].as_str().unwrap();
         let expected = &row["current"];
         let raw = held_4a6eb(
@@ -1367,6 +1378,9 @@ _=>None,
             .unwrap()
             .iter()
             .find(|row| row["source"] == source)?;
+        if let Some(value) = overlay_v2::stage_requested(row, expected, supplied) {
+            return value;
+        }
         let actual = current(row);
         let selected = [&row["before"], &row["current"]]
             .into_iter()
@@ -1397,6 +1411,9 @@ _=>None,
         else {
             return Cow::Borrowed(supplied);
         };
+        if let Some(value) = overlay_v2::stage_normalize(row, supplied) {
+            return Cow::Owned(value);
+        }
         let actual = current(row);
         if supplied == actual {
             Cow::Owned(pin(&row["before"]))
