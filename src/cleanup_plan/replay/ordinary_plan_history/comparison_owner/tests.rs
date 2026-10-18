@@ -1,6 +1,7 @@
 //! Authored current/complete-immediate comparator owners; execution pending.
 use super::*;
 mod source_format;
+mod tail_source;
 use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
 use crate::test_allocation_observer::{measure, Metrics};
 #[derive(Clone, Debug, Eq, PartialEq)]

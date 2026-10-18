@@ -1472,8 +1472,10 @@ mod opt858_sequence_input;
 // Keep the shared source reader and its authenticated outer adapter together.
 #[path = "../../src/source_reflows_merge/final_ready_inputs.rs"]
 mod final_ready_inputs;
+#[allow(dead_code, unused_imports, reason = "Retained reader.")]
 #[path = "../../src/source_reflows_merge/main67107_inputs.rs"]
 mod main67107_inputs;
+#[allow(dead_code, reason = "Retained reader.")]
 #[path = "../../src/source_reflows_merge/ordinary_plan_inputs.rs"]
 mod ordinary_plan_inputs;
 mod current344_input {

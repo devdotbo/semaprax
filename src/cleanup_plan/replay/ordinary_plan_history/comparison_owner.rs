@@ -296,12 +296,14 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PAIR_SCOPE,
+                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW,
                     "ordinary plan history pair-local paths"
                 )?;
                 {
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
+                    let mut left_tail = left_path.history.tail.as_slice();
+                    let mut right_tail = right_path.history.tail.as_slice();
                     loop {
                         paid!(
                             budget,
@@ -314,7 +316,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_cursor,
                             left_items,
                             left_loaded,
-                            left_path.history,
+                            left_tail,
+                            census,
                             function,
                             budget,
                             "ordinary plan history paired cursor next"
@@ -324,7 +327,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_cursor,
                             right_items,
                             right_loaded,
-                            right_path.history,
+                            right_tail,
+                            census,
                             function,
                             budget,
                             "ordinary plan history paired cursor next"
@@ -403,7 +407,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
         paid!(
             budget,
             function,
-            PREPARE_CALL + lexical_cursor::RESET,
+            PREPARE_CALL + lexical_cursor::RESET + lexical_cursor::TAIL_VIEW,
             "ordinary plan history HIR cursor prepare"
         )?;
         owner
@@ -411,6 +415,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
             .prepare(&path.history, &actual.arena, function, budget)?;
         owner.left_items = &[];
         owner.left_loaded = false;
+        let mut plan_tail = path.history.tail.as_slice();
         budget.reserve_bytes(
             function,
             skeleton_work::enumerated_prefix::HIR_QUERY_CONTROLS,
@@ -439,7 +444,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
-                        path.history,
+                        plan_tail,
+                        census,
                         function,
                         budget,
                         "ordinary plan history HIR cursor next"
@@ -484,7 +490,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         left_cursor,
                         left_items,
                         left_loaded,
-                        path.history,
+                        plan_tail,
+                        census,
                         function,
                         budget,
                         "ordinary plan history HIR cursor next"

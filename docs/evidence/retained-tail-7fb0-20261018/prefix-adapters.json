@@ -1,0 +1,16 @@
+[
+  {
+    "kind": "Tests880",
+    "only_new_prefix_adapter": "mod tail_source;",
+    "current_length": 15461,
+    "before_length": 12288,
+    "edits": 291
+  },
+  {
+    "kind": "Tests883",
+    "only_new_prefix_adapter": "mod tail_source;",
+    "current_length": 42951,
+    "before_length": 33690,
+    "edits": 770
+  }
+]

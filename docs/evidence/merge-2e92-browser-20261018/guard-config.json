@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 21433,
-      "sha256": "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888"
+      "length": 21817,
+      "sha256": "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 42990,
-      "sha256": "c248aaf86e3962a7794164957de914e8c1ea0520292dd42c61723cd2321e5ffb"
+      "length": 43007,
+      "sha256": "6a8c5d6332f92bd5170f845375ef6f42f08a5f182ad531b47d652126d254c0b2"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -261,8 +261,8 @@
       "sha256": "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
-      "length": 6323,
-      "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
+      "length": 6431,
+      "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22"
     },
     "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs": {
       "length": 11775,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 8951,
-      "sha256": "f960427eaa572185b7038ad4d9727386bcf54914b3c1a25c9ab98310ce06fb87"
+      "length": 9167,
+      "sha256": "0d0b20f5ef894692ee8fd14387d936f7b1b3ed8156d32ecd34de41f5ac6a4b23"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 35035,
-      "sha256": "73300989a2850532c0f8a5cad7db5fff4cf5e21f4d33d64eb06aed28fd8cfd34"
+      "length": 37558,
+      "sha256": "eb6ad553c326cd785282cf0ecd1392d3a84a376f8871c8083295573f9a764bd0"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 40744,
-      "sha256": "8c01c57c137915cd0549e3e51914e9f2572a224d8937964d251630756558e42b"
+      "length": 40964,
+      "sha256": "effb4dbe14917529a97b813d0a63c9d70a1f7ccd3ee5356846db89ada261628a"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

@@ -20,6 +20,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
     "tests/hir_module_boundaries.rs",
+    "tests/workspace/semantic_graph.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
@@ -27,10 +28,12 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
@@ -101,8 +104,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15624; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "b2d4e2cc27f1ae6ff089bdec614e9c35dc7b9170f1c4c83bbe131e69c66d7afb";
+const POLICY_LENGTH: usize = 15829; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "83fcfbc5e1ccbeffaa343be1661fbdf743eb8ae7d94c2d0bbc61e8034cd0604a";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

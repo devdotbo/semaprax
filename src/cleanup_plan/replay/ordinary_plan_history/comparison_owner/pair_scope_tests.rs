@@ -2,6 +2,30 @@
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{measure, Metrics};
+// Source-type coefficients are independent of measured debit differences.
+fn tail_receiver_prices() -> (usize, usize, usize) {
+    let old = size_of::<&History>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+        + 2 * size_of::<usize>()
+        + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
+        + size_of::<bool>()
+        + size_of::<usize>()
+        + size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&Rc<SkeletonObservation>>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>();
+    let current = size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + 2 * size_of::<&Rc<SkeletonObservation>>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+        + size_of::<usize>();
+    let view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    (old, current, view)
+}
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -163,13 +187,17 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
         let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
         let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
             + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+        let (old_tail, tail, tail_view) = tail_receiver_prices();
         assert_eq!(
-            paid + 4 * PATH_INDEX * row.rounds + removed_view * flat_rounds,
+            paid + 4 * PATH_INDEX * row.rounds
+                + removed_view * flat_rounds
+                + (old_tail - tail) * row.tails,
             old_paid
                 + PAIR_SCOPE * row.pairs
                 + PAIR_PRIMITIVE
                 + PAYMENT_HEADER
                 + retained_view * flat_paths
+                + tail_view * (2 * row.pairs + expected.len())
         );
         eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
             function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
@@ -565,11 +593,23 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
     assert!(current.result.is_ok());
     assert_eq!(heap, old_heap);
     assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
-    assert_eq!(
-        paid + 4 * PATH_INDEX * row.rounds,
-        old_paid + PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE
-    );
-    assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
+    let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+    let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    let flat_rounds: usize = expected
+        .iter()
+        .map(|p| p.observations.items.len() + 1)
+        .sum();
+    let (old_tail, tail, tail_view) = tail_receiver_prices();
+    let removed =
+        4 * PATH_INDEX * row.rounds + removed_view * flat_rounds + (old_tail - tail) * row.tails;
+    let retained = PAIR_SCOPE * row.pairs
+        + PAIR_PRIMITIVE
+        + PAYMENT_HEADER
+        + retained_view * expected.len()
+        + tail_view * (2 * row.pairs + expected.len());
+    assert_eq!(paid + removed, old_paid + retained);
+    assert!(removed > retained);
     assert!(
         paid < old_paid,
         "actual complete883 receives its exact original tariff"
@@ -629,8 +669,8 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
     );
     assert_eq!(
         paid,
-        old_paid + PAIR_PRIMITIVE,
-        "new primitive frames are honestly funded even on this unused path"
+        old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER,
+        "all retained primitive frames are funded even on this unused path"
     );
     eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
 }
@@ -659,10 +699,10 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
     assert_eq!(
         source_format::restore(
             source_format::Kind::Cursor,
-            include_str!("lexical_cursor.rs")
+            &tail_source::previous(include_str!("lexical_cursor.rs")),
         ),
         cursor,
-        "production cursor macro/API/prices unchanged"
+        "entire declared retained-tail transform and complete independent old macro"
     );
     let tests=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"));
     assert!(
@@ -800,10 +840,18 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                     })
                 })
             };
+            pair_scope_census::reset();
             let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
             frontiers::finish();
+            pair_scope_census::finish();
+            pair_scope_census::reset();
             let ((current, heap), refused, paid, receipt) = observe(false);
             frontiers::finish();
+            let (rows, lost) = pair_scope_census::finish();
+            assert_eq!(lost, 0);
+            assert_eq!(rows.len(), 1);
+            assert!(!rows[0].old && !rows[0].overflow && !rows[0].truncated);
+
             assert_eq!(
                 current, old,
                 "all diagnostic fields and work, len={len} mutation={mutation}"
@@ -821,9 +869,12 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                     2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
                 let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
                     + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+                let (old_tail, tail, tail_view) = tail_receiver_prices();
+                assert!(rows[0].complete && rows[0].ended);
+                assert_eq!(rows[0].tails, len + 1);
                 assert_eq!(
-                    paid + removed * (len + 1),
-                    old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + retained
+                    paid + (removed + old_tail - tail) * (len + 1),
+                    old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + retained + tail_view
                 );
                 if len >= 64 {
                     assert!(

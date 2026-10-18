@@ -1,0 +1,18 @@
+[
+  {
+    "subject": "MACRO",
+    "current_length": 6431,
+    "current_sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22",
+    "before_length": 6323,
+    "before_sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+    "inverse_records": 48
+  },
+  {
+    "subject": "OWNER",
+    "current_length": 21817,
+    "current_sha256": "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
+    "before_length": 21433,
+    "before_sha256": "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888",
+    "inverse_records": 22
+  }
+]

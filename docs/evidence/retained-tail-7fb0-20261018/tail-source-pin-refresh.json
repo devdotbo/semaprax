@@ -1,0 +1,57 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "7fb0bc5e324e9077037de944a8fdc32464215851",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "dd8c98781af818c2db69cc4a3c12dd2ad5592966ccf51c4532a34df5716cbddd",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/dd8c98781af818c2db69cc4a3c12dd2ad5592966ccf51c4532a34df5716cbddd.txt"
+  },
+  "before_config": {
+    "length": 136457,
+    "sha256": "5151aabd6b6bf842219f870f2ec223a97051bf27b3b9909ba71a5da86f85d50b",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/5151aabd6b6bf842219f870f2ec223a97051bf27b3b9909ba71a5da86f85d50b.txt"
+  },
+  "before_helper": {
+    "length": 40744,
+    "sha256": "8c01c57c137915cd0549e3e51914e9f2572a224d8937964d251630756558e42b",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/8c01c57c137915cd0549e3e51914e9f2572a224d8937964d251630756558e42b.txt"
+  },
+  "before_python_overlay": {
+    "length": 13267,
+    "sha256": "46576d3dd8f932658315e67444a17482d27f3cab89c1de26a77a509cfee5f5c6",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/46576d3dd8f932658315e67444a17482d27f3cab89c1de26a77a509cfee5f5c6.txt"
+  },
+  "before_policy": {
+    "length": 15624,
+    "sha256": "b2d4e2cc27f1ae6ff089bdec614e9c35dc7b9170f1c4c83bbe131e69c66d7afb",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/b2d4e2cc27f1ae6ff089bdec614e9c35dc7b9170f1c4c83bbe131e69c66d7afb.txt"
+  },
+  "before_page": {
+    "length": 161964,
+    "sha256": "a458474766f0331e15a019329c623d0552aa94618ff8fca0ba207707e9b8374a",
+    "archive": "docs/evidence/retained-tail-7fb0-20261018/whole/a458474766f0331e15a019329c623d0552aa94618ff8fca0ba207707e9b8374a.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 165339,
+  "policy_bytes": 15793,
+  "raw_owners": 342
+}

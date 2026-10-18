@@ -996,13 +996,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-    "sha256": "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888",
-    "lines": 516
+    "sha256": "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
+    "lines": 523
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
-    "sha256": "c248aaf86e3962a7794164957de914e8c1ea0520292dd42c61723cd2321e5ffb",
-    "lines": 1114
+    "sha256": "6a8c5d6332f92bd5170f845375ef6f42f08a5f182ad531b47d652126d254c0b2",
+    "lines": 1115
   },
   {
     "source": "src/cleanup_plan/replay/owned_suffix_878.rs",
@@ -1201,7 +1201,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-    "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+    "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22",
     "lines": 117
   },
   {
@@ -1266,13 +1266,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
-    "sha256": "f960427eaa572185b7038ad4d9727386bcf54914b3c1a25c9ab98310ce06fb87",
-    "lines": 295
+    "sha256": "0d0b20f5ef894692ee8fd14387d936f7b1b3ed8156d32ecd34de41f5ac6a4b23",
+    "lines": 303
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-    "sha256": "73300989a2850532c0f8a5cad7db5fff4cf5e21f4d33d64eb06aed28fd8cfd34",
-    "lines": 839
+    "sha256": "eb6ad553c326cd785282cf0ecd1392d3a84a376f8871c8083295573f9a764bd0",
+    "lines": 890
   },
   {
     "source": "src/workspace_graph/shape_identity/before785.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "8c01c57c137915cd0549e3e51914e9f2572a224d8937964d251630756558e42b",
-    "lines": 966
+    "sha256": "effb4dbe14917529a97b813d0a63c9d70a1f7ccd3ee5356846db89ada261628a",
+    "lines": 969
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
