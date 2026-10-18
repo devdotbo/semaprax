@@ -42,7 +42,7 @@ pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
 
 fn observation(n: usize, value: bool) -> Rc<SkeletonObservation> {
     Rc::new(SkeletonObservation::Boolean {
-        expression: format!("identity-observation-{n}").into(),
+        expression: crate::hir::ExpressionId::from_owned(format!("identity-observation-{n}")),
         value,
     })
 }
@@ -94,8 +94,8 @@ fn fixture(
             },
             terminal,
         });
-        let mut observations: Vec<_> = common.iter().map(|v| v.as_ref().clone()).collect();
-        observations.extend(tail.iter().map(|v| v.as_ref().clone()));
+        let mut observations: Vec<_> = common.iter().map(|v| Rc::new(v.as_ref().clone())).collect();
+        observations.extend(tail.iter().map(|v| Rc::new(v.as_ref().clone())));
         expected.push(SkeletonPath {
             observations: observations.into(),
             terminal,

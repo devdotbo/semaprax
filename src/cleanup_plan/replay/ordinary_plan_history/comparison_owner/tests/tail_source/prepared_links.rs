@@ -112,7 +112,7 @@ mod tests {
             ))
         );
         assert_eq!(
-            previous_owner(&super::prepared_owner_stage(include_str!(
+            previous_owner(&super::super::prepared_owner_stage(include_str!(
                 "../../../comparison_owner.rs"
             ))),
             include_str!(concat!(
@@ -121,7 +121,7 @@ mod tests {
             ))
         );
         assert_eq!(
-            previous_tail_source(&super::prepared_tail_stage(include_str!(
+            previous_tail_source(&super::super::prepared_tail_stage(include_str!(
                 "../tail_source.rs"
             ))),
             include_str!(concat!(
@@ -142,7 +142,7 @@ mod tests {
             MACRO,
         );
         hostile(
-            &super::prepared_owner_stage(include_str!("../../../comparison_owner.rs")),
+            &super::super::prepared_owner_stage(include_str!("../../../comparison_owner.rs")),
             previous_owner,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
@@ -151,7 +151,7 @@ mod tests {
             OWNER,
         );
         hostile(
-            &super::prepared_tail_stage(include_str!("../tail_source.rs")),
+            &super::super::prepared_tail_stage(include_str!("../tail_source.rs")),
             previous_tail_source,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),

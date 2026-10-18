@@ -1,4 +1,5 @@
 use super::*;
+use crate::bounded_output::classifier_string::StorageParent;
 use crate::hir::{
     DeclarationId, DeclarationIndex, FunctionInstanceId, ResolvedFunctionInstance,
     ResolvedFunctionTemplate, ResolvedInterface, ResolvedTypeDeclaration,
