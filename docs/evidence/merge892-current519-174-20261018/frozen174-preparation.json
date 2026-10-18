@@ -1,0 +1,39 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {},
+  "strict_dependencies": 2196,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    }
+  ],
+  "logical_rows": 519,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "400630451061327106584fe22abbccae33718d07f740f1c9736bdb35e8fecefc",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
