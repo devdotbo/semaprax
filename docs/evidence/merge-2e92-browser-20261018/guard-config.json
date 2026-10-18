@@ -3264,6 +3264,14 @@
       {
         "at": 32,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs"
+      },
+      {
+        "at": 70,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"
+      },
+      {
+        "at": 71,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs"
       }
     ],
     "rows": 1031
