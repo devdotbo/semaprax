@@ -10,7 +10,7 @@ fn packet() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(261817,"9d0c8d8fe8dc609323cdb980a8a81d780aed4bd4228ce0a3ae56d6471cc0d311".to_owned()));
+    assert_eq!((data.len(),digest(data.as_bytes())),(261813,"789aadff9a33fe74a6d93227cbeb98fcb2dec736c55f28cfc0c10beaf040382f".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
     let ext:serde_json::Value=serde_json::from_str(data).unwrap();
@@ -1104,17 +1104,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 71435);
+        assert_eq!(data.len(), 73869);
         assert_eq!(
             digest(data.as_bytes()),
-            "9e1fedcfc034122f0cea77ed67129461947d37125f0013c0cdaf5e25a86801c6"
+            "1f84d8cdb3006938eb83807c4be2f86db235f493dacd08e7432b7108bddfa451"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "9e1fedcfc034122f0cea77ed67129461947d37125f0013c0cdaf5e25a86801c6"
+                "1f84d8cdb3006938eb83807c4be2f86db235f493dacd08e7432b7108bddfa451"
             )
             .unwrap(),
             data
