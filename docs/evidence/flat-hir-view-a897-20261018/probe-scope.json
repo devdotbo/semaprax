@@ -1,0 +1,4 @@
+{
+  "scope": "Actual before/current FLAT_MATCH and PAYMENT_HEADER/FLAT_VIEW expressions, actual complete Diagnostic/Severity/Span field declarations. Opaque sized pointees are used only behind thin references. The probe checks flat std slice behavior and exact independent type coefficients; it does not compile the full comparator or claim application fit.",
+  "parent": "a8977f09194a8f3bc461361428e3d4c73ffb5c72"
+}

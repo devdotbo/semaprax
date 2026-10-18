@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 20712,
-      "sha256": "4f9c140083625e08eae643deb36ffc91272c1a23b8fa8f79fbbb737756bf7903"
+      "length": 21433,
+      "sha256": "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 42598,
@@ -317,8 +317,8 @@
       "sha256": "f960427eaa572185b7038ad4d9727386bcf54914b3c1a25c9ab98310ce06fb87"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 29080,
-      "sha256": "e60f7e92bdab6588cfb2668dca13176687b8986a541034088f9e6d12d3144edc"
+      "length": 34736,
+      "sha256": "9c25c24a3f452bf432cd226f1e1e90315537eca45b9f4476e51c5a46b6cf0349"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 40454,
-      "sha256": "536aff4f70af00000f446eca959662d4d29192d09edd9cba79fd32193da80f0f"
+      "length": 40617,
+      "sha256": "eaf73030b7d5cf37839a2b822139ca0674ec1b78819771474bfa6d1e6fd97be7"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

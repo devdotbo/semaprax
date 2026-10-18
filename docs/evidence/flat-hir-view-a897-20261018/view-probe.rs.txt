@@ -1,0 +1,80 @@
+#![allow(dead_code,unused_imports)]
+use std::{mem::size_of,rc::Rc,cell::Cell,borrow::Cow};
+#[derive(Clone,Copy)]
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+    pub line: usize,
+    pub column: usize,
+}
+pub enum Severity {
+    Error,
+    Warning,
+}
+pub struct Diagnostic {
+    pub code: &'static str,
+    pub severity: Severity,
+    pub message: Cow<'static, str>,
+    pub path: Option<String>,
+    pub span: Option<Span>,
+    pub help: Option<String>,
+}
+struct ResolvedFunction;struct ReplayBudget;
+#[derive(Clone,Eq,PartialEq)]struct SkeletonObservation(u32);
+struct Observations {items:Vec<Rc<SkeletonObservation>>}
+thread_local!{static VIEWS:Cell<usize>=const{Cell::new(0)};}
+impl std::ops::Deref for Observations{type Target=[Rc<SkeletonObservation>];fn deref(&self)->&Self::Target{VIEWS.with(|v|v.set(v.get()+1));&self.items}}
+const PAYMENT_HEADER: usize = 2 * size_of::<&ResolvedFunction>()
+    + 2 * size_of::<&mut ReplayBudget>()
+    + 2 * size_of::<&str>()
+    + 2 * size_of::<usize>()
+    + 2 * size_of::<Result<(), Diagnostic>>();
+const OLD_FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<SkeletonObservation>>)>()
+    + size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>()
+    + 4 * size_of::<&SkeletonObservation>() // equality actual/formal pair
+    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
+    + 2 * size_of::<&Observations>() + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 2 * size_of::<usize>() + size_of::<Option<&Rc<SkeletonObservation>>>()
+    + size_of::<bool>();
+const FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<SkeletonObservation>>)>()
+    + size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>()
+    + 4 * size_of::<&SkeletonObservation>() // equality actual/formal pair
+    + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // retained slice get actual/formal
+    + 2 * size_of::<usize>() + size_of::<Option<&Rc<SkeletonObservation>>>()
+    + size_of::<bool>();
+const FLAT_VIEW: usize =
+    2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+fn old(actual:&[Rc<SkeletonObservation>],flat:&Observations)->(bool,usize){
+ let mut index=0;let mut work=0;
+ loop{work+=1;match(actual.get(index).map(Rc::as_ref),flat.get(index)){
+ (Some(left),Some(right)) if left==right.as_ref()=>index+=1,
+ (None,None)=>return(true,work),_=>return(false,work),}}
+}
+fn new(actual:&[Rc<SkeletonObservation>],flat:&Observations)->(bool,usize){
+ let items=flat.items.as_slice();let mut index=0;let mut work=0;
+ loop{work+=1;match(actual.get(index).map(Rc::as_ref),items.get(index)){
+ (Some(left),Some(right)) if left==right.as_ref()=>index+=1,
+ (None,None)=>return(true,work),_=>return(false,work),}}
+}
+fn main(){
+ let removed=2*size_of::<&Observations>()+size_of::<&[Rc<SkeletonObservation>]>();
+ assert_eq!(OLD_FLAT_MATCH-FLAT_MATCH,removed);
+ assert_eq!(FLAT_VIEW,2*size_of::<&Vec<Rc<SkeletonObservation>>>()+2*size_of::<&[Rc<SkeletonObservation>]>());
+ let mut cases=0;
+ for len in [0usize,1,2,12,16,64,256]{
+  let mut flat=Observations{items:(0..len).map(|i|Rc::new(SkeletonObservation(i as u32))).collect()};
+  let actual=flat.items.clone();
+  for mutation in 0..4{
+   if mutation==1&&!flat.items.is_empty(){flat.items[0]=Rc::new(SkeletonObservation(9999));}
+   if mutation==2 {flat.items=actual.clone();flat.items.push(Rc::new(SkeletonObservation(8888)));}
+   if mutation==3 {flat.items=actual.clone();flat.items.pop();}
+   VIEWS.with(|v|v.set(0));let a=old(&actual,&flat);let old_views=VIEWS.with(Cell::get);
+   VIEWS.with(|v|v.set(0));let b=new(&actual,&flat);let new_views=VIEWS.with(Cell::get);
+   assert_eq!(a,b);assert_eq!(old_views,a.1);assert_eq!(new_views,0);
+   if mutation==0 {assert!(a.0);assert_eq!(a.1,len+1);}
+   cases+=1;
+  }
+ }
+ println!("cases={cases} removed_per_round={removed} retained_per_flat_path={FLAT_VIEW} additional_primitive_header={PAYMENT_HEADER}; all content/multiplicity/first-mismatch/sentinel/work comparisons pass; no full compiler or application-fit claim");
+}

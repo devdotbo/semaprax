@@ -317,10 +317,12 @@ fn no_possible_wrapper_routes_are_paid_symmetric_and_keep_complete_results_and_d
             }
         };
         let old = observe(true);
+        let old_reason = crate::test_allocation_observer::invalid_reason();
         let current = observe(false);
+        let current_reason = crate::test_allocation_observer::invalid_reason();
         assert!(current.0 .0);
-        for metrics in [old.1, current.1] {
-            assert!(!metrics.invalid);
+        for (metrics, reason) in [(old.1, old_reason), (current.1, current_reason)] {
+            assert!(!metrics.invalid, "allocation observer invalid: {reason:?}");
             assert_eq!(metrics.live, 0);
             assert_eq!(metrics.allocated, metrics.freed);
         }

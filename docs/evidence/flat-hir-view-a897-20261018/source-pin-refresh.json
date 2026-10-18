@@ -1,0 +1,51 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "a8977f09194a8f3bc461361428e3d4c73ffb5c72",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "4d8105ec762eb65de14482e53a5d7c3441fe790da99830244d3752a6f83a9bd7",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/4d8105ec762eb65de14482e53a5d7c3441fe790da99830244d3752a6f83a9bd7.txt"
+  },
+  "before_config": {
+    "length": 136457,
+    "sha256": "d0ca1216a17c644fe3bc6039f415b72760ce9731a21cf78552575b4e0eab3b93",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/d0ca1216a17c644fe3bc6039f415b72760ce9731a21cf78552575b4e0eab3b93.txt"
+  },
+  "before_helper": {
+    "length": 40454,
+    "sha256": "536aff4f70af00000f446eca959662d4d29192d09edd9cba79fd32193da80f0f",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/536aff4f70af00000f446eca959662d4d29192d09edd9cba79fd32193da80f0f.txt"
+  },
+  "before_python_overlay": {
+    "length": 12993,
+    "sha256": "a515ac467c8356bfc7777e457da3ab35ed18b2d82f6cbadfb0a776f76b4d4806",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/a515ac467c8356bfc7777e457da3ab35ed18b2d82f6cbadfb0a776f76b4d4806.txt"
+  },
+  "before_policy": {
+    "length": 15354,
+    "sha256": "0088a84936e8c4ae14cc24feacf28cc22db4fa01d90eda918cae802f2f2c5138",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/0088a84936e8c4ae14cc24feacf28cc22db4fa01d90eda918cae802f2f2c5138.txt"
+  },
+  "before_page": {
+    "length": 155017,
+    "sha256": "b0754ede9776101670521674a45d34197d6573ed20ce259bab42d7ca34012ad6",
+    "archive": "docs/evidence/flat-hir-view-a897-20261018/whole/b0754ede9776101670521674a45d34197d6573ed20ce259bab42d7ca34012ad6.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 158174,
+  "policy_bytes": 15507,
+  "raw_owners": 342
+}

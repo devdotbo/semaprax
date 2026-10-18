@@ -14,6 +14,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
     "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
@@ -29,6 +30,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
@@ -97,8 +99,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15354; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "0088a84936e8c4ae14cc24feacf28cc22db4fa01d90eda918cae802f2f2c5138";
+const POLICY_LENGTH: usize = 15507; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "5db3446a047da6a2703a249ca1390876496aaf5b056373112519cd973d40f39e";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

@@ -149,10 +149,27 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             (row.payer, row.selected, row.invocation),
             (old_row.payer, old_row.selected, old_row.invocation)
         );
-        // Source-counted independent coefficients. No measured paid subtraction.
+        // Independent source-type coefficients, not measured debit subtraction.
+        // A successful flat comparison reads every member and its None sentinel.
+        let flat_paths = expected
+            .iter()
+            .filter(|p| p.observations.prefix.is_none())
+            .count();
+        let flat_rounds: usize = expected
+            .iter()
+            .filter(|p| p.observations.prefix.is_none())
+            .map(|p| p.observations.items.len() + 1)
+            .sum();
+        let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+        let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+            + 2 * size_of::<&[Rc<SkeletonObservation>]>();
         assert_eq!(
-            paid + 4 * PATH_INDEX * row.rounds,
-            old_paid + PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE
+            paid + 4 * PATH_INDEX * row.rounds + removed_view * flat_rounds,
+            old_paid
+                + PAIR_SCOPE * row.pairs
+                + PAIR_PRIMITIVE
+                + PAYMENT_HEADER
+                + retained_view * flat_paths
         );
         eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
             function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
@@ -204,6 +221,7 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                 "ordinary plan retained comparison owner",
                 "ordinary plan history pair-local paths",
                 "ordinary plan history paired cursor next",
+                "ordinary plan history flat HIR retained slice",
             ]
         };
         for phase in phases {
@@ -699,4 +717,116 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
         refused.0 .0.result.as_ref().unwrap_err(),
         &primitive_failure(function, event, event.before, 0)
     );
+}
+
+#[test]
+fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagnostics() {
+    let program = super::super::super::tests::program();
+    let function = &program.functions[0];
+    for len in [0usize, 1, 64, 256] {
+        let seed: Vec<_> = (0..len)
+            .map(|index| {
+                Rc::new(SkeletonObservation::Boolean {
+                    expression: function.body.id.clone(),
+                    value: index % 2 == 0,
+                })
+            })
+            .collect();
+        let expected = vec![SkeletonPath {
+            observations: seed.clone().into(),
+            terminal: SkeletonTerminal::Success,
+        }];
+        for mutation in 0..3 {
+            let mut tail = seed.clone();
+            if mutation == 1 {
+                if tail.pop().is_none() {
+                    tail.push(Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: false,
+                    }));
+                }
+            } else if mutation == 2 {
+                tail.push(Rc::new(SkeletonObservation::Boolean {
+                    expression: function.body.id.clone(),
+                    value: true,
+                }));
+            }
+            let observe = |old| {
+                with_limit_usage_refusal(usize::MAX, || {
+                    measure(|| {
+                        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                        // Identical fixture backing in both observations. The seeded
+                        // immutable observations stay held outside both invocations.
+                        budget
+                            .reserve_array::<Rc<SkeletonObservation>>(
+                                function,
+                                tail.len(),
+                                "flat-view test tail",
+                            )
+                            .unwrap();
+                        budget
+                            .reserve_array::<PlanPath>(function, 1, "flat-view test path")
+                            .unwrap();
+                        let actual = HistorySet {
+                            arena: Vec::new(),
+                            max_depth: 0,
+                            paths: vec![PlanPath {
+                                history: History {
+                                    previous: None,
+                                    tail: tail.clone(),
+                                },
+                                terminal: SkeletonTerminal::Success,
+                            }],
+                        };
+                        let result = if old {
+                            before_pair_scope::compare(function, &mut budget, actual, &expected)
+                        } else {
+                            compare(function, &mut budget, actual, &expected)
+                        };
+                        let outcome = (
+                            result.as_ref().map(|_| ()).map_err(failure),
+                            budget.remaining,
+                            budget.skeleton_spent,
+                        );
+                        drop(result);
+                        outcome
+                    })
+                })
+            };
+            let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
+            frontiers::finish();
+            let ((current, heap), refused, paid, receipt) = observe(false);
+            frontiers::finish();
+            assert_eq!(
+                current, old,
+                "all diagnostic fields and work, len={len} mutation={mutation}"
+            );
+            assert!(!refused && !old_refused && receipt.is_none() && old_receipt.is_none());
+            balanced(heap);
+            balanced(old_heap);
+            assert_eq!(
+                heap, old_heap,
+                "identical fixture backing and complete invocation Drop"
+            );
+            if mutation == 0 {
+                assert!(current.0.is_ok());
+                let removed =
+                    2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+                let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                    + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+                assert_eq!(
+                    paid + removed * (len + 1),
+                    old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + retained
+                );
+                if len >= 64 {
+                    assert!(
+                        paid < old_paid,
+                        "long complete comparisons must reduce real reservations"
+                    );
+                }
+            } else {
+                assert_eq!(current.0.unwrap_err().code, "SPX-H006");
+            }
+        }
+    }
 }

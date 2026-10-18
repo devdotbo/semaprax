@@ -1,0 +1,1 @@
+cases=28 removed_per_round=32 retained_per_flat_path=48 additional_primitive_header=352; all content/multiplicity/first-mismatch/sentinel/work comparisons pass; no full compiler or application-fit claim
