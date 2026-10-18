@@ -467,7 +467,33 @@ fn composed_flat_helpers_keep_sorted_sparse_multiplicity_overflow_and_prepublica
 fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order() {
     use super::super::super::{compare_with_index_storage, lexical_plan_tests};
     use std::fmt::Write as _;
-    for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
+    // The retained primitive source-body profile explicitly admits only
+    // Condition and BorrowRecord latches (static_text/primitive/body_digest.rs).
+    // Keep the original Copy-latch GENERATED ordinary oracle and work cuts;
+    // a separate actual BorrowRecord source exercises admitted physical replay.
+    const BORROWED_RECORD: &str = r#"module factored.borrowed;
+@id("paid_many.row") record Row {
+ @id("paid_many.row.n") n:i64,
+ @id("paid_many.row.text") text:string,
+}
+@id("probe") fn probe(rows:borrow Vec<Row>)->i64 {
+ let key=str"x";let mut seen=0;
+ for borrow row at index in rows {
+  seen=seen+row.n;
+  if index==0usize {continue;} else {0}
+  let text=row.text;
+  if str_len_bytes(text)==str_len_bytes(key) {return seen;} else {0}
+  0
+ }
+ seen
+}
+@id("main") fn main()->i64 {0}
+"#;
+    for source in [
+        lexical_plan_tests::WHILE,
+        lexical_plan_tests::GENERATED,
+        BORROWED_RECORD,
+    ] {
         // Preserve the complete historical anchor transport and its exact-source
         // assertions. Original non-static oracle/work probes keep the production
         // linker. The separate anchored physical probes below use the existing
@@ -519,7 +545,9 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
         // Keep the original whole comparison above and work oracle below on
         // their original unanchored source and complete linked provider.
         let prepared_fixture = crate::workspace_graph::SourceRecordReplayFixture::new(&anchored);
-        prepared_fixture.with_prepared_context(|prepared| {
+        let prepared_called = std::cell::Cell::new(false);
+        let prepared_result = prepared_fixture.try_with_prepared_context(|prepared| {
+        prepared_called.set(true);
         let prepared_functions = prepared.functions();
         let prepared_function = prepared_functions.iter().find(|f| f.id.as_str() == "probe").unwrap();
         assert_eq!(prepared_function, function, "complete original probe body, inventory and plan");
@@ -590,6 +618,15 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
             }
         }
         });
+        if source == lexical_plan_tests::GENERATED {
+            assert!(!prepared_called.get(), "unadmitted Copy latch never receives a context");
+            assert_eq!(prepared_result, Err(vec![Diagnostic::io(
+                "SPX-G410", "retained static UTF-8 source-site authority disagrees",
+            )]), "full six-field rejection of the unadmitted Copy latch; callback must not run");
+        } else {
+            assert!(prepared_called.get(), "admitted source reaches both actual physical receivers");
+            prepared_result.unwrap();
+        }
         let work = initial - old.remaining;
         for remaining in [0, work.saturating_sub(1), work] {
             let mut old = ReplayBudget::unobserved();
