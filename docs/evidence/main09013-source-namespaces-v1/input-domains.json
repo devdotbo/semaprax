@@ -5,8 +5,8 @@
   "main": [
     {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "current_len": 165305,
-      "current_sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df",
+      "current_len": 181883,
+      "current_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
       "view_len": 105523,
       "view_sha256": "70b707a2915c51abb76a72aeb084835c943c8a969c906a1b12eb287e7fa6beca",
@@ -986,8 +986,8 @@
     },
     {
       "path": "src/cleanup_plan/replay.rs",
-      "current_len": 324477,
-      "current_sha256": "e688f57ac691a478b7c751ad69975d3ba447ffdc6ac8f71b018a5d438e8f3d0c",
+      "current_len": 325741,
+      "current_sha256": "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay.rs",
       "view_len": 302169,
       "view_sha256": "e02105834f829503b1e1a6645067f7b0784fed133890c6f7b4553346ba011f28",
@@ -1004,8 +1004,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone.rs",
-      "current_len": 17112,
-      "current_sha256": "4ff120ef24b54cc98d956f3548a76b4a7f0ca9f4393044356f47ea1e51cefbc5",
+      "current_len": 17122,
+      "current_sha256": "7f639da343b5b88c60751510a27cd4f7cd8c97bccfa454d662e9c179057e9a4c",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone.rs",
       "view_len": 5704,
       "view_sha256": "e0c30462e1576af2a9b48f9bdc55a64ce606510864752932fc8b280a3c77b1d4",
@@ -1013,8 +1013,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone/tests.rs",
-      "current_len": 31514,
-      "current_sha256": "62b9e0c3a9b13808363506de6505e5380d276af65069f99fdc62ee52023ac79a",
+      "current_len": 33988,
+      "current_sha256": "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone/tests.rs",
       "view_len": 14266,
       "view_sha256": "48956a2d192fdbc73cbfa58cb9e57f3e4380a4ff601728ded0d53c2bbf9db8ca",
@@ -1058,8 +1058,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
-      "current_len": 11757,
-      "current_sha256": "e39302d1391d4cf096d6600220cfd4a0df108a918649ed94227532f06f0bca39",
+      "current_len": 11767,
+      "current_sha256": "dd227ffdfe6bccda89dbce95c99f3ed7d6106d54a4be3f89de319311e8a1d1b7",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
       "view_len": 11227,
       "view_sha256": "5b41b54ec6cf5e584e1845ab4e823ce752012ded7d3b9c485a3eb4fb181a74ae",
@@ -1077,7 +1077,7 @@
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "current_len": 39631,
-      "current_sha256": "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938",
+      "current_sha256": "5238d8d20d294365c9af2804b718beb3a79fe9df1e71e07a20c5163c25c273fd",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "view_len": 19472,
       "view_sha256": "9f9c495e16fe9af39e773c6ef5413bc8eff8363b21d5771620f7bd91eec746b1",
@@ -1086,7 +1086,7 @@
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "current_len": 54774,
-      "current_sha256": "4627d662ac47ed383ab9952d32d4158a49ff1e9a7a1d7006760d6290c470ee2b",
+      "current_sha256": "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "view_len": 29718,
       "view_sha256": "371f112bb250011df5930334be7d3bd4f4ff82e10a8471469d981ca0ba094a87",
@@ -1166,8 +1166,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/factored.rs",
-      "current_len": 46852,
-      "current_sha256": "045b2a3e7c1872ead79cfdf897f7337764d555d0c1db9c9ebb280f7e6365ca39",
+      "current_len": 47242,
+      "current_sha256": "da77f31291ee670ec84a7aeb18fc7ae470a88b1b803b7791e6884d1af6826a2a",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/factored.rs",
       "view_len": 40065,
       "view_sha256": "0214a3a244d8e26e50d7413a3570eede88b10b013784c0efc130ad2a8ef2ad72",
@@ -1193,8 +1193,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/factored/oracle_hook.rs",
-      "current_len": 12088,
-      "current_sha256": "8cb40146286217b0816abb9f576b9d72805b3a38c0e48d5b71e51fedead76800",
+      "current_len": 12128,
+      "current_sha256": "6e66cc082468494f902cc490e53e655bbeb369a36b511e42a292592e6b37c26e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/factored/oracle_hook.rs",
       "view_len": 11716,
       "view_sha256": "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
@@ -1211,8 +1211,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/skeleton_work.rs",
-      "current_len": 47700,
-      "current_sha256": "6dd9f2807059079b8cf9900d3d1831afe3ba043b0fb1131031ae97e370668dec",
+      "current_len": 48091,
+      "current_sha256": "daf80d75a2b54337da2c687fc8deb2e2c69f7b97226ae4a947239d0cc31c7031",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/skeleton_work.rs",
       "view_len": 41539,
       "view_sha256": "78712ffd0063c945b7053258f62e608cefdbbd892b2348f99d54fee9c8ad577f",
@@ -1229,8 +1229,8 @@
     },
     {
       "path": "src/hir/expr_nodes.rs",
-      "current_len": 38066,
-      "current_sha256": "e2291267786bdec4371b969031209b4e77aa6876f4564048ad1c7561b004b73f",
+      "current_len": 38151,
+      "current_sha256": "83b966066744c034bee88a717094f08891df2c6a813bbee17126ddc458b37666",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/expr_nodes.rs",
       "view_len": 32492,
       "view_sha256": "be3f28e10fc840d3c1397ccff1573a7940bd933931eee4b99a41bf3c63b15c90",
@@ -1239,7 +1239,7 @@
     {
       "path": "src/hir/function_value.rs",
       "current_len": 14218,
-      "current_sha256": "25b6ed470ac8b334e509e44bd2934caa87ab9b018d08816bdcef425aa2e21c3c",
+      "current_sha256": "f2fa8fd365608e1c31dd834f51940f95c92415c9625efbd0528c39782f82b56c",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/function_value.rs",
       "view_len": 14218,
       "view_sha256": "f2fa8fd365608e1c31dd834f51940f95c92415c9625efbd0528c39782f82b56c",
@@ -1275,7 +1275,7 @@
     {
       "path": "src/hir/iterator_loop/renewal.rs",
       "current_len": 14822,
-      "current_sha256": "18c1e353e54705458a511f8be6c23ed5484391d0e6db674666bcb93100a0ae2d",
+      "current_sha256": "433c862ad4565552ff8d6c357728d25b010a99ef7ac98e820269b860dd0ed834",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/iterator_loop/renewal.rs",
       "view_len": 14809,
       "view_sha256": "83636c9a9e903ce7856ccb6e84a3957bd1df28193aa4ef9908500c42c4073149",
@@ -1292,8 +1292,8 @@
     },
     {
       "path": "src/hir/lexical_exit.rs",
-      "current_len": 6956,
-      "current_sha256": "246cb0df50653502b3cf26ab9348e6db14508dad14c870852a22aab95db1e05d",
+      "current_len": 6957,
+      "current_sha256": "ef9fdd2f4d38c41ea78c61e8fb0555055298db38c3770dcdca7028a743b7f897",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/lexical_exit.rs",
       "view_len": 6796,
       "view_sha256": "b13b08c925580c8cbcfba2b73e578fcff7573ff64c3f62f615cfba06d11bc7bf",
@@ -1310,8 +1310,8 @@
     },
     {
       "path": "src/hir/validation.rs",
-      "current_len": 399117,
-      "current_sha256": "f89e882a3d8ed796b8b8b864247e4e7eb19631d6299cd0dd94ddcc6b5ca17eba",
+      "current_len": 399157,
+      "current_sha256": "85a730c701db6b3031fecd84499aa1f2dff5f5c07d0498612bdcd1284dd0b271",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/validation.rs",
       "view_len": 399080,
       "view_sha256": "85ae66ee35b346b0b65fb2c7490601216c49ac858aaae3345a03cbe08691447f",
@@ -1373,8 +1373,8 @@
     },
     {
       "path": "src/loop_calls/byte_writer.rs",
-      "current_len": 8055,
-      "current_sha256": "9d9227d8d51508bf478aa83d9c76ee2d16a40ea8bda2413b239da92bf87fa863",
+      "current_len": 8051,
+      "current_sha256": "7c35e7fba596f0c9a999190092cedd78238d11940e40ab6ed43d2c39ace63b74",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/loop_calls/byte_writer.rs",
       "view_len": 7941,
       "view_sha256": "3d99d7a80a99912b3aba134781cfedaea49e8db8774e136fb15044652797a544",
@@ -1383,7 +1383,7 @@
     {
       "path": "src/loop_calls/byte_writer/resolved.rs",
       "current_len": 23214,
-      "current_sha256": "a11ca15dd29de5813e49f84002072b13694c001554f8e2826c7be28dc395f918",
+      "current_sha256": "72f38ae029e55568d374fc5f037cb30759da3d88575655b877efdedc3f14cb1d",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/loop_calls/byte_writer/resolved.rs",
       "view_len": 23084,
       "view_sha256": "a357e24edfcba7588e983f59e997c3186f24841f0aab818aa8059fd650829d2e",
@@ -1436,8 +1436,8 @@
     },
     {
       "path": "src/source_reflows/semantic_receivers.rs",
-      "current_len": 37347,
-      "current_sha256": "9a1a427f77312a2dc475a9ec0be8e6f5eff0f82686612e31f38016066adc7031",
+      "current_len": 38705,
+      "current_sha256": "5926337017992c1f9081f4632214736f6e34182334b2591b482e119fa5d4df22",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/source_reflows/semantic_receivers.rs",
       "view_len": 36937,
       "view_sha256": "a620377ce8bcfe1ff7d44654ddc5ebf45cfecb2743e3ad4248220260a4dc58c7",
@@ -1445,8 +1445,8 @@
     },
     {
       "path": "src/source_verify/declaration.rs",
-      "current_len": 15793,
-      "current_sha256": "54bca5bc3be89d2b788655f72cb8671c76b540edd99c126a0862a4f1f22a0a88",
+      "current_len": 15876,
+      "current_sha256": "5d31e7ff4f7127e8bd347ce2bb4470c74e7ef47355ba7cdd8f54dc9363076526",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/source_verify/declaration.rs",
       "view_len": 12842,
       "view_sha256": "1ee6c27c7e20e6578261de0f58d0019762080e33f5631685081a8318485420d8",
@@ -1526,8 +1526,8 @@
     },
     {
       "path": "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
-      "current_len": 30242,
-      "current_sha256": "bf59d79e6bcd513cf071c52112ded222e4561c785389f2723684d072c15d0fc2",
+      "current_len": 30254,
+      "current_sha256": "8ca91a97b040d3386d07715660cf5d43aa8f916e1b81fed8d38a28f526e87b5a",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
       "view_len": 30208,
       "view_sha256": "b54a1e1ef7192aed60c821f228e40955b5fd60b8755d4428e2f87f72eb6c41b2",
@@ -1544,8 +1544,8 @@
     },
     {
       "path": "tests/hir_module_boundaries.rs",
-      "current_len": 106143,
-      "current_sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "current_len": 125075,
+      "current_sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/tests/hir_module_boundaries.rs",
       "view_len": 54335,
       "view_sha256": "d6e8ad51661a3f8727e9f654bd7e7f2687ffa6fa13fd9c66900217def541c1cc",
@@ -1553,8 +1553,8 @@
     },
     {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "current_len": 104065,
-      "current_sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "current_len": 141562,
+      "current_sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/tests/workspace/semantic_graph/source_inventory.rs",
       "view_len": 38330,
       "view_sha256": "1cd423cdab9473ed591145366c339f9519892e06593d287c28b799f7e359c660",
@@ -1564,8 +1564,8 @@
   "physical": [
     {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "current_len": 165305,
-      "current_sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df",
+      "current_len": 181883,
+      "current_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
       "view_len": 105523,
       "view_sha256": "70b707a2915c51abb76a72aeb084835c943c8a969c906a1b12eb287e7fa6beca",
@@ -2545,8 +2545,8 @@
     },
     {
       "path": "src/cleanup_plan/replay.rs",
-      "current_len": 324477,
-      "current_sha256": "e688f57ac691a478b7c751ad69975d3ba447ffdc6ac8f71b018a5d438e8f3d0c",
+      "current_len": 325741,
+      "current_sha256": "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay.rs",
       "view_len": 302169,
       "view_sha256": "e02105834f829503b1e1a6645067f7b0784fed133890c6f7b4553346ba011f28",
@@ -2563,8 +2563,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone.rs",
-      "current_len": 17112,
-      "current_sha256": "4ff120ef24b54cc98d956f3548a76b4a7f0ca9f4393044356f47ea1e51cefbc5",
+      "current_len": 17122,
+      "current_sha256": "7f639da343b5b88c60751510a27cd4f7cd8c97bccfa454d662e9c179057e9a4c",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone.rs",
       "view_len": 5704,
       "view_sha256": "e0c30462e1576af2a9b48f9bdc55a64ce606510864752932fc8b280a3c77b1d4",
@@ -2572,8 +2572,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/branch_clone/tests.rs",
-      "current_len": 31514,
-      "current_sha256": "62b9e0c3a9b13808363506de6505e5380d276af65069f99fdc62ee52023ac79a",
+      "current_len": 33988,
+      "current_sha256": "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/cleanup_plan/replay/branch_clone/tests.rs",
       "view_len": 14266,
       "view_sha256": "48956a2d192fdbc73cbfa58cb9e57f3e4380a4ff601728ded0d53c2bbf9db8ca",
@@ -2617,8 +2617,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
-      "current_len": 11757,
-      "current_sha256": "e39302d1391d4cf096d6600220cfd4a0df108a918649ed94227532f06f0bca39",
+      "current_len": 11767,
+      "current_sha256": "dd227ffdfe6bccda89dbce95c99f3ed7d6106d54a4be3f89de319311e8a1d1b7",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
       "view_len": 11227,
       "view_sha256": "5b41b54ec6cf5e584e1845ab4e823ce752012ded7d3b9c485a3eb4fb181a74ae",
@@ -2636,7 +2636,7 @@
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "current_len": 39631,
-      "current_sha256": "99f5b16ac2977b62cac944a4ec6f81b3c6a14c4d44abd844cb2803f498dd4938",
+      "current_sha256": "5238d8d20d294365c9af2804b718beb3a79fe9df1e71e07a20c5163c25c273fd",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
       "view_len": 19472,
       "view_sha256": "9f9c495e16fe9af39e773c6ef5413bc8eff8363b21d5771620f7bd91eec746b1",
@@ -2645,7 +2645,7 @@
     {
       "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "current_len": 54774,
-      "current_sha256": "4627d662ac47ed383ab9952d32d4158a49ff1e9a7a1d7006760d6290c470ee2b",
+      "current_sha256": "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
       "view_len": 29718,
       "view_sha256": "371f112bb250011df5930334be7d3bd4f4ff82e10a8471469d981ca0ba094a87",
@@ -2725,8 +2725,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/factored.rs",
-      "current_len": 46852,
-      "current_sha256": "045b2a3e7c1872ead79cfdf897f7337764d555d0c1db9c9ebb280f7e6365ca39",
+      "current_len": 47242,
+      "current_sha256": "da77f31291ee670ec84a7aeb18fc7ae470a88b1b803b7791e6884d1af6826a2a",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/factored.rs",
       "view_len": 40065,
       "view_sha256": "0214a3a244d8e26e50d7413a3570eede88b10b013784c0efc130ad2a8ef2ad72",
@@ -2752,8 +2752,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/factored/oracle_hook.rs",
-      "current_len": 12088,
-      "current_sha256": "8cb40146286217b0816abb9f576b9d72805b3a38c0e48d5b71e51fedead76800",
+      "current_len": 12128,
+      "current_sha256": "6e66cc082468494f902cc490e53e655bbeb369a36b511e42a292592e6b37c26e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/factored/oracle_hook.rs",
       "view_len": 11716,
       "view_sha256": "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
@@ -2770,8 +2770,8 @@
     },
     {
       "path": "src/cleanup_plan/replay/skeleton_work.rs",
-      "current_len": 47700,
-      "current_sha256": "6dd9f2807059079b8cf9900d3d1831afe3ba043b0fb1131031ae97e370668dec",
+      "current_len": 48091,
+      "current_sha256": "daf80d75a2b54337da2c687fc8deb2e2c69f7b97226ae4a947239d0cc31c7031",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/cleanup_plan/replay/skeleton_work.rs",
       "view_len": 41539,
       "view_sha256": "78712ffd0063c945b7053258f62e608cefdbbd892b2348f99d54fee9c8ad577f",
@@ -2788,8 +2788,8 @@
     },
     {
       "path": "src/hir/expr_nodes.rs",
-      "current_len": 38066,
-      "current_sha256": "e2291267786bdec4371b969031209b4e77aa6876f4564048ad1c7561b004b73f",
+      "current_len": 38151,
+      "current_sha256": "83b966066744c034bee88a717094f08891df2c6a813bbee17126ddc458b37666",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/expr_nodes.rs",
       "view_len": 32492,
       "view_sha256": "be3f28e10fc840d3c1397ccff1573a7940bd933931eee4b99a41bf3c63b15c90",
@@ -2798,7 +2798,7 @@
     {
       "path": "src/hir/function_value.rs",
       "current_len": 14218,
-      "current_sha256": "25b6ed470ac8b334e509e44bd2934caa87ab9b018d08816bdcef425aa2e21c3c",
+      "current_sha256": "f2fa8fd365608e1c31dd834f51940f95c92415c9625efbd0528c39782f82b56c",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/function_value.rs",
       "view_len": 14218,
       "view_sha256": "f2fa8fd365608e1c31dd834f51940f95c92415c9625efbd0528c39782f82b56c",
@@ -2834,7 +2834,7 @@
     {
       "path": "src/hir/iterator_loop/renewal.rs",
       "current_len": 14822,
-      "current_sha256": "18c1e353e54705458a511f8be6c23ed5484391d0e6db674666bcb93100a0ae2d",
+      "current_sha256": "433c862ad4565552ff8d6c357728d25b010a99ef7ac98e820269b860dd0ed834",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/iterator_loop/renewal.rs",
       "view_len": 14809,
       "view_sha256": "83636c9a9e903ce7856ccb6e84a3957bd1df28193aa4ef9908500c42c4073149",
@@ -2851,8 +2851,8 @@
     },
     {
       "path": "src/hir/lexical_exit.rs",
-      "current_len": 6956,
-      "current_sha256": "246cb0df50653502b3cf26ab9348e6db14508dad14c870852a22aab95db1e05d",
+      "current_len": 6957,
+      "current_sha256": "ef9fdd2f4d38c41ea78c61e8fb0555055298db38c3770dcdca7028a743b7f897",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/lexical_exit.rs",
       "view_len": 6796,
       "view_sha256": "b13b08c925580c8cbcfba2b73e578fcff7573ff64c3f62f615cfba06d11bc7bf",
@@ -2869,8 +2869,8 @@
     },
     {
       "path": "src/hir/validation.rs",
-      "current_len": 399117,
-      "current_sha256": "f89e882a3d8ed796b8b8b864247e4e7eb19631d6299cd0dd94ddcc6b5ca17eba",
+      "current_len": 399157,
+      "current_sha256": "85a730c701db6b3031fecd84499aa1f2dff5f5c07d0498612bdcd1284dd0b271",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/hir/validation.rs",
       "view_len": 399080,
       "view_sha256": "85ae66ee35b346b0b65fb2c7490601216c49ac858aaae3345a03cbe08691447f",
@@ -2932,8 +2932,8 @@
     },
     {
       "path": "src/loop_calls/byte_writer.rs",
-      "current_len": 8055,
-      "current_sha256": "9d9227d8d51508bf478aa83d9c76ee2d16a40ea8bda2413b239da92bf87fa863",
+      "current_len": 8051,
+      "current_sha256": "7c35e7fba596f0c9a999190092cedd78238d11940e40ab6ed43d2c39ace63b74",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/loop_calls/byte_writer.rs",
       "view_len": 7941,
       "view_sha256": "3d99d7a80a99912b3aba134781cfedaea49e8db8774e136fb15044652797a544",
@@ -2942,7 +2942,7 @@
     {
       "path": "src/loop_calls/byte_writer/resolved.rs",
       "current_len": 23214,
-      "current_sha256": "a11ca15dd29de5813e49f84002072b13694c001554f8e2826c7be28dc395f918",
+      "current_sha256": "72f38ae029e55568d374fc5f037cb30759da3d88575655b877efdedc3f14cb1d",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/loop_calls/byte_writer/resolved.rs",
       "view_len": 23084,
       "view_sha256": "a357e24edfcba7588e983f59e997c3186f24841f0aab818aa8059fd650829d2e",
@@ -2995,8 +2995,8 @@
     },
     {
       "path": "src/source_reflows/semantic_receivers.rs",
-      "current_len": 37347,
-      "current_sha256": "9a1a427f77312a2dc475a9ec0be8e6f5eff0f82686612e31f38016066adc7031",
+      "current_len": 38705,
+      "current_sha256": "5926337017992c1f9081f4632214736f6e34182334b2591b482e119fa5d4df22",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/source_reflows/semantic_receivers.rs",
       "view_len": 36937,
       "view_sha256": "a620377ce8bcfe1ff7d44654ddc5ebf45cfecb2743e3ad4248220260a4dc58c7",
@@ -3004,8 +3004,8 @@
     },
     {
       "path": "src/source_verify/declaration.rs",
-      "current_len": 15793,
-      "current_sha256": "54bca5bc3be89d2b788655f72cb8671c76b540edd99c126a0862a4f1f22a0a88",
+      "current_len": 15876,
+      "current_sha256": "5d31e7ff4f7127e8bd347ce2bb4470c74e7ef47355ba7cdd8f54dc9363076526",
       "archive": "docs/evidence/main09013-source-namespaces-v1/main8c-inputs/src/source_verify/declaration.rs",
       "view_len": 12842,
       "view_sha256": "1ee6c27c7e20e6578261de0f58d0019762080e33f5631685081a8318485420d8",
@@ -3085,8 +3085,8 @@
     },
     {
       "path": "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
-      "current_len": 30242,
-      "current_sha256": "bf59d79e6bcd513cf071c52112ded222e4561c785389f2723684d072c15d0fc2",
+      "current_len": 30254,
+      "current_sha256": "8ca91a97b040d3386d07715660cf5d43aa8f916e1b81fed8d38a28f526e87b5a",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs",
       "view_len": 30208,
       "view_sha256": "b54a1e1ef7192aed60c821f228e40955b5fd60b8755d4428e2f87f72eb6c41b2",
@@ -3103,8 +3103,8 @@
     },
     {
       "path": "tests/hir_module_boundaries.rs",
-      "current_len": 106143,
-      "current_sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "current_len": 125075,
+      "current_sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/tests/hir_module_boundaries.rs",
       "view_len": 54335,
       "view_sha256": "d6e8ad51661a3f8727e9f654bd7e7f2687ffa6fa13fd9c66900217def541c1cc",
@@ -3112,8 +3112,8 @@
     },
     {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "current_len": 104065,
-      "current_sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "current_len": 141562,
+      "current_sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e",
       "archive": "docs/evidence/main21-exit-region-integration-20261017/main-inputs/tests/workspace/semantic_graph/source_inventory.rs",
       "view_len": 38330,
       "view_sha256": "1cd423cdab9473ed591145366c339f9519892e06593d287c28b799f7e359c660",
@@ -3124,8 +3124,8 @@
       "archive": "docs/evidence/main09013-source-namespaces-v1/main21-current-checkpoints/src/source_reflows/incoming67107_semantic_receivers.rs",
       "view_len": 32182,
       "view_sha256": "6c5d74b4423ae089bdb8864c3b0210bad4b160b8a6e003819a5553d7ab891e43",
-      "current_len": 32535,
-      "current_sha256": "d68f7f9b5a638b4b87498dbff360df371d5d2d2258f36a639c350b40cc243b54"
+      "current_len": 34564,
+      "current_sha256": "bece004991e952b9e0a5249aba35f66d320a50be19385ffd757f963131712a7f"
     }
   ],
   "ours": [],
@@ -4100,5 +4100,5 @@
   ],
   "unassembled": [],
   "cap": 9464242,
-  "bound_final_head": "347edffe20f30b18236d2bbfc93d76ff352d358c"
+  "bound_final_head": "afedb9ff7b2a33194e21eaeb2baf853566d119f4"
 }
