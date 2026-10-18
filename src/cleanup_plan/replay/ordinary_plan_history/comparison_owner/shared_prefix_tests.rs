@@ -549,14 +549,52 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
             e.phase == "ordinary plan retained comparison owner"
                 || e.phase == "ordinary plan fresh segment identity event"
                 || e.phase.starts_with("ordinary plan shared suffix")
+                || e.phase.starts_with("ordinary plan certified numeric run")
         })
         .copied()
         .collect();
+    assert_eq!(success.row.identity_bodies, 0);
     assert!(
-        events
+        !events
             .iter()
-            .any(|e| e.phase == "ordinary plan shared suffix scalar receivers")
+            .any(|e| e.phase == "ordinary plan shared suffix scalar receivers"),
+        "the current certified run forms no removed scalar BODY packet"
     );
+    for (phase, count, price) in [
+        (
+            "ordinary plan shared suffix pattern probe",
+            success.row.identity_probes,
+            3 * size_of::<&[Rc<SkeletonObservation>]>(),
+        ),
+        (
+            "ordinary plan certified numeric run capture",
+            success.row.shared_runs,
+            2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>(),
+        ),
+        (
+            "ordinary plan certified numeric run turn",
+            success.row.shared_turns,
+            4 * size_of::<usize>() + size_of::<bool>(),
+        ),
+        (
+            "ordinary plan certified numeric run publication",
+            success.row.shared_publishes,
+            4 * size_of::<&[Rc<SkeletonObservation>]>()
+                + 4 * size_of::<usize>()
+                + size_of::<Ordering>(),
+        ),
+    ] {
+        assert!(
+            count > 0 && events.iter().any(|event| event.phase == phase),
+            "the complete current fixture must reach its actual {phase} acquisition"
+        );
+        let admitted: usize = events
+            .iter()
+            .filter(|event| event.phase == phase)
+            .map(|event| event.after.unwrap() - event.before)
+            .sum();
+        assert_eq!(admitted, count * price, "all real current {phase} packets");
+    }
     assert!(
         events
             .iter()
@@ -564,7 +602,7 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
     );
     for event in events {
         let after = event.after.unwrap();
-        for (limit, floor) in [(after - 1, 0), (after, 1)] {
+        for (limit, floor) in [(event.before, 0), (after - 1, 0), (after, 1)] {
             let result = run(
                 function,
                 16,

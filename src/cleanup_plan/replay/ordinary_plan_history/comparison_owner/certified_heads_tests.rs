@@ -645,7 +645,7 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
                 assert!(r.observed.0.0.retry.is_some());
                 assert_eq!(
                     r.observed.0.0.result.as_ref().unwrap_err(),
-                    &primitive_failure(function, *event, event.before, floor)
+                    &primitive_failure(function, *event, limit, floor)
                 );
             }
         }
@@ -1029,7 +1029,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         if old.observed.1 && !current.observed.1 && current.row.pairs == 1 {
             assert_eq!(
                 old.observed.0.0.result.as_ref().unwrap_err(),
-                &primitive_failure(function, *matching, matching.before, 0)
+                &primitive_failure(function, *matching, matching.before + PAIR_MATCH - 1, 0)
             );
             assert!(current.observed.0.0.result.is_err());
             assert_eq!(current.observed.0.0.remaining, 0);
@@ -1091,7 +1091,12 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         if old.observed.1 && !current.observed.1 && current.row.certified_bases == 1 {
             assert_eq!(
                 old.observed.0.0.result.as_ref().unwrap_err(),
-                &primitive_failure(function, *right_step, right_step.before, 0)
+                &primitive_failure(
+                    function,
+                    *right_step,
+                    right_step.before + certified_heads::BASE,
+                    0
+                )
             );
             assert!(current.observed.0.0.result.is_err());
             assert_eq!(current.observed.0.0.remaining, 0);
