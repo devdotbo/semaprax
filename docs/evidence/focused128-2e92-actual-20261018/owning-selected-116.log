@@ -1,0 +1,7 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::actual_status_to_initial_edge_owner_has_full_typed_net_and_unchanged_work ... cross-phase actual status=385 edge_queries=128 old=(Ok(()), false, 21780882, 3217995) current=(Ok(()), false, 21771666, 3217995) S=160 R=88 M_new=0 A_new=0
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 0.78s
+

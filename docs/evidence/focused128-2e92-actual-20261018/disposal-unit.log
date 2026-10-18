@@ -1,0 +1,19 @@
+   Compiling semaprax v0.9.0 (/Volumes/Semaprax/worktrees/next-large-combined-20261017)
+warning: unused import: `validate_status_sources_certified`
+ --> src/cleanup_plan/replay/expression_facts/receiving.rs:9:66
+  |
+9 |     validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_certified,
+  |                                                                  ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+  |
+  = note: `#[warn(unused_imports)]` (part of `#[warn(unused)]`) on by default
+
+warning: `semaprax` (lib) generated 1 warning (run `cargo fix --lib -p semaprax` to apply 1 suggestion)
+   Compiling semaprax-native-rust-interop v0.1.0 (/Volumes/Semaprax/worktrees/next-large-combined-20261017/crates/semaprax-native-rust-interop-builder)
+    Finished `test` profile [unoptimized] target(s) in 1m 54s
+     Running unittests src/lib.rs (target/final-cgu64-20261012/debug/deps/semaprax_native_rust_interop-150f9d88af9c3e09)
+
+running 1 test
+test implementation::tests::resolved_disposal::resolved_owner_disposal_is_preallocated_and_depth_bounded ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 246 filtered out; finished in 0.35s
+

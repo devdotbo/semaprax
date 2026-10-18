@@ -1,0 +1,23 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner ... cross-phase retained LexicalAttempt=8 Session=120 S=160 Re=88
+
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner' (34017819) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs:330:5:
+assertion `left == right` failed
+  left: 15586
+ right: 15587
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner' (34017819) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs:330:5:
+assertion `left == right` failed
+  left: 15597
+ right: 15587
+
+thread 'cleanup_plan::replay::expression_facts::receiving::retained::ordinary_cross_phase::tests::exact_source_inverses_restore_every_whole_immediate_owner' (34017819) panicked at src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs:330:5:
+assertion `left == right` failed
+  left: 31174
+ right: 15587
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 2.04s
+
