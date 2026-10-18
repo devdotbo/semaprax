@@ -1,0 +1,42 @@
+{
+  "status": "SOURCE_ONLY_UNRUN",
+  "base": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "cause": "ReplayBudget::new initializes skeleton_remaining=0; direct inner receiver bypassed production reserve_program_skeleton_work; first actual HIR root path charge1 refuses. Dense64-row positive summarizes and skips skeleton, unlike original32-row Drop control.",
+  "remedy": "Exact existing production preflight under same measured payer and ReplayBudget before both independent old/current receivers. Original32-row test/caps/Drop body byteexact. Complete old ordinary helper compiled under explicit name, exact six-field H006/work-not-byte-refusal/Drop regression added. Production import reexport test-gated; function bodies/tariffs/caps unchanged.",
+  "rows": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "before_length": 27977,
+      "before_sha256": "67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44",
+      "after_length": 27986,
+      "after_sha256": "d44da2c3d647fa0e9dadeb06898b54f12292a582f3db4020036af2bb2b2b0a25",
+      "lines": 648
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+      "before_length": 11437,
+      "before_sha256": "e20c77a4d5b6f2b01fc5dff98936f266f80348b6a6cba81af722a39249eea44b",
+      "after_length": 13422,
+      "after_sha256": "e993c0cc5d04e4f4b316484e6f045eeddf6d48c645770b4b15a492790b2ec946",
+      "lines": 354
+    }
+  ],
+  "assertions": {
+    "whole_base_sources": true,
+    "old_helper_byteexact_except_name": true,
+    "original_32row_test_byteexact": true,
+    "new_modules": 0,
+    "new_selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::complete_caller_without_skeleton_preflight_keeps_exact_root_refusal_and_drop"
+  },
+  "checks": [
+    "rustfmt parsing two changed sources",
+    "git diff --check"
+  ],
+  "not_run": [
+    "Cargo",
+    "build",
+    "tests",
+    "Clippy",
+    "source custody generation"
+  ]
+}
