@@ -283,6 +283,8 @@ fn projection344_stage(supplied: &str) -> String {
     // The immutable old44 stage above remains independently checked. Only
     // this exact, separately pinned live49 join may enter that old facade.
     let live = projection344_live_descriptor();
+    let phase_prior = projection344_phase_join(supplied);
+    let supplied = phase_prior.as_deref().unwrap_or(supplied);
     let supplied = if supplied != current
         && supplied != previous
         && supplied.len() == live["length"].as_u64().unwrap() as usize
@@ -298,6 +300,66 @@ fn projection344_stage(supplied: &str) -> String {
         "foreign historical projection input"
     );
     previous
+}
+
+// One complete phase-observer source changed after the immutable49-part join.
+// Authenticate its actual current channels before selecting the whole old image;
+// the old49 and old44 recipes and their independent assertions remain unchanged.
+fn projection344_phase_test_source(compiled: &str) -> String {
+    let source = "src/workspace_graph/expected_projection/call_carriers_tests.rs";
+    assert_eq!(compiled.len(), 23994);
+    assert_eq!(digest(compiled), "04baeff68abf890ab6bfa855969786876b0b91ef59cf685f898b829e14e0c047");
+    let prior = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source,
+        "bf17711b9ee9801531b16d3a505163c32df52e2ef13a46d1426eeee2cc8c3934",
+        compiled,
+    );
+    assert_eq!(prior.len(), 23577);
+    assert_eq!(digest(&prior), "bf17711b9ee9801531b16d3a505163c32df52e2ef13a46d1426eeee2cc8c3934");
+    prior
+}
+fn projection344_phase_join(supplied: &str) -> Option<String> {
+    if supplied.len() != 647939
+        || digest(supplied) != "fe42350bec2fc90ebd37d5aef11786020716c555df70c85c3bf7622a4b4b1e7b"
+    {
+        return None;
+    }
+    let compiled = include_str!("../../src/workspace_graph/expected_projection/call_carriers_tests.rs");
+    let source = "src/workspace_graph/expected_projection/call_carriers_tests.rs";
+    let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source, "04baeff68abf890ab6bfa855969786876b0b91ef59cf685f898b829e14e0c047", compiled,
+    );
+    assert_eq!(current, compiled, "complete actual phase observer channels");
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let descriptor = projection344_live_descriptor();
+    let mut physical = String::new();
+    for part in descriptor["parts"].as_array().unwrap() {
+        if let Some(literal) = part["literal"].as_str() {
+            physical.push_str(literal);
+        } else {
+            let path = part["source"].as_str().unwrap();
+            let (length, sha) = if path == source {
+                (23994, "04baeff68abf890ab6bfa855969786876b0b91ef59cf685f898b829e14e0c047")
+            } else {
+                (part["length"].as_u64().unwrap() as usize, part["sha256"].as_str().unwrap())
+            };
+            let text = reader::read(&root.join(path), length, sha, 2_097_152)
+                .expect("complete actual projection part before historical normalization");
+            if path == source {
+                assert_eq!(text, compiled);
+            } else if let Some(archive) = part["archive"].as_str() {
+                assert_eq!(text, reader::read(&root.join(archive), length, sha, 2_097_152).unwrap());
+            }
+            physical.push_str(&text);
+        }
+    }
+    assert_eq!(physical, supplied, "every actual compiled/physical part in original join order");
+    let prior = projection344_phase_test_source(compiled);
+    assert_eq!(supplied.matches(compiled).count(), 1, "one complete current phase observer in the full join");
+    let previous = supplied.replacen(compiled, &prior, 1);
+    assert_eq!(previous.len(), 647522);
+    assert_eq!(digest(&previous), "f92a4a4b2866ed66099de40d03521efa9654955e9ff8b8bcdbf8f862628e5ea4");
+    Some(previous)
 }
 
 fn projection344_live_descriptor() -> serde_json::Value {
@@ -330,8 +392,17 @@ fn projection344_live_sources(row: &serde_json::Value) -> String {
             assert!(length <= 2_097_152);
             let sha = part["sha256"].as_str().unwrap();
             let source = part["source"].as_str().unwrap();
-            let text = reader::read(&root.join(source), length, sha, 2_097_152)
-                .expect("exact live projection part");
+            let text = if source == "src/workspace_graph/expected_projection/call_carriers_tests.rs"
+                && length == 23577
+                && sha == "bf17711b9ee9801531b16d3a505163c32df52e2ef13a46d1426eeee2cc8c3934"
+            {
+                crate::source_reflows_merge::main_e177_final_inputs::file(
+                    &root.join(source), length, sha,
+                ).expect("authenticated complete pre-phase projection part")
+            } else {
+                reader::read(&root.join(source), length, sha, 2_097_152)
+                    .expect("exact live projection part")
+            };
             if let Some(archive) = part["archive"].as_str() {
                 let compiled = match source {
                     "src/workspace_graph/expected_projection/call_carriers.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers.rs"),
@@ -340,6 +411,16 @@ fn projection344_live_sources(row: &serde_json::Value) -> String {
                     "src/workspace_graph/expected_projection/call_carriers_original.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_original.rs"),
                     "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_historical_tests.rs"),
                     _ => panic!("foreign additional projection part"),
+                };
+                let phase_prior;
+                let compiled = if source == "src/workspace_graph/expected_projection/call_carriers_tests.rs"
+                    && length == 23577
+                    && sha == "bf17711b9ee9801531b16d3a505163c32df52e2ef13a46d1426eeee2cc8c3934"
+                {
+                    phase_prior = projection344_phase_test_source(compiled);
+                    phase_prior.as_str()
+                } else {
+                    compiled
                 };
                 assert_eq!(
                     text, compiled,
@@ -515,6 +596,19 @@ fn observer_projection_stage_keeps_whole_current_and_prior_and_refuses_foreign_j
     let live = projection344_live_sources(&projection344_live_descriptor());
     assert_ne!(live, current);
     assert_eq!(projection344_stage(&live), previous);
+    let compiled = include_str!("../../src/workspace_graph/expected_projection/call_carriers_tests.rs");
+    let old_phase = projection344_phase_test_source(compiled);
+    assert_eq!(live.matches(&old_phase).count(), 1);
+    let phase_join = live.replacen(&old_phase, compiled, 1);
+    assert_eq!(projection344_phase_join(&phase_join).as_deref(), Some(live.as_str()));
+    assert_eq!(projection344_stage(&phase_join), previous);
+    for foreign in [
+        format!("{phase_join} "),
+        phase_join[..phase_join.len() - 1].to_owned(),
+        phase_join.replacen(compiled, &format!("{compiled} "), 1),
+    ] {
+        assert!(std::panic::catch_unwind(|| projection344_stage(&foreign)).is_err());
+    }
     let mut drift = live.clone();
     drift.push(' ');
     assert!(std::panic::catch_unwind(|| projection344_stage(&drift)).is_err());
