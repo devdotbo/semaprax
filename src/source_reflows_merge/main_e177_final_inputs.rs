@@ -6,48 +6,148 @@ fn digest(bytes: &[u8]) -> String {
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
 fn packet() -> serde_json::Value {
-    let base=packet_fmt433();
-    let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
-    assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(157497,"1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe".to_owned()));
-    let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
-    let ext:serde_json::Value=serde_json::from_str(data).unwrap();
-    assert_eq!(ext["schema"],"semaprax.fmt433-local133-extension.v1");
-    assert_eq!(ext["base_sha256"],"de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc");
-    assert_eq!(ext["compiled_upgrades"],serde_json::json!(["src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"]));
-    let mut logical=base.clone();
-    let rows=logical["rows"].as_array_mut().unwrap();
-    let mut seen=std::collections::BTreeSet::new();
+    let base = packet_fmt433();
+    let data = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
+    assert!(data.len() <= 262144);
+    assert_eq!(
+        (data.len(), digest(data.as_bytes())),
+        (
+            157497,
+            "1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe".to_owned()
+        )
+    );
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(
+        held(
+            &root.join("docs/evidence/fmt-local-441-20261018/extension.json"),
+            data.len(),
+            &digest(data.as_bytes())
+        )
+        .unwrap(),
+        data
+    );
+    let ext: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(ext["schema"], "semaprax.fmt433-local133-extension.v1");
+    assert_eq!(
+        ext["base_sha256"],
+        "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc"
+    );
+    assert_eq!(
+        ext["compiled_upgrades"],
+        serde_json::json!([
+            "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"
+        ])
+    );
+    let mut logical = base.clone();
+    let rows = logical["rows"].as_array_mut().unwrap();
+    let mut seen = std::collections::BTreeSet::new();
     for row in ext["rows"].as_array().unwrap() {
-        let source=row["source"].as_str().unwrap();assert!(seen.insert(source));
-        if let Some(index)=rows.iter().position(|r|r["source"]==source) {rows[index]=row.clone();}else{rows.push(row.clone());}
+        let source = row["source"].as_str().unwrap();
+        assert!(seen.insert(source));
+        if let Some(index) = rows.iter().position(|r| r["source"] == source) {
+            rows[index] = row.clone();
+        } else {
+            rows.push(row.clone());
+        }
     }
-    assert_eq!(rows.len(),441);
-    for (prior,current) in base["rows"].as_array().unwrap().iter().zip(rows.iter()) {
-        assert_eq!(current["source"],prior["source"]);assert!(current["compiled"]==prior["compiled"] || (prior["compiled"]==false && current["compiled"]==true && ext["compiled_upgrades"].as_array().unwrap().contains(&prior["source"])));
-        let views=current["views"].as_array().unwrap();let before=prior["views"].as_array().unwrap();assert_eq!(&views[..before.len()],before.as_slice());
-        if current["current"]!=prior["current"] {let mut view=prior["current"].clone();view["name"]="whole-fmt433-current".into();assert!(views.contains(&view));}
-        let mut restored=current.clone();restored["compiled"]=prior["compiled"].clone();restored["current"]=prior["current"].clone();restored["views"]=prior["views"].clone();
-        if prior.get("fragments").is_some(){restored["fragments"]=prior["fragments"].clone();}assert_eq!(&restored,prior);
+    assert_eq!(rows.len(), 441);
+    for (prior, current) in base["rows"].as_array().unwrap().iter().zip(rows.iter()) {
+        assert_eq!(current["source"], prior["source"]);
+        assert!(
+            current["compiled"] == prior["compiled"]
+                || (prior["compiled"] == false
+                    && current["compiled"] == true
+                    && ext["compiled_upgrades"]
+                        .as_array()
+                        .unwrap()
+                        .contains(&prior["source"]))
+        );
+        let views = current["views"].as_array().unwrap();
+        let before = prior["views"].as_array().unwrap();
+        assert_eq!(&views[..before.len()], before.as_slice());
+        if current["current"] != prior["current"] {
+            let mut view = prior["current"].clone();
+            view["name"] = "whole-fmt433-current".into();
+            assert!(views.contains(&view));
+        }
+        let mut restored = current.clone();
+        restored["compiled"] = prior["compiled"].clone();
+        restored["current"] = prior["current"].clone();
+        restored["views"] = prior["views"].clone();
+        if prior.get("fragments").is_some() {
+            restored["fragments"] = prior["fragments"].clone();
+        }
+        assert_eq!(&restored, prior);
     }
-    let mut restored=logical.clone();restored["rows"]=base["rows"].clone();assert_eq!(restored,base,"complete433 inverse");
-    let rows=logical["rows"].as_array().unwrap();let mut edges=0;
-    for row in rows {for child in row.get("fragments").and_then(|v|v.as_array()).into_iter().flatten(){assert!(child.get("fragments").is_none());assert_eq!(child["compiled"],true);assert_eq!(Some(child),rows.iter().find(|r|r["source"]==child["source"]));edges+=1;}}
-    assert_eq!(edges,10);
+    let mut restored = logical.clone();
+    restored["rows"] = base["rows"].clone();
+    assert_eq!(restored, base, "complete433 inverse");
+    let rows = logical["rows"].as_array().unwrap();
+    let mut edges = 0;
+    for row in rows {
+        for child in row
+            .get("fragments")
+            .and_then(|v| v.as_array())
+            .into_iter()
+            .flatten()
+        {
+            assert!(child.get("fragments").is_none());
+            assert_eq!(child["compiled"], true);
+            assert_eq!(
+                Some(child),
+                rows.iter().find(|r| r["source"] == child["source"])
+            );
+            edges += 1;
+        }
+    }
+    assert_eq!(edges, 10);
     let local_data=include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
-    assert_eq!((local_data.len(),digest(local_data.as_bytes())),(123158,"319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045".to_owned()));
-    assert_eq!(read_view(&ext["whole_local133"]),local_data,"whole local133 physical/compiled anchor");
-    let local=packet_local133();assert_eq!(local,serde_json::from_str::<serde_json::Value>(local_data).unwrap(),"entire original133 loader replay");assert_eq!(local["rows"].as_array().unwrap().len(),133);
-    for prior in local["rows"].as_array().unwrap(){
-        let row=rows.iter().find(|r|r["source"]==prior["source"]).unwrap();assert_eq!(row["compiled"],prior["compiled"]);
-        let views=row["views"].as_array().unwrap();assert!(prior["views"].as_array().unwrap().iter().all(|v|views.contains(v)));
-        if row["current"]!=prior["current"]{let mut view=prior["current"].clone();view["name"]="whole-local133-current".into();assert!(views.contains(&view));}
-        let mut projected=row.clone();projected.as_object_mut().unwrap().remove("fragments");projected["current"]=prior["current"].clone();projected["views"]=prior["views"].clone();assert_eq!(&projected,prior,"complete local133 row projection");
+    assert_eq!(
+        (local_data.len(), digest(local_data.as_bytes())),
+        (
+            123158,
+            "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045".to_owned()
+        )
+    );
+    assert_eq!(
+        read_view(&ext["whole_local133"]),
+        local_data,
+        "whole local133 physical/compiled anchor"
+    );
+    let local = packet_local133();
+    assert_eq!(
+        local,
+        serde_json::from_str::<serde_json::Value>(local_data).unwrap(),
+        "entire original133 loader replay"
+    );
+    assert_eq!(local["rows"].as_array().unwrap().len(), 133);
+    for prior in local["rows"].as_array().unwrap() {
+        let row = rows
+            .iter()
+            .find(|r| r["source"] == prior["source"])
+            .unwrap();
+        assert_eq!(row["compiled"], prior["compiled"]);
+        let views = row["views"].as_array().unwrap();
+        assert!(prior["views"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .all(|v| views.contains(v)));
+        if row["current"] != prior["current"] {
+            let mut view = prior["current"].clone();
+            view["name"] = "whole-local133-current".into();
+            assert!(views.contains(&view));
+        }
+        let mut projected = row.clone();
+        projected.as_object_mut().unwrap().remove("fragments");
+        projected["current"] = prior["current"].clone();
+        projected["views"] = prior["views"].clone();
+        assert_eq!(&projected, prior, "complete local133 row projection");
     }
     logical
 }
 
+#[rustfmt::skip] // Retain the complete historical 133-row loader verbatim.
 fn packet_local133() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
     assert_eq!(data.len(), 123158);
@@ -845,9 +945,28 @@ fn combined_side_actual(row: &serde_json::Value) -> String {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let source = row["source"].as_str().unwrap();
     let current = &row["current"];
-    let actual = file(&root.join(source),current["length"].as_u64().unwrap() as usize,current["sha256"].as_str().unwrap()).unwrap_or_else(|| held(&root.join(source),current["length"].as_u64().unwrap() as usize,current["sha256"].as_str().unwrap()).unwrap());
-    let compiled=value_direct(source,current["sha256"].as_str().unwrap(),&clippy_stage::normalize(source, combined_side_compiled(source).unwrap()));
-    assert_eq!(actual,compiled,"complete combined current compiled source");
+    let actual = file(
+        &root.join(source),
+        current["length"].as_u64().unwrap() as usize,
+        current["sha256"].as_str().unwrap(),
+    )
+    .unwrap_or_else(|| {
+        held(
+            &root.join(source),
+            current["length"].as_u64().unwrap() as usize,
+            current["sha256"].as_str().unwrap(),
+        )
+        .unwrap()
+    });
+    let compiled = value_direct(
+        source,
+        current["sha256"].as_str().unwrap(),
+        &clippy_stage::normalize(source, combined_side_compiled(source).unwrap()),
+    );
+    assert_eq!(
+        actual, compiled,
+        "complete combined current compiled source"
+    );
     assert_eq!(
         actual,
         read_view(current),
@@ -1000,17 +1119,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 76409);
+        assert_eq!(data.len(), 77047);
         assert_eq!(
             digest(data.as_bytes()),
-            "353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b"
+            "05a30834d0f1b2bdd4476bc35132eeca7f021c24ad646a0c0ad2b82202d9dc21"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b"
+                "05a30834d0f1b2bdd4476bc35132eeca7f021c24ad646a0c0ad2b82202d9dc21"
             )
             .unwrap(),
             data

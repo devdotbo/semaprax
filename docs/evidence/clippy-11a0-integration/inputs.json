@@ -1500,10 +1500,18 @@
         "archive": "docs/evidence/clippy-11a0-integration/qS2jckBvmXtuefz93wq73WSz3kmgcR7OjikmawdYVyU.txt"
       },
       "current": {
-        "length": 576277,
-        "sha256": "4ef276fa6ec7c0d930cf5bb892c15b3682edd4a60b05d23e2d21030a09cdf030",
-        "archive": "docs/evidence/clippy-11a0-integration/TvJ2-m7HwNkwz1u4ksFbNoLt1KYLBdI-LSEDCgnN8DA.txt"
-      }
+        "length": 576475,
+        "sha256": "c1b13d3a498d93bf20c51183480b3ac49a812436309706c535df4a8a1e268582",
+        "archive": "docs/evidence/fmt-ec77-20261018/whole/c1b13d3a498d93bf20c51183480b3ac49a812436309706c535df4a8a1e268582.txt"
+      },
+      "views": [
+        {
+          "name": "whole-ec77-current",
+          "length": 576277,
+          "sha256": "4ef276fa6ec7c0d930cf5bb892c15b3682edd4a60b05d23e2d21030a09cdf030",
+          "archive": "docs/evidence/clippy-11a0-integration/TvJ2-m7HwNkwz1u4ksFbNoLt1KYLBdI-LSEDCgnN8DA.txt"
+        }
+      ]
     },
     {
       "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -1715,9 +1723,9 @@
         "archive": "docs/evidence/clippy-11a0-integration/NM6iTrc6lFMARuPyMM2ZUMXEo4K-EY0jiTrYKZLuWT4.txt"
       },
       "current": {
-        "length": 27546,
-        "sha256": "2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980",
-        "archive": "docs/evidence/remote12ad-checkpoint-20261018/whole/2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980.txt"
+        "length": 27629,
+        "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
+        "archive": "docs/evidence/fmt-ec77-20261018/whole/a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294.txt"
       },
       "before_head": "11a0a46b70502896ba832ece6d9c3afb85ec5909",
       "views": [
@@ -1732,6 +1740,12 @@
           "length": 27389,
           "sha256": "b09d3fb2f9d3c57fddc7255d0ae7e084bec6396014b732b82e9496eb7e576b05",
           "archive": "docs/evidence/fmt-local-441-20261018/whole/b09d3fb2f9d3c57fddc7255d0ae7e084bec6396014b732b82e9496eb7e576b05.txt"
+        },
+        {
+          "name": "whole-ec77-current",
+          "length": 27546,
+          "sha256": "2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980",
+          "archive": "docs/evidence/remote12ad-checkpoint-20261018/whole/2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980.txt"
         }
       ]
     },

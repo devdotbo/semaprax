@@ -1,0 +1,47 @@
+{
+  "src/source_reflows_merge/main_e177_final_inputs.rs": {
+    "length": 97847,
+    "sha256": "3439c2b1bd86faec732c23a451ecd5c12d61bce75e0736ea0e7879f41eb3f927",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/3439c2b1bd86faec732c23a451ecd5c12d61bce75e0736ea0e7879f41eb3f927.txt"
+  },
+  "src/hir/ids/declaration_tag.rs": {
+    "length": 27546,
+    "sha256": "2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/2a01744d0c853b5238c2c8eb23fd9fabeb8f31c13ab6ff91a454ee840ec88980.txt"
+  },
+  "src/hir/ids/declaration_tag/before.rs": {
+    "length": 8897,
+    "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355.txt"
+  },
+  "docs/evidence/clippy-11a0-integration/inputs.json": {
+    "length": 76409,
+    "sha256": "353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b.txt"
+  },
+  "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py": {
+    "length": 10643,
+    "sha256": "157f804c7a81f4fdbaa681d019315a29aba5449558c68c447df2f2186526798b",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/157f804c7a81f4fdbaa681d019315a29aba5449558c68c447df2f2186526798b.txt"
+  },
+  "docs/evidence/remote12ad-checkpoint-20261018/guard-config.json": {
+    "length": 116352,
+    "sha256": "a3c018d548701ac556055d50cb30d993af7a5189de2c6d2ab2c5da12c3bf6c57",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/a3c018d548701ac556055d50cb30d993af7a5189de2c6d2ab2c5da12c3bf6c57.txt"
+  },
+  "docs/evidence/accepted-final6-source-binding-20261017/check-source.py": {
+    "length": 2253,
+    "sha256": "884bf8d9ba459c16f5e87660f86d6931bb00765db30e58129a64b0e1cae0516d",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/884bf8d9ba459c16f5e87660f86d6931bb00765db30e58129a64b0e1cae0516d.txt"
+  },
+  "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py": {
+    "length": 5322,
+    "sha256": "4ce328b34fd13a32b338ea76a9a28503b2e8bb8862557e67708876b911beb079",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/4ce328b34fd13a32b338ea76a9a28503b2e8bb8862557e67708876b911beb079.txt"
+  },
+  "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py": {
+    "length": 2766,
+    "sha256": "ec1621c933c7f6529c716fa7d6efb28eb6b7e7f11e126b7594f078138ca9b37d",
+    "archive": "docs/evidence/fmt-ec77-20261018/whole/ec1621c933c7f6529c716fa7d6efb28eb6b7e7f11e126b7594f078138ca9b37d.txt"
+  }
+}

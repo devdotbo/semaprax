@@ -1,0 +1,9 @@
+{
+  "source": "tests/component_runtime_ci_contract.rs",
+  "before_sha256": "f8b47b37e649cbf49570dd17718af79e8768a91f9c060fef88220c8ff17d419e",
+  "current_sha256": "1edec9a189015127b4de0b686f8bac175631076cc0dd625dcbc17a365ec41065",
+  "old": "sha2 = { version = \\\"=0.11.0\\\", default-features = false }",
+  "new": "sha2 = { version = \\\"=0.11.1\\\", default-features = false }",
+  "only_exact_pin_changes": true,
+  "runner_manifest_unchanged": true
+}
