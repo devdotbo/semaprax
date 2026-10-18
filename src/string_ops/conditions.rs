@@ -14,6 +14,7 @@ use crate::hir::{
 
 mod funded;
 pub(crate) use funded::function_reads_funded;
+pub(crate) use funded::reads_into;
 
 fn is_condition_read(op: super::StringOp) -> bool {
     matches!(

@@ -4,6 +4,9 @@ use super::super::require_expression;
 use super::case_certified::retained_lookup;
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::arena::retained::Session;
+use crate::cleanup_plan::replay::ordinary_receiving::{
+    prepare_into, refuse_into, reserve_into, Failure,
+};
 pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,
@@ -152,7 +155,9 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                         if arena.len() != 0 {
                             budget.reserve_bytes(
                                 function,
-                                Session::OLD_SCRATCH + Session::acquisition_bytes(),
+                                Session::OLD_SCRATCH
+                                    + Session::acquisition_bytes()
+                                    + Failure::acquisition_bytes(),
                                 "retained expression-fact owner acquisition",
                             )?;
                             budget.charge(
@@ -160,10 +165,42 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                 12,
                                 "retained expression-fact owner initialization",
                             )?;
+                            #[cfg(test)]
+                            crate::cleanup_plan::replay::ordinary_receiving::observe_site(1);
+                            let mut failure = Failure {
+                                error: None,
+                                function,
+                                budget: budget,
+                            };
+                            let mut received = None;
                             let mut session = Session::new_prepaid(arena, function, budget);
                             loop {
                                 let source = &function.cleanup_plan.status_sources[ordinal];
-                                let Some(fact) = session.fact(&source.id.expression)? else {
+                                {
+                                    if !reserve_into!(
+                                        session.budget,
+                                        function,
+                                        failure,
+                                        Session::into_query_bytes(),
+                                        "ordinary fact query actual and formal receiving"
+                                    ) {
+                                        return Err(failure
+                                            .error
+                                            .take()
+                                            .expect("query frontier selected first error"));
+                                    }
+                                }
+                                if !session.fact_into(
+                                    &source.id.expression,
+                                    &mut received,
+                                    &mut failure,
+                                ) {
+                                    return Err(failure
+                                        .error
+                                        .take()
+                                        .expect("fact query selected first error"));
+                                }
+                                let Some(fact) = received else {
                                     return Err(
                                         <Diagnostic as semantic_refusal::Error>::structural(
                                             function,
@@ -358,14 +395,25 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         )?;
                                         session.budget.reserve_bytes(
                                             function,
-                                            Session::EDGE_RECEIVING_BYTES,
+                                            Session::into_edge_local_bytes()
+                                                + Session::into_edge_query_bytes(),
                                             "retained expression-fact query result controls",
                                         )?;
                                         #[allow(
                                             clippy::redundant_pattern_matching,
                                             reason = "bare pattern avoids a new Option method receiving boundary"
                                         )]
-                                        if let None = session.fact_edge_prepaid(expression)? {
+                                        if !session.fact_edge_into_prepaid(
+                                            expression,
+                                            &mut received,
+                                            &mut failure,
+                                        ) {
+                                            return Err(failure
+                                                .error
+                                                .take()
+                                                .expect("edge query selected first error"));
+                                        }
+                                        if let None = received {
                                             return Err(replay_error(function,
                         format_args!("cleanup plan references unknown expression `{expression}`")));
                                         }
@@ -383,6 +431,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             }
 
                             // The existing owner ends before every program-dependent transition callback.
+                            drop(failure);
                             let budget = session.budget;
                             let expressions: &dyn Lookup = facts;
                             {

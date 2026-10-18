@@ -79,6 +79,17 @@ impl<'a> HelperSites<'a> {
     }
 }
 impl<'a> RenewalBindings<'a> {
+    // Complete additional empty() initializer and returned/received carriers.
+    // The unchanged factory is now reached even when ordinary setup has no index.
+    pub(crate) const fn empty_receiving_bytes() -> usize {
+        use std::mem::size_of;
+        2 * size_of::<Self>()
+            + 2 * size_of::<BTreeMap<ExpressionId, &'a ResolvedBinding>>()
+            + 2 * size_of::<BTreeMap<ExpressionId, ExpressionId>>()
+            + 2 * size_of::<crate::loop_calls::byte_writer::HelperBindings<'a>>()
+            + 2 * size_of::<Vec<(&'a ExpressionId, &'a ResolvedBinding)>>()
+            + size_of::<HelperSites<'a>>()
+    }
     pub(crate) fn empty() -> Self {
         Self {
             legacy: BTreeMap::new(),
@@ -319,4 +330,5 @@ pub(crate) mod type_drop_refusal;
 
 pub(crate) mod path_boundary_refusal;
 
+pub(crate) use funded::bindings_into;
 pub(crate) use funded::bindings_with_index_funded;

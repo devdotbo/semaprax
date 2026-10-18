@@ -91,10 +91,16 @@ fn earlier_schema_error_and_query_free_prefix_keep_all_six_fields_and_debits() {
         ordinary(&program, true, 64 * 1024 * 1024)
     );
     let scalar = checked_program(0);
-    assert_eq!(
-        ordinary(&scalar, false, 64 * 1024 * 1024),
-        ordinary(&scalar, true, 64 * 1024 * 1024)
-    );
+    // Generation-specific #885 zero-query fee claim: #892 separately changes
+    // ordinary setup. Keep this entire original assertion on the complete
+    // immediate old HIR caller; current scalar semantics/costs have a mirror in
+    // lookup_tests::receiving's independent 0/1/many composition control.
+    crate::cleanup_plan::replay::ordinary_receiving::with_before(|| {
+        assert_eq!(
+            ordinary(&scalar, false, 64 * 1024 * 1024),
+            ordinary(&scalar, true, 64 * 1024 * 1024)
+        );
+    });
 }
 #[test]
 fn retained_first_frontier_has_no_new_owner_before_original_row_guard() {
@@ -352,3 +358,5 @@ fn selector_site_ledger_uses_actual_borrowed_roles_and_preserves_old_inverse() {
     );
     assert!(!old.contains("super::CLEANUP_PLAN_SCHEMA_V20"));
 }
+
+mod receiving;

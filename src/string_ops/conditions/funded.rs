@@ -179,3 +179,7 @@ mod tests {
 
 #[cfg(test)]
 pub(crate) mod work;
+
+#[path = "funded_receiving.rs"]
+mod receiving;
+pub(crate) use receiving::reads_into;

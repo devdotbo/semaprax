@@ -75,6 +75,7 @@ mod owner_funded;
 #[cfg(test)]
 pub(crate) use owner_funded::requires_funded;
 pub(crate) use owner_funded::{owner_funded, requires_with_funded_cursor, OwnerVerdict};
+pub(crate) use owner_funded::{owner_into, requires_into};
 
 pub(super) mod rekey;
 

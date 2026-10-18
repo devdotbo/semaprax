@@ -101,6 +101,13 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             + size_of::<&crate::cleanup_plan::StatusSource>()
             + 2 * size_of::<bool>()
     }
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "complete immediate-old returning lookup ABI retained for legacy/control composition"
+        )
+    )]
     pub(in crate::cleanup_plan::replay::expression_facts) fn fact(
         &mut self,
         query: &'arena ExpressionId,
@@ -248,6 +255,13 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         + 2 * size_of::<&mut ReplayBudget>();
     pub(in crate::cleanup_plan::replay::expression_facts) const EDGE_RECEIVING_BYTES: usize =
         RESULTS + Self::EDGE_QUERY_BYTES;
+    #[cfg_attr(
+        not(test),
+        allow(
+            dead_code,
+            reason = "complete immediate-old returning lookup ABI retained for legacy/control composition"
+        )
+    )]
     pub(in crate::cleanup_plan::replay::expression_facts) fn fact_edge_prepaid(
         &mut self,
         query: &'arena ExpressionId,
@@ -370,3 +384,9 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay::expression_facts) mod tests;
+
+#[path = "retained_into.rs"]
+mod into;
+
+#[cfg(test)]
+mod into_tests;

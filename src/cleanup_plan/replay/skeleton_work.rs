@@ -5,7 +5,7 @@
 //! Existing work events remain; ordinary construction ordinals and exact memo
 //! pointer checks add explicit work, and new ordinary DAG storage is prepaid.
 use super::*;
-mod dag_storage;
+pub(super) mod dag_storage;
 pub(super) mod enumerated_prefix;
 #[cfg(test)]
 mod isolated_paths;
@@ -21,6 +21,7 @@ pub(super) mod merge_search;
 mod oracle_entry;
 mod ordinary_dag;
 pub(super) mod prefix_fusion;
+pub(super) mod receiving;
 
 #[cfg(test)]
 mod constructor_funding_tests {
@@ -185,12 +186,14 @@ pub(super) struct SkeletonWork<'a, 'b> {
     pub(super) budget: &'b mut ReplayBudget,
     pub(super) renewal_bindings: crate::cleanup_plan::renewal_profile::RenewalBindings<'a>,
     pub(super) active_copy_region: Option<ExpressionId>,
-    dag_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
-    ordinary_scratch: Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
-    next_ordinary_dag: usize,
-    held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
-    ordinary_index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
-    ordinary_program: Option<&'a dyn crate::cleanup::ReplayContext>,
+    pub(super) dag_scratch:
+        Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
+    pub(super) ordinary_scratch:
+        Option<std::rc::Rc<std::cell::RefCell<dag_storage::DestructionScratch>>>,
+    pub(super) next_ordinary_dag: usize,
+    pub(super) held_renewals: Option<&'a crate::cleanup_plan::renewal_profile::RenewalBindings<'a>>,
+    pub(super) ordinary_index: Option<&'b crate::loop_calls::byte_writer::ModuleIndex<'a>>,
+    pub(super) ordinary_program: Option<&'a dyn crate::cleanup::ReplayContext>,
     /// Authored same-owner append and direct literal-format String moves.
     pub(super) string_owner_moves: BTreeSet<ExpressionId>,
     pub(super) string_condition_reads: BTreeSet<ExpressionId>,
