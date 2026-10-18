@@ -1,0 +1,17 @@
+{
+  "path": "src/cleanup_plan/replay/selected_entry/tests/paid.rs",
+  "before_sha256": "252916a53da9d3f107e38590d50a5553dcc23f71c672307ff929c98fff24c08f",
+  "after_sha256": "3881cf0fd3d6deb5f7bf8208cb4675dff683855b95fe975473ce9b48d60e9441",
+  "edits": [
+    {
+      "before": "mod selected_family;",
+      "after": "#[path = \"paid/selected_family.rs\"]\nmod selected_family;"
+    },
+    {
+      "before": "mod selected_control;",
+      "after": "#[path = \"paid/selected_control.rs\"]\nmod selected_control;"
+    }
+  ],
+  "bodies_changed": false,
+  "roles_minted": false
+}

@@ -452,6 +452,8 @@ fn paid_stage_moves_keep_each_report_with_its_original_ledger_without_pairing_ar
     assert_eq!(allocations.allocated, allocations.freed);
 }
 
+#[path = "paid/selected_family.rs"]
 mod selected_family;
 
+#[path = "paid/selected_control.rs"]
 mod selected_control;
