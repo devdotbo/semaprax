@@ -32,6 +32,7 @@ fn legacy(error: expression_facts::errors::EngineError, function: &ResolvedFunct
 #[test]
 fn scalar_selected_schema_keeps_complete_original_schema_and_whole_owner() {
     let program = program();
+    let source = primitive_fixture::Context::new(&program);
     for function in &program.functions {
         if !function.id.as_str().starts_with("family.")
             || !crate::hir::is_scalar_resolved_type(&function.return_type)
@@ -39,8 +40,8 @@ fn scalar_selected_schema_keeps_complete_original_schema_and_whole_owner() {
             continue;
         }
         let mut original = ReplayBudget::with_physical(function, usize::MAX).unwrap();
-        let old_schema = schema::selected_schema_with_index(&program, function, None).unwrap();
-        let selected = schema::selected_paid::selected(&program, function, &mut original)
+        let old_schema = schema::selected_schema_with_index(&source, function, None).unwrap();
+        let selected = schema::selected_paid::selected(&source, function, &mut original)
             .map_err(|e| legacy(e, function))
             .unwrap();
         assert_eq!(selected, old_schema);
@@ -49,7 +50,7 @@ fn scalar_selected_schema_keeps_complete_original_schema_and_whole_owner() {
                 let mut budget = ReplayBudget::with_physical(function, usize::MAX).unwrap();
                 let initial = budget.remaining;
                 let context =
-                    selected_context::Context::new_paid(&program, function, &mut budget, false)
+                    selected_context::Context::new_paid(&source, function, &mut budget, false)
                         .unwrap();
                 let result = if old {
                     paid_before::validate_paid_before(&context, function, &mut budget)
@@ -94,11 +95,12 @@ fn scalar_selected_schema_hostile_plan_keeps_old_refusal_precedence_and_all_fiel
         }
         // Mutate the actual held member before borrowing, rather than passing
         // an unheld clone that the unchanged owner check must reject first.
+        let source = primitive_fixture::Context::new(&program);
         let forged = &program.functions[index];
         let mut before = ReplayBudget::with_physical(forged, usize::MAX).unwrap();
         let mut after = ReplayBudget::with_physical(forged, usize::MAX).unwrap();
-        let a = selected_context::Context::new_paid(&program, forged, &mut before, false).unwrap();
-        let b = selected_context::Context::new_paid(&program, forged, &mut after, false).unwrap();
+        let a = selected_context::Context::new_paid(&source, forged, &mut before, false).unwrap();
+        let b = selected_context::Context::new_paid(&source, forged, &mut after, false).unwrap();
         let original = legacy(
             paid_before::validate_paid_before(&a, forged, &mut before).unwrap_err(),
             forged,
