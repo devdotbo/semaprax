@@ -316,6 +316,29 @@ impl ClassifierLedger {
             + 2 * size_of::<usize>()
             + 2 * size_of::<&Cell<bool>>()
             + 2 * size_of::<bool>();
+        // One reached record_refusal body, not the insertion owner's unrelated
+        // two-call bank: get/is_none precede the optional first sticky receipt.
+        type Receipt = Option<super::ReservationRefusal>;
+        type Site = Option<&'static std::panic::Location<'static>>;
+        type Stage = Option<super::ReservationStage>;
+        let first_refusal_get = 2 * size_of::<&Cell<Receipt>>() + size_of::<Receipt>();
+        let first_refusal_test = 2 * size_of::<&Receipt>() + size_of::<bool>();
+        // Location::caller output, Some(site) actual and Cell::set value formal,
+        // and that distinct set's actual/formal receiver loans.
+        let first_site = size_of::<&'static std::panic::Location<'static>>()
+            + 2 * size_of::<Site>()
+            + 2 * size_of::<&Cell<Site>>();
+        // remaining/floor get actual/formal receivers and returned usize values;
+        // stage get has its own actual/formal receiver and Option return.
+        let receipt_fields = 4 * size_of::<&Cell<usize>>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<Stage>>()
+            + size_of::<Stage>();
+        // Complete struct construction, Some(receipt) actual and set formal,
+        // plus the first_refusal.set actual/formal receiver loans.
+        let first_receipt = size_of::<super::ReservationRefusal>()
+            + 2 * size_of::<Receipt>()
+            + 2 * size_of::<&Cell<Receipt>>();
         // The empty-parent true and mismatch false are actual distinct literal
         // producers. Unit returns at record_refusal/Cell::set have zero width.
         let terminal_literals = 2 * size_of::<bool>();
@@ -328,6 +351,11 @@ impl ClassifierLedger {
             + pointer_test
             + successful
             + mismatch
+            + first_refusal_get
+            + first_refusal_test
+            + first_site
+            + receipt_fields
+            + first_receipt
             + terminal_literals
     };
 
