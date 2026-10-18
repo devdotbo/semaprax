@@ -183,6 +183,10 @@ pub(super) fn reject_unmarked_finish(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "explicit paid formals preserve the existing receiving ABI without an aggregate owner"
+)]
 pub(super) fn reserve(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -344,6 +348,10 @@ pub(super) fn reserve(
     Ok(())
 }
 
+#[allow(
+    clippy::too_many_arguments,
+    reason = "explicit paid formals preserve the existing receiving ABI without an aggregate owner"
+)]
 pub(super) fn renew(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -607,6 +615,10 @@ pub(super) fn validate_join_compatibility<'a>(
         existing,
         std::collections::btree_set::Range<'_, Box<PathState>>
     );
+    #[allow(
+        clippy::redundant_pattern_matching,
+        reason = "bare pattern preserves the paid Option receiving boundary without a method receiver"
+    )]
     while let Some(_) = dynamic_next!(
         budget,
         function,

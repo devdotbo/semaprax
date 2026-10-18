@@ -170,7 +170,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             let mut failure = Failure {
                                 error: None,
                                 function,
-                                budget: budget,
+                                budget,
                             };
                             let mut received = None;
                             let mut session = Session::new_prepaid(arena, function, budget);
@@ -399,10 +399,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 + Session::into_edge_query_bytes(),
                                             "retained expression-fact query result controls",
                                         )?;
-                                        #[allow(
-                                            clippy::redundant_pattern_matching,
-                                            reason = "bare pattern avoids a new Option method receiving boundary"
-                                        )]
                                         if !session.fact_edge_into_prepaid(
                                             expression,
                                             &mut received,
@@ -413,6 +409,10 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 .take()
                                                 .expect("edge query selected first error"));
                                         }
+                                        #[allow(
+                                            clippy::redundant_pattern_matching,
+                                            reason = "bare pattern avoids a new Option method receiving boundary"
+                                        )]
                                         if let None = received {
                                             return Err(replay_error(function,
                         format_args!("cleanup plan references unknown expression `{expression}`")));
