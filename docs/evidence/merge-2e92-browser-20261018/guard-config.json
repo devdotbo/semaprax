@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 22089,
-      "sha256": "5bece0186359c6198d7a9e74fd74134d434c5fd62a3c2208210f37a1b080f7da"
+      "length": 27456,
+      "sha256": "c5f1f2ef4ddb4090d8256a84f4df6365eb67a66bf89fd45a397afe64b2ad0978"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 42598,
@@ -365,8 +365,8 @@
       "sha256": "00262caa57f8a1eded7f93aeb18901f09a62f2abc2749a967d4c93e6ce392b4e"
     },
     "src/source_reflows_merge/main67107_inputs_tail.rs": {
-      "length": 59391,
-      "sha256": "00121e0ed4e0a3cce18d33f63777b7012a99b8f8b1b20abf3095bfd53750792d"
+      "length": 59527,
+      "sha256": "efafdf720cc69602a40bd107508b2e959a88152aea399b6cc60402c935bec965"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs": {
       "length": 30973,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 56165,
-      "sha256": "b5769574d938f217f0b100937107a1314059f8fccddd05473be75a2972c449ae"
+      "length": 56466,
+      "sha256": "9eae8a79489d5415ae7df93e2ac7d213ec0125e60f27ffdbce31416dfb895494"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -797,27 +797,27 @@
       "sha256": "01bf8c0e7937199a7d4cef58a469bd3406eb0e3ec2c6825bfbbe407f6bc9d886"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
-      "length": 4568,
-      "sha256": "ffb43c47fdb3be64999d5b19535e6d35d687d27dfad14795470f20abe7b6673c"
+      "length": 6683,
+      "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 132747,
-      "sha256": "4862202704efc88f399012e0300519ca4e52bface85985bc0bce8911ac023abb",
+      "length": 132818,
+      "sha256": "1979fee7b741fe878f2b9f058e1fbc694b1613b398b92158dbb8f62d3c36ec9e",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 149498,
-      "sha256": "d12e98f75f7c8f6434f8a4dc498d98a7330efa18ed7fa40c9ada1efced0c55ed",
+      "length": 149572,
+      "sha256": "ae18963ff5d65298c3b35b49f25b4a5d47c18fbd96336950d8b87a991ed6ac28",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 190635,
-      "sha256": "1a495ee93e288f78591806cae2a7285500849d396423f4174510e2752daba4bd",
+      "length": 190718,
+      "sha256": "4b5051d3f129786f11712001fcedd0332adbf190b2e52d9aac99b18cfe9392f8",
       "base": "../../../../../"
     }
   },
@@ -840,8 +840,8 @@
   },
   "workspace_owner": {
     "path": "tests/workspace/semantic_graph.rs",
-    "length": 57423,
-    "sha256": "b4d8c484c115ff71427e873d8b97470048b85106f7d54043299cb00b0e987f6d"
+    "length": 57556,
+    "sha256": "199b49885168f659daaf1759593b72392aa83621f6340796a83f97ec397de96d"
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
@@ -3866,7 +3866,8 @@
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
-    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+    "src/source_reflows_merge/runtime_json/sealed_io.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

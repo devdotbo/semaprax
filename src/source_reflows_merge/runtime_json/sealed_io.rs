@@ -26,7 +26,10 @@ pub(super) fn digest(bytes: &[u8]) -> [u8; 32] {
 // Fixed repository payloads use the same sealed one-handle reader. Their
 // complete immutable bytes remain required at test runtime; no global cache.
 #[derive(Clone, Copy)]
-#[allow(dead_code, reason = "Both fixed historical and ordinary-plan descriptors stay complete when the workspace harness uses only the latter.")]
+#[allow(
+    dead_code,
+    reason = "Both fixed historical and ordinary-plan descriptors stay complete when the workspace harness uses only the latter."
+)]
 pub(crate) enum AdditionalFixture {
     HistoricalCompact7,
     HistoricalReceivers12,

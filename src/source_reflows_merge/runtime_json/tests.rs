@@ -32,7 +32,7 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
     assert_eq!(
         super::super::main_e177_final_inputs::value_direct(
             "src/source_reflows_merge/runtime_json/sealed_io.rs",
-            "ade0fceb0ac08cee97176dc91519030b0cd6509cf7669cd1a2c8c761cca18931",
+            "bef85d126a5ce9c72f6f74835d9966d60d7b9bff6622302d4df864adf1701fd0",
             shared,
         ),
         shared,
