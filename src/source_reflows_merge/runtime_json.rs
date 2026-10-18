@@ -223,7 +223,7 @@ pub(crate) fn receiver_fixture(fixture: ReceiverFixture) -> String {
 // The original selected-call assertion audits its own complete source. Restore
 // exactly the two transport edits before applying its unchanged original inverse.
 pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {
-    // These eleven exact entry images belong to the unchanged SelectedCalls
+    // These fourteen exact entry images belong to the unchanged SelectedCalls
     // inverse packet. Acquire them only after current physical/compiled/archive
     // authentication; the original self-transport inverse below stays intact.
     let expected = match source {
@@ -235,6 +235,9 @@ pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> Str
         "src/cleanup_plan/replay/semantic_refusal.rs" => Some("fc1a6f41a225e0936ede78ff9923eb0eea1e93ce5c8e37fbde9709e6ee78c823"),
         "src/cleanup_plan/replay/semantic_refusal/tests.rs" => Some("aca69e92356ddfb4d7bbb774ca647a981cf86d402d9b0dff71108adef777b1ad"),
         "src/cleanup_plan/replay/structural_control.rs" => Some("84c9d537b31a2f24e0f4c977ea0341bf4a4a6a738c299f5e7e35976a4946a037"),
+        "src/cleanup_plan/replay/structural_control/blocks.rs" => Some("be348bfc7e713d79dccb11d6022a7371a3419390703aac7e667ae613f591b725"),
+        "src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs" => Some("93a5af9fc855967b0fd48573c0dd7ff8075ef63cda3ab8e9a28787d6be47ea04"),
+        "src/cleanup_plan/replay/structural_control/calls/custody_tests.rs" => Some("55245329e3a803f31cbdf5488c4068934f1b74ac03cfca84bbf5eb6d93f53dc7"),
         "src/cleanup_plan/replay/structural_control/calls.rs" => Some("17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000"),
         "tests/hir_module_boundaries.rs" => Some("055a8f7ddd8b9f5b2d12122154de053a0a6823b75c298580cd4770628c4e8851"),
         "tests/workspace/semantic_graph/source_inventory.rs" => Some("4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14"),
@@ -255,6 +258,13 @@ pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> Str
     if source != "src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs" {
         return current.to_owned();
     }
+    assert_eq!(current.len(), 7873);
+    assert_eq!(digest(current.as_bytes()), [22, 25, 246, 163, 6, 93, 58, 87, 222, 52, 59, 43, 203, 215, 114, 78, 99, 244, 200, 168, 70, 222, 252, 141, 0, 68, 117, 28, 248, 37, 90, 5]);
+    assert_eq!(current.matches("        crate::source_reflows_merge::receiver_fixture_source_before(\n            \"src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs\",\n            include_str!(\"../../blocks_before_receipt.rs\"),\n        ).replacen(").count(), 1);
+    let prior = current.replacen("        crate::source_reflows_merge::receiver_fixture_source_before(\n            \"src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs\",\n            include_str!(\"../../blocks_before_receipt.rs\"),\n        ).replacen(", "        include_str!(\"../../blocks_before_receipt.rs\").replacen(", 1);
+    assert_eq!(prior.len(), 7706);
+    assert_eq!(digest(prior.as_bytes()), [131, 224, 221, 224, 214, 14, 199, 238, 82, 83, 218, 38, 95, 37, 112, 115, 28, 115, 130, 137, 146, 83, 41, 253, 48, 76, 196, 9, 53, 64, 39, 52]);
+    let current = prior.as_str();
     let mut before = current.to_owned();
     assert_eq!(before.matches("    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,\n        ))\n        .unwrap();").count(), 1, "exact runtime fixture transport edit");
     before = before.replacen("    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,\n        ))\n        .unwrap();", "    let rows: serde_json::Value = serde_json::from_str(include_str!(\n        \"../../../../../../docs/evidence/selected-call-refusal-781/exact-source-inverses.json\"\n    ))\n    .unwrap();", 1);

@@ -133,7 +133,10 @@ fn every_call_receiver_source_and_complete_before_body_remains_bound() {
         )
     );
     assert_eq!(
-        include_str!("../../blocks_before_receipt.rs").replacen(
+        crate::source_reflows_merge::receiver_fixture_source_before(
+            "src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs",
+            include_str!("../../blocks_before_receipt.rs"),
+        ).replacen(
             "use super::*;\nuse super::calls_before_receipt as calls;",
             "use super::*;",
             1
