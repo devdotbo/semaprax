@@ -342,6 +342,110 @@ fn actual_target_layout_and_vector_cost_equations_are_reported_without_a_guessed
     assert!(align_of::<DeclarationId>() <= align_of::<before::DeclarationId>());
     assert!(size_of::<Option<DeclarationId>>() <= size_of::<Option<before::DeclarationId>>());
     eprintln!("OPT891 actual_target_layout old={} current={} old_option={} current_option={} compiler_tag={}",size_of::<before::DeclarationId>(),size_of::<DeclarationId>(),size_of::<Option<before::DeclarationId>>(),size_of::<Option<DeclarationId>>(),size_of::<CompilerDeclaration>());
+    // These are compiled Rust object layouts, not a calling-convention or CPU
+    // measurement. Only the complete old ID has an old compiled counterpart;
+    // no old aggregate layout is reconstructed from a changed ID field width.
+    for (role, bytes, alignment) in [
+        (
+            "old.DeclarationId",
+            size_of::<before::DeclarationId>(),
+            align_of::<before::DeclarationId>(),
+        ),
+        (
+            "current.DeclarationId",
+            size_of::<DeclarationId>(),
+            align_of::<DeclarationId>(),
+        ),
+        (
+            "old.Option<DeclarationId>",
+            size_of::<Option<before::DeclarationId>>(),
+            align_of::<Option<before::DeclarationId>>(),
+        ),
+        (
+            "current.Option<DeclarationId>",
+            size_of::<Option<DeclarationId>>(),
+            align_of::<Option<DeclarationId>>(),
+        ),
+        (
+            "old.&DeclarationId",
+            size_of::<&before::DeclarationId>(),
+            align_of::<&before::DeclarationId>(),
+        ),
+        (
+            "current.&DeclarationId",
+            size_of::<&DeclarationId>(),
+            align_of::<&DeclarationId>(),
+        ),
+        (
+            "old.Option<&DeclarationId>",
+            size_of::<Option<&before::DeclarationId>>(),
+            align_of::<Option<&before::DeclarationId>>(),
+        ),
+        (
+            "current.Option<&DeclarationId>",
+            size_of::<Option<&DeclarationId>>(),
+            align_of::<Option<&DeclarationId>>(),
+        ),
+        (
+            "old.Vec<DeclarationId>",
+            size_of::<Vec<before::DeclarationId>>(),
+            align_of::<Vec<before::DeclarationId>>(),
+        ),
+        (
+            "current.Vec<DeclarationId>",
+            size_of::<Vec<DeclarationId>>(),
+            align_of::<Vec<DeclarationId>>(),
+        ),
+        (
+            "current.DeclarationText",
+            size_of::<super::DeclarationText>(),
+            align_of::<super::DeclarationText>(),
+        ),
+        (
+            "current.CompilerDeclaration",
+            size_of::<CompilerDeclaration>(),
+            align_of::<CompilerDeclaration>(),
+        ),
+        (
+            "current.Arc<str>",
+            size_of::<std::sync::Arc<str>>(),
+            align_of::<std::sync::Arc<str>>(),
+        ),
+        ("current.&str", size_of::<&str>(), align_of::<&str>()),
+        ("current.String", size_of::<String>(), align_of::<String>()),
+        (
+            "current.ast.ExprKind",
+            size_of::<crate::ast::ExprKind>(),
+            align_of::<crate::ast::ExprKind>(),
+        ),
+        (
+            "current.hir.ResolvedExprKind",
+            size_of::<crate::hir::ResolvedExprKind>(),
+            align_of::<crate::hir::ResolvedExprKind>(),
+        ),
+        (
+            "current.hir.ResolvedExpr",
+            size_of::<crate::hir::ResolvedExpr>(),
+            align_of::<crate::hir::ResolvedExpr>(),
+        ),
+        (
+            "current.hir.ResolvedType",
+            size_of::<crate::hir::ResolvedType>(),
+            align_of::<crate::hir::ResolvedType>(),
+        ),
+        (
+            "current.cleanup_plan.CleanupSlot",
+            size_of::<crate::cleanup_plan::CleanupSlot>(),
+            align_of::<crate::cleanup_plan::CleanupSlot>(),
+        ),
+        (
+            "current.cleanup_plan.CleanupPlace",
+            size_of::<crate::cleanup_plan::CleanupPlace>(),
+            align_of::<crate::cleanup_plan::CleanupPlace>(),
+        ),
+    ] {
+        eprintln!("OPT891 actual_compiled_layout role={role} bytes={bytes} alignment={alignment}");
+    }
     let old = before::DeclarationId::new("shared-vector-key");
     let current = DeclarationId::new("shared-vector-key");
     for count in [0, 1, 64, 1024] {
