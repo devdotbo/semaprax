@@ -158,8 +158,36 @@ def expand_old519_indices(before, policy, page):
  assert all('old519_index' not in row and 'old519' not in row for row in result['additions'])
  return expand_fragment_refs(before,policy,result)
 
+V7_SCHEMA = 'semaprax.finite-source-overlay-page.v7'
+def expand_canonical_indices(before, policy, page):
+ assert page['schema']==V7_SCHEMA and len(before['rows'])==519
+ # The same authenticated predecessor and closed additions determine every index.
+ assert H(canonical(before))==policy['predecessor']['logical_sha256']
+ sources=[r['source'] for r in before['rows']]+[r['source'] for r in page['additions']]
+ assert len(set(sources))==len(sources), 'v7 duplicate canonical source'
+ result=copy.deepcopy(page); result['schema']=V6_SCHEMA
+ for group in ('replacements','additions'):
+  for row in result[group]:
+   if 'old519_index' in row:
+    reference=row['old519_index']
+    assert keys(row,('old519_index',)) and type(reference) is list and len(reference)==4
+    index=reference[0]; assert type(index) is int and 0<=index<519
+    parent=sources[index]; fragments=reference[3]
+   else:parent=row['source']; fragments=row.get('fragments')
+   if fragments is None:continue
+   assert type(fragments) is list
+   for fragment in fragments:
+    if 'canonical_source' not in fragment:continue
+    value=fragment['canonical_source']
+    if type(value) is str:continue
+    assert parent in V3_ROOTS and keys(fragment,('canonical_source',))
+    assert type(value) is int and 519<=value<len(sources), 'v7 canonical addition index'
+    fragment['canonical_source']=sources[value]
+ return expand_old519_indices(before,policy,result)
+
 def compose_values(before, policy, page):
- if page['schema']==V6_SCHEMA:page=expand_old519_indices(before,policy,page)
+ if page['schema']==V7_SCHEMA:page=expand_canonical_indices(before,policy,page)
+ elif page['schema']==V6_SCHEMA:page=expand_old519_indices(before,policy,page)
  elif page['schema']==V5_SCHEMA:page=expand_extra519_refs(before,policy,page)
  elif page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
  elif page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
