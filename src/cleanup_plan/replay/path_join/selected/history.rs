@@ -53,12 +53,15 @@ pub(super) fn new(
         "selected renewal constructor formal and epoch vector receiving",
         ()
     );
-    let mut epochs = if protected.is_some() {
+    // Pattern dispatch inspects the persistent Option without a new method call.
+    #[allow(clippy::redundant_pattern_matching)]
+    let mut epochs = if let Some(_) = protected {
         Vec::with_capacity(history.len())
     } else {
         Vec::new()
     };
-    if protected.is_some() {
+    #[allow(clippy::redundant_pattern_matching)]
+    if let Some(_) = protected {
         receive!(
             budget,
             function,

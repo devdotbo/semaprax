@@ -73,7 +73,9 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
             receiving::CancelEntriesNext<'_>,
             3
         ) {
-            if receive!(
+            // Inspect the existing lookup result directly; no Option method ABI.
+            #[allow(clippy::redundant_pattern_matching)]
+            if let Some(_) = receive!(
                 budget,
                 function,
                 (
@@ -86,9 +88,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                 selected_renewals!(budget, function, program)
                     .expect("held selected renewal lease")
                     .get(assignment)
-            )
-            .is_some()
-            {
+            ) {
                 return Err(path_error!(
                     permit,
                     Reason::Finite(Kind::OwningBreakConditionalStepHasUnexpectedRenewalAuthority,)
