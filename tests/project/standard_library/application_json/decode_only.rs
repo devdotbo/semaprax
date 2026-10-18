@@ -305,8 +305,12 @@ fn backend_parity(utf8: bool) {
         std::fs::write(root.join("src/schema.spx"), generated).unwrap();
         std::fs::write(root.join("src/app.spx"), canonical(&app(utf8))).unwrap();
         let used = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
-            let options = project::ProjectExecutionOptions::new(16 * 1024 * 1024, 160_000_000)
-                .map_err(|e| vec![e])?;
+            let options = if utf8 {
+                project::ProjectExecutionOptions::new(16 * 1024 * 1024, 160_000_000)
+                    .map_err(|e| vec![e])?
+            } else {
+                project::ProjectExecutionOptions::default()
+            };
             let execution = snapshot.execute_entry(&options)?;
             assert_eq!(
                 execution.outcome(),
