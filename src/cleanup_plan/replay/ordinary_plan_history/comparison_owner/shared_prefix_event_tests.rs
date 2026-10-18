@@ -214,8 +214,15 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
         assert_eq!(bytes("ordinary plan certified numeric run publication"),
             current.row.shared_publishes * certified_heads::RUN_PUBLISH);
         assert_eq!(current.row.identity_bodies, 0);
-        assert!(current.row.shared_turns >= current.row.identity_observations);
-        if current.row.shared_turns > current.row.identity_observations {
+        // Each published run has one paid terminal turn after its last
+        // observation. Only an additional turn can identify a work-refused body.
+        let completed_turns = current.row.identity_observations + current.row.shared_publishes;
+        assert!(current.row.shared_turns >= completed_turns);
+        if current.row.complete {
+            assert_eq!(current.row.shared_turns, completed_turns);
+            assert_eq!(current.row.shared_runs, current.row.shared_publishes);
+        }
+        if current.row.shared_turns > completed_turns {
             assert!(!current.row.complete && current.observed.0 .0.result.is_err());
             partial_body = true;
         }
