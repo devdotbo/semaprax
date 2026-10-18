@@ -126,3 +126,24 @@ owners. Runtime qualification is still pending; neither this candidate nor its
 typed finite receipt grants source, replay or report authority. Unmigrated
 internal Session semantic Diagnostic descendants remain explicit unpaid
 production residuals. Named external compatibility exclusions are unchanged.
+
+
+### Selected structural-control child candidate (#781, unqualified)
+
+The subsequent selected structural-control source batch keeps the same acquired
+report carrier and affine ledger through the actual paid Session unknown-entry
+refusal. Semantic details stay in a typed finite/shared-ID receipt; publishing
+that receipt must retain the original Diagnostic slot, fixed text backing and
+source identity pointer without allocating. An already failed Session refuses a
+second validation, and a separately prepaid later receipt cannot replace the
+first. Full legacy diagnostics are observed outside this paid publication cut
+and compared against complete immediate original owners, including all six
+fields and first-refusal order. The owner selector is
+`selected_entry::tests::paid::selected_control`.
+
+These controls and their structural-family controls are source-only and unrun.
+They do not grant AuthSourceBorrow, source authentication, replay permission or
+new report authority; existing authority controls remain unchanged. Remaining
+lexical-HIR/certificate, path-state/transition and factored semantic descendants
+retain their explicit unpaid production status. No claim of complete #781
+closure, current-head executable support or measured improvement is made.

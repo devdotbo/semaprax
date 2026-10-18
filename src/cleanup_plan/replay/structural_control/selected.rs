@@ -16,3 +16,6 @@ pub(in crate::cleanup_plan::replay) use cfg::validate_reachable_acyclic_cfg;
 pub(in crate::cleanup_plan::replay) use entry::validate_entry;
 pub(in crate::cleanup_plan::replay) use exits::validate_exits;
 pub(in crate::cleanup_plan::replay) use status::validate_core as validate_status;
+
+#[cfg(test)]
+mod tests;

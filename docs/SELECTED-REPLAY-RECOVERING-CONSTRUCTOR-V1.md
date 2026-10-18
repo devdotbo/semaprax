@@ -884,3 +884,59 @@ still include original semantic Diagnostic producers. They remain explicit
 unpaid production residuals, rather than being reclassified as allocating
 legacy compatibility. The outward named Legacy APIs retain their existing,
 separate compatibility classification.
+
+
+### Selected structural-control receiving candidate (#781, unqualified)
+
+The next source-only batch extends the admitted paid scalar and lexical
+Session family through status metadata, entry places, block/edge/terminator
+validation, exact call transfer children, staged Copy target checks, selected
+same-owner renewal binding, ordered finalizers, exit-region chains and CFG.
+The original general APIs remain complete. Test-only immediate pre-control
+scalar and lexical drivers retain every original child route; they never call
+the new selected structural twin. No admission profile, quota, tariff or cap
+changes, and no source or proof authority is added.
+
+Each new child has a typed lexical caller argument/result admission before the
+call forms its arguments, followed by its separate actual callee roles. Finite
+semantic refusals carry a closed reason; unknown expression/status operands
+retain shared immutable identities, with rendering only at named legacy
+observation. The twelve-field control bank separately pays the dynamic clone
+receiver/result, terminal body-ID clone receiver/result, two moved Reason roles,
+Permit/function arguments, Atom, Receipt, Error and permit Result. The retained
+old eleven-field acquire bank is unchanged. Full permit work is
+`3 + 12 + 3 + 11 = 29`, before actual local/caller and original operation work.
+All physical layouts use actual Rust types, including ID layouts, padding,
+Results, Option, iterators, cursor and owned headers; no old-fee credit is used.
+
+Pure signature queries expand inline with typed match/query roles, including
+actual double-reference pattern bindings. Their explicit Some matches preserve
+parameter lookup before ownership classification and avoid adding closure
+captures. Original cursor/backing/tree/vector/type/probe payments remain. The
+scalar empty return-operand set is separately present in its caller frame;
+test-only optional borrowed scratch carriers and the borrowed status formal
+also have their own actual typed roles. These additions are costs, not a source
+claim of byte, work, fit or performance improvement.
+
+The existing owning harnesses add selectors under
+`structural_control::selected::tests` and
+`selected_entry::tests::paid::selected_control`. Controls compare all six
+Diagnostic fields and original first refusal against complete immediate-old
+owners; ordinary whole replay remains an independent control. Genuine held
+primitive and retained nominal fixtures cover success, unknown entry,
+profile/schema precedence, block/edge/branch/exit corruption, call transfers,
+dynamic IDs, renewal, staged targets, finalizers and CFG. Exact/one-short and
+zero work controls derive the entry floor from independent literal typed frames;
+there the added work is `5 + 9 + 3 + 12 + 3 + 11 = 43`. Real Session refusal
+checks original report/text/source/ledger pointers, sticky first error,
+allocation-free publication and complete Drop. These controls are authored but
+unrun; the candidate has not been built or runtime qualified.
+
+This is still not complete #781 closure. The selected lexical route next calls
+`lexical_hir::collect` and existing lexical-certificate descendants; both selected
+routes subsequently call path-state/transition and factored comparisons. Their
+remaining internal semantic Diagnostic producers are explicit unpaid production
+residuals, not newly invented legacy exclusions. A whole scalar duplicate-live
+Initialize witness is authored to isolate the existing path transition boundary
+after this family; it remains unverified until owning runtime qualification.
+External named allocating compatibility APIs retain their original scope.
