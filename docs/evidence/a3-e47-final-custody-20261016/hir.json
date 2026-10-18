@@ -5379,8 +5379,8 @@
       "sha256": "d01121cc328a636f5561d32e295cdeea232c53ec43d9cd42e3100ff96391d287"
     },
     "src/project/json_codec.rs": {
-      "length": 13438,
-      "sha256": "8f8808f56e3ee15c1311d17a8aa832b7fcc7baf48143010d46547036528bf410"
+      "length": 13604,
+      "sha256": "ee6195e9d264d5f9130b6d67c32abd1605d82e5fb07391cd4463eb45375ba919"
     },
     "src/project/json_codec/retained_receipt.rs": {
       "length": 7005,
@@ -5587,8 +5587,8 @@
       "sha256": "156b25619d771da6e55dbde9936222e399c518c2f454426cff8d484077a1ec6c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 40055,
-      "sha256": "a973fa5e2df3ab392de00c768a944f5fd97e3235cf05196a6362215679ce9975"
+      "length": 40116,
+      "sha256": "43695c31e54b44dd604b4431e0f7216b20957b58a26744c66937661364263f7e"
     },
     "src/source_reflows_merge/main_eb2_inputs.rs": {
       "length": 7598,

@@ -9,6 +9,7 @@ const PAGE_CAP: usize = 262144;
 const REPLACEMENTS: &[&str] = &[
     "CHANGELOG.md",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "docs/ARCHITECTURE.md",
     "src/cleanup_plan/replay.rs",
     "src/cleanup_plan/replay/branch_clone/direct.rs",
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
@@ -33,6 +34,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
+    "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
@@ -91,8 +93,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 14985; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "2c08cccdec7cf2db88c1caca9f1f7914853e262360bb0458dc44ca2d799a3f27";
+const POLICY_LENGTH: usize = 15036; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "a4dc85e7ed0e478b972a79b9672be4902a0894dc633f7922e0d97bb7f261ee5d";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
