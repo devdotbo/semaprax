@@ -533,7 +533,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     crate::workflow_profile::plan_comparison::Site::Round,
                                     0,
                                 );
-                                continue;
+                                continue 'paired;
                             }
                             break 'paired;
                         }
