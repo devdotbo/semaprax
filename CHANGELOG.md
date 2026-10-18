@@ -1,3 +1,4 @@
+- Fix test source restoration so a rejected input cannot poison the shared cache or cascade into unrelated source-audit failures.
 - Avoid the recursive type-copy census cursor for one- and two-leaf nominal metadata. Pay the exact argument-vector backing before cloning; retain sticky refusal and the complete recursive, callable, wide-type and depth-bound fallback.
 - Factor decimal loop decisions into scalar helpers and stop comparison at the first unequal digit so the complete ordinary project fits its unchanged graph budget. Preserve all eight supported APIs, every original contract and conformance case; add lazy-admission, early-difference and exhausted-cursor regressions.
 - Refresh both browser graph known answers from the actual 4872530969 Linux compiler capture after fused fallback pricing. Preserve every input, revision, assertion and non-budget graph byte; retain the original graph and source limits.

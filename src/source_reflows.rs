@@ -124,19 +124,66 @@ pub(crate) fn source(
     if record.is_none() && !semantic_receivers::contains(&path) {
         return current;
     }
-    let mut cache = CACHE.get_or_init(Mutex::default).lock().unwrap();
-    cache.entry((caller, included)).or_insert_with(|| {
-        let predecessor = semantic_receivers::predecessor(&path, current);
-        let current = predecessor.as_deref().unwrap_or(current);
-        // One bounded fixture allocation per included file, retained only for
-        // this test process. This helper is absent from production builds.
-        let restored = match record {
-            Some(record) if predecessor.is_some() => restore_formatting(record, current),
-            Some(record) => restore(record, current),
-            None => predecessor.unwrap(),
-        };
-        Box::leak(restored.into_boxed_str())
-    })
+    cached_source(
+        CACHE.get_or_init(Mutex::default),
+        (caller, included),
+        || {
+            let predecessor = semantic_receivers::predecessor(&path, current);
+            let current = predecessor.as_deref().unwrap_or(current);
+            // One bounded fixture allocation per included file, retained only for
+            // this test process. This helper is absent from production builds.
+            match record {
+                Some(record) if predecessor.is_some() => restore_formatting(record, current),
+                Some(record) => restore(record, current),
+                None => predecessor.unwrap(),
+            }
+        },
+    )
+}
+
+// Restore complete source bytes before taking the publication lock. A failed
+// authentication must leave both the cache and its mutex unchanged. Concurrent
+// misses may independently restore a value; only the winning insertion leaks
+// its immutable result, and the other complete String is dropped normally.
+fn cached_source(
+    cache: &Mutex<Cache>,
+    key: (&'static str, &'static str),
+    restore: impl FnOnce() -> String,
+) -> &'static str {
+    if let Some(value) = cache.lock().unwrap().get(&key).copied() {
+        return value;
+    }
+    let restored = restore();
+    cache
+        .lock()
+        .unwrap()
+        .entry(key)
+        .or_insert_with(|| Box::leak(restored.into_boxed_str()))
+}
+
+#[test]
+fn rejected_source_restoration_does_not_poison_or_populate_the_cache() {
+    let cache = Mutex::new(Cache::new());
+    let key = ("caller.rs", "included.rs");
+    let rejected = std::panic::catch_unwind(|| {
+        cached_source(&cache, key, || panic!("source authentication refused"));
+    });
+    assert!(rejected.is_err());
+    assert!(!cache.is_poisoned());
+    assert!(cache.lock().unwrap().is_empty());
+    let expected = "complete authenticated predecessor";
+    let value = cached_source(&cache, key, || {
+        assert!(
+            cache.try_lock().is_ok(),
+            "restoration must run outside the cache lock"
+        );
+        expected.to_owned()
+    });
+    assert_eq!(value, expected);
+    assert_eq!(cache.lock().unwrap().len(), 1);
+    let hit = cached_source(&cache, key, || panic!("a cache hit must not restore"));
+    assert!(std::ptr::eq(value, hit));
+    assert!(!cache.is_poisoned());
 }
 
 #[test]

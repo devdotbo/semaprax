@@ -1,0 +1,28 @@
+[
+  {
+    "source": "src/source_reflows.rs",
+    "before": {
+      "length": 10048,
+      "sha256": "2ee7d81a26b2da2e3d43baf06d2185eff6b01d727ae1552238d516bf33c3ef60",
+      "archive": "docs/evidence/cache-unwind-796-20261019/whole/2ee7d81a26b2da2e3d43baf06d2185eff6b01d727ae1552238d516bf33c3ef60.txt"
+    },
+    "current": {
+      "length": 11646,
+      "sha256": "b96c28c7547de7fa7d2096348278e16000c7e8e47324e066ad0ed620b9ee92e9",
+      "archive": "docs/evidence/cache-unwind-796-20261019/whole/b96c28c7547de7fa7d2096348278e16000c7e8e47324e066ad0ed620b9ee92e9.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 581603,
+      "sha256": "c4157e5afcfbde0487898a760d1f16ae3f28b1c2f1fd8e6ffb4e06b01555f2e9",
+      "archive": "docs/evidence/cache-unwind-796-20261019/whole/c4157e5afcfbde0487898a760d1f16ae3f28b1c2f1fd8e6ffb4e06b01555f2e9.txt"
+    },
+    "current": {
+      "length": 581733,
+      "sha256": "3d4484a74a1d3d16574ce7de2fd9b6a537b5a511191e9101b1547dd063f28e31",
+      "archive": "docs/evidence/cache-unwind-796-20261019/whole/3d4484a74a1d3d16574ce7de2fd9b6a537b5a511191e9101b1547dd063f28e31.txt"
+    }
+  }
+]

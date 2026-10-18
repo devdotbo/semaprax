@@ -1,0 +1,24 @@
+pub(crate) fn source(
+    caller: &'static str,
+    included: &'static str,
+    current: &'static str,
+) -> &'static str {
+    let path = logical_path(caller, included);
+    let record = records().iter().find(|record| record["path"] == path);
+    if record.is_none() && !semantic_receivers::contains(&path) {
+        return current;
+    }
+    let mut cache = CACHE.get_or_init(Mutex::default).lock().unwrap();
+    cache.entry((caller, included)).or_insert_with(|| {
+        let predecessor = semantic_receivers::predecessor(&path, current);
+        let current = predecessor.as_deref().unwrap_or(current);
+        // One bounded fixture allocation per included file, retained only for
+        // this test process. This helper is absent from production builds.
+        let restored = match record {
+            Some(record) if predecessor.is_some() => restore_formatting(record, current),
+            Some(record) => restore(record, current),
+            None => predecessor.unwrap(),
+        };
+        Box::leak(restored.into_boxed_str())
+    })
+}

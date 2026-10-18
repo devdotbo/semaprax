@@ -1,0 +1,12 @@
+{
+  "base_head": "79640d4725b61dc1cb3527b74f110dbe4390282c",
+  "changed_sources": [
+    "src/source_reflows.rs",
+    "CHANGELOG.md"
+  ],
+  "all_original_runtime_tests_and_assertions_preserved": true,
+  "full_original_before_source_recovered_by_one_exact_complete_entry_replacement": true,
+  "new_runtime_cases_added": 1,
+  "all_ceilings_and_floors_unchanged": true,
+  "original_full_CI_still_required": true
+}

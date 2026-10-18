@@ -1,0 +1,6 @@
+{
+  "acquisition_only_rebound_to_current_exact_guard": true,
+  "before": "helper_raw=bounded(helper,11549,'461dace9b656c42a05c15effc4d529017a7e12619268f518659b08a54787eae4')",
+  "after": "helper_raw=bounded(helper,11549,'281fae500bbef3cc3cf84277fc209ea4fc8bb5955ae34d8b94c01de7fa319951')",
+  "all_original_hostile_predicates_retained": true
+}
