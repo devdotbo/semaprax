@@ -804,20 +804,20 @@
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 131602,
-      "sha256": "bead460b4bd510b260bd6759a235dcecffb9d1e183d463e7d54cd02e324740a1",
+      "length": 132747,
+      "sha256": "4862202704efc88f399012e0300519ca4e52bface85985bc0bce8911ac023abb",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 148320,
-      "sha256": "13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d",
+      "length": 149498,
+      "sha256": "d12e98f75f7c8f6434f8a4dc498d98a7330efa18ed7fa40c9ada1efced0c55ed",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 189358,
-      "sha256": "583a7311433f3fa96d3807dd09659230f528e82c89ed9c04e06a83e2a23a8471",
+      "length": 190635,
+      "sha256": "1a495ee93e288f78591806cae2a7285500849d396423f4174510e2752daba4bd",
       "base": "../../../../../"
     }
   },
