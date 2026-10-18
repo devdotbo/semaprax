@@ -80,28 +80,30 @@ fn scalar_selected_schema_keeps_complete_original_schema_and_whole_owner() {
 }
 #[test]
 fn scalar_selected_schema_hostile_plan_keeps_old_refusal_precedence_and_all_fields() {
-    let program = program();
-    let function = program
-        .functions
-        .iter()
-        .find(|f| f.id.as_str() == "family.main")
-        .unwrap();
     for case in 0..2 {
-        let mut forged = function.clone();
+        let mut program = program();
+        let index = program
+            .functions
+            .iter()
+            .position(|f| f.id.as_str() == "family.main")
+            .unwrap();
         if case == 0 {
-            forged.cleanup_plan.schema = "hostile.schema".into();
+            program.functions[index].cleanup_plan.schema = "hostile.schema";
         } else {
-            forged.loan_plan.schema = "hostile.loan".into();
+            program.functions[index].loan_plan.schema = "hostile.loan";
         }
-        let mut before = ReplayBudget::with_physical(&forged, usize::MAX).unwrap();
-        let mut after = ReplayBudget::with_physical(&forged, usize::MAX).unwrap();
-        let a = selected_context::Context::new_paid(&program, &forged, &mut before, false).unwrap();
-        let b = selected_context::Context::new_paid(&program, &forged, &mut after, false).unwrap();
+        // Mutate the actual held member before borrowing, rather than passing
+        // an unheld clone that the unchanged owner check must reject first.
+        let forged = &program.functions[index];
+        let mut before = ReplayBudget::with_physical(forged, usize::MAX).unwrap();
+        let mut after = ReplayBudget::with_physical(forged, usize::MAX).unwrap();
+        let a = selected_context::Context::new_paid(&program, forged, &mut before, false).unwrap();
+        let b = selected_context::Context::new_paid(&program, forged, &mut after, false).unwrap();
         let original = legacy(
-            paid_before::validate_paid_before(&a, &forged, &mut before).unwrap_err(),
-            &forged,
+            paid_before::validate_paid_before(&a, forged, &mut before).unwrap_err(),
+            forged,
         );
-        let current = legacy(validate_paid(&b, &forged, &mut after).unwrap_err(), &forged);
+        let current = legacy(validate_paid(&b, forged, &mut after).unwrap_err(), forged);
         assert_eq!(current, original, "first complete refusal case {case}");
     }
 }
