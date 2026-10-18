@@ -1,0 +1,32 @@
+
+running 1 test
+test hir::ids::declaration_tag::actual_target_layout_and_vector_cost_equations_are_reported_without_a_guessed_width ... OPT891 actual_target_layout old=24 current=16 old_option=24 current_option=24 compiler_tag=2
+OPT891 actual_compiled_layout role=old.DeclarationId bytes=24 alignment=8
+OPT891 actual_compiled_layout role=current.DeclarationId bytes=16 alignment=8
+OPT891 actual_compiled_layout role=old.Option<DeclarationId> bytes=24 alignment=8
+OPT891 actual_compiled_layout role=current.Option<DeclarationId> bytes=24 alignment=8
+OPT891 actual_compiled_layout role=old.&DeclarationId bytes=8 alignment=8
+OPT891 actual_compiled_layout role=current.&DeclarationId bytes=8 alignment=8
+OPT891 actual_compiled_layout role=old.Option<&DeclarationId> bytes=8 alignment=8
+OPT891 actual_compiled_layout role=current.Option<&DeclarationId> bytes=8 alignment=8
+OPT891 actual_compiled_layout role=old.Vec<DeclarationId> bytes=24 alignment=8
+OPT891 actual_compiled_layout role=current.Vec<DeclarationId> bytes=24 alignment=8
+OPT891 actual_compiled_layout role=current.DeclarationText bytes=16 alignment=8
+OPT891 actual_compiled_layout role=current.CompilerDeclaration bytes=2 alignment=1
+OPT891 actual_compiled_layout role=current.Arc<str> bytes=16 alignment=8
+OPT891 actual_compiled_layout role=current.&str bytes=16 alignment=8
+OPT891 actual_compiled_layout role=current.String bytes=24 alignment=8
+OPT891 actual_compiled_layout role=current.ast.ExprKind bytes=160 alignment=8
+OPT891 actual_compiled_layout role=current.hir.ResolvedExprKind bytes=104 alignment=8
+OPT891 actual_compiled_layout role=current.hir.ResolvedExpr bytes=192 alignment=8
+OPT891 actual_compiled_layout role=current.hir.ResolvedType bytes=40 alignment=8
+OPT891 actual_compiled_layout role=current.cleanup_plan.CleanupSlot bytes=128 alignment=8
+OPT891 actual_compiled_layout role=current.cleanup_plan.CleanupPlace bytes=56 alignment=8
+OPT891 exact_vector_roles count=0 old=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false } current=Metrics { allocations: 0, reallocations: 0, allocated: 0, freed: 0, live: 0, highwater: 0, invalid: false }
+OPT891 exact_vector_roles count=1 old=Metrics { allocations: 1, reallocations: 0, allocated: 24, freed: 24, live: 0, highwater: 24, invalid: false } current=Metrics { allocations: 1, reallocations: 0, allocated: 16, freed: 16, live: 0, highwater: 16, invalid: false }
+OPT891 exact_vector_roles count=64 old=Metrics { allocations: 1, reallocations: 0, allocated: 1536, freed: 1536, live: 0, highwater: 1536, invalid: false } current=Metrics { allocations: 1, reallocations: 0, allocated: 1024, freed: 1024, live: 0, highwater: 1024, invalid: false }
+OPT891 exact_vector_roles count=1024 old=Metrics { allocations: 1, reallocations: 0, allocated: 24576, freed: 24576, live: 0, highwater: 24576, invalid: false } current=Metrics { allocations: 1, reallocations: 0, allocated: 16384, freed: 16384, live: 0, highwater: 16384, invalid: false }
+ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 0.00s
+

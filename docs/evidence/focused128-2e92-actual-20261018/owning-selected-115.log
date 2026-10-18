@@ -1,0 +1,6 @@
+
+running 1 test
+test hir::validation::owned_iterative_oracle::frame_layout::whole_saved_frame_and_type_sources_have_only_declared_layout_substitutions ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 0.05s
+

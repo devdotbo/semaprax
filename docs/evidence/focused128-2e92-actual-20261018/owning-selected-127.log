@@ -1,0 +1,6 @@
+
+running 1 test
+test cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::complete_immediate_old_ordinary_caller_preserves_results_and_funds_real_dense_route ... ok
+
+test result: ok. 1 passed; 0 failed; 0 ignored; 0 measured; 10101 filtered out; finished in 0.72s
+

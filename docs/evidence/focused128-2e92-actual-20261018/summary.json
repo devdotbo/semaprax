@@ -1,0 +1,306 @@
+{
+  "source_head": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "build_commands_passed": 6,
+  "new_artifacts": 9,
+  "selected": 128,
+  "passed": 94,
+  "failed": 34,
+  "scope": "Focused compiler qualification, not an agent application benchmark. No token, billed-cost, CPU-speedup or application-admission claim.",
+  "failures": [
+    {
+      "index": 8,
+      "harness": "semaprax::lib",
+      "selector": "hir::ids::declaration_tag::complete_source_inverses_keep_all_raw_children_and_refuse_foreign_stages",
+      "log_sha256": "ce4615923d00de8538e58c8e615526aba805decb79ab42353321f0332097eb86"
+    },
+    {
+      "index": 9,
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::tests::codec808_frontier::primitive_string_codec_actual_preparation_reports_existing_first_operation_without_replacing_failure",
+      "log_sha256": "e2e884d022c02d180dfb031a8d3a868d23b9b1d131b69fc58c3f21ece9c855c1"
+    },
+    {
+      "index": 10,
+      "harness": "semaprax::project",
+      "selector": "standard_library::application_json::owned::shiftsim_typed_records::unfactored_schedule_retains_original_source_and_factored_admission",
+      "log_sha256": "433ab6eb623cf2b2c28b76a86f45b52e75d03ac7a9f089fc0e9e8cad95dd5887"
+    },
+    {
+      "index": 11,
+      "harness": "semaprax::project",
+      "selector": "standard_library::application_json::owned::catalog_scoped_records::typed_catalog_derives_codecs_and_preserves_all_23_functional_cases",
+      "log_sha256": "80974c6f1c6f0d922f973199303bbff5d048e817069878c20ab184a01b5638e7"
+    },
+    {
+      "index": 12,
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::tests::builder_limits::catalog_normalizer_compact_core_fits_production_builder_cap",
+      "log_sha256": "f53711ce817c59ad1621aff2113421a8c76fa439d2dbe15ee337dfab7b3e590f"
+    },
+    {
+      "index": 13,
+      "harness": "semaprax::project",
+      "selector": "standard_library::application_json::owned::shiftsim_typed_records::typed_record_shiftsim_derives_both_codecs_and_runs_retained_corpus",
+      "log_sha256": "89c86da8811f13b87eb9a876e1aa1c3aaae372f99b5b9fb45ac1865cf0bf4479"
+    },
+    {
+      "index": 14,
+      "harness": "semaprax::project",
+      "selector": "standard_library::application_json::owned::catalog_scoped_records::catalog_sort_adoption::direct_wire_row_sort_retains_independent_original_pipeline_and_all_23_cases",
+      "log_sha256": "016e8b2e3c26b2cfb16b63acc881202ec49d19f00ebcea5f13e98b39e9133b4e"
+    },
+    {
+      "index": 15,
+      "harness": "semaprax::useful_data",
+      "selector": "catalog_normalizer_application::batch_boundaries_and_string_normalization_agree_across_backends",
+      "log_sha256": "298a1f0d747ed1cee5d693506655030b02b597ee5a51d7d92e26d7ef967cbdfa"
+    },
+    {
+      "index": 16,
+      "harness": "semaprax::native",
+      "selector": "string_settlement::codec_allocation::string_vectors::primitive_string_codec_reads_and_short_refusal_allocate_nothing_then_copy_final_string_once",
+      "log_sha256": "cd6c002ddb0f49da2a5defb6f1860951ae5adc0be128263e3c7580fc70e398f8"
+    },
+    {
+      "index": 17,
+      "harness": "semaprax::native",
+      "selector": "string_settlement::codec_allocation::string_vectors::primitive_string_codec_actual_byte_and_item_plus_one_preflight_never_reserve_output",
+      "log_sha256": "1144456e1450a4245122297eba55cf10f9e1a14cb4f2661679615d4081187905"
+    },
+    {
+      "index": 18,
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::paid_many::tests::composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order",
+      "log_sha256": "b415b0a7a88fe99a4c4669c34cf532cbf2f5d3f19eee398af3abe4b24b77b42b"
+    },
+    {
+      "index": 19,
+      "harness": "semaprax::workspace",
+      "selector": "semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root",
+      "log_sha256": "59921d65e1da31f87d7d9aa8fc8393db1bcccdda7ba9bd0b7efb84c2b1c7eba3"
+    },
+    {
+      "index": 20,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::accepted_whole_sources_authenticate_actual_owners_and_keep_every_prior_independent",
+      "log_sha256": "78c0faf8cab68c6802e660ac288e8a4f65979e20a4b2601f99763d55a0150d05"
+    },
+    {
+      "index": 21,
+      "harness": "semaprax::useful_data",
+      "selector": "catalog_normalizer_application::ndjson::old_framing_and_new_structured_receiver_preserve_the_complete_normalizer_oracle",
+      "log_sha256": "dcb02461bcb25c12e0508c0674d8d5bb4a2fb6ae5c568c27283a2da773b36d0f"
+    },
+    {
+      "index": 24,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::before_future57::accepted_whole_sources_authenticate_actual_owners_and_keep_every_prior_independent",
+      "log_sha256": "bfbd3532dbe7fee75a3ad65d59508fbc60b8058d51cfb7c58e3ec87601e42747"
+    },
+    {
+      "index": 26,
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::paid_many::source::complete_immediate_canonicalizer_caller_terminal_helpers_and_all_original_tests_are_exact",
+      "log_sha256": "8382d19a4736d2708548db4241feeaf3bd384718167f07a316b14f23d9d496b7"
+    },
+    {
+      "index": 27,
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::factored::canonical_shared::paid_many::source::complete_paid_many_source_domains_keep_all_original_inputs_and_raw_production_checks",
+      "log_sha256": "56597c6725346da0f927f85c51bfe935234006a78f3d8422ad8e85e5d7e85167"
+    },
+    {
+      "index": 28,
+      "harness": "semaprax-toolchain::cli_new_project_v1",
+      "selector": "application_starter::application_starter_typed_shiftsim_fresh_check_native_tests_and_original_fifteen",
+      "log_sha256": "ccdf0132386a8dcd6deb17603c0a0f75e0259bd6f383d95ae2c3cd6dd2053a99"
+    },
+    {
+      "index": 29,
+      "harness": "semaprax-toolchain::cli_new_project_v1",
+      "selector": "application_starter::application_starter_selected_file_declared_native_tests_and_unchanged_cli49",
+      "log_sha256": "c7d36f1b0abc255a8f9b87a633cfb8706b7c0f322cefec779cfc0add9c229522"
+    },
+    {
+      "index": 30,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::next_big_batch_inputs::complete_current_and_parent_views_refuse_foreign_truncated_duplicate_and_wrong_stages",
+      "log_sha256": "dd0d4ccd6013e1b4a4fa79a0c460c4fb99a94d290ee84b1ccfd9ffd00b133b07"
+    },
+    {
+      "index": 31,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows::semantic_receivers::status_inline::inline_status_receipts_keep_all_complete_inputs_and_original_validation_loops",
+      "log_sha256": "58b9c4137b468db40cda199f013bcd03b83095908075e532f53f93cf2da452dd"
+    },
+    {
+      "index": 32,
+      "harness": "semaprax::project",
+      "selector": "standard_library::application_json::starter::starter_shared_plan_decoder_retains_closed_schema_bounds_and_stale_source_refusals",
+      "log_sha256": "d7bd4617d9513ed50fd442dd40f9bdb9e99dae0403f7d84dfae2be996e82d204"
+    },
+    {
+      "index": 33,
+      "harness": "semaprax::lib",
+      "selector": "cleanup_plan::replay::expression_facts::receiving::retained::case_certified::lookup_tests::complete_caller_success_and_refusal_drop_remain_observed_at_unchanged_cap",
+      "log_sha256": "336aaf7e0e2aa516da19b4e48971d9d646387b4df155ecf44fcb489a545495c3"
+    },
+    {
+      "index": 35,
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::tests::callable_limit_exact_advances_and_one_over_is_g171",
+      "log_sha256": "676512e7ee46aa5367ace5e2ceea5912cd08c9f5b4db0b672d47be637141ee4e"
+    },
+    {
+      "index": 37,
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::uninstantiated_static_lexical_template_cannot_skip_the_actual_census_guard",
+      "log_sha256": "fbf1af35d9166e0f15f692fbb6fa4495c8669277c70e04dbe197fc87aba35e8a"
+    },
+    {
+      "index": 51,
+      "harness": "semaprax::lib",
+      "selector": "hir::ids::declaration_backing_tests::qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier",
+      "log_sha256": "2b1c000ae71bb796e4f81f07af8e0f7fddca4e589d3ee8df3d52725c1b3cdb02"
+    },
+    {
+      "index": 69,
+      "harness": "semaprax::lib",
+      "selector": "hir::ids::fixed_operation_tests::full_original_operation_sources_and_receivers_have_only_declared_identity_hooks",
+      "log_sha256": "28563bab03d70f587061c0733f95396187c27291945733e9b156dd5cdf43fc32"
+    },
+    {
+      "index": 86,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main_e177_final_inputs::latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wrong_stages",
+      "log_sha256": "abdfad306aac31be7a034e5691b414883ea9d0cfff6951cb8b052452d9d5c165"
+    },
+    {
+      "index": 87,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main_e177_final_inputs::combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_old_guards",
+      "log_sha256": "d4bf8d39d5313ae709158c98a47e198ff1896de33a521e0280218892304d1ca3"
+    },
+    {
+      "index": 88,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::owned_compile35f_current_acquisition_preserves_complete_seven_subjects_and_refuses_foreign",
+      "log_sha256": "f0a1e1164ca5ea172dc3092b5f1782ba3e85587ab0d9b3366e10991d5706d3be"
+    },
+    {
+      "index": 89,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::canonical_import_generation_authenticates_current_and_complete_selected_stages",
+      "log_sha256": "5fa8c1fd17a3284e81b306a002657c653262a5a6a78602d162804bbe83de6af8"
+    },
+    {
+      "index": 90,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::paid_many_canonical_ingress_keeps_whole_import_and_selected_controls",
+      "log_sha256": "e695538c77a11aab954985137059e3913d97502895efd49423ad473fe5b4f7c5"
+    },
+    {
+      "index": 91,
+      "harness": "semaprax::lib",
+      "selector": "source_reflows_merge::main67107_inputs::semantic_batch_complete_physical_views_preserve_old_sources_and_refuse_supplied_drift",
+      "log_sha256": "7afa5ca5eafedb5ffec990fd316285be9816cf3153638ee23945133442a4ca1d"
+    },
+    {
+      "index": 109,
+      "harness": "semaprax::lib",
+      "selector": "workspace_graph::source_schema::static_text::tests::missing_lexical_authority::whole_old_selector_and_original_regression_are_retained_with_exact_glue",
+      "log_sha256": "ec8b25331eddef112f47e5017c3f93c8e84cf2419b159aa37e934c2bfead5274"
+    }
+  ],
+  "forecast_inputs_same_order_and_bytes": true,
+  "forecast_pass_1": [
+    {
+      "current_line": 386,
+      "old_line": 372,
+      "old_log": "/Volumes/Semaprax/lane-prompts/semantic-focused243-530073-20261018/owning-selected-03.log",
+      "old_log_sha256": "0af43722511e7b9e9e92b61c36e5e7877a4876bcdde97bf05a7c1b02dd9a5629",
+      "exact_event_key": [
+        [
+          "schema",
+          "semaprax.forecast-pass.v1"
+        ],
+        [
+          "application",
+          "catalog-normalizer-compact-original"
+        ],
+        [
+          "ordinal",
+          61
+        ],
+        [
+          "layout_mode",
+          null
+        ],
+        [
+          "execution_mode",
+          6
+        ],
+        [
+          "execution_peak_pass",
+          null
+        ],
+        [
+          "pass_id",
+          1
+        ],
+        [
+          "module_index",
+          null
+        ],
+        [
+          "path",
+          null
+        ],
+        [
+          "include_imports",
+          null
+        ],
+        [
+          "retention",
+          null
+        ]
+      ],
+      "exact_selector_input_emission_sequence": true,
+      "current": {
+        "application": "catalog-normalizer-compact-original",
+        "complete_attribution": true,
+        "completed": true,
+        "execution_mode": 6,
+        "global_peak": 50515936,
+        "ordinal": 61,
+        "pass_id": 1,
+        "residual": null,
+        "retained_sum": 50515936,
+        "schema": "semaprax.forecast-pass.v1",
+        "scope": "static forecast only; incomplete/lost/invalid pass totals unavailable",
+        "transient_ast_peak": null,
+        "winner_selection": "first strict resolve maximum; final retained sum only when larger",
+        "winning_module_index": 9,
+        "winning_term": "resolve_step"
+      },
+      "old": {
+        "application": "catalog-normalizer-compact-original",
+        "complete_attribution": true,
+        "completed": true,
+        "execution_mode": 6,
+        "global_peak": 51988568,
+        "ordinal": 61,
+        "pass_id": 1,
+        "residual": null,
+        "retained_sum": 51988568,
+        "schema": "semaprax.forecast-pass.v1",
+        "scope": "static forecast only; incomplete/lost/invalid pass totals unavailable",
+        "transient_ast_peak": null,
+        "winner_selection": "first strict resolve maximum; final retained sum only when larger",
+        "winning_module_index": 9,
+        "winning_term": "resolve_step"
+      },
+      "interpretation": "Raw matched records only. Completeness/lost/reconciliation flags remain authoritative; input set is selector-log scope, not invented per-pass association."
+    }
+  ]
+}
