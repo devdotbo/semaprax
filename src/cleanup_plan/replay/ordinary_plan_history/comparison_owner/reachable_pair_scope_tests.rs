@@ -1,5 +1,5 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
-use super::super::before_reachable_primitives::{compare, ComparisonOwner};
+use super::super::before_reachable_primitives::compare;
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{measure, Metrics};

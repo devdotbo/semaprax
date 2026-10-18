@@ -704,6 +704,14 @@ fn reachable_stage(path: &str, sha: &str, current: &str) -> String {
 }
 
 // Exact generation witness glue. Production above is the complete immediate owner.
+// This test-only facade is outside the whole original body above. Constants in
+// the byte-exact nested macro remain private to their genuine owner namespace.
+pub(super) mod shared_prefix_prices {
+    pub(in super::super) const CAPTURE_LINK: usize = super::shared_prefix::CAPTURE_LINK;
+    pub(in super::super) const CAPTURE_EXTENT: usize = super::shared_prefix::CAPTURE_EXTENT;
+    pub(in super::super) const OWNER: usize = super::shared_prefix::OWNER;
+    pub(in super::super) const DETECTOR: usize = super::shared_prefix::DETECTOR;
+}
 pub(super) fn whole_source() -> String {
     use sha2::{Digest, Sha256};
     let whole = include_str!("before_event_prefix.rs");

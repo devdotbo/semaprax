@@ -1,6 +1,6 @@
 //! Complete immediate comparator versus identity-replayed current path.
 use super::*;
-use super::super::before_event_prefix::{compare, ComparisonOwner, shared_prefix};
+use super::super::before_event_prefix::{compare, ComparisonOwner, shared_prefix_prices as shared_prefix};
 
 // Independent typed site equation. No coefficient is inferred from paid totals.
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {

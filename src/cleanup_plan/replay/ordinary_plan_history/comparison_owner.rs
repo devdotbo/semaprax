@@ -11,6 +11,7 @@ mod before_event_prefix;
 #[cfg(test)]
 mod before_shared_steps;
 #[cfg(test)]
+#[allow(unused_imports, reason = "complete frozen generation retains its exact original namespace imports")]
 #[rustfmt::skip]
 mod before_reachable_primitives;
 #[cfg(test)]
