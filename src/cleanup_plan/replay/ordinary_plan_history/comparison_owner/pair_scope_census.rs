@@ -16,6 +16,9 @@ pub(super) struct Row {
     pub tails: usize,
     pub steps: usize,
     pub shared_checks: usize,
+    pub mask_checks: usize,
+    pub tail_marks: usize,
+    pub fused_turns: usize,
     pub shared_patterns: usize,
     pub shared_metadata: usize,
     pub shared_steps: usize,
@@ -46,6 +49,9 @@ const EMPTY: Row = Row {
     tails: 0,
     steps: 0,
     shared_checks: 0,
+    mask_checks: 0,
+    tail_marks: 0,
+    fused_turns: 0,
     shared_patterns: 0,
     shared_metadata: 0,
     shared_steps: 0,
@@ -191,6 +197,24 @@ impl Guard {
     pub(super) fn step(&self) {
         self.update(|r| match r.steps.checked_add(1) {
             Some(n) => r.steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn mask_checks(&self) {
+        self.update(|r| match r.mask_checks.checked_add(1) {
+            Some(n) => r.mask_checks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn tail_marks(&self) {
+        self.update(|r| match r.tail_marks.checked_add(1) {
+            Some(n) => r.tail_marks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn fused_turns(&self) {
+        self.update(|r| match r.fused_turns.checked_add(1) {
+            Some(n) => r.fused_turns = n,
             None => r.overflow = true,
         });
     }
@@ -508,6 +532,35 @@ mod controls {
                 guard.shared_turns();
             } else {
                 guard.shared_runs();
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
+    #[test]
+    fn paired_tail_counter_overflow_is_incomplete_and_does_not_spend_work() {
+        for counter in 0..3 {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                match counter {
+                    0 => trace.rows[0].mask_checks = usize::MAX,
+                    1 => trace.rows[0].tail_marks = usize::MAX,
+                    _ => trace.rows[0].fused_turns = usize::MAX,
+                }
+            });
+            match counter {
+                0 => guard.mask_checks(),
+                1 => guard.tail_marks(),
+                _ => guard.fused_turns(),
             }
             guard.success();
             drop(guard);

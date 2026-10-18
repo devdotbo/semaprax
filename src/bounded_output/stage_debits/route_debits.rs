@@ -871,7 +871,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
     ));
     let direct = phases(owner, "paid!(", &[4]);
     let forwarded = phases(owner, "lexical_plan_next!(", &[10, 11]);
-    let shared = phases(owner, "shared_plan_pair_step!(", &[7]);
+    let shared = phases(owner, "shared_plan_pair_step!(", &[11]);
     assert_eq!(
         (direct.len(), forwarded.len(), shared.len()),
         (13, 4, 1),
@@ -884,9 +884,11 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
     let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 15, "audit every generic payment site");
+    assert_eq!(sites.len(), 17, "audit every generic payment site");
     assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
     assert_eq!(lexical.matches("shared_plan_segment_run!(").count(), 1);
+    assert_eq!(lexical.matches("paired_plan_tails!(").count(), 1);
+    assert_eq!(lexical.matches("remember_plan_tail!(").count(), 1);
     let compact: String = lexical.split_whitespace().collect();
     assert_eq!(compact.matches("lexical_pair_plan_next!($owner,$cursor,$items,$loaded,$limit,$tail,$links,$census,$function,$budget,$phase)").count(), 1);
     assert_eq!(

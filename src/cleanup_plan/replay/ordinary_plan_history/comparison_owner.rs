@@ -25,6 +25,7 @@ struct ComparisonOwner<'history> {
     right_items: &'history [Rc<SkeletonObservation>],
     left_loaded: bool,
     right_loaded: bool,
+    tail_mask: u8,
     left_cursor: Cursor,
     right_cursor: Cursor,
     left_link: usize,
@@ -135,6 +136,7 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 2 * size_of::<usize>() // initial remembered segment identities
     + 2 * size_of::<usize>() // initial retained segment extents
+    + size_of::<u8>() // mask initializer; retained field is in owner storage
     + 3 * size_of::<Step>(); // copied state transports at return/schedule sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
@@ -168,6 +170,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
         right_items: &[],
         left_loaded: false,
         right_loaded: false,
+        tail_mask: 0,
         left_cursor: Cursor {
             links: Vec::new(),
             segment: 0,
@@ -323,10 +326,14 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 paid!(
                     budget,
                     function,
-                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW + 2 * lexical_cursor::PAIR_LINK_VIEW,
+                    PAIR_SCOPE
+                        + 2 * lexical_cursor::TAIL_VIEW
+                        + 2 * lexical_cursor::PAIR_LINK_VIEW
+                        + size_of::<u8>(),
                     "ordinary plan history pair-local paths"
                 )?;
                 {
+                    owner.tail_mask = 0;
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
                     let mut left_tail = left_path.history.tail.as_slice();
@@ -336,6 +343,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     loop {
                         shared_plan_pair_step!(
                             owner,
+                            left_path,
+                            right_path,
+                            left_tail,
+                            right_tail,
                             left_links,
                             right_links,
                             census,

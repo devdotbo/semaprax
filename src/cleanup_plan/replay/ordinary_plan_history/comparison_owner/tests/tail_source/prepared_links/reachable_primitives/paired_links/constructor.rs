@@ -15,6 +15,9 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_tail_stage(&super::paired_tails::previous_pair_tests(current))
+}
+fn previous_pair_tests_tail_stage(current: &str) -> String {
     restore(current, 50521, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -92,8 +95,10 @@ mod tests {
     #[test]
     fn constructor_sources_refuse_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &super::super::paired_tails::previous_pair_tests(include_str!(
+                "../../../../../pair_scope_tests.rs"
+            )),
+            previous_pair_tests_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/repeat-constructor-308-20261018/before-pair-tests.rs.txt"

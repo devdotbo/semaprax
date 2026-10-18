@@ -15,6 +15,9 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    previous_owner_tail_stage(&paired_tails::previous_owner(current))
+}
+fn previous_owner_tail_stage(current: &str) -> String {
     restore(current, 23894, OWNER)
 }
 #[rustfmt::skip]
@@ -26,6 +29,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (14296, "                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW + 2 * lexical_cursor::PAIR_LINK_VIEW,\n", "                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW,\n"),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_tail_stage(&paired_tails::previous_macro(current))
+}
+fn previous_macro_tail_stage(current: &str) -> String {
     restore(current, 21368, MACRO)
 }
 #[rustfmt::skip]
@@ -68,6 +74,10 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (4447, "    let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();\n", "    let links = 4 * size_of::<&Vec<usize>>()\n        + 4 * size_of::<&[usize]>()\n        + 4 * size_of::<usize>()\n        + 3 * size_of::<bool>();\n"),
 ];
 mod json_ledger;
+mod paired_tails;
+pub(super) fn previous_tail_census(current: &str) -> String {
+    paired_tails::previous_census(current)
+}
 pub(super) fn previous_route(current: &str) -> String {
     previous_route_stage(&json_ledger::previous_route(current))
 }
@@ -104,6 +114,9 @@ const STAGE1: &[(usize, &str, &str)] = &[
     (5993, "    let current = super::paired_links::previous_owner(current);\n    let current = current.as_str();\n", ""),
 ];
 pub(super) fn previous_stage3(current: &str) -> String {
+    previous_stage3_tail_stage(&paired_tails::previous_runs(current))
+}
+fn previous_stage3_tail_stage(current: &str) -> String {
     restore(current, 19581, STAGE3)
 }
 #[rustfmt::skip]
@@ -231,8 +244,10 @@ mod tests {
     #[test]
     fn pair_local_sources_refuse_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../../comparison_owner.rs"),
-            previous_owner,
+            &super::paired_tails::previous_owner(include_str!(
+                "../../../../../comparison_owner.rs"
+            )),
+            previous_owner_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/pair-links-7e-20261018/before-owner.rs.txt"
@@ -240,8 +255,8 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../../../../lexical_cursor.rs"),
-            previous_macro,
+            &super::paired_tails::previous_macro(include_str!("../../../../lexical_cursor.rs")),
+            previous_macro_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/pair-links-7e-20261018/before-macro.rs.txt"
@@ -289,8 +304,10 @@ mod tests {
             STAGE1,
         );
         hostile(
-            include_str!("shared_steps/shared_boundaries/shared_runs.rs"),
-            previous_stage3,
+            &super::paired_tails::previous_runs(include_str!(
+                "shared_steps/shared_boundaries/shared_runs.rs"
+            )),
+            previous_stage3_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/pair-links-7e-20261018/before-stage3.rs.txt"

@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 23894,
-      "sha256": "c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc"
+      "length": 24302,
+      "sha256": "4d2e0d16ce30a9ce7c6f8aea3d5e09ba8d7d111f285a6c4c1d3055603dca17ca"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 43007,
@@ -261,8 +261,8 @@
       "sha256": "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
-      "length": 21368,
-      "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3"
+      "length": 25469,
+      "sha256": "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c"
     },
     "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs": {
       "length": 11775,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 16853,
-      "sha256": "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5"
+      "length": 18711,
+      "sha256": "271da1ba63267eda74d709d8f722ba365be0522c5544a50237de06bea9bf3c63"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 50521,
-      "sha256": "8484121abb7afd47a3baf21d1eb36875622f31ef72e65a867728b7af1ec34d26"
+      "length": 50721,
+      "sha256": "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 41016,
-      "sha256": "a408eae4aa848f7a6d0da2f93ab3305b3d7b7aacb4c25013263b52f5a238c938"
+      "sha256": "f977bce4c560c6b6cdd8c8e86aa45f1a62c4dcf997eb422bd059feaf43b6dfb1"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,

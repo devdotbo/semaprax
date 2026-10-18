@@ -6,7 +6,9 @@ use super::*;
 // Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.
 // The shared immutable-step branch adds five payment and five work sites.
 // Every payload below is separately paid on actual execution, never once.
-pub(super) const PRIMITIVE_FRAMES: usize = 41 * PAYMENT_HEADER;
+// Paired-tail selection adds one payment site; its bulk loop adds one
+// payload payment and three work sites, each with a complete primitive frame.
+pub(super) const PRIMITIVE_FRAMES: usize = 46 * PAYMENT_HEADER;
 pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;
 // Before inspecting the already-funded owner length, fund the new payment
 // site's complete primitive frame, match/local usize receivers and both
@@ -207,7 +209,15 @@ macro_rules! lexical_pair_plan_next {
                     }
                 }
             }
-            paid!($budget, $function, lexical_cursor::TAIL, $phase)?;
+            paid!(
+                $budget,
+                $function,
+                lexical_cursor::TAIL + 3 * size_of::<u8>(),
+                $phase
+            )?;
+            #[cfg(test)]
+            $census.tail_marks();
+            remember_plan_tail!($owner, $cursor);
             #[cfg(test)]
             $census.tail();
             match $tail {
@@ -239,7 +249,23 @@ macro_rules! remember_plan_segment {
 // remains separately paid before formation. No observation Option/tuple/cmp
 // payload is formed on this branch. Original left-before-right work is exact.
 macro_rules! shared_plan_pair_step {
-    ($owner:ident, $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
+    ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident, $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
+        paid!($budget, $function, 3 * size_of::<bool>(), $phase)?;
+        #[cfg(test)]
+        $census.mask_checks();
+        if $owner.tail_mask == 3 {
+            paired_plan_tails!(
+                $owner,
+                $left_path,
+                $right_path,
+                $left_tail,
+                $right_tail,
+                $census,
+                $function,
+                $budget,
+                $phase
+            );
+        }
         paid!($budget, $function, 3 * size_of::<bool>(), $phase)?;
         #[cfg(test)]
         $census.shared_checks();
@@ -454,5 +480,85 @@ macro_rules! shared_plan_segment_run {
         $owner.right_cursor.item += shared_length;
         $owner.ordering = Ordering::Equal;
         continue;
+    };
+}
+
+// Only non-owning tails, after both original prepared chains finish.
+macro_rules! paired_plan_tails {
+    ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
+        loop {
+            // All pattern, slice, comparison and scalar payloads, including
+            // mutually exclusive terminal cases, are paid on each turn.
+            paid!(
+                $budget,
+                $function,
+                2 * size_of::<&Rc<SkeletonObservation>>()
+                    + 4 * size_of::<&[Rc<SkeletonObservation>]>()
+                    + 4 * size_of::<&Rc<SkeletonObservation>>()
+                    + 2 * size_of::<&SkeletonObservation>()
+                    + 4 * size_of::<&SkeletonObservation>()
+                    + 4 * size_of::<&SkeletonTerminal>()
+                    + 2 * size_of::<usize>()
+                    + 4 * size_of::<Ordering>()
+                    + 3 * size_of::<bool>(),
+                $phase
+            )?;
+            #[cfg(test)]
+            $census.fused_turns();
+            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+            #[cfg(test)]
+            $census.step();
+            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+            #[cfg(test)]
+            $census.step();
+            #[cfg(test)]
+            {
+                $census.tail();
+                $census.tail();
+            }
+            match $left_tail {
+                [left, left_rest @ ..] => {
+                    $left_tail = left_rest;
+                    $owner.left_cursor.item += 1;
+                    match $right_tail {
+                        [right, right_rest @ ..] => {
+                            $right_tail = right_rest;
+                            $owner.right_cursor.item += 1;
+                            $owner.ordering = left.as_ref().cmp(right.as_ref());
+                            if $owner.ordering == Ordering::Equal {
+                                $budget.charge(
+                                    $function,
+                                    1,
+                                    "ordinary plan history observation comparison",
+                                )?;
+                                #[cfg(test)]
+                                $census.round();
+                                continue;
+                            }
+                        }
+                        [] => $owner.ordering = Ordering::Greater,
+                    }
+                }
+                [] => match $right_tail {
+                    [_, right_rest @ ..] => {
+                        $right_tail = right_rest;
+                        $owner.right_cursor.item += 1;
+                        $owner.ordering = Ordering::Less;
+                    }
+                    [] => $owner.ordering = $left_path.terminal.cmp(&$right_path.terminal),
+                },
+            }
+            break;
+        }
+        break;
+    };
+}
+
+macro_rules! remember_plan_tail {
+    ($owner:ident, left_cursor) => {
+        $owner.tail_mask |= 1;
+    };
+    ($owner:ident, right_cursor) => {
+        $owner.tail_mask |= 2;
     };
 }

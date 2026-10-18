@@ -1,5 +1,7 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
 use super::*;
+#[path = "pair_scope_tests/paired_tails.rs"]
+mod paired_tails;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::test_allocation_observer::{measure, Metrics};
 // Source-type coefficients are independent of measured debit differences.
@@ -152,9 +154,10 @@ fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usi
             + size_of::<Ordering>())
             * row.shared_runs;
     let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
+    let (tail_removed, tail_retained) = paired_tails::prices(paths, row);
     (
-        (pair + 2 * step) * row.shared_steps + boundary_removed,
-        retained + boundary_retained,
+        (pair + 2 * step) * row.shared_steps + boundary_removed + tail_removed,
+        retained + boundary_retained + tail_retained,
     )
 }
 fn observe_pair(
@@ -822,7 +825,7 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
         (0, 0, 0, 0)
     );
     assert_eq!(
-        paid + reachable_primitive_prices(0).0,
+        paid + reachable_primitive_prices(0).0 + shared_step_prices(0, &row).0,
         old_paid
             + PAIR_PRIMITIVE
             + PAYMENT_HEADER

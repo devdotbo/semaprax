@@ -42,6 +42,11 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (6325, "        + if paths >= 2 { 11 * header } else { 0 }\n", "        + if paths >= 2 { 9 * header } else { 0 }\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    previous_census_tail_stage(&super::super::super::paired_links::previous_tail_census(
+        current,
+    ))
+}
+fn previous_census_tail_stage(current: &str) -> String {
     restore(current, 16853, CENSUS)
 }
 #[rustfmt::skip]
@@ -183,8 +188,10 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../../../../../../pair_scope_census.rs"),
-            previous_census,
+            &super::super::super::super::paired_links::previous_tail_census(include_str!(
+                "../../../../../../pair_scope_census.rs"
+            )),
+            previous_census_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-runs-b66-20261018/before-census.rs.txt"

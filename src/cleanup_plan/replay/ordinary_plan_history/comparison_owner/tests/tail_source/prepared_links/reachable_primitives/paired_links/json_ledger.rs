@@ -15,6 +15,9 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_route(current: &str) -> String {
+    previous_route_tail_stage(&super::paired_tails::previous_route(current))
+}
+fn previous_route_tail_stage(current: &str) -> String {
     restore(current, 35723, ROUTE)
 }
 #[rustfmt::skip]
@@ -22,6 +25,9 @@ const ROUTE: &[(usize, &str, &str)] = &[
     (201, "mod json_codec_probe;\n", ""),
 ];
 pub(super) fn previous_controls(current: &str) -> String {
+    previous_controls_tail_stage(&super::paired_tails::previous_controls(current))
+}
+fn previous_controls_tail_stage(current: &str) -> String {
     restore(current, 24582, CONTROLS)
 }
 #[rustfmt::skip]
@@ -31,6 +37,9 @@ const CONTROLS: &[(usize, &str, &str)] = &[
     (12530, "mod json_ledger;\n", ""),
 ];
 pub(super) fn previous_constructor(current: &str) -> String {
+    previous_constructor_tail_stage(&super::paired_tails::previous_constructor(current))
+}
+fn previous_constructor_tail_stage(current: &str) -> String {
     restore(current, 4758, CONSTRUCTOR)
 }
 #[rustfmt::skip]
@@ -106,8 +115,10 @@ mod tests {
     #[test]
     fn json_profile_sources_refuse_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../../../../../../bounded_output/stage_debits/route_debits.rs"),
-            previous_route,
+            &super::super::paired_tails::previous_route(include_str!(
+                "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
+            )),
+            previous_route_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/json-ledger-bc294-20261018/before-route.rs.txt"
@@ -115,8 +126,8 @@ mod tests {
             ROUTE,
         );
         hostile(
-            include_str!("../paired_links.rs"),
-            previous_controls,
+            &super::super::paired_tails::previous_controls(include_str!("../paired_links.rs")),
+            previous_controls_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/json-ledger-bc294-20261018/before-controls.rs.txt"
@@ -124,8 +135,8 @@ mod tests {
             CONTROLS,
         );
         hostile(
-            include_str!("constructor.rs"),
-            previous_constructor,
+            &super::super::paired_tails::previous_constructor(include_str!("constructor.rs")),
+            previous_constructor_tail_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/json-ledger-bc294-20261018/before-constructor.rs.txt"
