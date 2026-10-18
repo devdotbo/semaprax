@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 28900,
-      "sha256": "4d1b77c0e2af83e3988274975af589b9fef1cfe3b320ae1dd659764b0f2891d6"
+      "length": 29585,
+      "sha256": "288674c9f9171464d0630c7a3ee6c6dc05fa490192096cc2a421c735e11623d7"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 43910,
-      "sha256": "e4f7dff02b5a0ab70c470d7d8ba3fe87da7aa978183d4d91af881078d6fe543a"
+      "length": 43971,
+      "sha256": "37ecdf4e80d23ac019348f051759123bab4068af368924c7046cfe9eba9c2db6"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -313,8 +313,8 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 15968,
-      "sha256": "16a4ae9e363108b3377ae98b1339a8ed52c3c85c5f71f5dc84c31f625ffa76bb"
+      "length": 18067,
+      "sha256": "e4ad49c81d826e3ffab30d80522edf0086155806b5bb3999a62c352266819c6f"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
       "length": 58148,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 67434,
-      "sha256": "c269ab821ea70b6aae3c1e35c98a6fa60e110a435f12638408f4149ff656ac78"
+      "length": 69020,
+      "sha256": "67897e20466d4aba7d0b8a5181cbe2784892a067b0659ba92781943d80b6be07"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -797,8 +797,8 @@
       "sha256": "cbabeca225942f20ffe4d4cd675199eb0200934c8be06940ddbfff1b05f74bb3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
-      "length": 6267,
-      "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
+      "length": 7075,
+      "sha256": "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
       "length": 28105,
@@ -809,8 +809,8 @@
       "sha256": "de6628881d539bd95eb53d7ba260be5d7865babf59432890a4d6e91a2f6964f3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
-      "length": 59318,
-      "sha256": "b3a1e3e2d6e78473a39fad747b00ce0ed4dd4ae8fc0454568b83cff4dca13583"
+      "length": 59526,
+      "sha256": "86a43afa185217351575c5ea4cc9019f4600c354fe12398a38bb85334c13ce27"
     },
     "src/ast/program_source/function_alias/scalar_signature.rs": {
       "length": 3398,
@@ -943,25 +943,45 @@
     "src/workspace_graph/expected_projection/prelude_forecast_tests.rs": {
       "length": 12973,
       "sha256": "1118299b35a0009ce7476507741ea9f1495b0d12191af673a852a6da7cb771af"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs": {
+      "length": 28714,
+      "sha256": "f1458b012d31d958e5fb5cbb06cfc7b914ed5f10664f3ab654f99a9c3d6f16e9"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs": {
+      "length": 6457,
+      "sha256": "8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs": {
+      "length": 6267,
+      "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs": {
+      "length": 6770,
+      "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
+      "length": 30460,
+      "sha256": "c7add844c7148ee77287dbefab83250b1e780096d11baeed7e7f8e6ffab04e41"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 136628,
-      "sha256": "1ba2d0dd1eba18abc2208fa9968d76808bccc2994326a369040eea9b5162315d",
+      "length": 137215,
+      "sha256": "291caac6e6b6da49c4b14dd76e4b10967b8c129443156a718e4751a325834a11",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 153197,
-      "sha256": "762e9c901a697e1c84a18aa19ca2bec6ce2851bd7bfb694276b31a241b373d0e",
+      "length": 153799,
+      "sha256": "89fa9d4602c78987d33a53dde8bca6cbc468716c646170513a9717ce56898152",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 194972,
-      "sha256": "015677b96df39e70d15d2f6c9f0c0762210e954ca42fe2113f04ca15630d25c7",
+      "length": 195619,
+      "sha256": "93c98678f96fb65efe401688da9578c6ea7e21e9d84cfbbac417d6717a1b6345",
       "base": "../../../../../"
     }
   },
@@ -989,8 +1009,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 57961,
-    "sha256": "d18b19624743dd771020e88f7f152c9bdf3e5fab0d3095faed5c1a8c48e30881",
+    "length": 58408,
+    "sha256": "83ee9e55840274452d989de470b549e057dfb4b43d9b9cd8b6307f51f912b8ea",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3528,9 +3548,29 @@
       {
         "at": 1058,
         "path": "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"
+      },
+      {
+        "at": 1059,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs"
+      },
+      {
+        "at": 1060,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs"
+      },
+      {
+        "at": 1061,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs"
+      },
+      {
+        "at": 1062,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs"
+      },
+      {
+        "at": 1063,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs"
       }
     ],
-    "rows": 1059
+    "rows": 1064
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -4156,7 +4196,12 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
     "src/workspace_graph/expected_projection/call_carriers_before_directory.rs",
     "src/workspace_graph/expected_projection/call_carriers_directory.rs",
-    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"
+    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

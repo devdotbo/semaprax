@@ -300,6 +300,11 @@ macro_rules! loan_cfg_source_inventory {
         include_str!("../../../../../src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection.rs"),
         include_str!("../../../../../src/workspace_graph/expected_projection/prelude_forecast_tests.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs"),
         )
     };
 }
