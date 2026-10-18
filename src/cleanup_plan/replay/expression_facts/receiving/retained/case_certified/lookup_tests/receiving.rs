@@ -114,7 +114,7 @@ fn earlier_schema_and_hostile_status_keep_complete_old_first_error() {
             .find(|f| f.name == "main")
             .unwrap();
         match mutation {
-            0 => function.cleanup_plan.schema = "foreign.schema".into(),
+            0 => function.cleanup_plan.schema = "foreign.schema",
             1 => {
                 let row = function.cleanup_plan.status_sources[0].clone();
                 function.cleanup_plan.status_sources.insert(1, row);
@@ -251,7 +251,7 @@ fn exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are
         .find(|f| f.name == "main")
         .unwrap()
         .cleanup_plan
-        .schema = "foreign.schema".into();
+        .schema = "foreign.schema";
     let old = ordinary_receiving::with_before(|| ordinary(&bad, false, 64 * 1024 * 1024));
     ordinary_receiving::take_census();
     let current = ordinary(&bad, false, 64 * 1024 * 1024);

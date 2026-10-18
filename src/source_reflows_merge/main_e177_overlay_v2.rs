@@ -24,6 +24,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
@@ -38,6 +39,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
+    "src/workspace_graph/source_schema/static_text/tests.rs",
     "tests/project/standard_library/application_json.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
     "src/bounded_output/stage_debits/route_debits.rs",
@@ -48,6 +50,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid_before.rs",
+    "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs",
     "src/cleanup_plan/replay/path_join/selected.rs",
     "src/cleanup_plan/replay/path_join/selected/joins.rs",
     "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs",
@@ -58,6 +61,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs",
     "src/cleanup_plan/replay/path_join/selected/walk.rs",
     "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs",
     "src/cleanup_plan/replay/structural_control/selected.rs",
     "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
     "src/cleanup_plan/replay/structural_control/selected/calls.rs",
@@ -95,8 +99,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15089; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "0fc120945ed0769da73878c14b402a77fa37651b0d055345223616cbe10f0a1b";
+const POLICY_LENGTH: usize = 15351; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "7c96acafb8c0ea3aeed37fc762487b599a5fbe7bf45af108bb91e341c8cb42c5";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

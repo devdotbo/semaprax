@@ -1,0 +1,36 @@
+{
+  "head": "df942b53e9947be1f4f388f3d744310a4ad52060",
+  "run": 39102893794,
+  "job": 117603050390,
+  "raw_log_sha256": "b75c1cd8ff96a6ca9d8a68abfd57b4bef420078f442b8ffe029b5b9567577fc0",
+  "marker": "SEMAPRAX_PROJECT_GRAPH_EVIDENCE_V1",
+  "subjects": [
+    {
+      "subject": "calculator-baseline.json",
+      "length": 9895,
+      "sha256": "7d9e3b1500af16c0946c0d2e266f1807dbc2cfebb346d5c9db0781370ca9ff5b",
+      "metadata": {
+        "bytes": 9895,
+        "sha256": "7d9e3b1500af16c0946c0d2e266f1807dbc2cfebb346d5c9db0781370ca9ff5b"
+      }
+    },
+    {
+      "subject": "calculator-renamed.json",
+      "length": 9895,
+      "sha256": "3885a82a6cff8b03222d8b8ec2d5e306c64b87c569b512e9cd0f55e43df26ecc",
+      "metadata": {
+        "bytes": 9895,
+        "sha256": "3885a82a6cff8b03222d8b8ec2d5e306c64b87c569b512e9cd0f55e43df26ecc"
+      }
+    },
+    {
+      "subject": "provenance.json",
+      "length": 354,
+      "sha256": "064ca5a3a84ff7e6d157a9cf954637a93f58dc6604494ac779e0c79b545a76cb",
+      "metadata": {
+        "bytes": 354,
+        "sha256": "064ca5a3a84ff7e6d157a9cf954637a93f58dc6604494ac779e0c79b545a76cb"
+      }
+    }
+  ]
+}
