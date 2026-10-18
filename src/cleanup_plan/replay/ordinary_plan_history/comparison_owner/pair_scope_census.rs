@@ -681,7 +681,7 @@ impl Drop for Scope {
             lost
         );
         eprintln!(
-            "OPT899 suffix typed-invoice owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only old-new=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions and first-head removals) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
             size_of::<ComparisonOwner<'static>>(),
             size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
             shared_prefix::OWNER,
