@@ -954,7 +954,7 @@ fn combined_side_actual(row: &serde_json::Value) -> String {
     let compiled = value_direct(
         source,
         current["sha256"].as_str().unwrap(),
-        &clippy_stage::normalize(source, combined_side_compiled(source).unwrap()),
+        combined_side_compiled(source).unwrap(),
     );
     assert_eq!(
         actual, compiled,
@@ -1077,21 +1077,9 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
 // Nondelegating entry for the older owner's compiled-channel normalization.
 // Membership is tested before calling the public delegating route.
 pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
-    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
-        let _ = packet();
-        return value;
-    }
-    let normalized = clippy_stage::normalize(source, supplied);
-    let result = value_direct_4a6eb(source, expected, normalized.as_ref());
-    if normalized.as_ref() != supplied
-        && result == normalized.as_ref()
-        && digest(result.as_bytes()) != expected
-    {
-        supplied.to_owned()
-    } else {
-        result
-    }
+    overlay_v2::value_direct(source, expected, supplied)
 }
+
 fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
     let current = packet();
     if current["rows"]

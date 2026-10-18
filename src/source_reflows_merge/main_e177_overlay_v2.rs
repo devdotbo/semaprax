@@ -693,6 +693,23 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn logical_current_view_precedes_stage_normalization_and_preserves_foreign_refusals() {
+        let source = "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs";
+        let expected = "700318b054f35e3dbf69cf25d7a83cd3bf65d04f5674327bcbbd5af02bbdec66";
+        let current = super::super::compiled(source).unwrap();
+        let previous = value_direct(source, expected, current);
+        assert_eq!(digest(previous.as_bytes()), expected);
+        assert_ne!(previous, current);
+        assert_eq!(value_direct(source, expected, &previous), previous);
+        for bad in [
+            String::new(),
+            format!("{current} "),
+            current.get(..current.len() / 2).unwrap_or("").to_owned(),
+        ] {
+            assert_eq!(value_direct(source, expected, &bad), bad);
+        }
+    }
     fn record(source: &str, value: &str) -> Value {
         serde_json::json!({"source":source,"compiled":false,
             "current":{"length":value.len(),"sha256":digest(value.as_bytes()),"archive":format!("e/{}",digest(value.as_bytes()))},
@@ -955,5 +972,31 @@ mod tests {
             assert!(held_4a6eb(&link, 6, &digest(b"actual")).is_err());
         }
         std::fs::remove_dir_all(path).unwrap();
+    }
+}
+
+// Nondelegating current/prior view front, followed by the entire old stage path.
+pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    // A whole logical-table view is selected only after its actual current
+    // physical, compiled and archive channels have authenticated. Preserve the
+    // complete historical stage fallback below for every other input.
+    let direct = super::value_direct_4a6eb(source, expected, supplied);
+    if digest(direct.as_bytes()) == expected {
+        return direct;
+    }
+
+    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {
+        let _ = super::packet();
+        return value;
+    }
+    let normalized = super::clippy_stage::normalize(source, supplied);
+    let result = super::value_direct_4a6eb(source, expected, normalized.as_ref());
+    if normalized.as_ref() != supplied
+        && result == normalized.as_ref()
+        && digest(result.as_bytes()) != expected
+    {
+        supplied.to_owned()
+    } else {
+        result
     }
 }
