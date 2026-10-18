@@ -47,6 +47,11 @@ macro_rules! lexical_plan_value {
                 )?;
                 #[cfg(test)]
                 $census.value_step();
+                #[cfg(feature = "unstable-workflow-profiling")]
+                $crate::workflow_profile::plan_comparison::event(
+                    $crate::workflow_profile::plan_comparison::Site::StepAdmitted,
+                    paired_value::STEP + paired_value::EMPTY,
+                );
                 if $owner.$cursor.segment >= $owner.$cursor.links.len() {
                     break;
                 }
@@ -57,6 +62,11 @@ macro_rules! lexical_plan_value {
                 )?;
                 if !$owner.$loaded {
                     paid!($budget, $function, paired_value::LOAD, $phase)?;
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
+                        paired_value::LOAD,
+                    );
                     let links = $owner.$cursor.links.as_slice();
                     let link = links[links.len() - $owner.$cursor.segment - 1];
                     $owner.$items = $owner.arena[link].items.as_slice();
@@ -64,11 +74,25 @@ macro_rules! lexical_plan_value {
                 }
                 match $owner.$items {
                     [head, rest @ ..] => {
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            if stringify!($cursor) == "left_cursor" {
+                                $crate::workflow_profile::plan_comparison::Site::LeftHead
+                            } else {
+                                $crate::workflow_profile::plan_comparison::Site::RightHead
+                            },
+                            0,
+                        );
                         $owner.$items = rest;
                         $owner.$cursor.item += 1;
                         break 'plan_yield head.as_ref();
                     }
                     [] => {
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::EmptySegment,
+                            0,
+                        );
                         $owner.$cursor.segment += 1;
                         $owner.$cursor.item = 0;
                         $owner.$loaded = false;
@@ -78,9 +102,23 @@ macro_rules! lexical_plan_value {
             paid!($budget, $function, paired_value::TAIL, $phase)?;
             #[cfg(test)]
             $census.value_tail();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::TailAdmitted,
+                paired_value::TAIL,
+            );
             let history = &$history;
             let value = history.tail.get($owner.$cursor.item);
             if value.is_some() {
+                #[cfg(feature = "unstable-workflow-profiling")]
+                $crate::workflow_profile::plan_comparison::event(
+                    if stringify!($cursor) == "left_cursor" {
+                        $crate::workflow_profile::plan_comparison::Site::LeftTailSome
+                    } else {
+                        $crate::workflow_profile::plan_comparison::Site::RightTailSome
+                    },
+                    0,
+                );
                 $owner.$cursor.item += 1;
             }
             match value {

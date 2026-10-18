@@ -113,3 +113,46 @@ Use the values to compare like-for-like observations with the recorded subject,
 fixture, profile, and host metadata. Product equality is a separate invariant
 from timing equality, and neither one upgrades local benchmark evidence into a
 semantic, hosted, or production claim.
+
+## PLAN comparison diagnostic census
+
+The same explicit feature also exposes `workflow_profile::plan_comparison`.
+`Capture::begin(Binding)` enables a separate, current-thread, fixed-storage
+census; `finish` must follow compiler owner teardown. It never enables an old
+comparison arm, changes admission, or changes any payment, work request, result,
+cap, diagnostic, or publication. The existing timing capture is independent.
+This is **instrumented production-algorithm** data when the library is built
+without `cfg(test)`, and **instrumented library-test** data otherwise. Neither
+is default-shipping evidence or a wall-time/allocation performance result.
+The fixed TLS storage and instrumentation frames are outside the compiler's
+allocation ledger; this overhead is not a saving and is not priced as compiler
+work. Recording does not allocate Rust heap storage. Formatting the report is a
+host operation after teardown.
+
+The closed route records actual reached prefixes: owner admission, successful
+left/right prepare payments and completed resets, prepared pairs P, comparison
+rounds N, pair-scope/match payments, STEP (including its EMPTY bank), LOAD,
+exhausted segments, TAIL, segment heads and tail-Some yields, left/right
+exhaustion, terminal comparisons, and invocation success/end/unwind. Per-site
+byte totals include only successful admitted banks, never future iterations.
+Each detailed row carries the actual compiled invoice, copied function span,
+payer and selected-route classification. Refused prefixes remain distinct from
+successful invocations; counters do not authenticate a budget or source.
+
+Storage retains 128 detailed invocation rows plus checked aggregate counters.
+Exceeding that bound marks `detail_complete: false` while aggregate counting
+continues. Nesting beyond 32 also loses detail. Checked overflow, reentrant
+storage access, or inconsistent guard closure invalidates `counts_complete`;
+a live invocation refuses `finish`. Sessions and guards are thread-bound and
+capture generations cannot wrap. Function IDs retain full byte length, SHA256,
+and a bounded byte prefix, which can end within UTF-8 and is never a full-string
+claim. No function/payer pointers survive teardown.
+
+`Binding` is explicitly caller-labelled fixture/source metadata, with optional
+caller revision bytes. It carries no validation authority. The two existing
+native string-vector fixtures emit this diagnostic only with the feature,
+after their original generator returns or unwinds; they retain all original
+inputs, options, C fault/allocation assertions and panic payloads. Their label
+marks revision unknown: the external round manifest must bind the actual source
+HEAD and instrumented binary. No old shipping baseline, application admission,
+or complete old/current net is established by a census alone.

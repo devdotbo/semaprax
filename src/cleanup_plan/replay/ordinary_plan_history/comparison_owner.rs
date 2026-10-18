@@ -151,6 +151,38 @@ pub(in crate::cleanup_plan::replay) fn compare(
     }
     #[cfg(test)]
     let census = pair_scope_census::begin(function, budget, false);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let mut diagnostic = crate::workflow_profile::plan_comparison::begin(
+        function.id.as_str(),
+        function.span,
+        match budget.payer {
+            AllocationPayer::LegacyUnobserved => {
+                crate::workflow_profile::plan_comparison::Payer::Unobserved
+            }
+            AllocationPayer::ActiveBuilder => {
+                crate::workflow_profile::plan_comparison::Payer::ActiveBuilder
+            }
+            AllocationPayer::SelectedReservation => {
+                crate::workflow_profile::plan_comparison::Payer::SelectedReservation
+            }
+            AllocationPayer::Oracle(_) => crate::workflow_profile::plan_comparison::Payer::Oracle,
+        },
+        budget.admission == allocation::AdmissionMode::SelectedRetained,
+        crate::workflow_profile::plan_comparison::Invoice {
+            payment_header: PAYMENT_HEADER,
+            owner: OWNER_CONTROLS,
+            pair_primitives: PAIR_PRIMITIVE,
+            paired_primitives: paired_value::ADDITIONAL_PRIMITIVES,
+            path_index: PATH_INDEX,
+            pair_scope: PAIR_SCOPE,
+            pair_match: PAIR_MATCH,
+            new_pair_references: NEW_PAIR_REFERENCES,
+            step: paired_value::STEP,
+            load: paired_value::LOAD,
+            empty: paired_value::EMPTY,
+            tail: paired_value::TAIL,
+        },
+    );
     paid!(
         budget,
         function,
@@ -159,6 +191,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
     )?;
     #[cfg(test)]
     census.owner_admitted();
+    #[cfg(feature = "unstable-workflow-profiling")]
+    crate::workflow_profile::plan_comparison::event(
+        crate::workflow_profile::plan_comparison::Site::OwnerAdmitted,
+        OWNER_CONTROLS,
+    );
     let mut owner = ComparisonOwner {
         arena: actual.arena.as_slice(),
         left_items: &[],
@@ -264,12 +301,22 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
                     "ordinary plan history left cursor prepare"
                 )?;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::LeftPrepareAdmitted,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                );
                 owner.left_cursor.prepare(
                     &actual.paths[owner.left].history,
                     &actual.arena,
                     function,
                     budget,
                 )?;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::LeftResetCompleted,
+                    0,
+                );
                 owner.left_items = &[];
                 owner.left_loaded = false;
                 paid!(
@@ -278,16 +325,31 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
                     "ordinary plan history right cursor prepare"
                 )?;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::RightPrepareAdmitted,
+                    PREPARE_CALL + PATH_INDEX + lexical_cursor::RESET,
+                );
                 owner.right_cursor.prepare(
                     &actual.paths[owner.right].history,
                     &actual.arena,
                     function,
                     budget,
                 )?;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::RightResetCompleted,
+                    0,
+                );
                 owner.right_items = &[];
                 owner.right_loaded = false;
                 #[cfg(test)]
                 census.pair();
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::PairPrepared,
+                    0,
+                );
                 owner.step = Step::PairNext;
             }
             Step::PairNext => {
@@ -296,12 +358,22 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 budget.charge(function, 1, "ordinary plan history observation comparison")?;
                 #[cfg(test)]
                 census.round();
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::Round,
+                    0,
+                );
                 paid!(
                     budget,
                     function,
                     PAIR_SCOPE,
                     "ordinary plan history pair-local paths"
                 )?;
+                #[cfg(feature = "unstable-workflow-profiling")]
+                crate::workflow_profile::plan_comparison::event(
+                    crate::workflow_profile::plan_comparison::Site::PairScopeAdmitted,
+                    PAIR_SCOPE,
+                );
                 {
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
@@ -314,6 +386,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         )?;
                         #[cfg(test)]
                         census.pair_match_admitted();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        crate::workflow_profile::plan_comparison::event(
+                            crate::workflow_profile::plan_comparison::Site::MatchAdmitted,
+                            PAIR_MATCH,
+                        );
                         // Both Some paths converge at the bare reference yield;
                         // no Option/tuple or owner payload crosses this frontier.
                         let left = lexical_plan_value!(
@@ -327,6 +404,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             "ordinary plan history paired cursor next",
                             census,
                             {
+                                #[cfg(feature = "unstable-workflow-profiling")]
+                                crate::workflow_profile::plan_comparison::event(
+                                    crate::workflow_profile::plan_comparison::Site::LeftExhausted,
+                                    0,
+                                );
                                 let _right = lexical_plan_value!(
                                     owner,
                                     right_cursor,
@@ -338,6 +420,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     "ordinary plan history paired cursor next",
                                     census,
                                     {
+                                        #[cfg(feature = "unstable-workflow-profiling")]
+                                        crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
+                                        #[cfg(feature = "unstable-workflow-profiling")]
+                                        crate::workflow_profile::plan_comparison::event(crate::workflow_profile::plan_comparison::Site::TerminalCompared, 0);
                                         owner.ordering =
                                             left_path.terminal.cmp(&right_path.terminal);
                                         break 'paired;
@@ -358,6 +444,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             "ordinary plan history paired cursor next",
                             census,
                             {
+                                #[cfg(feature = "unstable-workflow-profiling")]
+                                crate::workflow_profile::plan_comparison::event(
+                                    crate::workflow_profile::plan_comparison::Site::RightExhausted,
+                                    0,
+                                );
                                 owner.ordering = Ordering::Greater;
                                 break 'paired;
                             }
@@ -371,6 +462,11 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             )?;
                             #[cfg(test)]
                             census.round();
+                            #[cfg(feature = "unstable-workflow-profiling")]
+                            crate::workflow_profile::plan_comparison::event(
+                                crate::workflow_profile::plan_comparison::Site::Round,
+                                0,
+                            );
                             continue;
                         }
                         break;
@@ -526,6 +622,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
     }
     #[cfg(test)]
     census.success();
+    #[cfg(feature = "unstable-workflow-profiling")]
+    diagnostic.success();
     Ok(())
 }
 

@@ -62,3 +62,7 @@ mod enabled;
 pub(crate) use enabled::span;
 #[cfg(feature = "unstable-workflow-profiling")]
 pub use enabled::{capture, CaptureBusy, Observation, StageObservation};
+
+/// Fixed-storage comparison census for explicitly instrumented builds.
+#[cfg(feature = "unstable-workflow-profiling")]
+pub mod plan_comparison;

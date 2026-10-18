@@ -39,6 +39,57 @@ if accepted && same && required=={length}usize{{724}}else{{0}}
         invalid = invalid
     )
 }
+// Diagnostic build only: all compiler owners unwind/drop before reporting.
+// This labels the fixture bytes, not an authenticated repository revision.
+#[cfg(feature = "unstable-workflow-profiling")]
+fn observed_generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
+    use semaprax::workflow_profile::plan_comparison::{Binding, Capture};
+    use sha2::{Digest, Sha256};
+    let mut digest = Sha256::new();
+    digest.update(SCHEMA.replace("Vec<Row>", "Vec<string>").as_bytes());
+    digest.update(include_bytes!("../bulk_utf8/semaprax.toml"));
+    digest.update(INPUT_V2.as_bytes());
+    digest.update(OUTPUT_V2.as_bytes());
+    digest.update(b"request=NestedRequest/64/256; generated-v2-v1");
+    digest.update(app_v2(invalid).as_bytes());
+    digest.update(format!("{response:?}/{invalid}").as_bytes());
+    let capture = match Capture::begin(Binding::caller_labelled(
+        "native/string-vectors/generated-v2; revision=unknown (bind external round manifest); caller-labelled",
+        digest.finalize().into(),
+    )) {
+        Ok(capture) => capture,
+        Err(error) => {
+            eprintln!("PLAN_COMPARISON_DIAGNOSTIC_REFUSED {error:?}");
+            return generated_v2(response, invalid);
+        }
+    };
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        generated_v2(response, invalid)
+    }));
+    match capture.finish() {
+        Ok(report) => {
+            use semaprax::workflow_profile::plan_comparison::Site;
+            eprintln!(
+        "PLAN_COMPARISON_DIAGNOSTIC build={:?} generation={} P={} N={} STEP={} LOAD={} EMPTY={} TAIL={} left_head={} right_head={} left_exhaustion={} right_exhaustion={} terminal={} started={} ended={} success={} unwind={} counts_complete={} detail_complete={} overflow={}",
+        report.build, report.generation,
+        report.counts.at(Site::PairPrepared), report.counts.at(Site::Round),
+        report.counts.at(Site::StepAdmitted), report.counts.at(Site::LoadAdmitted),
+        report.counts.at(Site::EmptySegment), report.counts.at(Site::TailAdmitted),
+        report.counts.at(Site::LeftHead), report.counts.at(Site::RightHead),
+        report.counts.at(Site::LeftExhausted), report.counts.at(Site::RightExhausted),
+        report.counts.at(Site::TerminalCompared), report.counts.started, report.counts.ended,
+        report.counts.succeeded, report.counts.unwound,
+        report.counts_complete, report.detail_complete, report.overflow,
+    );
+            eprintln!("PLAN_COMPARISON_DIAGNOSTIC_DETAILS {report:?}");
+        }
+        Err(error) => eprintln!("PLAN_COMPARISON_DIAGNOSTIC_INCOMPLETE {error:?}"),
+    }
+    match result {
+        Ok(value) => value,
+        Err(payload) => std::panic::resume_unwind(payload),
+    }
+}
 fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
     let root = std::env::temp_dir().join(format!(
         "native-codec-allocation-{}-{}-{}",
@@ -167,7 +218,16 @@ fn expected_wire_bytes() -> String {
 }
 #[test]
 fn primitive_string_codec_reads_and_short_refusal_allocate_nothing_then_copy_final_string_once() {
+    #[cfg(not(feature = "unstable-workflow-profiling"))]
     let generated = observe_slot_copies(generated_v2(
+        project::JsonCodecProfile::NestedResponseV2 {
+            max_string_bytes: 64,
+            max_array_items: 256,
+        },
+        false,
+    ));
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let generated = observe_slot_copies(observed_generated_v2(
         project::JsonCodecProfile::NestedResponseV2 {
             max_string_bytes: 64,
             max_array_items: 256,
@@ -270,7 +330,10 @@ fn primitive_string_codec_actual_byte_and_item_plus_one_preflight_never_reserve_
             },
         ),
     ] {
+        #[cfg(not(feature = "unstable-workflow-profiling"))]
         let generated = observe_slot_copies(generated_v2(policy, true));
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let generated = observe_slot_copies(observed_generated_v2(policy, true));
         let raw = INPUT_V2
             .bytes()
             .map(|b| b.to_string())
