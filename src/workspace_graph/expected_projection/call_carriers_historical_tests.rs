@@ -4,9 +4,13 @@
 //! allocation highwater gate. Variable roots keep all storage and closure
 //! subtrees keep every variable auxiliary carrier. This source batch awaits
 //! executable qualification. Nothing here mirrors `declaration_cost`.
-use super::super::call_carriers_original::{
-    historical_cached as cached_exact, historical_scoped as synthetic_builder_bytes_scoped,
-};
+use super::super::call_carriers_original::historical_scoped as synthetic_builder_bytes_scoped;
+mod cached_exact {
+    pub(super) use super::super::super::cached_exact::fixed_upper;
+    pub(super) use super::super::super::call_carriers_original::historical_cached::{
+        Retention, summed,
+    };
+}
 use super::super::dependency_identity_max;
 use super::StructuralCost;
 use crate::ast::{Expr, ExprKind, Program};

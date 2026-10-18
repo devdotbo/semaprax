@@ -1,7 +1,7 @@
 //! Authenticated authored ordinary calls. This proof owns no heap allocation.
 //! Scratch exhaustion, incomplete traversal and ambiguous headers keep the old
 //! charge. Synthetic/default/generic trees never enter this census.
-use super::{call_identity, AuthoredDeclaration};
+use super::{AuthoredDeclaration, call_identity};
 use crate::ast::{
     Expr, ExprKind, MatchPattern, ModuleUseKind, Program, RecordMatchFieldPattern, Statement,
 };
@@ -40,13 +40,45 @@ impl<'a> Names<'a> {
     }
     fn contains(&self, name: &str, proof: &mut Proof) -> bool {
         proof.charge(&(self, name));
-        let found = self.entries[..self.len].iter().any(|item| {
-            proof.charge(&item);
-            *item == Some(name)
-        });
-        proof.charge(&found);
-        found
+        // One scalar cursor. No iterator, closure environment, Some(name)
+        // construction or Option equality pipeline is formed by this search.
+        proof.bytes = proof.bytes.saturating_add(std::mem::size_of::<usize>());
+        let mut index = 0;
+        loop {
+            // Actual cursor/length comparison values and its boolean result,
+            // including the terminal probe on an absent spelling.
+            proof.bytes = proof
+                .bytes
+                .saturating_add(2 * std::mem::size_of::<usize>() + std::mem::size_of::<bool>());
+            if index == self.len {
+                proof.charge(&false);
+                return false;
+            }
+            // Array Index actual/formal receivers and indices, returned option
+            // loan. Matching a borrowed place forms no Option<&str> value.
+            proof.bytes = proof.bytes.saturating_add(
+                2 * std::mem::size_of::<&[Option<&str>; 128]>()
+                    + 2 * std::mem::size_of::<usize>()
+                    + std::mem::size_of::<&Option<&str>>(),
+            );
+            if let Some(item) = &self.entries[index] {
+                // The &&str pattern binding, str::eq's actual/formal fat loans,
+                // and its returned boolean all belong to this reached probe.
+                proof.bytes = proof.bytes.saturating_add(
+                    std::mem::size_of::<&&str>()
+                        + 4 * std::mem::size_of::<&str>()
+                        + std::mem::size_of::<bool>(),
+                );
+                if str::eq(*item, name) {
+                    proof.charge(&true);
+                    return true;
+                }
+            }
+            proof.bytes = proof.bytes.saturating_add(std::mem::size_of::<usize>());
+            index += 1;
+        }
     }
+
     fn pattern(&mut self, pattern: &'a MatchPattern, depth: usize, proof: &mut Proof) -> bool {
         proof.charge(&(&*self, pattern, depth));
         if depth == 128 {

@@ -5,7 +5,7 @@ pub(in crate::workspace_graph) fn new() -> StructuralCost {
 }
 pub(in crate::workspace_graph) fn capture_projection(
     cost: &StructuralCost,
-) -> (bool, bool, [usize; 15]) {
+) -> (bool, bool, [usize; 16]) {
     let StructuralCost {
         total,
         string_bytes,
@@ -22,6 +22,7 @@ pub(in crate::workspace_graph) fn capture_projection(
         exact_carrier_free_ifs,
         exact_carrier_free_vars,
         exact_carrier_free_blocks,
+        exact_carrier_free_calls,
     } = cost;
     (
         *embedded_headers,
@@ -42,6 +43,7 @@ pub(in crate::workspace_graph) fn capture_projection(
             *exact_carrier_free_ifs,
             *exact_carrier_free_vars,
             *exact_carrier_free_blocks,
+            *exact_carrier_free_calls,
         ],
     )
 }

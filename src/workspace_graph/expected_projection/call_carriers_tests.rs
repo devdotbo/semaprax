@@ -253,7 +253,9 @@ fn hostile_target_binding_and_delegated_routes_fail_closed() {
 #[test]
 fn imported_target_requires_actual_unique_authenticated_monomorphic_header() {
     let provider = parse("module provider; @id(\"provider.f\") fn f()->i64{1}");
-    let consumer = parse("module ordinary; use function @id(\"provider.f\") from provider as f; @id(\"ordinary.main\") fn main()->i64{f()}");
+    let consumer = parse(
+        "module ordinary; use function @id(\"provider.f\") from provider as f; @id(\"ordinary.main\") fn main()->i64{f()}",
+    );
     let programs = vec![provider, consumer];
     let authored = crate::workspace_graph::index_authored(&programs).unwrap();
     assert_eq!(count(&programs[1], &authored, true).roots, 1);
@@ -343,6 +345,8 @@ fn dense_invoice(n: usize) -> usize {
         + (expressions - functions) * charged::<(usize, &Expr, bool, bool)>();
     let targets = n
         * (charged::<(&Names<'_>, &str)>()
+            + size_of::<usize>() // empty-name cursor
+            + 2 * size_of::<usize>() + size_of::<bool>() // terminal length probe
             + charged::<bool>()
             + charged::<(&Program, &Index<'_>, bool, &str, usize)>()
             + charged::<(&str, bool)>()
@@ -361,6 +365,42 @@ fn independent_cold_invoice_prices_zero_and_every_closed_dense_proof_role() {
             crate::test_allocation_observer::measure(|| count(&programs[0], &authored, true));
         assert_eq!(p.roots, n);
         assert_eq!(p.bytes, dense_invoice(n));
+        assert!(!allocation.invalid);
+        assert_eq!(allocation.allocations, 0);
+        assert_eq!(allocation.reallocations, 0);
+        assert_eq!(allocation.live, 0);
+    }
+    // Existing shadowing controls cover semantic refusal. This independent
+    // source-role equation additionally reaches nonempty names and early hits.
+    for (query, probes, terminal, increments, found) in [
+        ("first", 1usize, 0usize, 0usize, true),
+        ("second", 2, 0, 1, true),
+        ("absent", 2, 1, 2, false),
+    ] {
+        let mut names = Names {
+            entries: [None; 128],
+            len: 2,
+        };
+        names.entries[0] = Some("first");
+        names.entries[1] = Some("second");
+        let mut invoice = Proof::default();
+        let (actual, allocation) =
+            crate::test_allocation_observer::measure(|| names.contains(query, &mut invoice));
+        assert_eq!(actual, found);
+        let entry = charged::<(&Names<'_>, &str)>() + size_of::<usize>();
+        let predicate = 2 * size_of::<usize>() + size_of::<bool>();
+        let index = 2 * size_of::<&[Option<&str>; 128]>()
+            + 2 * size_of::<usize>()
+            + size_of::<&Option<&str>>();
+        let comparison = size_of::<&&str>() + 4 * size_of::<&str>() + size_of::<bool>();
+        assert_eq!(
+            invoice.bytes,
+            entry
+                + (probes + terminal) * predicate
+                + probes * (index + comparison)
+                + increments * size_of::<usize>()
+                + charged::<bool>()
+        );
         assert!(!allocation.invalid);
         assert_eq!(allocation.allocations, 0);
         assert_eq!(allocation.reallocations, 0);
@@ -429,7 +469,9 @@ fn identical_admitted_hir_and_six_field_diagnostics_at_matched_successful_budget
 
 #[test]
 fn native_import_priority_and_malformed_or_runtime_censuses_keep_old_charges() {
-    let source = format!("{HEADER}@id(\"host.f\") import rust fn f()->i64 failure infallible; @id(\"ordinary.main\") fn main()->i64{{f()}}");
+    let source = format!(
+        "{HEADER}@id(\"host.f\") import rust fn f()->i64 failure infallible; @id(\"ordinary.main\") fn main()->i64{{f()}}"
+    );
     assert_eq!(proof(&source).roots, 0);
     let mut raw = super::super::StructuralCost::new();
     raw.exact_expressions = 1;
