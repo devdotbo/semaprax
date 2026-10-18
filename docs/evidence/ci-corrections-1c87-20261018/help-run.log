@@ -1,8 +1,0 @@
-
-running 3 tests
-test help::usages::tests::new_help_preserves_exact_public_and_full_grammar ... ok
-test complete_catalog_matches_unchanged_frozen_current_snapshot ... ok
-test help::usages::tests::exhaustive_catalog_preserves_the_qualified_full_new_shape ... ok
-
-test result: ok. 3 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.01s
-

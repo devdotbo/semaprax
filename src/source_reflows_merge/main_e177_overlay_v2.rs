@@ -20,6 +20,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/skeleton_work.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows_merge/next_big_batch_inputs.rs",
     "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
@@ -53,7 +54,10 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "src/source_reflows_merge/runtime_json.rs",
     "src/source_verify/declaration.rs",
+    "src/workspace_graph.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs",
+    "src/workspace_graph/function_alias/before_core.rs",
+    "src/workspace_graph/function_alias/before_core/tests.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "src/workspace_graph/test_replay_context.rs",
     "tests/project/standard_library/application_json.rs",
@@ -172,11 +176,15 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 49233; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "5902cce903d6a919b69768a65b65a658acbc0202c8de7d210a987b79cf1ea976";
+const POLICY_LENGTH: usize = 52180; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "b30ba0cc84dd32895fdd78d720f914ff3beb07edd51cc7c20bec295a454be703";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -857,6 +865,10 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs")),

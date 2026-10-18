@@ -302,10 +302,10 @@ fn projection344_stage(supplied: &str) -> String {
 
 fn projection344_live_descriptor() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/current339-source-custody-repair-20261017/projection344-live-join.json");
-    assert_eq!(data.len(), 8340);
+    assert_eq!(data.len(), 8735);
     assert_eq!(
         digest(data),
-        "9b2e3c0c0d87c9c99486fabd39897ef4e96d2bc35f19d53d0359c13e1f0c553e"
+        "4467c717fb5efd95c65d7f827c545e8ed473549114f917a8c62253c67702c03f"
     );
     let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(
         "docs/evidence/current339-source-custody-repair-20261017/projection344-live-join.json",
@@ -330,18 +330,36 @@ fn projection344_live_sources(row: &serde_json::Value) -> String {
             assert!(length <= 2_097_152);
             let sha = part["sha256"].as_str().unwrap();
             let source = part["source"].as_str().unwrap();
-            let text = crate::source_reflows_merge::main_e177_final_inputs::file(
-                &root.join(source), length, sha,
-            ).unwrap_or_else(|| {
-                // Only original44 regular-reader subjects retain that route.
-                // The five added sources must have current compiled custody.
+            let text = reader::read(&root.join(source), length, sha, 2_097_152)
+                .expect("exact live projection part");
+            if let Some(archive) = part["archive"].as_str() {
+                let compiled = match source {
+                    "src/workspace_graph/expected_projection/call_carriers.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers.rs"),
+                    "src/workspace_graph/expected_projection/call_carriers_tests.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_tests.rs"),
+                    "src/workspace_graph/expected_projection/call_carriers_inverse.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_inverse.rs"),
+                    "src/workspace_graph/expected_projection/call_carriers_original.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_original.rs"),
+                    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_historical_tests.rs"),
+                    _ => panic!("foreign additional projection part"),
+                };
+                assert_eq!(
+                    text, compiled,
+                    "complete compiled additional projection part"
+                );
+                assert_eq!(
+                    text,
+                    reader::read(&root.join(archive), length, sha, 2_097_152).unwrap(),
+                    "complete current additional projection archive"
+                );
+            } else {
                 let old: serde_json::Value = serde_json::from_str(include_str!(
                     "../../docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json"
                 )).unwrap();
-                assert!(old["parts"].as_array().unwrap().iter().any(|p| p["source"].as_str() == Some(source)));
-                reader::read(&root.join(source), length, sha, 2_097_152)
-                    .expect("exact original projection part at its live tuple")
-            });
+                assert!(old["parts"]
+                    .as_array()
+                    .unwrap()
+                    .iter()
+                    .any(|p| p["source"].as_str() == Some(source)));
+            }
             assert_eq!(text.len(), length);
             assert_eq!(digest(&text), sha);
             joined.push_str(&text);
