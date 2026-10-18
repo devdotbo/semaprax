@@ -3,11 +3,187 @@
 //! vectors. Label order, route weights, signature algebra and work debits keep
 //! the complete original receiver in canonical_before.rs as an independent control.
 use super::super::{
-    physical_clone, replay_error, Automaton, BTreeMap, BTreeSet, Diagnostic, Label, Rc,
-    ReplayBudget, ResolvedFunction, Weighted,
+    physical_clone, replay_error, BTreeMap, BTreeSet, Diagnostic, Label, Rc, ReplayBudget,
+    ResolvedFunction, Weighted,
 };
 
-use super::{app_census, epsilon_alias, tests};
+use super::super::{instrumentation, SkeletonTerminal};
+use super::{app_census, epsilon_alias};
+// Genuine c598 Vec-field automaton. Both historical receivers borrow this same
+// representation; current compact-node getters are absent from their cut.
+#[derive(Default)]
+struct Node {
+    moves: Vec<(Label, usize)>,
+    epsilon: Vec<usize>,
+}
+
+#[derive(Default)]
+pub(super) struct Automaton {
+    nodes: Vec<Node>,
+}
+
+impl Automaton {
+    fn node(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<usize, Diagnostic> {
+        budget.charge(function, 1, "factored automaton node construction")?;
+        budget.reserve_vec(function, &mut self.nodes, 1, "factored automaton nodes")?;
+        self.nodes.push(Node::default());
+        #[cfg(test)]
+        instrumentation::node();
+        Ok(self.nodes.len() - 1)
+    }
+
+    fn movement(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        from: usize,
+        label: Label,
+        to: usize,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "factored automaton labelled movement")?;
+        budget.reserve_vec(
+            function,
+            &mut self.nodes[from].moves,
+            1,
+            "factored automaton moves",
+        )?;
+        self.nodes[from].moves.push((label, to));
+        #[cfg(test)]
+        instrumentation::edge();
+        Ok(())
+    }
+
+    fn epsilon(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        from: usize,
+        to: usize,
+    ) -> Result<(), Diagnostic> {
+        budget.charge(function, 1, "factored automaton epsilon movement")?;
+        budget.reserve_vec(
+            function,
+            &mut self.nodes[from].epsilon,
+            1,
+            "factored automaton epsilon moves",
+        )?;
+        self.nodes[from].epsilon.push(to);
+        #[cfg(test)]
+        instrumentation::edge();
+        Ok(())
+    }
+
+    fn end(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+        sink: usize,
+        terminal: SkeletonTerminal,
+    ) -> Result<usize, Diagnostic> {
+        let node = self.node(function, budget)?;
+        self.movement(function, budget, node, Label::End(terminal), sink)?;
+        Ok(node)
+    }
+}
+
+pub(super) fn graph(
+    function: &ResolvedFunction,
+    width: usize,
+    repeats: usize,
+) -> (Automaton, usize, usize) {
+    let mut budget = ReplayBudget::unobserved();
+    let mut graph = Automaton::default();
+    let sink = graph.node(function, &mut budget).unwrap();
+    let root = graph.node(function, &mut budget).unwrap();
+    let mut children = Vec::new();
+    for _ in 0..width {
+        children.push(
+            graph
+                .end(function, &mut budget, sink, SkeletonTerminal::Failure)
+                .unwrap(),
+        );
+    }
+    for child in children.into_iter().rev() {
+        for _ in 0..repeats {
+            graph
+                .movement(
+                    function,
+                    &mut budget,
+                    root,
+                    Label::End(SkeletonTerminal::Success),
+                    child,
+                )
+                .unwrap();
+        }
+    }
+    (graph, sink, root)
+}
+
+// Fixture-only equality runs before any measured receiver/payer is created.
+// The getter calls belong to neither historical canonicalization arm.
+pub(super) fn assert_same_fixture(old: &Automaton, current: &super::super::Automaton) {
+    assert_eq!(old.nodes.len(), current.nodes.len());
+    for (old, current) in old.nodes.iter().zip(&current.nodes) {
+        assert_eq!(old.moves.as_slice(), current.moves());
+        assert_eq!(old.epsilon.as_slice(), current.epsilon());
+    }
+}
+
+#[rustfmt::skip]
+mod tests {
+    use super::*;
+    pub(super) use super::super::tests::note_actual_entry;
+pub(super) fn automaton(function: &ResolvedFunction) -> (Automaton, usize, Vec<usize>) {
+    let mut budget = ReplayBudget::new();
+    let mut automaton = Automaton::default();
+    let sink = automaton.node(function, &mut budget).unwrap();
+    let mut roots = Vec::new();
+    for terminal in [
+        SkeletonTerminal::Success,
+        SkeletonTerminal::Failure,
+        SkeletonTerminal::LoopLatch,
+    ] {
+        roots.push(
+            automaton
+                .end(function, &mut budget, sink, terminal)
+                .unwrap(),
+        );
+    }
+    let duplicate = automaton.node(function, &mut budget).unwrap();
+    for _ in 0..2 {
+        automaton
+            .epsilon(function, &mut budget, duplicate, roots[0])
+            .unwrap();
+    }
+    roots.push(duplicate);
+    for targets in [[roots[0], roots[1]], [roots[1], roots[0]]] {
+        let root = automaton.node(function, &mut budget).unwrap();
+        for target in targets {
+            automaton
+                .epsilon(function, &mut budget, root, target)
+                .unwrap();
+        }
+        roots.push(root);
+    }
+    let cycle = automaton.node(function, &mut budget).unwrap();
+    automaton
+        .movement(
+            function,
+            &mut budget,
+            cycle,
+            Label::End(SkeletonTerminal::Success),
+            cycle,
+        )
+        .unwrap();
+    roots.push(cycle);
+    (automaton, sink, roots)
+}
+}
+
 #[path = "matched_receiving_layers/memo.rs"]
 mod memo;
 #[path = "matched_receiving_layers/successor_targets.rs"]
@@ -507,7 +683,7 @@ impl<'a> Canonicalizer<'a> {
     }
 }
 
-
+#[rustfmt::skip]
 mod before_receiving_layers {
 //! Paid immutable weighted backing for the ordinary canonical receiver.
 //! Frames, open states and completed memo keys share only owned immutable
@@ -518,7 +694,7 @@ use super::{
     physical_clone, replay_error,
 };
 
-use super::{epsilon_alias, memo, successor_targets, tests};
+use super::{app_census, epsilon_alias, memo, successor_targets, tests};
 
 type SharedWeighted = Rc<Weighted>;
 

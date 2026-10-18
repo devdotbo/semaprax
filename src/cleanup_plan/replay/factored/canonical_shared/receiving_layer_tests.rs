@@ -140,7 +140,7 @@ fn observe(
 fn inline_targets_actual_old_current_reserved_allocated_peak_and_whole_drop_are_measured() {
     let function = fixture();
     for width in 0..=4 {
-        let (graph, sink, root) = graph(&function, width, 2);
+        let (graph, sink, root) = super::matched_receiving_layers::graph(&function, width, 2);
         let mut tuples = Vec::new();
         for old in [true, false] {
             let (paid, physical) = observe_matched_831(&function, &graph, sink, root, 1 << 24, old);
@@ -737,7 +737,7 @@ fn arity_dispatch_complete_886_corpus_preserves_all_shapes_work_and_drop_with_ex
 // The matched historical claim above is independent of this complete live receiver.
 fn observe_matched_831(
     function: &ResolvedFunction,
-    graph: &Automaton,
+    graph: &super::matched_receiving_layers::Automaton,
     sink: usize,
     root: usize,
     limit: usize,
@@ -755,7 +755,8 @@ fn observe_matched_831(
         let result = (|| {
             budget.reserve_array::<(usize, u64)>(function, 1, "inline target root")?;
             let id = if old {
-                let mut receiver = super::matched_receiving_layers::BeforeCanonicalizer::new(graph, sink);
+                let mut receiver =
+                    super::matched_receiving_layers::BeforeCanonicalizer::new(graph, sink);
                 receiver.id(function, vec![(root, 1)], &mut budget)?
             } else {
                 let mut receiver = super::matched_receiving_layers::Canonicalizer::new(graph, sink);
@@ -788,10 +789,21 @@ fn matched_831_and_live_receiver_report_full_tuples_without_relabeling_the_gener
     let function = fixture();
     for width in 0..=4 {
         let (graph, sink, root) = graph(&function, width, 2);
+        let (matched_graph, matched_sink, matched_root) =
+            super::matched_receiving_layers::graph(&function, width, 2);
+        assert_eq!((matched_sink, matched_root), (sink, root));
+        super::matched_receiving_layers::assert_same_fixture(&matched_graph, &graph);
         let mut reports = Vec::new();
         for generation in 0..3 {
             let (result, heap) = if generation < 2 {
-                observe_matched_831(&function, &graph, sink, root, 1 << 24, generation == 0)
+                observe_matched_831(
+                    &function,
+                    &matched_graph,
+                    matched_sink,
+                    matched_root,
+                    1 << 24,
+                    generation == 0,
+                )
             } else {
                 observe(&function, &graph, sink, root, 1 << 24, false)
             };
