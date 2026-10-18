@@ -300,7 +300,11 @@ fn exact_one_short_zero_and_whole_allocation_drop_controls() {
         }
     }
     let checked = crate::check(&source, "ordinary.spx").unwrap();
-    let ((), allocation) = crate::test_allocation_observer::measure(|| {
+    // The complete resolver keeps more than the default 16,384 pointers live.
+    // Freed slots are already reclaimed; this is simultaneous HIR backing,
+    // not a tombstone leak. Use the existing explicit whole-HIR registry size;
+    // its backing is prepared outside observation, with exhaustion still fatal.
+    let ((), allocation) = crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
         let resolved = crate::hir::resolve(&checked).unwrap();
         crate::hir::validate(&resolved).unwrap();
         drop(resolved);

@@ -40,6 +40,33 @@ fn flat(headers: usize, groups: usize, reverse: bool) -> String {
         statements,
     )
 }
+// Only call-site text changes: globally replacing f1() also renames its
+// declaration and correctly makes the original multiset ambiguous.
+fn warm_calls(source: &str, balanced: bool) -> String {
+    let (header, body) = source.split_once("fn main()->i64{").unwrap();
+    let mut body = body.to_owned();
+    for i in 1..16 {
+        body = body.replace(&format!("f{i}()"), "f0()");
+    }
+    if balanced {
+        let statements = body.strip_suffix("0}").unwrap();
+        let mut level: Vec<String> = statements
+            .split(';')
+            .filter(|call| !call.is_empty())
+            .map(str::to_owned)
+            .collect();
+        assert!(!level.is_empty() && level.len().is_power_of_two());
+        while level.len() > 1 {
+            level = level
+                .chunks_exact(2)
+                .map(|pair| format!("({}+{})", pair[0], pair[1]))
+                .collect();
+        }
+        body = format!("{}}}", level.pop().unwrap());
+    }
+    format!("{header}fn main()->i64{{{body}")
+}
+
 fn parity(program: &Program, index: &Index<'_>, imports: bool) -> (Proof, Census) {
     let old = super::super::before_directory::count(program, index, imports);
     take_census();
@@ -66,8 +93,21 @@ fn complete_before_source_and_all_header_capacity_boundaries_are_retained() {
         linear.replacen("fn count_linear(", "pub(super) fn count(", 1),
         before
     );
+    let empty = crate::parse("module ordinary; ", "ordinary.spx").unwrap_err();
+    assert_eq!(empty.code, "SPX-P101");
+    assert_eq!(empty.message, "a module must declare at least one function");
+    assert_eq!(empty.path.as_deref(), Some("ordinary.spx"));
+    assert_eq!(
+        empty.span.as_ref().map(|s| (s.line, s.column)),
+        Some((1, 18))
+    );
+    assert!(empty.help.is_none());
     for n in [0, 1, 63, 64, 128, 129, 512, 513] {
-        let program = parse(&format!("module ordinary; {}", padding(n)));
+        let mut program = parse(&format!("module ordinary; {}", padding(n.max(1))));
+        if n == 0 {
+            // Defensive raw-header DATA boundary, not frontend admission.
+            program.functions.clear();
+        }
         let programs = [program];
         let index = crate::workspace_graph::index_authored(&programs).unwrap();
         let (current, census) = parity(&programs[0], &index, true);
@@ -211,9 +251,19 @@ fn full_cold_invoice_retains_short_losses_and_genuine_dense_net_gate() {
     for (headers, groups) in [(2, 1), (64, 0), (128, 0), (512, 128)] {
         let mut source = flat(headers, groups, false);
         if headers == 512 {
+            let mut ambiguous = source.clone();
             for i in 1..16 {
-                source = source.replace(&format!("f{i}()"), "f0()");
+                ambiguous = ambiguous.replace(&format!("f{i}()"), "f0()");
             }
+            let programs = [parse(&ambiguous)];
+            let index = crate::workspace_graph::index_authored(&programs).unwrap();
+            let old = super::super::before_directory::count(&programs[0], &index, true);
+            let (proof, census) = parity(&programs[0], &index, true);
+            assert_eq!(
+                (old.roots, proof.roots, census.queries),
+                (0, 0, 16 * groups)
+            );
+            source = warm_calls(&source, false);
         }
         let program = parse(&source);
         let programs = [program];
@@ -287,18 +337,22 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
     use crate::workspace_graph::expected_projection::{
         cached_exact::Retention, call_carriers_original, dependency_identity_max, held_projection,
     };
-    for (headers, groups, warm) in [
-        (2, 1, false),
-        (64, 0, false),
-        (128, 1, false),
-        (512, 128, false),
-        (64, 128, true),
+    for (headers, groups, shape) in [
+        (2, 1, 0),
+        (64, 0, 0),
+        (128, 1, 0),
+        (512, 128, 0),
+        (64, 128, 1), // complete original duplicate-header negative
+        (64, 128, 2), // genuine warm calls, 128 synthetic shadow names
+        (64, 128, 3), // same calls, balanced value tree and no shadow names
     ] {
         let mut source = flat(headers, groups, false);
-        if warm {
+        if shape == 1 {
             for i in 1..16 {
                 source = source.replace(&format!("f{i}()"), "f0()");
             }
+        } else if shape >= 2 {
+            source = warm_calls(&source, shape == 3);
         }
         let programs = [parse(&source)];
         let index = crate::workspace_graph::index_authored(&programs).unwrap();
@@ -306,6 +360,22 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
         let maximum = Some(dependency_identity_max(program, &index, &programs).unwrap());
         let before_directory = super::super::before_directory::count(program, &index, true);
         let current_proof = count(program, &index, true);
+        assert_eq!(current_proof.roots, before_directory.roots);
+        if shape == 1 {
+            assert_eq!(current_proof.roots, 0, "original duplicate headers refuse");
+        } else if shape == 2 {
+            assert_eq!(current_proof.roots, 16 * groups);
+        } else if shape == 3 {
+            // Every sink is also a free binary operand; all original argument
+            // calls remain. No padding or borrowed semantic authority.
+            assert_eq!(current_proof.roots, 17 * groups);
+            let crate::ast::ExprKind::Block { statements, .. } =
+                &program.functions.last().unwrap().body.kind
+            else {
+                panic!("parsed main remains an ordinary block");
+            };
+            assert!(statements.is_empty());
+        }
         for (mode, retention) in [
             (5, Retention::Parsed),
             (6, Retention::Parsed),
@@ -323,8 +393,22 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
                     true,
                     (mode, retention),
                     None,
-                )
-                .unwrap();
+                );
+            let current = match current {
+                Ok(current) => current,
+                Err(errors) => {
+                    assert_eq!((headers, groups, shape, mode), (512, 128, 0, 7));
+                    assert_eq!(
+                        errors,
+                        vec![crate::workspace_graph::limit_error(
+                            "builder_bytes",
+                            67_108_864
+                        )]
+                    );
+                    eprintln!("AUTHORED_HEADER_DIRECTORY mode={mode} retention={retention:?} headers={headers} groups={groups} shape={shape} pre898={} current_refusal={errors:?}; original 64MiB cap retained", old.retained_clone_and_hir);
+                    continue;
+                }
+            };
             let copies = match retention {
                 Retention::Parsed => 1,
                 Retention::Semantic => 2,
@@ -339,7 +423,13 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
                 current.retained_clone_and_hir + copies * current_proof.roots * auxiliary,
                 old.retained_clone_and_hir + current_proof.bytes
             );
-            if warm {
+            if shape == 2 {
+                assert!(
+                    current.retained_clone_and_hir > old.retained_clone_and_hir,
+                    "128 synthetic shadow names retain the genuine unfavorable row"
+                );
+            }
+            if shape == 3 {
                 assert!(
                     current.retained_clone_and_hir < old.retained_clone_and_hir,
                     "adoption gate includes the complete pre898 forecast and every current cold/query fee: old={} current={}",
@@ -351,7 +441,7 @@ fn complete_pre898_forecast_comparison_discloses_every_cold_and_dense_row() {
             // immediate linear proof. Negative rows remain explicit; neither
             // test supplies application adoption authority or cap changes.
             eprintln!(
-                "AUTHORED_HEADER_DIRECTORY mode={mode} retention={retention:?} headers={headers} groups={groups} warm={warm} copies={copies} roots={} pre898={} immediate_linear={} current={} old_proof={} current_proof={} auxiliary={auxiliary}",
+                "AUTHORED_HEADER_DIRECTORY mode={mode} retention={retention:?} headers={headers} groups={groups} shape={shape} copies={copies} roots={} pre898={} immediate_linear={} current={} old_proof={} current_proof={} auxiliary={auxiliary}",
                 current_proof.roots,
                 old.retained_clone_and_hir,
                 current.retained_clone_and_hir - current_proof.bytes + before_directory.bytes,
