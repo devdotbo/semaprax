@@ -1,5 +1,6 @@
 //! Exact selected structural twin; complete original remains in the parent owner.
 use super::*;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
 pub(in crate::cleanup_plan::replay) fn validate_place(
     function: &ResolvedFunction,
     place: &CleanupPlace,
@@ -15,17 +16,23 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
         &'a BTreeSet<StorageId>,
         &'a Leaves,
         &'a mut ReplayBudget,
-        &'a CleanupPlace,
+        std::collections::btree_map::Values<'a, LivenessFlagId, super::super::Leaf>,
+        Option<&'a super::super::Leaf>,
         &'a super::super::Leaf,
         usize,
+        std::collections::btree_map::Iter<'a, LivenessFlagId, super::super::Leaf>,
+        Option<(&'a LivenessFlagId, &'a super::super::Leaf)>,
+        &'a LivenessFlagId,
+        &'a super::super::Leaf,
         Vec<LivenessFlagId>,
+        Result<Vec<LivenessFlagId>, Error>,
     );
     budget.reserve_array::<Receiving<'_>>(
         function,
         1,
         "selected validate_place local receiving",
     )?;
-    budget.charge(function, 9, "selected validate_place local receiving")?;
+    budget.charge(function, 15, "selected validate_place local receiving")?;
 
     let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
         budget,
@@ -38,21 +45,28 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
     if !known.contains(&place.storage) {
         return Err(permit.control(Reason::Finite(Kind::CleanupPlaceReferencesUnknownStorage)));
     }
-    let matches = |leaf: &super::super::Leaf| {
-        leaf.place.storage == place.storage
+    // Two full flag-order scans preserve the old count-then-publication order.
+    // Their concrete iterator, next-result and binding roles are paid above.
+    let mut count = 0;
+    for leaf in leaves.values() {
+        if leaf.place.storage == place.storage
             && leaf.place.projections.starts_with(&place.projections)
-    };
-    let count = leaves.values().filter(|leaf| matches(leaf)).count();
+        {
+            count += 1;
+        }
+    }
     if count == 0 {
         return Err(permit.control(Reason::Finite(Kind::CleanupPlaceHasNoDroppableLeaf)));
     }
     budget.reserve_array::<LivenessFlagId>(function, count, "entry place leaves")?;
     let mut result = Vec::with_capacity(count);
-    result.extend(
-        leaves
-            .iter()
-            .filter_map(|(flag, leaf)| matches(leaf).then_some(*flag)),
-    );
+    for (flag, leaf) in leaves.iter() {
+        if leaf.place.storage == place.storage
+            && leaf.place.projections.starts_with(&place.projections)
+        {
+            result.push(*flag);
+        }
+    }
     Ok(result)
 }
 pub(super) fn validate_binding_selected(
@@ -94,10 +108,26 @@ pub(super) fn validate_binding_selected(
         function.cleanup_plan.schema,
         CLEANUP_PLAN_SCHEMA_V18 | CLEANUP_PLAN_SCHEMA_V19
     ) || sites.is_helper(at) && function.cleanup_plan.schema != CLEANUP_PLAN_SCHEMA_V19
-        || !sites.get(at).is_some_and(|binding| {
-            matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
-                && place.projections.is_empty()
-        })
+        || !receive!(
+            budget,
+            function,
+            (
+                Option<&crate::hir::ResolvedBinding>,
+                &crate::hir::ResolvedBinding,
+                bool
+            ),
+            3,
+            "selected renewal binding query receiving",
+            {
+                match sites.get(at) {
+                    Some(binding) => {
+                        matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
+                            && place.projections.is_empty()
+                    }
+                    None => false,
+                }
+            }
+        )
     {
         return Err(permit.control(Reason::Finite(
             Kind::RenewalIsOutsideAnExactAuthenticatedSameOwnerAssignment,
@@ -271,24 +301,55 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
         "selected control permit call receiving",
         Permit::control_receiver::<()>(function, budget)
     )?;
+    receive!(
+        budget,
+        function,
+        Option<&crate::cleanup_plan::FinalizeAction>,
+        1,
+        "selected finalizer next action receiving",
+        ()
+    );
     let mut finalized = BTreeSet::new();
     for action in actions {
         if !known.contains(&action.source.storage) {
             return Err(permit.control(Reason::Finite(Kind::CleanupPlaceReferencesUnknownStorage)));
         }
-        let mut under = leaves.iter().filter(|(_, leaf)| {
-            leaf.place.storage == action.source.storage
-                && leaf
+        receive!(
+            budget,
+            function,
+            (
+                std::collections::btree_map::Iter<'_, LivenessFlagId, super::super::Leaf>,
+                Option<(&LivenessFlagId, &super::super::Leaf)>,
+                &LivenessFlagId,
+                &super::super::Leaf,
+                Option<(&LivenessFlagId, &super::super::Leaf)>
+            ),
+            5,
+            "selected finalizer leaf scan receiving",
+            ()
+        );
+        let mut first = None;
+        let mut second = None;
+        for (candidate_flag, candidate_leaf) in leaves.iter() {
+            if candidate_leaf.place.storage == action.source.storage
+                && candidate_leaf
                     .place
                     .projections
                     .starts_with(&action.source.projections)
-        });
-        let first = under.next();
+            {
+                if first.is_none() {
+                    first = Some((candidate_flag, candidate_leaf));
+                } else {
+                    second = Some((candidate_flag, candidate_leaf));
+                    break;
+                }
+            }
+        }
         if first.is_none() {
             return Err(permit.control(Reason::Finite(Kind::CleanupPlaceHasNoDroppableLeaf)));
         }
         let (flag, leaf) = first.expect("nonempty borrowed leaf query");
-        if under.next().is_some() || *flag != action.guard_flag || leaf.place != action.source {
+        if second.is_some() || *flag != action.guard_flag || leaf.place != action.source {
             return Err(permit.control(Reason::Finite(
                 Kind::FinalizerGuardDoesNotNameItsExactCleanupLeaf,
             )));
@@ -317,18 +378,31 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
             }
             if condition.storage != action.source.storage
                 || action.source.projections.first() != Some(&condition.case)
-                || function
-                    .cleanup_plan
-                    .slots
-                    .iter()
-                    .find(|slot| slot.storage == condition.storage)
-                    .is_none_or(|slot| {
-                        !matches!(
-                            &slot.ty,
-                            ResolvedType::Nominal { declaration, .. }
-                                if declaration == &condition.variant
-                        )
-                    })
+                || !receive!(
+                    budget,
+                    function,
+                    (
+                        std::slice::Iter<'_, crate::cleanup_plan::CleanupSlot>,
+                        Option<&crate::cleanup_plan::CleanupSlot>,
+                        &crate::cleanup_plan::CleanupSlot,
+                        bool,
+                        bool,
+                        &DeclarationId
+                    ),
+                    6,
+                    "selected finalizer variant slot query receiving",
+                    {
+                        let mut agrees = false;
+                        for slot in &function.cleanup_plan.slots {
+                            if slot.storage == condition.storage {
+                                agrees = matches!(&slot.ty, ResolvedType::Nominal { declaration, .. }
+                                if declaration == &condition.variant);
+                                break;
+                            }
+                        }
+                        agrees
+                    }
+                )
             {
                 return Err(permit.control(Reason::Finite(
                     Kind::ConditionalFinalizerDoesNotBindItsExactVariantCasePath,

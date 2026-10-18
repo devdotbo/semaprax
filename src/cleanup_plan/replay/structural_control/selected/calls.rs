@@ -2,6 +2,7 @@
 // Borrowed call signatures and one precharged current-HIR lookup cursor.
 use super::super::call_receiving::{Kind as CallKind, Policy};
 use super::*;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
 use crate::cleanup_plan::CallArgumentTransfer;
 use crate::hir::lexical_exit::ChildCursor;
 
@@ -538,20 +539,70 @@ pub(super) fn validate<'a>(
             && type_arguments == fact.type_arguments.as_slice()
             && instance == fact.instance
             && args.len() == fact.arguments.len()
-            && args
-                .iter()
-                .zip(&fact.arguments)
-                .all(|(arg, id)| &arg.id == id)
+            && receive!(
+                budget,
+                function,
+                (
+                    std::slice::Iter<'_, ResolvedExpr>,
+                    crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                    std::iter::Zip<
+                        std::slice::Iter<'_, ResolvedExpr>,
+                        crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                    >,
+                    Option<(&ResolvedExpr, &ExpressionId)>,
+                    &ResolvedExpr,
+                    &ExpressionId,
+                    bool,
+                    bool
+                ),
+                8,
+                "selected call argument equality scan receiving",
+                {
+                    let mut same = true;
+                    for (arg, id) in args.iter().zip(&fact.arguments) {
+                        if &arg.id != id {
+                            same = false;
+                            break;
+                        }
+                    }
+                    same
+                }
+            )
     };
     #[cfg(not(test))]
     let agrees = callee == fact.callee.as_str()
         && type_arguments == fact.type_arguments.as_slice()
         && instance == fact.instance
         && args.len() == fact.arguments.len()
-        && args
-            .iter()
-            .zip(&fact.arguments)
-            .all(|(arg, id)| &arg.id == id);
+        && receive!(
+            budget,
+            function,
+            (
+                std::slice::Iter<'_, ResolvedExpr>,
+                crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                std::iter::Zip<
+                    std::slice::Iter<'_, ResolvedExpr>,
+                    crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                >,
+                Option<(&ResolvedExpr, &ExpressionId)>,
+                &ResolvedExpr,
+                &ExpressionId,
+                bool,
+                bool
+            ),
+            8,
+            "selected call argument equality scan receiving",
+            {
+                let mut same = true;
+                for (arg, id) in args.iter().zip(&fact.arguments) {
+                    if &arg.id != id {
+                        same = false;
+                        break;
+                    }
+                }
+                same
+            }
+        );
     if !agrees {
         return Err(Error::static_error(
             &permit,
@@ -676,10 +727,19 @@ pub(super) fn validate<'a>(
                 u32,
                 CallKind::TooManyCallParameters
             ))?;
-            if actual
-                .next()
-                .is_none_or(|arg| arg.parameter_index != expected)
-            {
+            if receive!(
+                budget,
+                function,
+                (Option<&CallArgumentTransfer>, &CallArgumentTransfer, bool),
+                3,
+                "selected owned argument next query receiving",
+                {
+                    match actual.next() {
+                        Some(arg) => arg.parameter_index != expected,
+                        None => true,
+                    }
+                }
+            ) {
                 return Err(Error::static_error(
                     &permit,
                     CallKind::CallCommitDoesNotContainEveryAndOnlyOwnedDroppableParameter,
@@ -697,7 +757,19 @@ pub(super) fn validate<'a>(
     let mut consumed = BTreeSet::new();
     for argument in arguments {
         budget.charge(function, 1, "structural call epochs")?;
-        if previous.is_some_and(|value| value >= argument.parameter_index) {
+        if receive!(
+            budget,
+            function,
+            (u32, bool),
+            2,
+            "selected argument prior index query receiving",
+            {
+                match previous {
+                    Some(value) => value >= argument.parameter_index,
+                    None => false,
+                }
+            }
+        ) {
             return Err(Error::static_error(
                 &permit,
                 CallKind::CallCommitParametersAreNotInStrictSignatureOrder,

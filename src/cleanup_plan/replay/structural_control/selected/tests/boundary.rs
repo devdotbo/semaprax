@@ -54,7 +54,7 @@ type OriginalAcquire<'a> = (
 );
 fn entry(function: &ResolvedFunction, budget: &mut ReplayBudget) -> Result<(), Error> {
     let storage = BTreeSet::new();
-    let leaves = Leaves::new();
+    let leaves = Leaves::new(BTreeMap::new());
     crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
         budget,
         function,
@@ -121,6 +121,115 @@ fn unknown_entry_exact_typed_frontier_and_one_short_keep_work_physical_and_no_al
                 assert_eq!(ledger.reserve(1).unwrap_err(), first);
             }
             other => panic!("wrong first refusal semantic={semantic}: {other:?}"),
+        }
+    }
+}
+
+#[test]
+fn unknown_place_full_iterator_frame_exact_short_zero_keeps_old_six_fields() {
+    type PlaceCaller<'a> = (
+        &'a ResolvedFunction,
+        &'a CleanupPlace,
+        &'a BTreeSet<StorageId>,
+        &'a Leaves,
+        &'a mut ReplayBudget,
+        Result<Vec<LivenessFlagId>, Error>,
+    );
+    // Independently name the concrete two-scan frame; no anonymous closure
+    // layout or reference-width constant stands in for an iterator header.
+    type PlaceLocal<'a> = (
+        &'a ResolvedFunction,
+        &'a CleanupPlace,
+        &'a BTreeSet<StorageId>,
+        &'a Leaves,
+        &'a mut ReplayBudget,
+        std::collections::btree_map::Values<'a, LivenessFlagId, crate::cleanup_plan::replay::Leaf>,
+        Option<&'a crate::cleanup_plan::replay::Leaf>,
+        &'a crate::cleanup_plan::replay::Leaf,
+        usize,
+        std::collections::btree_map::Iter<'a, LivenessFlagId, crate::cleanup_plan::replay::Leaf>,
+        Option<(&'a LivenessFlagId, &'a crate::cleanup_plan::replay::Leaf)>,
+        &'a LivenessFlagId,
+        &'a crate::cleanup_plan::replay::Leaf,
+        Vec<LivenessFlagId>,
+        Result<Vec<LivenessFlagId>, Error>,
+    );
+    let program = program(SCALAR);
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "family.main")
+        .unwrap();
+    let place = CleanupPlace {
+        storage: StorageId::ProvisionalResult,
+        projections: Vec::new(),
+    };
+    let known = BTreeSet::new();
+    let leaves = Leaves::new(BTreeMap::new());
+    let mut old_budget = ReplayBudget::with_physical(function, LIMIT).unwrap();
+    let expected = crate::cleanup_plan::replay::path_join::storage::validate_place(
+        function,
+        &place,
+        &known,
+        &leaves,
+        &mut old_budget,
+    )
+    .unwrap_err();
+    let setup = ReplayBudget::with_physical(function, usize::MAX)
+        .unwrap()
+        .physical
+        .as_ref()
+        .unwrap()
+        .charged();
+    let request = size_of::<PlaceCaller<'_>>()
+        + size_of::<PlaceLocal<'_>>()
+        + 2 * size_of::<PermitCall<'_>>()
+        + size_of::<Control<'_>>()
+        + size_of::<OriginalAcquire<'_>>();
+    const WORK: usize = 6 + 15 + 3 + 12 + 3 + 11;
+    for (bytes, work, semantic) in [
+        (setup, WORK, false),
+        (setup + request - 1, WORK, false),
+        (setup + request, 0, false),
+        (setup + request, WORK - 1, false),
+        (setup + request, WORK, true),
+    ] {
+        let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();
+        budget.remaining = work;
+        let (result, observed) = measure(|| {
+            crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                budget,
+                function,
+                PlaceCaller<'_>,
+                6,
+                "selected test place caller receiving",
+                super::super::helpers::validate_place(
+                    function,
+                    &place,
+                    &known,
+                    &leaves,
+                    &mut budget
+                )
+            )
+        });
+        assert_eq!((observed.allocations, observed.reallocations), (0, 0));
+        assert!(!observed.invalid);
+        match result.unwrap_err() {
+            Error::Structural(receipt) if semantic => {
+                assert_eq!(receipt.legacy(function), expected);
+                assert_eq!(budget.physical.as_ref().unwrap().charged(), setup + request);
+                assert_eq!(budget.remaining, 0);
+                assert_eq!(
+                    receipt.source().as_str().as_ptr(),
+                    function.body.id.as_str().as_ptr()
+                );
+            }
+            Error::Owned(_) if !semantic => {
+                let ledger = budget.physical.as_deref_mut().unwrap();
+                let first = ledger.reserve(0).unwrap_err();
+                assert_eq!(ledger.reserve(1).unwrap_err(), first);
+            }
+            other => panic!("wrong place first refusal semantic={semantic}: {other:?}"),
         }
     }
 }

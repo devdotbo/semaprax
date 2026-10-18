@@ -1,5 +1,6 @@
 //! Exact selected structural twin; complete original remains in the parent owner.
 use super::*;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
 pub(in crate::cleanup_plan::replay) fn validate_exits(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
@@ -259,11 +260,29 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                     plan.status_sources.len(),
                     "structural failure status lookup",
                 )?;
-                if !plan
-                    .status_sources
-                    .iter()
-                    .any(|candidate| &candidate.id == source)
-                {
+                if !receive!(
+                    budget,
+                    function,
+                    (
+                        std::slice::Iter<'_, crate::cleanup_plan::StatusSource>,
+                        Option<&crate::cleanup_plan::StatusSource>,
+                        &crate::cleanup_plan::StatusSource,
+                        bool,
+                        bool
+                    ),
+                    5,
+                    "selected exit status source scan receiving",
+                    {
+                        let mut found = false;
+                        for candidate in &plan.status_sources {
+                            if &candidate.id == source {
+                                found = true;
+                                break;
+                            }
+                        }
+                        found
+                    }
+                ) {
                     return Err(permit.control(Reason::Finite(
                         Kind::CleanupReferenceNamesAnUnknownStatusSource,
                     )));
@@ -273,15 +292,43 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                     plan.blocks[exit.from.0 as usize].transitions.len(),
                     "structural failure selection",
                 )?;
-                let selected = plan.blocks[exit.from.0 as usize]
-                    .transitions
-                    .iter()
-                    .filter_map(|transition| match transition {
-                        CleanupTransition::SelectFailure { source } => Some(source),
-                        _ => None,
-                    });
-                let mut selected = selected;
-                if selected.next() != Some(source) || selected.next().is_some() {
+                receive!(
+                    budget,
+                    function,
+                    (
+                        std::slice::Iter<'_, CleanupTransition>,
+                        Option<&CleanupTransition>,
+                        &StatusSourceId,
+                        Option<&StatusSourceId>,
+                        Option<&CleanupTransition>,
+                        &StatusSourceId,
+                        Option<&StatusSourceId>,
+                        bool
+                    ),
+                    8,
+                    "selected failure selection scan receiving",
+                    ()
+                );
+                let mut selected = plan.blocks[exit.from.0 as usize].transitions.iter();
+                let first = loop {
+                    match selected.next() {
+                        Some(CleanupTransition::SelectFailure { source }) => break Some(source),
+                        Some(_) => {}
+                        None => break None,
+                    }
+                };
+                if first != Some(source) || {
+                    let second = loop {
+                        match selected.next() {
+                            Some(CleanupTransition::SelectFailure { source }) => {
+                                break Some(source)
+                            }
+                            Some(_) => {}
+                            None => break None,
+                        }
+                    };
+                    second.is_some()
+                } {
                     return Err(permit.control(Reason::Finite(
                         Kind::FailureExitDoesNotReturnItsUniquelySelectedStatus,
                     )));
@@ -482,15 +529,38 @@ pub(super) fn regions_match(
         ExitContinuation::LoopLatch {
             target: control_target,
         } => {
-            if plan.lexical_control.as_deref().is_some_and(|control| {
-                control.loops.iter().any(|lp| {
-                    lp.target == *control_target
-                        && matches!(
-                            &lp.latch,
-                            crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
-                        )
-                })
-            }) {
+            if receive!(
+                budget,
+                function,
+                (
+                    Option<&crate::cleanup_plan::LexicalControlPlan>,
+                    &crate::cleanup_plan::LexicalControlPlan,
+                    std::slice::Iter<'_, crate::cleanup_plan::LoopCertificate>,
+                    Option<&crate::cleanup_plan::LoopCertificate>,
+                    &crate::cleanup_plan::LoopCertificate,
+                    bool,
+                    bool
+                ),
+                7,
+                "selected latch owned iterator scan receiving",
+                {
+                    let mut owned = false;
+                    if let Some(control) = plan.lexical_control.as_deref() {
+                        for lp in &control.loops {
+                            if lp.target == *control_target
+                                && matches!(
+                                    &lp.latch,
+                                    crate::hir::LoopLatchKind::OwnedIteratorStep { .. }
+                                )
+                            {
+                                owned = true;
+                                break;
+                            }
+                        }
+                    }
+                    owned
+                }
+            ) {
                 return Err(permit.control(Reason::Finite(
                     Kind::SelectedPrimitiveExitsDoNotAdmitOwnedIteratorScopes,
                 )));
@@ -527,17 +597,31 @@ pub(super) fn regions_match(
         | ExitContinuation::LoopBreak { edge, .. }
         | ExitContinuation::FunctionReturn { edge, .. } => {
             target = Some(
-                plan.edges
-                    .get(edge.0 as usize)
-                    .and_then(|edge| plan.blocks.get(edge.to.0 as usize))
-                    .ok_or_else(control_refusal!(
-                        budget,
-                        function,
-                        permit,
-                        &crate::cleanup_plan::CleanupBlock,
-                        Kind::CleanupContinuationHasAnUnknownTarget
-                    ))?
-                    .region,
+                receive!(
+                    budget,
+                    function,
+                    (
+                        Option<&crate::cleanup_plan::CleanupEdge>,
+                        &crate::cleanup_plan::CleanupEdge,
+                        Option<&crate::cleanup_plan::CleanupBlock>
+                    ),
+                    3,
+                    "selected continuation target query receiving",
+                    {
+                        match plan.edges.get(edge.0 as usize) {
+                            Some(edge) => plan.blocks.get(edge.to.0 as usize),
+                            None => None,
+                        }
+                    }
+                )
+                .ok_or_else(control_refusal!(
+                    budget,
+                    function,
+                    permit,
+                    &crate::cleanup_plan::CleanupBlock,
+                    Kind::CleanupContinuationHasAnUnknownTarget
+                ))?
+                .region,
             );
         }
         ExitContinuation::CommitResult { .. }
@@ -708,10 +792,29 @@ fn result_source(
                 "selected control validate_place call receiving",
                 helpers::validate_place(function, result, storage, leaves, budget)
             )?;
-            if !leaves
-                .values()
-                .any(|leaf| leaf.place.storage == StorageId::ProvisionalResult)
-            {
+            if !receive!(
+                budget,
+                function,
+                (
+                    std::collections::btree_map::Values<'_, LivenessFlagId, super::super::Leaf>,
+                    Option<&super::super::Leaf>,
+                    &super::super::Leaf,
+                    bool,
+                    bool
+                ),
+                5,
+                "selected provisional result leaf scan receiving",
+                {
+                    let mut found = false;
+                    for leaf in leaves.values() {
+                        if leaf.place.storage == StorageId::ProvisionalResult {
+                            found = true;
+                            break;
+                        }
+                    }
+                    found
+                }
+            ) {
                 return Err(permit.control(Reason::Finite(
                     Kind::OwnedResultCommitHasNoProvisionalResultLeaves,
                 )));

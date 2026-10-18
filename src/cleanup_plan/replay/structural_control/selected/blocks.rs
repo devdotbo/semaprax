@@ -2,6 +2,7 @@
 // Selected primitive block/edge replay. Legacy validation remains unchanged.
 use super::super::call_receiving::Policy;
 use super::*;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive;
 
 #[allow(clippy::too_many_arguments)]
 pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
@@ -213,9 +214,24 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
                 "selected control index call receiving",
                 helpers::index(function, index, Kind::TooManyCleanupBlocks, budget)
             )?
-            || usize::try_from(block.region.0)
-                .ok()
-                .is_none_or(|region| region >= plan.regions.len())
+            || receive!(
+                budget,
+                function,
+                (
+                    Result<usize, std::num::TryFromIntError>,
+                    Option<usize>,
+                    usize,
+                    bool
+                ),
+                4,
+                "selected block region query receiving",
+                {
+                    match usize::try_from(block.region.0).ok() {
+                        Some(region) => region >= plan.regions.len(),
+                        None => true,
+                    }
+                }
+            )
         {
             return Err(permit.control(Reason::Finite(
                 Kind::CleanupBlockHasANonContiguousIdOrUnknownRegion,
@@ -739,10 +755,24 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
                 )?;
             }
             CleanupTerminator::Exit(exit) => {
-                if usize::try_from(exit.0)
-                    .ok()
-                    .is_none_or(|value| value >= plan.exits.len())
-                    || referenced_exits.contains(exit)
+                if receive!(
+                    budget,
+                    function,
+                    (
+                        Result<usize, std::num::TryFromIntError>,
+                        Option<usize>,
+                        usize,
+                        bool
+                    ),
+                    4,
+                    "selected block exit query receiving",
+                    {
+                        match usize::try_from(exit.0).ok() {
+                            Some(value) => value >= plan.exits.len(),
+                            None => true,
+                        }
+                    }
+                ) || referenced_exits.contains(exit)
                 {
                     return Err(permit.control(Reason::Finite(
                         Kind::CleanupBlockReferencesAnUnknownOrRepeatedExit,
