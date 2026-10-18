@@ -281,6 +281,11 @@ impl StorageParent<'_> {
 impl ClassifierLedger {
     /// Acquisition does not authenticate ACTIVE or spend allowance. The caller
     /// prepays it on the known parent and later uses fresh current() checks.
+    #[allow(
+        clippy::manual_map,
+        clippy::explicit_auto_deref,
+        reason = "Keep the explicit match and Rc dereference aligned with the complete acquisition invoice; a map closure introduces different receiving roles."
+    )]
     pub(crate) fn storage_parent(&self) -> Option<StorageParent<'_>> {
         match &self.0 {
             Some(budget) => Some(StorageParent(&**budget)),
