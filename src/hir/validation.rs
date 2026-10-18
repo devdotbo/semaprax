@@ -2061,7 +2061,7 @@ impl<'a> HirValidator<'a> {
 
         const { assert!(std::mem::size_of::<Frame<'static>>() <= super::VALIDATOR_FRAME_BYTES) };
         #[cfg(test)]
-        lexical_exit::observe_frame_layout(
+        lexical_exit::observe_frame_layout::<Frame<'static>>(
             std::mem::size_of::<Frame<'static>>(),
             std::mem::align_of::<Frame<'static>>(),
         );

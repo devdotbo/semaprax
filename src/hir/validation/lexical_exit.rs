@@ -240,6 +240,7 @@ struct Frontier {
 #[cfg(test)]
 #[derive(Clone, Copy, Debug, Default)]
 struct FrameRequests {
+    frame_type: Option<&'static str>,
     size: usize,
     alignment: usize,
     requested_capacity: usize,
@@ -261,9 +262,17 @@ thread_local! {
     static PANIC_AFTER_WITNESS: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
 }
 #[cfg(test)]
-pub(in crate::hir::validation) fn observe_frame_layout(size: usize, alignment: usize) {
+pub(in crate::hir::validation) fn observe_frame_layout<T>(size: usize, alignment: usize) {
     FRAME_REQUESTS.with(|cell| {
         if let Some(mut report) = cell.get() {
+            let frame_type = std::any::type_name::<T>();
+            if report
+                .frame_type
+                .is_some_and(|previous| previous != frame_type)
+            {
+                report.overflow = true;
+            }
+            report.frame_type = Some(frame_type);
             if report.size != 0 && (report.size != size || report.alignment != alignment) {
                 report.overflow = true;
             }
@@ -277,11 +286,16 @@ pub(in crate::hir::validation) fn observe_frame_layout(size: usize, alignment: u
 pub(in crate::hir::validation) fn observe_frame_request<T>(capacity: usize) {
     // Diagnostic type label only; it neither selects an algorithm nor funds a
     // receiver. The charged Storage<T> request and its allocation remain intact.
-    if !std::any::type_name::<T>().ends_with("::validate_expr_iterative_effects::Frame") {
-        return;
-    }
     FRAME_REQUESTS.with(|cell| {
         if let Some(mut report) = cell.get() {
+            let Some(frame_type) = report.frame_type else {
+                report.overflow = true;
+                cell.set(Some(report));
+                return;
+            };
+            if frame_type != std::any::type_name::<T>() {
+                return;
+            }
             match (
                 report.requested_capacity.checked_add(capacity),
                 report.requests.checked_add(1),
@@ -299,11 +313,16 @@ pub(in crate::hir::validation) fn observe_frame_request<T>(capacity: usize) {
 
 #[cfg(test)]
 pub(in crate::hir::validation) fn observe_frame_acquired<T>(capacity: usize) {
-    if !std::any::type_name::<T>().ends_with("::validate_expr_iterative_effects::Frame") {
-        return;
-    }
     FRAME_REQUESTS.with(|cell| {
         if let Some(mut report) = cell.get() {
+            let Some(frame_type) = report.frame_type else {
+                report.overflow = true;
+                cell.set(Some(report));
+                return;
+            };
+            if frame_type != std::any::type_name::<T>() {
+                return;
+            }
             match report.acquired_capacity.checked_add(capacity) {
                 Some(total) => report.acquired_capacity = total,
                 None => report.overflow = true,
@@ -372,11 +391,11 @@ pub(in crate::hir::validation) fn witness_unwind_point() {
 #[cfg(test)]
 mod witness_tests {
     use super::*;
-    const SCALAR: &str = "module witness; @id(\"w.f\") fn f(x:i64)->i64 {match x {0=>1, n=>n}} @id(\"w.main\") fn main()->i64 {f(0)}";
+    const SCALAR: &str = "module witness; @id(\"w.f\") fn f(x:i64)->i64 {match x {0=>1, n=>n,}} @id(\"w.main\") fn main()->i64 {f(0)}";
     fn sources() -> Vec<String> {
         let mut nested = "0".to_owned();
         for _ in 0..16 {
-            nested = format!("match 0 {{0=>{nested}, _=>0}}");
+            nested = format!("match 0 {{0=>{nested}, _=>0,}}");
         }
         let calls = std::iter::repeat_n("f(0)", 64)
             .collect::<Vec<_>>()
@@ -389,9 +408,9 @@ mod witness_tests {
             format!("module deep_binary; @id(\"main\") fn main()->i64 {{{binary}}}"),
             "module tiny; @id(\"t.main\") fn main()->i64 {1}".to_owned(),
             SCALAR.to_owned(),
-            "module guarded; @id(\"main\") fn main()->i64 {match 0 {0 if true=>1, n=>n}}".to_owned(),
-            "module never; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>{return 2;}}}".to_owned(),
-            "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>2}}".to_owned(),
+            "module guarded; @id(\"main\") fn main()->i64 {match 0 {0 if true=>1, n=>n,}}".to_owned(),
+            "module never; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>{return 2;},}}".to_owned(),
+            "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>2,}}".to_owned(),
             "module borrowed; @id(\"consume\") fn consume(value:own Result<Bytes,Bytes>)->i64 {let borrowed=match borrow value {Result::Ok {value:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{1},Result::Err {error:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{2},}; match own value {Result::Ok {value:payload}=>borrowed,Result::Err {error:payload}=>borrowed,}} @id(\"main\") fn main()->i64 {0}".to_owned(),
             format!("module nested; @id(\"main\") fn main()->i64 {{{nested}}}"),
             format!("module calls; @id(\"f\") fn f(x:i64)->i64 {{x}} @id(\"main\") fn main()->i64 {{{calls}}}"),
@@ -401,6 +420,10 @@ mod witness_tests {
 
     #[test]
     fn borrowed_join_keeps_first_normal_latest_never_and_complete_old_errors() {
+        let missing_comma = SCALAR.replacen("n=>n,}", "n=>n}", 1);
+        assert_ne!(missing_comma, SCALAR);
+        let syntax = crate::check(&missing_comma, "witness-missing-comma.spx").unwrap_err();
+        assert_eq!(syntax[0].code, "SPX-P106");
         let checked = crate::check(SCALAR, "witness.spx").unwrap();
         let program = crate::hir::resolve(&checked).unwrap();
         let validator = HirValidator::new(&program).unwrap();
@@ -468,74 +491,85 @@ mod witness_tests {
                 _ => None,
             }
         }
-        let mut late_attacks = [0; 2];
-        for source in sources() {
-            let checked = crate::check(&source, "witness-oracle.spx").unwrap();
-            let program = crate::hir::resolve(&checked).unwrap();
-            let function = program.functions.iter().find(|f| f.name == "main").unwrap();
-            for attack in 0..5 {
-                let mut expression = function.body.clone();
-                match attack {
-                    0 => {}
-                    1 => expression.ty = ResolvedType::Bool,
-                    2 => expression.ownership = OwnershipMode::Own,
-                    3 => {
-                        let Some(arms) = match_arms(&mut expression) else {
-                            continue;
-                        };
-                        arms.last_mut().unwrap().value.ty = ResolvedType::Bool;
-                        late_attacks[0] += 1;
+        // The complete saved recursive oracle deliberately exercises depth64.
+        // Give its historical recursion a bounded test-only stack rather than
+        // reducing the fixture or suppressing a failed oracle assertion.
+        std::thread::Builder::new()
+            .name("904-complete-recursive-oracle".to_owned())
+            .stack_size(8 * 1024 * 1024)
+            .spawn(|| {
+                let mut late_attacks = [0; 2];
+                for source in sources() {
+                    let checked = crate::check(&source, "witness-oracle.spx").unwrap();
+                    let program = crate::hir::resolve(&checked).unwrap();
+                    let function = program.functions.iter().find(|f| f.name == "main").unwrap();
+                    for attack in 0..5 {
+                        let mut expression = function.body.clone();
+                        match attack {
+                            0 => {}
+                            1 => expression.ty = ResolvedType::Bool,
+                            2 => expression.ownership = OwnershipMode::Own,
+                            3 => {
+                                let Some(arms) = match_arms(&mut expression) else {
+                                    continue;
+                                };
+                                arms.last_mut().unwrap().value.ty = ResolvedType::Bool;
+                                late_attacks[0] += 1;
+                            }
+                            4 => {
+                                let Some(arms) = match_arms(&mut expression) else {
+                                    continue;
+                                };
+                                arms.pop().unwrap();
+                                late_attacks[1] += 1;
+                            }
+                            _ => unreachable!(),
+                        }
+                        let execution = FunctionExecutionId::Monomorphic(function.id.clone());
+                        let mut iterative = HirValidator::new(&program).unwrap();
+                        let mut recursive = HirValidator::new(&program).unwrap();
+                        let mut iterative_scope = BTreeMap::new();
+                        let mut recursive_scope = BTreeMap::new();
+                        let actual = iterative.validate_expr(
+                            &execution,
+                            &expression,
+                            &mut iterative_scope,
+                            "body",
+                            true,
+                            None,
+                        );
+                        let old = recursive.validate_expr_recursive_reference_body(
+                            &execution,
+                            &expression,
+                            &mut recursive_scope,
+                            "body",
+                            true,
+                            None,
+                        );
+                        HirValidator::assert_validation_oracle(
+                            &actual,
+                            &old,
+                            &iterative,
+                            &recursive,
+                            &iterative_scope,
+                            &recursive_scope,
+                            "body",
+                        );
+                        if attack == 0 {
+                            assert!(actual.is_ok());
+                        } else {
+                            assert!(
+                                actual.is_err(),
+                                "attack {attack} must be genuinely malformed"
+                            );
+                        }
                     }
-                    4 => {
-                        let Some(arms) = match_arms(&mut expression) else {
-                            continue;
-                        };
-                        arms.pop().unwrap();
-                        late_attacks[1] += 1;
-                    }
-                    _ => unreachable!(),
                 }
-                let execution = FunctionExecutionId::Monomorphic(function.id.clone());
-                let mut iterative = HirValidator::new(&program).unwrap();
-                let mut recursive = HirValidator::new(&program).unwrap();
-                let mut iterative_scope = BTreeMap::new();
-                let mut recursive_scope = BTreeMap::new();
-                let actual = iterative.validate_expr(
-                    &execution,
-                    &expression,
-                    &mut iterative_scope,
-                    "body",
-                    true,
-                    None,
-                );
-                let old = recursive.validate_expr_recursive_reference_body(
-                    &execution,
-                    &expression,
-                    &mut recursive_scope,
-                    "body",
-                    true,
-                    None,
-                );
-                HirValidator::assert_validation_oracle(
-                    &actual,
-                    &old,
-                    &iterative,
-                    &recursive,
-                    &iterative_scope,
-                    &recursive_scope,
-                    "body",
-                );
-                if attack == 0 {
-                    assert!(actual.is_ok());
-                } else {
-                    assert!(
-                        actual.is_err(),
-                        "attack {attack} must be genuinely malformed"
-                    );
-                }
-            }
-        }
-        assert!(late_attacks.into_iter().all(|count| count > 0));
+                assert!(late_attacks.into_iter().all(|count| count > 0));
+            })
+            .expect("spawn complete recursive oracle")
+            .join()
+            .unwrap_or_else(|payload| std::panic::resume_unwind(payload));
     }
 
     struct Capture;
@@ -727,6 +761,25 @@ mod witness_tests {
 
     #[test]
     fn real_complete_frame_layout_and_every_capacity_request_are_reported_without_248_assumption() {
+        // Missing registration is explicitly incomplete; a foreign Storage<T>
+        // cannot contribute capacities to the actual registered frame type.
+        let capture = Capture::begin();
+        observe_frame_request::<usize>(1);
+        assert!(capture.finish().overflow);
+        let capture = Capture::begin();
+        observe_frame_layout::<(usize, usize)>(
+            std::mem::size_of::<(usize, usize)>(),
+            std::mem::align_of::<(usize, usize)>(),
+        );
+        observe_frame_request::<usize>(7);
+        observe_frame_acquired::<usize>(7);
+        observe_frame_request::<(usize, usize)>(3);
+        observe_frame_acquired::<(usize, usize)>(3);
+        let registration = capture.finish();
+        assert!(!registration.overflow);
+        assert_eq!(registration.requests, 1);
+        assert_eq!(registration.requested_capacity, 3);
+        assert_eq!(registration.acquired_capacity, 3);
         for source in sources() {
             let checked = crate::check(&source, "frame-invoice.spx").unwrap();
             let capture = Capture::begin();
