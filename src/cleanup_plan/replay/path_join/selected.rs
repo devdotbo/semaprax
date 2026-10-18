@@ -182,7 +182,7 @@ fn successors(
                         ),
                         3,
                         "selected successor latch lookup receiving",
-                        lexical_cert::latch_resume(plan, exit)
+                        lexical_cert::latch_resume(plan, *exit)
                     ),
                     None,
                 ],

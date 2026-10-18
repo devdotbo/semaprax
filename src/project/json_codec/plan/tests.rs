@@ -14,7 +14,9 @@ pub(super) fn note_check(kind: usize) {
 pub(in crate::project) fn counts() -> [usize; 3] {
     CHECKS.with(|slot| slot.replace([0; 3]))
 }
-pub(in crate::project) fn fixture(changed: bool) -> (std::path::PathBuf, ProjectRevision) {
+pub(in crate::project) fn fixture(
+    changed: bool,
+) -> (std::path::PathBuf, std::sync::Arc<ProjectRevision>) {
     let root = std::env::temp_dir().join(format!(
         "starter-candidate-895-{}-{}",
         std::process::id(),
