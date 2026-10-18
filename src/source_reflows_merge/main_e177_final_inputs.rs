@@ -21,9 +21,10 @@ fn packet_before_overlay() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(262076,"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6".to_owned()));
+    let compiled_digest = digest(data.as_bytes());
+    assert_eq!((data.len(),compiled_digest.clone()),(262076,"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
+    assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&compiled_digest).unwrap(),data);
     let ext:serde_json::Value=historical_json!(data).unwrap();
     assert_eq!(ext["schema"],"semaprax.fmt433-local133-extension.v1");
     assert_eq!(ext["base_sha256"],"de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc");
@@ -64,9 +65,10 @@ fn packet_before_overlay() -> serde_json::Value {
 fn packet_local133() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
     assert_eq!(data.len(), 123158);
-    assert_eq!(digest(data.as_bytes()), "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045");
+    let compiled_digest = digest(data.as_bytes());
+    assert_eq!(compiled_digest, "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let physical=held(&root.join("docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt"),data.len(),&digest(data.as_bytes())).unwrap();
+    let physical=held(&root.join("docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt"),data.len(),&compiled_digest).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
     let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
@@ -155,8 +157,9 @@ fn packet_fmt433() -> serde_json::Value {
         "../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"
     );
     assert_eq!(data.len(), 260977);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -164,7 +167,7 @@ fn packet_fmt433() -> serde_json::Value {
         held(
             &root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),
             data.len(),
-            &digest(data.as_bytes())
+            &compiled_digest
         )
         .unwrap(),
         data,
@@ -240,8 +243,9 @@ fn packet_a110() -> serde_json::Value {
         "../../docs/evidence/fmt-a110/packet-wV4m7PTunyjrIa8VFcfB0eaqPxmD03tBMXOGHXLXakY.json.txt"
     );
     assert_eq!(data.len(), 112949);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -250,7 +254,7 @@ fn packet_a110() -> serde_json::Value {
             "docs/evidence/fmt-a110/packet-wV4m7PTunyjrIa8VFcfB0eaqPxmD03tBMXOGHXLXakY.json.txt",
         ),
         data.len(),
-        &digest(data.as_bytes()),
+        &compiled_digest,
     )
     .unwrap();
     assert_eq!(
@@ -338,12 +342,13 @@ fn packet_a110() -> serde_json::Value {
 fn packet_remote_d88() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt");
     assert_eq!(data.len(), 68224);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
+    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &compiled_digest).unwrap(), data, "complete physical and compiled current manifest");
     let packet: serde_json::Value = historical_json!(data).unwrap();
     let mut restored = packet.clone();
     let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs").unwrap();
@@ -361,12 +366,13 @@ fn packet_remote_d88() -> serde_json::Value {
 fn packet_previous_remote_d88() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt");
     assert_eq!(data.len(), 84171);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&digest(data.as_bytes())).unwrap();
+    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&compiled_digest).unwrap();
     assert_eq!(
         physical, data,
         "complete physical and compiled current manifest"
@@ -907,8 +913,9 @@ fn combined_side_packet() -> serde_json::Value {
         "../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"
     );
     assert_eq!(data.len(), 18033);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "c185ed85f164ff3295e55d29d69e47de8616d3a582ffe359abb959b5d693713c"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -917,7 +924,7 @@ fn combined_side_packet() -> serde_json::Value {
             &root
                 .join("docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"),
             data.len(),
-            &digest(data.as_bytes())
+            &compiled_digest
         )
         .unwrap(),
         data

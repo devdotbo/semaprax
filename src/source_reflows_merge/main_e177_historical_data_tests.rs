@@ -116,6 +116,13 @@ fn historical_data_keeps_complete_old_loaders_and_all_sixteen_parse_frontiers() 
     let end = current.find("fn same_file(").unwrap();
     let raw = &current[start..end];
     assert_eq!(raw.matches("historical_json!(").count(), 16);
+    let digest_binding = "    let compiled_digest = digest(data.as_bytes());\n";
+    assert_eq!(raw.matches(digest_binding).count(), 6);
+    let raw = raw.replace(digest_binding, "");
+    assert_eq!(raw.matches("compiled_digest.clone()").count(), 1);
+    let raw = raw.replace("compiled_digest.clone()", "digest(data.as_bytes())");
+    assert_eq!(raw.matches("compiled_digest").count(), 11);
+    let raw = raw.replace("compiled_digest", "digest(data.as_bytes())");
     // Exactly four old explicit type arguments; other twelve inferred Value.
     let marker = "historical_json!(";
     let mut restored = raw.replace(marker, "serde_json::from_str(");
