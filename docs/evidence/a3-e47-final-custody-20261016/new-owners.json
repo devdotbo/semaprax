@@ -1066,7 +1066,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "89867b786f52abbcd3bc51014c3f74e8129c2b4c6811574c7cce9546d471f50a",
+    "sha256": "44b3d4f6f2e0ac8286c1b581c7688df968230a9c00d861e9842ec2942cb43c92",
     "lines": 1464
   },
   {
@@ -1316,8 +1316,8 @@
   },
   {
     "source": "src/hir/ids/declaration_tag.rs",
-    "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
-    "lines": 689
+    "sha256": "45c2827ad4c1476b531c1de56c6aa128cea01a71bc848609747d2c971b431165",
+    "lines": 734
   },
   {
     "source": "src/hir/ids/declaration_tag/before.rs",

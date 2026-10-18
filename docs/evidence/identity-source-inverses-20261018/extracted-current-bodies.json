@@ -1,0 +1,8 @@
+{
+  "full_fixed_operation_test_sha256": "cee33027ea046a4d85e47276520fa292f5c054f41d3ada1676b5614e9e057b00",
+  "census_view_and_original_prefix_test_sha256": "2aea1791bcd7d20e1754efc41f6f7df676c5fe3e67ce5103eabf15dfc4f4f4f9",
+  "complete_original_closed_tag_inverse_sha256": "cb62bc3aa62996351ee7864f3d475c78740ca361036c97e850b3f1984ffa9c71",
+  "entire_current_bodies_retained": true,
+  "actual_whole_source_inputs": true,
+  "full_compiler_or_original_bootstrap_qualification_claimed": false
+}

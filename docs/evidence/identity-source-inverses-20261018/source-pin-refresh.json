@@ -1,0 +1,56 @@
+{
+  "before_head": "ab8f3f1150b7c8926a6a971315b9a71706addf61",
+  "source_rows": 121,
+  "logical_rows": 444,
+  "extension_overrides": 188,
+  "tables": [
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "before": {
+        "length": 86292,
+        "sha256": "bfbc7fda10c3e4efb3fad374524ff5493b91e43ac9f73df55bd14831c21e8cf7",
+        "archive": "docs/evidence/identity-source-inverses-20261018/whole/bfbc7fda10c3e4efb3fad374524ff5493b91e43ac9f73df55bd14831c21e8cf7.txt"
+      },
+      "current_length": 86628,
+      "current_sha256": "3cf7bb201f6abc5e3d595dc6ecf1fccf1cf1fb1f2ecfda98f502d72ef7de43f1",
+      "updated_sources": [
+        "src/hir/ids/declaration_tag.rs"
+      ]
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "before": {
+        "length": 229256,
+        "sha256": "6cde749331e6be1f3614585d3f3cf181f6cbed1d37927d8959865510aaf829f0",
+        "archive": "docs/evidence/identity-source-inverses-20261018/whole/6cde749331e6be1f3614585d3f3cf181f6cbed1d37927d8959865510aaf829f0.txt"
+      },
+      "current_length": 230469,
+      "current_sha256": "fb16117b71541b022207fcd338ecb422f6a663c5d822c021529f64a9d3e87877",
+      "updated_sources": [
+        "src/hir/ids/declaration_tag.rs",
+        "src/hir/ids/fixed_operation_tests.rs"
+      ]
+    }
+  ],
+  "before_helper": {
+    "length": 99927,
+    "sha256": "89867b786f52abbcd3bc51014c3f74e8129c2b4c6811574c7cce9546d471f50a",
+    "archive": "docs/evidence/identity-source-inverses-20261018/whole/89867b786f52abbcd3bc51014c3f74e8129c2b4c6811574c7cce9546d471f50a.txt"
+  },
+  "before_guard": {
+    "length": 10633,
+    "sha256": "8b6cce6e6356e839e6c7afc2588af378e6c81a188e6ea8377912f45c742bff64",
+    "archive": "docs/evidence/identity-source-inverses-20261018/whole/8b6cce6e6356e839e6c7afc2588af378e6c81a188e6ea8377912f45c742bff64.txt"
+  },
+  "before_config": {
+    "length": 117696,
+    "sha256": "7dfca4151216ea6c6cf2703c2cccbc951e81b8cb086ea8f182f988ffe3f0747d",
+    "archive": "docs/evidence/identity-source-inverses-20261018/whole/7dfca4151216ea6c6cf2703c2cccbc951e81b8cb086ea8f182f988ffe3f0747d.txt"
+  },
+  "module_pins_refreshed": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/hir/ids/declaration_tag.rs"
+  ],
+  "all_prior_fields_views_and_current_wires_retained": true,
+  "source_reader_and_program_caps_unchanged": true
+}

@@ -1897,9 +1897,9 @@
         "archive": "docs/evidence/clippy-11a0-integration/NM6iTrc6lFMARuPyMM2ZUMXEo4K-EY0jiTrYKZLuWT4.txt"
       },
       "current": {
-        "length": 27629,
-        "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
-        "archive": "docs/evidence/fmt-ec77-20261018/whole/a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294.txt"
+        "length": 29433,
+        "sha256": "45c2827ad4c1476b531c1de56c6aa128cea01a71bc848609747d2c971b431165",
+        "archive": "docs/evidence/identity-source-inverses-20261018/whole/45c2827ad4c1476b531c1de56c6aa128cea01a71bc848609747d2c971b431165.txt"
       },
       "before_head": "11a0a46b70502896ba832ece6d9c3afb85ec5909",
       "views": [
@@ -1932,6 +1932,12 @@
           "length": 27629,
           "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
           "archive": "docs/evidence/fmt-local-441-20261018/whole/a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294.txt"
+        },
+        {
+          "name": "whole-ab8f-before-source-inverse",
+          "length": 27629,
+          "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
+          "archive": "docs/evidence/fmt-ec77-20261018/whole/a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294.txt"
         }
       ]
     },

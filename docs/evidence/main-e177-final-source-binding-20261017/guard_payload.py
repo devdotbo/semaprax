@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/clippy-9211-20261018/guard-config.json'
+_CONFIG_PATH=R/'docs/evidence/identity-source-inverses-20261018/guard-config.json'
 _CONFIG_LENGTH=117696
-_CONFIG_SHA256='7dfca4151216ea6c6cf2703c2cccbc951e81b8cb086ea8f182f988ffe3f0747d'
+_CONFIG_SHA256='4ea21a7dca5db4044b296d8c935e22dc2ba25f8a2f49e152c1547231d1bad43f'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
