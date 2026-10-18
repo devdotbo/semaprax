@@ -653,6 +653,28 @@ mod missing_lexical_authority {
         assert_eq!(malformed_source.matches(";0};value}").count(), 1);
         let source = malformed_source.replacen(";0};value}", ";0}value}", 1);
         assert_ne!(source, malformed_source);
+        // Fixing the parse error does not admit lexical exits in a generic
+        // template. Keep that independent frontend boundary explicit.
+        let ast = crate::parse(&source, "writer.spx").unwrap();
+        let expected = Diagnostic::error(
+            "SPX-T226",
+            "generic function `generic` uses an expression outside the direct-scalar slice",
+            ast.functions[0].span,
+        )
+        .at_path("writer.spx");
+        assert_eq!(
+            crate::check(&source, "writer.spx").unwrap_err(),
+            vec![expected]
+        );
+
+        // This admitted template stays scalar. The separately authored concrete
+        // function supplies the lexical exit; no generic restriction is relaxed.
+        let source = LEXICAL_SOURCE.replace(
+            "@id(\"app.main\")",
+            "@id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";value} @id(\"app.main\")",
+        );
+        let checked = crate::check(&source, "writer.spx").unwrap();
+        hir::validate(&hir::resolve(&checked).unwrap()).unwrap();
         let mut build = build(&source);
         assert!(!writer(&build).function_templates.is_empty());
         assert!(writer(&build).function_instances.is_empty());
@@ -674,6 +696,141 @@ mod missing_lexical_authority {
             "semaprax.graph.v77"
         );
         assert_eq!(build.source_graph_schemas().unwrap_err(), REPORT.legacy());
+    }
+
+    #[test]
+    fn hostile_uninstantiated_template_lexical_body_reaches_its_own_census_guard() {
+        // Both donors are complete source-derived builds. Only the subsequent
+        // typed-HIR mutation is hostile; generic lexical source stays T226.
+        let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";value} @id(\"app.main\") fn main()->i64 {0}";
+        let mut retained = build(source);
+        let donor = build(LEXICAL_SOURCE);
+        let body = writer(&donor)
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "static.lexical")
+            .unwrap()
+            .body
+            .clone();
+        assert!(writer(&retained).function_instances.is_empty());
+        let module = writer_mut(&mut retained);
+        assert_eq!(module.function_templates.len(), 1);
+        module.function_templates.iter_mut().next().unwrap().body = body;
+        module.static_text.as_mut().unwrap().lexical = None;
+        let module = writer(&retained);
+        // The ordinary-member guard cannot explain this refusal: its entire
+        // concrete body/contract census has no lexical exits.
+        assert!(module
+            .functions
+            .iter()
+            .all(|function| !hir::lexical_exit::requires(function).unwrap()));
+        assert!(module.function_instances.is_empty());
+        let mut found = false;
+        let mut pending = vec![&module.function_templates[0].body];
+        while let Some(expression) = pending.pop() {
+            found |= matches!(expression.kind, hir::ResolvedExprKind::LexicalExit { .. });
+            let mut children = hir::lexical_exit::ChildCursor::new(expression);
+            while let Some(child) = children.next() {
+                pending.push(child);
+            }
+        }
+        assert!(
+            found,
+            "the actual template, not an ordinary member, holds the exit"
+        );
+        let functions = module.functions.iter().cloned().collect::<Vec<_>>();
+        let templates = module
+            .function_templates
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let inventory = module.static_text.as_deref().unwrap();
+        let sites = inventory
+            .sites
+            .iter()
+            .map(|site| {
+                (
+                    site.owner.clone(),
+                    site.explicit,
+                    site.expression.clone(),
+                    site.path.clone(),
+                    site.span,
+                    site.text.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let identity = (
+            module.path.clone(),
+            module.module.clone(),
+            inventory.path.clone(),
+            inventory.module.clone(),
+        );
+        let modules = &retained.hir.modules;
+        let facts = &retained.hir.declarations;
+        assert_eq!(
+            byte_helper::before_static_guard_schema_with_proofs(
+                module,
+                modules,
+                facts,
+                &mut byte_helper::Proofs::new(modules, facts)
+            )
+            .unwrap(),
+            None,
+            "complete old helper skips the uninstantiated-template lexical census"
+        );
+        assert_eq!(
+            byte_helper::schema_with_proofs(
+                module,
+                modules,
+                facts,
+                &mut byte_helper::Proofs::new(modules, facts)
+            )
+            .unwrap_err(),
+            REPORT.legacy(),
+            "all six public fields at the actual template census frontier"
+        );
+        assert_eq!(
+            module.functions.iter().cloned().collect::<Vec<_>>(),
+            functions
+        );
+        assert_eq!(
+            module
+                .function_templates
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>(),
+            templates
+        );
+        let after = module.static_text.as_deref().unwrap();
+        assert!(after.lexical.is_none());
+        assert_eq!(
+            (
+                module.path.clone(),
+                module.module.clone(),
+                after.path.clone(),
+                after.module.clone()
+            ),
+            identity
+        );
+        assert_eq!(
+            after
+                .sites
+                .iter()
+                .map(|site| (
+                    site.owner.clone(),
+                    site.explicit,
+                    site.expression.clone(),
+                    site.path.clone(),
+                    site.span,
+                    site.text.clone()
+                ))
+                .collect::<Vec<_>>(),
+            sites
+        );
+        assert!(
+            retained.source_graph_schemas().is_err(),
+            "outer authority also refuses this hostile typed-HIR input"
+        );
     }
 
     #[test]
