@@ -39,3 +39,5 @@ fn insert_copy<T: Copy + Ord>(
 
 #[cfg(test)]
 mod tests;
+
+pub(in crate::cleanup_plan::replay) mod selected;

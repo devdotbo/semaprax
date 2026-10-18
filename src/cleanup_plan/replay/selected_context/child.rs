@@ -230,3 +230,172 @@ impl ReplayBudget {
     }
 }
 pub(in super::super) mod receiving;
+
+impl<'a> Permit<'a> {
+    /// Actual new finite reason and child result slots, plus the existing full
+    /// EngineError/receipt receiver. Uses this invocation's existing budget.
+    pub(in super::super) fn family_receiver<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<FamilyReceiving<'_>>(
+            subject,
+            1,
+            "selected family finite receiving",
+        )?;
+        budget.charge(subject, 9, "selected family finite receiving")?;
+        // Preserve the complete original nine-role invoice without layout credit.
+        budget.reserve_array::<FamilySourceCloneReceiving<'_>>(
+            subject,
+            1,
+            "selected family source clone receiver",
+        )?;
+        budget.charge(subject, 1, "selected family source clone receiver")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected family acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    // Complete pre-formal generation, independently compiled at its old fees.
+    #[cfg(test)]
+    pub(in super::super) fn family_receiver_before_formals<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<BeforeFamilyReceiving<'_>>(
+            subject,
+            1,
+            "selected family finite receiving",
+        )?;
+        budget.charge(subject, 9, "selected family finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected family acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    pub(in super::super) fn family(&self, reason: super::family::Reason) -> Error {
+        Error::Structural(semantic_refusal::Receipt::family(self.subject, reason))
+    }
+}
+
+// Actual extra family()/Receipt::family() arguments, construction values,
+// source-clone result, nested receipt return, error return, and
+// this wrapper's acquire-result slot.
+// The original Permit receiver below this layer is still paid independently.
+pub(in super::super) type FamilyReceiving<'a> = (
+    &'a Permit<'a>,
+    super::family::Reason,
+    &'a ResolvedFunction,
+    super::family::Reason,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);
+
+// This additional actual terminal borrower is paid separately: original nine
+// fields, their old full physical invoice and their old work remain intact.
+pub(in super::super) type FamilySourceCloneReceiving<'a> = &'a crate::hir::ExpressionId;
+
+#[cfg(test)]
+pub(in super::super) type BeforeFamilyReceiving<'a> = (
+    &'a Permit<'a>,
+    super::family::Reason,
+    &'a ResolvedFunction,
+    super::family::Reason,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);
+
+// Distinct wrapper callee formals and final return; neither the outer actual
+// arguments nor the inner acquire actual arguments cover these source roles.
+pub(in super::super) type WrapperFormalReceiving<'a> = (
+    &'a ResolvedFunction,
+    &'a mut ReplayBudget,
+    Result<Permit<'a>, Error>,
+);
+
+// Caller-side arguments and result, admitted lexically BEFORE a new family or
+// acquire invocation forms them; distinct from each callee's retained roles.
+pub(in super::super) type FamilyCallReceiving<'a> = (
+    &'a ResolvedFunction,
+    &'a mut ReplayBudget,
+    Result<Permit<'a>, Error>,
+);
+
+impl<'a> Permit<'a> {
+    pub(in super::super) fn control_receiver<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<ControlReceiving<'_>>(
+            subject,
+            1,
+            "selected control finite receiving",
+        )?;
+        budget.charge(subject, 12, "selected control finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected control acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    // Complete pre-formal generation, independently compiled at its old fees.
+    #[cfg(test)]
+    pub(in super::super) fn control_receiver_before_formals<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<ControlReceiving<'_>>(
+            subject,
+            1,
+            "selected control finite receiving",
+        )?;
+        budget.charge(subject, 12, "selected control finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected control acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    pub(in super::super) fn control(
+        &self,
+        reason: super::super::structural_control::selected::reason::Reason,
+    ) -> Error {
+        Error::Structural(semantic_refusal::Receipt::control(self.subject, reason))
+    }
+}
+pub(in super::super) type ControlReceiving<'a> = (
+    &'a Permit<'a>,
+    super::super::structural_control::selected::reason::Reason,
+    &'a ResolvedFunction,
+    super::super::structural_control::selected::reason::Reason,
+    // Dynamic missing-ID clone receiver/result coexist with the terminal
+    // body's source clone; these are distinct from both moved Reason roles.
+    &'a crate::hir::ExpressionId,
+    crate::hir::ExpressionId,
+    &'a crate::hir::ExpressionId,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);

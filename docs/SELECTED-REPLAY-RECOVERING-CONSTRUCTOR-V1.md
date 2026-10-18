@@ -807,3 +807,226 @@ entry and retained ledger/remaining pointers, irreversible charge across result
 conversion/Drop, exact/one-short/zero physical frontiers, work zero/short/exact,
 floors and first refusal. They are authored only; no Rust execution, numerical
 benefit, application admission or #781 closure is claimed.
+
+### Selected schema and inventory family candidate (#781)
+
+The next isolated source candidate extends the existing paid Session path at
+`scalar_replay::validate_paid` and `inventory_coverage::paid`. It is not runtime
+qualification or closure of #781. The original general APIs remain available,
+and the complete pre-batch paid inventory and scalar owners are compiled only
+as independent controls in their existing owning harnesses.
+
+The scalar receiver preserves profile and owner validation before schema
+selection. Its order is the original local helper-potential predicate and helper
+census, lexical selection, complete inventory summary, record destructure/update
+classification, then owner admission and the original schema choices. Imported
+helper directory membership does not enlarge the original local potential
+predicate. The summary uses the existing same-payer type-fact constructors;
+their already funded dynamic Strings move into their original diagnostics. A
+Diagnostic-shaped result alone is not evidence of an unpaid allocation.
+
+The always-run update expression scan now pays its pending Vec header, actual
+root/child growth and receiving controls before formation. Complete selected
+profile validation already refuses every UpdateRecord before this scan. The
+original general update authenticator and its generic descendants are preserved;
+this selected call does not add admission to those excluded shapes.
+
+Selected inventory comparison and the exact selected supplemental walk retain
+the original raw typed inventory constructor, requires/body/ensures order,
+1028-frame bound, parameter lookup order, probe prepayment, type/drop queries,
+flat shapes and all original payload debits. Finite refusals retain a closed
+`selected_context::family::Reason`; base and supplemental slot indices remain
+actual usize operands. The receipt retains the exact shared body identity.
+Detailed text is rendered only by the explicit legacy observation, after the
+paid route. Report publication consumes the caller's same preacquired carrier
+and same affine ledger; no new report vector, text or ownership permission is
+created by the receipt.
+
+Every new receiving declaration uses its actual Rust type in `size_of` through
+`reserve_array`, including helper results, Reason/Atom/Receipt/Error transport,
+shape and supplemental receiving frames, query activation fields and closed
+metadata match results/bindings. The new family layer pays
+`size_of::<FamilyReceiving>()` and nine field initializer/transfer units, then
+retains the existing full `Permit::acquire<T>` debit and eleven units. It takes
+no old-header credit. A separate lexical `FamilyCallReceiving` tuple pays the
+function/budget arguments and returned Permit/Error before every family call,
+and again before the new family wrapper calls the existing acquire method;
+these are two real caller boundaries, each with three field units. Thus the
+complete new family invocation retains all existing callee charges and adds
+both caller frontiers rather than funding arguments after they already exist.
+Per-query activation tuples and each actual closed query
+match have separate debits; fixed cursor backing and original lifecycle/type/
+identity charges remain. An old/new bill comparison must include every reached
+family activation, helper proof/census and summary/update allocation, all
+transport layouts, active floor refusal and complete Drop. No byte, work or
+performance result is asserted from source alone.
+
+The owning new selectors are:
+
+- `inventory_coverage::typed_tests::selected_family` (complete old success,
+  hostile base/entry/supplemental six-field diagnostics, receiving floors/work,
+  same ledger and full Drop).
+- `scalar_replay::selected_family_tests` (complete original schema and scalar
+  owner, owned local/call argument storage, schema/loan first refusal).
+- `selected_entry::tests::paid::selected_family` (a real inventory child refusal,
+  original carrier/text/source/ledger pointers, first sticky receipt, later
+  receipt non-replacement, allocation-free publication and full Drop).
+
+Existing raw inventory, typed-child, profile, report, authority and source
+identity controls retain their assertions. Source-custody inverses must include
+new module registrations and joined production children without reducing the
+whole original authenticated subjects. These tests are selected but unrun in
+this source-only lane.
+
+This family is not a claim that all paid Session descendants are migrated.
+Later lexical HIR validation, path-state and factored comparison descendants
+still include original semantic Diagnostic producers. They remain explicit
+unpaid production residuals, rather than being reclassified as allocating
+legacy compatibility. The outward named Legacy APIs retain their existing,
+separate compatibility classification.
+
+
+### Selected structural-control receiving candidate (#781, unqualified)
+
+The next source-only batch extends the admitted paid scalar and lexical
+Session family through status metadata, entry places, block/edge/terminator
+validation, exact call transfer children, staged Copy target checks, selected
+same-owner renewal binding, ordered finalizers, exit-region chains and CFG.
+The original general APIs remain complete. Test-only immediate pre-control
+scalar and lexical drivers retain every original child route; they never call
+the new selected structural twin. No admission profile, quota, tariff or cap
+changes, and no source or proof authority is added.
+
+Each new child has a typed lexical caller argument/result admission before the
+call forms its arguments, followed by its separate actual callee roles. Finite
+semantic refusals carry a closed reason; unknown expression/status operands
+retain shared immutable identities, with rendering only at named legacy
+observation. The twelve-field control bank separately pays the dynamic clone
+receiver/result, terminal body-ID clone receiver/result, two moved Reason roles,
+Permit/function arguments, Atom, Receipt, Error and permit Result. The retained
+old eleven-field acquire bank is unchanged. Full permit work is
+`3 + 12 + 3 + 11 = 29`, before actual local/caller and original operation work.
+All physical layouts use actual Rust types, including ID layouts, padding,
+Results, Option, iterators, cursor and owned headers; no old-fee credit is used.
+
+Finite-error option closures have an additional lexical capture/typed-Result
+debit before closure formation, on every reached formation, independent of the
+terminal receipt bank. Control and call option closures each add two actual
+roles/work units; call integer-conversion closures add three; the control index
+closure additionally carries its borrowed Kind and adds four. The CFG successor
+map/transpose is an explicit match with five typed transport roles, preserving
+successor lookup order. These costs are included even when the option succeeds;
+no pre-existing closure or error header is subtracted as credit.
+
+Pure signature queries expand inline with typed match/query roles, including
+actual double-reference pattern bindings. Their explicit Some matches preserve
+parameter lookup before ownership classification and avoid adding closure
+captures. Original cursor/backing/tree/vector/type/probe payments remain. The
+scalar empty return-operand set is separately present in its caller frame;
+test-only optional borrowed scratch carriers and the borrowed status formal
+also have their own actual typed roles. These additions are costs, not a source
+claim of byte, work, fit or performance improvement.
+
+The existing owning harnesses add selectors under
+`structural_control::selected::tests` and
+`selected_entry::tests::paid::selected_control`. Controls compare all six
+Diagnostic fields and original first refusal against complete immediate-old
+owners; ordinary whole replay remains an independent control. Genuine held
+primitive and retained nominal fixtures cover success, unknown entry,
+profile/schema precedence, block/edge/branch/exit corruption, call transfers,
+dynamic IDs, renewal, staged targets, finalizers and CFG. Exact/one-short and
+zero work controls derive the entry floor from independent literal typed frames;
+there the added work is `5 + 9 + 3 + 12 + 3 + 11 = 43`. Real Session refusal
+checks original report/text/source/ledger pointers, sticky first error,
+allocation-free publication and complete Drop. These controls are authored but
+unrun; the candidate has not been built or runtime qualified.
+
+This is still not complete #781 closure. The selected lexical route next calls
+`lexical_hir::collect` and existing lexical-certificate descendants; both selected
+routes subsequently call path-state/transition and factored comparisons. Their
+remaining internal semantic Diagnostic producers are explicit unpaid production
+residuals, not newly invented legacy exclusions. A whole scalar duplicate-live
+Initialize witness is authored to isolate the existing path transition boundary
+after this family; it remains unverified until owning runtime qualification.
+External named allocating compatibility APIs retain their original scope.
+
+### Selected path-state, transitions and renewal receiving candidate (#781)
+
+The next isolated source candidate routes only the paid selected scalar and
+lexical drivers through `path_join::selected`. Ordinary replay and the complete
+immediate pre-path scalar/lexical drivers remain independently compiled. The
+selected twin keeps original path scheduling, left-to-right transition order,
+first refusal, exact old join/clone/materialization work and cleanup ordering.
+The genuine duplicate-live Initialize witness now retains finite typed failure
+data through the existing Control12 permit and prepaid Session report.
+
+A nested `ControlReason::Path` carries only a finite reason or the original
+block/exit number. It grants no source, identity, report or replay authority.
+Caller and callee arguments/results are admitted before formation on the same
+ledger. The original dynamic call/status atoms retain their original renderer
+and stage. Complete original Reason/Atom/Receipt/EngineError shapes are compiled
+as a layout witness; no-growth assertions are authored but unrun. Shipping
+`size_of` requests always charge the actual current carriers. No current enum
+is used as the purported original footprint.
+
+Every reached explicit next/get/index/remove result has its literal typed
+receiving packet before evaluation, including reached terminal None. Concrete
+iterator/frame headers retain their separate entry charges. Lexical scan,
+filter, equality and stable Copy-flag compaction macros form no hidden closure
+or forwarding helper. Reverse-stack renewal expression lookup retains original
+reverse root/child search order and admits actual Vec backing before growth.
+The original lookup and renewal APIs remain unchanged. Selected renewal work
+calculation uses the same paid traversal and exact old materialization units;
+its repeated old discovery is not silently cached or credited away.
+
+Selected renewal provenance construction/stage/commit use explicit paid loops.
+Their private storage borrow/construction accessors grant no authority and have
+literal caller/callee receiving banks. Original `RenewalHistory` methods remain
+independent controls. Same-owner String append keeps ordered first-match lookup
+and original publication/history order. Neither path order nor canonical cleanup
+vectors are sorted or repaired. Actual payload backing stays separately funded.
+
+Earlier closed source/profile/structural validation excludes affine closure
+calls, conditional aggregate ownership and ordinary-only staged Copy branches
+before this selected family. Those facts do not admit malformed raw general
+APIs. The original general descendants and whole pre-path drivers remain the
+controls. No arbitrary legacy API is reclassified as funded. Later factored
+comparison descendants and any earlier unmigrated paid-Session family remain
+explicit production residuals; this candidate does not close #781.
+
+The owning `path_join::selected::tests` children author whole ordinary/pre-path/
+current success and hostile comparisons over all six diagnostic fields; genuine
+nominal, byte renewal and String append fixtures; exact/one-short/zero/work/
+sticky/source-pointer controls; complete original carrier layouts; literal
+known/unknown reverse-stack lookup floors; reached terminal None; provenance
+zero/one/many cases; paid current Session report-pointer retention and full Drop.
+Original structural/schema controls continue to target current drivers.
+
+This source-only candidate has not been built or run. New receiving/frame/
+lookup/control costs are additive; no cap, old tariff, allowance or limit is
+lowered or raised. No net application gain, executable gate, #781 closure or
+improvement to the earlier 64MiB HIR-final refusals is claimed. Source custody
+and physical-role inventory coupling are deferred to the owning integration
+lane after sealing and independent review.
+
+
+The source-only #781 review successor retains the original finite-family9 and
+control12 packets and all original child charges. Current family adds the actual
+terminal source-clone reference as a separate one-role invoice (family9+1); every new family/control wrapper
+call additionally admits its own actual formal3 tuple at the lexical caller,
+separately from the original actual3 tuple, before invocation. Complete wrapper
+work is therefore family30 and control32. The complete old methods and original
+26/43/46/50 generation controls remain compiled, with current floor/short/zero/
+work/sticky/Drop counterparts. No old header or payload is credited back.
+The selected owner-admission helper retains one514-element array across roots;
+completed roots drain every reached slot with `take`. Its own formal4 tuple is
+admitted at its caller. Each actual counted pop admits a fresh six-role packet
+before `take`, without inventing a terminal probe. Additional work is4 per helper
+activation plus6 per reached pop; physical cost is the full actual formal tuple
+plus one full pop tuple per reached pop. The forest-count control uses2N−R for
+complete pure Copy traversals, not a successful-prefix estimate on refusal.
+New finite permit-error callbacks use direct lexical matches instead of fresh
+capturing closures. All old public APIs, complete immediate controls, first-error
+order and quotas remain. These source definitions are unrun and make no fit or
+performance claim; current cold receiving costs increase until actual composed
+qualification establishes the complete outcome.

@@ -110,3 +110,51 @@ The original Vec-returning APIs and CLI callers remain explicit compatibility
 routes. Dynamic proposal, filesystem, authentication, rendering and commit errors
 remain ordinary legacy reports. This addition does not establish funding for
 those errors, activate new source profiles, or establish complete OPT781 closure.
+
+### Selected-family receiving candidate (#781)
+
+The source-only selected schema/inventory candidate is specified in
+`SELECTED-REPLAY-RECOVERING-CONSTRUCTOR-V1.md`. It changes the child receipt
+transport and receiving funding on the existing paid replay path, while keeping
+the original acquired report carrier and affine ledger. A real selected
+inventory mismatch is observed in the existing selected-entry paid-report
+harness: the original Diagnostic slot/text pointer and shared source identity
+survive publication, a later receipt cannot replace the first, and full owner
+Drop releases report, scratch and ledger. Detailed legacy diagnostics are
+compared outside the paid no-allocation cut with complete independent original
+owners. Runtime qualification is still pending; neither this candidate nor its
+typed finite receipt grants source, replay or report authority. Unmigrated
+internal Session semantic Diagnostic descendants remain explicit unpaid
+production residuals. Named external compatibility exclusions are unchanged.
+
+
+### Selected structural-control child candidate (#781, unqualified)
+
+The subsequent selected structural-control source batch keeps the same acquired
+report carrier and affine ledger through the actual paid Session unknown-entry
+refusal. Semantic details stay in a typed finite/shared-ID receipt; publishing
+that receipt must retain the original Diagnostic slot, fixed text backing and
+source identity pointer without allocating. An already failed Session refuses a
+second validation, and a separately prepaid later receipt cannot replace the
+first. Full legacy diagnostics are observed outside this paid publication cut
+and compared against complete immediate original owners, including all six
+fields and first-refusal order. The owner selector is
+`selected_entry::tests::paid::selected_control`.
+
+These controls and their structural-family controls are source-only and unrun.
+They do not grant AuthSourceBorrow, source authentication, replay permission or
+new report authority; existing authority controls remain unchanged. Remaining
+lexical-HIR/certificate, path-state/transition and factored semantic descendants
+retain their explicit unpaid production status. No claim of complete #781
+closure, current-head executable support or measured improvement is made.
+
+The isolated #781 selected path-state candidate extends the same preacquired
+report/ledger route through path transitions and renewal provenance. A finite
+nested control reason replaces semantic owned-Diagnostic transport for that
+selected family; genuine budget diagnostics retain their existing prepaid
+provenance. No new report or payer is supplied, and later refusals retain the
+first receipt and original report slot/text pointers. Complete immediate old
+owners and ordinary APIs remain independent. Owning source-only controls cover
+live duplicate Initialize, current paid Session recovery, full six-field legacy
+observation and Drop. This candidate remains unqualified and does not establish
+whole-engine funding, net cost benefit or closure of #781.

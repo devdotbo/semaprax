@@ -1164,3 +1164,5 @@ mod final_edge_tests;
 #[cfg(test)]
 #[allow(dead_code, reason = "complete immediate old path boundary receiver")]
 pub(in crate::cleanup_plan::replay) mod before_path_boundary;
+
+pub(in crate::cleanup_plan::replay) mod selected;

@@ -61,10 +61,40 @@ pub(super) fn validate_paid(
     #[cfg(test)]
     let selected_schema = match &borrowed {
         Some(lease) => lease.schema(program, function, budget)?,
-        None => schema::selected_schema_with_index(program, function, None)?,
+        None => crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &crate::hir::ResolvedFunction,
+                &mut crate::cleanup_plan::replay::ReplayBudget,
+                Result<
+                    &'static str,
+                    crate::cleanup_plan::replay::expression_facts::errors::EngineError,
+                >
+            ),
+            4,
+            "selected scalar schema call receiving",
+            schema::selected_paid::selected(program, function, budget)
+        )?,
     };
     #[cfg(not(test))]
-    let selected_schema = schema::selected_schema_with_index(program, function, None)?;
+    let selected_schema = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &dyn crate::cleanup::ReplayContext,
+            &crate::hir::ResolvedFunction,
+            &mut crate::cleanup_plan::replay::ReplayBudget,
+            Result<
+                &'static str,
+                crate::cleanup_plan::replay::expression_facts::errors::EngineError,
+            >
+        ),
+        4,
+        "selected scalar schema call receiving",
+        schema::selected_paid::selected(program, function, budget)
+    )?;
     let plan = &function.cleanup_plan;
     if !budget.selected() || plan.lexical_control.is_some() || plan.schema != selected_schema {
         return Err(permit.refuse(
@@ -99,11 +129,34 @@ pub(super) fn validate_paid(
     status_construction::paid::validate_required_status_sources(program, function, budget)?;
     let storage = structural_maps::paid::slots(function, budget)?;
     let leaves = structural_maps::paid::leaves(function, budget)?;
-    status_validation::validate_core::<expression_facts::errors::EngineError>(
-        function, facts, budget,
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &ResolvedFunction,
+            &dyn expression_facts::Lookup,
+            &mut ReplayBudget,
+            Result<(), expression_facts::errors::EngineError>
+        ),
+        4,
+        "selected structural driver call receiving",
+        structural_control::selected::validate_status(function, facts, budget,)
     )?;
     structural_maps::paid::regions(function, &storage, budget)?;
-    structural_control::validate_entry(function, &storage, &leaves, budget)?;
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &ResolvedFunction,
+            &BTreeSet<StorageId>,
+            &Leaves,
+            &mut ReplayBudget,
+            Result<(), expression_facts::errors::EngineError>
+        ),
+        5,
+        "selected structural driver call receiving",
+        structural_control::selected::validate_entry(function, &storage, &leaves, budget)
+    )?;
     let renewals = match program.primitive_renewals(function) {
         Some(value) => value,
         None => {
@@ -114,21 +167,71 @@ pub(super) fn validate_paid(
             ))
         }
     };
-    structural_control::validate_blocks_and_edges_paid::<expression_facts::errors::EngineError>(
-        program, function, facts, &storage, &leaves, renewals, budget,
-    )?;
-    structural_control::validate_exits(
-        program,
-        function,
-        &storage,
-        &leaves,
-        &BTreeSet::new(),
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
         budget,
+        function,
+        (
+            &dyn crate::cleanup::ReplayContext,
+            &ResolvedFunction,
+            &dyn expression_facts::Lookup,
+            &BTreeSet<StorageId>,
+            &Leaves,
+            &crate::cleanup_plan::ReplayRenewalBindings<'_>,
+            &mut ReplayBudget,
+            Result<(), expression_facts::errors::EngineError>
+        ),
+        8,
+        "selected structural driver call receiving",
+        structural_control::selected::validate_blocks_and_edges_paid(
+            program, function, facts, &storage, &leaves, renewals, budget,
+        )
+    )?;
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &dyn crate::cleanup::ReplayContext,
+            &ResolvedFunction,
+            &BTreeSet<StorageId>,
+            &Leaves,
+            &BTreeSet<ExpressionId>,
+            BTreeSet<ExpressionId>,
+            &mut ReplayBudget,
+            Result<(), expression_facts::errors::EngineError>
+        ),
+        8,
+        "selected structural driver call receiving",
+        structural_control::selected::validate_exits(
+            program,
+            function,
+            &storage,
+            &leaves,
+            &BTreeSet::new(),
+            budget,
+        )
     )?;
     structural_maps::paid_reference::validate(function, budget)?;
-    structural_control::validate_reachable_acyclic_cfg(function, budget)?;
-    validate_path_states::<expression_facts::errors::EngineError>(
-        program, function, &storage, &leaves, budget, None, None,
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &ResolvedFunction,
+            &mut ReplayBudget,
+            Result<(), expression_facts::errors::EngineError>
+        ),
+        3,
+        "selected structural driver call receiving",
+        structural_control::selected::validate_reachable_acyclic_cfg(function, budget)
+    )?;
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        path_join::selected::CallReceiving<'_>,
+        8,
+        "selected path driver call receiving",
+        path_join::selected::validate_path_states(
+            program, function, &storage, &leaves, budget, None, None
+        )
     )?;
     match factored::compare_with_index(program, function, budget, None)? {
         Some(true) => Ok(()),
@@ -348,3 +451,14 @@ pub(in crate::cleanup_plan::replay) mod before_status_scalar;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_certificate;
+
+#[cfg(test)]
+mod paid_before;
+#[cfg(test)]
+mod selected_family_tests;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_control;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_path;

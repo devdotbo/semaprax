@@ -58,7 +58,7 @@ impl<'a> CallCursor<'a> {
         Ok(())
     }
 
-    pub(super) fn find<E: Policy>(
+    pub(in crate::cleanup_plan::replay::structural_control) fn find<E: Policy>(
         &mut self,
         function: &'a ResolvedFunction,
         id: &ExpressionId,

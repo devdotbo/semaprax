@@ -8,6 +8,8 @@ pub(super) enum Atom {
     UnknownCallCallee(DeclarationId),
     StatusUnknownCallee(DeclarationId),
     SelectedSession(&'static str),
+    SelectedFamily(selected_context::family::Reason),
+    SelectedControl(structural_control::selected::reason::Reason),
     SelectedChild(crate::cleanup_plan::renewal_profile::child_refusal::Refusal),
     RepeatedStatus(ExpressionId),
     UnknownStatus(ExpressionId),
@@ -46,11 +48,31 @@ impl Receipt {
             atom: Atom::SelectedChild(reason),
         }
     }
+    pub(super) fn family(
+        function: &ResolvedFunction,
+        reason: selected_context::family::Reason,
+    ) -> Self {
+        Self {
+            source: function.body.id.clone(),
+            atom: Atom::SelectedFamily(reason),
+        }
+    }
+    pub(super) fn control(
+        function: &ResolvedFunction,
+        reason: structural_control::selected::reason::Reason,
+    ) -> Self {
+        Self {
+            source: function.body.id.clone(),
+            atom: Atom::SelectedControl(reason),
+        }
+    }
     pub(super) fn stage(&self) -> &'static str {
         match &self.atom {
             Atom::SelectedCall(_) | Atom::UnknownCallCallee(_) => "selected call",
             Atom::SelectedSession(_) => "selected session",
             Atom::SelectedChild(_) => "selected child",
+            Atom::SelectedFamily(_) => "selected family",
+            Atom::SelectedControl(_) => "selected control",
             _ => "structural replay",
         }
     }
@@ -68,6 +90,8 @@ impl Receipt {
                 format_args!("call commit has unknown callee `{callee}`"),
             ),
             Atom::SelectedSession(detail) => replay_error(function, detail),
+            Atom::SelectedFamily(reason) => reason.legacy(function),
+            Atom::SelectedControl(reason) => reason.legacy(function),
             Atom::SelectedChild(reason) => {
                 if reason.prefixed() {
                     replay_error(function, reason.detail())
@@ -167,6 +191,24 @@ impl Receipt {
     )> {
         match &self.atom {
             Atom::SelectedChild(reason) => Some((&self.source, *reason)),
+            _ => None,
+        }
+    }
+    #[cfg(test)]
+    pub(in crate::cleanup_plan::replay) fn borrowed_control_receipt(
+        &self,
+    ) -> Option<(&ExpressionId, &structural_control::selected::reason::Reason)> {
+        match &self.atom {
+            Atom::SelectedControl(reason) => Some((&self.source, reason)),
+            _ => None,
+        }
+    }
+    #[cfg(test)]
+    pub(in crate::cleanup_plan::replay) fn borrowed_family_receipt(
+        &self,
+    ) -> Option<(&ExpressionId, selected_context::family::Reason)> {
+        match self.atom {
+            Atom::SelectedFamily(reason) => Some((&self.source, reason)),
             _ => None,
         }
     }

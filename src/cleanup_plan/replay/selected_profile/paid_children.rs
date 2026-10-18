@@ -40,3 +40,5 @@ pub(super) fn latch(
 
 #[cfg(test)]
 mod tests;
+
+pub(in crate::cleanup_plan::replay) use collections::type_key_bytes;

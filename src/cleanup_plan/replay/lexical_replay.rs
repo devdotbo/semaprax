@@ -71,27 +71,64 @@ pub(super) fn validate_paid(
         status_construction::paid::validate_required_status_sources(program, function, budget)?;
         let storage = structural_maps::paid::slots(function, budget)?;
         let leaves = structural_maps::paid::leaves(function, budget)?;
-        status_validation::validate_core::<expression_facts::errors::EngineError>(
-            function,
-            &expression_facts,
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
+            function,
+            (
+                &ResolvedFunction,
+                &dyn expression_facts::Lookup,
+                &mut ReplayBudget,
+                Result<(), expression_facts::errors::EngineError>
+            ),
+            4,
+            "selected structural driver call receiving",
+            structural_control::selected::validate_status(function, &expression_facts, budget,)
         )?;
         structural_maps::paid::regions(function, &storage, budget)?;
-        structural_control::validate_entry(function, &storage, &leaves, budget)?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &ResolvedFunction,
+                &BTreeSet<StorageId>,
+                &Leaves,
+                &mut ReplayBudget,
+                Result<(), expression_facts::errors::EngineError>
+            ),
+            5,
+            "selected structural driver call receiving",
+            structural_control::selected::validate_entry(function, &storage, &leaves, budget)
+        )?;
         let renewals = program.primitive_renewals(function).ok_or_else(|| {
             replay_error(
                 function,
                 "selected replay lacks its independently rebuilt renewal lease",
             )
         })?;
-        structural_control::validate_blocks_and_edges_paid::<expression_facts::errors::EngineError>(
-            program,
-            function,
-            &expression_facts,
-            &storage,
-            &leaves,
-            renewals,
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &ResolvedFunction,
+                &dyn expression_facts::Lookup,
+                &BTreeSet<StorageId>,
+                &Leaves,
+                &crate::cleanup_plan::ReplayRenewalBindings<'_>,
+                &mut ReplayBudget,
+                Result<(), expression_facts::errors::EngineError>
+            ),
+            8,
+            "selected structural driver call receiving",
+            structural_control::selected::validate_blocks_and_edges_paid(
+                program,
+                function,
+                &expression_facts,
+                &storage,
+                &leaves,
+                renewals,
+                budget,
+            )
         )?;
         (storage, leaves)
     } else {
@@ -134,8 +171,23 @@ pub(super) fn validate_paid(
             }
             operands.insert(operand.id.clone());
         }
-        structural_control::validate_exits(
-            program, function, &storage, &leaves, &operands, budget,
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &ResolvedFunction,
+                &BTreeSet<StorageId>,
+                &Leaves,
+                &BTreeSet<ExpressionId>,
+                &mut ReplayBudget,
+                Result<(), expression_facts::errors::EngineError>
+            ),
+            7,
+            "selected structural driver call receiving",
+            structural_control::selected::validate_exits(
+                program, function, &storage, &leaves, &operands, budget,
+            )
         )?;
         operands
     } else {
@@ -155,21 +207,51 @@ pub(super) fn validate_paid(
     let auth = lexical_cert::paid::authenticate(program, function, &owner, &facts, budget)?;
     if selected {
         structural_maps::paid_reference::validate(function, budget)?;
-        structural_control::validate_reachable_acyclic_cfg(function, budget)?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &ResolvedFunction,
+                &mut ReplayBudget,
+                Result<(), expression_facts::errors::EngineError>
+            ),
+            3,
+            "selected structural driver call receiving",
+            structural_control::selected::validate_reachable_acyclic_cfg(function, budget)
+        )?;
     } else {
         structural_maps::validate_reference_coverage(function, budget)?;
         structural_control::validate_ordinary_cfg(function, budget)?;
     }
     // Lexical functions always replay every path: no summary shortcut applies.
-    validate_path_states::<expression_facts::errors::EngineError>(
-        program,
-        function,
-        &storage,
-        &leaves,
-        budget,
-        Some(&auth),
-        None,
-    )?;
+    if budget.selected() {
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            path_join::selected::CallReceiving<'_>,
+            8,
+            "selected path driver call receiving",
+            path_join::selected::validate_path_states(
+                program,
+                function,
+                &storage,
+                &leaves,
+                budget,
+                Some(&auth),
+                None
+            )
+        )?;
+    } else {
+        validate_path_states::<expression_facts::errors::EngineError>(
+            program,
+            function,
+            &storage,
+            &leaves,
+            budget,
+            Some(&auth),
+            None,
+        )?;
+    }
     factored::strategy::validate_authenticated(
         program,
         function,
@@ -348,3 +430,9 @@ pub(in crate::cleanup_plan::replay) mod before_certificate;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_boundary;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_control;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_path;
