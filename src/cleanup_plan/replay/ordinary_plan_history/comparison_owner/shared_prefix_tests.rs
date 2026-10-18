@@ -776,7 +776,7 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
     let function = &program.functions[0];
     let capture = Capture::begin(Binding::caller_labelled(
         "899 synthetic shared PLAN arena",
-        [0; 32],
+        Sha256::digest(include_bytes!("shared_prefix_tests.rs")).into(),
     ))
     .unwrap();
     let current = run(
