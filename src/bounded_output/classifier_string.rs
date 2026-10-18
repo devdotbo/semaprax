@@ -273,6 +273,18 @@ impl ClassifierLedger {
             }
         })
     }
+    /// Complete fresh borrowed parent check, including closure capture,
+    /// match tuple and caller booleans. Paid on the known parent BEFORE a
+    /// callback; checking its return spends no ACTIVE funds.
+    pub(crate) const STORAGE_PARENT_CURRENT_CONTROLS: usize = 3 * std::mem::size_of::<&Self>()
+        + std::mem::size_of::<&std::cell::RefCell<Option<Rc<Budget>>>>()
+        + std::mem::size_of::<std::cell::Ref<'_, Option<Rc<Budget>>>>()
+        + 2 * std::mem::size_of::<&Option<Rc<Budget>>>()
+        + 5 * std::mem::size_of::<&Rc<Budget>>()
+        + std::mem::size_of::<Option<&Rc<Budget>>>()
+        + std::mem::size_of::<(&Option<Rc<Budget>>, &Option<Rc<Budget>>)>()
+        + 4 * std::mem::size_of::<bool>();
+
     /// Actual new callers of current() prepay its cloned ACTIVE return/local,
     /// match tuple and arm receiver, TLS borrow, borrowed predicates and bools.
     /// Original current() below is unchanged; this inventory grants no authority.
