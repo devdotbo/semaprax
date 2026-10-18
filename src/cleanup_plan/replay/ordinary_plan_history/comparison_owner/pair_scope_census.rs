@@ -34,6 +34,8 @@ pub(super) struct Row {
     pub shared_queries: usize,
     pub shared_boundaries: usize,
     pub shared_runs: usize,
+    pub shared_boundary_complete: usize,
+    pub shared_publishes: usize,
     pub shared_turns: usize,
     pub loads: usize,
     pub identity_empty_probes: usize,
@@ -83,6 +85,8 @@ const EMPTY: Row = Row {
     shared_queries: 0,
     shared_boundaries: 0,
     shared_runs: 0,
+    shared_boundary_complete: 0,
+    shared_publishes: 0,
     shared_turns: 0,
     loads: 0,
     identity_empty_probes: 0,
@@ -346,6 +350,18 @@ impl Guard {
     pub(super) fn shared_boundaries(&self) {
         self.update(|r| match r.shared_boundaries.checked_add(1) {
             Some(n) => r.shared_boundaries = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_publishes(&self) {
+        self.update(|r| match r.shared_publishes.checked_add(1) {
+            Some(n) => r.shared_publishes = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn shared_boundary_complete(&self) {
+        self.update(|r| match r.shared_boundary_complete.checked_add(1) {
+            Some(n) => r.shared_boundary_complete = n,
             None => r.overflow = true,
         });
     }
@@ -659,7 +675,7 @@ mod controls {
     }
     #[test]
     fn shared_run_counter_overflow_is_incomplete_without_work_or_identity_aliasing() {
-        for turn in [false, true] {
+        for counter in 0..4 {
             let function = fixture();
             let budget = ReplayBudget::unobserved();
             let remaining = budget.remaining;
@@ -667,16 +683,18 @@ mod controls {
             let guard = begin(&function, &budget, false);
             TRACE.with(|trace| {
                 let mut trace = trace.borrow_mut();
-                if turn {
-                    trace.rows[0].shared_turns = usize::MAX;
-                } else {
-                    trace.rows[0].shared_runs = usize::MAX;
+                match counter {
+                    0 => trace.rows[0].shared_runs = usize::MAX,
+                    1 => trace.rows[0].shared_turns = usize::MAX,
+                    2 => trace.rows[0].shared_publishes = usize::MAX,
+                    _ => trace.rows[0].shared_boundary_complete = usize::MAX,
                 }
             });
-            if turn {
-                guard.shared_turns();
-            } else {
-                guard.shared_runs();
+            match counter {
+                0 => guard.shared_runs(),
+                1 => guard.shared_turns(),
+                2 => guard.shared_publishes(),
+                _ => guard.shared_boundary_complete(),
             }
             guard.success();
             drop(guard);
@@ -843,6 +861,20 @@ impl Drop for Scope {
                 row.unwound,
                 row.overflow,
                 row.truncated
+            );
+            eprintln!(
+                "PLAN main7e-composite row={} boundary_checks={} left_empty={} right_empty={} links={} queries={} body_admitted={} boundary_complete={} run_capture={} turns={} run_publish={}; actual reached physical packets, no future work credit",
+                row.invocation,
+                row.shared_checks,
+                row.shared_metadata,
+                row.shared_empty_checks,
+                row.shared_links,
+                row.shared_queries,
+                row.shared_boundaries,
+                row.shared_boundary_complete,
+                row.shared_runs,
+                row.shared_turns,
+                row.shared_publishes
             );
             eprintln!(
                 "OPT899 row={} generation={} serial={} function={:?} old={} owner_admitted={} K={} hits={} detectors_D={} captures_C={} extent_captures_E={} replayed_work={} complete={} ended={} unwound={} overflow={} truncated={}",

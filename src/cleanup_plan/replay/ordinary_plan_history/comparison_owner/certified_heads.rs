@@ -2,7 +2,34 @@
 use super::{Ordering, PAYMENT_HEADER, Rc, Segment, SkeletonObservation, size_of};
 // Additional actual reserve/work sites relative to the complete d458 owner:
 // split right producer +4, relocated MATCH +3, first-head certificate +1.
-pub(super) const OWNER: usize = 8 * PAYMENT_HEADER;
+pub(super) const OWNER: usize = 23 * PAYMENT_HEADER;
+// Additional actual sites beyond the first-head split: thirteen boundary
+// sites (six payments and seven work calls), and two numeric-run payments.
+pub(super) const BOUNDARY_CHECK: usize = 3 * size_of::<bool>();
+pub(super) const BOUNDARY_EMPTY: usize = size_of::<bool>();
+pub(super) const BOUNDARY_LINKS: usize = 4 * size_of::<&Vec<usize>>()
+    + 4 * size_of::<&[usize]>()
+    + 4 * size_of::<usize>()
+    + 3 * size_of::<bool>();
+pub(super) const BOUNDARY_VIEW: usize = 2 * size_of::<&[Segment]>()
+    + 2 * size_of::<usize>()
+    + size_of::<&Segment>()
+    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+    + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<bool>();
+// Retain the complete main7e body invoice, including its two remembered-link
+// assignments; this branch physically has no such retained fields.
+pub(super) const BOUNDARY_BODY: usize = 4 * size_of::<&mut Vec<usize>>()
+    + 2 * size_of::<Option<usize>>()
+    + 10 * size_of::<usize>()
+    + 6 * size_of::<bool>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<Ordering>();
+pub(super) const RUN_CAPTURE: usize =
+    2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>();
+pub(super) const RUN_TURN: usize = 4 * size_of::<usize>() + size_of::<bool>();
+pub(super) const RUN_PUBLISH: usize =
+    4 * size_of::<&[Rc<SkeletonObservation>]>() + 4 * size_of::<usize>() + size_of::<Ordering>();
 pub(super) const BASE: usize =
     2 * size_of::<usize>() + 3 * size_of::<bool>() + super::paired_value::EMPTY;
 pub(super) const POP: usize = 2 * size_of::<&mut Vec<usize>>()
@@ -47,7 +74,7 @@ macro_rules! certified_match {
 }
 macro_rules! certified_right_value {
     ($owner:ident, $left_head:ident, $left_link:ident, $tail:ident,
-     $function:ident, $budget:ident, $census:ident, $paired:lifetime) => {{
+     $function:ident, $budget:ident, $census:ident, $paired:lifetime, $certificate:lifetime) => {{
         // Original observation receiving slots, formed only on fallback. There
         // is no new Option, tuple, callback, result or Rc alias transport.
         let left;
@@ -124,7 +151,7 @@ macro_rules! certified_right_value {
                             $crate::workflow_profile::plan_comparison::event(
                                 $crate::workflow_profile::plan_comparison::Site::IdentityHit, 0);
                         }
-                        certified_suffix!($owner, $function, $budget, $census, $paired);
+                        break $certificate;
                     }
                     paid!($budget, $function, certified_heads::VIEW_HEAD,
                         "ordinary plan foreign right segment view and head")?;
@@ -309,66 +336,87 @@ macro_rules! certified_left_value {
 }
 
 // BEGIN CERTIFIED SUFFIX
-// No second detector: the enclosing fresh-ID branch is the certificate.
+// A certificate reaches this single expansion from either the two fresh heads
+// or the direct loaded-empty boundary. No link, flag or certificate is stored.
 macro_rules! certified_suffix {
     ($owner:ident, $function:ident, $budget:ident, $census:ident, $paired:lifetime) => {{
         loop {
             paid!($budget, $function, shared_prefix::PROBE,
                 "ordinary plan shared suffix pattern probe")?;
-            #[cfg(test)]
-            $census.identity_probe();
+            #[cfg(test)] $census.identity_probe();
             #[cfg(feature = "unstable-workflow-profiling")]
             $crate::workflow_profile::plan_comparison::event(
                 $crate::workflow_profile::plan_comparison::Site::IdentityProbeAdmitted,
                 shared_prefix::PROBE);
             match $owner.left_items {
-                [_, rest @ ..] => {
-                    paid!($budget, $function, shared_prefix::REPLAY,
-                        "ordinary plan shared suffix scalar receivers")?;
-                    #[cfg(test)] $census.identity_body();
+                [_, ..] => {
+                    paid!($budget, $function, certified_heads::RUN_CAPTURE,
+                        "ordinary plan certified numeric run capture")?;
+                    #[cfg(test)] $census.shared_runs();
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityReplayAdmitted,
-                        shared_prefix::REPLAY);
-                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-                    #[cfg(test)] $census.identity_work();
+                        $crate::workflow_profile::plan_comparison::Site::NumericCaptureAdmitted,
+                        certified_heads::RUN_CAPTURE);
+                    let shared_length = $owner.left_items.len();
+                    let mut shared_remaining = shared_length;
+                    loop {
+                        paid!($budget, $function, certified_heads::RUN_TURN,
+                            "ordinary plan certified numeric run turn")?;
+                        #[cfg(test)] $census.shared_turns();
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-                    $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
-                    #[cfg(test)] $census.identity_work();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-                    $owner.left_items = rest;
-                    $owner.left_cursor.item += 1;
-                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-                    #[cfg(test)] $census.identity_work();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-                    $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
-                    #[cfg(test)] $census.identity_work();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-                    $owner.right_items = rest;
-                    $owner.right_cursor.item += 1;
-                    $owner.ordering = Ordering::Equal;
-                    #[cfg(test)] $census.identity_observation();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityObservation, 0);
-                    $budget.charge($function, 1, "ordinary plan history observation comparison")?;
-                    #[cfg(test)] $census.identity_work();
-                    #[cfg(test)] $census.round();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    {
+                        $crate::workflow_profile::plan_comparison::Site::NumericTurnAdmitted,
+                        certified_heads::RUN_TURN);
+                        if shared_remaining == 0 { break; }
+                        $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                        #[cfg(test)] $census.identity_work();
+                        #[cfg(feature = "unstable-workflow-profiling")]
                         $crate::workflow_profile::plan_comparison::event(
                             $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+                        #[cfg(test)] $census.identity_work();
+                        #[cfg(feature = "unstable-workflow-profiling")]
                         $crate::workflow_profile::plan_comparison::event(
-                            $crate::workflow_profile::plan_comparison::Site::Round, 0);
+                            $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                        #[cfg(test)] $census.identity_work();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+                        #[cfg(test)] $census.identity_work();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        #[cfg(test)] $census.identity_observation();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::IdentityObservation, 0);
+                        $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+                        #[cfg(test)] $census.identity_work();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        #[cfg(test)] $census.round();
+                        #[cfg(feature = "unstable-workflow-profiling")]
+                        {
+                            $crate::workflow_profile::plan_comparison::event(
+                                $crate::workflow_profile::plan_comparison::Site::Round, 0);
+                        }
+                        shared_remaining -= 1;
                     }
+                    paid!($budget, $function, certified_heads::RUN_PUBLISH,
+                        "ordinary plan certified numeric run publication")?;
+                    #[cfg(test)] $census.shared_publishes();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::NumericPublishAdmitted,
+                        certified_heads::RUN_PUBLISH);
+                    $owner.left_items = &[];
+                    $owner.right_items = &[];
+                    $owner.left_cursor.item += shared_length;
+                    $owner.right_cursor.item += shared_length;
+                    $owner.ordering = Ordering::Equal;
                 }
                 [] => {
                     #[cfg(test)] $census.identity_empty_probe();
@@ -380,5 +428,169 @@ macro_rules! certified_suffix {
             }
         }
         continue $paired;
+    }};
+}
+
+// Both cursors have already exhausted one segment. The immutable prepared link
+// stacks identify the SAME next nonempty segment, including on paths whose
+// previous segments differed. Empty/different successors take the old route.
+macro_rules! certified_boundary {
+    ($owner:ident, $function:ident, $budget:ident, $census:ident, $certificate:lifetime) => {{
+        paid!(
+            $budget,
+            $function,
+            certified_heads::BOUNDARY_CHECK,
+            "ordinary plan certified boundary loaded guards"
+        )?;
+        #[cfg(test)]
+        $census.shared_checks();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        $crate::workflow_profile::plan_comparison::event(
+            $crate::workflow_profile::plan_comparison::Site::BoundaryChecksAdmitted,
+            certified_heads::BOUNDARY_CHECK,
+        );
+        if $owner.left_loaded && $owner.right_loaded {
+            paid!(
+                $budget,
+                $function,
+                certified_heads::BOUNDARY_EMPTY,
+                "ordinary plan certified boundary left empty"
+            )?;
+            #[cfg(test)]
+            $census.shared_metadata();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::BoundaryLeftEmptyAdmitted,
+                certified_heads::BOUNDARY_EMPTY,
+            );
+            if let [] = $owner.left_items {
+                paid!(
+                    $budget,
+                    $function,
+                    certified_heads::BOUNDARY_EMPTY,
+                    "ordinary plan certified boundary right empty"
+                )?;
+                #[cfg(test)]
+                $census.shared_empty_checks();
+                #[cfg(feature = "unstable-workflow-profiling")]
+                $crate::workflow_profile::plan_comparison::event(
+                    $crate::workflow_profile::plan_comparison::Site::BoundaryRightEmptyAdmitted,
+                    certified_heads::BOUNDARY_EMPTY,
+                );
+                if let [] = $owner.right_items {
+                    paid!(
+                        $budget,
+                        $function,
+                        certified_heads::BOUNDARY_LINKS,
+                        "ordinary plan certified boundary next links"
+                    )?;
+                    #[cfg(test)]
+                    $census.shared_links();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::BoundaryLinksAdmitted,
+                        certified_heads::BOUNDARY_LINKS,
+                    );
+                    let left_links = $owner.left_cursor.links.as_slice();
+                    let right_links = $owner.right_cursor.links.as_slice();
+                    if let &[.., left_next] = left_links {
+                        if let &[.., right_next] = right_links {
+                            if left_next == right_next {
+                                paid!(
+                                    $budget,
+                                    $function,
+                                    certified_heads::BOUNDARY_VIEW,
+                                    "ordinary plan certified boundary next view"
+                                )?;
+                                #[cfg(test)]
+                                $census.shared_queries();
+                                #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::BoundaryViewAdmitted,
+                            certified_heads::BOUNDARY_VIEW);
+                                let next_items = $owner.arena[left_next].items.as_slice();
+                                if let [_, rest @ ..] = next_items {
+                                    paid!(
+                                        $budget,
+                                        $function,
+                                        certified_heads::BOUNDARY_BODY,
+                                        "ordinary plan certified boundary transition"
+                                    )?;
+                                    #[cfg(test)]
+                                    $census.shared_boundaries();
+                                    #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::BoundaryBodyAdmitted,
+                            certified_heads::BOUNDARY_BODY);
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward cursor step",
+                                    )?;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward segment traversal",
+                                    )?;
+                                    $owner.left_cursor.segment += 1;
+                                    $owner.left_cursor.item = 0;
+                                    $owner.left_loaded = false;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward segment traversal",
+                                    )?;
+                                    let Some(_left_link) = $owner.left_cursor.links.pop() else {
+                                        unreachable!("validated ordinary plan next segment");
+                                    };
+                                    $owner.left_items = rest;
+                                    $owner.left_loaded = true;
+                                    $owner.left_cursor.item = 1;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward cursor step",
+                                    )?;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward segment traversal",
+                                    )?;
+                                    $owner.right_cursor.segment += 1;
+                                    $owner.right_cursor.item = 0;
+                                    $owner.right_loaded = false;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history forward segment traversal",
+                                    )?;
+                                    let Some(_right_link) = $owner.right_cursor.links.pop() else {
+                                        unreachable!("validated ordinary plan next segment");
+                                    };
+                                    $owner.right_items = rest;
+                                    $owner.right_loaded = true;
+                                    $owner.right_cursor.item = 1;
+                                    $owner.ordering = Ordering::Equal;
+                                    $budget.charge(
+                                        $function,
+                                        1,
+                                        "ordinary plan history observation comparison",
+                                    )?;
+                                    #[cfg(test)]
+                                    $census.round();
+                                    #[cfg(test)]
+                                    $census.shared_boundary_complete();
+                                    #[cfg(feature = "unstable-workflow-profiling")]
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::BoundaryCompleted,
+                            0);
+                                    break $certificate;
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }};
 }

@@ -5,7 +5,7 @@ use super::*;
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
-        + (15 + 8) * PAYMENT_HEADER;
+        + (15 + 23) * PAYMENT_HEADER;
     let event = 2 * size_of::<usize>() + size_of::<bool>();
     let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
     let body =
@@ -20,6 +20,44 @@ pub(super) fn added(r: &pair_scope_census::Row) -> usize {
         + certified_heads::VIEW_HEAD * r.certified_views
         + certified_heads::HEAD * r.certified_heads
         + certified_heads::FIRST * r.certified_firsts
+        + boundary_run_added(r)
+}
+// Complete actually admitted boundary/run packets, independently typed from
+// old tariffs. A body admission and a completed seven-work boundary differ.
+pub(super) fn boundary_run_added(r: &pair_scope_census::Row) -> usize {
+    3 * size_of::<bool>() * r.shared_checks
+        + size_of::<bool>() * (r.shared_metadata + r.shared_empty_checks)
+        + (4 * size_of::<&Vec<usize>>()
+            + 4 * size_of::<&[usize]>()
+            + 4 * size_of::<usize>()
+            + 3 * size_of::<bool>())
+            * r.shared_links
+        + (2 * size_of::<&[Segment]>()
+            + 2 * size_of::<usize>()
+            + size_of::<&Segment>()
+            + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+            + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+            + size_of::<bool>())
+            * r.shared_queries
+        + (4 * size_of::<&mut Vec<usize>>()
+            + 2 * size_of::<Option<usize>>()
+            + 10 * size_of::<usize>()
+            + 6 * size_of::<bool>()
+            + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+            + size_of::<Ordering>())
+            * r.shared_boundaries
+        + (2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>()) * r.shared_runs
+        + (4 * size_of::<usize>() + size_of::<bool>()) * r.shared_turns
+        + (4 * size_of::<&[Rc<SkeletonObservation>]>()
+            + 4 * size_of::<usize>()
+            + size_of::<Ordering>())
+            * r.shared_publishes
+}
+pub(super) fn old_steps(r: &pair_scope_census::Row) -> usize {
+    r.steps + r.certified_bases + 2 * r.identity_observations + 4 * r.shared_boundary_complete
+}
+pub(super) fn old_loads(r: &pair_scope_census::Row) -> usize {
+    r.loads + r.certified_pops + 2 * r.shared_boundary_complete
 }
 // Separate incoming reachable-site delta; never an identity-replay credit.
 pub(super) fn reachable_delta(paths: usize) -> (usize, usize) {
@@ -55,6 +93,7 @@ pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
         + r.certified_bases * (step + empty)
         + r.certified_pops * paired_value::LOAD
         + r.certified_firsts * matching
+        + r.shared_boundary_complete * (matching + 4 * (step + empty) + 2 * paired_value::LOAD)
 }
 
 fn observation(n: usize, value: bool) -> Rc<SkeletonObservation> {
@@ -402,13 +441,20 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 5 * current.row.identity_observations
             );
             assert_eq!(
-                current.row.identity_bodies,
-                current.row.identity_observations
+                current.row.shared_turns,
+                current.row.identity_observations + current.row.shared_runs
             );
-            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits);
+            assert_eq!(current.row.identity_bodies, 0);
+            assert_eq!(current.row.shared_publishes, current.row.shared_runs);
+            assert_eq!(
+                current.row.identity_empty_probes,
+                current.row.identity_hits + current.row.shared_boundary_complete
+            );
             assert_eq!(
                 current.row.identity_probes,
-                current.row.identity_observations + current.row.identity_hits
+                current.row.shared_runs
+                    + current.row.identity_hits
+                    + current.row.shared_boundary_complete
             );
             assert_eq!(
                 (
@@ -422,12 +468,14 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 current.row.value_steps
                     + current.row.certified_bases
                     + 2 * current.row.identity_observations
+                    + 4 * current.row.shared_boundary_complete
             );
             assert_eq!(
                 old.row.pair_matches_admitted,
                 current.row.pair_matches_admitted
                     + current.row.certified_firsts
                     + current.row.identity_observations
+                    + current.row.shared_boundary_complete
             );
             if shared && length > 1 {
                 assert!(current.row.identity_hits > 0 && current.row.identity_observations > 0);
@@ -934,7 +982,7 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
     );
     assert_eq!(
         report.counts.admitted_bytes[Site::IdentityReplayAdmitted as usize],
-        (current.row.identity_observations * shared_prefix::REPLAY) as u64
+        (current.row.identity_bodies * shared_prefix::REPLAY) as u64
     );
 }
 

@@ -85,6 +85,15 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan exhausted right step retained envelope"
         | "ordinary plan fresh segment identity event"
         | "ordinary plan shared suffix pattern probe"
+        | "ordinary plan certified boundary loaded guards"
+        | "ordinary plan certified boundary left empty"
+        | "ordinary plan certified boundary right empty"
+        | "ordinary plan certified boundary next links"
+        | "ordinary plan certified boundary next view"
+        | "ordinary plan certified boundary transition"
+        | "ordinary plan certified numeric run capture"
+        | "ordinary plan certified numeric run turn"
+        | "ordinary plan certified numeric run publication"
         | "ordinary plan shared suffix scalar receivers" => Some(8),
         "ordinary plan history HIR cursor next" => Some(9),
         "ordinary plan retained drain swap receivers" => Some(10),
@@ -1087,12 +1096,13 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             suffix.matches("paid!(").count(),
             suffix.matches(".charge(").count()
         ),
-        (2, 5)
+        (10, 12)
     );
     // Old loop: MATCH + four five-site producers + two first-work sites +
     // eight event/suffix sites. New loop: seven-site left + two old producers
-    // + fifteen-site right + seven suffix sites. These are real expansions.
-    assert_eq!((7 + 2 * 5 + 15 + 7) - (1 + 4 * 5 + 2 + 8), 8);
+    // + fifteen-site right + nine numeric suffix sites + thirteen boundary sites.
+    // These are real expansions, including every fallback and zero sentinel.
+    assert_eq!((7 + 2 * 5 + 15 + 9 + 13) - (1 + 4 * 5 + 2 + 8), 23);
     for phase in phases(heads, "paid!(", 4)
         .into_iter()
         .chain(phases(suffix, "paid!(", 4))

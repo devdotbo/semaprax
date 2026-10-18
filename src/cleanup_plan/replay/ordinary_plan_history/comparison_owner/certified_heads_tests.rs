@@ -14,6 +14,35 @@ fn heads_run(
     swaps_only: bool,
     shape: usize,
 ) -> Run {
+    heads_run_generation(
+        function,
+        length,
+        depth,
+        shared,
+        fault,
+        usize::from(old),
+        units,
+        limit,
+        floor,
+        hir_shared,
+        swaps_only,
+        shape,
+    )
+}
+fn heads_run_generation(
+    function: &ResolvedFunction,
+    length: usize,
+    depth: usize,
+    shared: bool,
+    fault: usize,
+    generation: usize,
+    units: usize,
+    limit: usize,
+    floor: usize,
+    hir_shared: bool,
+    swaps_only: bool,
+    shape: usize,
+) -> Run {
     let (mut actual, mut expected) = fixture(length, depth, shared, fault);
     if shape == 1 {
         let values = actual.arena[0].items.clone();
@@ -132,10 +161,11 @@ fn heads_run(
                     COMPARE_CALL_CONTROLS,
                     "899 complete comparison receiver"
                 )?;
-                if old {
-                    before_certified_heads::compare(function, &mut budget, actual, &expected)
-                } else {
-                    compare(function, &mut budget, actual, &expected)
+                match generation {
+                    0 => compare(function, &mut budget, actual, &expected),
+                    1 => before_certified_heads::compare(function, &mut budget, actual, &expected),
+                    2 => before_shared_runs::compare(function, &mut budget, actual, &expected),
+                    _ => unreachable!("closed test generations"),
                 }
             })();
             let saved = result.as_ref().map(|_| ()).map_err(failure);
@@ -269,14 +299,18 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         "foreign right views retain the complete old STEP and LOAD, including empty segments"
     );
     (
-        8 * header
+        23 * header
             + base * r.certified_bases
             + pop * r.certified_pops
             + head * r.certified_heads
             + view * r.certified_views
             + rhs * r.certified_rhs_assignments
-            + first * r.certified_firsts,
-        old_step * r.certified_bases + old_load * r.certified_pops + matching * r.certified_firsts,
+            + first * r.certified_firsts
+            + super::boundary_run_added(r),
+        old_step * r.certified_bases
+            + old_load * r.certified_pops
+            + matching * r.certified_firsts
+            + r.shared_boundary_complete * (matching + 4 * old_step + 2 * old_load),
     )
 }
 fn observe_heads(
@@ -362,27 +396,45 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     old.row.identity_observations,
                     current.row.identity_observations
                 );
-                assert_eq!(old.row.identity_probes, current.row.identity_probes);
-                assert_eq!(old.row.identity_bodies, current.row.identity_bodies);
-                assert_eq!(old.row.identity_hits, current.row.identity_hits);
+                assert_eq!(
+                    old.row.identity_probes,
+                    current.row.identity_observations + old.row.identity_hits
+                );
+                assert_eq!(old.row.identity_bodies, current.row.identity_observations);
+                assert_eq!(current.row.identity_bodies, 0);
+                assert_eq!(
+                    old.row.identity_hits,
+                    current.row.identity_hits + current.row.shared_boundary_complete
+                );
                 assert_eq!(
                     old.row.value_steps,
-                    current.row.value_steps + current.row.certified_bases
+                    current.row.value_steps
+                        + current.row.certified_bases
+                        + 4 * current.row.shared_boundary_complete
                 );
                 assert_eq!(
                     old.row.loads,
-                    current.row.loads + current.row.certified_pops
+                    current.row.loads
+                        + current.row.certified_pops
+                        + 2 * current.row.shared_boundary_complete
                 );
                 assert_eq!(
                     old.row.pair_matches_admitted,
-                    current.row.pair_matches_admitted + current.row.certified_firsts
+                    current.row.pair_matches_admitted
+                        + current.row.certified_firsts
+                        + current.row.shared_boundary_complete
                 );
                 let (new, removed) = invoice(&current.row);
                 assert_eq!(
                     current.observed.2
                         + removed
-                        + old.row.identity_detectors * shared_prefix::DETECTOR,
-                    old.observed.2 + new + current.row.identity_detectors * shared_prefix::DETECTOR
+                        + old.row.identity_detectors * shared_prefix::DETECTOR
+                        + old.row.identity_bodies * shared_prefix::REPLAY
+                        + old.row.identity_probes * shared_prefix::PROBE,
+                    old.observed.2
+                        + new
+                        + current.row.identity_detectors * shared_prefix::DETECTOR
+                        + current.row.identity_probes * shared_prefix::PROBE
                 );
                 if shape == 3 && length > 0 {
                     assert!(
@@ -392,16 +444,21 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                 }
                 if length == 0 {
                     assert_eq!(current.row.certified_bases, 0);
-                    assert_eq!(current.observed.2, old.observed.2 + 8 * PAYMENT_HEADER);
+                    assert_eq!(
+                        current.observed.2,
+                        old.observed.2
+                            + 23 * PAYMENT_HEADER
+                            + super::boundary_run_added(&current.row)
+                    );
                 }
                 if shape == 4 && length == 128 {
                     assert!(
-                        current.row.certified_firsts > 128,
+                        current.row.certified_firsts + current.row.shared_boundary_complete > 128,
                         "many real segment first heads, not padded root controls"
                     );
                     assert!(
                         current.observed.2 < old.observed.2,
-                        "full genuine d458 invoice including all eight cold headers must win on this dense witness"
+                        "full genuine d458 invoice including all composite cold headers must win on this dense witness"
                     );
                 }
                 if !shared {
@@ -411,7 +468,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     "OPT900902 length={length} depth={depth} shared={shared} shape={shape} hir_shared={hir_shared} old_d458={} current={} cold={} base={} pop={} view={} head={} rhs={} first={} old_Q={} current_Q={} G={} H={}; full individual work and Drop; source candidate only, no shipping gain claim",
                     old.observed.2,
                     current.observed.2,
-                    8 * PAYMENT_HEADER,
+                    23 * PAYMENT_HEADER,
                     current.row.certified_bases,
                     current.row.certified_pops,
                     current.row.certified_views,
@@ -457,7 +514,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
                     true,
                     shape,
                 );
-                for units in 0..=complete.observed.0.0.skeleton_spent + 1 {
+                for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0.0.remaining + 1 {
                     let old = heads_run(
                         function,
                         length,
@@ -500,7 +557,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
 fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_controls() {
     let program = super::super::super::super::tests::program();
     let function = &program.functions[0];
-    let mut reached = [false; 9];
+    let mut reached = [false; 18];
     let phases = [
         "ordinary plan fresh right segment base",
         "ordinary plan fresh right link pop",
@@ -511,6 +568,15 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         "ordinary plan exhausted right step retained envelope",
         "ordinary plan fresh segment identity event",
         "ordinary plan history paired cursor next",
+        "ordinary plan certified boundary loaded guards",
+        "ordinary plan certified boundary left empty",
+        "ordinary plan certified boundary right empty",
+        "ordinary plan certified boundary next links",
+        "ordinary plan certified boundary next view",
+        "ordinary plan certified boundary transition",
+        "ordinary plan certified numeric run capture",
+        "ordinary plan certified numeric run turn",
+        "ordinary plan certified numeric run publication",
     ];
     for (shared, shape) in [
         (true, 0),
@@ -519,6 +585,7 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         (true, 2),
         (true, 3),
         (true, 5),
+        (true, 4),
     ] {
         let complete = observe_heads(
             function,
@@ -584,7 +651,7 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         }
     }
     assert_eq!(
-        reached, [true; 9],
+        reached, [true; 18],
         "all actual packet frontiers must have a genuine witness"
     );
 }
@@ -594,7 +661,7 @@ fn certified_heads_refused_prefix_distinguishes_admitted_first_banks_from_comple
     let function = &program.functions[0];
     let complete = observe_heads(function, 2, 1, true, 0, false, MAX_REPLAY_WORK_UNITS, true);
     let mut first_before_work = false;
-    for units in 0..=complete.observed.0.0.skeleton_spent {
+    for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0.0.remaining {
         let r = observe_heads(function, 2, 1, true, 0, false, units, true);
         let admitted = |phase| {
             r.events
@@ -929,7 +996,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         })
         .unwrap();
     let mut changed_priority = false;
-    for units in 0..=success.observed.0.0.skeleton_spent {
+    for units in 0..=MAX_REPLAY_WORK_UNITS - success.observed.0.0.remaining {
         let old = heads_run(
             function,
             2,
@@ -952,7 +1019,8 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
             0,
             false,
             units,
-            matching.before + 8 * PAYMENT_HEADER + PAIR_MATCH - 1,
+            matching.before + 23 * PAYMENT_HEADER + certified_heads::BOUNDARY_CHECK + PAIR_MATCH
+                - 1,
             0,
             false,
             false,
@@ -991,7 +1059,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         .nth(1)
         .unwrap();
     let mut split_priority = false;
-    for units in 0..=success.observed.0.0.skeleton_spent {
+    for units in 0..=MAX_REPLAY_WORK_UNITS - success.observed.0.0.remaining {
         let old = heads_run(
             function,
             2,
@@ -1090,11 +1158,199 @@ fn certified_heads_opt_in_counts_every_real_new_packet_after_complete_teardown()
             r.row.certified_firsts,
             certified_heads::FIRST,
         ),
+        (
+            Site::BoundaryChecksAdmitted,
+            r.row.shared_checks,
+            certified_heads::BOUNDARY_CHECK,
+        ),
+        (
+            Site::BoundaryLeftEmptyAdmitted,
+            r.row.shared_metadata,
+            certified_heads::BOUNDARY_EMPTY,
+        ),
+        (
+            Site::BoundaryRightEmptyAdmitted,
+            r.row.shared_empty_checks,
+            certified_heads::BOUNDARY_EMPTY,
+        ),
+        (
+            Site::BoundaryLinksAdmitted,
+            r.row.shared_links,
+            certified_heads::BOUNDARY_LINKS,
+        ),
+        (
+            Site::BoundaryViewAdmitted,
+            r.row.shared_queries,
+            certified_heads::BOUNDARY_VIEW,
+        ),
+        (
+            Site::BoundaryBodyAdmitted,
+            r.row.shared_boundaries,
+            certified_heads::BOUNDARY_BODY,
+        ),
+        (
+            Site::NumericCaptureAdmitted,
+            r.row.shared_runs,
+            certified_heads::RUN_CAPTURE,
+        ),
+        (
+            Site::NumericTurnAdmitted,
+            r.row.shared_turns,
+            certified_heads::RUN_TURN,
+        ),
+        (
+            Site::NumericPublishAdmitted,
+            r.row.shared_publishes,
+            certified_heads::RUN_PUBLISH,
+        ),
+        (Site::BoundaryCompleted, r.row.shared_boundary_complete, 0),
     ] {
         assert_eq!(report.counts.at(site), count as u64);
         assert_eq!(
             report.counts.admitted_bytes[site as usize],
             (count * amount) as u64
         );
+    }
+}
+
+// Both independently compiled full generations have equations against the
+// same whole883 control. Elimination below uses only typed source coefficients,
+// never a measured debit difference as a price or a hypothetical900 stage.
+fn main7e_delta(r: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize, usize) {
+    use super::super::main7e_pair_scope_tests as old;
+    let flat_paths = expected
+        .iter()
+        .filter(|p| p.observations.prefix.is_none())
+        .count();
+    let flat_rounds: usize = expected
+        .iter()
+        .filter(|p| p.observations.prefix.is_none())
+        .map(|p| p.observations.items.len() + 1)
+        .sum();
+    let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+    let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    let (old_tail, tail, tail_view) = old::tail_receiver_prices();
+    let (step, load, setup, limit) = old::prepared_link_prices();
+    let (all_primitives, reachable_primitives) = old::reachable_primitive_prices(expected.len());
+    let (shared_removed, shared_retained) = old::shared_step_prices(expected.len(), r);
+    (
+        PAIR_SCOPE * r.pairs
+            + PAIR_PRIMITIVE
+            + PAYMENT_HEADER
+            + retained_view * flat_paths
+            + tail_view * (2 * r.pairs + expected.len())
+            + setup
+            + limit * (2 * r.pairs + expected.len())
+            + reachable_primitives
+            + shared_retained,
+        4 * PATH_INDEX * r.rounds
+            + removed_view * flat_rounds
+            + (old_tail - tail) * r.tails
+            + step * r.steps
+            + load * r.loads
+            + all_primitives
+            + shared_removed,
+    )
+}
+fn current883_delta(r: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize, usize) {
+    use super::super::combined_pair_scope_tests as current;
+    let flat = current::flat_delta(expected);
+    let tail = current::tail_delta(r, expected);
+    (
+        PAIR_SCOPE * r.pairs
+            + PAIR_PRIMITIVE
+            + paired_value::ADDITIONAL_PRIMITIVES
+            + NEW_PAIR_REFERENCES * r.rounds
+            + flat.0
+            + tail.0,
+        4 * PATH_INDEX * r.rounds + current::fused_removed(r) + flat.1 + tail.1,
+    )
+}
+#[test]
+fn composed_main7e_and_certified_heads_keep_full_actual_invoices_both_hir_and_all_work_cuts() {
+    let program = super::super::super::super::tests::program();
+    let function = &program.functions[0];
+    for hir_shared in [false, true] {
+        for (length, depth, shared, shape) in [
+            (0, 1, true, 0),
+            (1, 1, true, 0),
+            (16, 1, true, 0),
+            (16, 8, true, 0),
+            (8, 1, false, 0),
+            (8, 1, true, 1),
+            (8, 1, true, 2),
+            (8, 1, true, 3),
+            (32, 1, true, 4),
+            (8, 1, true, 5),
+        ] {
+            let observe = |generation, units, fault| {
+                heads_run_generation(
+                    function,
+                    length,
+                    depth,
+                    shared,
+                    fault,
+                    generation,
+                    units,
+                    usize::MAX,
+                    0,
+                    hir_shared,
+                    true,
+                    shape,
+                )
+            };
+            let old = observe(2, MAX_REPLAY_WORK_UNITS, 0);
+            let current = observe(0, MAX_REPLAY_WORK_UNITS, 0);
+            assert_eq!(old.observed.0.0, current.observed.0.0);
+            assert!(current.observed.0.0.result.is_ok());
+            assert_eq!(old.observed.0.1, current.observed.0.1);
+            assert_eq!(swaps(&old), swaps(&current));
+            assert!(old.row.complete && current.row.complete);
+            // The shapes retain four paths except explicit two-path right tail.
+            // Reconstruct only expected HIR outside either measured invocation.
+            let (actual, mut expected) = fixture(length, depth, shared, 0);
+            if shape == 5 {
+                expected.clear();
+                for path in actual.paths.iter().take(2) {
+                    let mut observations = actual.arena[0].items.clone();
+                    observations.extend(path.history.tail.iter().cloned());
+                    expected.push(SkeletonPath {
+                        observations: observations.into(),
+                        terminal: path.terminal,
+                    });
+                }
+                expected.sort();
+            }
+            if hir_shared {
+                for p in &mut expected {
+                    p.observations.prefix = p.observations.freeze();
+                    p.observations.items.clear();
+                }
+            }
+            let (old_added, old_removed) = main7e_delta(&old.row, &expected);
+            let (new_added, new_removed) = current883_delta(&current.row, &expected);
+            assert_eq!(
+                current.observed.2 + new_removed + old_added,
+                old.observed.2 + old_removed + new_added,
+                "whole invoices len={length} depth={depth} shared={shared} shape={shape} HIR={hir_shared}"
+            );
+            eprintln!(
+                "composite versus wholemain7e len={length} shape={shape}: old={} current={}; no universal or application claim",
+                old.observed.2, current.observed.2
+            );
+            let spent = MAX_REPLAY_WORK_UNITS - old.observed.0.0.remaining;
+            for fault in [0, 1, 2, 3] {
+                for cut in 0..=spent {
+                    let old = observe(2, cut, fault);
+                    let current = observe(0, cut, fault);
+                    assert_eq!(
+                        old.observed.0.0, current.observed.0.0,
+                        "six fields/work len={length} shape={shape} fault={fault} cut={cut}"
+                    );
+                    assert_eq!(swaps(&old), swaps(&current));
+                }
+            }
+        }
     }
 }

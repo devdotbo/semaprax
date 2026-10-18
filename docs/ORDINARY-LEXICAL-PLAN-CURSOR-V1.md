@@ -319,3 +319,56 @@ failure cuts; a real compiler fixture checks every cut of a multi-step run.
 Every predecessor invoice, exact-source inverse and hostile control remains.
 These source and bounded model results do not establish full compiler, physical
 allocator, application, native64MiB, STD-08, browser or hosted qualification.
+
+
+## Complementary fresh heads, next boundaries, and immutable numeric runs (v3)
+
+The shipping composition retains the v2 fresh-head proof and adds main7e's
+loaded-empty boundary transition and numeric immutable-suffix loop. It does
+not retain remembered owner link IDs or a nonempty loaded-item poll. Such a
+poll is redundant after a successful fresh-head certificate has consumed its
+whole suffix. Both independently compiled complete generations remain controls:
+the immediate d458 suffix-only owner and the complete main7e owner, macro,
+all original owner tests, and each finite source inverse.
+
+At every ordinary paired round a paid three-boolean guard tests the two loaded
+fields and their lazy conjunction. Its separate paid left-empty and right-empty
+patterns precede the exact prepared next-link and immutable next-view packets.
+Only equal next IDs in the same prepared immutable arena and a nonempty next
+segment enter the boundary body. Empty, absent, and different successors take
+the unchanged ordinary fallback. The body retains the complete main7e invoice,
+including its conservative two remembered-assignment slots, although no such
+fields are physically stored in this composition.
+
+A successful boundary executes the original seven work requests individually:
+left step, exhausted left segment, next left segment, right step, exhausted
+right segment, next right segment, and observation comparison. Cursor mutation
+and link pops retain that order. The two fresh-head path and this boundary path
+then leave a zero-payload lexical block for one shared suffix expansion. No
+Option, callback, flag, copied link certificate, or extra observation receiver
+transports the proof between those lexical positions.
+
+The suffix retains the complete old paid pattern envelope on every entry and
+terminal empty probe. A nonempty suffix acquires the exact numeric capture,
+turn (including zero sentinel), and publication packets. Every observation
+still executes left step/segment, right step/segment, and comparison work in
+that order. Private non-owning slice/item fields publish only after the entire
+numeric run and its publication packet succeed. Thus adequate-physical work
+cuts preserve sticky six diagnostic fields, remaining work, swaps, complete
+behavior, and owned Drop; they do not assert identical intermediate private
+cursor fields on refusal. Physical-versus-work cuts additionally distinguish
+new guard, capture, turn, and publication refusals. No old work is merged and
+no backend or final independent HIR comparison is skipped.
+
+The complete expanded cold-site difference is 23 PAYMENT_HEADER frames beyond
+the retained d458 suffix bank: eight first-head split sites, six boundary
+payment plus seven boundary work sites, and two additional numeric payment
+sites. The current owner directly pays its actual width. Every old cold fee
+remains. The typed independent whole invoices count actual admitted boundary
+checks, patterns, links, views, bodies, completed boundaries, numeric captures,
+turns, and publications. Body admission can precede a work refusal; completed
+boundary and completed observation counters must not substitute for it. The
+feature observer records every successful work charge at that charge's own
+frontier, including partial runs. Cold/short losses remain disclosed; matched
+application admission, paid savings, allocator or RSS gains remain unqualified
+until actual current execution.

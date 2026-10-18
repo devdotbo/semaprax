@@ -144,9 +144,11 @@ fn fresh_entry_suffix_has_independent_full_old_new_invoices_and_real_q_g_h() {
             assert_eq!(swaps(&old), swaps(&current));
             assert!(old.row.complete && current.row.complete);
             assert_eq!(current.row.identity_probes,
-                current.row.identity_observations + current.row.identity_hits);
-            assert_eq!(current.row.identity_bodies, current.row.identity_observations);
-            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits);
+                current.row.shared_runs + current.row.identity_hits + current.row.shared_boundary_complete);
+            assert_eq!(current.row.identity_bodies, 0);
+            assert_eq!(current.row.shared_turns, current.row.identity_observations + current.row.shared_runs);
+            assert_eq!(current.row.shared_runs, current.row.shared_publishes);
+            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits + current.row.shared_boundary_complete);
             if length == 1 && shape == 0 {
                 assert!(current.row.identity_hits > 0);
                 assert_eq!(current.row.identity_observations, 0, "same-ID singleton is a paid empty suffix, never G");
@@ -177,7 +179,7 @@ fn fresh_entry_suffix_asymmetric_empty_and_every_work_cut_preserve_immediate_six
     let function = &program.functions[0];
     for (length, shape) in [(2, 0), (2, 1), (2, 2), (0, 3), (8, 3)] {
         let complete = event_observe(function, length, shape, true, MAX_REPLAY_WORK_UNITS, false);
-        for units in 0..=complete.observed.0 .0.skeleton_spent + 1 {
+        for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining + 1 {
             let old = event_observe(function, length, shape, true, units, false);
             let current = event_observe(function, length, shape, false, units, false);
             assert_eq!(old.observed.0 .0, current.observed.0 .0,
@@ -192,7 +194,7 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
     let function = &program.functions[0];
     let complete = event_observe(function, 2, 0, false, MAX_REPLAY_WORK_UNITS, true);
     let mut partial_body = false;
-    for units in 0..=complete.observed.0 .0.skeleton_spent {
+    for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining {
         let current = event_observe(function, 2, 0, false, units, true);
         let bytes = |phase| current.events.iter().filter(|e| e.phase == phase)
             .filter_map(|e| e.after.map(|after| after - e.before)).sum::<usize>();
@@ -203,8 +205,15 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
         assert_eq!(bytes("ordinary plan shared suffix scalar receivers"),
             current.row.identity_bodies * (2 * size_of::<&SkeletonObservation>()
                 + 2 * size_of::<usize>() + size_of::<Ordering>()));
-        assert!(current.row.identity_bodies >= current.row.identity_observations);
-        if current.row.identity_bodies > current.row.identity_observations {
+        assert_eq!(bytes("ordinary plan certified numeric run capture"),
+            current.row.shared_runs * certified_heads::RUN_CAPTURE);
+        assert_eq!(bytes("ordinary plan certified numeric run turn"),
+            current.row.shared_turns * certified_heads::RUN_TURN);
+        assert_eq!(bytes("ordinary plan certified numeric run publication"),
+            current.row.shared_publishes * certified_heads::RUN_PUBLISH);
+        assert_eq!(current.row.identity_bodies, 0);
+        assert!(current.row.shared_turns >= current.row.identity_observations);
+        if current.row.shared_turns > current.row.identity_observations {
             assert!(!current.row.complete && current.observed.0 .0.result.is_err());
             partial_body = true;
         }
@@ -318,9 +327,10 @@ fn fresh_suffix_supersedes_complete_shared_step_generation_without_polling() {
                 assert_eq!(swaps(&old), swaps(&current));
                 assert_eq!((old.observed.0 .1.live, current.observed.0 .1.live), (0, 0));
                 assert!(old.row.complete && current.row.complete);
-                assert_eq!((current.row.shared_checks, current.row.shared_patterns,
-                    current.row.shared_metadata, current.row.shared_steps), (0, 0, 0, 0),
-                    "the superseded per-round poll is physically absent");
+                assert_eq!((current.row.shared_patterns, current.row.shared_steps), (0, 0),
+                    "the superseded nonempty loaded-item poll is physically absent");
+                assert!(current.row.shared_checks >= current.row.shared_metadata,
+                    "the distinct loaded-empty boundary checks are actually observed");
                 if length > 1 && shape == 0 {
                     assert!(old.row.shared_steps > 0, "genuine incoming loaded-item route executes");
                     assert!(current.row.identity_observations > 0,
@@ -343,7 +353,7 @@ fn fresh_suffix_and_complete_shared_step_generation_keep_every_work_refusal_and_
     for (length, shape) in [(2, 0), (2, 1), (2, 2), (0, 3), (8, 3)] {
         let complete = main99_run(function, length, shape, MAX_REPLAY_WORK_UNITS,
             usize::MAX, 0, false, true);
-        for units in 0..=complete.observed.0 .0.skeleton_spent + 1 {
+        for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining + 1 {
             let old = main99_run(function, length, shape, units, usize::MAX, 0, false, true);
             let current = event_run(function, length, shape, false, units,
                 usize::MAX, 0, false, true);

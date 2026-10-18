@@ -1,7 +1,7 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
 use super::*;
 // Complete-success flat-view delta, from actual typed sites, never paid subtraction.
-fn flat_delta(expected: &[SkeletonPath]) -> (usize, usize) {
+pub(super) fn flat_delta(expected: &[SkeletonPath]) -> (usize, usize) {
     let paths = expected.iter().filter(|p| p.observations.prefix.is_none());
     let removed = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
     let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
@@ -11,7 +11,10 @@ fn flat_delta(expected: &[SkeletonPath]) -> (usize, usize) {
     (PAYMENT_HEADER + retained * count, removed * rounds)
 }
 
-fn tail_delta(row: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize, usize) {
+pub(super) fn tail_delta(
+    row: &pair_scope_census::Row,
+    expected: &[SkeletonPath],
+) -> (usize, usize) {
     let before = size_of::<&History>()
         + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
         + 3 * size_of::<&[Rc<SkeletonObservation>]>()
@@ -52,9 +55,8 @@ fn tail_delta(row: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize
             + shared_prefix_tests::added(row)
             + shared_prefix_tests::reachable_delta(expected.len()).1,
         removed
-            + (old_step - new_step)
-                * (row.steps + row.certified_bases + 2 * row.identity_observations)
-            + (old_load - new_load) * (row.loads + row.certified_pops)
+            + (old_step - new_step) * (super::shared_prefix_tests::old_steps(row))
+            + (old_load - new_load) * (super::shared_prefix_tests::old_loads(row))
             + shared_prefix_tests::removed(row)
             + shared_prefix_tests::reachable_delta(expected.len()).0,
     )
@@ -827,12 +829,13 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
 }
 
 // Complete-success equation only. Refusal controls use reached real frontiers.
-fn fused_removed(row: &pair_scope_census::Row) -> usize {
+pub(super) fn fused_removed(row: &pair_scope_census::Row) -> usize {
     size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>() * row.rounds
         + 2 * size_of::<Option<&SkeletonObservation>>()
             * (row.value_steps
                 + row.certified_bases
                 + 2 * row.identity_observations
+                + 4 * row.shared_boundary_complete
                 + row.value_tails)
 }
 fn observe_886_pair(

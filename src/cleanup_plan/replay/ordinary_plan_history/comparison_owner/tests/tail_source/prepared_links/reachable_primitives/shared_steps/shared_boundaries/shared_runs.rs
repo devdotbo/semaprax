@@ -1,4 +1,13 @@
 //! Exact immutable-run successor; complete older guards remain independently executable.
+// The complete incoming stage is authenticated before its unchanged finite
+// inverse. Mutated historical inputs stay mutated and must fail that inverse.
+fn incoming_stage(current: &str, path: &str, sha: &str, live: &str) -> String {
+    if current == live {
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(path, sha, current)
+    } else {
+        current.to_owned()
+    }
+}
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
     let mut result = current.to_owned();
@@ -15,6 +24,16 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_macro(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 17993, MACRO)
 }
 #[rustfmt::skip]
@@ -28,6 +47,16 @@ const MACRO: &[(usize, &str, &str)] = &[
     (339, "// The shared immutable-step branch adds six payment and five work sites.\n", "// The shared immutable-step branch adds four payment and five work sites.\n"),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+        "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 49614, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -38,6 +67,16 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (6325, "        + if paths >= 2 { 11 * header } else { 0 }\n", "        + if paths >= 2 { 9 * header } else { 0 }\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+        "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 16853, CENSUS)
 }
 #[rustfmt::skip]
@@ -48,6 +87,16 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (732, "    pub shared_runs: usize,\n    pub shared_turns: usize,\n", ""),
 ];
 pub(super) fn previous_boundary_controls(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+        "f3c7bd5f0c297d24432f4893c1e3ef9b0dd12b45080efc4f851c6e335c841a16",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 22995, BOUNDARY_CONTROLS)
 }
 #[rustfmt::skip]
@@ -63,6 +112,16 @@ const BOUNDARY_CONTROLS: &[(usize, &str, &str)] = &[
     (721, "mod shared_runs;\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/bounded_output/stage_debits/route_debits.rs",
+        "4fbbb4241187bdc85e3687bffd1829ff6c16c63e5a198a6e1ef767e84c273c9d",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 35279, ROUTE)
 }
 #[rustfmt::skip]

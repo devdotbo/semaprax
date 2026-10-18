@@ -98,8 +98,18 @@ pub enum Site {
     CertifiedViewAdmitted,
     CertifiedHeadAdmitted,
     CertifiedFirstAdmitted,
+    BoundaryChecksAdmitted,
+    BoundaryLeftEmptyAdmitted,
+    BoundaryRightEmptyAdmitted,
+    BoundaryLinksAdmitted,
+    BoundaryViewAdmitted,
+    BoundaryBodyAdmitted,
+    NumericCaptureAdmitted,
+    NumericTurnAdmitted,
+    NumericPublishAdmitted,
+    BoundaryCompleted,
 }
-const SITES: usize = 34;
+const SITES: usize = 44;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Counts {
     pub events: [u64; SITES],
