@@ -1,0 +1,94 @@
+{
+  "status": "SOURCE_ONLY_COMPLETE_ORIGINAL_VERIFIER_AND_SIX_HOSTILE_CONTROLS_PASS",
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "whole_prior_sides": [
+        {
+          "length": 2334554,
+          "sha256": "098071a48330bc2951056624e0aa7877d1c19e19a28ba19ab1a57e4051977be5",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/098071a48330bc2951056624e0aa7877d1c19e19a28ba19ab1a57e4051977be5.txt"
+        },
+        {
+          "length": 2334440,
+          "sha256": "cc810478880aa1502d1745a926c5fcac0c39fe936a4e5c2bc80897c66c33daad",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/cc810478880aa1502d1745a926c5fcac0c39fe936a4e5c2bc80897c66c33daad.txt"
+        }
+      ],
+      "current_length": 2334554,
+      "current_sha256": "9a2e1cc15d2c834c747e8f5083cfe8462e0a0a243998bca16978c6edb88b40ae",
+      "all_prior_classes_and_roles_preserved": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "whole_prior_sides": [
+        {
+          "length": 2625543,
+          "sha256": "334391b5719d5da163a87f506927f724d7fcf40869d8d4cdd10c11ab7ec039f8",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/334391b5719d5da163a87f506927f724d7fcf40869d8d4cdd10c11ab7ec039f8.txt"
+        },
+        {
+          "length": 2625429,
+          "sha256": "dfcdfb5b03350e23c66e461c92454bf96efefc4d0182708fda97e6e568562af9",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/dfcdfb5b03350e23c66e461c92454bf96efefc4d0182708fda97e6e568562af9.txt"
+        }
+      ],
+      "current_length": 2625543,
+      "current_sha256": "d39903f3af0f91fbcc2d0da85a805d7aa5041945d1302f393c79ec8b1fba63a7",
+      "all_prior_classes_and_roles_preserved": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "whole_prior_sides": [
+        {
+          "length": 49971,
+          "sha256": "7584ad8ea9b8ff0c09b6642c098db44c6b4162bfaa3c8bfcfe9db456b9a68f92",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/7584ad8ea9b8ff0c09b6642c098db44c6b4162bfaa3c8bfcfe9db456b9a68f92.txt"
+        },
+        {
+          "length": 49971,
+          "sha256": "81806e37abd22027f9e9b15c298b8b9797b1a0d0109b4a272183298fce7aa899",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/81806e37abd22027f9e9b15c298b8b9797b1a0d0109b4a272183298fce7aa899.txt"
+        }
+      ],
+      "current_length": 49971,
+      "current_sha256": "1dedefb30106366ea1ec0ca9a00e955b18227f8c1c719180080999b6cf7b022c",
+      "all_prior_owner_fields_and_order_retained_except_refreshed_source_identity": true
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "whole_prior_sides": [
+        {
+          "length": 242132,
+          "sha256": "70ba765e386ab533474fcb30cc7f57df3963f54cf06065f9a5e6b3bb99c3d8fb",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/70ba765e386ab533474fcb30cc7f57df3963f54cf06065f9a5e6b3bb99c3d8fb.txt"
+        },
+        {
+          "length": 242132,
+          "sha256": "a92dbcb059493e4c69ef248d7efd01df013054c5b58c28834883f428e48c4671",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/a92dbcb059493e4c69ef248d7efd01df013054c5b58c28834883f428e48c4671.txt"
+        }
+      ],
+      "current_length": 242132,
+      "current_sha256": "e156700640de289396093ef8beedb7bf55dd306258d46a683e1230bdedc0a783"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "whole_prior_sides": [
+        {
+          "length": 3412,
+          "sha256": "2f842fa6e9ec85705932a076117a84912b67f70f6e7ab363b567b1a94dd0717c",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/2f842fa6e9ec85705932a076117a84912b67f70f6e7ab363b567b1a94dd0717c.txt"
+        },
+        {
+          "length": 2772,
+          "sha256": "57ffc4b695b0c9a497dd5bd3b2b445961b5fdb194a38609d29030558e5854a69",
+          "archive": "docs/evidence/merge-2e92-browser-20261018/whole/57ffc4b695b0c9a497dd5bd3b2b445961b5fdb194a38609d29030558e5854a69.txt"
+        }
+      ],
+      "current_length": 3389,
+      "current_sha256": "958f5f97f9fa95f9699adaff3543fd9abf8bf97dab3a8141cbd8bde3436cde4f"
+    }
+  ],
+  "original_authority_source_proof_unchanged": true
+}

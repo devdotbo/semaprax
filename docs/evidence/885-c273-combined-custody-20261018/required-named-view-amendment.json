@@ -1,0 +1,90 @@
+{
+  "status": "SOURCE_ONLY_RETAIN_REQUIRED_WHOLE_433_AND_133_CURRENT_VIEWS",
+  "initial_packet_refusal": "required literal whole-fmt433-current view absent for newly changed base row; original assertion preserved",
+  "added": [
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 325741,
+        "sha256": "8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed",
+        "archive": "docs/evidence/fmt-a110/i42wkfgzCcx6Ul8MUMKT2gVaS2lJ1affk2LIN7ni4O0.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 36733,
+        "sha256": "1161e0a666820d35bf0365ecf4b7f871cf463693a413db14871e3a0349a3a74e",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/1161e0a666820d35bf0365ecf4b7f871cf463693a413db14871e3a0349a3a74e.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 9869,
+        "sha256": "6cbe7fcb25702bb3ab005b64e8175cb8a0c7dfdf594532dc393d25b5def1d031",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/6cbe7fcb25702bb3ab005b64e8175cb8a0c7dfdf594532dc393d25b5def1d031.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 7190,
+        "sha256": "4444834e368473fb3a213c900280cd7777a93fc64c423f88ca9ffe3985199e3d",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/views/4444834e368473fb3a213c900280cd7777a93fc64c423f88ca9ffe3985199e3d.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 27937,
+        "sha256": "d3955dba84fc669c56362ab5c0b37f9f5b62b363a255c7b04e07bf606a276209",
+        "archive": "docs/evidence/fmt-a110/05VduoT8ZpxWNiq1wLN_n1tis2OiVcewTge_YGonYgk.txt"
+      }
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "before_sha256": "6e869e2cae17da290bf2b6c753083d7b54962fd681689d94db804620a853c0c0",
+      "after_sha256": "1ad1ccd76a81daeb63ef10a29f554be7de8e04ab41a1b514bf43b2d1d151e478"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before_sha256": "cb5e630dfc86b7ca704fc5e34094ba5bb92ec32a44c17481ff3fcc8f641ac4c6",
+      "after_sha256": "fa72c2e0e9d8c5566611eb604c6fd5b6e7b9cc8bf5ce99e0d1663fe793970e09"
+    },
+    {
+      "path": "docs/evidence/remote12ad-checkpoint-20261018/guard-config.json",
+      "before_sha256": "c76d7fc4f6684e16e0dfb0d4d835f16ef8a900d465d94c4496658b5322987248",
+      "after_sha256": "35f37d82478722b4c6cb0a285d2b8364e67bd7b15818c6a4761c4d669810785d"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before_sha256": "7baf407e6be777f4e2badb6628b13e435e1145631fb46047173393af139f87b9",
+      "after_sha256": "67f1b54e99c2336c644bd20b5911abc0f1c14d2f2c1b6b44c29801729a59efe4"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before_sha256": "fe6bb7dccd3fb9e6aa4262d93880f94dd4d73240ce02b3e36cb7611823725b70",
+      "after_sha256": "d347f7728fd136f6eea804795bb518aedeb17297cf8e1a6f59d1a9f7951ba9cd"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before_sha256": "0885bd28cc9ae6e6a20359610aeb50b627dbc9fbca08ed8790adf67ff519241e",
+      "after_sha256": "69979d5d58fb896c38424ef8466695391c06da0635f3a99ed09db8e77674d685"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before_sha256": "7be915811aa2dddb17ab505d303ea658fafb82f3ebfdaef8f8bd741f4697bb7b",
+      "after_sha256": "5702fe54bd3bd6df4f5ac79db9d236e97d48407eaf6b26aa1a951c69b07c53a3"
+    }
+  ],
+  "caps_unchanged": true,
+  "Cargo": false
+}

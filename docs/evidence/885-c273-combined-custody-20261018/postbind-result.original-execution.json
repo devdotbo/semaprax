@@ -1,0 +1,99 @@
+{
+  "status": "SOURCE_ONLY_TWO_BINDER_OUTPUT_SOURCE_ROWS_UNAPPLIED",
+  "source_head": "fd0f795bb412ee0e07845a9cf81742b525660843",
+  "changed_sources": [
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows_merge/ordinary_plan_inputs.rs",
+    "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv"
+  ],
+  "logical_rows": 441,
+  "base433_unchanged_sha256": "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc",
+  "whole_extension_before_sha256": "1ad1ccd76a81daeb63ef10a29f554be7de8e04ab41a1b514bf43b2d1d151e478",
+  "extension_after_sha256": "be6ef7d7ab30cbeab228a89603108cf1d62c4b704a0c88db0b43e83c192f8ef3",
+  "old_extension_rows": 187,
+  "new_extension_rows": 187,
+  "helper_pin_edit": {
+    "before": "(223242,\"1ad1ccd76a81daeb63ef10a29f554be7de8e04ab41a1b514bf43b2d1d151e478\".to_owned())",
+    "after": "(224028,\"be6ef7d7ab30cbeab228a89603108cf1d62c4b704a0c88db0b43e83c192f8ef3\".to_owned())"
+  },
+  "guard_pin_edits": [
+    {
+      "before": "92671",
+      "after": "92671"
+    },
+    {
+      "before": "'35f37d82478722b4c6cb0a285d2b8364e67bd7b15818c6a4761c4d669810785d'",
+      "after": "'0036a1478619bfb997e285103695fc94c774fe4a2b82cb96a053c35f255327b9'"
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "length": 2253,
+      "sha256": "2c8dd5d07a89da164fe8aad61263bdfef097a7a20435257c7e7af0b985c15aea",
+      "before_sha256": "69979d5d58fb896c38424ef8466695391c06da0635f3a99ed09db8e77674d685"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "length": 5322,
+      "sha256": "7ebb776a62cd809a2e4dc221cd1a61ee42d8185deac0a9709df698a102f57c20",
+      "before_sha256": "d347f7728fd136f6eea804795bb518aedeb17297cf8e1a6f59d1a9f7951ba9cd"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "length": 64627,
+      "sha256": "751e1126ec33ab4bf9475e46b8bf8b4f23e4ec6b2f770bcae5ba7258758ea74d",
+      "before_sha256": "c451280f8d9746fc1c31822cf3969cdba32072ab8e09eab286de281cb2e7e2dd"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "length": 224028,
+      "sha256": "be6ef7d7ab30cbeab228a89603108cf1d62c4b704a0c88db0b43e83c192f8ef3",
+      "before_sha256": "1ad1ccd76a81daeb63ef10a29f554be7de8e04ab41a1b514bf43b2d1d151e478"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/88b1c920b34cd40d5a848eb0007042fbb51915e4ab97a2a32f4b958598abcf7c.txt",
+      "length": 52075,
+      "sha256": "88b1c920b34cd40d5a848eb0007042fbb51915e4ab97a2a32f4b958598abcf7c",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/ac6aafd36d9a4f29dfe0a6e46615415f2ed2fc2d8b4f49f90b8553293955a5ff.txt",
+      "length": 49904,
+      "sha256": "ac6aafd36d9a4f29dfe0a6e46615415f2ed2fc2d8b4f49f90b8553293955a5ff",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/b8740e6908c69afe9c386e59bfd10f72a83155bafcedd8d4d24b4280443a2a4d.txt",
+      "length": 19742,
+      "sha256": "b8740e6908c69afe9c386e59bfd10f72a83155bafcedd8d4d24b4280443a2a4d",
+      "before_sha256": null
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 10642,
+      "sha256": "b8475d803503a720b63cb531dba3629fd1655edcdd7f822c2cd1ddf61315f044",
+      "before_sha256": "67f1b54e99c2336c644bd20b5911abc0f1c14d2f2c1b6b44c29801729a59efe4"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "length": 2766,
+      "sha256": "25af8d546e57b652407a26c9c203c5e9e71062478e06ae17f2bd84521d01224f",
+      "before_sha256": "5702fe54bd3bd6df4f5ac79db9d236e97d48407eaf6b26aa1a951c69b07c53a3"
+    },
+    {
+      "path": "docs/evidence/remote12ad-checkpoint-20261018/guard-config.json",
+      "length": 92671,
+      "sha256": "0036a1478619bfb997e285103695fc94c774fe4a2b82cb96a053c35f255327b9",
+      "before_sha256": "35f37d82478722b4c6cb0a285d2b8364e67bd7b15818c6a4761c4d669810785d"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 98503,
+      "sha256": "cf554c2199acf88471660b2c913a480607df4ddb03685820dfaec47cb31d0ada",
+      "before_sha256": "fa72c2e0e9d8c5566611eb604c6fd5b6e7b9cc8bf5ce99e0d1663fe793970e09"
+    }
+  ],
+  "prior174_and_FINAL6_producers_not_replayed": true,
+  "Cargo": false
+}

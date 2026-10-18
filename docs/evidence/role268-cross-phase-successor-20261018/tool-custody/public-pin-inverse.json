@@ -1,0 +1,20 @@
+{
+  "status": "SOURCE_ONLY_UNINVOKED_FINITE_PUBLIC_PIN_CORRECTION",
+  "whole_before": "role268-b205.whole-before.py.txt",
+  "whole_before_sha256": "b205592321c812d20cff75310a7c8cff9dbf86a30bc7981f235f510d71881f47",
+  "successor": "refresh-role268-cross-phase-public-pin.py",
+  "successor_sha256": "b4dd1e0cd0935c3b833949ce28869b99c664583e3626f39bbb420a6b21235fd2",
+  "edits": [
+    {
+      "before": "   if 'path'in value and value['path'].startswith('docs/evidence/'):paths.append(value['path'])",
+      "after": "   if 'path'in value and value['path'].startswith('docs/evidence/'):\n    if value is admission['CONFIG']['public']:\n     # This one exact record names the historical public carrier. Preserve its\n     # whole archive and authenticate the live successor via original grammar.\n     assert set(value)=={'path','length','sha256','archive'}\n     actual=held(value['path'],9753094);assert actual==G(a.expected_head,value['path'])\n     prior=admission['public_previous']()\n     assert prior==held(value['archive'],9753094)and(len(prior),H(prior))==(value['length'],value['sha256'])\n     assert held(value['path'],9753094)==actual\n    else:paths.append(value['path'])",
+      "count": 1
+    }
+  ],
+  "complete_inverse_verified": true,
+  "scope": "Exact CONFIG.public object only; unchanged original public_previous grammar authenticates live public seal and whole old archive; actual current public added to SNAPSHOTS and matches invocation Git HEAD.",
+  "all_other_existing_path_and_archive_assertions_unchanged": true,
+  "workspace_owner": "Original b205 docs-only path branch intentionally excludes raw-source paths. Actual workspace owner remains held/refreshed in BOTH prior models sources; no old tuple asserted as current physical.",
+  "producer_invoked": false,
+  "ROOT_mutated": false
+}

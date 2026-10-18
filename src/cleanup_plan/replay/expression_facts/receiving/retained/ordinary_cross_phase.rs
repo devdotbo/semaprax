@@ -4,7 +4,6 @@ use super::super::require_expression;
 use super::case_certified::retained_lookup;
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::arena::retained::Session;
-use crate::cleanup_plan::replay::*;
 pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,

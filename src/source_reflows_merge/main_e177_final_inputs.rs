@@ -12,8 +12,8 @@ fn packet() -> serde_json::Value {
     assert_eq!(
         (data.len(), digest(data.as_bytes())),
         (
-            212076,
-            "5fec5794582e2c23b013fea8df0f2d012d7c53156758e0a8cb14dc93bdd0cfcc".to_owned()
+            228268,
+            "762e3c6221da8df3a43a58a941e3b4f17fa4500084971fee6743eb6f09778cd9".to_owned()
         )
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -50,7 +50,7 @@ fn packet() -> serde_json::Value {
             rows.push(row.clone());
         }
     }
-    assert_eq!(rows.len(), 441);
+    assert_eq!(rows.len(), 444);
     for (prior, current) in base["rows"].as_array().unwrap().iter().zip(rows.iter()) {
         assert_eq!(current["source"], prior["source"]);
         assert!(
@@ -749,6 +749,9 @@ fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/factored/compact_nodes/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/compact_nodes/tests.rs")),
         "src/hir/ids/declaration_tag.rs" => Some(include_str!("../../src/hir/ids/declaration_tag.rs")),
         "src/hir/ids/declaration_tag/before.rs" => Some(include_str!("../../src/hir/ids/declaration_tag/before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs")),
         _ => None,
     }
 }
@@ -1119,17 +1122,17 @@ mod clippy_stage {
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
-        assert_eq!(data.len(), 80040);
+        assert_eq!(data.len(), 85979);
         assert_eq!(
             digest(data.as_bytes()),
-            "af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d"
+            "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a"
         );
         assert_eq!(
             held_4a6eb(
                 &Path::new(env!("CARGO_MANIFEST_DIR"))
                     .join("docs/evidence/clippy-11a0-integration/inputs.json"),
                 data.len(),
-                "af61812eea04170b7734fcbe831f2842c288aec4d586871b06f0cf6aa280412d"
+                "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a"
             )
             .unwrap(),
             data

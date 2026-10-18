@@ -1,0 +1,11 @@
+Traceback (most recent call last):
+  File "/Volumes/Semaprax/provenance/role268-cross-phase-successor-20261018/refresh-role268-cross-phase.py", line 59, in <module>
+    configpath=str(admission['_CONFIG_PATH'].relative_to(R));assert held(configpath,262144)==admission['_CONFIG_RAW'];hold_pins(admission['CONFIG'])
+                                                                                                                      ~~~~~~~~~^^^^^^^^^^^^^^^^^^^^^
+  File "/Volumes/Semaprax/provenance/role268-cross-phase-successor-20261018/refresh-role268-cross-phase.py", line 56, in hold_pins
+    for child in value.values():hold_pins(child)
+                                ~~~~~~~~~^^^^^^^
+  File "/Volumes/Semaprax/provenance/role268-cross-phase-successor-20261018/refresh-role268-cross-phase.py", line 55, in hold_pins
+    raw=held(path,9753094);assert(len(raw),H(raw))==(value['length'],value['sha256'])
+                                 ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+AssertionError

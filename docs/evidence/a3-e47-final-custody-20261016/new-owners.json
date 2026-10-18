@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "77aec79d1e5eea8bbfebc4ee70c516027851d0d4003137e6e3f5364341a3b882",
+    "sha256": "ac6aafd36d9a4f29dfe0a6e46615415f2ed2fc2d8b4f49f90b8553293955a5ff",
     "lines": 1235
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "67daafbc387f420b4372ab4d5c59d301cae72fcdfd96cb8803533823db0cb8b3",
+    "sha256": "b8740e6908c69afe9c386e59bfd10f72a83155bafcedd8d4d24b4280443a2a4d",
     "lines": 510
   },
   {
@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "b6add9eefb2f2a4db80dea46433174e58d5472a1427893ec112dd97c6982f520",
-    "lines": 1461
+    "sha256": "8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d",
+    "lines": 1464
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1326,8 +1326,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
-    "sha256": "6ba196436b4c28008168b9f927ab70a4b9703a5a23885f49b540aadb4ffa5394",
-    "lines": 1328
+    "sha256": "fd9a33482f749d39d63010e414114c95b5958a3315bbeff887b3e22002e3c984",
+    "lines": 1327
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
@@ -1336,7 +1336,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
-    "sha256": "3bf6acc672b265ae27ab9a662caeddcd02f8829b95b4fbfaaefa3d8166e99338",
-    "lines": 353
+    "sha256": "990aec163cc046175cc3867ec75bfbee6cf3e54feece0528689faefc8728bf85",
+    "lines": 359
   }
 ]

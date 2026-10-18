@@ -283,14 +283,14 @@ fn exact_source_inverses_restore_every_whole_immediate_owner() {
         let current = restored_c336.as_str();
         let row=records["sources"].as_array().unwrap().iter().find(|r|r["path"]==path).unwrap();
         assert_eq!(current.len(),row["after"]["length"].as_u64().unwrap()as usize);
-        assert_eq!(format!("{:x}",sha2::Sha256::digest(current.as_bytes())),row["after"]["sha256"].as_str().unwrap());
+        assert_eq!(format!("{:x}",crate::digest_hex::LowerHex(sha2::Sha256::digest(current.as_bytes()))),row["after"]["sha256"].as_str().unwrap());
         let mut restored=current.to_owned();
         for edit in row["edits"].as_array().unwrap().iter().rev() {
             let after=edit["after"].as_str().unwrap();assert_eq!(restored.matches(after).count(),1);
             restored=restored.replacen(after,edit["before"].as_str().unwrap(),1);
         }
         assert_eq!(restored.len(),row["before"]["length"].as_u64().unwrap()as usize);
-        assert_eq!(format!("{:x}",sha2::Sha256::digest(restored.as_bytes())),row["before"]["sha256"].as_str().unwrap());
+        assert_eq!(format!("{:x}",crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))),row["before"]["sha256"].as_str().unwrap());
     }
     eprintln!(
         "cross-phase retained LexicalAttempt={} Session={} S={} Re={}",
@@ -332,7 +332,10 @@ fn before_bare_pattern_source(path: &str, current: &str) -> String {
         row["after"]["length"].as_u64().unwrap() as usize
     );
     assert_eq!(
-        format!("{:x}", sha2::Sha256::digest(current.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(sha2::Sha256::digest(current.as_bytes()))
+        ),
         row["after"]["sha256"].as_str().unwrap()
     );
     let mut restored = current.to_owned();
@@ -346,7 +349,10 @@ fn before_bare_pattern_source(path: &str, current: &str) -> String {
         row["before"]["length"].as_u64().unwrap() as usize
     );
     assert_eq!(
-        format!("{:x}", sha2::Sha256::digest(restored.as_bytes())),
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))
+        ),
         row["before"]["sha256"].as_str().unwrap()
     );
     restored

@@ -903,6 +903,9 @@ src/loan_plan/paid_plan/retained_before_dense.rs
 src/loan_plan/funded_flat/before_dense.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs

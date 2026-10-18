@@ -1,0 +1,67 @@
+{
+  "base": "67281d0166b024a0c13e36eb16d271065c1da8f8",
+  "sources": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "before": {
+        "length": 76609,
+        "sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-67281-compile-fix-20261018/whole-before/src__cleanup_plan__replay__expression_facts__receiving__retained__ordinary_cross_phase.rs.txt"
+      },
+      "after": {
+        "length": 76611,
+        "sha256": "fd9a33482f749d39d63010e414114c95b5958a3315bbeff887b3e22002e3c984",
+        "lines": 1327
+      },
+      "edits": [
+        {
+          "before": "use crate::cleanup_plan::replay::*;\n",
+          "after": "use super::super::require_expression;\n",
+          "count": 1
+        },
+        {
+          "before": "//! #885 whole ordinary ABI with an actual lexical status/initial-edge owner.\n//! SOURCE WIP: typed receiving ledger and independent controls pending review.\nuse super::case_certified::retained_lookup;\nuse super::*;\nuse crate::cleanup_plan::replay::expression_facts::arena::retained::Session;\nuse super::super::require_expression;\n",
+          "after": "//! #885 whole ordinary ABI with an actual lexical status/initial-edge owner.\n//! SOURCE WIP: typed receiving ledger and independent controls pending review.\nuse super::super::require_expression;\nuse super::case_certified::retained_lookup;\nuse super::*;\nuse crate::cleanup_plan::replay::expression_facts::arena::retained::Session;\n",
+          "count": 1
+        }
+      ],
+      "complete_inverse_verified": true
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "before": {
+        "length": 14618,
+        "sha256": "3bf6acc672b265ae27ab9a662caeddcd02f8829b95b4fbfaaefa3d8166e99338",
+        "archive": "docs/evidence/retained-expression-fact-cross-phase-67281-compile-fix-20261018/whole-before/src__cleanup_plan__replay__expression_facts__receiving__retained__ordinary_cross_phase_tests.rs.txt"
+      },
+      "after": {
+        "length": 14802,
+        "sha256": "990aec163cc046175cc3867ec75bfbee6cf3e54feece0528689faefc8728bf85",
+        "lines": 359
+      },
+      "edits": [
+        {
+          "before": "sha2::Sha256::digest(current.as_bytes())",
+          "after": "crate::digest_hex::LowerHex(sha2::Sha256::digest(current.as_bytes()))",
+          "count": 2
+        },
+        {
+          "before": "sha2::Sha256::digest(restored.as_bytes())",
+          "after": "crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))",
+          "count": 2
+        },
+        {
+          "before": "        format!(\"{:x}\", crate::digest_hex::LowerHex(sha2::Sha256::digest(current.as_bytes()))),",
+          "after": "        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(sha2::Sha256::digest(current.as_bytes()))\n        ),",
+          "count": 1
+        },
+        {
+          "before": "        format!(\"{:x}\", crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))),",
+          "after": "        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))\n        ),",
+          "count": 1
+        }
+      ],
+      "complete_inverse_verified": true
+    }
+  ]
+}

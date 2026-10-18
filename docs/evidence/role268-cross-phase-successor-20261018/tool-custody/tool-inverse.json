@@ -1,0 +1,115 @@
+{
+  "status": "SOURCE_ONLY_UNINVOKED_DRAFT",
+  "whole_before": "role265-fragments.whole-before.py.txt",
+  "whole_before_sha256": "7c653d0e3480447f2df56fca3cfa579cc8ea33d1b654fbf283f142f0ef68c06e",
+  "successor": "refresh-role268-cross-phase.py",
+  "successor_sha256": "b205592321c812d20cff75310a7c8cff9dbf86a30bc7981f235f510d71881f47",
+  "edits": [
+    {
+      "before": "Finite existing241-owner registration delta; no full root enumeration or compiler.",
+      "after": "Finite existing265-owner registration delta; no full root enumeration or compiler.",
+      "count": 1
+    },
+    {
+      "before": "BASE='4a6eb7a20eb117fda38211fbb128e3f742995262';SOURCE=BASE;REL='docs/evidence/fragment-aware-role265-successor-20261018'",
+      "after": "BASE='c27382c179983118110231cc95a3d0560973ef7a';SOURCE=BASE;REL='docs/evidence/role268-cross-phase-successor-20261018'",
+      "count": 1
+    },
+    {
+      "before": "Path('/Volumes/Semaprax/worktrees/fixture11-linked-context-530073-20261018')",
+      "after": "Path('/Volumes/Semaprax/worktrees/next-large-combined-20261017')",
+      "count": 1
+    },
+    {
+      "before": "NEW={'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs', 'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs', 'src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs', 'src/hir/ids/declaration_tag.rs', 'src/hir/ids/declaration_tag/before.rs'} # Five authentic core test registrations; native test children outside core inventory.\nADDED_RS={x for x in git('diff','--name-only','--diff-filter=A',BASE,a.expected_head).decode().splitlines()if x.endswith('.rs')and x.startswith(('src/','tests/','crates/'))};NATIVE={'src/codegen/native_emit/emission_before.rs','src/codegen/native_emit/validation_reuse_tests.rs'};assert ADDED_RS==NEW|NATIVE,('unexpected physical module',sorted(ADDED_RS))",
+      "after": "NEW={'src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs','src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs','src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs'} # Actual core children; roles come only from original parser chains.\nADDED_RS={x for x in git('diff','--name-only','--diff-filter=A',BASE,a.expected_head).decode().splitlines()if x.endswith('.rs')and x.startswith(('src/','tests/','crates/'))};NATIVE=set();assert ADDED_RS==NEW,('unexpected physical module',sorted(ADDED_RS))",
+      "count": 1
+    },
+    {
+      "before": "pin=record['current'];raw=held(child,9753094);assert raw==G(BASE,child)and(len(raw),H(raw))==(pin['length'],pin['sha256'])\n assert held(pin['archive'],9753094)==raw",
+      "after": "pin=record['current'];whole433=held(pin['archive'],9753094);assert(len(whole433),H(whole433))==(pin['length'],pin['sha256'])\n raw=held(child,9753094);assert raw==G(a.expected_head,child)\n prior=G(BASE,child)\n assert admission['latest_source'](child,len(prior),H(prior))==prior\n assert admission['latest_source'](child,len(raw),H(raw))==raw\n live=next(x for x in logical['rows']if x['source']==child)\n liveparent=next(x for x in logical['rows']if x['source']==parent)\n assert live['compiled']is True and liveparent['fragments'].count(live)==1\n assert any(p['length']==len(prior)and p['sha256']==H(prior)for p in [live['current'],*live['views']]),('missing complete c273 fragment view',child)",
+      "count": 1
+    },
+    {
+      "before": "FRAGMENT_EDGES={};fragment_receipts=[]",
+      "after": "# Held exact-final-commit admission, never a loader reopening its source.\nguardpath='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py'\nguardraw=held(guardpath,262144);assert guardraw==G(a.expected_head,guardpath)\nadmission={'__file__':str(R/guardpath),'_AUTHENTICATED_PROGRAM':guardraw};exec(compile(guardraw,guardpath,'exec'),admission)\nlogical=admission['packet']();assert len(logical['rows'])==444\nassert len({x['source']for x in logical['rows']})==444\n# Hold configuration dependencies and archives, not historical raw-source pins.\n# Raw sources are acquired by the existing latest_source closed view channel.\ndef hold_pins(value):\n if isinstance(value,dict):\n  if {'length','sha256'}<=value.keys():\n   paths=[value['archive']]if 'archive'in value else []\n   if 'path'in value and value['path'].startswith('docs/evidence/'):paths.append(value['path'])\n   for path in paths:\n    raw=held(path,9753094);assert(len(raw),H(raw))==(value['length'],value['sha256'])\n  for child in value.values():hold_pins(child)\n elif isinstance(value,list):\n  for child in value:hold_pins(child)\nconfigpath=str(admission['_CONFIG_PATH'].relative_to(R));assert held(configpath,262144)==admission['_CONFIG_RAW'];hold_pins(admission['CONFIG'])\nFRAGMENT_EDGES={};fragment_receipts=[]",
+      "count": 1
+    },
+    {
+      "before": "# Baseline source models are the complete published4a6 generation, not530.",
+      "after": "# Baseline source models and all 265 owners are the complete c273 generation.",
+      "count": 1
+    },
+    {
+      "before": "BRIDGES={'src/lib.rs','src/hir.rs','src/hir/ids.rs'}",
+      "after": "BRIDGES=set() # Existing retained.rs compiled parent suffices; no root walk.",
+      "count": 1
+    },
+    {
+      "before": "assert {'src/cleanup_plan/replay/factored/canonical_shared.rs'}<=PARENTS",
+      "after": "assert {'src/cleanup_plan/replay/expression_facts/receiving/retained.rs'}<=PARENTS",
+      "count": 1
+    },
+    {
+      "before": "# Only the exact registered785 branch can traverse these unchanged ancestors;\n# capture() rejects every unrelated root child before original parse executes.\nassert held('src/lib.rs',9753094)==G(BASE,'src/lib.rs')\nassert held('src/hir.rs',9753094)==G(BASE,'src/hir.rs')\ncapture(R/'src/lib.rs',[],[],'lib','semaprax')",
+      "after": "# No root traversal or unchanged ancestor bridge is required for NEW3.\nassert not BRIDGES",
+      "count": 1
+    },
+    {
+      "before": "   if not allowed:continue\n  if v not in chains:chains.append(v)",
+      "after": "   if not allowed:continue\n  # NEW3 ownership requires this DOMAIN's authentic existing-parent compiled\n  # prefix, including for both children below the new production file.\n  additions=[i for i,e in enumerate(edges)if e['child']in NEW]\n  if additions:\n   at=additions[0];parent=edges[at]['parent'];assert parent not in NEW\n   prefix=dict(root=v['root'],kind=v['kind'],package=v['package'],edges=edges[:at])\n   witnesses=REMAPPED_PRIOR[domain]['classes'].get(parent,{}).get('chains',[])\n   if prefix not in witnesses:continue\n   assert compiled_chain(prefix)\n  if v not in chains:chains.append(v)",
+      "count": 1
+    },
+    {
+      "before": "assert len(owners)==260;",
+      "after": "assert len(owners)==265;",
+      "count": 1
+    },
+    {
+      "before": "assert len(owners)==260+len(NEW-have)",
+      "after": "assert len(owners)==265+len(NEW-have)==268",
+      "count": 1
+    },
+    {
+      "before": "FINITE_260_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_FIVE_ACTUAL_CORE_CHILDREN",
+      "after": "FINITE_265_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_THREE_ACTUAL_CORE_CHILDREN",
+      "count": 1
+    },
+    {
+      "before": "old_owners=260,",
+      "after": "old_owners=265,",
+      "count": 1
+    },
+    {
+      "before": "for p in [B+'current-domains.json',B+'boundary-source-proof.json']:before[p]=held(p,16777216)",
+      "after": "for p in [B+'current-domains.json',B+'boundary-source-proof.json']:\n before[p]=held(p,16777216);assert before[p]==G(SOURCE,p)",
+      "count": 1
+    },
+    {
+      "before": " for path,initial in list(SNAPSHOTS.items()):assert held(path,max(1,len(initial)))==initial,path",
+      "after": " assert admission['packet']()==logical\n hold_pins(admission['CONFIG'])\n for path,initial in list(SNAPSHOTS.items()):assert held(path,max(1,len(initial)))==initial,path",
+      "count": 1
+    },
+    {
+      "before": "Baseline241 already owns the selected_labels narrowing",
+      "after": "Baseline265 already owns the selected_labels narrowing",
+      "count": 1
+    },
+    {
+      "before": "baseline241.",
+      "after": "baseline265.",
+      "count": 1
+    },
+    {
+      "before": "old source metadata not exact7feba",
+      "after": "old source metadata not exactc273",
+      "count": 1
+    },
+    {
+      "before": "# Actual new19 registration parents; unchanged canonical root is not a seed.",
+      "after": "# Actual NEW3 registration parent; unchanged canonical root is not a seed.",
+      "count": 1
+    }
+  ],
+  "complete_inverse_verified": true
+}

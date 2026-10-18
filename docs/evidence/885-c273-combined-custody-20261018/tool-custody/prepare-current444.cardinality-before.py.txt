@@ -1,0 +1,94 @@
+from pathlib import Path
+import json,hashlib,subprocess,copy,ast,os,stat,argparse
+A=argparse.ArgumentParser();A.add_argument('--expected-head',required=True);A.add_argument('--out',type=Path,required=True);a=A.parse_args();R=Path('/Volumes/Semaprax/worktrees/next-large-combined-20261017');H=lambda b:hashlib.sha256(b).hexdigest();enc=lambda v:(json.dumps(v,separators=(',',':'))+'\n').encode();git=lambda *x:subprocess.check_output(['git',*x],cwd=R);G=lambda p:git('show',a.expected_head+':'+p);snap={}
+def clean():assert git('rev-parse','HEAD').decode().strip()==a.expected_head and not git('status','--porcelain','--untracked-files=all').strip()
+def held(p):
+ for q in (R/p).parents:
+  if q==R:break
+  assert not q.is_symlink()
+ fd=os.open(R/p,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+ try:
+  st=os.fstat(fd);ident=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns);assert stat.S_ISREG(st.st_mode)and st.st_size<=9753094
+  with os.fdopen(fd,'rb',closefd=False)as f:b=f.read(st.st_size);assert len(b)==st.st_size and not f.read(1)
+  assert ident(st)==ident(os.fstat(fd))==ident(os.lstat(R/p));assert b==G(p)
+  if p in snap:assert snap[p]==b
+  else:snap[p]=b
+  return b
+ finally:os.close(fd)
+clean();assert not a.out.exists();REL='docs/evidence/fmt-local-441-20261018';EXT=REL+'/extension.json';CFG='docs/evidence/remote12ad-checkpoint-20261018/guard-config.json';HELP='src/source_reflows_merge/main_e177_final_inputs.rs';GUARD='docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py';BASE='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json';EVID='docs/evidence/885-c273-combined-custody-20261018';C5='c5a66317ada06b8ceceb7a9c9257a62375a33115';C273='c27382c179983118110231cc95a3d0560973ef7a';UP='8db669070';N='src/cleanup_plan/replay/expression_facts/receiving/retained/';NEW=[N+x for x in ['ordinary_cross_phase.rs','ordinary_cross_phase_before.rs','ordinary_cross_phase_tests.rs']];out={};old={p:held(p)for p in [EXT,CFG,HELP,GUARD,BASE]};e=json.loads(old[EXT]);c=json.loads(old[CFG]);base=json.loads(old[BASE]);by={r['source']:copy.deepcopy(r)for r in base['rows']};by.update({r['source']:r for r in e['rows']});prior=copy.deepcopy(by);assert len(by)==441 and not set(NEW)&set(by)and HELP not in by
+changed=[]
+def archive(b):
+ p=REL+'/whole/'+H(b)+'.txt';out[p]=b
+ if (R/p).exists():assert held(p)==b
+ return dict(length=len(b),sha256=H(b),archive=p)
+def view(row,b,name):
+ v=dict(name=name,**archive(b))
+ if v not in row['views']:row['views'].append(v)
+for p,r in by.items():
+ b=held(p)
+ if (len(b),H(b))!=(r['current']['length'],r['current']['sha256']):view(r,held(r['current']['archive']),'whole-c273-before-885-coupling');r['current']=archive(b);changed.append(p)
+assert len(changed)==12,changed
+controls=[r['path']for r in json.loads(git('show',C5+':docs/evidence/retained-expression-fact-cross-phase-20261018/inverses.json'))['sources']];assert len(controls)==7
+for p in controls:view(by[p],git('show',C5+':'+p),'whole-c5-cross-phase-control')
+for p in changed:
+ for rev,name in [(C273,'whole-c273-qualification-generation'),(UP,'whole-upstream8db-generation')]:view(by[p],git('show',rev+':'+p),name)
+for p in NEW:
+ r=dict(source=p,compiled=True,current=archive(held(p)),views=[]);view(r,git('show',C5+':'+p),'whole-c5-cross-phase-control');by[p]=r;e['rows'].append(r)
+oldorder=[r['source']for r in json.loads(old[EXT])['rows']]
+for p in changed:
+ if p not in oldorder:e['rows'].append(by[p])
+assert [r['source']for r in e['rows']][:len(oldorder)]==oldorder
+for p,r in by.items():
+ if 'fragments'in r:r['fragments']=[copy.deepcopy(by[x['source']])for x in r['fragments']]
+for p,r in prior.items():
+ now=copy.deepcopy(by[p]);now['current']=r['current'];now['views']=r['views']
+ if 'fragments'in r:now['fragments']=r['fragments']
+ assert now==r
+ext=enc(e);assert len(ext)<=262144;out[EXT]=ext
+helper=old[HELP].decode();x=f'({len(old[EXT])},"{H(old[EXT])}".to_owned())';y=f'({len(ext)},"{H(ext)}".to_owned())';assert helper.count(x)==1;helper=helper.replace(x,y);assert helper.count('assert_eq!(rows.len(),441);')==1;helper=helper.replace('assert_eq!(rows.len(),441);','assert_eq!(rows.len(),444);')
+start=helper.index('fn compiled(source:');at=helper.index('        _ => None,',start);arms=''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in NEW);helper=helper[:at]+arms+helper[at:]
+# Keep the entire121/105 source-successor protocol and every existing field.
+stage=c['source_successor']['path'];old[stage]=held(stage);sv=json.loads(old[stage]);stage_changed=[]
+for r in sv['rows']:
+ p=r['source'];b=held(p)
+ if (len(b),H(b))!=(r['current']['length'],r['current']['sha256']):
+  prev=dict(name='whole-before-885-c273-coupling',**r['current']);r.setdefault('views',[]).append(prev);r['current']=archive(b);stage_changed.append(p)
+ if p in controls:
+  v=dict(name='whole-c5-cross-phase-control',**archive(git('show',C5+':'+p)))
+  if v not in r.setdefault('views',[]):r['views'].append(v)
+st=enc(sv);assert len(st)<=262144;out[stage]=st;assert helper.count(H(old[stage]))==2;helper=helper.replace(H(old[stage]),H(st));needle='assert_eq!(data.len(), '+str(len(old[stage]))+');';assert helper.count(needle)==1;helper=helper.replace(needle,'assert_eq!(data.len(), '+str(len(st))+');');out[HELP]=helper.encode();assert len(helper.splitlines())<=1500;c['source_successor'].update(length=len(st),sha256=H(st))
+# Ordered extension uses the actual literal NEW3 run directly after its old owner.
+table=c['table'];old[table['path']]=held(table['path']);lines=old[table['path']].decode().splitlines();assert len(lines)==len(set(lines))==972;anchor=N+'case_certified/retained_lookup.rs';at=lines.index(anchor)+1
+carrier=held('tests/workspace/semantic_graph/source_inventory.rs').decode();ordered=[p[6:]for p in __import__('re').findall(r'include_str!\("(\.\./\.\./src/[^"\n]+)"\)',carrier)];i=ordered.index(anchor);assert ordered[i:i+4]==[anchor]+NEW
+for n,p in enumerate(NEW):assert p not in lines;lines.insert(at+n,p);table['insertions'].append(dict(at=at+n,path=p))
+tsv=('\n'.join(lines)+'\n').encode();out[table['path']]=tsv;table.update(length=len(tsv),sha256=H(tsv),rows=len(lines))
+for p in sorted(set(c['modules'])|set(NEW)):
+ b=out.get(p,None)
+ if b is None:b=held(p)
+ c['modules'].setdefault(p,{}).update(length=len(b),sha256=H(b))
+for p in NEW:
+ if p not in c['closed_prior_sources']:c['closed_prior_sources'].append(p)
+for p,pin in c['carriers'].items():b=held(p);pin.update(length=len(b),sha256=H(b))
+c.update(logical_rows=444);c['extension'].update(length=len(ext),sha256=H(ext));cfg=enc(c);assert len(cfg)<=262144;out[CFG]=cfg
+s=old[GUARD].decode()
+for name,value in [('_CONFIG_LENGTH',len(cfg)),('_CONFIG_SHA256',H(cfg))]:
+ n=next(n.value for n in ast.parse(s).body if isinstance(n,ast.Assign)and isinstance(n.targets[0],ast.Name)and n.targets[0].id==name);ss=s.splitlines(True);a0=sum(map(len,ss[:n.lineno-1]))+n.col_offset;a1=sum(map(len,ss[:n.end_lineno-1]))+n.end_col_offset;s=s[:a0]+repr(value)+s[a1:]
+ast.parse(s);assert len(s.encode())<=65536;out[GUARD]=s.encode()
+for p in ['docs/evidence/accepted-strict-guard-generation-20261017/check-source.py','docs/evidence/accepted-final6-source-binding-20261017/check-source.py','docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py']:
+ b=held(p);old[p]=b;assert b.count(H(old[GUARD]).encode())==1;b=b.replace(H(old[GUARD]).encode(),H(out[GUARD]).encode());prefix='guard_raw=held(guard_helper,'if'verify-or-refresh'in p else'helper_raw=bounded(helper,';x=(prefix+str(len(old[GUARD]))).encode();assert b.count(x)==1;b=b.replace(x,(prefix+str(len(out[GUARD]))).encode());ast.parse(b);out[p]=b
+for r in by.values():
+ for pin in [r['current']]+r['views']:
+  b=out.get(pin['archive'],None)
+  if b is None:b=held(pin['archive'])
+  assert(len(b),H(b))==(pin['length'],pin['sha256'])
+for p,pin in c['modules'].items():
+ b=out.get(p,None)
+ if b is None:b=held(p)
+ assert(len(b),H(b))==(pin['length'],pin['sha256'])
+for p,b in list(snap.items()):assert held(p)==b
+clean();a.out.mkdir(parents=True);files=[]
+for p,b in sorted(out.items()):
+ q=a.out/'candidate'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(b)
+ if (R/p).exists():q=a.out/'before'/p;q.parent.mkdir(parents=True,exist_ok=True);q.write_bytes(held(p))
+ files.append(dict(path=p,length=len(b),sha256=H(b)))
+(a.out/'receipt.json').write_text(json.dumps(dict(status='SOURCE_ONLY_PREPARED_NOT_APPLIED',head=a.expected_head,changed_rows=changed,new_modules=NEW,logical_rows=len(by),modules=len(c['modules']),ordered_rows=len(lines),extension_bytes=len(ext),stage_changed=stage_changed,held_inputs=len(snap),files=files,Cargo=False),indent=2)+'\n');print(a.out/'receipt.json')
