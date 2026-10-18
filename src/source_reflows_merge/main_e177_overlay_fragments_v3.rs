@@ -624,6 +624,16 @@ mod tests {
                 .unwrap()
                 .push(serde_json::json!({"old519":[offset + 2,1,hash,extra]}));
         }
+        // Both protocol generations obey the same predecessor row order.
+        let names = policy["replacements"].as_array().unwrap().clone();
+        let mut order: Vec<_> = (0..names.len()).collect();
+        order.sort_by_key(|&index| before["rows"].as_array().unwrap().iter()
+            .position(|row| row["source"] == names[index]).unwrap());
+        policy["replacements"] = order.iter().map(|&i| names[i].clone()).collect::<Vec<_>>().into();
+        for page in [&mut full, &mut compact] {
+            let rows = page["replacements"].as_array().unwrap().clone();
+            page["replacements"] = order.iter().map(|&i| rows[i].clone()).collect::<Vec<_>>().into();
+        }
         (before, policy, full, compact)
     }
     #[test]

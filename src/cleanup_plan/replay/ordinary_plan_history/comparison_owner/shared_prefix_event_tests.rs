@@ -177,7 +177,8 @@ fn fresh_entry_suffix_asymmetric_empty_and_every_work_cut_preserve_immediate_six
     let function = &program.functions[0];
     for (length, shape) in [(2, 0), (2, 1), (2, 2), (0, 3), (8, 3)] {
         let complete = event_observe(function, length, shape, true, MAX_REPLAY_WORK_UNITS, false);
-        for units in 0..=complete.observed.0 .0.skeleton_spent + 1 {
+        let ordinary_spent = MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining;
+        for units in 0..=ordinary_spent + 1 {
             let old = event_observe(function, length, shape, true, units, false);
             let current = event_observe(function, length, shape, false, units, false);
             assert_eq!(old.observed.0 .0, current.observed.0 .0,
@@ -192,7 +193,8 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
     let function = &program.functions[0];
     let complete = event_observe(function, 2, 0, false, MAX_REPLAY_WORK_UNITS, true);
     let mut partial_body = false;
-    for units in 0..=complete.observed.0 .0.skeleton_spent {
+    let ordinary_spent = MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining;
+    for units in 0..=ordinary_spent {
         let current = event_observe(function, 2, 0, false, units, true);
         let bytes = |phase| current.events.iter().filter(|e| e.phase == phase)
             .filter_map(|e| e.after.map(|after| after - e.before)).sum::<usize>();
@@ -343,7 +345,8 @@ fn fresh_suffix_and_complete_shared_step_generation_keep_every_work_refusal_and_
     for (length, shape) in [(2, 0), (2, 1), (2, 2), (0, 3), (8, 3)] {
         let complete = main99_run(function, length, shape, MAX_REPLAY_WORK_UNITS,
             usize::MAX, 0, false, true);
-        for units in 0..=complete.observed.0 .0.skeleton_spent + 1 {
+        let ordinary_spent = MAX_REPLAY_WORK_UNITS - complete.observed.0 .0.remaining;
+        for units in 0..=ordinary_spent + 1 {
             let old = main99_run(function, length, shape, units, usize::MAX, 0, false, true);
             let current = event_run(function, length, shape, false, units,
                 usize::MAX, 0, false, true);

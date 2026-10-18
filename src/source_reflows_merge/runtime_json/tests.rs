@@ -45,6 +45,7 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
         "5a95fa1f07fac99c62f6572817df247695a4d2e274d5accc5ce231d7dc150bc4",
         include_str!("../runtime_json.rs"),
     );
+    let authenticated = complete_preformat_transport(&authenticated);
     let current = super::super::release_current_input(
         "src/source_reflows_merge/runtime_json.rs",
         &authenticated,
@@ -461,6 +462,9 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         .unwrap()
         .0
         .to_owned();
+    let bridge = "    let authenticated = complete_preformat_transport(&authenticated);\n";
+    assert_eq!(original_tests.matches(bridge).count(), 1);
+    original_tests = original_tests.replacen(bridge, "", 1);
     // Exact formatter-only inverse; preserve every complete preexisting assertion.
     let formatted = "    assert!(std::panic::catch_unwind(|| {\n        pair_custody::normalize(\n            \"src/source_reflows_merge/runtime_json.rs\",\n            &(common.clone() + \" \"),\n        )\n    })\n    .is_err());\n";
     let prior = "    assert!(\n        std::panic::catch_unwind(|| {\n            pair_custody::normalize(\n                \"src/source_reflows_merge/runtime_json.rs\",\n                &(common.clone() + \" \"),\n            )\n        })\n        .is_err()\n    );\n";
@@ -474,4 +478,27 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         ],
         "all prior runtime fixture controls retained"
     );
+}
+
+// The current-first reader above acquires the complete formatted transport.
+// Restore only its exact compatibility annotation and four formatter hunks
+// before replaying all unchanged independent historical transport controls.
+fn complete_preformat_transport(current: &str) -> String {
+    assert_eq!(current.len(), 8140);
+    assert_eq!(digest(current.as_bytes()), [90, 149, 250, 31, 7, 250, 201, 156, 98, 246, 87, 40, 23, 223, 36, 118, 149, 164, 210, 226, 116, 213, 172, 204, 92, 226, 49, 215, 220, 21, 11, 196]);
+    let mut original = current.to_owned();
+    for (after, before) in [
+        ("#[allow(\n    dead_code,\n    reason = \"Retained compatibility entry for independently compiled historical and semantic controls.\"\n)]\n", ""),
+        ("    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)\n        .expect(\"complete authenticated Main44 metadata\")\n", "    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect(\"complete authenticated Main44 metadata\")\n"),
+        ("    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)\n        .expect(\"complete authenticated Main44 source domain\")\n", "    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect(\"complete authenticated Main44 source domain\")\n"),
+        ("    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)\n        .expect(\"complete authenticated Main043 metadata\")\n", "    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect(\"complete authenticated Main043 metadata\")\n"),
+        ("    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256)\n        .expect(\"complete authenticated Main043 helper input\")\n", "    read_fixture(std::path::Path::new(spec.path), spec.length, spec.sha256).expect(\"complete authenticated Main043 helper input\")\n"),
+
+    ] {
+        assert_eq!(original.matches(after).count(), 1);
+        original = original.replacen(after, before, 1);
+    }
+    assert_eq!(original.len(), 7972);
+    assert_eq!(digest(original.as_bytes()), [134, 67, 1, 208, 184, 127, 141, 233, 92, 107, 141, 31, 47, 211, 6, 195, 187, 150, 234, 201, 47, 86, 105, 152, 99, 8, 6, 95, 42, 189, 174, 239]);
+    original
 }

@@ -487,7 +487,7 @@ fn expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root(
         "pub(super) fn pay_teardown_minimum(owner: &mut Receiver) -> Result<(), Setup> {",
     ]);
     current_facade.push("pub(super) fn verify(");
-    let current_facade_input = current_projection_facade_input(&facade_input);
+    let current_facade_input = current_projection_facade_input(&facade_input, &current_projection_root);
     assert_eq!(
         current_facade_input
             .lines()
@@ -1415,7 +1415,7 @@ mod production_source_inventory;
 
 // Full pre847 declaration-source view for the unchanged historical facade list.
 // Current production purity above and the entire current projected method stay audited.
-fn current_projection_facade_input(current: &str) -> String {
+fn current_projection_facade_input(current: &str, live: &str) -> String {
     use sha2::{Digest, Sha256};
     let row: serde_json::Value = serde_json::from_str(include_str!(
         "../../docs/evidence/actual50-fixture-and-facade-corrections-20261016/current-facade-input.json"
@@ -1425,6 +1425,14 @@ fn current_projection_facade_input(current: &str) -> String {
     let stage = &row["decl_profile_successor"];
     assert_eq!(sha(actual), stage["current_decl_sha256"]);
     assert_eq!(actual.len(), stage["current_decl_length"].as_u64().unwrap() as usize);
+    assert_eq!(live.matches(actual).count(), 1, "complete actual declaration owner in live raw facade union");
+    // project() already authenticated the complete live join before returning
+    // this exact actual50 stage. Reconstruct only the declaration successor
+    // inside that whole pinned context, then keep the original full inverse.
+    assert_eq!(sha(current), row["current_sha256"], "complete actual50 facade stage");
+    let prior_declaration = row["edits"][0]["new"].as_str().unwrap();
+    assert_eq!(current.matches(prior_declaration).count(), 1);
+    let current = current.replacen(prior_declaration, actual, 1);
     assert_eq!(current.matches(actual).count(), 1, "complete actual declaration owner in raw facade union");
     assert!(actual.contains("impl<'a, T> DeclSlices<'a, T> {"));
     let method = row["actual_projected_method"].as_str().unwrap();

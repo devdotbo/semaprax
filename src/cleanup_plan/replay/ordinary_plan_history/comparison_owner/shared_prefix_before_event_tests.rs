@@ -603,11 +603,11 @@ fn shared_identity_replay_real_producer_and_both_hir_representations_keep_comple
 #[test]
 fn shared_identity_replay_retains_complete_immediate_sources_and_original_invoices() {
     use sha2::{Digest, Sha256};
-    let original = &super::super::before_event_prefix::whole_source();
+    let _original = &super::super::before_event_prefix::whole_source();
     let incoming = reachable_stage(
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "ae4705bfe4032ba2674a57c1451ded8c2cf0672f8f91cad07a127e5d599303b2",
-        original,
+        include_str!("../comparison_owner.rs"),
     );
     let frozen = include_str!("before_reachable_primitives.rs")
         .replace("#[path = \"lexical_cursor_reachable_before.rs\"]\n", "")

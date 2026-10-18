@@ -98,7 +98,19 @@ mod tests {
         inverse: fn(&str) -> String,
         before: &str,
         edits: &[(usize, &str, &str)],
+        stage: (&str, &str, usize),
     ) {
+        // Public current-first acquisition must still reject physical drift.
+        assert_eq!(inverse(current), before);
+        assert!(std::panic::catch_unwind(|| inverse(&format!("{current} "))).is_err());
+        let acquired = super::super::super::super::super::super::reachable_stage(
+            stage.0, stage.1, current);
+        assert_eq!(acquired.len(), stage.2);
+        let current = acquired.as_str();
+        // Archived inverse offsets apply to this authenticated complete stage,
+        // not to the later physical source which legitimately has another size.
+        let inverse = |current: &str| restore(current, stage.2, edits);
+        assert_eq!(inverse(current), before);
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -177,6 +189,7 @@ mod tests {
                 "/docs/evidence/shared-pair-c79-20261018/before-macro.rs.txt"
             )),
             MACRO,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs", "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded", 10841),
         );
         hostile(
             include_str!("../../../../../comparison_owner.rs"),
@@ -186,6 +199,7 @@ mod tests {
                 "/docs/evidence/shared-pair-c79-20261018/before-owner.rs.txt"
             )),
             OWNER,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs", "a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8", 23539),
         );
         hostile(
             include_str!("../../../../pair_scope_tests.rs"),
@@ -195,6 +209,7 @@ mod tests {
                 "/docs/evidence/shared-pair-c79-20261018/before-pair-tests.rs.txt"
             )),
             PAIR_TESTS,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs", "10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5", 42740),
         );
         hostile(
             include_str!("../../../../pair_scope_census.rs"),
@@ -204,6 +219,7 @@ mod tests {
                 "/docs/evidence/shared-pair-c79-20261018/before-census.rs.txt"
             )),
             CENSUS,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs", "ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5", 12959),
         );
         hostile(
             include_str!("../reachable_primitives.rs"),
@@ -213,6 +229,7 @@ mod tests {
                 "/docs/evidence/shared-pair-c79-20261018/before-reachable.rs.txt"
             )),
             REACHABLE,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs", "fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921", 11132),
         );
     }
 }
