@@ -1210,7 +1210,7 @@ impl<'a> Canonicalizer<'a> {
             crate::bounded_output::stage_debits::Operation::ReplayFactoredCanonical,
         );
         #[cfg(test)]
-        tests::note_actual_entry(budget);
+        super::tests::note_actual_entry(budget);
         // Authenticate even when states already contains the requested root.
         // One equivalent() call holds this function and budget borrowed across
         // both roots; no closure/cache view leaves that invocation.

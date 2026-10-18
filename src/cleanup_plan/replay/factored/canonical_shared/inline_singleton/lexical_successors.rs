@@ -3,6 +3,12 @@ use super::*;
 use std::mem::size_of;
 type Successors = (u64, Vec<(Label, SharedWeighted)>);
 type InlineSuccessors = (u64, Label, SharedWeighted);
+// Exact same producer-output and caller-destructure role as old Successors:
+// accepted:u64 survives, the old Vec<Row> output is replaced by owned Label/Rc.
+// No old output/Vec is live on this branch. The single Option receiver and
+// both complete Result compatibility slots in ORIGINAL_RECEIVING stay paid
+// at their original frontier and map individually, never to an unrelated bank.
+const _: () = assert!(size_of::<InlineSuccessors>() <= size_of::<Successors>());
 const _: () = assert!(size_of::<Option<InlineSuccessors>>() <= size_of::<Option<Successors>>());
 const _: () = assert!(
     size_of::<Result<Option<InlineSuccessors>, Diagnostic>>()
@@ -142,7 +148,7 @@ pub(super) const ONE_PASS_OWNING_ITERATOR: usize =
         + 2 * size_of::<Option<(&Label, paid_many::Targets)>>()
         + 2 * size_of::<(&Label, paid_many::Targets)>();
 
-// 24 byte/work/vector primitive sites + five node sites. BOTH owned weighted
+// 25 byte/work/vector primitive sites + five node sites. BOTH owned weighted
 // finish ABIs are compound payloads and stay outside this retained bank.
 pub(super) const PRIMITIVE_FRAMES: usize = 25 * ONE_PASS_UNIT_ABI + 5 * ONE_PASS_NODE_ABI;
 // Resident flag test/store and selected scalar operand remain conservatively

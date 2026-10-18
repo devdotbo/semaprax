@@ -32,6 +32,8 @@ use std::rc::Rc;
 #[cfg(test)]
 mod before_closure_invocation;
 #[cfg(test)]
+mod before_inline_singleton;
+#[cfg(test)]
 mod borrowed_canonical;
 #[cfg(test)]
 mod canonical_before;

@@ -417,3 +417,330 @@ fn actual_inline_owner_exact_short_zero_and_floor_refusals_release_every_owner()
     assert!(floor.result.is_err() && floor.refused);
     balanced(&floor);
 }
+
+#[test]
+fn complete_immediate_hir_and_plan_caller_keeps_results_work_and_unchanged_cap() {
+    use super::super::super::{
+        before_inline_singleton, compare_with_index_storage, lexical_plan_tests,
+    };
+    fn invoke(
+        old: bool,
+        program: &ResolvedProgram,
+        function: &ResolvedFunction,
+        limit: usize,
+    ) -> (
+        Result<Option<bool>, Failure>,
+        bool,
+        usize,
+        usize,
+        usize,
+        Metrics,
+    ) {
+        let ((result, remaining, spent, heap), refused, paid, _) =
+            with_limit_usage_refusal(limit, || {
+                let ((result, remaining, spent), heap) = measure(|| {
+                    let mut budget = ReplayBudget::new();
+                    let result = (|| {
+                        crate::cleanup_plan::replay::reserve_program_skeleton_work(
+                            program,
+                            std::iter::once(function),
+                            &mut budget,
+                        )?;
+                        if old {
+                            before_inline_singleton::compare_with_index_storage(
+                                program,
+                                function,
+                                &mut budget,
+                                None,
+                                None,
+                            )
+                        } else {
+                            compare_with_index_storage(program, function, &mut budget, None, None)
+                        }
+                    })()
+                    .map_err(failure);
+                    (result, budget.remaining, budget.skeleton_spent)
+                });
+                (result, remaining, spent, heap)
+            });
+        (result, refused, paid, remaining, spent, heap)
+    }
+    for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
+        let (program, function) = lexical_plan_tests::fixture(source);
+        let old = invoke(true, &program, &function, 64 * 1024 * 1024);
+        let current = invoke(false, &program, &function, 64 * 1024 * 1024);
+        assert_eq!(old.0, Ok(Some(true)));
+        assert_eq!(current.0, old.0);
+        assert!(!old.1 && !current.1);
+        assert_eq!((current.3, current.4), (old.3, old.4));
+        for heap in [&old.5, &current.5] {
+            assert!(!heap.invalid);
+            assert_eq!(heap.live, 0);
+            assert_eq!(heap.allocated, heap.freed);
+        }
+        // A complete composition may pay more on a cold graph. This owner
+        // checks real semantics and teardown without padding the old invoice.
+        eprintln!(
+            "OPT889 complete caller old={} current={} old_heap={:?} current_heap={:?}",
+            old.2, current.2, old.5, current.5
+        );
+        let exact = invoke(false, &program, &function, current.2);
+        assert_eq!(exact.0, current.0);
+        assert!(!exact.1);
+        for limit in [0, current.2 - 1] {
+            let short = invoke(false, &program, &function, limit);
+            assert!(short.0.is_err() && short.1);
+            assert_eq!(short.5.live, 0);
+            assert_eq!(short.5.allocated, short.5.freed);
+        }
+    }
+}
+
+#[test]
+fn every_signature_state_and_cumulative_frame_capacity_matches_the_whole_old_owner() {
+    let f = function();
+    for length in [0, 1, 4, 64] {
+        for width in [0, 1, 2, 4] {
+            let (a, sink, root) = graph(&f, length, width, false);
+            let (_, refused, _, _) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+                let mut x = ReplayBudget::new();
+                let mut y = ReplayBudget::new();
+                x.reserve_bytes(
+                    &f,
+                    super::super::Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * OLD_CALL,
+                    "889 old complete owner",
+                )
+                .unwrap();
+                y.reserve_bytes(
+                    &f,
+                    Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * NEW_CALL,
+                    "889 current complete owner",
+                )
+                .unwrap();
+                let mut old = super::super::Canonicalizer::new(&a, sink);
+                let mut current = Canonicalizer::new(&a, sink);
+                for _ in 0..2 {
+                    x.reserve_array::<(usize, u64)>(&f, 1, "889 old root")
+                        .unwrap();
+                    y.reserve_array::<(usize, u64)>(&f, 1, "889 current root")
+                        .unwrap();
+                    assert_eq!(
+                        old.id(&f, vec![(root, 1)], &mut x),
+                        current.id(&f, vec![(root, 1)], &mut y)
+                    );
+                    assert!(old.ids.iter().eq(current.ids.iter()));
+                    assert!(old.states.iter().eq(current.states.iter()));
+                    assert_eq!(old.frames.capacity(), current.frames.capacity());
+                    assert!(old.frames.is_empty() && current.frames.is_empty());
+                    assert_eq!(
+                        (x.remaining, x.skeleton_remaining, x.skeleton_spent),
+                        (y.remaining, y.skeleton_remaining, y.skeleton_spent)
+                    );
+                }
+            });
+            assert!(!refused);
+        }
+    }
+}
+
+#[test]
+fn distinct_equal_observation_owners_and_overflow_keep_full_order_and_six_fields() {
+    let f = function();
+    let mut a = Automaton::default();
+    let mut setup = ReplayBudget::unobserved();
+    let sink = a.node(&f, &mut setup).unwrap();
+    let root = a.node(&f, &mut setup).unwrap();
+    let observation = super::super::super::SkeletonObservation::Boolean {
+        expression: crate::hir::ExpressionId::from_owned("889.equal.content".into()),
+        value: true,
+    };
+    let first = Rc::new(observation.clone());
+    let second = Rc::new(observation);
+    assert!(!Rc::ptr_eq(&first, &second));
+    assert_eq!(first, second);
+    a.movement(&f, &mut setup, root, Label::Observation(first), sink)
+        .unwrap();
+    a.movement(&f, &mut setup, root, Label::Observation(second), sink)
+        .unwrap();
+    for weight in [0, 1, 2, u64::MAX] {
+        for work in [0, 1, 31, MAX_REPLAY_WORK_UNITS] {
+            let old = run(true, &f, &a, sink, root, weight, 64 * 1024 * 1024, work, 0);
+            let current = run(false, &f, &a, sink, root, weight, 64 * 1024 * 1024, work, 0);
+            same(&old, &current);
+        }
+    }
+}
+
+#[test]
+fn inline_banks_cannot_authenticate_foreign_function_budget_or_nested_restored_invocation() {
+    let f = function();
+    let wrong = f.clone();
+    let (a, sink, root) = graph(&f, 4, 1, false);
+    for attack in 0..3 {
+        with_limit_usage_refusal(1 << 28, || {
+            let mut b = ReplayBudget::new();
+            b.reserve_bytes(
+                &f,
+                Canonicalizer::CONSTRUCTOR_CONTROLS + NEW_CALL,
+                "884 actual warm constructor and callers",
+            )
+            .unwrap();
+            let mut c = Canonicalizer::new(&a, sink);
+            b.reserve_array::<(usize, u64)>(&f, 1, "884 warm root")
+                .unwrap();
+            assert!(c.id(&f, vec![(root, 1)], &mut b).unwrap().is_some());
+            let flags = (c.successor_unit_paid, c.successor_general_paid);
+            let observer = old_census::observe(&f, &b);
+            b.reserve_bytes(&f, 2 * NEW_CALL, "884 actual two subsequent caller frames")
+                .unwrap();
+            b.reserve_array::<(usize, u64)>(&f, 2, "884 subsequent two roots")
+                .unwrap();
+            let foreign_root = vec![(root, 1)];
+            let restored_root = vec![(root, 1)];
+            if attack == 0 {
+                let bytes = crate::bounded_output::active_remaining();
+                let before = (b.remaining, b.skeleton_remaining);
+                assert_eq!(
+                    c.id(&wrong, foreign_root, &mut b).unwrap_err(),
+                    Diagnostic::io("SPX-H006", String::new())
+                );
+                assert_eq!(bytes, crate::bounded_output::active_remaining());
+                assert_eq!(before, (b.remaining, b.skeleton_remaining));
+            } else if attack == 1 {
+                let mut foreign = ReplayBudget::new();
+                let bytes = crate::bounded_output::active_remaining();
+                assert_eq!(
+                    c.id(&f, foreign_root, &mut foreign).unwrap_err(),
+                    Diagnostic::io("SPX-H006", String::new())
+                );
+                assert_eq!(bytes, crate::bounded_output::active_remaining());
+            } else {
+                let (_, child_refused, child_paid, child_first) =
+                    with_limit_usage_refusal(1 << 28, || {
+                        assert_eq!(
+                            c.id(&f, foreign_root, &mut b).unwrap_err(),
+                            Diagnostic::io("SPX-H006", String::new())
+                        );
+                    });
+                assert!(!child_refused && child_first.is_none());
+                assert_eq!(child_paid, 0);
+            }
+            assert_eq!(flags, (c.successor_unit_paid, c.successor_general_paid));
+            assert_eq!(
+                old_census::take().cells,
+                [[[old_census::Cell::default(); 2]; 3]; 2]
+            );
+            let remaining = crate::bounded_output::active_remaining();
+            assert_eq!(
+                c.id(&f, restored_root, &mut b).unwrap_err(),
+                Diagnostic::io("SPX-H006", String::new())
+            );
+            assert_eq!(remaining, crate::bounded_output::active_remaining());
+            drop(observer);
+        });
+    }
+}
+
+#[test]
+fn unwind_during_a_live_completed_owner_releases_all_rc_and_frame_backing() {
+    let f = function();
+    let (a, sink, root) = graph(&f, 17, 1, false);
+    for old in [true, false] {
+        let ((caught, heap), refused, _, _) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+            measure(|| {
+                let caught = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                    let mut b = ReplayBudget::new();
+                    if old {
+                        b.reserve_bytes(
+                            &f,
+                            super::super::Canonicalizer::CONSTRUCTOR_CONTROLS + OLD_CALL,
+                            "889 old unwind owner",
+                        )
+                        .unwrap();
+                        let mut c = super::super::Canonicalizer::new(&a, sink);
+                        b.reserve_array::<(usize, u64)>(&f, 1, "889 old unwind root")
+                            .unwrap();
+                        assert!(c.id(&f, vec![(root, 1)], &mut b).unwrap().is_some());
+                        panic!("889 deliberate old live-owner unwind");
+                    } else {
+                        b.reserve_bytes(
+                            &f,
+                            Canonicalizer::CONSTRUCTOR_CONTROLS + NEW_CALL,
+                            "889 current unwind owner",
+                        )
+                        .unwrap();
+                        let mut c = Canonicalizer::new(&a, sink);
+                        b.reserve_array::<(usize, u64)>(&f, 1, "889 current unwind root")
+                            .unwrap();
+                        assert!(c.id(&f, vec![(root, 1)], &mut b).unwrap().is_some());
+                        panic!("889 deliberate current live-owner unwind");
+                    }
+                }));
+                let unwound = caught.is_err();
+                drop(caught);
+                unwound
+            })
+        });
+        assert!(caught && !refused);
+        assert!(!heap.invalid);
+        assert_eq!(heap.live, 0);
+        assert_eq!(heap.allocated, heap.freed);
+    }
+}
+
+#[test]
+fn cached_root_with_no_new_singleton_keeps_the_complete_additive_cold_bank() {
+    let f = function();
+    let (a, sink, root) = graph(&f, 4, 1, false);
+    let mut charged = [0; 2];
+    for old in [true, false] {
+        let (cached, refused, _, _) = with_limit_usage_refusal(64 * 1024 * 1024, || {
+            let mut b = ReplayBudget::new();
+            if old {
+                b.reserve_bytes(
+                    &f,
+                    super::super::Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * OLD_CALL,
+                    "889 old cached owner",
+                )
+                .unwrap();
+                let mut c = super::super::Canonicalizer::new(&a, sink);
+                b.reserve_array::<(usize, u64)>(&f, 2, "889 old cached roots")
+                    .unwrap();
+                let first = c.id(&f, vec![(root, 1)], &mut b).unwrap();
+                let root = vec![(root, 1)];
+                let before = crate::bounded_output::active_remaining().unwrap();
+                assert_eq!(c.id(&f, root, &mut b).unwrap(), first);
+                before - crate::bounded_output::active_remaining().unwrap()
+            } else {
+                b.reserve_bytes(
+                    &f,
+                    Canonicalizer::CONSTRUCTOR_CONTROLS + 2 * NEW_CALL,
+                    "889 current cached owner",
+                )
+                .unwrap();
+                let mut c = Canonicalizer::new(&a, sink);
+                b.reserve_array::<(usize, u64)>(&f, 2, "889 current cached roots")
+                    .unwrap();
+                let first = c.id(&f, vec![(root, 1)], &mut b).unwrap();
+                let root = vec![(root, 1)];
+                let observer = shape_census::observe(&f, &b);
+                let before = crate::bounded_output::active_remaining().unwrap();
+                assert_eq!(c.id(&f, root, &mut b).unwrap(), first);
+                let paid = before - crate::bounded_output::active_remaining().unwrap();
+                let row = observer.finish(true);
+                assert!(row.complete && !row.overflowed);
+                assert_eq!(row.arity, [0; 3]);
+                paid
+            }
+        });
+        assert!(!refused);
+        charged[usize::from(!old)] = cached;
+    }
+    assert_eq!(charged[1] - charged[0], inline_exit::PRIMITIVES);
+    eprintln!(
+        "OPT889 actual cached cold regression old={} current={} additive={}",
+        charged[0],
+        charged[1],
+        inline_exit::PRIMITIVES
+    );
+}
