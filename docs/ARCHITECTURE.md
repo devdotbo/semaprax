@@ -1147,8 +1147,11 @@ import walk. The original full wrapper classifier still admits the shape;
 unsupported declarations retain the owning fallback and ordinary diagnostics. The actual core selects this
 transient route only for retained-output uncached construction without a
 frontend; it cannot publish a checked cache key. A shared, prepaid allocation-free
-identity-family prefilter selects the original producer in both frontend modes
-when no imported identity can denote a retained Vec/Box wrapper. Positive family
+identity-family prefilter selects the original producer in cached mode and
+probes ordinary function imports only on the uncached transient route. Closed
+scalar signature views lend immutable metadata and exact finite defaults; their
+profile iterator preserves the original iterator carrier width while excluding
+only the provably false finite-default feature contribution. Positive family
 matches still run the full unchanged classifier and provider checks. This avoids
 an all-owned transient directory; it does not establish cache parity for actual
 retained wrappers or grant authority from a name. Existing semantic replay and

@@ -10,9 +10,12 @@ impl<'a> FunctionSlices<'a> {
             Self::Projected {
                 directory, start, ..
             } => directory.entries.get(*start..).is_some_and(|entries| {
-                entries
-                    .iter()
-                    .any(|entry| matches!(entry, FunctionEntry::Borrowed(_)))
+                entries.iter().any(|entry| {
+                    matches!(
+                        entry,
+                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_)
+                    )
+                })
             }),
         }
     }
@@ -38,8 +41,8 @@ impl<'a> FunctionSlices<'a> {
                                 }
                             }
                         }
-                        FunctionEntry::Borrowed(view) if view._alias == name => return None,
-                        FunctionEntry::Borrowed(_) => {}
+                        FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) if view._alias == name => return None,
+                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => {}
                     }
                 }
                 None
@@ -74,7 +77,7 @@ impl<'a> FunctionSlices<'a> {
                             FunctionEntry::Owned(index) => {
                                 directory.roots.functions.get(*index).is_some_and(same)
                             }
-                            FunctionEntry::Borrowed(_) => false,
+                            FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => false,
                         })
                     })
             }
@@ -115,7 +118,7 @@ impl<'a> FunctionSlices<'a> {
                             .functions
                             .get(*index)
                             .filter(|function| same(function)),
-                        FunctionEntry::Borrowed(_) => None,
+                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => None,
                     })
             }),
         }
@@ -175,7 +178,7 @@ impl<'a> FunctionSlices<'a> {
                             .functions
                             .get(*index)
                             .filter(|function| function.name == name && predicate(function)),
-                        FunctionEntry::Borrowed(view) => (view._alias == name
+                        FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) => (view._alias == name
                             && predicate(view.original))
                         .then_some(view.original),
                     })
@@ -185,7 +188,7 @@ impl<'a> FunctionSlices<'a> {
 
     pub(crate) fn contains_presentation(&self, target: &FunctionRef<'_>) -> bool {
         let ordinary = |function: &Function| {
-            target.alias_cell.is_none() && std::ptr::eq(function, target.payload)
+            target.alias_entry.is_none() && std::ptr::eq(function, target.payload)
         };
         match self {
             Self::Ordinary {
@@ -212,11 +215,11 @@ impl<'a> FunctionSlices<'a> {
                             FunctionEntry::Owned(index) => {
                                 directory.roots.functions.get(*index).is_some_and(ordinary)
                             }
-                            FunctionEntry::Borrowed(view) => {
+                            FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) => {
                                 std::ptr::eq(view.original, target.payload)
                                     && target
-                                        .alias_cell
-                                        .is_some_and(|cell| std::ptr::eq(cell, &view._alias))
+                                        .alias_entry
+                                        .is_some_and(|cell| std::ptr::eq(cell, entry))
                             }
                         })
                     })

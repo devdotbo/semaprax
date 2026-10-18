@@ -21,6 +21,7 @@ enum Binding {
 
 type Scope<'a> = HashMap<&'a str, Binding>;
 
+#[allow(dead_code, reason = "Complete raw-function compatibility and independently compiled old producers remain intact.")]
 pub(in crate::source_verify) fn function_value_targets(
     program: &dyn ProgramSource,
     functions: &crate::source_verify::function_map::FunctionMap<'_>,
@@ -47,6 +48,7 @@ pub(in crate::source_verify) fn function_value_targets(
     targets
 }
 
+#[allow(dead_code, reason = "Complete raw-function compatibility and independently compiled old producers remain intact.")]
 pub(in crate::source_verify) fn calls(
     function: &Function,
     functions: &crate::source_verify::function_map::FunctionMap<'_>,
@@ -60,6 +62,57 @@ pub(in crate::source_verify) fn calls(
         .iter()
         .chain(std::iter::once(&function.payload().body))
         .chain(&function.payload().ensures)
+    {
+        visit(
+            expression,
+            &mut scope.clone(),
+            functions,
+            &mut output,
+            Some(universe),
+        );
+    }
+    output.into_iter().collect()
+}
+
+// Current receivers borrow the already funded declaration cells. The complete
+// raw-Function producers above remain independent for historical controls.
+pub(in crate::source_verify) fn function_value_targets_in(
+    globals: &[crate::ast::program_source::FunctionCell<'_>],
+    functions: &crate::source_verify::function_map::FunctionMap<'_>,
+) -> BTreeSet<String> {
+    let mut targets = BTreeSet::new();
+    for (_, function) in globals {
+        let scope = initial_scope(function.payload());
+        for expression in function
+            .requires()
+            .iter()
+            .chain(std::iter::once(function.body()))
+            .chain(function.ensures())
+        {
+            visit(
+                expression,
+                &mut scope.clone(),
+                functions,
+                &mut targets,
+                None,
+            );
+        }
+    }
+    targets
+}
+
+pub(in crate::source_verify) fn calls_ref(
+    function: &crate::ast::program_source::FunctionRef<'_>,
+    functions: &crate::source_verify::function_map::FunctionMap<'_>,
+    universe: &BTreeSet<String>,
+) -> Vec<String> {
+    let scope = initial_scope(function.payload());
+    let mut output = BTreeSet::new();
+    for expression in function
+        .requires()
+        .iter()
+        .chain(std::iter::once(function.body()))
+        .chain(function.ensures())
     {
         visit(
             expression,

@@ -111,8 +111,8 @@ pub(crate) fn source_wrapper_ref(
         || function.payload().type_parameters.len() != 1
         || function.payload().type_parameters[0].name != "T"
         || !function.payload().effects.is_empty()
-        || !function.payload().requires.is_empty()
-        || !function.payload().ensures.is_empty()
+        || !function.requires().is_empty()
+        || !function.ensures().is_empty()
     {
         return None;
     }
@@ -139,7 +139,7 @@ pub(crate) fn source_wrapper_ref(
     {
         return None;
     }
-    exact_source_body(&function.payload().body, op, &function.payload().params[0]).then_some(op)
+    exact_source_body(function.body(), op, &function.payload().params[0]).then_some(op)
 }
 fn exact_source_body(body: &Expr, op: BoxOp, param: &crate::ast::Param) -> bool {
     let ExprKind::Block { statements, tail } = &body.kind else {

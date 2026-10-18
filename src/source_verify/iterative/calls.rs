@@ -801,8 +801,7 @@ impl<'a, 'v, 'p> IterativeVerifier<'a, 'v, 'p> {
         self.values.pop();
         let value = self
             .current
-            .payload()
-            .yields
+            .yields()
             .as_ref()
             .map(|yields| CheckedValue::value(yields.response_type.clone()));
         self.values.push(value);

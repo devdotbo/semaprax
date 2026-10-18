@@ -146,7 +146,7 @@ impl Resolver<'_, '_> {
         };
         self.source_functions()
             .find(|candidate| candidate.payload().stable_id == id.as_str())
-            .and_then(|candidate| candidate.payload().yields.as_ref())
+            .and_then(|candidate| candidate.yields().as_ref())
             .and_then(|clause| self.resolve_type(&clause.response_type, clause.span).ok())
             .unwrap_or_else(|| request.clone())
     }
@@ -183,7 +183,7 @@ impl Resolver<'_, '_> {
         function: &crate::ast::program_source::FunctionRef<'_>,
         params: &[ResolvedParam],
     ) -> Result<Option<ResolvedYieldsClause>, Diagnostic> {
-        let Some(yields) = &function.payload().yields else {
+        let Some(yields) = function.yields() else {
             return Ok(None);
         };
         if !function.payload().effects.is_empty() {

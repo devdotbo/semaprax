@@ -52,8 +52,7 @@ impl<'a, 'v, 'p> IterativeVerifier<'a, 'v, 'p> {
                 let hygienic = *self.constructor_hygiene.get_or_insert_with(|| {
                     crate::ast::expression_statement::projection_roots(
                         self.current
-                            .payload()
-                            .requires
+                            .requires()
                             .iter()
                             .chain(std::iter::once(&current.body))
                             .chain(&current.ensures),

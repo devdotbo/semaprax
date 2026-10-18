@@ -485,3 +485,11 @@ mod before_alias;
 #[cfg(test)]
 #[path = "typed/name_equal.rs"]
 mod name_equal;
+
+#[cfg(test)]
+#[path = "typed/before_scalar_signature.rs"]
+pub(in crate::workspace_graph) mod before_scalar_signature;
+
+#[cfg(test)]
+#[path = "typed/scalar_signature_tests.rs"]
+mod scalar_signature_tests;

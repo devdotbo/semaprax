@@ -215,7 +215,7 @@ pub(crate) fn source_uses(program: &dyn crate::ast::program_source::ProgramSourc
                 found
             })
     };
-    program.functions().iter().any(uses) || program.types().iter().any(|t| matches!(&t.kind,crate::ast::TypeDeclarationKind::Class {methods,..} if methods.iter().any(uses)))
+    program.functions().profile_iter().any(uses) || program.types().iter().any(|t| matches!(&t.kind,crate::ast::TypeDeclarationKind::Class {methods,..} if methods.iter().any(uses)))
 }
 
 /// Complete ordinary-call signature, including the descriptor's exact RHS type.

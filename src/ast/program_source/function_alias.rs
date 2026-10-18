@@ -8,6 +8,7 @@ use super::{
 };
 use crate::ast::{Function, Program};
 
+#[derive(Debug)]
 pub(crate) struct FunctionView<'a> {
     _provider: &'a Program,
     original: &'a Function,
@@ -33,9 +34,12 @@ impl<'a> FunctionView<'a> {
         })
     }
 }
+#[derive(Debug)]
 pub(crate) enum FunctionEntry<'a> {
     Owned(usize),
     Borrowed(FunctionView<'a>),
+    /// Ordinary scalar signature: exact provider metadata, finite synthetic body.
+    Signature(scalar_signature::ScalarSignature<'a>),
 }
 pub(crate) struct FunctionDirectory<'a> {
     pub(crate) roots: GeneratedRoots,
@@ -47,6 +51,16 @@ impl DeclarationDirectory<Function> for FunctionDirectory<'_> {
     }
     fn get(&self, index: usize) -> Option<&Function> {
         match &self.entries[index] {
+            FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
+            FunctionEntry::Borrowed(view)
+            | FunctionEntry::Signature(scalar_signature::ScalarSignature { view }) => {
+                Some(view.original)
+            }
+        }
+    }
+    fn profile_get(&self, index: usize) -> Option<&Function> {
+        match &self.entries[index] {
+            FunctionEntry::Signature(_) => None,
             FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
             FunctionEntry::Borrowed(view) => Some(view.original),
         }
@@ -115,3 +129,5 @@ impl ProgramSource for TransientFunctions<'_> {
 // The stored alias cell is immutable while source, verifier and HIR receivers
 // borrow it. Unsupported producer shapes keep the complete owning route.
 pub(crate) mod presentation;
+
+pub(crate) mod scalar_signature;

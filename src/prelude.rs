@@ -630,7 +630,7 @@ pub(crate) fn program_uses_box(program: &dyn ProgramSource) -> bool {
                 })
     }
     program.module_uses().iter().any(|module_use| module_use.kind == ModuleUseKind::Function && module_use.target_module == crate::box_ops::MODULE && crate::box_ops::wrapper_by_id(&module_use.persistent_id).is_some())
-        || program.functions().iter().any(function_uses_box)
+        || program.functions().profile_iter().any(function_uses_box)
         || program.types().iter().any(|declaration| matches!(&declaration.kind, TypeDeclarationKind::Class { methods, .. } if methods.iter().any(function_uses_box)))
 }
 
@@ -664,7 +664,7 @@ pub(crate) fn program_uses_vec_v3(program: &dyn ProgramSource) -> bool {
         module_use.kind == ModuleUseKind::Function
             && module_use.target_module == crate::vec_ops::MODULE
             && crate::vec_ops::wrapper_by_id(&module_use.persistent_id).is_some_and(vec_v3_op)
-    }) || program.functions().iter().any(function_uses_vec_v3)
+    }) || program.functions().profile_iter().any(function_uses_vec_v3)
         || program.types().iter().any(|declaration| {
             matches!(
                 &declaration.kind,
@@ -725,7 +725,7 @@ pub(crate) fn program_uses_vec(program: &dyn ProgramSource) -> bool {
                         || methods.iter().any(function_uses_vec)
                 }
             }
-    }) || program.functions().iter().any(function_uses_vec)
+    }) || program.functions().profile_iter().any(function_uses_vec)
 }
 
 #[cfg(test)]

@@ -200,7 +200,10 @@ pub(crate) fn program_uses_owned_payload(program: &dyn ProgramSource) -> bool {
     program
         .function_refs()
         .iter()
-        .any(|function| function_uses(function.payload()))
+        .any(|function| match function.classifier_payload() {
+            Some(payload) => function_uses(payload),
+            None => false,
+        })
         || program
             .types()
             .iter()

@@ -14,7 +14,7 @@ pub(crate) fn program_uses_sort(program: &dyn ProgramSource) -> bool {
                     found
                 })
     };
-    program.module_uses().iter().any(|binding| binding.kind == crate::ast::ModuleUseKind::Function && binding.target_module == super::MODULE && Some(binding.persistent_id.as_str()) == super::wrapper_id(super::VecOp::Sort)) || program.functions().iter().any(uses) || program.types().iter().any(|declaration| {
+    program.module_uses().iter().any(|binding| binding.kind == crate::ast::ModuleUseKind::Function && binding.target_module == super::MODULE && Some(binding.persistent_id.as_str()) == super::wrapper_id(super::VecOp::Sort)) || program.functions().profile_iter().any(uses) || program.types().iter().any(|declaration| {
         matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. } if methods.iter().any(uses))
     })
 }

@@ -816,8 +816,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
         )?;
         let result_id = ValueId::result(&function_scope);
         let requires = function
-            .payload()
-            .requires
+            .requires()
             .iter()
             .enumerate()
             .map(|(index, expression)| {
@@ -829,8 +828,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
                 )
             })
             .collect::<Result<_, _>>()?;
-        let body =
-            self.resolve_expr(&function_scope, &function.payload().body, &bindings, "body")?;
+        let body = self.resolve_expr(&function_scope, function.body(), &bindings, "body")?;
         let mut ensures_bindings = bindings;
         ensures_bindings.insert(
             "result".to_owned(),
@@ -871,8 +869,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
             },
         );
         let ensures = function
-            .payload()
-            .ensures
+            .ensures()
             .iter()
             .enumerate()
             .map(|(index, expression)| {
@@ -1087,8 +1084,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
         let yields = self.resolve_yields_clause_ref(function, &params)?;
 
         let requires = function
-            .payload()
-            .requires
+            .requires()
             .iter()
             .enumerate()
             .map(|(index, expression)| {
@@ -1100,8 +1096,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
                 )
             })
             .collect::<Result<_, _>>()?;
-        let mut body =
-            self.resolve_expr(function_scope, &function.payload().body, &bindings, "body")?;
+        let mut body = self.resolve_expr(function_scope, function.body(), &bindings, "body")?;
         if let Some(yields_clause) = &yields {
             self.finish_yields_admission(
                 function.name(),
@@ -1128,8 +1123,7 @@ impl<'v, 'p> Resolver<'v, 'p> {
             },
         );
         let ensures = function
-            .payload()
-            .ensures
+            .ensures()
             .iter()
             .enumerate()
             .map(|(index, expression)| {

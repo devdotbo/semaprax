@@ -45,7 +45,7 @@ pub(crate) fn selection(
             }
         }
     };
-    for function in program.functions() {
+    for function in program.functions().profile_iter() {
         uses(function.payload());
     }
     for ty in program.types() {

@@ -202,7 +202,7 @@ pub(crate) fn program_uses_owned_iterator(program: &dyn ProgramSource) -> bool {
         }
         false
     }
-    program.functions().iter().any(uses_function)
+    program.functions().profile_iter().any(uses_function)
         || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(uses_function))

@@ -241,7 +241,7 @@ impl Resolver<'_, '_> {
                                         })
                                         .is_some_and(|function| {
                                             super::resolve_for::bytes::source_byte_ancestry(
-                                                &function.payload().body,
+                                                function.body(),
                                                 expression,
                                                 scope,
                                             )
