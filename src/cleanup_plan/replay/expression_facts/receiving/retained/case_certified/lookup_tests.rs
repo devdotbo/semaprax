@@ -17,6 +17,31 @@ fn ordinary(
     let function = program.functions.iter().find(|f| f.name == "main").unwrap();
     crate::bounded_output::with_limit_usage(bytes, || {
         let mut budget = ReplayBudget::new();
+        // Production reserves the complete skeleton allowance before calling this inner receiver.
+        // Keep that real preflight inside the same measured payer for both independent arms.
+        reserve_program_skeleton_work(program, std::iter::once(function), &mut budget)?;
+        if old {
+            lookup_caller_before::validate_structure_with_budget_storage(
+                program,
+                function,
+                &mut budget,
+                None,
+                None,
+            )
+        } else {
+            validate_structure_with_budget_storage(program, function, &mut budget, None, None)
+        }
+    })
+}
+// Complete immediate old helper: intentionally lacks the production preflight.
+fn ordinary_without_skeleton_preflight(
+    program: &ResolvedProgram,
+    old: bool,
+    bytes: usize,
+) -> (Result<(), Diagnostic>, bool, usize) {
+    let function = program.functions.iter().find(|f| f.name == "main").unwrap();
+    crate::bounded_output::with_limit_usage(bytes, || {
+        let mut budget = ReplayBudget::new();
         if old {
             lookup_caller_before::validate_structure_with_budget_storage(
                 program,
@@ -170,6 +195,31 @@ fn complete_caller_success_and_refusal_drop_remain_observed_at_unchanged_cap() {
                 result.0,
                 result.1,
                 result.2,
+            );
+            drop(result);
+        });
+        assert!(!metrics.invalid && metrics.live == 0);
+        assert_eq!(metrics.allocated, metrics.freed);
+    }
+}
+
+#[test]
+fn complete_caller_without_skeleton_preflight_keeps_exact_root_refusal_and_drop() {
+    let program = checked_program(32);
+    let function = program.functions.iter().find(|f| f.name == "main").unwrap();
+    for old in [false, true] {
+        let (_, metrics) = crate::test_allocation_observer::measure(|| {
+            let result = ordinary_without_skeleton_preflight(&program, old, 64 * 1024 * 1024);
+            assert_eq!(
+                result.0,
+                Err(replay_error(
+                    function,
+                    "cleanup replay work budget exhausted during HIR root path",
+                ))
+            );
+            assert!(
+                !result.1,
+                "work refusal must not be relabeled as a byte refusal"
             );
             drop(result);
         });
