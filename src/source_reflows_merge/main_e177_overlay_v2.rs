@@ -15,6 +15,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
@@ -100,8 +101,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15550; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "4ea264a711aa9c3867e83f335b148d879a2493e1a51f5ffb4c2bae294039504f";
+const POLICY_LENGTH: usize = 15624; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "b2d4e2cc27f1ae6ff089bdec614e9c35dc7b9170f1c4c83bbe131e69c66d7afb";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

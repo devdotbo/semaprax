@@ -646,21 +646,28 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         .replacen("                owner.step = Step::PairNext;","                census.pair();\n                owner.step = Step::PairNext;",1)
         .replacen("                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,","                census.round();\n                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,",1)
         .replacen("    Ok(())\n}","    census.success();\n    Ok(())\n}",1);
-    assert_eq!(include_str!("before_pair_scope/mod.rs"),expected,"entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated");
+    assert_eq!(source_format::restore(source_format::Kind::BeforePair, include_str!("before_pair_scope/mod.rs")),expected,"entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated");
     let cursor=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"));
     assert_eq!(
-        include_str!("before_pair_scope/lexical_cursor.rs"),
+        source_format::restore(
+            source_format::Kind::Cursor,
+            include_str!("before_pair_scope/lexical_cursor.rs")
+        ),
         cursor,
         "whole old macro source and every tariff exact"
     );
     assert_eq!(
-        include_str!("lexical_cursor.rs"),
+        source_format::restore(
+            source_format::Kind::Cursor,
+            include_str!("lexical_cursor.rs")
+        ),
         cursor,
         "production cursor macro/API/prices unchanged"
     );
     let tests=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"));
     assert!(
-        include_str!("tests.rs").starts_with(tests),
+        source_format::restore(source_format::Kind::Tests883, include_str!("tests.rs"))
+            .starts_with(tests),
         "every existing owner assertion/body retained verbatim"
     );
 }

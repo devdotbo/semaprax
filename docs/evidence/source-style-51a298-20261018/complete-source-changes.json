@@ -1,0 +1,28 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+    "before": {
+      "length": 42598,
+      "sha256": "c12d761098a9fdafeafb07a33796f39d863ea02966bd7acbd15e41811d612d2d",
+      "archive": "docs/evidence/source-style-51a298-20261018/whole/c12d761098a9fdafeafb07a33796f39d863ea02966bd7acbd15e41811d612d2d.txt"
+    },
+    "current": {
+      "length": 42990,
+      "sha256": "c248aaf86e3962a7794164957de914e8c1ea0520292dd42c61723cd2321e5ffb",
+      "archive": "docs/evidence/source-style-51a298-20261018/whole/c248aaf86e3962a7794164957de914e8c1ea0520292dd42c61723cd2321e5ffb.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "before": {
+      "length": 34736,
+      "sha256": "9c25c24a3f452bf432cd226f1e1e90315537eca45b9f4476e51c5a46b6cf0349",
+      "archive": "docs/evidence/source-style-51a298-20261018/whole/9c25c24a3f452bf432cd226f1e1e90315537eca45b9f4476e51c5a46b6cf0349.txt"
+    },
+    "current": {
+      "length": 35035,
+      "sha256": "73300989a2850532c0f8a5cad7db5fff4cf5e21f4d33d64eb06aed28fd8cfd34",
+      "archive": "docs/evidence/source-style-51a298-20261018/whole/73300989a2850532c0f8a5cad7db5fff4cf5e21f4d33d64eb06aed28fd8cfd34.txt"
+    }
+  }
+]

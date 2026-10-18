@@ -1,5 +1,6 @@
 //! Authored current/complete-immediate comparator owners; execution pending.
 use super::*;
+mod source_format;
 use crate::bounded_output::{with_limit_usage_refusal, ReservationRefusal};
 use crate::test_allocation_observer::{measure, Metrics};
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -381,7 +382,10 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
 #[test]
 fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_and_exact() {
     let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt880-comparison-owner-v1/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
-    let after = include_str!("../before_comparison.rs");
+    let after = source_format::restore(
+        source_format::Kind::OldCompare,
+        include_str!("../before_comparison.rs"),
+    );
     let body = before
         .split_once("const COMPARE_CONTROLS:")
         .unwrap()
@@ -397,7 +401,10 @@ fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_an
         .split_once("\nconst COMPARE_CONTROLS:")
         .unwrap()
         .0;
-    let current = include_str!("../../ordinary_plan_history.rs");
+    let current = source_format::restore(
+        source_format::Kind::Root,
+        include_str!("../../ordinary_plan_history.rs"),
+    );
     assert_eq!(
         current
             .matches(&format!("struct Cursor {{{cursor}"))
@@ -729,7 +736,10 @@ fn lexical_plan_cursor_reports_complete_immediate_actual_paid_work_and_drop() {
 
 #[test]
 fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_exact() {
-    let root = include_str!("../../ordinary_plan_history.rs");
+    let root = source_format::restore(
+        source_format::Kind::Root,
+        include_str!("../../ordinary_plan_history.rs"),
+    );
     let old_root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
     assert_eq!(
         root, old_root,
@@ -743,16 +753,20 @@ fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_ex
         .split_once("\n#[cfg(test)]\nmod before_comparison;")
         .unwrap()
         .0;
-    let before = include_str!("before_lexical_cursor.rs");
+    let before = source_format::restore(
+        source_format::Kind::BeforeLexical,
+        include_str!("before_lexical_cursor.rs"),
+    );
     let body = old.strip_prefix("//! One comparison invocation owns sort and pair state. No nested order/sift calls.\nuse super::*;\n").unwrap().strip_suffix("\n#[cfg(test)]\nmod tests;\n").unwrap();
     assert_eq!(before, format!("//! Complete immediate880 comparator and Cursor; namespace-only test module.\nuse super::*;\n\nstruct Cursor {{{cursor}\n{body}"));
     let current = include_str!("../comparison_owner.rs");
-    assert_eq!(current.matches("lexical_plan_next!(owner,").count(), 4);
+    assert_eq!(current.matches("lexical_plan_next!(").count(), 4);
     assert!(!current.contains(".cursors[0].next("));
     assert!(!current.contains(".cursors[1].next("));
     let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"));
     assert!(
-        include_str!("tests.rs").starts_with(original_tests),
+        source_format::restore(source_format::Kind::Tests880, include_str!("tests.rs"))
+            .starts_with(original_tests),
         "every prior test is retained verbatim"
     );
 }

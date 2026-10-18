@@ -2821,8 +2821,8 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "728965dbd050cd486f84abd71fec828733a7711f50bdb2975fc92533cd0fd881",
-      "full_raw_sha256": "b9c6e7f35e56e975ecaec46ebfd61e941011abe20478d6c73eef72c70223d8a1",
+      "full_manifest_sha256": "2319373e6dcbc4881b4269a5fa916ee2e6d2db3a3f2f3e6ff9f376e5abf5fdcb",
+      "full_raw_sha256": "dbd189feb406ba841cd574b48ab81c03175eee8bd66a3d4c15a4e9bead2b35c3",
       "full_authenticated_production_sha256": "1a7625bf5df4577c70b4e704c615f785de6c8925979e168e843e17f6550ed15d"
     },
     "projection": {
@@ -3870,7 +3870,7 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "57b34018e422a26d7be909a262c340d8e2cebf6e0266b31cc584e07ae5966463",
+      "full_manifest_sha256": "d5322d1767fbf6eeb3ef362d08518979120354c343cfa1d11e7412c5d164f971",
       "full_raw_sha256": "3629aa93b869973b0ecb3f2bc7c0d29d82f2f89142e7c88991d82f0a91889ee5",
       "full_authenticated_production_sha256": "02abfe5cdda4c61891b03fba0b4b99888a5dddd392726b231a0d622d6a37ef1e"
     }

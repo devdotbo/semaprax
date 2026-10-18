@@ -1,0 +1,3 @@
+# Exact original constructed bodies retain their significant terminal blank lines.
+BeforePair-complete-before.txt whitespace=-blank-at-eof
+OldCompare-complete-before.txt whitespace=-blank-at-eof

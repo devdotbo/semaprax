@@ -1001,8 +1001,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
-    "sha256": "c12d761098a9fdafeafb07a33796f39d863ea02966bd7acbd15e41811d612d2d",
-    "lines": 1100
+    "sha256": "c248aaf86e3962a7794164957de914e8c1ea0520292dd42c61723cd2321e5ffb",
+    "lines": 1114
   },
   {
     "source": "src/cleanup_plan/replay/owned_suffix_878.rs",
@@ -1271,8 +1271,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-    "sha256": "9c25c24a3f452bf432cd226f1e1e90315537eca45b9f4476e51c5a46b6cf0349",
-    "lines": 832
+    "sha256": "73300989a2850532c0f8a5cad7db5fff4cf5e21f4d33d64eb06aed28fd8cfd34",
+    "lines": 839
   },
   {
     "source": "src/workspace_graph/shape_identity/before785.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "5c279be6c3791f4cda007e24533c554d3d6c88c77ed0e6fe699aeb8b70456e23",
-    "lines": 965
+    "sha256": "8c01c57c137915cd0549e3e51914e9f2572a224d8937964d251630756558e42b",
+    "lines": 966
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
