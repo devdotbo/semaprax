@@ -88,10 +88,14 @@ struct Identity {
     generation: usize,
     serial: usize,
 }
-pub(super) struct Guard {
+pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct Guard {
     identity: Option<Identity>,
 }
-pub(super) fn begin(function: &ResolvedFunction, budget: &ReplayBudget, old: bool) -> Guard {
+pub(in crate::cleanup_plan::replay::ordinary_plan_history) fn begin(
+    function: &ResolvedFunction,
+    budget: &ReplayBudget,
+    old: bool,
+) -> Guard {
     let identity = TRACE.with(|t| {
         let Ok(mut t) = t.try_borrow_mut() else {
             lost();
@@ -167,13 +171,13 @@ impl Guard {
             None => r.overflow = true,
         });
     }
-    pub(super) fn pair(&self) {
+    pub(in crate::cleanup_plan::replay::ordinary_plan_history) fn pair(&self) {
         self.update(|r| match r.pairs.checked_add(1) {
             Some(n) => r.pairs = n,
             None => r.overflow = true,
         });
     }
-    pub(super) fn round(&self) {
+    pub(in crate::cleanup_plan::replay::ordinary_plan_history) fn round(&self) {
         self.update(|r| match r.rounds.checked_add(1) {
             Some(n) => r.rounds = n,
             None => r.overflow = true,
@@ -191,7 +195,7 @@ impl Guard {
             None => r.overflow = true,
         });
     }
-    pub(super) fn success(&self) {
+    pub(in crate::cleanup_plan::replay::ordinary_plan_history) fn success(&self) {
         self.update(|r| r.complete = !r.truncated && !r.overflow);
     }
 }

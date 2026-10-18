@@ -502,10 +502,12 @@ fn expression_closed(expr: &Expr, forbidden: &BTreeSet<&str>, variant: &str) -> 
         ExprKind::Match { arms, .. } => {
             closed &= arms.iter().all(|a| pattern_closed(&a.pattern, variant))
         }
-        ExprKind::MethodCall { type_arguments, .. }
-        | ExprKind::SuperMethod { type_arguments, .. } => {
+        ExprKind::MethodCall { type_arguments, .. } => {
             closed &= type_arguments.iter().all(|t| !uses_type(t, variant))
         }
+        // SuperMethod has no type arguments. Its actual args are visited by
+        // visit_all_nodes, including every nested call/type/dependency check.
+        ExprKind::SuperMethod { .. } => {}
         ExprKind::Closure {
             params,
             return_type,

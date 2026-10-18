@@ -140,7 +140,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
         return before_hir_compare::compare(function, budget, actual, expected);
     }
     #[cfg(test)]
-    let census = pair_scope_census::begin(function, budget, false);
+    let census = pair_scope_census::begin(function, budget, true);
     paid!(
         budget,
         function,

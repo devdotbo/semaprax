@@ -126,7 +126,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             0,
         );
         let swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
-        let row = complete_row(false);
+        let row = complete_row(true); // Frozen886 is an old receiver in this generation.
         assert_eq!(current, old);
         assert!(
             current.result.is_ok()
@@ -542,7 +542,7 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
     pair_scope_census::reset();
     let (current, heap, paid) =
         observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-    let row = complete_row(false);
+    let row = complete_row(true); // Frozen886 is an old receiver in this generation.
     assert_eq!(current, old);
     assert!(current.result.is_ok());
     assert_eq!(heap, old_heap);
@@ -601,7 +601,7 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
     pair_scope_census::reset();
     let (current, heap, paid) =
         observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-    let row = complete_row(false);
+    let row = complete_row(true); // Frozen886 is an old receiver in this generation.
     assert_eq!(current, old);
     assert_eq!(heap, old_heap);
     assert!(current.result.is_ok());
@@ -1112,7 +1112,7 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
         pair_scope_census::reset();
         let (old, old_heap, old_paid) =
             observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-        let old_row = complete_row(false);
+        let old_row = complete_row(true);
         frontiers::finish();
         pair_scope_census::reset();
         let (current, heap, paid) =
@@ -1157,7 +1157,12 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
 #[test]
 fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue() {
     let before = include_str!("before_paired.rs");
+    let old_label = "let census = pair_scope_census::begin(function, budget, false);";
+    let oracle_label = "let census = pair_scope_census::begin(function, budget, true);";
+    assert_eq!(before.matches(oracle_label).count(), 1);
+    assert_eq!(before.matches(old_label).count(), 0);
     let restored = before
+        .replacen(oracle_label, old_label, 1)
         .replace("#[path = \"lexical_cursor.rs\"]\n", "")
         .replace("#[cfg(test)]\nuse super::comparison_owner::pair_scope_census;\n", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;\n")
         .replace("pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct ComparisonOwner", "struct ComparisonOwner")
