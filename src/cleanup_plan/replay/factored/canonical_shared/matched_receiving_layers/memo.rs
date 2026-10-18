@@ -155,6 +155,7 @@ impl<T> Memo<T> {
 }
 
 #[cfg(test)]
+#[rustfmt::skip]
 mod tests {
 use super::{Memo, WIDTH};
 use super::super::{Diagnostic, ReplayBudget, ResolvedFunction};

@@ -1,0 +1,7 @@
+{
+  "before_sha256": "d50ee256b89b22c7ffaca9275ebd6330643d0928067e0b2b80d3357067d35c1e",
+  "after_sha256": "98b98b5415e02bf23d3f133772ad775a98e54456698b1f3b38f689be2629d1ea",
+  "before": "#[cfg(test)]\nmod tests {",
+  "after": "#[cfg(test)]\n#[rustfmt::skip]\nmod tests {",
+  "scope": "cfg(test) authentic historical inline module only"
+}
