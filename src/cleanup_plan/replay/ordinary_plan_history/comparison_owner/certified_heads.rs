@@ -18,7 +18,7 @@ pub(super) const BOUNDARY_VIEW: usize = 2 * size_of::<&[Segment]>()
 // Retain the complete incoming pair-link body invoice, including its two
 // remembered-link assignments; this branch has no such retained fields.
 pub(super) const BOUNDARY_BODY: usize = 2 * size_of::<&[usize]>()
-    + 8 * size_of::<usize>()
+    + size_of::<[usize; 8]>()
     + 4 * size_of::<bool>()
     + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<Ordering>();
