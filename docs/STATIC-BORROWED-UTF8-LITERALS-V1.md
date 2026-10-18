@@ -213,3 +213,16 @@ Remaining completion obligations include the remaining retained lexical-renewal
 shapes, current-source execution of retained source/HIR and normal
 Project definitions, final producer bindings, and the complete owning gate. No efficiency or cost improvement is
 claimed without paired measurements.
+
+
+The OPT #887 failure-37/109 source-only correction keeps generic lexical exits
+outside the admitted template profile (the corrected source is SPX-T226),
+while testing an admitted scalar/static template beside a concrete lexical
+function. A separate hostile typed-HIR donor case isolates the uninstantiated
+template census with no lexical concrete member; it grants no source admission.
+The complete old selector is independently compiled from authentic root-level
+bytes in `src/workspace_graph/source_schema/static_text/tests/before_static_lexical_selector.rs`,
+with only named visibility, function-name and old-helper glue. Its exact source
+check also retains the entire original test prefix and production owner check.
+This child belongs in the physical/source inventory union. These corrections
+are authored and await owning runtime qualification; no new support is claimed.

@@ -328,232 +328,13 @@ fn retained_primitive_lexical_rejects_source_signature_schema_and_certificate_dr
     }
 }
 
-// The complete old selector is independently compiled, with one name change.
+// The complete old selector is independently compiled, with exact named glue.
+mod before_static_lexical_selector;
+use before_static_lexical_selector::before_select;
+// The complete old selector is independently compiled in that child.
 // It documents the genuine prior widening; it is never used for admission.
 mod missing_lexical_authority {
     use super::*;
-    fn before_select<'a>(
-        module: &'a WorkspaceResolvedModule,
-        modules: &'a [WorkspaceResolvedModule],
-        facts: &'a BTreeMap<String, WorkspaceDeclarationFact>,
-        proofs: &mut byte_helper::Proofs<'a>,
-        static_schema: Option<&'static str>,
-        lexical_static: bool,
-    ) -> Result<&'static str, Vec<Diagnostic>> {
-        let helper_schema =
-            byte_helper::before_static_guard_schema_with_proofs(module, modules, facts, proofs)?;
-        let mut string_slots = false;
-        for function in module.functions.iter().chain(
-            module
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        ) {
-            for root in function
-                .requires
-                .iter()
-                .chain(std::iter::once(&function.body))
-                .chain(&function.ensures)
-            {
-                hir::visit_resolved_calls(root, &mut |callee, _, _| {
-                    string_slots |= matches!(
-                        callee.as_str(),
-                        crate::vec_ops::string_slot::ID | crate::vec_ops::string_slot::BYTES_ID
-                    );
-                });
-            }
-        }
-        let finite_scratch = module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .any(crate::finite_byte_scratch::function_requires);
-        let admission = |operation: crate::vec_ops::VecOp, element: &hir::ResolvedType| {
-            if crate::vec_ops::resolved_element_is_admitted(element)
-                && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
-            {
-                return Some(hir::OwnershipMode::Value);
-            }
-            if *element == hir::ResolvedType::String && operation.admits_owned_leaf()
-                || *element == hir::ResolvedType::Bytes
-                    && crate::vec_ops::resolved_operation_element_is_admitted(operation, element)
-            {
-                return Some(hir::OwnershipMode::Own);
-            }
-            let mode = record_mode(element, module, modules, facts)?;
-            match mode {
-                hir::OwnershipMode::Value if !operation.owned_leaf_only() => Some(mode),
-                hir::OwnershipMode::Own if operation.admits_owned_leaf() => Some(mode),
-                _ => None,
-            }
-        };
-        let authority = |function: &hir::ResolvedFunction| {
-            hir::vec_loop_renewal::requires_with_admission(function, admission)
-        };
-        let consuming = module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .any(|function| {
-                hir::vec_loop_renewal::consuming::requires_with_admission(function, admission)
-            });
-        // Static modules independently replay the other renewal obligations too.
-        if static_schema.is_none() && !consuming && !string_slots {
-            if finite_scratch {
-                return Ok("semaprax.graph.v78");
-            }
-            if let Some(schema) = helper_schema {
-                return Ok(schema);
-            }
-        }
-        for function in module.functions.iter().chain(
-            module
-                .function_instances
-                .iter()
-                .map(|instance| &instance.function),
-        ) {
-            if lexical_static
-                && hir::lexical_exit::requires(function).map_err(|error| vec![error])?
-            {
-                continue;
-            }
-            if helper_schema.is_some()
-                && function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V19
-            {
-                continue;
-            }
-            let lexical = hir::lexical_exit::requires(function).map_err(|error| vec![error])?;
-            if (function.cleanup_plan.schema == crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V18)
-                != lexical
-            {
-                return Err(vec![graph_error(
-                    "SPX-G410",
-                    "lexical cleanup schema disagrees with authored exits",
-                )]);
-            }
-            let byte = !lexical && crate::byte_ops::requires_same_owner_set(function);
-            let string = !lexical && !byte && crate::string_ops::replacement::requires(function);
-            let ordinary = !lexical && !byte && !string && authority(function);
-            for (schema, expected, message) in [
-                (
-                    crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V17,
-                    byte,
-                    "byte-buffer renewal cleanup schema disagrees",
-                ),
-                (
-                    crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V16,
-                    string,
-                    "String replacement cleanup schema disagrees",
-                ),
-                (
-                    crate::cleanup_plan::CLEANUP_PLAN_SCHEMA_V15,
-                    ordinary,
-                    "ordinary Vec renewal cleanup schema disagrees",
-                ),
-            ] {
-                if (function.cleanup_plan.schema == schema) != expected {
-                    return Err(vec![graph_error("SPX-G410", message)]);
-                }
-            }
-        }
-        if module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .any(|f| {
-                std::iter::once(&f.body)
-                    .chain(&f.requires)
-                    .chain(&f.ensures)
-                    .any(crate::vec_field::expression_uses)
-            })
-        {
-            return Ok("semaprax.graph.v85");
-        }
-        if module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .any(crate::hir::copy_discard_function_uses)
-        {
-            return Ok("semaprax.graph.v84");
-        }
-        // Byte traversal is the outer v83 layer, preserving row-loan v82 facts.
-        if module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .any(crate::hir::byte_traversal_function_uses)
-        {
-            return Ok("semaprax.graph.v83");
-        }
-        if graph::row_loan::functions_require(
-            module
-                .functions
-                .iter()
-                .chain(module.function_instances.iter().map(|i| &i.function)),
-        ) {
-            return Ok(graph::row_loan::SCHEMA);
-        }
-        if module
-            .functions
-            .iter()
-            .chain(module.function_instances.iter().map(|i| &i.function))
-            .try_fold(false, |found, f| {
-                crate::hir::vec_constructor::function_uses(f).map(|uses| found || uses)
-            })
-            .map_err(|e| vec![e])?
-        {
-            return Ok("semaprax.graph.v81");
-        }
-        if string_slots {
-            return Ok("semaprax.graph.v80");
-        }
-        if consuming {
-            return Ok("semaprax.graph.v79");
-        }
-        if let Some(schema) = static_schema {
-            return Ok(if finite_scratch {
-                "semaprax.graph.v78"
-            } else {
-                schema
-            });
-        }
-        reserve_builder_structure(nominal_context::RECEIVING_CONTROLS)?;
-        let types = nominal_context::Types {
-            module,
-            modules,
-            facts,
-        };
-        if !module
-            .functions
-            .iter()
-            .chain(
-                module
-                    .function_instances
-                    .iter()
-                    .map(|instance| &instance.function),
-            )
-            .any(|function| authority(function) && !hir::vec_loop_renewal::requires(function))
-        {
-            return graph::graph_schema_from_parts_and_instances(
-                &module.interfaces,
-                &types,
-                &module.functions,
-                &module.function_templates,
-                &module.function_instances,
-            )
-            .map_err(|error| vec![error]);
-        }
-        graph::graph_schema_from_parts_and_instances_with_renewal_authority(
-            &module.interfaces,
-            &types,
-            &module.functions,
-            &module.function_templates,
-            &module.function_instances,
-            Some(&authority),
-        )
-        .map_err(|error| vec![error])
-    }
 
     #[test]
     fn absent_private_lexical_inventory_cannot_inherit_static_or_helper_schema_authority() {
@@ -653,6 +434,28 @@ mod missing_lexical_authority {
         assert_eq!(malformed_source.matches(";0};value}").count(), 1);
         let source = malformed_source.replacen(";0};value}", ";0}value}", 1);
         assert_ne!(source, malformed_source);
+        // Fixing the parse error does not admit lexical exits in a generic
+        // template. Keep that independent frontend boundary explicit.
+        let ast = crate::parse(&source, "writer.spx").unwrap();
+        let expected = Diagnostic::error(
+            "SPX-T226",
+            "generic function `generic` uses an expression outside the direct-scalar slice",
+            ast.functions[0].span,
+        )
+        .at_path("writer.spx");
+        assert_eq!(
+            crate::check(&source, "writer.spx").unwrap_err(),
+            vec![expected]
+        );
+
+        // This admitted template stays scalar. The separately authored concrete
+        // function supplies the lexical exit; no generic restriction is relaxed.
+        let source = LEXICAL_SOURCE.replace(
+            "@id(\"app.main\")",
+            "@id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";value} @id(\"app.main\")",
+        );
+        let checked = crate::check(&source, "writer.spx").unwrap();
+        hir::validate(&hir::resolve(&checked).unwrap()).unwrap();
         let mut build = build(&source);
         assert!(!writer(&build).function_templates.is_empty());
         assert!(writer(&build).function_instances.is_empty());
@@ -677,16 +480,151 @@ mod missing_lexical_authority {
     }
 
     #[test]
+    fn hostile_uninstantiated_template_lexical_body_reaches_its_own_census_guard() {
+        // Both donors are complete source-derived builds. Only the subsequent
+        // typed-HIR mutation is hostile; generic lexical source stays T226.
+        let source = "module static.writer; @id(\"generic\") fn generic<T>(value:T)->T {let key=str\"x\";value} @id(\"app.main\") fn main()->i64 {0}";
+        let mut retained = build(source);
+        let donor = build(LEXICAL_SOURCE);
+        let body = writer(&donor)
+            .functions
+            .iter()
+            .find(|f| f.id.as_str() == "static.lexical")
+            .unwrap()
+            .body
+            .clone();
+        assert!(writer(&retained).function_instances.is_empty());
+        let module = writer_mut(&mut retained);
+        assert_eq!(module.function_templates.len(), 1);
+        module.function_templates.iter_mut().next().unwrap().body = body;
+        module.static_text.as_mut().unwrap().lexical = None;
+        let module = writer(&retained);
+        // The ordinary-member guard cannot explain this refusal: its entire
+        // concrete body/contract census has no lexical exits.
+        assert!(module
+            .functions
+            .iter()
+            .all(|function| !hir::lexical_exit::requires(function).unwrap()));
+        assert!(module.function_instances.is_empty());
+        let mut found = false;
+        let mut pending = vec![&module.function_templates[0].body];
+        while let Some(expression) = pending.pop() {
+            found |= matches!(expression.kind, hir::ResolvedExprKind::LexicalExit { .. });
+            let mut children = hir::lexical_exit::ChildCursor::new(expression);
+            while let Some(child) = children.next() {
+                pending.push(child);
+            }
+        }
+        assert!(
+            found,
+            "the actual template, not an ordinary member, holds the exit"
+        );
+        let functions = module.functions.iter().cloned().collect::<Vec<_>>();
+        let templates = module
+            .function_templates
+            .iter()
+            .cloned()
+            .collect::<Vec<_>>();
+        let inventory = module.static_text.as_deref().unwrap();
+        let sites = inventory
+            .sites
+            .iter()
+            .map(|site| {
+                (
+                    site.owner.clone(),
+                    site.explicit,
+                    site.expression.clone(),
+                    site.path.clone(),
+                    site.span,
+                    site.text.clone(),
+                )
+            })
+            .collect::<Vec<_>>();
+        let identity = (
+            module.path.clone(),
+            module.module.clone(),
+            inventory.path.clone(),
+            inventory.module.clone(),
+        );
+        let modules = &retained.hir.modules;
+        let facts = &retained.hir.declarations;
+        assert_eq!(
+            byte_helper::before_static_guard_schema_with_proofs(
+                module,
+                modules,
+                facts,
+                &mut byte_helper::Proofs::new(modules, facts)
+            )
+            .unwrap(),
+            None,
+            "complete old helper skips the uninstantiated-template lexical census"
+        );
+        assert_eq!(
+            byte_helper::schema_with_proofs(
+                module,
+                modules,
+                facts,
+                &mut byte_helper::Proofs::new(modules, facts)
+            )
+            .unwrap_err(),
+            REPORT.legacy(),
+            "all six public fields at the actual template census frontier"
+        );
+        assert_eq!(
+            module.functions.iter().cloned().collect::<Vec<_>>(),
+            functions
+        );
+        assert_eq!(
+            module
+                .function_templates
+                .iter()
+                .cloned()
+                .collect::<Vec<_>>(),
+            templates
+        );
+        let after = module.static_text.as_deref().unwrap();
+        assert!(after.lexical.is_none());
+        assert_eq!(
+            (
+                module.path.clone(),
+                module.module.clone(),
+                after.path.clone(),
+                after.module.clone()
+            ),
+            identity
+        );
+        assert_eq!(
+            after
+                .sites
+                .iter()
+                .map(|site| (
+                    site.owner.clone(),
+                    site.explicit,
+                    site.expression.clone(),
+                    site.path.clone(),
+                    site.span,
+                    site.text.clone()
+                ))
+                .collect::<Vec<_>>(),
+            sites
+        );
+        assert!(
+            retained.source_graph_schemas().is_err(),
+            "outer authority also refuses this hostile typed-HIR input"
+        );
+    }
+
+    #[test]
     fn whole_old_selector_and_original_regression_are_retained_with_exact_glue() {
         let original = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-lexical-authority-guard-20261018/before/src/workspace_graph/source_schema.rs"));
         let start = original.find("fn select<'a>(").unwrap();
         let end = original[start..].find("\n// Hostile controls").unwrap() + start;
-        let expected = original[start..end].trim_end().replacen("fn select<", "fn before_select<", 1)
+        let expected = original[start..end].trim_end().replacen("fn select<", "pub(super) fn before_select<", 1)
             .replacen("byte_helper::schema_with_proofs(module, modules, facts, proofs)", "byte_helper::before_static_guard_schema_with_proofs(module, modules, facts, proofs)", 1);
+        let selector = include_str!("tests/before_static_lexical_selector.rs");
+        let start = selector.find("pub(super) fn before_select<'a>(").unwrap();
+        assert_eq!(selector[start..].trim_end(), expected);
         let current = include_str!("tests.rs");
-        let start = current.find("fn before_select<'a>(").unwrap();
-        let end = current[start..].find("\n    #[test]").unwrap() + start;
-        assert_eq!(current[start..end].trim_end(), expected);
         let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/static-lexical-authority-guard-20261018/before/src/workspace_graph/source_schema/static_text/tests.rs"));
         assert!(
             current.starts_with(original_tests),
