@@ -243,9 +243,9 @@ crate::cleanup_plan::replay::inventory_coverage::paid::queries::primitive_drop!(
 }
 }};}
 
-pub(in crate::cleanup_plan::replay) use needs_drop_in;
-
-pub(super) use {
-    authenticate_vector, flat_declaration, flat_fields, primitive_drop, required_closed,
-    vector_element,
+// Expanded sibling callers also resolve these qualified nested macro paths.
+// Keep the entire transitive classifier closure private to replay.
+pub(in crate::cleanup_plan::replay) use {
+    authenticate_vector, flat_declaration, flat_fields, needs_drop_in, primitive_drop,
+    required_closed, vector_element,
 };
