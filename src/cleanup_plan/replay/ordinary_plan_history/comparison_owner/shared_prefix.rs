@@ -1,120 +1,126 @@
-//! Loaded-segment remainder only. No graph walk, observation loan or content cmp.
+//! Both first-head continuations keep the original popped links lexical.
 use super::{Ordering, PAYMENT_HEADER, Rc, SkeletonObservation, size_of};
-// The complete current owner size is already paid by OWNER_CONTROLS. Only
-// these three scalar initializers and mode initializer are additive here.
-// Seven distinct new reserve/work primitive sites remain independently paid.
-pub(super) const OWNER: usize = 3 * size_of::<usize>() + size_of::<bool>() + 7 * PAYMENT_HEADER;
-// Both sorting LOADs capture their actual popped link. Only the left LOAD
-// receives Slice::len actual/formal/return; same-ID proves the right extent.
-pub(super) const CAPTURE_LINK: usize = size_of::<usize>();
-pub(super) const CAPTURE_EXTENT: usize =
-    2 * size_of::<&[Rc<SkeletonObservation>]>() + size_of::<usize>();
-macro_rules! shared_prefix_capture_price {
-    ([]) => {
-        shared_prefix::CAPTURE_LINK
-    };
-    ([left_extent]) => {
-        shared_prefix::CAPTURE_LINK + shared_prefix::CAPTURE_EXTENT
-    };
-}
-// Nested branches form no aggregate boolean or callback. Two loaded predicates,
-// three scalar comparisons and six copied comparison operands; fallback resets
-// the mode bit. All are paid even when an early predicate rejects the route.
-pub(super) const DETECTOR: usize = 6 * size_of::<usize>() + 8 * size_of::<bool>();
-// Two old successful-pattern reference invoices remain conservative admission.
-// Actual replay forms two item increments, an Equal value, end comparison and
-// its operands, and two empty-slice field values. Mode test/negation/set are
-// distinct boolean values, with no transported Option/tuple/reference result.
+// One extra right expansion (five sites), two duplicated first-equal work
+// sites, event/probe/body payment sites, and five suffix work sites. No new
+// owner fields, captures, len queries, reset flags or round-level detector.
+pub(super) const OWNER: usize = 15 * PAYMENT_HEADER;
+pub(super) const DETECTOR: usize = 2 * size_of::<usize>() + size_of::<bool>();
+// A direct slice pattern: rest binding and its two actual field assignments.
+// This complete branch envelope is also acquired for the terminal [] probe.
+pub(super) const PROBE: usize = 3 * size_of::<&[Rc<SkeletonObservation>]>();
+// Retain the two old successful-pattern reference invoices conservatively;
+// only two actual item increments and the Equal initializer remain here.
 pub(super) const REPLAY: usize = 2 * size_of::<&SkeletonObservation>()
-    + 4 * size_of::<usize>()
-    + size_of::<Ordering>()
-    + 4 * size_of::<bool>()
-    + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    + 2 * size_of::<usize>() + size_of::<Ordering>();
 
-macro_rules! replay_shared_prefix {
-    ($owner:ident, $function:ident, $budget:ident, $census:ident, $paired:lifetime) => {{
-        paid!($budget, $function, shared_prefix::DETECTOR,
-            "ordinary plan shared prefix identity detector")?;
-        #[cfg(test)]
-        $census.identity_detector();
-        #[cfg(feature = "unstable-workflow-profiling")]
-        $crate::workflow_profile::plan_comparison::event(
-            $crate::workflow_profile::plan_comparison::Site::IdentityDetectorAdmitted, shared_prefix::DETECTOR);
-        'shared_certificate: {
-            if !$owner.left_loaded { break 'shared_certificate; }
-            if !$owner.right_loaded { break 'shared_certificate; }
-            if $owner.left_link != $owner.right_link { break 'shared_certificate; }
-            if $owner.left_cursor.item != $owner.right_cursor.item { break 'shared_certificate; }
-            if $owner.left_cursor.item >= $owner.left_extent { break 'shared_certificate; }
-            // The retained left extent describes the same immutable Segment
-            // in both views. First observation and every boundary have
-            // already used the ordinary path; only its nonempty remainder enters.
-            paid!($budget, $function, shared_prefix::REPLAY,
-                "ordinary plan shared prefix scalar receivers")?;
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityReplayAdmitted,
-                shared_prefix::REPLAY);
-            if !$owner.prefix_replaying {
-                #[cfg(test)]
-                $census.identity_hit();
-                #[cfg(feature = "unstable-workflow-profiling")]
-                $crate::workflow_profile::plan_comparison::event(
-                    $crate::workflow_profile::plan_comparison::Site::IdentityHit, 0);
-                $owner.prefix_replaying = true;
-            }
-            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-            #[cfg(test)]
-            $census.identity_work();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-            $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
-            #[cfg(test)]
-            $census.identity_work();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-            $owner.left_cursor.item += 1;
-            $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-            #[cfg(test)]
-            $census.identity_work();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-            $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
-            #[cfg(test)]
-            $census.identity_work();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
-            $owner.right_cursor.item += 1;
-            $owner.ordering = Ordering::Equal;
-            if $owner.left_cursor.item == $owner.left_extent {
-                // While replaying, stale remaining slices are never read. Clear
-                // them at run end, leaving loaded/segment unchanged so original
-                // [] traversal, following empty segments and tails remain LTR.
-                $owner.left_items = &[];
-                $owner.right_items = &[];
-            }
-            #[cfg(test)]
-            $census.identity_observation();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityObservation, 0);
+macro_rules! shared_prefix_first_comparison {
+    ($owner:ident, $left:ident, $right:ident, $function:ident, $budget:ident,
+     $census:ident, $paired:lifetime, $equal:block) => {{
+        // This is the same PAIR_MATCH-funded comparison/receiving boundary,
+        // relocated into a mutually exclusive first-head continuation.
+        $owner.ordering = $left.cmp($right);
+        if $owner.ordering == Ordering::Equal {
             $budget.charge($function, 1, "ordinary plan history observation comparison")?;
-            #[cfg(test)]
-            $census.identity_work();
-            #[cfg(feature = "unstable-workflow-profiling")]
-            $crate::workflow_profile::plan_comparison::event(
-                $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
             #[cfg(test)]
             $census.round();
             #[cfg(feature = "unstable-workflow-profiling")]
             $crate::workflow_profile::plan_comparison::event(
                 $crate::workflow_profile::plan_comparison::Site::Round, 0);
-            continue $paired;
+            $equal
         }
-        $owner.prefix_replaying = false;
+        break $paired;
+    }};
+}
+macro_rules! replay_shared_prefix {
+    ($owner:ident, $left_link:ident, $right_link:ident, $function:ident,
+     $budget:ident, $census:ident, $paired:lifetime) => {{
+        // Both original first observations and their cmp have already run.
+        // The next original comparison-work refusal precedes this new event.
+        paid!($budget, $function, shared_prefix::DETECTOR,
+            "ordinary plan fresh segment identity event")?;
+        #[cfg(test)]
+        $census.identity_detector();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        $crate::workflow_profile::plan_comparison::event(
+            $crate::workflow_profile::plan_comparison::Site::IdentityDetectorAdmitted,
+            shared_prefix::DETECTOR);
+        if $left_link != $right_link { continue $paired; }
+        // Same arena + two lexical first heads prove identical remaining
+        // slices. No certificate survives this loop, preparation or swap.
+        #[cfg(test)]
+        $census.identity_hit();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        $crate::workflow_profile::plan_comparison::event(
+            $crate::workflow_profile::plan_comparison::Site::IdentityHit, 0);
+        loop {
+            paid!($budget, $function, shared_prefix::PROBE,
+                "ordinary plan shared suffix pattern probe")?;
+            #[cfg(test)]
+            $census.identity_probe();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::IdentityProbeAdmitted,
+                shared_prefix::PROBE);
+            match $owner.left_items {
+                [_, rest @ ..] => {
+                    paid!($budget, $function, shared_prefix::REPLAY,
+                        "ordinary plan shared suffix scalar receivers")?;
+                    #[cfg(test)] $census.identity_body();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityReplayAdmitted,
+                        shared_prefix::REPLAY);
+                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                    #[cfg(test)] $census.identity_work();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                    $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+                    #[cfg(test)] $census.identity_work();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                    $owner.left_items = rest;
+                    $owner.left_cursor.item += 1;
+                    $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                    #[cfg(test)] $census.identity_work();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                    $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+                    #[cfg(test)] $census.identity_work();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                    $owner.right_items = rest;
+                    $owner.right_cursor.item += 1;
+                    $owner.ordering = Ordering::Equal;
+                    #[cfg(test)] $census.identity_observation();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityObservation, 0);
+                    $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+                    #[cfg(test)] $census.identity_work();
+                    #[cfg(test)] $census.round();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    {
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::IdentityWork, 0);
+                        $crate::workflow_profile::plan_comparison::event(
+                            $crate::workflow_profile::plan_comparison::Site::Round, 0);
+                    }
+                }
+                [] => {
+                    #[cfg(test)] $census.identity_empty_probe();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::IdentityEmptyProbe, 0);
+                    break;
+                }
+            }
+        }
+        // Leave item/segment/loaded exactly at the old exhausted-segment
+        // frontier. The normal next round owns empty segments and tails.
+        continue $paired;
     }};
 }

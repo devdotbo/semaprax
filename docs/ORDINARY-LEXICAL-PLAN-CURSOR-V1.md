@@ -86,42 +86,58 @@ All controls are authored and unrun. Whole-project positive cost, native codec,
 ShiftSim/LogLens64MiB and scoped Clippy qualification remain required before
 adoption or performance claims; no cap, fee factor or application profile changes.
 
-## Identity-certified loaded remainder (#899)
+## Identity-certified fresh-entry suffix (#899)
 
-The source successor keeps both original preparations and the first ordinary
-observation of every loaded segment. Only the remaining observations of two
-loaded cursors with the same actual index in the invocation's immutable arena,
-the same item offset, and a nonempty retained extent may use scalar replay.
-Different indices with equal contents do not qualify. This certificate is local
-to one prepared pair; path swaps cannot carry it into another comparison.
+The source successor retains both original preparations, every ordinary first
+observation, and their content comparison. Only nested successful first-head
+branches of the left and right LOADs can compare their existing popped arena
+indices. Equal first observations execute the original next-round comparison
+work before this new event. Equal indices in the same immutable arena prove
+identical remaining slices; distinct indices with equal contents fall back.
+Neither an owner identity field, length capture, freshness flag nor per-round
+identity poll remains. Asymmetric loads, empty segments, tails and both final
+PLAN/HIR comparison routes retain their complete ordinary paths.
 
-Each certified observation still executes the original left cursor work, left
-segment work, right cursor work, right segment work, and next observation work
-individually, in that order. The left item update precedes right-side work; the
-right item and Equal ordering are published before the next observation charge.
-No work batching, empty-segment prescan, callback, observation borrow, comparison
-payload or new authority result occurs on the scalar route. At the end of the
-loaded remainder both retained slices become empty while their loaded bits and
-segment counters remain unchanged. The next ordinary yield handles its original
-empty transition, subsequent segments and tails in left-before-right order.
-Both final PLAN/HIR comparison routes remain independent and unchanged.
+A certified suffix uses one nonbinding-head/rest slice pattern, not two
+observation references or a content comparison. Each item still executes left
+forward work, left segment work, left slice/item update, right forward work,
+right segment work, right slice/item update, Equal publication, and next-round
+comparison work individually and in that order. Its terminal empty probe leaves
+segment counters and loaded bits unchanged. The normal paired loop owns the
+subsequent empty-segment traversal and tails without another comparison charge.
+The local certificate ends before that continuation, preparation or any swap.
 
-The entire current owner is paid before construction. Additive initializers,
-seven new primitive sites, every detector, actual loaded link/extent capture,
-scalar updates and terminal slice assignments have explicit typed invoices.
-The two original successful-pattern reference invoices remain conservative
-admission. No surviving prepare/backing/tail fee is removed. Cold and
-identity-ineligible shapes pay the real added cost. Complete-success controls
-bind the source-counted new-cost equation to actual certified observations and
-actual loads; they do not infer eligible observations from pair reservations.
-The complete immediate comparator and both macros remain independently compiled,
-with finite source inverses, alongside every earlier generation control.
-The existing opt-in workflow capture adds fixed closed identity hit, certified
-observation, successful work, capture and admitted-bank events. Its overflow and
-teardown flags remain unchanged; it is an instrumented production algorithm,
-not default-shipping census. Default builds strip these hooks.
-All new controls are unrun. Neither net savings, application admission at 64 MiB,
-shipping census nor a compiler/runtime performance improvement is established.
+The owner acquires fifteen new primitive headers: five for the additional right
+consumer expansion, two for duplicated first-equal work sites, three for the
+event/probe/body payments, and five suffix work sites. All existing primitive
+banks and the conservative successful-pattern reference admission survive.
+The event pays its two scalar operands and comparison result. Every probe pays
+the full rest-binding/two-assignment envelope, including an empty suffix; each
+nonempty body separately pays two item increments, Equal and retained pattern
+admission before those roles form. No surviving fee is waived or borrowed.
+
+The bounded diagnostic census records Q admitted fresh/fresh identity events,
+H same-ID suffix entries (including singleton empty suffixes), G completed
+replayed observations, P admitted probes, B admitted bodies, explicit empty
+probes, and each successful replayed work event. Complete runs satisfy P=G+H
+and B=G; refused/unwound prefixes do not assume those equations. In particular,
+Q/H/G are measured independently, and old K is not substituted for any of them.
+The complete source equation relative to the pre899 generation keeps actual
+owner layouts, fifteen cold headers, Q event packets, P probe packets and B body
+packets separate from physically removed comparison/STEP packets per G. The
+immediate round-polling899 generation remains independently compiled with all
+its original D/C/E/K invoices, controls and complete source hashes.
+
+All previous parity, six-field/every-work-cut, swap, byte exact/short/zero/floor,
+sticky/foreign/Oracle, source-inverse, full Drop and live-unwind controls remain.
+Current mirrors add complete old899/new invoices, asymmetric segmentation,
+different-ID equal contents, paid singleton empty probes, and admitted bodies
+whose original work refuses before G increments. The existing explicit workflow
+capture exposes the same bounded counters and actual admitted banks, with all
+hooks absent from default builds. It is instrumented-production-algorithm data,
+not a default-shipping census. No current compile, net saving, application
+admission at 64 MiB, physical-memory or performance claim follows from source.
+
 ## Reachable primitive-site continuation
 
 The current source continuation funds the complete invocation owner and a new

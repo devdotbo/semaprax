@@ -90,8 +90,10 @@ pub enum Site {
     IdentityObservation,
     IdentityWork,
     IdentityCapture,
+    IdentityProbeAdmitted,
+    IdentityEmptyProbe,
 }
-const SITES: usize = 26;
+const SITES: usize = 28;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Counts {
     pub events: [u64; SITES],

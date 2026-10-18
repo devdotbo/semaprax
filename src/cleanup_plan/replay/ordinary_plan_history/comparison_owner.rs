@@ -7,6 +7,8 @@ mod paired_value;
 #[macro_use]
 mod shared_prefix;
 #[cfg(test)]
+mod before_event_prefix;
+#[cfg(test)]
 #[rustfmt::skip]
 mod before_reachable_primitives;
 #[cfg(test)]
@@ -47,10 +49,6 @@ struct ComparisonOwner<'history> {
     right_cursor: Cursor,
     left_segments: usize,
     right_segments: usize,
-    left_link: usize,
-    right_link: usize,
-    left_extent: usize,
-    prefix_replaying: bool,
     step: Step,
     return_to: Step,
     after_pair: Step,
@@ -245,10 +243,6 @@ pub(in crate::cleanup_plan::replay) fn compare(
         },
         left_segments: 0,
         right_segments: 0,
-        left_link: 0,
-        right_link: 0,
-        left_extent: 0,
-        prefix_replaying: false,
         step: Step::Build,
         return_to: Step::Build,
         after_pair: Step::Root,
@@ -434,7 +428,6 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     let mut left_tail = left_path.history.tail.as_slice();
                     let mut right_tail = right_path.history.tail.as_slice();
                     'paired: loop {
-                        replay_shared_prefix!(owner, function, budget, census, 'paired);
                         paid!(
                             budget,
                             function,
@@ -456,8 +449,30 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_items,
                             left_loaded,
                             left_segments,
-                            left_link,
-                            [left_extent],
+                            fresh_left_link,
+                            [left => {
+                                let right = lexical_plan_value!(
+                                    owner, right_cursor, right_items, right_loaded,
+                                    right_segments, fresh_right_link,
+                                    [right => {
+                                        shared_prefix_first_comparison!(owner, left, right,
+                                            function, budget, census, 'paired, {
+                                                replay_shared_prefix!(owner, fresh_left_link,
+                                                    fresh_right_link, function, budget, census, 'paired);
+                                            });
+                                    }],
+                                    right_tail, function, budget,
+                                    "ordinary plan history paired cursor next", census,
+                                    {
+                                        #[cfg(feature = "unstable-workflow-profiling")]
+                                        crate::workflow_profile::plan_comparison::event(
+                                            crate::workflow_profile::plan_comparison::Site::RightExhausted, 0);
+                                        owner.ordering = Ordering::Greater; break 'paired;
+                                    }
+                                );
+                                shared_prefix_first_comparison!(owner, left, right,
+                                    function, budget, census, 'paired, { continue 'paired; });
+                            }],
                             left_tail,
                             function,
                             budget,
@@ -475,7 +490,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     right_items,
                                     right_loaded,
                                     right_segments,
-                                    right_link,
+                                    exhausted_right_link,
                                     [],
                                     right_tail,
                                     function,
@@ -502,7 +517,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_items,
                             right_loaded,
                             right_segments,
-                            right_link,
+                            ordinary_right_link,
                             [],
                             right_tail,
                             function,

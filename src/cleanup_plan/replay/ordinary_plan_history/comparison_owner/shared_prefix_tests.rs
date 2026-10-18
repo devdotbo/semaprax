@@ -5,22 +5,13 @@ use super::*;
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
-        + 3 * size_of::<usize>()
-        + size_of::<bool>()
-        + 7 * PAYMENT_HEADER;
-    let detector = 6 * size_of::<usize>() + 8 * size_of::<bool>();
-    let capture = size_of::<usize>();
-    let extent = 2 * size_of::<&[Rc<SkeletonObservation>]>() + size_of::<usize>();
-    let replay = 2 * size_of::<&SkeletonObservation>()
-        + 4 * size_of::<usize>()
-        + size_of::<Ordering>()
-        + 4 * size_of::<bool>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-    setup
-        + detector * r.identity_detectors
-        + capture * r.identity_captures
-        + extent * r.identity_extent_captures
-        + replay * r.identity_observations
+        + 15 * PAYMENT_HEADER;
+    let event = 2 * size_of::<usize>() + size_of::<bool>();
+    let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
+    let body = 2 * size_of::<&SkeletonObservation>()
+        + 2 * size_of::<usize>() + size_of::<Ordering>();
+    setup + event * r.identity_detectors + probe * r.identity_probes
+        + body * r.identity_bodies
 }
 // Separate incoming reachable-site delta; never an identity-replay credit.
 pub(super) fn reachable_delta(paths: usize) -> (usize, usize) {
@@ -395,10 +386,12 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 current.observed.2 + removed(&current.row) + reachable_delta(4).0,
                 old.observed.2 + added(&current.row) + reachable_delta(4).1
             );
-            assert_eq!(
-                current.row.identity_work,
-                5 * current.row.identity_observations
-            );
+            assert_eq!(current.row.identity_work, 5 * current.row.identity_observations);
+            assert_eq!(current.row.identity_bodies, current.row.identity_observations);
+            assert_eq!(current.row.identity_empty_probes, current.row.identity_hits);
+            assert_eq!(current.row.identity_probes,
+                current.row.identity_observations + current.row.identity_hits);
+            assert_eq!((current.row.identity_captures, current.row.identity_extent_captures), (0, 0));
             assert_eq!(
                 old.row.value_steps,
                 current.row.value_steps + 2 * current.row.identity_observations
@@ -477,23 +470,17 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
         .iter()
         .filter(|e| {
             e.phase == "ordinary plan retained comparison owner"
-                || e.phase.starts_with("ordinary plan shared prefix")
-                || (e.phase == "ordinary plan history paired cursor next"
-                    && [
-                        shared_prefix::CAPTURE_LINK,
-                        shared_prefix::CAPTURE_LINK + shared_prefix::CAPTURE_EXTENT,
-                    ]
-                    .iter()
-                    .any(|capture| e.after == Some(e.before + paired_value::LOAD + capture)))
+                || e.phase == "ordinary plan fresh segment identity event"
+                || e.phase.starts_with("ordinary plan shared suffix")
         })
         .copied()
         .collect();
     assert!(events
         .iter()
-        .any(|e| e.phase == "ordinary plan shared prefix scalar receivers"));
+        .any(|e| e.phase == "ordinary plan shared suffix scalar receivers"));
     assert!(events
         .iter()
-        .any(|e| e.phase == "ordinary plan shared prefix identity detector"));
+        .any(|e| e.phase == "ordinary plan fresh segment identity event"));
     for event in events {
         let after = event.after.unwrap();
         for (limit, floor) in [(after - 1, 0), (after, 1)] {
@@ -670,15 +657,19 @@ fn shared_identity_replay_retains_complete_immediate_sources_and_original_invoic
         digest(include_bytes!("paired_value_before_identity.rs")),
         "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
     );
-    assert!(original.contains("replay_shared_prefix!(owner, function, budget, census, 'paired)"));
-    assert_eq!(
-        shared_prefix::OWNER,
-        3 * size_of::<usize>() + size_of::<bool>() + 7 * PAYMENT_HEADER
-    );
-    assert_eq!(
-        shared_prefix::DETECTOR,
-        6 * size_of::<usize>() + 8 * size_of::<bool>()
-    );
+    assert!(original.contains("fresh_left_link"));
+    assert!(!original.contains("prefix_replaying:"));
+    assert_eq!(shared_prefix::OWNER, 15 * PAYMENT_HEADER);
+    assert_eq!(shared_prefix::DETECTOR, 2 * size_of::<usize>() + size_of::<bool>());
+    assert_eq!(shared_prefix::PROBE, 3 * size_of::<&[Rc<SkeletonObservation>]>());
+    assert_eq!(shared_prefix::REPLAY,
+        2 * size_of::<&SkeletonObservation>() + 2 * size_of::<usize>() + size_of::<Ordering>());
+    let immediate = before_event_prefix::whole_source();
+    assert!(!immediate.is_empty());
+    assert_eq!(digest(include_bytes!("paired_value_before_event.rs")),
+        "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730");
+    assert_eq!(digest(include_bytes!("shared_prefix_before_event.rs")),
+        "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2");
 }
 
 #[test]
@@ -875,10 +866,12 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
         report.counts.at(Site::IdentityWork),
         current.row.identity_work as u64
     );
-    assert_eq!(
-        report.counts.at(Site::IdentityCapture),
-        current.row.identity_captures as u64
-    );
+    assert_eq!(report.counts.at(Site::IdentityCapture), 0);
+    assert_eq!(report.counts.at(Site::IdentityProbeAdmitted), current.row.identity_probes as u64);
+    assert_eq!(report.counts.at(Site::IdentityEmptyProbe), current.row.identity_empty_probes as u64);
+    assert_eq!(report.counts.at(Site::IdentityReplayAdmitted), current.row.identity_bodies as u64);
+    assert_eq!(report.counts.admitted_bytes[Site::IdentityProbeAdmitted as usize],
+        (current.row.identity_probes * shared_prefix::PROBE) as u64);
     assert_eq!(
         report.counts.admitted_bytes[Site::IdentityDetectorAdmitted as usize],
         (current.row.identity_detectors * shared_prefix::DETECTOR) as u64
@@ -888,3 +881,6 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
         (current.row.identity_observations * shared_prefix::REPLAY) as u64
     );
 }
+
+#[path = "shared_prefix_event_tests.rs"]
+mod event_suffix_tests;

@@ -31,7 +31,7 @@ pub(super) const TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
     + size_of::<usize>();
 
 macro_rules! lexical_plan_value {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident, $link_id:ident, [$($extent:ident)?],
+    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident, $link:ident, [$($head_value:ident => $entry:block)?],
      $tail:ident, $function:ident, $budget:ident, $phase:literal, $census:ident, $empty:block) => {{
         $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
         'plan_yield: {
@@ -63,32 +63,42 @@ macro_rules! lexical_plan_value {
                     paid!(
                         $budget,
                         $function,
-                        paired_value::LOAD + shared_prefix_capture_price!([$($extent)?]),
+                        paired_value::LOAD,
                         $phase
                     )?;
                     #[cfg(feature = "unstable-workflow-profiling")]
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::LoadAdmitted,
-                        paired_value::LOAD + shared_prefix_capture_price!([$($extent)?]),
+                        paired_value::LOAD,
                     );
                     #[cfg(test)]
                     $census.load();
-                    let Some(link) = $owner.$cursor.links.pop() else {
+                    let Some($link) = $owner.$cursor.links.pop() else {
                         unreachable!("prepared ordinary plan links");
                     };
-                    $owner.$items = $owner.arena[link].items.as_slice();
-                    $owner.$link_id = link;
-                    $(
-                        $owner.$extent = $owner.$items.len();
-                        #[cfg(test)]
-                        $census.identity_extent_capture();
-                    )?
+                    $owner.$items = $owner.arena[$link].items.as_slice();
                     $owner.$loaded = true;
-                    #[cfg(test)]
-                    $census.identity_capture();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityCapture, 0);
+                    $(
+                        // First-head provenance and the already-paid pop's link
+                        // remain lexical. The continuation always leaves this
+                        // successful head; [] still takes the original path.
+                        match $owner.$items {
+                            [head, rest @ ..] => {
+                                #[cfg(feature = "unstable-workflow-profiling")]
+                                $crate::workflow_profile::plan_comparison::event(
+                                    if stringify!($cursor) == "left_cursor" {
+                                        $crate::workflow_profile::plan_comparison::Site::LeftHead
+                                    } else {
+                                        $crate::workflow_profile::plan_comparison::Site::RightHead
+                                    }, 0);
+                                $owner.$items = rest;
+                                $owner.$cursor.item += 1;
+                                let $head_value = head.as_ref();
+                                $entry
+                            }
+                            [] => {}
+                        }
+                    )?
                 }
                 match $owner.$items {
                     [head, rest @ ..] => {

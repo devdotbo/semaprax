@@ -20,6 +20,9 @@ pub(super) struct Row {
     pub tails: usize,
     pub steps: usize,
     pub loads: usize,
+    pub identity_empty_probes: usize,
+    pub identity_bodies: usize,
+    pub identity_probes: usize,
     pub identity_detectors: usize,
     pub identity_hits: usize,
     pub identity_observations: usize,
@@ -50,6 +53,9 @@ const EMPTY: Row = Row {
     tails: 0,
     steps: 0,
     loads: 0,
+    identity_empty_probes: 0,
+    identity_bodies: 0,
+    identity_probes: 0,
     identity_detectors: 0,
     identity_hits: 0,
     identity_observations: 0,
@@ -230,6 +236,24 @@ impl Guard {
     pub(super) fn load(&self) {
         self.update(|r| match r.loads.checked_add(1) {
             Some(n) => r.loads = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_empty_probe(&self) {
+        self.update(|r| match r.identity_empty_probes.checked_add(1) {
+            Some(n) => r.identity_empty_probes = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_body(&self) {
+        self.update(|r| match r.identity_bodies.checked_add(1) {
+            Some(n) => r.identity_bodies = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn identity_probe(&self) {
+        self.update(|r| match r.identity_probes.checked_add(1) {
+            Some(n) => r.identity_probes = n,
             None => r.overflow = true,
         });
     }
@@ -486,6 +510,9 @@ impl Drop for Scope {
             sum(|r| r.identity_work),
             sum(|r| r.identity_captures),
             sum(|r| r.identity_extent_captures),
+            sum(|r| r.identity_probes),
+            sum(|r| r.identity_bodies),
+            sum(|r| r.identity_empty_probes),
         ];
         let total_overflow = totals.iter().any(Option::is_none);
         let complete = self
@@ -528,29 +555,15 @@ impl Drop for Scope {
         // a net saving inferred from an incomplete refused prefix. In particular,
         // pair/round counts are not the number of identity-replayed observations.
         eprintln!(
-            "OPT899 whole-caller complete={} partial_prefix={} M={} K={:?} hits={:?} detectors_D={:?} captures_C={:?} extent_captures_E={:?} replayed_work={:?} total_overflow={} lost={}; identity component only, no LOAD/tail credit; reachable primitive-site funding is separate",
-            complete,
-            !complete,
-            rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
-            totals[9],
-            totals[8],
-            totals[7],
-            totals[11],
-            totals[12],
-            totals[10],
-            total_overflow,
-            lost
+            "OPT899 suffix whole-caller complete={} partial_prefix={} M={} G={:?} H={:?} Q={:?} probes_P={:?} admitted_bodies_B={:?} empty_probes={:?} replayed_work={:?} overflow={} lost={}; actual fresh/fresh events and reached suffixes, no segment-distribution inference or LOAD credit",
+            complete, !complete, rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
+            totals[9], totals[8], totals[7], totals[13], totals[14], totals[15], totals[10], total_overflow, lost
         );
         eprintln!(
-            "OPT899 typed-invoice owner_current={} owner_before_identity={} additive_fields_and_headers={} removed_per_K={} replay_per_K={} detector={} capture_link={} capture_extent={}; complete-only old-new=K*(removed_per_K-replay_per_K)-M*(owner_current-owner_before_identity+additive_fields_and_headers)-D*detector-C*capture_link-E*capture_extent; no whole-shipping net claim",
-            size_of::<ComparisonOwner<'static>>(),
-            size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
-            shared_prefix::OWNER,
-            PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
-            shared_prefix::REPLAY,
-            shared_prefix::DETECTOR,
-            shared_prefix::CAPTURE_LINK,
-            shared_prefix::CAPTURE_EXTENT
+            "OPT899 suffix typed-invoice owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only old-new=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            size_of::<ComparisonOwner<'static>>(), size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
+            shared_prefix::OWNER, PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
+            shared_prefix::REPLAY, shared_prefix::DETECTOR, shared_prefix::PROBE
         );
         for row in rows {
             let function = std::str::from_utf8(&row.function[..row.function_len])
