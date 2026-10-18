@@ -480,7 +480,17 @@ fn edges(packet: &Value) -> Result<Vec<(String, String)>, &'static str> {
     }
     Ok(result)
 }
+#[path = "main_e177_overlay_fragments_v3.rs"]
+mod fragments_v3;
 fn compose_values(before: Value, policy: &Value, page: &Value) -> Result<Value, &'static str> {
+    if page["schema"] == fragments_v3::SCHEMA {
+        let expanded = fragments_v3::expand(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else {
+        compose_values_v2(before, policy, page)
+    }
+}
+fn compose_values_v2(before: Value, policy: &Value, page: &Value) -> Result<Value, &'static str> {
     require!(
         keys(
             page,
