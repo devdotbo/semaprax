@@ -16,7 +16,7 @@ def bounded(path,length,digest):
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/remote12ad-checkpoint-20261018/guard-config.json'
 _CONFIG_LENGTH=92671
-_CONFIG_SHA256='c76d7fc4f6684e16e0dfb0d4d835f16ef8a900d465d94c4496658b5322987248'
+_CONFIG_SHA256='35f37d82478722b4c6cb0a285d2b8364e67bd7b15818c6a4761c4d669810785d'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():

@@ -44,6 +44,14 @@ for p,r in prior.items():
  now=copy.deepcopy(by[p]);now['current']=r['current'];now['views']=r['views']
  if 'fragments'in r:now['fragments']=r['fragments']
  assert now==r
+# Preserve the exact names required by both unchanged predecessor projections.
+local=json.loads(held(e['whole_local133']['archive']))
+for tag,whole in [('whole-fmt433-current',base),('whole-local133-current',local)]:
+ for oldrow in whole['rows']:
+  row=by[oldrow['source']]
+  if row['current']!=oldrow['current']:
+   pin=dict(name=tag,**oldrow['current'])
+   if pin not in row['views']:row['views'].append(pin)
 ext=enc(e);assert len(ext)<=262144;out[EXT]=ext
 helper=old[HELP].decode();x=f'({len(old[EXT])},"{H(old[EXT])}".to_owned())';y=f'({len(ext)},"{H(ext)}".to_owned())';assert helper.count(x)==1;helper=helper.replace(x,y);assert helper.count('assert_eq!(rows.len(),441);')==1;helper=helper.replace('assert_eq!(rows.len(),441);','assert_eq!(rows.len(),444);')
 start=helper.index('fn compiled(source:');at=helper.index('        _ => None,',start);arms=''.join('        '+json.dumps(p)+' => Some(include_str!("../../'+p+'")),\n'for p in NEW);helper=helper[:at]+arms+helper[at:]
