@@ -134,3 +134,7 @@ impl ProgramSource for TransientFunctions<'_> {
 pub(crate) mod presentation;
 
 pub(crate) mod scalar_signature;
+
+#[cfg(test)]
+#[path = "function_alias/before_string.rs"]
+mod before_string;

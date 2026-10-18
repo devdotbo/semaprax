@@ -1,4 +1,4 @@
-//! Exact finite defaults used by ordinary scalar imported signatures.
+//! Exact finite defaults used by ordinary primitive/string imported signatures.
 use crate::ast::{Expr, ExprKind, Span};
 const ZERO: Span = Span {
     start: 0,
@@ -39,6 +39,11 @@ pub(super) static BOOL: Expr = Expr {
     span: ZERO,
 };
 
+pub(super) static STRING: Expr = Expr {
+    kind: ExprKind::String(String::new()),
+    span: ZERO,
+};
+
 pub(super) static EMPTY: Vec<Expr> = Vec::new();
 
 /// Construction is private: a raw provider body is never its effective body.
@@ -71,6 +76,7 @@ impl<'a> ScalarSignature<'a> {
                     | Type::F32
                     | Type::F64
                     | Type::Bool
+                    | Type::String
             );
         // Complete bounded checks: the caller's source-length invoice pays
         // exactly these iterations, including both terminal iterator results.
@@ -86,6 +92,7 @@ impl<'a> ScalarSignature<'a> {
                         | Type::F32
                         | Type::F64
                         | Type::Bool
+                        | Type::String
                 );
         }
         let mut member = false;

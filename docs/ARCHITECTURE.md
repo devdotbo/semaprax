@@ -1149,7 +1149,7 @@ transient route only for retained-output uncached construction without a
 frontend; it cannot publish a checked cache key. A shared, prepaid allocation-free
 identity-family prefilter selects the original producer in cached mode and
 probes ordinary function imports only on the uncached transient route. Closed
-scalar signature views lend immutable metadata and exact finite defaults; their
+primitive/string signature views lend immutable metadata and exact finite defaults; their
 profile iterator preserves the original iterator carrier width while excluding
 only the provably false finite-default feature contribution. Positive family
 matches still run the full unchanged classifier and provider checks. This avoids

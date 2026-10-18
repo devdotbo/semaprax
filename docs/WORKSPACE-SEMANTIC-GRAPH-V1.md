@@ -353,17 +353,20 @@ the same exact copied imported declaration. Every ordinary import, ownership,
 byte-helper, source, prelude and declaration-index check still runs.
 
 The uncached ordinary-import producer may instead retain a closed scalar
-signature view: nongeneric value-mode primitive parameters and a primitive
-result, with no reserved `std.` identity or yielding/session clause. Invariant,
-Agent and protocol-sensitive presentations retain the complete owning fallback.
+signature view: nongeneric value-mode primitive or standalone `string`
+parameters and results, with no reserved `std.` identity or yielding/session
+clause. Invariant, Agent and protocol-sensitive presentations retain the complete owning fallback.
 The view lends the provider's exact signature metadata and uses the original
-finite zero/default expression, empty checking contracts and no continuation
-clause. It carries no checked authority. Source and HIR validation still visit
+finite zero/default expression (including the exact empty-string literal),
+empty checking contracts and no continuation clause. It carries no checked authority. Source and HIR validation still visit
 all effective functions; expression identities remain function-scoped even when
 two views share a finite default's immutable AST address. Only presence scans
 whose finite-default contribution is false use the separate same-width profile
 projection. Constructor/provider checks are prepaid before view formation;
 there is no per-pass presentation allocation or credit against existing fees.
+The shared empty-string AST has zero buffer capacity and is process-static;
+each resolved expression still receives its own function-scoped identity.
+Owned/borrowed string parameter modes and aggregate defaults stay owning.
 Broader ordinary imported signatures retain the original owning producer.
 
 Generated directories and the complete borrowed type-name index are paid before

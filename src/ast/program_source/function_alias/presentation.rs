@@ -88,6 +88,7 @@ impl<'a> FunctionRef<'a> {
                 crate::ast::Type::F32 => &super::scalar_signature::F32,
                 crate::ast::Type::F64 => &super::scalar_signature::F64,
                 crate::ast::Type::Bool => &super::scalar_signature::BOOL,
+                crate::ast::Type::String => &super::scalar_signature::STRING,
                 _ => unreachable!("signature producer admitted a finite scalar return"),
             },
             _ => &self.payload.body,
