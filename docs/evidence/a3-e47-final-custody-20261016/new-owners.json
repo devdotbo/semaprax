@@ -221,7 +221,7 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
-    "sha256": "f73af679fffc8962f6ff5c0137c1dace91cc151cd03d4b7b01c6f64b0fea80a9",
+    "sha256": "8b2707b9d876b769350a9fb194ec8a0e591511683b74aaaf1ac68859284a3826",
     "lines": 1279
   },
   {
@@ -511,8 +511,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs",
-    "sha256": "4d3137d1016a91c0e6adfb98042f6c7a96976d211a33998402eaefd96d2f8140",
-    "lines": 115
+    "sha256": "819a98fa2a846ed770093fdb822bfde36010d769995e7eddd40eb88328a544dd",
+    "lines": 121
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
@@ -931,8 +931,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
-    "sha256": "a5092ded75e8bddb71b11752ce4163e7a5835c1c88bb04f31f18f2eed504118e",
-    "lines": 477
+    "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283",
+    "lines": 478
   },
   {
     "source": "src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs",
@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "acdb8679457b6567d87d0210c94a39e65cf3ed544bad74a9028a8165a083291f",
-    "lines": 1084
+    "sha256": "03cbf57636c7329bb26326edecc988f4f7ac92db64771fd79777ec43ae12873c",
+    "lines": 1211
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1146,8 +1146,8 @@
   },
   {
     "source": "src/source_reflows/semantic_receivers/status_inline.rs",
-    "sha256": "92b2d3736c595a0847cc19b67ec4ee909f5f5257e0f9e248f5a36d13bb306be4",
-    "lines": 202
+    "sha256": "181c3470264c6296140754f439fcc148c90f3039b105f0be248ffa7ac72d0879",
+    "lines": 204
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
@@ -1171,8 +1171,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
-    "sha256": "33988a4c6fdf44c9fe9e046b0a90f975cb221d962d17335027eaa4b85403273c",
-    "lines": 370
+    "sha256": "d452d127a17c3d076fcc9e2e66f64e4609eebed8c9f840ba0a126f82117bb065",
+    "lines": 374
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs",
@@ -1191,8 +1191,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
-    "sha256": "80df83fbefe5b94e7aa03a282ff74d72d5a1e42c9bc35d9698b15ce84399d7df",
-    "lines": 907
+    "sha256": "3a690560fa0fed1ce01cffed9cefab0753a4660cc6774f9dd68375759790b00a",
+    "lines": 910
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
@@ -1231,8 +1231,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
-    "sha256": "0e78dbe7a5413c43cbf87f087508b89822b57c28cf67b0ea648fd309815fc0ab",
-    "lines": 297
+    "sha256": "e20c77a4d5b6f2b01fc5dff98936f266f80348b6a6cba81af722a39249eea44b",
+    "lines": 304
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
@@ -1241,8 +1241,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
-    "sha256": "667ee461134a294e622a9ce9521f412eb143979310089aaf12fb5da126dccac3",
-    "lines": 147
+    "sha256": "26e8d0ad5fe3c34e40315634b9bc718a77ce4f42a7ef933073a3d40420219933",
+    "lines": 209
   },
   {
     "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs",

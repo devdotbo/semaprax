@@ -11,9 +11,15 @@ const PACKET: &str = include_str!(concat!(
     "/docs/evidence/ordinary-hir-prefix-877-v1/source-inverse.json"
 ));
 fn restore(current: &str, row: &serde_json::Value) -> String {
+    // Acquire this immutable inverse's exact whole after-image before older stages.
+    let acquired_after = crate::source_reflows_merge::next_big_batch_inputs::value(
+        row["path"].as_str().unwrap(),
+        row["after_sha256"].as_str().unwrap(),
+        current,
+    );
     let composed = crate::source_reflows_merge::main67107_inputs::semantic_batch_previous(
         row["path"].as_str().unwrap(),
-        current,
+        &acquired_after,
         "opt877",
     );
     let current = composed.as_str();

@@ -1,0 +1,21 @@
+{
+  "status": "SOURCE_ONLY_AUTHORED_LEXICAL_RETURN_FIXTURE_UNEXECUTED",
+  "base": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+  "before_sha256": "137dfa7120a6fa0ee355635d11156c6e6969b55e203fd49586c3f81465677ea0",
+  "after_sha256": "5a7269779eadf8d89e2289afc57254f422a44358ec5d59879d4633d142f09646",
+  "edits": [
+    {
+      "before": "    // The actual source loop selects explicit lexical exits. It runs once;\n    // the same 96 statements, return and both original branches remain.\n    source = source.replacen(\"if a { return 1; };\",\n        \"let mut lexical_once=0;while lexical_once<1 {lexical_once=lexical_once+1;0}if a { return 1; };\", 1);",
+      "after": "    // The actual return is INSIDE the authored one-iteration loop, so its\n    // resolver-owned edge is lexical. The same 96 statements and both original\n    // branches remain; the complete loop-free source above stays a negative.\n    source = source.replacen(\"if a { return 1; };\",\n        \"let mut lexical_once=0;while lexical_once<1 {lexical_once=lexical_once+1;if a { return 1; };0}\", 1);",
+      "count": 1
+    }
+  ],
+  "all_old_assertions_preserved": true,
+  "original_program_and_loopfree_negatives_unchanged": true,
+  "same_96_statements_and_both_branches": true,
+  "no_synthetic_control_target": true,
+  "production_algorithms_unchanged": true,
+  "new_modules": 0,
+  "Cargo": false
+}

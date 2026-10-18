@@ -1,0 +1,23 @@
+{
+  "status": "SOURCE_ONLY_CURRENT_RAW_PREFIX_REPAIR_UNEXECUTED",
+  "source": "tests/support/production_source_inventory.rs",
+  "base": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "before_sha256": "652adbdf49e32e5d2a6f10efcc4a7fec5b13f0c1000af7307305e76c491bc818",
+  "after_sha256": "5056f4ef635e57d5a664664a329f2d687346366e84f4d159855e0b4565bc4b90",
+  "edits": [
+    {
+      "before": "pub(super) fn production(raw: &str, manifest: &str) -> String {\n    assert_accepted_batch_relocated_prefix(raw);",
+      "after": "pub(super) fn production(raw: &str, manifest: &str) -> String {\n    assert_current_accepted_batch_relocated_prefix(raw);",
+      "count": 1
+    },
+    {
+      "append": "\n// The original twenty-eight-subject receiver and all of its controls above stay\n// independently compiled. This current generation joins the two actual lexical\n// children at their parent's existing raw slot; raw input is never rewritten.\nfn current_accepted_batch_relocated_prefix() -> String {\n    let previous = accepted_batch_relocated_prefix();\n    let slot = include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs\");\n    let complete = concat!(\n        include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs\"),\n    );\n    assert!(!slot.is_empty());\n    assert_eq!(previous.matches(slot).count(), 1, \"unique original lexical child slot\");\n    let current = previous.replacen(slot, complete, 1);\n    assert_eq!(current.matches(complete).count(), 1);\n    assert_eq!(current.replacen(complete, slot, 1), previous, \"complete original prefix inverse\");\n    current\n}\nfn assert_current_accepted_batch_relocated_prefix(raw: &str) {\n    let prefix = current_accepted_batch_relocated_prefix();\n    let rest = raw.strip_prefix(prefix.as_str()).expect(\"all original twenty-eight subjects and both nested lexical children enter the raw owner in order\");\n    assert!(!rest.is_empty(), \"current relocated prefix requires the remaining raw inventory\");\n    assert!(!rest.starts_with(prefix.as_str()), \"duplicate current relocated inventory prefix\");\n}\n#[test]\nfn current_accepted_prefix_keeps_nested_lexical_children_and_all_original_subjects() {\n    let prefix = current_accepted_batch_relocated_prefix();\n    let original = accepted_batch_relocated_prefix();\n    let valid = format!(\"{prefix}remaining raw inventory\");\n    assert_current_accepted_batch_relocated_prefix(&valid);\n    assert_accepted_batch_relocated_prefix(&format!(\"{original}remaining raw inventory\"));\n    for bad in [String::new(), prefix.clone(), format!(\"sentinel{prefix}\"),\n        format!(\"{prefix}{prefix}\"), format!(\"{original}remaining raw inventory\")] {\n        assert_ne!(bad, valid, \"identity mutation cannot prove refusal\");\n        assert!(std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad)).is_err());\n    }\n    for subject in [\n        include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs\"),\n        include_str!(\"../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs\"),\n    ] {\n        assert!(!subject.is_empty());\n        assert_eq!(prefix.matches(subject).count(), 1);\n        let missing = prefix.replacen(subject, \"\", 1);\n        for bad in [format!(\"{missing}remaining raw inventory\"),\n            format!(\"{missing}{subject}remaining raw inventory\"),\n            format!(\"{prefix}{subject}remaining raw inventory\")] {\n            // A duplicate inside the current prefix must also be refused;\n            // appending an unrelated raw tail remains allowed by this contract.\n            let bad = if bad.starts_with(prefix.as_str()) {\n                prefix.replacen(subject, &format!(\"{subject}{subject}\"), 1) + \"remaining raw inventory\"\n            } else { bad };\n            assert_ne!(bad, valid);\n            assert!(std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad)).is_err());\n        }\n    }\n}\n"
+    }
+  ],
+  "all_old28_constructor_guard_controls_byteexact": true,
+  "new_modules": 0,
+  "new_test": "production_source_inventory::current_accepted_prefix_keeps_nested_lexical_children_and_all_original_subjects",
+  "raw_input_never_normalized": true,
+  "original_full_manifest_and_boundary_validators_unchanged": true,
+  "Cargo": false
+}

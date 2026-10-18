@@ -1,0 +1,22 @@
+{
+  "status": "PASS_ALL_CHANGES_AGAINST_INCOMING_MAIN",
+  "incoming_main": "11a0a46b70502896ba832ece6d9c3afb85ec5909",
+  "incoming_first_parent_diff_whitespace_only": [
+    {
+      "path": "docs/evidence/current-nested-prefix-custody-20261018/actual-530073-owner21-failure.log",
+      "unchanged_incoming_raw_log": true,
+      "sha256": "3d7644da2d1b0cf3ee98a49071875319b3ccce4c923c11bae0c622bb0642cf09"
+    },
+    {
+      "path": "docs/evidence/opt877-exact-after-source-acquisition-20261018/actual-530073-owner25-failure.log",
+      "unchanged_incoming_raw_log": true,
+      "sha256": "1389b36f6e8bdd51b78ac049ba5a3a385204e574431ed0171a52f692f8e1944d"
+    },
+    {
+      "path": "docs/evidence/opt879-return-inside-authored-loop-fixture-20261018/actual-530073-owner24-failure.log",
+      "unchanged_incoming_raw_log": true,
+      "sha256": "d3130e5e9a6589f44c29f96fda388fceea7e675766b997d4b1143197c4f1d14c"
+    }
+  ],
+  "original_raw_logs_retained_byte_identical": true
+}

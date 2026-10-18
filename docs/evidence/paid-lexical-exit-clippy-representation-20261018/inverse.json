@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_ONLY_TWO_STATEMENT_LOCAL_LINT_EXCEPTIONS_NO_PRODUCER_CHANGE",
+  "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+  "before_sha256": "9e6d7876bf04dde77554d2bcf5da93b1fe4ff841184d0a24385f38f6a702bc15",
+  "after_sha256": "fa89b2b070c84466dda64493723a14e810d75f7c88852d2f3abdb62515267806",
+  "edits": [
+    {
+      "before": "                    match exit_arity {",
+      "after": "                    // This paid place-pattern keeps the independent typed oracle; an if adds a boolean operand.\n                    #[allow(clippy::single_match)]\n                    match exit_arity {"
+    },
+    {
+      "before": "                            let Some((label, child)) = successors.iter().next() else {",
+      "after": "                            // Retain the funded Iterator/Option representation; first() has a different receiver shape.\n                            #[allow(clippy::iter_next_slice)]\n                            let Some((label, child)) = successors.iter().next() else {"
+    }
+  ],
+  "whole_body_inverse_verified": true,
+  "Cargo": false
+}

@@ -8,7 +8,7 @@ mod boundary;
 mod original;
 
 pub(super) fn production(raw: &str, manifest: &str) -> String {
-    assert_accepted_batch_relocated_prefix(raw);
+    assert_current_accepted_batch_relocated_prefix(raw);
     // Authenticate ALL raw bytes, sources, registrations and production/test
     // roles first. No outside-boundary source is relabelled or left unaudited.
     let complete_authenticated_production = original::production(raw, manifest);
@@ -230,6 +230,38 @@ fn accepted_batch_relocated_prefix() -> &'static str {
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
+        include_str!("../../src/source_reflows/main_c883_receivers.rs"),
+        include_str!("../../src/source_reflows_merge/main_c883_inputs.rs"),
+        include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs"),
+    )
+}
+fn formatted_accepted_batch_relocated_prefix() -> &'static str {
+    concat!(
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs"),
+        include_str!("../../src/loop_calls/byte_writer/tests/string_slots.rs"),
+        include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/before_hir_compare.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/sequence_vector.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs"),
+        include_str!("../../src/bounded_output/stage_debits/route_debits.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
         include_str!("../../src/source_reflows/main_c883_receivers.rs"),
@@ -291,6 +323,143 @@ fn accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_t
         let missing = prefix.replacen(subject, "", 1);
         for bad in [missing.clone(), format!("{missing}{subject}")] {
             assert!(std::panic::catch_unwind(|| assert_accepted_batch_relocated_prefix(&bad)).is_err());
+        }
+    }
+}
+
+// The original twenty-eight-subject receiver and all of its controls above stay
+// independently compiled. This current generation joins the two actual lexical
+// children at their parent's existing raw slot; raw input is never rewritten.
+fn before_format_current_accepted_batch_relocated_prefix() -> String {
+    let previous = accepted_batch_relocated_prefix();
+    let slot = include_str!(
+        "../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"
+    );
+    let complete = concat!(
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
+    );
+    assert!(!slot.is_empty());
+    assert_eq!(
+        previous.matches(slot).count(),
+        1,
+        "unique original lexical child slot"
+    );
+    let current = previous.replacen(slot, complete, 1);
+    assert_eq!(current.matches(complete).count(), 1);
+    assert_eq!(
+        current.replacen(complete, slot, 1),
+        previous,
+        "complete original prefix inverse"
+    );
+    current
+}
+fn current_accepted_batch_relocated_prefix() -> String {
+    concat!(
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs"),
+        include_str!("../../src/loop_calls/byte_writer/tests/string_slots.rs"),
+        include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/moderate_tests/before.rs"),
+        include_str!("../../src/hir/resolve_program_methods.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/before_hir_compare.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/sequence_vector.rs"),
+        include_str!("../../src/cleanup_plan/replay/owned_suffix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_before.rs"),
+        include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs"),
+        include_str!("../../src/bounded_output/stage_debits/route_debits.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs"),
+        include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/before.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
+        include_str!("../../src/source_reflows/main_c883_receivers.rs"),
+        include_str!("../../src/source_reflows_merge/main_c883_inputs.rs"),
+        include_str!("../../tests/workspace/semantic_graph/source_inventory_controls.rs"),
+    ).to_owned()
+}
+fn assert_before_format_accepted_prefix(raw: &str) {
+    let prefix = before_format_current_accepted_batch_relocated_prefix();
+    let rest = raw
+        .strip_prefix(prefix.as_str())
+        .expect("complete independent pre-format thirty-subject prefix");
+    assert!(!rest.is_empty());
+    assert!(!rest.starts_with(prefix.as_str()));
+}
+fn assert_current_accepted_batch_relocated_prefix(raw: &str) {
+    let prefix = current_accepted_batch_relocated_prefix();
+    let rest = raw.strip_prefix(prefix.as_str()).expect("all original twenty-eight subjects and both nested lexical children enter the raw owner in order");
+    assert!(
+        !rest.is_empty(),
+        "current relocated prefix requires the remaining raw inventory"
+    );
+    assert!(
+        !rest.starts_with(prefix.as_str()),
+        "duplicate current relocated inventory prefix"
+    );
+}
+#[test]
+fn current_accepted_prefix_keeps_nested_lexical_children_and_all_original_subjects() {
+    let prefix = current_accepted_batch_relocated_prefix();
+    let original = accepted_batch_relocated_prefix();
+    let before_format = before_format_current_accepted_batch_relocated_prefix();
+    assert_eq!(before_format, formatted_accepted_batch_relocated_prefix());
+    assert_before_format_accepted_prefix(&format!("{before_format}remaining raw inventory"));
+    for bad in [
+        String::new(),
+        before_format.clone(),
+        format!("sentinel{before_format}"),
+        format!("{before_format}{before_format}"),
+        format!("{original}remaining raw inventory"),
+    ] {
+        assert!(std::panic::catch_unwind(|| assert_before_format_accepted_prefix(&bad)).is_err());
+    }
+    let valid = format!("{prefix}remaining raw inventory");
+    assert_current_accepted_batch_relocated_prefix(&valid);
+    assert_accepted_batch_relocated_prefix(&format!("{original}remaining raw inventory"));
+    for bad in [
+        String::new(),
+        prefix.clone(),
+        format!("sentinel{prefix}"),
+        format!("{prefix}{prefix}"),
+        format!("{original}remaining raw inventory"),
+    ] {
+        assert_ne!(bad, valid, "identity mutation cannot prove refusal");
+        assert!(
+            std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad))
+                .is_err()
+        );
+    }
+    for subject in [
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
+        include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
+        include_str!("../../src/hir/resolve_program_methods.rs"),
+    ] {
+        assert!(!subject.is_empty());
+        assert_eq!(prefix.matches(subject).count(), 1);
+        let missing = prefix.replacen(subject, "", 1);
+        for bad in [format!("{missing}remaining raw inventory"),
+            format!("{missing}{subject}remaining raw inventory"),
+            format!("{prefix}{subject}remaining raw inventory")] {
+            // A duplicate inside the current prefix must also be refused;
+            // appending an unrelated raw tail remains allowed by this contract.
+            let bad = if bad.starts_with(prefix.as_str()) {
+                prefix.replacen(subject, &format!("{subject}{subject}"), 1) + "remaining raw inventory"
+            } else { bad };
+            assert_ne!(bad, valid);
+            assert!(std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad)).is_err());
         }
     }
 }

@@ -1,0 +1,55 @@
+{
+  "rows": 121,
+  "packet_length": 59384,
+  "packet_sha256": "f564fa5deb6b69d47df856813e2540cdc9ca203bc16befb81fc5566588238072",
+  "CONFIG_length": 89856,
+  "CONFIG_sha256": "5d476082c47add2dca832a549f73297ad8e7f16287836d656f71a9e77984aed3",
+  "guard_length": 8434,
+  "guard_sha256": "93fffd412c8b465f557c829aea0e25053f9ce2b01d2a236e2996709c0908cc76",
+  "all_previous_fields_and_views_retained": true,
+  "new_guard_caps_unchanged": true,
+  "formatted_sources": [
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
+      "current_sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
+      "formatter_peak_KiB": 26096
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+      "before_sha256": "8fec71e4b0f29ec742ddd49cb855f7427a8f2ee9907c62097ea493eac427b13f",
+      "current_sha256": "26e8d0ad5fe3c34e40315634b9bc718a77ce4f42a7ef933073a3d40420219933",
+      "formatter_peak_KiB": 2064
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+      "before_sha256": "c05f65d6acd89ca4d6cf7b6bb2dd2c96197b265d9038ec03353cf9e3a9e75aec",
+      "current_sha256": "1ed58e281e587d62016f841257ca2b5ebd240bc0604bf23b37e89c5b13ffe358",
+      "formatter_peak_KiB": 2064
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+      "before_sha256": "cd09018becc3d74cccad338dbdfd4b2a6ee6d1e6c7f241258999b75df44233db",
+      "current_sha256": "c854830d8e6340647187c3e747f75439ecfcd57544ccf024f6dde8f8180e91dc",
+      "formatter_peak_KiB": 2064
+    },
+    {
+      "source": "src/hir/ids/declaration_tag.rs",
+      "before_sha256": "34cea24eb73a94530046e3f230cd9950c5c4a382be118d23893ad82992ee593e",
+      "current_sha256": "e4aeca2ada77af48cf88587767b8a21f8cb026c59c1eb0c4f49c2b2d6c48de1c",
+      "formatter_peak_KiB": 2064
+    },
+    {
+      "source": "src/hir/ids/declaration_tag/before.rs",
+      "before_sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355",
+      "current_sha256": "fd91e8af94a655332df52ec62fb45a2e097b25b33428ac1b72240c702ce02948",
+      "formatter_peak_KiB": 2064
+    },
+    {
+      "source": "tests/support/production_source_inventory.rs",
+      "before_sha256": "934c66b29fd169ae30a2377532e186347201e7526da55eb19c98e2c81feaa6f7",
+      "current_sha256": "8ebfa7f693a69f7b22005e0720b3e571f35ead3967aa415b5b94481c83e5ba8f",
+      "formatter_peak_KiB": 2064
+    }
+  ]
+}

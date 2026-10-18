@@ -1,0 +1,7 @@
+{
+  "actual_sha256": "8404df1d42d0df22546e6cc55865ee440d2a2cf0c39afecec58aa6d3b385f510",
+  "requested_after_sha256": "d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7",
+  "existing_complete_prior_archive": "docs/evidence/next-semantic-source-views-20261017/objects/d5e04c498ebdf3c725faa28a6b41440a6ebd2f2aa208a43445effb254a58cdb7.txt",
+  "complete_original_inverse_restores_sha256": "373e120333b6316c6e140e130db662d38ceb2c83b1ca68e87328543fa0c20641",
+  "Rust_executed": false
+}

@@ -1,0 +1,29 @@
+{
+  "status": "PASS_EXACT_121_SOURCE_UNION",
+  "rows": 121,
+  "parts": [
+    {
+      "part": 0,
+      "channels": 44,
+      "compiler_peak_KiB": 193344,
+      "runtime_peak_KiB": 19744
+    },
+    {
+      "part": 1,
+      "channels": 45,
+      "compiler_peak_KiB": 163696,
+      "runtime_peak_KiB": 17888
+    },
+    {
+      "part": 2,
+      "channels": 48,
+      "compiler_peak_KiB": 178080,
+      "runtime_peak_KiB": 16800
+    }
+  ],
+  "source_only": true,
+  "all_original_packet_checks_and_ten_parent_fragment_pairs_each_part": true,
+  "all_new_named_views_real_file_value_value_direct": true,
+  "unknown_old_compiled_or_delegated_branches_panic": true,
+  "no_full_Cargo_or_hosted_scope_claimed": true
+}

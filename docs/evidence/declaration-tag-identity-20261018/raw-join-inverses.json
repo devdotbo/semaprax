@@ -1,0 +1,59 @@
+[
+  {
+    "source": "tests/hir_module_boundaries.rs",
+    "before": {
+      "length": 106143,
+      "sha256": "4fb70945c950d9e78d1990e8d07a0da79c247a816d6aa692f10cbdb9e10698bf",
+      "archive": "tests__hir_module_boundaries.rs.before.txt"
+    },
+    "after": {
+      "length": 106252,
+      "sha256": "0e22a96bc32a2dc96a25718e0e5557890aba2820624b050c5cef279c7d4edee4"
+    },
+    "edits": [
+      {
+        "before": "include_str!(\"../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../src/hir/ids/declaration_tag.rs\"), include_str!(\"../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ],
+    "lines_unchanged": true
+  },
+  {
+    "source": "tests/workspace/semantic_graph/source_inventory.rs",
+    "before": {
+      "length": 104065,
+      "sha256": "ceae29cfda600da8937c603aae54d665d965b3491f867698196e71e60a48ba18",
+      "archive": "tests__workspace__semantic_graph__source_inventory.rs.before.txt"
+    },
+    "after": {
+      "length": 104180,
+      "sha256": "282a152563aa5065bbfb267cec453d4c00096712a962a60f2248431a44766618"
+    },
+    "edits": [
+      {
+        "before": "include_str!(\"../../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ],
+    "lines_unchanged": true
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "before": {
+      "length": 165305,
+      "sha256": "08dc10fd9d158b8bb35bd6e7659f50a2d849638aa79537200282b15fcbec83df",
+      "archive": "crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.before.txt"
+    },
+    "after": {
+      "length": 165438,
+      "sha256": "8867f36b6b8a8985de65489f1f9a625e8388a2ccac7190df48d8121282876c10"
+    },
+    "edits": [
+      {
+        "before": "include_str!(\"../../../../../src/hir/ids/fixed_operation_tests.rs\")",
+        "after": "include_str!(\"../../../../../src/hir/ids/fixed_operation_tests.rs\"), include_str!(\"../../../../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../../../../src/hir/ids/declaration_tag/before.rs\")"
+      }
+    ],
+    "lines_unchanged": true
+  }
+]

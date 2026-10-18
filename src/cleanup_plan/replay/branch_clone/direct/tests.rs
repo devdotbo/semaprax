@@ -382,10 +382,11 @@ fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
         .iter()
         .all(|exit| !matches!(exit.continuation, ExitContinuation::FunctionReturn { .. })));
     drop(compatibility);
-    // The actual source loop selects explicit lexical exits. It runs once;
-    // the same 96 statements, return and both original branches remain.
+    // The actual return is INSIDE the authored one-iteration loop, so its
+    // resolver-owned edge is lexical. The same 96 statements and both original
+    // branches remain; the complete loop-free source above stays a negative.
     source = source.replacen("if a { return 1; };",
-        "let mut lexical_once=0;while lexical_once<1 {lexical_once=lexical_once+1;0}if a { return 1; };", 1);
+        "let mut lexical_once=0;while lexical_once<1 {lexical_once=lexical_once+1;if a { return 1; };0}", 1);
     let parsed = crate::check(&source, "direct879.spx").unwrap();
     let canonical = crate::format::canonical(&parsed);
     let checked = crate::check(&canonical, "direct879.spx").unwrap();

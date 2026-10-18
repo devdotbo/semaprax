@@ -468,10 +468,10 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
     use super::super::super::{compare_with_index_storage, lexical_plan_tests};
     use std::fmt::Write as _;
     for source in [lexical_plan_tests::WHILE, lexical_plan_tests::GENERATED] {
-        // The original probe source is byte-exact. A separate unused source
-        // function supplies the 16-byte literal required by the existing complete
-        // prepared source inventory; every function is authenticated together.
-        // The original literal-free linked fixture stays a strict negative below.
+        // Preserve the complete historical anchor transport and its exact-source
+        // assertions. These loop probes are non-static: use the existing owning
+        // production linker for the ORIGINAL source, not the closed static-text
+        // test receiver. Each measured old/current arm still funds its phase lease.
         const INVENTORY_ANCHOR: &str = r#"
 @id("paid_many.replay.inventory") fn replay_inventory_anchor()->i64 {
     let key=str"memo-fixture-key";
@@ -481,8 +481,8 @@ fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_orde
         assert_eq!("memo-fixture-key".len(), 16);
         let anchored = format!("{source}{INVENTORY_ANCHOR}");
         assert_eq!(anchored.strip_suffix(INVENTORY_ANCHOR), Some(source));
-        let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(&anchored);
-        fixture.with_prepared_context(|program| {
+        let fixture = crate::workspace_graph::SourceRecordReplayFixture::new(source);
+        fixture.with_linked_context(|program| {
         let functions = program.functions();
         let function = functions.iter().find(|function| function.id.as_str() == "probe").unwrap();
         lexical_plan_tests::assert_plan_oracle(&function);

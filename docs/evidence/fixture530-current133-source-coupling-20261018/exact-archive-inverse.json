@@ -1,0 +1,11 @@
+{
+  "before_sha256": "cedd431ee34df33049aa5848a802bf6d03afa95fb20ac44ad2f1ce1683681307",
+  "after_sha256": "510c26a5d28b2d048518b3d01b50d04524dc6236f0bf2e7fdcbc963176845d09",
+  "edits": [
+    {
+      "before": "if not any(x['sha256']==previous['sha256']and x['length']==previous['length']for x in row['views']):",
+      "after": "if not any(all(x[k]==previous[k]for k in ['length','sha256','archive'])for x in row['views']):"
+    }
+  ],
+  "exact_full_inverse_verified": true
+}

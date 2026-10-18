@@ -173,8 +173,34 @@ pub(super) struct NativeImportedFinalizer {
 pub(super) fn build_resource_abi(
     program: &ResolvedProgram,
 ) -> Result<NativeResourceAbi, Diagnostic> {
+    #[cfg(test)]
+    record_ordinary_validation();
     hir::validate(program)?;
     build_validated_resource_abi(program)
+}
+
+/// Receipt for complete ordinary HIR validation of this exact immutable borrow.
+/// Fields stay private to this module; selected/proof owners cannot mint it.
+/// No program clone, allocation, hash, cache, or publication authority is held.
+pub(super) struct OrdinaryValidatedProgram<'a> {
+    program: &'a ResolvedProgram,
+}
+
+impl<'a> OrdinaryValidatedProgram<'a> {
+    pub(super) fn validate(program: &'a ResolvedProgram) -> Result<Self, Diagnostic> {
+        #[cfg(test)]
+        record_ordinary_validation();
+        hir::validate(program)?;
+        Ok(Self { program })
+    }
+}
+
+/// Consume the ordinary receipt without replaying the same complete validation.
+/// The held shared borrow prevents safe mutation or substitution before use.
+pub(super) fn build_ordinary_validated_resource_abi(
+    validated: OrdinaryValidatedProgram<'_>,
+) -> Result<NativeResourceAbi, Diagnostic> {
+    build_validated_resource_abi(validated.program)
 }
 
 /// Selected fused owner receiving. Ordinary validation necessarily refuses
@@ -494,3 +520,18 @@ mod tests;
 #[cfg(test)]
 #[path = "native_resource/selected_tests.rs"]
 mod selected_tests;
+
+// Count only actual ordinary validation invocations at this receiving boundary.
+// Thread-local storage keeps independently scheduled unit tests isolated.
+#[cfg(test)]
+thread_local! {
+    static ORDINARY_VALIDATIONS: std::cell::Cell<usize> = const { std::cell::Cell::new(0) };
+}
+#[cfg(test)]
+pub(super) fn record_ordinary_validation() {
+    ORDINARY_VALIDATIONS.with(|count| count.set(count.get() + 1));
+}
+#[cfg(test)]
+pub(super) fn take_ordinary_validation_count() -> usize {
+    ORDINARY_VALIDATIONS.with(|count| count.replace(0))
+}

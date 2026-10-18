@@ -163,7 +163,14 @@ fn complete_caller_success_and_refusal_drop_remain_observed_at_unchanged_cap() {
     for bytes in [0, 4096, 64 * 1024 * 1024] {
         let (_, metrics) = crate::test_allocation_observer::measure(|| {
             let result = ordinary(&program, false, bytes);
-            assert_eq!(result.0.is_ok(), bytes == 64 * 1024 * 1024);
+            assert_eq!(
+                result.0.is_ok(),
+                bytes == 64 * 1024 * 1024,
+                "unchanged32-row whole caller at bytes={bytes}: diagnostic={:?}, refused={}, consumed={}",
+                result.0,
+                result.1,
+                result.2,
+            );
             drop(result);
         });
         assert!(!metrics.invalid && metrics.live == 0);

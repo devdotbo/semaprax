@@ -1,0 +1,36 @@
+{
+  "before_sha256": "792679ece87c57d6e838d26f656c42a81f73d459fa285995e0942ff96350243b",
+  "after_sha256": "cedd431ee34df33049aa5848a802bf6d03afa95fb20ac44ad2f1ce1683681307",
+  "edits": [
+    {
+      "before": "NEW=set(G('diff','--name-only','--diff-filter=A',BASE,HEAD,'--','src','tests','crates').decode().splitlines());NEW={p for p in NEW if p.endswith('.rs')};prefix='src/cleanup_plan/replay/factored/canonical_shared/';assert NEW=={prefix+'matched_receiving_layers.rs',prefix+'matched_receiving_layers/memo.rs',prefix+'matched_receiving_layers/successor_targets.rs'}",
+      "after": "ADDED={p for p in G('diff','--name-only','--diff-filter=A',BASE,HEAD,'--','src','tests','crates').decode().splitlines()if p.endswith('.rs')}\nNATIVE={'src/codegen/native_emit/emission_before.rs','src/codegen/native_emit/validation_reuse_tests.rs'};NEW=ADDED-NATIVE;prefix='src/cleanup_plan/replay/factored/canonical_shared/';assert NATIVE<=ADDED and NEW=={prefix+'matched_receiving_layers.rs',prefix+'matched_receiving_layers/memo.rs',prefix+'matched_receiving_layers/successor_targets.rs','src/hir/ids/declaration_tag.rs','src/hir/ids/declaration_tag/before.rs'}\nfor model in ['hir','projection']:\n scope=json.loads(git('docs/evidence/a3-e47-final-custody-20261016/'+model+'.json'))\n assert not NATIVE&(set(scope['sources'])|set(scope['classes'])|{x['path']for x in scope['chunks']if'path'in x}), 'native test modules are outside this core raw/role inventory'"
+    },
+    {
+      "before": "assert len(targets)==131 and HELP not in targets",
+      "after": "assert len(targets)==133 and HELP not in targets"
+    },
+    {
+      "before": "whole=image(old);v['whole_current124_before_fixture_repairs']=whole",
+      "after": "# Exact 891 whole after-carriers precede its unchanged six-source inverse.\nE34='e34b1a4637c38499a7db2818794f83a8ba029142'\nproof=json.loads(G('show',E34+':docs/evidence/declaration-tag-identity-20261018/sources.json'))\nfor path in cfg['carriers']:\n prior=G('show',E34+':'+path);pin=next(x['after']for x in proof if x['source']==path);assert(len(prior),H(prior))==(pin['length'],pin['sha256'])\n row=next(r for r in v['rows']if r['source']==path)\n if not any(x['sha256']==H(prior)and x['length']==len(prior)for x in [row['current']]+row['views']):row['views'].append(dict(name='whole891-e34-after-before-combined-raw-joins',**image(prior)))\nwhole=image(old);v['whole_current124_before_fixture_repairs']=whole"
+    },
+    {
+      "before": "len(), 131);",
+      "after": "len(), 133);"
+    },
+    {
+      "before": "cfg['rows']=131",
+      "after": "cfg['rows']=133"
+    },
+    {
+      "before": "current_rows=131",
+      "after": "current_rows=133"
+    },
+    {
+      "before": "new_modules=sorted(NEW),",
+      "after": "new_modules=sorted(NEW),all_added_Rust_modules=sorted(ADDED),native_modules_outside_core_scope=sorted(NATIVE),"
+    }
+  ],
+  "whole_before": "prepare-current131.whole-before.py.txt",
+  "exact_full_inverse_verified": true
+}

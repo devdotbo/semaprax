@@ -1,0 +1,19 @@
+{
+  "owners": 260,
+  "all_order_and_other_fields_preserved": true,
+  "published241_prefix_and19_retained": true,
+  "refreshed_current_pins": [
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/source_reflows/semantic_receivers/status_inline.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"
+  ],
+  "before_archive": "docs/evidence/clippy-11a0-integration/vCJCwmKsyiwK-lFIs1-rpqIDLBhtq2ySi4F6XAShJ08.txt",
+  "before_sha256": "bc2242c262acca2c0afa5148b35faba6a2032c186dab6c928b817a5c04a1274f",
+  "current_sha256": "b21ac9576805d0a964c502d97f7bf47479434b7f0ec4164083456a77d24d9257"
+}

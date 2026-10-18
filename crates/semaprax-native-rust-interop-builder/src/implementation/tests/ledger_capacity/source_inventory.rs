@@ -17,6 +17,8 @@ macro_rules! fixed_operation_identity_source_inventory {
     () => {
         audit_source_join!(
             include_str!("../../../../../src/hir/ids/fixed_operation_tests.rs"),
+            include_str!("../../../../../src/hir/ids/declaration_tag.rs"),
+            include_str!("../../../../../src/hir/ids/declaration_tag/before.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/map/identity_tests.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/list/identity_tests.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/iterator/identity_tests.rs"),
@@ -244,7 +246,7 @@ macro_rules! loan_cfg_source_inventory {
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/singleton_target_tests.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs"),
-        include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"),
+        audit_source_join!(include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs"), include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs")),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/tests.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo.rs"),
         include_str!("../../../../../src/cleanup_plan/replay/factored/canonical_shared/memo/tests.rs"),

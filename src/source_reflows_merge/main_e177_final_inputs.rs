@@ -552,6 +552,13 @@ fn actual(row: &serde_json::Value) -> String {
     value
 }
 pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {
+    if let Some(Ok(value)) = clippy_stage::read(path, length, expected) {
+        let _ = packet();
+        return Some(value);
+    }
+    file_4a6eb(path, length, expected)
+}
+fn file_4a6eb(path: &Path, length: usize, expected: &str) -> Option<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let relative = path.strip_prefix(root).ok()?;
     if !relative
@@ -576,6 +583,10 @@ pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String>
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
+    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
+        let _ = packet();
+        return value;
+    }
     let normalized = clippy_stage::normalize(source, supplied);
     let result = value_4a6eb(source, expected, normalized.as_ref());
     if normalized.as_ref() != supplied
@@ -823,6 +834,10 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
 // Nondelegating entry for the older owner's compiled-channel normalization.
 // Membership is tested before calling the public delegating route.
 pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
+        let _ = packet();
+        return value;
+    }
     let normalized = clippy_stage::normalize(source, supplied);
     let result = value_direct_4a6eb(source, expected, normalized.as_ref());
     if normalized.as_ref() != supplied
@@ -853,6 +868,69 @@ mod clippy_stage {
     use super::*;
     use std::borrow::Cow;
     fn rows() -> serde_json::Value {
+        let data = include_str!("../../docs/evidence/clippy-11a0-integration/inputs.json");
+        assert_eq!(data.len(), 59384);
+        assert_eq!(
+            digest(data.as_bytes()),
+            "f564fa5deb6b69d47df856813e2540cdc9ca203bc16befb81fc5566588238072"
+        );
+        assert_eq!(
+            held_4a6eb(
+                &Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join("docs/evidence/clippy-11a0-integration/inputs.json"),
+                data.len(),
+                "f564fa5deb6b69d47df856813e2540cdc9ca203bc16befb81fc5566588238072"
+            )
+            .unwrap(),
+            data
+        );
+        let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+        let previous = rows_4a6eb();
+        assert_eq!(packet["rows"].as_array().unwrap().len(), 121);
+        assert_eq!(
+            packet["previous_packet"],
+            serde_json::json!({"path": "docs/evidence/clippy-4a6eb/inputs.json", "length": 47876, "sha256": "5d8f589d5cfb817ebda43548e89b6d3cfacecee20659896ffd57f49e7499baeb"})
+        );
+        let mut names = std::collections::BTreeSet::new();
+        for row in packet["rows"].as_array().unwrap() {
+            assert!(names.insert(row["source"].as_str().unwrap()));
+        }
+        for (old, current) in previous["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .zip(packet["rows"].as_array().unwrap())
+        {
+            assert_eq!(old["source"], current["source"]);
+            if old["current"] != current["current"] {
+                assert!(
+                    current["views"].as_array().unwrap().iter().any(|v| {
+                        let mut v = v.clone();
+                        v.as_object_mut().unwrap().remove("name");
+                        v == old["current"]
+                    }),
+                    "complete old current retained"
+                );
+            }
+            let mut restored = current.clone();
+            restored["current"] = old["current"].clone();
+            match old.get("views") {
+                Some(views) => {
+                    restored["views"] = views.clone();
+                }
+                None => {
+                    restored.as_object_mut().unwrap().remove("views");
+                }
+            }
+            assert_eq!(&restored, old, "every original field");
+        }
+        let mut restored = packet.clone();
+        restored["rows"] = previous["rows"].clone();
+        restored.as_object_mut().unwrap().remove("previous_packet");
+        assert_eq!(restored, previous, "complete previous packet");
+        packet
+    }
+    fn rows_4a6eb() -> serde_json::Value {
         let data = include_str!("../../docs/evidence/clippy-4a6eb/inputs.json");
         assert_eq!(data.len(), 47876);
         assert_eq!(
@@ -1027,7 +1105,48 @@ mod clippy_stage {
             "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs")),
             "src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs" => Some(include_str!("../../src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs")),
             "src/workspace_graph/validation/before_roots.rs" => Some(include_str!("../../src/workspace_graph/validation/before_roots.rs")),
-            _ => None,
+            "CHANGELOG.md" => Some(include_str!("../../CHANGELOG.md")),
+            "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => Some(include_str!("../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),
+            "docs/ARCHITECTURE.md" => Some(include_str!("../../docs/ARCHITECTURE.md")),
+            "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv" => Some(include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv")),
+            "src/cleanup_plan/replay/branch_clone/direct/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/direct/tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs")),
+            "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs")),
+            "src/source_reflows/semantic_receivers/status_inline.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers/status_inline.rs")),
+            "src/workspace_graph/source_schema/static_text/tests.rs" => Some(include_str!("../../src/workspace_graph/source_schema/static_text/tests.rs")),
+            "src/workspace_graph/tests.rs" => Some(include_str!("../../src/workspace_graph/tests.rs")),
+            "tests/hir_module_boundaries.rs" => Some(include_str!("../../tests/hir_module_boundaries.rs")),
+            "tests/support/production_source_inventory.rs" => Some(include_str!("../../tests/support/production_source_inventory.rs")),
+            "tests/workspace/semantic_graph/source_inventory.rs" => Some(include_str!("../../tests/workspace/semantic_graph/source_inventory.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs")),
+            "src/hir/ids/declaration_tag.rs" => Some(include_str!("../../src/hir/ids/declaration_tag.rs")),
+            "src/hir/ids/declaration_tag/before.rs" => Some(include_str!("../../src/hir/ids/declaration_tag/before.rs")),
+_=>None,
+}
+    }
+    pub(super) fn requested(source: &str, expected: &str, supplied: &str) -> Option<String> {
+        compiled(source)?;
+        let packet = rows();
+        let row = packet["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)?;
+        let actual = current(row);
+        let selected = [&row["before"], &row["current"]]
+            .into_iter()
+            .chain(
+                row.get("views")
+                    .and_then(serde_json::Value::as_array)
+                    .into_iter()
+                    .flatten(),
+            )
+            .find(|pin| pin["sha256"] == expected)?;
+        let previous = pin(selected);
+        if supplied == actual || supplied == previous {
+            Some(previous)
+        } else {
+            None
         }
     }
     pub(super) fn normalize<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
@@ -1072,11 +1191,19 @@ mod clippy_stage {
             .iter()
             .find(|row| row["source"] == source)?;
         let actual = current(row);
-        for (name, value) in [("before", None), ("current", Some(actual))] {
-            let selected = &row[name];
+        for selected in [&row["before"], &row["current"]].into_iter().chain(
+            row.get("views")
+                .and_then(serde_json::Value::as_array)
+                .into_iter()
+                .flatten(),
+        ) {
             if selected["length"].as_u64() == Some(length as u64) && selected["sha256"] == expected
             {
-                return Some(Ok(value.unwrap_or_else(|| pin(selected))));
+                return Some(Ok(if selected == &row["current"] {
+                    actual
+                } else {
+                    pin(selected)
+                }));
             }
         }
         Some(Err("foreign successor tuple"))

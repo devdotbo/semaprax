@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/clippy-4a6eb/guard-config.json'
-_CONFIG_LENGTH=89213
-_CONFIG_SHA256='4119cc196787aee7e5f1c0662e15007cc1d9960aad80e3bccddbd9a3bc708332'
+_CONFIG_PATH=R/'docs/evidence/clippy-11a0-integration/guard-config.json'
+_CONFIG_LENGTH=89856
+_CONFIG_SHA256='5d476082c47add2dca832a549f73297ad8e7f16287836d656f71a9e77984aed3'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -32,21 +32,43 @@ def packet():
  assert len(v['rows'])==len({x['source']for x in v['rows']})
  return v
 
-def _successor_rows():
+def _successor_rows_4a6eb():
  _configuration_current()
- p=CONFIG['source_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ p=CONFIG['previous_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
  assert v['schema']=='semaprax.clippy-complete-source-successor.v1'and len(v['rows'])==105
  assert v['source_cap']==9753094 and len(v['rows'])==len({x['source']for x in v['rows']})
  assert v['base_packet']==CONFIG['packet']
  p=v['base_packet'];bounded(R/p['path'],p['length'],p['sha256'])
  return v['rows']
+def _successor_rows():
+ _configuration_current()
+ p=CONFIG['source_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ old_rows=_successor_rows_4a6eb();p=CONFIG['previous_successor'];old=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ assert old_rows==old['rows']and v['previous_packet']==CONFIG['previous_successor']
+ assert len(v['rows'])==121 and len(v['rows'])==len({x['source']for x in v['rows']})
+ for before,after in zip(old_rows,v['rows']):
+  assert before['source']==after['source']
+  if before['current']!=after['current']:assert any({k:x for k,x in pin.items()if k!='name'}==before['current']for pin in after['views'])
+  restored=dict(after);restored['current']=before['current']
+  if 'views'in before:restored['views']=before['views']
+  else:restored.pop('views',None)
+  assert restored==before
+ restored=dict(v);restored['rows']=old_rows;restored.pop('previous_packet');assert restored==old
+ return v['rows']
+def _successor_pin(path,length,digest):
+ row=next((r for r in _successor_rows()if r['source']==path),None)
+ if row is None:return None
+ return next((p for p in [row['before'],row['current'],*row.get('views',[])]if(length,digest)==(p['length'],p['sha256'])),None)
 def _stage_source(path,pin):
  row=next((r for r in _successor_rows()if r['source']==path),None)
  if row is None:return bounded(R/path,pin['length'],pin['sha256'])
  p=row['current'];actual=bounded(R/path,p['length'],p['sha256']);assert actual==read(p)
  if(pin['length'],pin['sha256'])==(p['length'],p['sha256']):return actual
- p=row['before'];assert(pin['length'],pin['sha256'])==(p['length'],p['sha256']),('foreign successor tuple',path)
- return read(p)
+ p=row['before']
+ if(pin['length'],pin['sha256'])==(p['length'],p['sha256']):return read(p)
+ views=[v for v in row.get('views',[])if(pin['length'],pin['sha256'])==(v['length'],v['sha256'])]
+ assert views,('foreign successor tuple',path)
+ result=read(views[0]);assert all(read(v)==result for v in views);return result
 
 def latest_source(path,length,digest):
  assert path in CONFIG['closed_prior_sources'],('foreign named source acquisition',path)
@@ -57,6 +79,7 @@ def latest_source(path,length,digest):
   assert not child.get('fragments')and child['compiled']is True
   pin=child['current'];value=_stage_source(child['source'],pin);assert value==read(pin)
  if(length,digest)==(p['length'],p['sha256']):return actual
+ if _successor_pin(path,length,digest)is not None:return _stage_source(path,dict(length=length,sha256=digest))
  views=[v for v in row['views']if(length,digest)==(v['length'],v['sha256'])];assert views,('foreign prior tuple',path,length,digest)
  b=read(views[0]);assert all(read(v)==b for v in views);return b
 

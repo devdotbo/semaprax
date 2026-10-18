@@ -1329,6 +1329,9 @@
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight/tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight_tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/memo.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/memo/retained.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs",
@@ -2740,9 +2743,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "8dec5da63580a5a0edd989fdd00984e1082fec76a0bfc4c65e7178181c819e33",
-      "full_raw_sha256": "2ed8fe038493083225ee4b56ba3e8dfe87b92fc6ea04a3c6a9fbacb9ce50b5fd",
-      "full_authenticated_production_sha256": "bde44465d9b2d1e5bfe793191bfe134c1e83997ea31f4f3a22414330ee2ca7fa"
+      "full_manifest_sha256": "7dec3557afbb8d2b2f37a97a5b85157b62b86e557449256be90a6ca7c1df91bb",
+      "full_raw_sha256": "03f58a338db96e634bc20913e0cd981d73742ae732066d04a622864f722f5e82",
+      "full_authenticated_production_sha256": "f4dbeab78a81c7c7404d5c0086a5389af24deeee2f800b4421683e2154f7360b"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3757,9 +3760,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "65b01872af25e7d34c8fb8a3fe7a109d5a38fa40f820c917dd550ceaefd6fc02",
-      "full_raw_sha256": "aa2b9058d648b126062cf6f4586411010d674559cc35fc1f7b6c27be8732f7e0",
-      "full_authenticated_production_sha256": "76d6100ca3037e2d0b39191bae43148a710b4735677d34e0734b454d8f69e104"
+      "full_manifest_sha256": "a14704cf15e1c1b853e322a08ae5137c956a4d9948e6438161110d0322722ce4",
+      "full_raw_sha256": "40343ed417461d159cb65ee449b879d3267104317121769500bcdc2d4971926c",
+      "full_authenticated_production_sha256": "3d13435b2d6709dca6e3a8c40256bfaadb5f83b6ed071a6b9f59351b7eb326e0"
     }
   }
 }

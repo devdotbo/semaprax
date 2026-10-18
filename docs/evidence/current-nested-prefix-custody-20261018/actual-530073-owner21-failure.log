@@ -1,0 +1,15 @@
+
+running 1 test
+test semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root ... 
+thread 'semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root' (31149452) panicked at tests/workspace/../support/production_source_inventory.rs:176:41:
+all twenty-eight accepted subjects enter the raw owner in order
+note: run with `RUST_BACKTRACE=1` environment variable to display a backtrace
+FAILED
+
+failures:
+
+failures:
+    semantic_graph::expected_projection_source_boundary_is_pure_and_keeps_shared_helpers_in_root
+
+test result: FAILED. 0 passed; 1 failed; 0 ignored; 0 measured; 325 filtered out; finished in 0.01s
+
