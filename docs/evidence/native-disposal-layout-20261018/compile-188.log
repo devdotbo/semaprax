@@ -1,0 +1,27 @@
+warning: type `HistoricalDeclarationId` is more private than the item `HistoricalResolvedType::TypeParameter::owner`
+   --> /Volumes/Semaprax/tmp/ci-38383508340/disposal-layout-79bbe/layout.rs:281:9
+    |
+281 |         owner: HistoricalDeclarationId,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `HistoricalResolvedType::TypeParameter::owner` is reachable at visibility `pub`
+    |
+note: but type `HistoricalDeclarationId` is only usable at visibility `pub(crate)`
+   --> /Volumes/Semaprax/tmp/ci-38383508340/disposal-layout-79bbe/layout.rs:236:1
+    |
+236 | struct HistoricalDeclarationId(HistoricalDeclarationText);enum HistoricalDeclarationText{CompilerStatic(&'static str),Shared(Arc<str>)}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+    = note: `#[warn(private_interfaces)]` on by default
+
+warning: type `HistoricalDeclarationId` is more private than the item `HistoricalResolvedType::Nominal::declaration`
+   --> /Volumes/Semaprax/tmp/ci-38383508340/disposal-layout-79bbe/layout.rs:285:9
+    |
+285 |         declaration: HistoricalDeclarationId,
+    |         ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ field `HistoricalResolvedType::Nominal::declaration` is reachable at visibility `pub`
+    |
+note: but type `HistoricalDeclarationId` is only usable at visibility `pub(crate)`
+   --> /Volumes/Semaprax/tmp/ci-38383508340/disposal-layout-79bbe/layout.rs:236:1
+    |
+236 | struct HistoricalDeclarationId(HistoricalDeclarationText);enum HistoricalDeclarationText{CompilerStatic(&'static str),Shared(Arc<str>)}
+    | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^
+
+warning: 2 warnings emitted
+

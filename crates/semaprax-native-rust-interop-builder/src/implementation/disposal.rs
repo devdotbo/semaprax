@@ -19,7 +19,10 @@ pub(super) enum ResolvedDisposeFrame {
     Shapes(Vec<semaprax::cleanup::FieldLiveness>),
 }
 
-const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 56);
+// Closed compiler declaration tags reduce both inline type/shape payloads by
+// one word. Keep an exact layout pin; reservation and retention use size_of
+// of this live frame rather than the historical 56-byte frame.
+const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 48);
 
 pub(super) struct ResolvedProgramOwner {
     program: Option<ResolvedProgram>,

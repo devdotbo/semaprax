@@ -70,7 +70,7 @@ fn resolved_owner_disposal_is_preallocated_and_depth_bounded() {
         RESOLVED_DISPOSE_CAPACITIES.with(std::cell::Cell::get),
         [capacity; 2]
     );
-    assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 56);
+    assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 48);
 }
 
 #[test]

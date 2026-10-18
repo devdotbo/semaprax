@@ -1,0 +1,18 @@
+[
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/disposal.rs",
+    "before": "docs/evidence/native-disposal-layout-20261018/disposal.rs.whole-before.txt",
+    "before_sha256": "4e0f871ae914cb679ddd0403b60cf6291c8b97c4cb5c6401be023a4a711fd7ec",
+    "current_sha256": "1e29627ca961032278910c781033ac887316c8ab72cc698f1e3fe123a412f985",
+    "old": "const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 56);",
+    "new": "// Closed compiler declaration tags reduce both inline type/shape payloads by\n// one word. Keep an exact layout pin; reservation and retention use size_of\n// of this live frame rather than the historical 56-byte frame.\nconst _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 48);"
+  },
+  {
+    "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/resolved_disposal.rs",
+    "before": "docs/evidence/native-disposal-layout-20261018/resolved_disposal.rs.whole-before.txt",
+    "before_sha256": "49e8efd3793d5e8b5dc76abd21ffe520c5273296f9fa46efa67eef28296543c5",
+    "current_sha256": "b46e1bb72659d48c849b7c7f5e13055fb267dfe5185cf27447ad18658a511592",
+    "old": "assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 56);",
+    "new": "assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 48);"
+  }
+]
