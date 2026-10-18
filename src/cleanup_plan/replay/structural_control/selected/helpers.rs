@@ -34,7 +34,7 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
     )?;
     budget.charge(function, 15, "selected validate_place local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -114,7 +114,7 @@ pub(super) fn validate_binding_selected(
         "selected validate_binding_selected local receiving",
     )?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -194,7 +194,7 @@ pub(super) fn validate_staged_target(
         "selected validate_staged_target local receiving",
     )?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -250,7 +250,7 @@ pub(super) fn validate_branch_pair(
     )?;
     budget.charge(function, 5, "selected validate_branch_pair local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -327,7 +327,7 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
     )?;
     budget.charge(function, 11, "selected finalizer_actions local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -494,7 +494,7 @@ pub(super) fn require_expression(
     )?;
     budget.charge(function, 4, "selected require_expression local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -536,7 +536,7 @@ pub(super) fn index(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected index local receiving")?;
     budget.charge(function, 4, "selected index local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

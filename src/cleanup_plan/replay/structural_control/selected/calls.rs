@@ -241,7 +241,7 @@ fn needs_drop(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected needs_drop local receiving")?;
     budget.charge(function, 4, "selected needs_drop local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

@@ -194,4 +194,6 @@ fn successors(
 }
 
 #[cfg(test)]
+mod append_before_formals;
+#[cfg(test)]
 mod tests;

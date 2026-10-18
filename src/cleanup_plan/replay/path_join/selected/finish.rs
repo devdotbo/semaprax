@@ -26,7 +26,7 @@ pub(super) fn append_flags(
         Result<(), Error>,
     )>(function, 1, "selected path append_flags formal receiving")?;
     budget.charge(function, 6, "selected path append_flags formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -111,7 +111,7 @@ pub(super) fn state_for_edge(
         Result<PathState, Error>,
     )>(function, 1, "selected path state_for_edge formal receiving")?;
     budget.charge(function, 6, "selected path state_for_edge formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -182,7 +182,7 @@ pub(super) fn finish_exit(
         Result<ExitFlow, Error>,
     )>(function, 1, "selected path finish_exit formal receiving")?;
     budget.charge(function, 7, "selected path finish_exit formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -455,7 +455,7 @@ pub(super) fn require_normal_flow_state(
         5,
         "selected path require_normal_flow_state formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

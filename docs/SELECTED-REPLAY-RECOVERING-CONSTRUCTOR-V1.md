@@ -1008,3 +1008,25 @@ lowered or raised. No net application gain, executable gate, #781 closure or
 improvement to the earlier 64MiB HIR-final refusals is claimed. Source custody
 and physical-role inventory coupling are deferred to the owning integration
 lane after sealing and independent review.
+
+
+The source-only #781 review successor retains the original finite-family9 and
+control12 packets and all original child charges. Current family adds the actual
+terminal source-clone reference (family10); every new family/control wrapper
+call additionally admits its own actual formal3 tuple at the lexical caller,
+separately from the original actual3 tuple, before invocation. Complete wrapper
+work is therefore family30 and control32. The complete old methods and original
+26/43/46/50 generation controls remain compiled, with current floor/short/zero/
+work/sticky/Drop counterparts. No old header or payload is credited back.
+The selected owner-admission helper retains one514-element array across roots;
+completed roots drain every reached slot with `take`. Its own formal4 tuple is
+admitted at its caller. Each actual counted pop admits a fresh six-role packet
+before `take`, without inventing a terminal probe. Additional work is4 per helper
+activation plus6 per reached pop; physical cost is the full actual formal tuple
+plus one full pop tuple per reached pop. The forest-count control uses2N−R for
+complete pure Copy traversals, not a successful-prefix estimate on refusal.
+New finite permit-error callbacks use direct lexical matches instead of fresh
+capturing closures. All old public APIs, complete immediate controls, first-error
+order and quotas remain. These source definitions are unrun and make no fit or
+performance claim; current cold receiving costs increase until actual composed
+qualification establishes the complete outcome.

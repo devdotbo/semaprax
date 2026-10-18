@@ -77,7 +77,7 @@ pub(super) fn capture_loop_entry(
         7,
         "selected path capture_loop_entry formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -196,7 +196,7 @@ pub(super) fn check_latch(
         Result<(), Error>,
     )>(function, 1, "selected path check_latch formal receiving")?;
     budget.charge(function, 7, "selected path check_latch formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -270,7 +270,7 @@ pub(super) fn check_break(
         Result<(), Error>,
     )>(function, 1, "selected path check_break formal receiving")?;
     budget.charge(function, 8, "selected path check_break formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

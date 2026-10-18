@@ -33,7 +33,7 @@ pub(in crate::cleanup_plan::replay) fn reserve_append(
         Result<Option<Vec<LivenessFlagId>>, Error>,
     )>(function, 1, "selected path reserve_append formal receiving")?;
     budget.charge(function, 8, "selected path reserve_append formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -191,7 +191,7 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
         Result<(), Error>,
     )>(function, 1, "selected path publish_append formal receiving")?;
     budget.charge(function, 5, "selected path publish_append formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

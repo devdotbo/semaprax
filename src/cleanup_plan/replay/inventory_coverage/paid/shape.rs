@@ -7,7 +7,7 @@ fn leaf(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -27,8 +27,10 @@ fn leaf(
     if !super::queries::primitive_drop!(permit, function, budget, ty) {
         return Ok(FieldLivenessShape::NoDrop);
     }
-    let lifecycle = crate::cleanup::primitive_leaf_lifecycle_identity(ty)
-        .ok_or_else(|| permit.family(Reason::SelectedFieldHasNoPrimitiveLifecycle))?;
+    let lifecycle = match crate::cleanup::primitive_leaf_lifecycle_identity(ty) {
+        Some(lifecycle) => lifecycle,
+        None => return Err(permit.family(Reason::SelectedFieldHasNoPrimitiveLifecycle)),
+    };
     crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
         budget,
         function,
@@ -58,7 +60,7 @@ fn lifecycle_leaf(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -79,9 +81,10 @@ fn lifecycle_leaf(
         return Err(permit.family(Reason::SelectedFieldFlagsExceedTheOwnedLeafLimit));
     }
     let flag = LivenessFlagId(*next);
-    *next = next
-        .checked_add(1)
-        .ok_or_else(|| permit.family(Reason::SelectedFieldFlagsOverflowed))?;
+    *next = match next.checked_add(1) {
+        Some(next) => next,
+        None => return Err(permit.family(Reason::SelectedFieldFlagsOverflowed)),
+    };
     budget.reserve_bytes(function, lifecycle.text().len(), "selected field lifecycle")?;
     Ok(FieldLivenessShape::Leaf {
         flag,
@@ -95,7 +98,7 @@ pub(super) fn shape(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

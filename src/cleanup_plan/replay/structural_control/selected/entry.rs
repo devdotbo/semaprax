@@ -26,7 +26,7 @@ pub(in crate::cleanup_plan::replay) fn validate_entry(
     )?;
     budget.charge(function, 9, "selected validate_entry local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

@@ -103,8 +103,12 @@ mod cfg;
 mod entry;
 #[cfg(test)]
 mod entry_before_dynamic;
+#[cfg(test)]
+mod entry_before_formals;
 mod exits;
 pub(in crate::cleanup_plan::replay) mod helpers;
+#[cfg(test)]
+mod place_before_formals;
 mod status;
 pub(in crate::cleanup_plan::replay) use blocks::validate_blocks_and_edges_paid;
 pub(in crate::cleanup_plan::replay) use cfg::validate_reachable_acyclic_cfg;

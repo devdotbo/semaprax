@@ -55,7 +55,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
         "selected validate_blocks_and_edges_paid local receiving",
     )?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -929,7 +929,7 @@ fn owned_edge(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected owned_edge local receiving")?;
     budget.charge(function, 6, "selected owned_edge local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -1001,7 +1001,7 @@ fn require_status_received(
         "selected require_status_received local receiving",
     )?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

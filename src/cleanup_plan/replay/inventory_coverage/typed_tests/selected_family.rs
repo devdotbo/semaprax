@@ -175,7 +175,7 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
     use super::super::super::{
         selected_context::{
             self,
-            child::{FamilyCallReceiving, FamilyReceiving, Permit},
+            child::{BeforeFamilyReceiving as FamilyReceiving, FamilyCallReceiving, Permit},
         },
         semantic_refusal,
     };
@@ -214,7 +214,7 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
                         FamilyCallReceiving<'_>,
                         3,
                         "selected family call receiving",
-                        Permit::family_receiver::<()>(function, &mut budget)
+                        Permit::family_receiver_before_formals::<()>(function, &mut budget)
                     )
                 })();
                 assert_eq!(result.is_ok(), headroom == total);
@@ -251,12 +251,105 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
                     FamilyCallReceiving<'_>,
                     3,
                     "selected family call receiving",
-                    Permit::family_receiver::<()>(function, &mut budget)
+                    Permit::family_receiver_before_formals::<()>(function, &mut budget)
                 )
             })();
             result.is_ok()
         });
         assert_eq!(succeeded, work == 26);
+        assert_eq!(budget.remaining, 0);
+        assert_eq!((observed.allocations, observed.reallocations), (0, 0));
+    }
+}
+
+#[test]
+fn current_selected_family_wrapper_formals_have_exact_short_zero_work_and_drop() {
+    use super::super::super::{
+        selected_context::{
+            self,
+            child::{FamilyCallReceiving, FamilyReceiving, Permit, WrapperFormalReceiving},
+        },
+        semantic_refusal,
+    };
+    use crate::bounded_output::{clear_active_floor, set_active_floor, with_limit_usage_refusal};
+    use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
+    // Complete unchanged Permit::acquire<()> fields, independent of the new
+    // family layer. No old carrier or header is credited against a new role.
+    type Original<'a> = (
+        Permit<'a>,
+        Refusal,
+        Option<Refusal>,
+        semantic_refusal::Receipt,
+        EngineError,
+        Option<EngineError>,
+        Result<(), Refusal>,
+        Result<(), EngineError>,
+        Result<Permit<'a>, EngineError>,
+        Result<selected_context::Context<'a>, EngineError>,
+        Result<(), EngineError>,
+    );
+    let family = std::mem::size_of::<FamilyReceiving<'_>>();
+    let caller = std::mem::size_of::<FamilyCallReceiving<'_>>();
+    let formal = std::mem::size_of::<WrapperFormalReceiving<'_>>();
+    let total = caller + formal + family + caller + std::mem::size_of::<Original<'_>>();
+    let program = program();
+    let function = &program.functions[0];
+    for headroom in [caller + formal + family, total - 1, total] {
+        let mut budget = ReplayBudget::with_physical(function, usize::MAX).unwrap();
+        let charged = budget.physical.as_ref().unwrap().charged();
+        let (((), observed), refused, _, _) = with_limit_usage_refusal(1 << 20, || {
+            assert!(set_active_floor((1 << 20) - headroom));
+            measure(|| {
+                let result = (|| {
+                    crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
+                        budget,
+                        function,
+                        FamilyCallReceiving<'_>,
+                        3,
+                        "selected family call receiving",
+                        Permit::family_receiver::<()>(function, &mut budget)
+                    )
+                })();
+                assert_eq!(result.is_ok(), headroom == total);
+                let expected = if headroom == total {
+                    total
+                } else if headroom < caller + formal + family + caller {
+                    caller + formal + family
+                } else {
+                    caller + formal + family + caller
+                };
+                assert_eq!(
+                    budget.physical.as_ref().unwrap().charged() - charged,
+                    expected
+                );
+                drop(result);
+                clear_active_floor();
+            })
+        });
+        assert_eq!(refused, headroom != total);
+        assert_eq!(
+            (observed.allocations, observed.reallocations, observed.live),
+            (0, 0, 0)
+        );
+        assert!(!observed.invalid);
+    }
+    for work in [0, 2, 3, 5, 6, 15, 16, 18, 19, 29, 30] {
+        let mut budget = ReplayBudget::with_physical(function, usize::MAX).unwrap();
+        budget.remaining = work;
+        let (succeeded, observed) = measure(|| {
+            let result = (|| {
+                crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
+                    budget,
+                    function,
+                    FamilyCallReceiving<'_>,
+                    3,
+                    "selected family call receiving",
+                    Permit::family_receiver::<()>(function, &mut budget)
+                )
+            })();
+            result.is_ok()
+        });
+        assert_eq!(succeeded, work == 30);
         assert_eq!(budget.remaining, 0);
         assert_eq!((observed.allocations, observed.reallocations), (0, 0));
     }

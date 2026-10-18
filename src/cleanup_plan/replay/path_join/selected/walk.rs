@@ -40,7 +40,7 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
         8,
         "selected path validate_path_states formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

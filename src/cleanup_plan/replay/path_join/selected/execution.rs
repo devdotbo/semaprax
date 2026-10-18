@@ -55,7 +55,7 @@ pub(super) fn execute(
         Result<(), Error>,
     )>(function, 1, "selected path execute formal receiving")?;
     budget.charge(function, 9, "selected path execute formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -438,7 +438,7 @@ pub(super) fn transfer(
         Result<(), Error>,
     )>(function, 1, "selected path transfer formal receiving")?;
     budget.charge(function, 8, "selected path transfer formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -967,7 +967,7 @@ pub(super) fn exit(
         Result<ExitFlow, Error>,
     )>(function, 1, "selected path exit formal receiving")?;
     budget.charge(function, 9, "selected path exit formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

@@ -9,7 +9,7 @@ pub(in crate::cleanup_plan::replay) fn selected(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<&'static str, EngineError> {
-    let _permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let _permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -89,19 +89,29 @@ pub(in crate::cleanup_plan::replay) fn selected(
         CLEANUP_PLAN_SCHEMA_V16
     } else if crate::hir::vec_loop_renewal::requires_in(program, function) {
         CLEANUP_PLAN_SCHEMA_V15
-    } else if crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
-        budget,
-        function,
-        (
-            &dyn crate::cleanup::ReplayContext,
-            &crate::hir::ResolvedFunction,
-            &mut crate::cleanup_plan::replay::ReplayBudget,
-            Result<bool, crate::cleanup_plan::replay::expression_facts::errors::EngineError>
-        ),
-        4,
-        "selected owner admission call receiving",
-        owner_admission(program, function, budget)
-    )? {
+    } else if {
+        // Own this new helper's formals before its call, independently of the
+        // unchanged actual-argument/result packet immediately below.
+        budget.reserve_array::<OwnerFormalReceiving<'_>>(
+            function,
+            1,
+            "selected owner formal caller frontier",
+        )?;
+        budget.charge(function, 4, "selected owner formal caller frontier")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &crate::hir::ResolvedFunction,
+                &mut crate::cleanup_plan::replay::ReplayBudget,
+                Result<bool, crate::cleanup_plan::replay::expression_facts::errors::EngineError>
+            ),
+            4,
+            "selected owner admission call receiving",
+            owner_admission(program, function, budget)
+        )?
+    } {
         CLEANUP_PLAN_SCHEMA_V14
     } else if crate::iterator_ops::function_uses_owned_iterator(function)
         || crate::iterator_ops::function_uses_record_iterator_in(program.declarations(), function)
@@ -166,7 +176,7 @@ fn helper_sites<'a>(
 ) -> Result<bool, EngineError> {
     use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
     use crate::loop_calls::byte_writer::HelperBindings;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -240,12 +250,29 @@ fn helper_sites<'a>(
     }
 }
 
+type OwnerFormalReceiving<'a> = (
+    &'a dyn crate::cleanup::ReplayContext,
+    &'a ResolvedFunction,
+    &'a mut ReplayBudget,
+    Result<bool, EngineError>,
+);
+// Fresh Option::take actual/formal receiver, returned Option, expected tuple,
+// and the two receiving bindings. The counted stack loop has no terminal pop.
+type OwnerPopReceiving<'a> = (
+    &'a mut Option<(&'a ResolvedExpr, usize)>,
+    &'a mut Option<(&'a ResolvedExpr, usize)>,
+    Option<(&'a ResolvedExpr, usize)>,
+    (&'a ResolvedExpr, usize),
+    &'a ResolvedExpr,
+    usize,
+);
+
 fn owner_admission(
     program: &dyn crate::cleanup::ReplayContext,
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<bool, EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -277,6 +304,14 @@ fn owner_admission(
         let mut len = 1usize;
         while len != 0 {
             len -= 1;
+            crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                budget,
+                function,
+                OwnerPopReceiving<'_>,
+                6,
+                "selected owner actual pop receiving",
+                ()
+            );
             let (expression, next) = stack[len].take().expect("owner admission frame retained");
             if next == 0 && super::super::owner_admission::required(program, expression) {
                 return Ok(true);
@@ -293,3 +328,6 @@ fn owner_admission(
     }
     Ok(false)
 }
+
+#[cfg(test)]
+mod tests;

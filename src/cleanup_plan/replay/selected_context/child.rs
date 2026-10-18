@@ -243,6 +243,27 @@ impl<'a> Permit<'a> {
             1,
             "selected family finite receiving",
         )?;
+        budget.charge(subject, 10, "selected family finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected family acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    // Complete pre-formal generation, independently compiled at its old fees.
+    #[cfg(test)]
+    pub(in super::super) fn family_receiver_before_formals<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<BeforeFamilyReceiving<'_>>(
+            subject,
+            1,
+            "selected family finite receiving",
+        )?;
         budget.charge(subject, 9, "selected family finite receiving")?;
         crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
@@ -259,9 +280,24 @@ impl<'a> Permit<'a> {
 }
 
 // Actual extra family()/Receipt::family() arguments, construction values,
-// nested receipt return, error return, and this wrapper's acquire-result slot.
+// source-clone receiver/result, nested receipt return, error return, and
+// this wrapper's acquire-result slot.
 // The original Permit receiver below this layer is still paid independently.
 pub(in super::super) type FamilyReceiving<'a> = (
+    &'a Permit<'a>,
+    super::family::Reason,
+    &'a ResolvedFunction,
+    super::family::Reason,
+    &'a crate::hir::ExpressionId,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);
+
+#[cfg(test)]
+pub(in super::super) type BeforeFamilyReceiving<'a> = (
     &'a Permit<'a>,
     super::family::Reason,
     &'a ResolvedFunction,
@@ -270,6 +306,14 @@ pub(in super::super) type FamilyReceiving<'a> = (
     semantic_refusal::Atom,
     semantic_refusal::Receipt,
     Error,
+    Result<Permit<'a>, Error>,
+);
+
+// Distinct wrapper callee formals and final return; neither the outer actual
+// arguments nor the inner acquire actual arguments cover these source roles.
+pub(in super::super) type WrapperFormalReceiving<'a> = (
+    &'a ResolvedFunction,
+    &'a mut ReplayBudget,
     Result<Permit<'a>, Error>,
 );
 
@@ -283,6 +327,27 @@ pub(in super::super) type FamilyCallReceiving<'a> = (
 
 impl<'a> Permit<'a> {
     pub(in super::super) fn control_receiver<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<ControlReceiving<'_>>(
+            subject,
+            1,
+            "selected control finite receiving",
+        )?;
+        budget.charge(subject, 12, "selected control finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected control acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    // Complete pre-formal generation, independently compiled at its old fees.
+    #[cfg(test)]
+    pub(in super::super) fn control_receiver_before_formals<T>(
         subject: &'a ResolvedFunction,
         budget: &mut ReplayBudget,
     ) -> Result<Self, Error> {

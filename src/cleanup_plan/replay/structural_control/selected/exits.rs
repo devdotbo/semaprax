@@ -37,7 +37,7 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
     )?;
     budget.charge(function, 17, "selected validate_exits local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -438,7 +438,7 @@ fn owned_edge(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected owned_edge local receiving")?;
     budget.charge(function, 6, "selected owned_edge local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -509,7 +509,7 @@ fn ancestor_contains(
     )?;
     budget.charge(function, 9, "selected ancestor_contains local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -579,7 +579,7 @@ pub(super) fn regions_match(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected regions_match local receiving")?;
     budget.charge(function, 12, "selected regions_match local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -847,7 +847,7 @@ fn result_source(
     budget.reserve_array::<Receiving<'_>>(function, 1, "selected result_source local receiving")?;
     budget.charge(function, 8, "selected result_source local receiving")?;
 
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

@@ -7,7 +7,7 @@ fn parameter<'a>(
     index: usize,
     budget: &mut ReplayBudget,
 ) -> Result<Option<(OwnershipMode, &'a ResolvedType)>, EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -77,9 +77,10 @@ fn parameter<'a>(
             )
         }));
     }
-    let target = program
-        .resolve_call_target(callee, None)
-        .ok_or_else(|| permit.family(Reason::SelectedSupplementalCallHasNoAuthenticatedBody))?;
+    let target = match program.resolve_call_target(callee, None) {
+        Some(target) => target,
+        None => return Err(permit.family(Reason::SelectedSupplementalCallHasNoAuthenticatedBody)),
+    };
     Ok(target.params.get(index).map(|p| (p.ownership, &p.ty)))
 }
 
@@ -91,7 +92,7 @@ pub(super) fn collect_supplemental(
     slots: &mut Vec<ExpectedSupplementalSlot>,
     budget: &mut ReplayBudget,
 ) -> Result<(), EngineError> {
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -204,26 +205,27 @@ pub(super) fn collect_supplemental(
                 let ResolvedExprKind::Call { args, .. } = &expression.kind else {
                     return Err(permit.family(Reason::SupplementalContinuationLacksACall));
                 };
-                let (ownership, ty) =
-                    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
-                        budget,
-                        function,
-                        (
-                            &dyn crate::cleanup::ReplayContext,
-                            &crate::hir::ResolvedFunction,
-                            &crate::hir::ResolvedExpr,
-                            usize,
-                            &mut crate::cleanup_plan::replay::ReplayBudget,
-                            Result<
-                                Option<(crate::hir::OwnershipMode, &crate::hir::ResolvedType)>,
-                                crate::cleanup_plan::replay::expression_facts::errors::EngineError,
-                            >
-                        ),
-                        6,
-                        "selected parameter call receiving",
-                        parameter(program, function, expression, index, budget)
-                    )?
-                    .ok_or_else(|| permit.family(Reason::SupplementalCallParameterIsMissing))?;
+                let Some((ownership, ty)) = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                    budget,
+                    function,
+                    (
+                        &dyn crate::cleanup::ReplayContext,
+                        &crate::hir::ResolvedFunction,
+                        &crate::hir::ResolvedExpr,
+                        usize,
+                        &mut crate::cleanup_plan::replay::ReplayBudget,
+                        Result<
+                            Option<(crate::hir::OwnershipMode, &crate::hir::ResolvedType)>,
+                            crate::cleanup_plan::replay::expression_facts::errors::EngineError,
+                        >
+                    ),
+                    6,
+                    "selected parameter call receiving",
+                    parameter(program, function, expression, index, budget)
+                )?
+                else {
+                    return Err(permit.family(Reason::SupplementalCallParameterIsMissing));
+                };
                 let argument = &args[index];
                 if ownership == OwnershipMode::Own && matches!(ty, ResolvedType::Nominal { .. }) {
                     selected_profile::paid_children::prepay(
@@ -264,8 +266,10 @@ pub(super) fn collect_supplemental(
                     slots.push(ExpectedSupplementalSlot {
                         storage: StorageId::CallArgument {
                             call: expression.id.clone(),
-                            parameter_index: u32::try_from(index)
-                                .map_err(|_| permit.family(Reason::TooManyCallParameters))?,
+                            parameter_index: match u32::try_from(index) {
+                                Ok(index) => index,
+                                Err(_) => return Err(permit.family(Reason::TooManyCallParameters)),
+                            },
                             value_expression: argument.id.clone(),
                         },
                         ty: ty.clone(),

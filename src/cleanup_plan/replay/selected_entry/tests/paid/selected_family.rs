@@ -11,6 +11,12 @@ fn exercise(program: &crate::hir::ResolvedProgram, observe_publish: bool) {
     let ledger = std::ptr::from_ref(preparation.budget.physical.as_deref().unwrap());
     // A genuinely second prepaid receiver; no receipt is manufactured after
     // the first failure by retrying the already sticky ledger.
+    preparation.budget.reserve_array::<crate::cleanup_plan::replay::selected_context::child::WrapperFormalReceiving<'_>>(
+        &subject,1,"selected wrapper formal caller frontier").unwrap();
+    preparation
+        .budget
+        .charge(&subject, 3, "selected wrapper formal caller frontier")
+        .unwrap();
     preparation.budget.reserve_array::<crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>>(&subject,1,"selected family call receiving").unwrap();
     preparation
         .budget

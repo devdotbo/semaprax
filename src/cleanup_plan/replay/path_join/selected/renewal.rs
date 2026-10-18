@@ -36,7 +36,7 @@ pub(super) fn validate_binding_selected(
         6,
         "selected path validate_binding_selected formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -118,7 +118,7 @@ pub(super) fn reject_unmarked_finish(
         7,
         "selected path reject_unmarked_finish formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -218,7 +218,7 @@ pub(super) fn reserve(
         Result<(), Error>,
     )>(function, 1, "selected path reserve formal receiving")?;
     budget.charge(function, 10, "selected path reserve formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -382,7 +382,7 @@ pub(super) fn renew(
         Result<(), Error>,
     )>(function, 1, "selected path renew formal receiving")?;
     budget.charge(function, 10, "selected path renew formal receiving")?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
@@ -555,7 +555,7 @@ pub(super) fn validate_join_compatibility<'a>(
         6,
         "selected path validate_join_compatibility formal receiving",
     )?;
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,

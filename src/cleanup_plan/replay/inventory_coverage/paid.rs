@@ -16,6 +16,21 @@ macro_rules! receive {
     }};
 }
 pub(in crate::cleanup_plan::replay) use receive;
+// Actual wrapper callee formals are owned by this lexical CALLER frontier.
+// Retain the original actual-argument/result packet independently below it.
+macro_rules! receive_wrapper {
+    ($budget:ident, $function:ident, $roles:ty, $fields:expr, $phase:literal, $call:expr) => {{
+        $budget.reserve_array::<crate::cleanup_plan::replay::selected_context::child::WrapperFormalReceiving<'_>>(
+            $function, 1, "selected wrapper formal caller frontier",
+        )?;
+        $budget.charge($function, 3, "selected wrapper formal caller frontier")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            $budget, $function, $roles, $fields, $phase, $call
+        )
+    }};
+}
+pub(in crate::cleanup_plan::replay) use receive_wrapper;
+
 // This lexical frontier introduces no preflight helper or forwarding Result.
 // The authenticated physical primitive and original checked/zeroing field debit
 // both finish before any raw argument.
@@ -63,7 +78,7 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             .inventory(program, function, budget)
             .map_err(EngineError::Owned);
     }
-    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive_wrapper!(
         budget,
         function,
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
