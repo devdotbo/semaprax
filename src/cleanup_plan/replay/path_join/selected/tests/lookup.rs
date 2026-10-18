@@ -1,4 +1,5 @@
 use super::*;
+use crate::cleanup_plan::replay::inventory_coverage::paid::receive_observed as receive;
 use std::mem::size_of;
 type Roots<'a> = std::iter::Chain<
     std::iter::Chain<std::slice::Iter<'a, ResolvedExpr>, std::iter::Once<&'a ResolvedExpr>>,
