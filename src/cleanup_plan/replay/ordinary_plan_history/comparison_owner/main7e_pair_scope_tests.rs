@@ -858,7 +858,7 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
     assert_eq!(
         source_format::restore(
             source_format::Kind::Cursor,
-            &tail_source::previous(&super::super::reachable_stage("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs", "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9", include_str!("lexical_cursor.rs"))),
+            &tail_source::previous(include_str!("lexical_cursor.rs")),
         ),
         cursor,
         "entire declared retained-tail transform and complete independent old macro"
@@ -1203,8 +1203,7 @@ fn complete_main7e_owner_macro_and_all_original_test_bodies_are_retained() {
         .replacen("pub(super) fn tail_receiver_prices(", "fn tail_receiver_prices(", 1)
         .replacen("pub(super) fn prepared_link_prices(", "fn prepared_link_prices(", 1)
         .replacen("pub(super) fn reachable_primitive_prices(", "fn reachable_primitive_prices(", 1)
-        .replacen("pub(super) fn shared_step_prices(", "fn shared_step_prices(", 1)
-        .replacen("&tail_source::previous(&super::super::reachable_stage(\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs\", \"1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9\", include_str!(\"lexical_cursor.rs\")))", "&tail_source::previous(include_str!(\"lexical_cursor.rs\"))", 1);
+        .replacen("pub(super) fn shared_step_prices(", "fn shared_step_prices(", 1);
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(&Sha256::digest(restored.as_bytes()))),
         "63c14f327486e06d5d953aa494c5a9c9d530cb172d6dec03114892ef1b8055fa");
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(&Sha256::digest(include_bytes!("lexical_cursor_shared_runs.rs")))),
