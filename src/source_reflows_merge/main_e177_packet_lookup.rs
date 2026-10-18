@@ -179,6 +179,9 @@ mod tests {
             "#[path = \"main_e177_packet_lookup.rs\"]\nmod packet_lookup;\n",
             "",
         );
+        let invocation_export = "pub(crate) use packet_lookup::ProjectionInvocation;\n";
+        assert_eq!(restored.matches(invocation_export).count(), 1);
+        restored = restored.replacen(invocation_export, "", 1);
         let new_value = "pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {\n    packet_lookup::with_packet(&packet(), source, expected, supplied)\n}\n";
         let new_lookup = "fn value_4a6eb(source: &str, expected: &str, supplied: &str) -> String {\n    packet_lookup::from_packet(&packet(), source, expected, supplied)\n}\n";
         assert_eq!(restored.matches(new_value).count(), 1);
@@ -194,4 +197,118 @@ mod tests {
         restored = restored.replacen(reuse, "        value(source, expected, supplied)\n", 1);
         assert_eq!(restored, before, "complete independently pinned old root");
     }
+
+    #[test]
+    fn same_invocation_file_context_reuses_metadata_and_keeps_fresh_reads_foreign_refusals_and_drop() {
+        use super::ProjectionInvocation;
+        let files = files();
+        let current = files.0.join("current.rs");
+        let old = files.0.join("prior.rs");
+        std::fs::write(&current, b"new!").unwrap();
+        std::fs::write(&old, b"old!").unwrap();
+        let source = current.to_str().unwrap();
+        let expected = digest(b"old!");
+        let fixture = serde_json::json!({"unknown_root":{"retained":[1,2]},
+            "rows":[{"source":source,"compiled":false,"unknown_metadata":{"retained":"whole"},
+            "current":{"archive":source,"length":4,"sha256":digest(b"new!")},
+            "views":[{"archive":old.to_str().unwrap(),"length":4,"sha256":expected}]}]});
+        let ((), heap) = crate::test_allocation_observer::measure(|| {
+            let mut context = ProjectionInvocation::new();
+            assert!(context.packet.is_none(), "a new invocation owns no prior packet");
+            assert!(context.file(std::path::Path::new("foreign"), 4, &expected).is_none());
+            assert!(context.packet.is_none(), "foreign paths retain the pre-packet refusal");
+            // Only this private control installs a synthetic immutable packet.
+            // The public constructor always acquires the complete real packet.
+            context.packet = Some(fixture.clone());
+            let identity = context.metadata() as *const serde_json::Value;
+            for _ in 0..2 {
+                assert_eq!(context.file_row(source, 4, &expected), Some("old!".to_owned()));
+                assert_eq!(from_packet(&fixture, source, &expected, "new!"), "old!");
+                assert_eq!(from_packet(&fixture, source, &expected, "foreign"), "foreign");
+                assert_eq!(context.metadata() as *const serde_json::Value, identity);
+                assert_eq!(context.metadata(), &fixture, "every unknown field remains whole");
+            }
+            assert!(context.file_row(source, 5, &expected).is_none());
+            assert!(context.file_row(source, 4, &"0".repeat(64)).is_none());
+            assert!(context.file_row("foreign", 4, &expected).is_none());
+            drop(context);
+        });
+        assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
+        // Refusal panics are outside the complete normal-Drop measurement.
+        let mut context = ProjectionInvocation::new();
+        context.packet = Some(fixture.clone());
+        assert_eq!(context.file_row(source, 4, &expected), Some("old!".to_owned()));
+        std::fs::write(&current, b"drft").unwrap();
+        std::fs::remove_file(&old).unwrap();
+        assert!(panic_text(std::panic::AssertUnwindSafe(|| {
+            context.file_row(source, 4, &expected);
+        })).contains("length-or-digest"));
+        drop(context);
+        let mut next = ProjectionInvocation::new();
+        assert!(next.packet.is_none(), "Drop cannot publish metadata into the next invocation");
+        next.packet = Some(fixture);
+        std::fs::write(&current, b"new!").unwrap();
+        assert!(panic_text(std::panic::AssertUnwindSafe(|| {
+            next.file_row(source, 4, &expected);
+        })).contains("missing"));
+        // The borrowed row lookup is the complete original file lookup suffix.
+        let root = include_str!("main_e177_final_inputs.rs");
+        let old = root.split_once("fn file_4a6eb(").unwrap().1
+            .split_once("    let packet = packet();\n").unwrap().1
+            .split_once("pub(crate) fn value(").unwrap().0;
+        let child = include_str!("main_e177_packet_lookup.rs");
+        let actual = child.rsplit_once("    fn file_row(&mut self,").unwrap().1
+            .split_once("        let packet = self.metadata();\n").unwrap().1
+            .split_once("\n}\n// END INVOCATION-LOCAL PROJECTION METADATA").unwrap().0;
+        assert_eq!(actual, old.trim_end_matches('\n'));
+    }
 }
+
+// BEGIN INVOCATION-LOCAL PROJECTION METADATA
+// Each outer projection acquisition owns one lazy immutable metadata packet.
+// Current sources, compiled bytes and current/prior archives are never cached.
+pub(crate) struct ProjectionInvocation {
+    packet: Option<serde_json::Value>,
+}
+#[rustfmt::skip] // Keep the complete old file-lookup suffix available verbatim.
+impl ProjectionInvocation {
+    pub(crate) fn new() -> Self {
+        Self { packet: None }
+    }
+    fn metadata(&mut self) -> &serde_json::Value {
+        self.packet.get_or_insert_with(packet)
+    }
+    pub(crate) fn file(&mut self, path: &std::path::Path, length: usize, expected: &str) -> Option<String> {
+        // Original Clippy read precedes metadata acquisition on every lookup.
+        if let Some(Ok(value)) = clippy_stage::read(path, length, expected) {
+            let _ = self.metadata();
+            return Some(value);
+        }
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let relative = path.strip_prefix(root).ok()?;
+        if !relative
+            .components()
+            .all(|p| matches!(p, std::path::Component::Normal(_)))
+        {
+            return None;
+        }
+        let source = relative.to_str()?;
+        self.file_row(source, length, expected)
+    }
+    fn file_row(&mut self, source: &str, length: usize, expected: &str) -> Option<String> {
+        let packet = self.metadata();
+    let row = packet["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["source"] == source)?;
+    let prior = row["views"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|v| v["length"].as_u64() == Some(length as u64) && v["sha256"] == expected)?;
+    actual(row);
+    Some(read_view(prior))
+}
+}
+// END INVOCATION-LOCAL PROJECTION METADATA

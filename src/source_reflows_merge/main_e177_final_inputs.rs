@@ -9,6 +9,7 @@ mod historical_json_data;
 mod historical_before_data;
 #[path = "main_e177_packet_lookup.rs"]
 mod packet_lookup;
+pub(crate) use packet_lookup::ProjectionInvocation;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 const SOURCE_CAP: usize = 9753094;

@@ -164,6 +164,7 @@ pub(crate) fn source_owner(domain: &str, source: &str, current: &str) -> String 
 // This named bridge is only for the original historical facade assertion.
 // The owning test audits the complete current projection before calling it.
 fn projection344_stage(supplied: &str) -> String {
+    let mut invocation = super::main_e177_final_inputs::ProjectionInvocation::new();
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let data = include_str!(
         "../../docs/evidence/current339-source-custody-repair-20261017/projection344-stage.json"
@@ -251,11 +252,7 @@ fn projection344_stage(supplied: &str) -> String {
                 // The same exact current-image owner authenticates before
                 // selecting this immutable, named historical part.
                 assert!(length <= 2_097_152);
-                let text = crate::source_reflows_merge::main_e177_final_inputs::file(
-                    &root.join(source),
-                    length,
-                    sha,
-                )
+                let text = invocation.file(&root.join(source), length, sha)
                 .expect("authenticated complete projection part");
                 assert_eq!(text.len(), length);
                 assert_eq!(digest(&text), sha);
