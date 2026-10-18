@@ -1,0 +1,20 @@
+{
+  "base_head": "b692586c48e93e5c8bba994b26b43b4ab0c4a39f",
+  "logical_changed": [
+    "CHANGELOG.md"
+  ],
+  "manifest_change": "Exclude only historical private interop crate and implementation snapshots from public Cargo inventory",
+  "actual_package_inventory_before": 45819,
+  "actual_package_inventory_after": 45696,
+  "exactly_125_private_paths_removed": true,
+  "all_other_existing_package_entries_preserved": true,
+  "original_package_assertions_unchanged": true,
+  "registered_existing_tail_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests/paired_tails.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"
+  ],
+  "tail_sources_introduced_at": "b692586c48e93e5c8bba994b26b43b4ab0c4a39f",
+  "publication_correction": "Publish actual verified complete role manifests omitted from preceding push; no compiler implementation or pricing change; test-only binding seals refreshed",
+  "all_original_roles_owner_rows_reader_caps_and_hostile_cases_retained": true,
+  "runtime_compiler_qualification_still_required": true
+}

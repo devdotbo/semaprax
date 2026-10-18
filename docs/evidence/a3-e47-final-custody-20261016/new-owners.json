@@ -36,8 +36,8 @@
   },
   {
     "source": "src/bounded_output/stage_debits/route_debits.rs",
-    "sha256": "75f6a22077bc3e016095caaba6ddbed8ce6b10453278bded8ea844ed4d99b235",
-    "lines": 921
+    "sha256": "1c9e90d871a0fb368fbba49ac96aa44cfe3e397186d0284b6c59b996fa917beb",
+    "lines": 923
   },
   {
     "source": "src/cleanup/inventory_builder/typed.rs",
@@ -996,8 +996,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-    "sha256": "c368fdbf21631e2580804180b9875a950790298df0cba3045d8700ca16b425dc",
-    "lines": 571
+    "sha256": "4d2e0d16ce30a9ce7c6f8aea3d5e09ba8d7d111f285a6c4c1d3055603dca17ca",
+    "lines": 582
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
@@ -1201,8 +1201,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-    "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3",
-    "lines": 458
+    "sha256": "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c",
+    "lines": 564
   },
   {
     "source": "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs",
@@ -1266,13 +1266,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
-    "sha256": "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5",
-    "lines": 520
+    "sha256": "271da1ba63267eda74d709d8f722ba365be0522c5544a50237de06bea9bf3c63",
+    "lines": 573
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-    "sha256": "8484121abb7afd47a3baf21d1eb36875622f31ef72e65a867728b7af1ec34d26",
-    "lines": 1214
+    "sha256": "76ad602250fc7e4c0fa09714b35266c3ee738c2eba0136092fb5111eec092dae",
+    "lines": 1217
   },
   {
     "source": "src/workspace_graph/shape_identity/before785.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "a408eae4aa848f7a6d0da2f93ab3305b3d7b7aacb4c25013263b52f5a238c938",
+    "sha256": "d101d92a3ccff212ed924205702a3e2746f727a1faa47d50d13f0197f0061132",
     "lines": 970
   },
   {

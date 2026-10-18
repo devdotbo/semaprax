@@ -1,0 +1,28 @@
+[
+  {
+    "source": "Cargo.toml",
+    "before": {
+      "length": 4287,
+      "sha256": "77a4822861e8f5641aae1b5234c0a08b5290bbb2451b3ef1b5508e1db981fac8",
+      "archive": "docs/evidence/package-b692-20261018/whole/77a4822861e8f5641aae1b5234c0a08b5290bbb2451b3ef1b5508e1db981fac8.txt"
+    },
+    "current": {
+      "length": 4410,
+      "sha256": "5d9fb3da6bc36a93d8f67409b9250e7bda3fa0dbd89aeae9188e38fc3157e1a7",
+      "archive": "docs/evidence/package-b692-20261018/whole/5d9fb3da6bc36a93d8f67409b9250e7bda3fa0dbd89aeae9188e38fc3157e1a7.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 579821,
+      "sha256": "fd9e31a694d0e100936c8267bbb76962cf4d3de2bacf8c2844b68769da26a3b2",
+      "archive": "docs/evidence/package-b692-20261018/whole/fd9e31a694d0e100936c8267bbb76962cf4d3de2bacf8c2844b68769da26a3b2.txt"
+    },
+    "current": {
+      "length": 579998,
+      "sha256": "61febafa7f697f68e3534692855d39e39f6e61de364e15b5af0bf9bc731ba5ec",
+      "archive": "docs/evidence/package-b692-20261018/whole/61febafa7f697f68e3534692855d39e39f6e61de364e15b5af0bf9bc731ba5ec.txt"
+    }
+  }
+]
