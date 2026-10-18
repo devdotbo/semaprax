@@ -1,5 +1,10 @@
 //! Exact selected structural twin; complete original remains in the parent owner.
 use super::*;
+// Historical child glue is a name-only import, with no forwarding ABI.
+mod helpers {
+    pub(super) use super::super::place_before_formals::validate_place_before_formals as validate_place;
+}
+
 pub(in crate::cleanup_plan::replay) fn validate_entry_before_formals(
     function: &ResolvedFunction,
     storage: &BTreeSet<StorageId>,
