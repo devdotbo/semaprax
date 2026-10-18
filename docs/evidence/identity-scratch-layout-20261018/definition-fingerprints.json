@@ -1,0 +1,86 @@
+[
+  {
+    "path": "src/vec_ops.rs",
+    "name": "VecOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "ee2694d578e2f7c531c0cf0681141d1317a44aedd04dfa2716f798864ecc7685"
+  },
+  {
+    "path": "src/box_ops.rs",
+    "name": "BoxOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "0a46573225b73219a715ac33a0ce90765799b3e5b7d336597b4774b18bd882cc"
+  },
+  {
+    "path": "src/map_ops.rs",
+    "name": "MapOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "e7a1063e402a7df1a6eeec5c80d4e28d6c001e2cc246f5f11d9cd1e797b60aa6"
+  },
+  {
+    "path": "src/list_ops.rs",
+    "name": "ListOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "d6ac2cf58054a7eb5c5fa8f1cc5838df8b005fba6f221f9db0eb23bef5cde749"
+  },
+  {
+    "path": "src/iterator_ops.rs",
+    "name": "IteratorOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "129c5a1f4b8eb06ea25b4e7464d78facb5860eac9e3853555f39600b2504a3d6"
+  },
+  {
+    "path": "src/stdin_stream_ops.rs",
+    "name": "PureOp",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "4b53553376299c77cd03d81cb2036c10ad3841b4bb578de3a38cf3e1da01ec6e"
+  },
+  {
+    "path": "src/hir/nodes.rs",
+    "name": "ResolvedHostCommandOperation",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "1720f4e862d9193cfe8edb784560254e10335e20b5c32fbf24706724553026ff"
+  },
+  {
+    "path": "src/hir/ids/compiler.rs",
+    "name": "CompilerDeclaration",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "cff31a3024cc59fdce29b6a3e7cc632b288a2157a94a56169c9b1fcc235d70b2"
+  },
+  {
+    "path": "src/hir/ids.rs",
+    "name": "DeclarationText",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "b442eddd73790cdfca98c39e4a8bf109964a494660bd72a8926145282e6df20e"
+  },
+  {
+    "path": "src/hir/nodes.rs",
+    "name": "ResolvedType",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "fe9aa01b6fa83c9e8336c93bbb107d066003b1c7d4aa73c19d16ba03e71de722"
+  },
+  {
+    "path": "src/cleanup.rs",
+    "name": "FieldLivenessShape",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "13d3709b274d1c42f6ffee80fa9e4872779f7d43f42585378d667e660cd90e1b"
+  },
+  {
+    "path": "src/cleanup.rs",
+    "name": "FieldLiveness",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "0f9f8a95c8f510542560a6273ccbf21060ccbef2af86e4fc77d1382704a81ccd"
+  },
+  {
+    "path": "src/cleanup.rs",
+    "name": "VariantCaseLiveness",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "da16e7fca8ad7db7a84c2a9bbf82fd44f3503c1f11bc2db5a49ccfc3bb2af031"
+  },
+  {
+    "path": "crates/semaprax-native-rust-interop-builder/src/implementation/disposal.rs",
+    "name": "ResolvedDisposeFrame",
+    "same_definition_as_qualified_layout_witness": true,
+    "current_definition_sha256": "05bcfa0d50754cec0d6c6e35ce51fe3577b4c15e2a0012ef6927311777996523"
+  }
+]

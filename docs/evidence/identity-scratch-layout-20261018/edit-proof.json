@@ -1,0 +1,27 @@
+{
+  "source": "src/hir/validation/identity_scratch/tests.rs",
+  "before": {
+    "length": 6766,
+    "sha256": "f9d68230558060fc3a467d07049852cec20bd91917d73a78e202121f3ff2cce7",
+    "archive": "docs/evidence/identity-scratch-layout-20261018/whole/f9d68230558060fc3a467d07049852cec20bd91917d73a78e202121f3ff2cce7.txt"
+  },
+  "edits": [
+    {
+      "old": "    assert_eq!(size_of::<DeclarationId>(), 3 * size_of::<usize>());",
+      "new": "    // Current closed tags use two words; the complete former identity oracle\n    // retains the independent three-word String layout check.\n    assert_eq!(size_of::<DeclarationId>(), 2 * size_of::<usize>());\n    assert_eq!(size_of::<std::string::String>(), 3 * size_of::<usize>());"
+    },
+    {
+      "old": "    assert_eq!(\n        keys * (size_of::<DeclarationId>() - size_of::<&DeclarationId>()),\n        390 * size_of::<usize>()\n    );",
+      "new": "    assert_eq!(\n        keys * (size_of::<DeclarationId>() - size_of::<&DeclarationId>()),\n        195 * size_of::<usize>()\n    );\n    // Preserve the historical logical census separately from the current key\n    // width. Neither formula describes private BTree node backing or RSS.\n    assert_eq!(\n        keys * (size_of::<std::string::String>() - size_of::<&DeclarationId>()),\n        390 * size_of::<usize>()\n    );"
+    }
+  ],
+  "complete_195_key_fixture_and_saved_owned_construction_unchanged": true,
+  "all_order_lookup_duplicate_and_allocation_assertions_unchanged": true,
+  "historical_24_byte_390_word_geometry_retained": true,
+  "current_16_byte_195_word_geometry_strict": true,
+  "scope": "Current identity ABI pins and logical key payload accounting; no compiler behavior or quota change",
+  "current_length": 7271,
+  "current_sha256": "d72e00aea8024d50c2f7084bbb2f88a9c60ea2ef946b94b8a30205bc73f39778",
+  "current_lines": 181,
+  "exact_whole_source_inverse_after_format": true
+}
