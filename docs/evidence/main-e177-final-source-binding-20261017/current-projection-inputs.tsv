@@ -1029,3 +1029,6 @@ docs/evidence/workspace21-legacy-source-repair-20261017/legacy/3d2be8c8fdaf0a3e0
 src/loan_plan/paid_live/funded_before.rs
 src/loan_plan/paid_live/original.rs
 tests/workspace/semantic_graph/source_inventory.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs
+src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs

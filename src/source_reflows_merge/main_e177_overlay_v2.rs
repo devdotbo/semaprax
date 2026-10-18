@@ -15,8 +15,8 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/branch_clone/direct.rs",
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
     "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
-    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
@@ -25,13 +25,9 @@ const REPLACEMENTS: &[&str] = &[
     "tests/workspace/semantic_graph/source_inventory.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
     "src/cleanup_plan/replay/factored/canonical_shared.rs",
-    "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
-    "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
-    "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored.rs",
-    "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
@@ -42,12 +38,9 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
     "src/cleanup_plan/replay/factored/strategy.rs",
-    "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
-    "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
-    "src/hir/resolve_program.rs",
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows_merge/main67107_inputs_tail.rs",
@@ -57,6 +50,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "src/workspace_graph/test_replay_context.rs",
     "tests/project/standard_library/application_json.rs",
+    "tests/wasm/scalar_browser_ci_contract.rs",
     "tests/wasm/scalar_browser_ci_contract/historical_builder.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
     "src/bounded_output/stage_debits/route_debits.rs",
@@ -125,11 +119,14 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
     "src/source_reflows_merge/runtime_json/sealed_io.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 23660; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "888ea02f2268b775b91baf32f2bd1b244ac2621b2ac60df7752343bc88131fc7";
+const POLICY_LENGTH: usize = 25149; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "7ddd7f9726ebb60c339ca986fe1e61042ff30db71ba74f95accd5d12674f12cb";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -800,6 +797,9 @@ pub(super) fn stage_requested(
 }
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs")),
         "src/source_reflows_merge/runtime_json/sealed_io.rs" => Some(include_str!("../../src/source_reflows_merge/runtime_json/sealed_io.rs")),
 
         "src/cleanup_plan/replay/factored/before_inline_singleton.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/before_inline_singleton.rs")),

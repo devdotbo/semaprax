@@ -263,6 +263,9 @@ macro_rules! loan_cfg_source_inventory {
             include_str!("../../../../../src/loan_plan/call_arguments_legacy.rs"),
             include_str!("../../../../../src/loan_plan/paid_materialize_legacy.rs"),
             include_str!("../../../../../src/loan_plan/paid_predicates_legacy.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"),
+        include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"),
         )
     };
 }

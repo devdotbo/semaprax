@@ -50,7 +50,9 @@ pub(in crate::project) fn fixture(
         ("second.spx", "schema.second", "second.row", 0),
     ] {
         let text = format!("module {module}; @id(\"{record}\") record Row {{ @id(\"{record}.n\") n: i64, }} @id(\"{record}.anchor\") fn anchor()->i64 {{{value}}}");
-        std::fs::write(root.join("src").join(path), text).unwrap();
+        let parsed = crate::parse(&text, path).unwrap();
+        let canonical = crate::format::canonical(&parsed);
+        std::fs::write(root.join("src").join(path), canonical).unwrap();
     }
     let revision =
         crate::project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {

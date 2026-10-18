@@ -1098,3 +1098,6 @@ fn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_o
 
 #[path = "pair_scope_tests.rs"]
 mod pair_scope_tests;
+
+#[path = "combined_pair_scope_tests.rs"]
+mod combined_pair_scope_tests;

@@ -10,6 +10,10 @@ mod before_lexical_cursor;
 mod before_pair_scope;
 #[cfg(test)]
 pub(super) mod pair_scope_census;
+#[cfg(test)]
+mod before_flat_view;
+#[cfg(test)]
+mod before_fused_flat;
 
 #[derive(Clone, Copy)]
 enum Step {
@@ -85,9 +89,13 @@ const FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<Sk
     + size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>()
     + 4 * size_of::<&SkeletonObservation>() // equality actual/formal pair
     + 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>()
-    + 2 * size_of::<&Observations>() + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // retained slice get actual/formal
     + 2 * size_of::<usize>() + size_of::<Option<&Rc<SkeletonObservation>>>()
     + size_of::<bool>();
+// Borrow once per flat path: Vec::as_slice actual/formal, returned slice and
+// its distinct retained receiver. Dynamic get/Option/match payloads stay above.
+const FLAT_VIEW: usize =
+    2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>();
 const SHARED_MATCH: usize =
     size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
         + 2 * size_of::<&SkeletonObservation>()
@@ -112,7 +120,8 @@ const MISMATCH_CALL: usize =
 const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,Eq,sibling,root
                                                   // Retained primitive caller slots, not dynamic compound payload credit:
                                                   // four charge sites + six original paid sites + three direct HIR reserve sites
-                                                  // + two swap payment sites + one Zip-next payment site = sixteen. Each is a
+                                                  // + two swap payment sites + one Zip-next payment site = sixteen original sites.
+                                                  // The new flat-view payment adds a seventeenth site. Each is a
                                                   // nonrecursive sequential Result<(), Diagnostic> receiving frame: success has
                                                   // no owned payload, failure leaves the invocation immediately with one owned
                                                   // Diagnostic. Function/budget places never change and no Result escapes or
@@ -127,6 +136,7 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
     + size_of::<HistorySet>() // retained original owning input header
     + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
+    + PAYMENT_HEADER // one new sequential flat-view payment site, no dynamic payload credit
     + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
     + FINAL_ITERATORS + size_of::<bool>() + 4 * MISMATCH_CALL
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
@@ -538,6 +548,13 @@ pub(in crate::cleanup_plan::replay) fn compare(
             "ordinary PLAN shared HIR selector receivers",
         )?;
         if flat.observations.prefix.is_none() {
+            paid!(
+                budget,
+                function,
+                FLAT_VIEW,
+                "ordinary plan history flat HIR retained slice"
+            )?;
+            let items = flat.observations.items.as_slice();
             let mut index = 0;
             loop {
                 budget.charge(function, 1, "ordinary plan history HIR comparison")?;
@@ -558,7 +575,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                         budget,
                         "ordinary plan history HIR cursor next"
                     ),
-                    flat.observations.get(index),
+                    items.get(index),
                 ) {
                     (Some(left), Some(right)) if left == right.as_ref() => {
                         index += 1;

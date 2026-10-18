@@ -1,7 +1,8 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
+use super::super::before_flat_view::compare;
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
-use crate::test_allocation_observer::{measure, Metrics};
+use crate::test_allocation_observer::{Metrics, measure};
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -154,8 +155,13 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             paid + 4 * PATH_INDEX * row.rounds,
             old_paid + PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE
         );
-        eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
-            function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
+        eprintln!(
+            "OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
+            function.id,
+            MAX_REPLAY_WORK_UNITS - current.remaining,
+            row.pairs,
+            row.rounds
+        );
         let spent = MAX_REPLAY_WORK_UNITS - current.remaining;
         for mutation in 0..4 {
             for cut in 0..=spent {
@@ -245,10 +251,10 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                         0,
                     );
                     frontiers::finish();
-                    assert_eq!(a.0 .0, b.0 .0);
+                    assert_eq!(a.0.0, b.0.0);
                     assert_eq!((a.1, a.2, a.3), (b.1, b.2, b.3));
-                    balanced(a.0 .1);
-                    balanced(b.0 .1);
+                    balanced(a.0.1);
+                    balanced(b.0.1);
                     if limit == end && floor == 0 {
                         assert_eq!(trace[ordinal].after, Some(end));
                     }
@@ -256,14 +262,14 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                         || (limit == end && floor == 1)
                         || (limit == event.before && floor == 0)
                     {
-                        assert!(a.1 && a.0 .0.result.is_err());
+                        assert!(a.1 && a.0.0.result.is_err());
                         let first = a.3.unwrap();
                         assert_eq!(
                             (first.requested, first.remaining, first.floor),
                             (end - event.before, limit - event.before, floor)
                         );
                         assert_eq!(
-                            a.0 .0.result.as_ref().unwrap_err(),
+                            a.0.0.result.as_ref().unwrap_err(),
                             &primitive_failure(function, event, limit, floor)
                         );
                     }
@@ -378,7 +384,10 @@ fn pair_local_immutable_hir_deep_empty_tail_and_malformed_composition_keeps_old_
                             "actual original forward/segment and HIR work priority"
                         );
                     }
-                    eprintln!("OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included", expected[0].observations.prefix.is_some());
+                    eprintln!(
+                        "OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included",
+                        expected[0].observations.prefix.is_some()
+                    );
                 }
             }
         }
@@ -556,7 +565,10 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
         paid < old_paid,
         "actual complete883 receives its exact original tariff"
     );
-    eprintln!("OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",row.pairs,row.rounds);
+    eprintln!(
+        "OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",
+        row.pairs, row.rounds
+    );
 }
 #[test]
 fn pair_census_dropped_rows_and_original_unwind_never_claim_complete() {
@@ -614,12 +626,29 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
         old_paid + PAIR_PRIMITIVE,
         "new primitive frames are honestly funded even on this unused path"
     );
-    eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
+    eprintln!(
+        "OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim"
+    );
 }
 #[test]
 fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() {
-    let old=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"));
-    let root=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history.rs"));
+    // Authenticate the real compiled current source before acquiring its exact
+    // whole pre-format generation; the original old-source assertions stay exact.
+    let whole_before_format = |leaf: &str, expected: &str, current: &str| {
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            &format!("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/{leaf}"),
+            expected,
+            current,
+        )
+    };
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+    ));
+    let root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history.rs"
+    ));
     let cursor_body=format!("struct Cursor {{{}",root.split_once("struct Cursor {").unwrap().1.split_once("\n#[cfg(test)]\nmod before_comparison;").unwrap().0)
         .replacen("impl Cursor {","#[allow(dead_code, reason = \"complete immediate883 Cursor retains its original unused next method\")]\nimpl Cursor {",1);
     let expected=old.replacen("use super::*;\n",&format!("use super::*;\n\n{cursor_body}\n"),1).replace("#[cfg(test)]\nmod before_lexical_cursor;\n","")
@@ -628,21 +657,48 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         .replacen("                owner.step = Step::PairNext;","                census.pair();\n                owner.step = Step::PairNext;",1)
         .replacen("                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,","                census.round();\n                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,",1)
         .replacen("    Ok(())\n}","    census.success();\n    Ok(())\n}",1);
-    assert_eq!(include_str!("before_pair_scope/mod.rs"),expected,"entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated");
-    let cursor=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"));
     assert_eq!(
-        include_str!("before_pair_scope/lexical_cursor.rs"),
+        whole_before_format(
+            "before_pair_scope/mod.rs",
+            "b5047bfb49ce1264ce57a0b6194a2cfce8bd79e24d8f1da852223912509947b6",
+            include_str!("before_pair_scope/mod.rs")
+        ),
+        expected,
+        "entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated"
+    );
+    let cursor = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+    ));
+    assert_eq!(
+        whole_before_format(
+            "before_pair_scope/lexical_cursor.rs",
+            "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
+            include_str!("before_pair_scope/lexical_cursor.rs")
+        ),
         cursor,
         "whole old macro source and every tariff exact"
     );
     assert_eq!(
-        include_str!("lexical_cursor.rs"),
+        whole_before_format(
+            "lexical_cursor.rs",
+            "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
+            include_str!("lexical_cursor.rs")
+        ),
         cursor,
         "production cursor macro/API/prices unchanged"
     );
-    let tests=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"));
+    let tests = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    ));
     assert!(
-        include_str!("tests.rs").starts_with(tests),
+        whole_before_format(
+            "tests.rs",
+            "b025d55c3208e7460d37efa45e6e1c57af9337a620e4cfccd57a32defcea094a",
+            include_str!("tests.rs")
+        )
+        .starts_with(tests),
         "every existing owner assertion/body retained verbatim"
     );
 }
@@ -660,8 +716,8 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
         MAX_REPLAY_WORK_UNITS,
         0,
     );
-    assert!(full.0 .0.result.is_ok());
-    balanced(full.0 .1);
+    assert!(full.0.0.result.is_ok());
+    balanced(full.0.1);
     let events = frontiers::finish();
     let event = *events
         .iter()
@@ -681,8 +737,8 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
     let (rows, lost) = pair_scope_census::finish();
     assert_eq!(lost, 0);
     assert_eq!(rows.len(), 1);
-    assert!(refused.1 && refused.0 .0.result.is_err());
-    balanced(refused.0 .1);
+    assert!(refused.1 && refused.0.0.result.is_err());
+    balanced(refused.0.1);
     assert!(
         rows[0].ended
             && !rows[0].unwound
@@ -696,7 +752,7 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
         "first work charge and both preparations precede the new acquisition"
     );
     assert_eq!(
-        refused.0 .0.result.as_ref().unwrap_err(),
+        refused.0.0.result.as_ref().unwrap_err(),
         &primitive_failure(function, event, event.before, 0)
     );
 }
@@ -907,8 +963,13 @@ fn fused_pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_e
                 + paired_value::ADDITIONAL_PRIMITIVES
                 + NEW_PAIR_REFERENCES * row.rounds
         );
-        eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
-            function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
+        eprintln!(
+            "OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
+            function.id,
+            MAX_REPLAY_WORK_UNITS - current.remaining,
+            row.pairs,
+            row.rounds
+        );
         let spent = MAX_REPLAY_WORK_UNITS - current.remaining;
         for mutation in 0..4 {
             for cut in 0..=spent {
@@ -993,7 +1054,10 @@ fn fused_pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_
         paid < old_paid,
         "actual complete883 receives its exact original tariff"
     );
-    eprintln!("OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",row.pairs,row.rounds);
+    eprintln!(
+        "OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",
+        row.pairs, row.rounds
+    );
 }
 #[test]
 fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
@@ -1025,7 +1089,9 @@ fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_paddi
         old_paid + PAIR_PRIMITIVE + paired_value::ADDITIONAL_PRIMITIVES,
         "new primitive frames are honestly funded even on this unused path"
     );
-    eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
+    eprintln!(
+        "OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim"
+    );
 }
 
 #[test]
@@ -1138,7 +1204,10 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
                 "only this actual complete dense fixture qualifies"
             );
         }
-        eprintln!("OPT888 old886/current={old_paid}/{paid} N={} STEP={} TAIL={} pairs={} left={left_len} right={right_len} tail={tail}; no application result", row.rounds, row.value_steps, row.value_tails, row.pairs);
+        eprintln!(
+            "OPT888 old886/current={old_paid}/{paid} N={} STEP={} TAIL={} pairs={} left={left_len} right={right_len} tail={tail}; no application result",
+            row.rounds, row.value_steps, row.value_tails, row.pairs
+        );
         for cut in 0..=MAX_REPLAY_WORK_UNITS - current.remaining {
             let a = observe_886_shaped_pair(function, &expected, actual(), false, cut);
             frontiers::finish();
@@ -1156,6 +1225,43 @@ fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_ex
 
 #[test]
 fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue() {
+    for (witness, length, sha, paired) in [
+        (
+            include_str!("before_flat_view.rs"),
+            27481,
+            "adbcf2e056ebe4c833699b0da53ee16dbe323289aae4ce69d469165240354755",
+            true,
+        ),
+        (
+            include_str!("before_fused_flat.rs"),
+            21433,
+            "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888",
+            false,
+        ),
+    ] {
+        let mut restored = witness.replace("#[path = \"lexical_cursor.rs\"]\n", "");
+        if paired {
+            restored = restored.replace("#[path = \"paired_value.rs\"]\n", "");
+        }
+        restored = restored.replace(
+            "#[cfg(test)]\nuse super::pair_scope_census;",
+            if paired {
+                "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\npub(super) mod pair_scope_census;"
+            } else {
+                "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;"
+            },
+        );
+        restored += "#[cfg(test)]\nmod tests;\n";
+        assert_eq!(restored.len(), length);
+        use sha2::{Digest, Sha256};
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+            ),
+            sha
+        );
+    }
     let before = include_str!("before_paired.rs");
     let old_label = "let census = pair_scope_census::begin(function, budget, false);";
     let oracle_label = "let census = pair_scope_census::begin(function, budget, true);";
@@ -1183,4 +1289,121 @@ fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue()
         ),
         "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
     );
+}
+
+mod matched_flat_generation {
+    use super::super::super::before_fused_flat::compare;
+    use super::*;
+    #[test]
+    fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagnostics() {
+        let program = super::super::super::super::tests::program();
+        let function = &program.functions[0];
+        for len in [0usize, 1, 64, 256] {
+            let seed: Vec<_> = (0..len)
+                .map(|index| {
+                    Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: index % 2 == 0,
+                    })
+                })
+                .collect();
+            let expected = vec![SkeletonPath {
+                observations: seed.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            }];
+            for mutation in 0..3 {
+                let mut tail = seed.clone();
+                if mutation == 1 {
+                    if tail.pop().is_none() {
+                        tail.push(Rc::new(SkeletonObservation::Boolean {
+                            expression: function.body.id.clone(),
+                            value: false,
+                        }));
+                    }
+                } else if mutation == 2 {
+                    tail.push(Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: true,
+                    }));
+                }
+                let observe = |old| {
+                    with_limit_usage_refusal(usize::MAX, || {
+                        measure(|| {
+                            let mut budget =
+                                ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                            // Identical fixture backing in both observations. The seeded
+                            // immutable observations stay held outside both invocations.
+                            budget
+                                .reserve_array::<Rc<SkeletonObservation>>(
+                                    function,
+                                    tail.len(),
+                                    "flat-view test tail",
+                                )
+                                .unwrap();
+                            budget
+                                .reserve_array::<PlanPath>(function, 1, "flat-view test path")
+                                .unwrap();
+                            let actual = HistorySet {
+                                arena: Vec::new(),
+                                max_depth: 0,
+                                paths: vec![PlanPath {
+                                    history: History {
+                                        previous: None,
+                                        tail: tail.clone(),
+                                    },
+                                    terminal: SkeletonTerminal::Success,
+                                }],
+                            };
+                            let result = if old {
+                                before_pair_scope::compare(function, &mut budget, actual, &expected)
+                            } else {
+                                compare(function, &mut budget, actual, &expected)
+                            };
+                            let outcome = (
+                                result.as_ref().map(|_| ()).map_err(failure),
+                                budget.remaining,
+                                budget.skeleton_spent,
+                            );
+                            drop(result);
+                            outcome
+                        })
+                    })
+                };
+                let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
+                frontiers::finish();
+                let ((current, heap), refused, paid, receipt) = observe(false);
+                frontiers::finish();
+                assert_eq!(
+                    current, old,
+                    "all diagnostic fields and work, len={len} mutation={mutation}"
+                );
+                assert!(!refused && !old_refused && receipt.is_none() && old_receipt.is_none());
+                balanced(heap);
+                balanced(old_heap);
+                assert_eq!(
+                    heap, old_heap,
+                    "identical fixture backing and complete invocation Drop"
+                );
+                if mutation == 0 {
+                    assert!(current.0.is_ok());
+                    let removed =
+                        2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+                    let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+                    assert_eq!(
+                        paid + removed * (len + 1),
+                        old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + retained
+                    );
+                    if len >= 64 {
+                        assert!(
+                            paid < old_paid,
+                            "long complete comparisons must reduce real reservations"
+                        );
+                    }
+                } else {
+                    assert_eq!(current.0.unwrap_err().code, "SPX-H006");
+                }
+            }
+        }
+    }
 }

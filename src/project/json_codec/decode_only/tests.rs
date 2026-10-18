@@ -149,7 +149,11 @@ fn missing_duplicate_forged_inventory_and_retained_dependencies_refuse_before_om
             format!("{raw}\n@id(\"{id}\") fn counterfeit()->i64 {{0}}"),
             raw.replacen(name, "wrong_encoder_name", 1),
             raw.replace("as jv_i64_len;", "as wrong_alias;"),
-            format!("{raw}\nuse function @id(\"foreign.import\") from foreign as unexpected;"),
+            raw.replacen(
+                "\nuse ",
+                "\nuse function @id(\"foreign.import\") from foreign as unexpected;\nuse ",
+                1,
+            ),
             raw.replace("as jv_root;", "as wrong_retained_alias;"),
             raw.replacen(
                 "let parsed=json_Request_request_decode(input);",

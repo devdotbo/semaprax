@@ -262,7 +262,10 @@ semantic_graph_private_layout_owned_source_inventory!(core),
         semantic_graph_legacy_main_source!("src/cleanup_plan/replay/sequence_vector/tests.rs"),
         include_str!("../../src/loan_plan/paid_live/funded_before.rs"),
         include_str!("../../src/loan_plan/paid_live/original.rs"),
-        include_str!("semantic_graph/source_inventory.rs")
+        include_str!("semantic_graph/source_inventory.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"),
     ) };
 }
 

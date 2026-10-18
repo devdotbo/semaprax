@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 27481,
-      "sha256": "adbcf2e056ebe4c833699b0da53ee16dbe323289aae4ce69d469165240354755"
+      "length": 28273,
+      "sha256": "ff45e4ec289829d44d0d55022961ab41bb8bfb18c14a68872ce0bfcf675f91d9"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 42598,
-      "sha256": "c12d761098a9fdafeafb07a33796f39d863ea02966bd7acbd15e41811d612d2d"
+      "length": 42671,
+      "sha256": "f0419b0dcfbd435f28607635364f99e6cd9b35bf36acb81de5aa43161bfea2ae"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -317,8 +317,8 @@
       "sha256": "985b03816f25a3f5da56ab149401fc188a91aad18c88cbc4a7cedf8675b51511"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 47859,
-      "sha256": "1deec4785d485f58d22408d711d7397e70d8251cc023396fc9368e4465857c2a"
+      "length": 56245,
+      "sha256": "360b7efb9cc8cc2e1bdcb4b16debe6f59c7d1f07a91af8d4809b0493282bc7f9"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 56466,
-      "sha256": "ea815ad102152af27f9ee645d2e0c347e6457c6b4cea225c0513d476df15142b"
+      "length": 56958,
+      "sha256": "5ddc037f30fb7488158fb2f7768b0cd9df250195601353e801dc50149c23111e"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -789,8 +789,8 @@
       "sha256": "e96169bac2c81637e3a741eb51dad2d48604d59eec0c3c441d9db1e2b7a4d649"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs": {
-      "length": 30292,
-      "sha256": "e674a46cb3d0aae4d9eb0adda23fa570f22667c81aa552824903bd420f3428b4"
+      "length": 30918,
+      "sha256": "7ba820da6e65243527976b6bee0ea1920440144c9c5c416a6d8e0d10d180698c"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
       "length": 20724,
@@ -799,25 +799,37 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
       "length": 6683,
       "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
+      "length": 27435,
+      "sha256": "931f8ad4919700e6a5cf6e9d4379b63716ed10d0c508dc3034c215a198d97838"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs": {
+      "length": 21370,
+      "sha256": "4f2e7390a54621cbe5a4363d0322b8f30676aa01a4c0f0e9065d18815051fc58"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
+      "length": 55470,
+      "sha256": "cb695b8abb92b747d037b46af45a2ff79c8dad2c8eb8cb54120cc6a92100487f"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 132818,
-      "sha256": "1979fee7b741fe878f2b9f058e1fbc694b1613b398b92158dbb8f62d3c36ec9e",
+      "length": 133161,
+      "sha256": "8c8a24986949d6d7c646f815f16f93b22131da896d6536a7206febeca15c5a88",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 149572,
-      "sha256": "ae18963ff5d65298c3b35b49f25b4a5d47c18fbd96336950d8b87a991ed6ac28",
+      "length": 149925,
+      "sha256": "76be1b65e1dacf6688e47e448f36b97f49c2966caa066a01c8fe027be88eeb39",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 190718,
-      "sha256": "4b5051d3f129786f11712001fcedd0332adbf190b2e52d9aac99b18cfe9392f8",
+      "length": 191097,
+      "sha256": "27112b83149e5c8ef4f9f5b6e95d5351460b5e569cf19f43e795083446f0fa3f",
       "base": "../../../../../"
     }
   },
@@ -845,8 +857,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 55725,
-    "sha256": "9f1be3bc2c6855447751d87241db805285db89bd0540fad6e7ae82e1a84b49a8",
+    "length": 55984,
+    "sha256": "1cdf77fa6aeba101e1eb2385d9657a6ec0f901d001e5778f0021fdfc099782b6",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -3272,9 +3284,21 @@
       {
         "at": 71,
         "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs"
+      },
+      {
+        "at": 1031,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"
+      },
+      {
+        "at": 1032,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"
+      },
+      {
+        "at": 1033,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"
       }
     ],
-    "rows": 1031
+    "rows": 1034
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -3867,7 +3891,10 @@
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
-    "src/source_reflows_merge/runtime_json/sealed_io.rs"
+    "src/source_reflows_merge/runtime_json/sealed_io.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

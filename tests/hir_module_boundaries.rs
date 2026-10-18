@@ -782,6 +782,9 @@ include_str!("../src/source_reflows_merge/current344.rs"), include_str!("../src/
         include_str!("../src/hir/validation/generic_template/values/refusal_tests.rs"),
         include_str!("../src/hir/validation/generic_template/values/charge/refusal_tests.rs"),
         include_str!("../src/hir/validation/iterator_loops/field_scope/refusal_tests.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"),
     );
     let validation = production_source_inventory::production(
         &validation_raw,

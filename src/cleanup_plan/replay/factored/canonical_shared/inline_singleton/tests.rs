@@ -284,7 +284,13 @@ fn genuine_long_singleton_chain_has_positive_complete_typed_net_without_padding_
     let n = current.successors.cells[1]
         .iter()
         .flat_map(|phase| phase.iter())
-        .map(|c| c.acquired)
+        .map(|c| {
+            // `acquired` is a byte invoice; this complete successful run needs
+            // the event count for its per-selector charge.
+            assert_eq!(c.refused, 0);
+            assert_eq!(c.requested, c.acquired);
+            c.attempts
+        })
         .sum::<usize>();
     let m = current.successors.cells[1]
         .iter()
@@ -652,6 +658,12 @@ fn inline_banks_cannot_authenticate_foreign_function_budget_or_nested_restored_i
 
 #[test]
 fn unwind_during_a_live_completed_owner_releases_all_rc_and_frame_backing() {
+    // Initialize the thread's panic hook before observing compiler owners.
+    // The runtime's first panic can retain thread-local backing independently
+    // of either canonicalizer; every measured owner still must balance fully.
+    let runtime = std::panic::catch_unwind(|| panic!("889 initialize thread panic hook"));
+    assert!(runtime.is_err());
+    drop(runtime);
     let f = function();
     let (a, sink, root) = graph(&f, 17, 1, false);
     for old in [true, false] {
