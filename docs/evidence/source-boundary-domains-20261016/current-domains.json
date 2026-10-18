@@ -2778,6 +2778,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_receiving.rs",
         "src/cleanup_plan/replay/ordinary_status.rs",
@@ -2850,9 +2851,9 @@
         "src/workspace_graph/expected_projection/call_carriers.rs",
         "src/workspace_graph/expected_projection/call_carriers_directory.rs"
       ],
-      "full_manifest_sha256": "65c12c63afaadfdf9f8ee701d158978506bd634120a7eab98d47a2a129e32ec7",
-      "full_raw_sha256": "88f2a7a8b640e538474a4579429b7cdfb7c51ea6f02216bbd3accdf205c15792",
-      "full_authenticated_production_sha256": "2ccff132d4f14a9e1bed126db947130578e6e9ad1755cbcbb30756a8c50267d8"
+      "full_manifest_sha256": "a5a13586e846bfbd4b43e81335fbc79616a779b00febd8cd74f1a2911caffc42",
+      "full_raw_sha256": "a385e2b43ad652c8c9eae7ca8f34f637a1d48c9321f8ed4d9fed30e75dde1f49",
+      "full_authenticated_production_sha256": "c1a731a91fcb478485d14e885867fe2564c06a55122db2961cc21ff6ae445ad5"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3441,6 +3442,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
         "src/cleanup_plan/replay/ordinary_receiving.rs",
         "src/cleanup_plan/replay/ordinary_renewals.rs",
@@ -3923,9 +3925,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "675a0528c0235d07639ef5e4b69354adf8f8e9b2e1746e7b0ba651f5f1c4dc28",
-      "full_raw_sha256": "314bb102a4fc8765c7711ff4e34ef7c546785fa9d0603b634d2b7db5d6ab0b43",
-      "full_authenticated_production_sha256": "575ed09776fc297807782c77d1ca868fed1ff98e9856d03dcc186742523e4bb8"
+      "full_manifest_sha256": "f77170aa1e647383c8653fec531eb1cb628cf45abc0b6e1dfe9afe6068dcba3c",
+      "full_raw_sha256": "30cb422d6b5949e6082b33fafb9972c33c0aa890ba4619f9b60d904d826a7747",
+      "full_authenticated_production_sha256": "4b63b8f4fb82d992b637f8556f0aecba188ddb62d0beb8766fcb79b9bea6d5f6"
     }
   }
 }
