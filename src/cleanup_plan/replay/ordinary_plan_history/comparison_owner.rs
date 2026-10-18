@@ -2,12 +2,14 @@
 use super::*;
 #[macro_use]
 mod lexical_cursor;
+#[macro_use]
+mod paired_value;
 #[cfg(test)]
 mod before_lexical_cursor;
 #[cfg(test)]
 mod before_pair_scope;
 #[cfg(test)]
-mod pair_scope_census;
+pub(super) mod pair_scope_census;
 
 #[derive(Clone, Copy)]
 enum Step {
@@ -58,8 +60,12 @@ const PAIR_SCOPE: usize = 2 * PATH_INDEX + 2 * size_of::<&PlanPath>();
 const PAIR_PRIMITIVE: usize = 2 * PAYMENT_HEADER;
 const PATH_SWAP: usize =
     2 * size_of::<&mut Vec<PlanPath>>() + 3 * size_of::<&mut [PlanPath]>() + 4 * size_of::<usize>();
-const PAIR_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
-    + 2 * size_of::<&SkeletonObservation>() // successful match bindings
+// Keep the complete original successful-pattern bank as conservative legacy
+// admission; it is not a claim those removed pattern bindings still form.
+// Bare yields add distinct outer reference receivers across the right advance.
+const NEW_PAIR_REFERENCES: usize = 2 * size_of::<&SkeletonObservation>();
+const PAIR_MATCH: usize = 2 * size_of::<&SkeletonObservation>() // retained original pattern invoice
+    + NEW_PAIR_REFERENCES // actual new lexical reference bindings
     + 4 * size_of::<&SkeletonObservation>() // content cmp actual/formal pairs
     + 4 * size_of::<&SkeletonTerminal>() // terminal cmp actual/formal pairs
     + 2 * size_of::<Ordering>(); // two lexical cmp returns, received in owner
@@ -117,7 +123,8 @@ const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,
                                                   // The first acquisition replaces the identical old compare-entry call and is
                                                   // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
-    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
+    + lexical_cursor::PRIMITIVE_FRAMES + paired_value::ADDITIONAL_PRIMITIVES
+    + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
     + size_of::<HistorySet>() // retained original owning input header
     + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
     + 2 * (PAYMENT_HEADER + 2 * size_of::<&mut Vec<usize>>()) // explicit two backing sites
@@ -296,14 +303,16 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 {
                     let left_path = &actual.paths[owner.left];
                     let right_path = &actual.paths[owner.right];
-                    loop {
+                    'paired: loop {
                         paid!(
                             budget,
                             function,
                             PAIR_MATCH,
                             "ordinary plan history paired cursor next"
                         )?;
-                        let left = lexical_plan_next!(
+                        // Both Some paths converge at the bare reference yield;
+                        // no Option/tuple or owner payload crosses this frontier.
+                        let left = lexical_plan_value!(
                             owner,
                             left_cursor,
                             left_items,
@@ -311,9 +320,30 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_path.history,
                             function,
                             budget,
-                            "ordinary plan history paired cursor next"
+                            "ordinary plan history paired cursor next",
+                            census,
+                            {
+                                let _right = lexical_plan_value!(
+                                    owner,
+                                    right_cursor,
+                                    right_items,
+                                    right_loaded,
+                                    right_path.history,
+                                    function,
+                                    budget,
+                                    "ordinary plan history paired cursor next",
+                                    census,
+                                    {
+                                        owner.ordering =
+                                            left_path.terminal.cmp(&right_path.terminal);
+                                        break 'paired;
+                                    }
+                                );
+                                owner.ordering = Ordering::Less;
+                                break 'paired;
+                            }
                         );
-                        let right = lexical_plan_next!(
+                        let right = lexical_plan_value!(
                             owner,
                             right_cursor,
                             right_items,
@@ -321,27 +351,23 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_path.history,
                             function,
                             budget,
-                            "ordinary plan history paired cursor next"
+                            "ordinary plan history paired cursor next",
+                            census,
+                            {
+                                owner.ordering = Ordering::Greater;
+                                break 'paired;
+                            }
                         );
-                        match (left, right) {
-                            (Some(left), Some(right)) => {
-                                owner.ordering = left.cmp(right);
-                                if owner.ordering == Ordering::Equal {
-                                    budget.charge(
-                                        function,
-                                        1,
-                                        "ordinary plan history observation comparison",
-                                    )?;
-                                    #[cfg(test)]
-                                    census.round();
-                                    continue;
-                                }
-                            }
-                            (None, None) => {
-                                owner.ordering = left_path.terminal.cmp(&right_path.terminal)
-                            }
-                            (None, Some(_)) => owner.ordering = Ordering::Less,
-                            (Some(_), None) => owner.ordering = Ordering::Greater,
+                        owner.ordering = left.cmp(right);
+                        if owner.ordering == Ordering::Equal {
+                            budget.charge(
+                                function,
+                                1,
+                                "ordinary plan history observation comparison",
+                            )?;
+                            #[cfg(test)]
+                            census.round();
+                            continue;
                         }
                         break;
                     }

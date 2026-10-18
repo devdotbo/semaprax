@@ -316,6 +316,9 @@ impl Cursor {
 
 #[cfg(test)]
 mod before_comparison;
+#[cfg(test)]
+#[path = "ordinary_plan_history/comparison_owner/before_paired.rs"]
+mod before_paired;
 mod comparison_owner;
 pub(super) use comparison_owner::compare;
 

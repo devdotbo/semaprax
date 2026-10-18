@@ -104,7 +104,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
     for function in &program.functions {
         let expected = expected(&program, function);
         pair_scope_census::reset();
-        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_pair(
+        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_886_pair(
             function,
             &expected,
             true,
@@ -116,7 +116,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
         let old_swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
         let old_row = complete_row(true);
         pair_scope_census::reset();
-        let ((current, heap), refused, paid, receipt) = observe_pair(
+        let ((current, heap), refused, paid, receipt) = observe_886_pair(
             function,
             &expected,
             false,
@@ -160,10 +160,10 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
         for mutation in 0..4 {
             for cut in 0..=spent {
                 let ((a, ma), _, _, _) =
-                    observe_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
+                    observe_886_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
                 frontiers::finish();
                 let ((b, mb), _, _, _) =
-                    observe_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
+                    observe_886_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
                 frontiers::finish();
                 assert_eq!(
                     a, b,
@@ -537,11 +537,11 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
     };
     pair_scope_census::reset();
     let (old, old_heap, old_paid) =
-        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
     let old_row = complete_row(true);
     pair_scope_census::reset();
     let (current, heap, paid) =
-        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
     let row = complete_row(false);
     assert_eq!(current, old);
     assert!(current.result.is_ok());
@@ -596,11 +596,11 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
     };
     pair_scope_census::reset();
     let (old, old_heap, old_paid) =
-        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
     let old_row = complete_row(true);
     pair_scope_census::reset();
     let (current, heap, paid) =
-        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
     let row = complete_row(false);
     assert_eq!(current, old);
     assert_eq!(heap, old_heap);
@@ -698,5 +698,484 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
     assert_eq!(
         refused.0 .0.result.as_ref().unwrap_err(),
         &primitive_failure(function, event, event.before, 0)
+    );
+}
+
+// Complete-success equation only. Refusal controls use reached real frontiers.
+fn fused_removed(row: &pair_scope_census::Row) -> usize {
+    size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>() * row.rounds
+        + 2 * size_of::<Option<&SkeletonObservation>>() * (row.value_steps + row.value_tails)
+}
+fn observe_886_pair(
+    function: &ResolvedFunction,
+    expected: &[SkeletonPath],
+    old: bool,
+    physical: usize,
+    floor: usize,
+    comparison_work: usize,
+    mutation: usize,
+) -> Observed {
+    with_limit_usage_refusal(physical, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            assert!(comparison_work <= MAX_REPLAY_WORK_UNITS);
+            budget.remaining = comparison_work; // initial test allowance, before any work/debit
+            assert!(crate::bounded_output::set_active_floor(floor));
+            frontiers::reset();
+            let result = (|| {
+                paid!(
+                    &mut budget,
+                    function,
+                    PRODUCE_CALL_CONTROLS,
+                    "retained test producer call"
+                )?;
+                let mut actual = produce(function, &mut budget)?;
+                match mutation {
+                    1 => actual.paths.reverse(),
+                    2 => {
+                        actual.paths[0].history.previous = Some(actual.arena.len());
+                    }
+                    3 => {
+                        if let Some(segment) = actual.arena.first_mut() {
+                            segment.depth = 0;
+                        }
+                    }
+                    _ => {}
+                }
+                paid!(
+                    &mut budget,
+                    function,
+                    COMPARE_CALL_CONTROLS,
+                    "retained test comparison call"
+                )?;
+                if old {
+                    before_pair_scope::compare(function, &mut budget, actual, expected)
+                } else {
+                    super::super::super::before_paired::compare(
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
+                }
+            })();
+            let saved = result.as_ref().map(|_| ()).map_err(failure);
+            let retry = if result.is_err()
+                && (budget.refusal_spent || crate::bounded_output::active_refused())
+            {
+                crate::bounded_output::clear_active_floor();
+                let before = crate::bounded_output::active_remaining();
+                let remaining = budget.remaining;
+                let allocation = crate::test_allocation_observer::current_metrics();
+                let retry = budget
+                    .reserve_bytes(function, 0, "retained comparator sticky zero")
+                    .unwrap_err();
+                assert_eq!(crate::bounded_output::active_remaining(), before);
+                assert_eq!(budget.remaining, remaining);
+                assert_eq!(
+                    crate::test_allocation_observer::current_metrics(),
+                    allocation
+                );
+                let empty = Diagnostic::io("SPX-H006", String::new());
+                assert_eq!(failure(&retry), failure(&empty));
+                assert_eq!(result.as_ref().map(|_| ()).map_err(failure), saved);
+                Some(retry)
+            } else {
+                None
+            };
+            let outcome = Outcome {
+                result: saved,
+                retry: retry.as_ref().map(failure),
+                remaining: budget.remaining,
+                skeleton_spent: budget.skeleton_spent,
+            };
+            crate::bounded_output::clear_active_floor();
+            drop(budget);
+            drop(result);
+            drop(retry);
+            outcome
+        })
+    })
+}
+
+fn observe_886_shaped_pair(
+    function: &ResolvedFunction,
+    expected: &[SkeletonPath],
+    actual: HistorySet,
+    old: bool,
+    units: usize,
+) -> (Outcome, Metrics, usize) {
+    let ((outcome, metrics), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            budget.remaining = units;
+            let result = (|| {
+                paid!(
+                    &mut budget,
+                    function,
+                    COMPARE_CALL_CONTROLS,
+                    "883 shaped comparison receiving"
+                )?;
+                if old {
+                    before_pair_scope::compare(function, &mut budget, actual, expected)
+                } else {
+                    super::super::super::before_paired::compare(
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
+                }
+            })();
+            let result = result.as_ref().map(|_| ()).map_err(failure);
+            let outcome = Outcome {
+                result,
+                retry: None,
+                remaining: budget.remaining,
+                skeleton_spent: budget.skeleton_spent,
+            };
+            drop(budget);
+            outcome
+        })
+    });
+    assert!(
+        !refused && first.is_none(),
+        "this comparison is byte-unlimited, including work errors"
+    );
+    balanced(metrics);
+    assert!(paid >= metrics.allocated);
+    (outcome, metrics, paid)
+}
+
+#[test]
+fn fused_pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equation() {
+    let program = super::super::super::tests::program();
+    for function in &program.functions {
+        let expected = expected(&program, function);
+        pair_scope_census::reset();
+        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_pair(
+            function,
+            &expected,
+            true,
+            usize::MAX,
+            0,
+            MAX_REPLAY_WORK_UNITS,
+            0,
+        );
+        let old_swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
+        let old_row = complete_row(true);
+        pair_scope_census::reset();
+        let ((current, heap), refused, paid, receipt) = observe_pair(
+            function,
+            &expected,
+            false,
+            usize::MAX,
+            0,
+            MAX_REPLAY_WORK_UNITS,
+            0,
+        );
+        let swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
+        let row = complete_row(false);
+        assert_eq!(current, old);
+        assert!(
+            current.result.is_ok()
+                && !refused
+                && !old_refused
+                && receipt.is_none()
+                && old_receipt.is_none()
+        );
+        assert_eq!(swaps, old_swaps);
+        assert_eq!(
+            heap, old_heap,
+            "actual paths/arena/backing and full Drop are unchanged"
+        );
+        balanced(heap);
+        balanced(old_heap);
+        assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
+        assert_eq!(row.function, old_row.function);
+        assert_eq!(row.function_len, function.id.as_str().len());
+        assert_eq!(
+            (row.payer, row.selected, row.invocation),
+            (old_row.payer, old_row.selected, old_row.invocation)
+        );
+        // Source-counted independent coefficients. No measured paid subtraction.
+        assert_eq!(
+            paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row),
+            old_paid
+                + PAIR_SCOPE * row.pairs
+                + PAIR_PRIMITIVE
+                + paired_value::ADDITIONAL_PRIMITIVES
+                + NEW_PAIR_REFERENCES * row.rounds
+        );
+        eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
+            function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
+        let spent = MAX_REPLAY_WORK_UNITS - current.remaining;
+        for mutation in 0..4 {
+            for cut in 0..=spent {
+                let ((a, ma), _, _, _) =
+                    observe_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
+                frontiers::finish();
+                let ((b, mb), _, _, _) =
+                    observe_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
+                frontiers::finish();
+                assert_eq!(
+                    a, b,
+                    "six-field Diagnostic/work cut{cut} mutation{mutation}"
+                );
+                balanced(ma);
+                balanced(mb);
+            }
+        }
+    }
+}
+#[test]
+fn fused_pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() {
+    let program = super::super::super::tests::program();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "f")
+        .unwrap();
+    let items = (0..256)
+        .map(|_| {
+            Rc::new(SkeletonObservation::Boolean {
+                expression: function.body.id.clone(),
+                value: true,
+            })
+        })
+        .collect::<Vec<_>>();
+    let expected = vec![
+        SkeletonPath {
+            observations: items.clone().into(),
+            terminal: SkeletonTerminal::Success
+        };
+        2
+    ];
+    let actual = || HistorySet {
+        arena: vec![Segment {
+            previous: None,
+            items: items.clone(),
+            depth: 1,
+        }],
+        paths: (0..2)
+            .map(|_| PlanPath {
+                history: History {
+                    previous: Some(0),
+                    tail: Vec::new(),
+                },
+                terminal: SkeletonTerminal::Success,
+            })
+            .collect(),
+        max_depth: 1,
+    };
+    pair_scope_census::reset();
+    let (old, old_heap, old_paid) =
+        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    let old_row = complete_row(true);
+    pair_scope_census::reset();
+    let (current, heap, paid) =
+        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(false);
+    assert_eq!(current, old);
+    assert!(current.result.is_ok());
+    assert_eq!(heap, old_heap);
+    assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
+    assert_eq!(
+        paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row),
+        old_paid
+            + PAIR_SCOPE * row.pairs
+            + PAIR_PRIMITIVE
+            + paired_value::ADDITIONAL_PRIMITIVES
+            + NEW_PAIR_REFERENCES * row.rounds
+    );
+    assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
+    assert!(
+        paid < old_paid,
+        "actual complete883 receives its exact original tariff"
+    );
+    eprintln!("OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",row.pairs,row.rounds);
+}
+#[test]
+fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
+    let program = super::super::super::tests::program();
+    let function = &program.functions[0];
+    let expected = Vec::new();
+    let actual = || HistorySet {
+        arena: Vec::new(),
+        paths: Vec::new(),
+        max_depth: 0,
+    };
+    pair_scope_census::reset();
+    let (old, old_heap, old_paid) =
+        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    let old_row = complete_row(true);
+    pair_scope_census::reset();
+    let (current, heap, paid) =
+        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(false);
+    assert_eq!(current, old);
+    assert_eq!(heap, old_heap);
+    assert!(current.result.is_ok());
+    assert_eq!(
+        (row.pairs, row.rounds, old_row.pairs, old_row.rounds),
+        (0, 0, 0, 0)
+    );
+    assert_eq!(
+        paid,
+        old_paid + PAIR_PRIMITIVE + paired_value::ADDITIONAL_PRIMITIVES,
+        "new primitive frames are honestly funded even on this unused path"
+    );
+    eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
+}
+
+#[test]
+fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_exact_invoice() {
+    assert_eq!(
+        size_of::<ComparisonOwner<'static>>(),
+        size_of::<super::super::super::before_paired::ComparisonOwner<'static>>(),
+        "actual unchanged owner layout, no uncounted added state"
+    );
+    assert_eq!(paired_value::ADDITIONAL_PRIMITIVES, 5 * PAYMENT_HEADER);
+    assert_eq!(
+        lexical_cursor::STEP,
+        paired_value::STEP + 2 * size_of::<Option<&SkeletonObservation>>()
+    );
+    assert_eq!(
+        lexical_cursor::TAIL,
+        paired_value::TAIL + 2 * size_of::<Option<&SkeletonObservation>>()
+    );
+    assert_eq!(lexical_cursor::LOAD, paired_value::LOAD);
+    assert_eq!(lexical_cursor::EMPTY, paired_value::EMPTY);
+    let program = super::super::super::tests::program();
+    let function = &program.functions[0];
+    for (left_len, right_len, tail) in [
+        (0, 0, false),
+        (0, 1, true),
+        (1, 0, false),
+        (1, 1, false),
+        (32, 32, true),
+        (256, 256, false),
+    ] {
+        let items = |n| {
+            (0..n)
+                .map(|_| {
+                    Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: true,
+                    })
+                })
+                .collect::<Vec<_>>()
+        };
+        let left = items(left_len);
+        let right = items(right_len);
+        let mut expected = vec![
+            SkeletonPath {
+                observations: left.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            },
+            SkeletonPath {
+                observations: right.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            },
+        ];
+        expected.sort();
+        let actual = || HistorySet {
+            arena: if tail {
+                Vec::new()
+            } else {
+                vec![
+                    Segment {
+                        previous: None,
+                        items: left.clone(),
+                        depth: 1,
+                    },
+                    Segment {
+                        previous: None,
+                        items: right.clone(),
+                        depth: 1,
+                    },
+                ]
+            },
+            paths: [left.clone(), right.clone()]
+                .into_iter()
+                .enumerate()
+                .map(|(i, items)| PlanPath {
+                    history: History {
+                        previous: if tail { None } else { Some(i) },
+                        tail: if tail { items } else { Vec::new() },
+                    },
+                    terminal: SkeletonTerminal::Success,
+                })
+                .collect(),
+            max_depth: if tail { 0 } else { 1 },
+        };
+        pair_scope_census::reset();
+        let (old, old_heap, old_paid) =
+            observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        let old_row = complete_row(false);
+        frontiers::finish();
+        pair_scope_census::reset();
+        let (current, heap, paid) =
+            observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        let row = complete_row(false);
+        frontiers::finish();
+        assert_eq!(current, old);
+        assert!(current.result.is_ok());
+        assert_eq!(heap, old_heap);
+        assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
+        assert_eq!(
+            paid + fused_removed(&row),
+            old_paid + paired_value::ADDITIONAL_PRIMITIVES + NEW_PAIR_REFERENCES * row.rounds
+        );
+        if left_len <= 1 && right_len <= 1 {
+            assert!(
+                paid > old_paid,
+                "honest cold regression on short genuine paths"
+            );
+        } else {
+            assert!(
+                paid < old_paid,
+                "only this actual complete dense fixture qualifies"
+            );
+        }
+        eprintln!("OPT888 old886/current={old_paid}/{paid} N={} STEP={} TAIL={} pairs={} left={left_len} right={right_len} tail={tail}; no application result", row.rounds, row.value_steps, row.value_tails, row.pairs);
+        for cut in 0..=MAX_REPLAY_WORK_UNITS - current.remaining {
+            let a = observe_886_shaped_pair(function, &expected, actual(), false, cut);
+            frontiers::finish();
+            let b = observe_shaped_pair(function, &expected, actual(), false, cut);
+            frontiers::finish();
+            assert_eq!(
+                a.0, b.0,
+                "full six fields/work left={left_len} right={right_len} tail={tail} cut={cut}"
+            );
+            balanced(a.1);
+            balanced(b.1);
+        }
+    }
+}
+
+#[test]
+fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue() {
+    let before = include_str!("before_paired.rs");
+    let restored = before
+        .replace("#[path = \"lexical_cursor.rs\"]\n", "")
+        .replace("#[cfg(test)]\nuse super::comparison_owner::pair_scope_census;\n", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;\n")
+        .replace("pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct ComparisonOwner", "struct ComparisonOwner")
+        + "\n#[cfg(test)]\nmod tests;\n";
+    assert_eq!(restored.len(), 20712);
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
+        "4f9c140083625e08eae643deb36ffc91272c1a23b8fa8f79fbbb737756bf7903"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!("lexical_cursor.rs")))
+        ),
+        "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
     );
 }

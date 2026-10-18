@@ -13,6 +13,8 @@ pub(super) struct Row {
     pub selected: bool,
     pub pairs: usize,
     pub rounds: usize,
+    pub value_steps: usize,
+    pub value_tails: usize,
     pub complete: bool,
     pub ended: bool,
     pub unwound: bool,
@@ -30,6 +32,8 @@ const EMPTY: Row = Row {
     selected: false,
     pairs: 0,
     rounds: 0,
+    value_steps: 0,
+    value_tails: 0,
     complete: false,
     ended: false,
     unwound: false,
@@ -159,6 +163,18 @@ impl Guard {
     pub(super) fn round(&self) {
         self.update(|r| match r.rounds.checked_add(1) {
             Some(n) => r.rounds = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn value_step(&self) {
+        self.update(|r| match r.value_steps.checked_add(1) {
+            Some(n) => r.value_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn value_tail(&self) {
+        self.update(|r| match r.value_tails.checked_add(1) {
+            Some(n) => r.value_tails = n,
             None => r.overflow = true,
         });
     }

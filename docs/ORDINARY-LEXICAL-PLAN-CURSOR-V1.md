@@ -51,3 +51,37 @@ All original codec/native/catalog owners and quality gates remain required at
 unchanged67,108,864 bytes after one combined source freeze. Later refusal is
 progress only. Relocated source must enter all raw inventories and finite
 whole-source stages before qualification. No Cargo/tests/gates ran in this lane.
+
+## Paired bare-reference consumption (#888)
+
+The source candidate consumes the paired PLAN producers through bare lexical
+reference yields. Segment and tail success converge before the right advance;
+left exhaustion uses a distinct right expansion. The unchanged final flat/shared
+HIR comparison still uses the complete original Option producer. No owner field,
+closure, callback, wide Result, authority, backing or additional traversal is
+introduced. Every original work request, prepare order, terminal comparison,
+heap schedule/swap and full Drop remains ordered left before right.
+
+One extra right expansion costs five complete PAYMENT_HEADER banks on every
+comparison invocation, including empty ones. Both new outer reference receivers
+are paid each round before formation; the original successful-pattern invoice
+is retained conservatively and is not described as current physical storage.
+The actual owner layout is checked against the complete immediate886 type.
+For a complete comparison the exact source equation is
+`current + tuple*N + 2*Option*(STEP+TAIL) = old886 + 5*HEADER*M + 2*reference*N`.
+N counts paired rounds, STEP and TAIL count reached successful producer payment
+sites; M counts actual invocations. These are not reservation-attempt counts.
+The fixed test-only census has no compiler authority and marks overflow,
+truncation, refusal prefixes and unwind incomplete. Refused comparisons report
+only reached sites and the original first diagnostic, never future costs.
+
+The complete immediate886 comparator and tariffs remain independently compiled;
+all older oracles remain intact. Generation-specific886 equations keep their
+original receiver and assertions, and current mirrors retain their full semantic,
+work-cut and authority corpus with the additive invoice. Empty/short controls
+explicitly require the cold regression, while matched dense controls require
+actual savings without baseline padding. Existing exact/short/zero/floor/sticky,
+malformed and full destruction controls continue to exercise current code.
+All controls are authored and unrun. Whole-project positive cost, native codec,
+ShiftSim/LogLens64MiB and scoped Clippy qualification remain required before
+adoption or performance claims; no cap, fee factor or application profile changes.
