@@ -1,6 +1,12 @@
 name: macOS CLI diagnostic
 on:
   workflow_dispatch:
+    inputs:
+      unit_tests:
+        description: Also retain the unit-test binary for bounded local diagnosis
+        type: boolean
+        required: false
+        default: false
 permissions:
   contents: read
 concurrency:
@@ -13,6 +19,7 @@ jobs:
     env:
       CARGO_BUILD_JOBS: "1"
       CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
       CARGO_INCREMENTAL: "0"
       CARGO_TARGET_DIR: target/macos-cli-diagnostic
     steps:
@@ -58,5 +65,49 @@ jobs:
         with:
           name: diagnostic-cli-aarch64-apple-darwin-${{ github.sha }}
           path: diagnostic-cli/
+          if-no-files-found: error
+          retention-days: 1
+      - name: Build the unit-test binary without running tests
+        if: inputs.unit_tests
+        run: >-
+          cargo test --locked --offline -p semaprax --lib --all-features
+          --no-run --target aarch64-apple-darwin --jobs 1 --message-format=json
+          > unit-build.jsonl
+      - name: Stage the exact unit-test binary and its build provenance
+        if: inputs.unit_tests
+        shell: bash
+        run: |
+          python3 - <<'PYCODE'
+          import hashlib,json,os,pathlib,shutil,subprocess
+          root=pathlib.Path.cwd()
+          head=subprocess.check_output(["git","rev-parse","HEAD"],text=True).strip()
+          assert head==os.environ["GITHUB_SHA"]
+          subprocess.run(["git","diff","--quiet","--","src","std","Cargo.toml","Cargo.lock","build.rs"],check=True)
+          candidates=[]
+          with (root/"unit-build.jsonl").open() as stream:
+              for line in stream:
+                  item=json.loads(line)
+                  target=item.get("target",{})
+                  if item.get("reason")=="compiler-artifact" and target.get("name")=="semaprax" and target.get("kind")==["lib"] and item.get("profile",{}).get("test") and item.get("executable"):
+                      candidates.append(pathlib.Path(item["executable"]).resolve())
+          assert len(candidates)==1
+          binary=candidates[0]
+          target="aarch64-apple-darwin"
+          assert binary.is_relative_to((root/"target/macos-cli-diagnostic"/target/"debug/deps").resolve())
+          assert binary.is_file() and not binary.is_symlink() and 0<binary.stat().st_size<=2*1024*1024*1024
+          digest=hashlib.sha256()
+          with binary.open("rb") as stream:
+              for chunk in iter(lambda:stream.read(65536),b""):digest.update(chunk)
+          out=root/"diagnostic-unit"
+          out.mkdir()
+          shutil.copyfile(binary,out/"semaprax-unit")
+          (out/"build.json").write_text(json.dumps({"schema":"semaprax.diagnostic-unit-build.v1","head":head,"target":target,"repository":os.environ["GITHUB_REPOSITORY"],"run_id":os.environ["GITHUB_RUN_ID"],"binary":"semaprax-unit","bytes":binary.stat().st_size,"sha256":digest.hexdigest(),"rustc":subprocess.check_output(["rustc","-vV"],text=True),"source_root":str(root),"profile":"test-debug0-incremental0-all-features","qualification":"build_only; tests that read source files require the matching source_root"},indent=2)+"\n")
+          PYCODE
+      - name: Retain the diagnostic unit-test binary
+        if: inputs.unit_tests
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
+        with:
+          name: diagnostic-unit-aarch64-apple-darwin-${{ github.sha }}
+          path: diagnostic-unit/
           if-no-files-found: error
           retention-days: 1
