@@ -113,18 +113,20 @@ pub(super) fn previous_boundary_controls(current: &str) -> String {
         );
         let glue = "    let stage = shared_runs::previous_shared_step_controls(&stage);\n";
         assert_eq!(current.matches(glue).count(), 1);
-        let current = current.replacen(glue, "", 1);
-        assert_eq!(current.len(), 23716);
+        // Keep the original whole current input for the entry-stage guard.
+        // This intermediate is only an operand of the exact finite inverse.
+        let without_glue = current.replacen(glue, "", 1);
+        assert_eq!(without_glue.len(), 23716);
         assert_eq!(
             format!(
                 "{:x}",
-                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+                crate::digest_hex::LowerHex(Sha256::digest(without_glue.as_bytes()))
             ),
             "6c805d362018fbb4a84f47bba80ca9481ab1b2439d70e90374399e7265ba815a",
         );
         let registration = "#[path = \"shared_boundaries/shared_runs.rs\"]\n";
-        assert_eq!(current.matches(registration).count(), 1);
-        let before = current.replacen(registration, "", 1);
+        assert_eq!(without_glue.matches(registration).count(), 1);
+        let before = without_glue.replacen(registration, "", 1);
         assert_eq!(before.len(), 23671);
         assert_eq!(
             format!(
