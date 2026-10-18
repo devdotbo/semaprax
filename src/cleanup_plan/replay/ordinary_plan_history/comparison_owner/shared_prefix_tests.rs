@@ -170,6 +170,23 @@ fn run(
     floor: usize,
     hir_shared: bool,
 ) -> Run {
+    run_traced(
+        function, length, depth, shared, fault, old, units, limit, floor, hir_shared, false,
+    )
+}
+fn run_traced(
+    function: &ResolvedFunction,
+    length: usize,
+    depth: usize,
+    shared: bool,
+    fault: usize,
+    old: bool,
+    units: usize,
+    limit: usize,
+    floor: usize,
+    hir_shared: bool,
+    swaps_only: bool,
+) -> Run {
     let (actual, mut expected) = fixture(length, depth, shared, fault);
     if hir_shared {
         for path in &mut expected {
@@ -178,7 +195,11 @@ fn run(
         }
     }
     pair_scope_census::reset();
-    frontiers::reset();
+    if swaps_only {
+        frontiers::reset_swaps();
+    } else {
+        frontiers::reset();
+    }
     let observed = with_limit_usage_refusal(limit, || {
         measure(|| {
             let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
@@ -338,7 +359,7 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
         (128, 16, true),
     ] {
         for hir_shared in [false, true] {
-            let old = run(
+            let old = run_traced(
                 function,
                 length,
                 depth,
@@ -349,8 +370,9 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 usize::MAX,
                 0,
                 hir_shared,
+                true,
             );
-            let current = run(
+            let current = run_traced(
                 function,
                 length,
                 depth,
@@ -361,6 +383,7 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 usize::MAX,
                 0,
                 hir_shared,
+                true,
             );
             assert!(old.observed.0 .0.result.is_ok());
             assert_eq!(old.observed.0 .0, current.observed.0 .0);

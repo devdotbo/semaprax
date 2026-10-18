@@ -251,7 +251,12 @@ impl Guard {
             None => r.overflow = true,
         });
         if UNWIND_IDENTITY.with(|flag| flag.replace(false)) {
-            panic!("test-only unwind inside live certified PLAN remainder");
+            // Exercise real cleanup unwinding without running the test panic
+            // reporter inside the allocation observation (which retains state).
+            // The caught payload is still allocated and dropped in that window.
+            std::panic::resume_unwind(Box::new(
+                "test-only unwind inside live certified PLAN remainder",
+            ));
         }
     }
     pub(super) fn identity_work(&self) {
