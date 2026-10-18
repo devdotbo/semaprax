@@ -1,0 +1,27 @@
+{
+  "status": "SOURCE_ONLY_CURRENT_COMPILED_CHANNEL_CORRECTION_UNRUN",
+  "base": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+  "before_sha256": "9de25fcd0689848572869e0e070a6bc8c14b529d460f65e24704e10afb385bff",
+  "after_sha256": "850d25291da9a4b240d4549cb52060babf82c825eed80f0edf36faf54b250fd0",
+  "inverse": [
+    {
+      "after": "\n#[test]\nfn complete_current_compiled_sources_precede_strict_historical_stage_acquisition() {\n    let packet = packet();\n    for source in [\n        \"tests/hir_module_boundaries.rs\",\n        \"tests/workspace/semantic_graph/source_inventory.rs\",\n        \"crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\",\n        \"src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs\",\n    ] {\n        let row = packet[\"rows\"]\n            .as_array()\n            .unwrap()\n            .iter()\n            .find(|row| row[\"source\"] == source)\n            .unwrap();\n        let compiled = compiled(source).unwrap();\n        let current = actual(row);\n        assert_eq!(current.as_str(), compiled, \"complete current compiled channel\");\n        // The original stage normalizer still authenticates both the current\n        // carrier and its complete historical before image. It must remain a\n        // historical channel, rather than replace the current compiled image.\n        let prior = clippy_stage::normalize(source, compiled);\n        assert_ne!(prior.as_ref(), compiled, \"genuine distinct prior generation\");\n        let expected = digest(prior.as_bytes());\n        assert_eq!(\n            clippy_stage::requested(source, &expected, compiled).as_deref(),\n            Some(prior.as_ref()),\n            \"unchanged complete historical stage acquisition\"\n        );\n        let foreign = format!(\"{compiled}\\n\");\n        assert_ne!(foreign.as_str(), compiled);\n        assert!(clippy_stage::requested(source, &expected, &foreign).is_none());\n        assert!(clippy_stage::requested(source, &\"0\".repeat(64), compiled).is_none());\n    }\n}\n",
+      "before": "",
+      "count": 1
+    },
+    {
+      "after": "        assert_eq!(\n            Some(value.as_str()),\n            compiled(source),\n            \"complete actual compiled source\"\n        );",
+      "before": "        assert_eq!(\n            Some(value.as_str()),\n            compiled(source)\n                .map(|raw| clippy_stage::normalize(source, raw))\n                .as_deref(),\n            \"complete actual compiled source\"\n        );",
+      "count": 1
+    }
+  ],
+  "new_modules": 0,
+  "added_selectors": [
+    "source_reflows_merge::main_e177_final_inputs::complete_current_compiled_sources_precede_strict_historical_stage_acquisition"
+  ],
+  "historical_clippy_stage_function_bodies_unchanged": true,
+  "all_prior_packets_views_caps_and_hostiles_unchanged": true,
+  "source_coupling": "PENDING_COMBINED_BATCH_NOT_ADOPTED",
+  "Cargo": false
+}

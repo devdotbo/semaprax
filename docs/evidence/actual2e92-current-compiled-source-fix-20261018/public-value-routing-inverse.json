@@ -1,0 +1,6 @@
+{
+  "before_sha256": "850d25291da9a4b240d4549cb52060babf82c825eed80f0edf36faf54b250fd0",
+  "after_sha256": "97127a12ed23a65544f718726f161d990f7708679ccc62866e5e962f0facf821",
+  "before": "pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {\n",
+  "after": "pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {\n    // Current and prior logical-table views retain their complete scope before\n    // the separately authenticated historical Clippy-stage acquisition.\n    let direct = value_4a6eb(source, expected, supplied);\n    if digest(direct.as_bytes()) == expected {\n        return direct;\n    }\n"
+}

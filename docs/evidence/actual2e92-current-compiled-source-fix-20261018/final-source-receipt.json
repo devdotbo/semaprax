@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_ONLY_FIX_RUNTIME_PENDING",
+  "base": "2e92f64f640fe7f4495b3fffe6a17c5575e9f965",
+  "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+  "before_sha256": "9de25fcd0689848572869e0e070a6bc8c14b529d460f65e24704e10afb385bff",
+  "after_sha256": "97127a12ed23a65544f718726f161d990f7708679ccc62866e5e962f0facf821",
+  "lines": 1385,
+  "changes": [
+    "Authenticate complete raw compiled image before historical normalization",
+    "Acquire requested complete logical-table view before historical Clippy-stage fallback"
+  ],
+  "new_selectors": [
+    "source_reflows_merge::main_e177_final_inputs::complete_current_compiled_sources_precede_strict_historical_stage_acquisition"
+  ],
+  "original_historical_functions_and_controls_unchanged": true,
+  "source_coupling": "PENDING_BATCH",
+  "Cargo": false
+}

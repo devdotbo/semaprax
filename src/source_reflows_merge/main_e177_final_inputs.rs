@@ -677,9 +677,7 @@ fn actual(row: &serde_json::Value) -> String {
     if row["compiled"].as_bool().unwrap() {
         assert_eq!(
             Some(value.as_str()),
-            compiled(source)
-                .map(|raw| clippy_stage::normalize(source, raw))
-                .as_deref(),
+            compiled(source),
             "complete actual compiled source"
         );
     }
@@ -727,6 +725,12 @@ fn file_4a6eb(path: &Path, length: usize, expected: &str) -> Option<String> {
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
+    // Current and prior logical-table views retain their complete scope before
+    // the separately authenticated historical Clippy-stage acquisition.
+    let direct = value_4a6eb(source, expected, supplied);
+    if digest(direct.as_bytes()) == expected {
+        return direct;
+    }
     if let Some(value) = clippy_stage::requested(source, expected, supplied) {
         let _ = packet();
         return value;
@@ -1341,5 +1345,41 @@ _=>None,
             }
         }
         Some(Err("foreign successor tuple"))
+    }
+}
+
+#[test]
+fn complete_current_compiled_sources_precede_strict_historical_stage_acquisition() {
+    let packet = packet();
+    for source in [
+        "tests/hir_module_boundaries.rs",
+        "tests/workspace/semantic_graph/source_inventory.rs",
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+    ] {
+        let row = packet["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)
+            .unwrap();
+        let compiled = compiled(source).unwrap();
+        let current = actual(row);
+        assert_eq!(current.as_str(), compiled, "complete current compiled channel");
+        // The original stage normalizer still authenticates both the current
+        // carrier and its complete historical before image. It must remain a
+        // historical channel, rather than replace the current compiled image.
+        let prior = clippy_stage::normalize(source, compiled);
+        assert_ne!(prior.as_ref(), compiled, "genuine distinct prior generation");
+        let expected = digest(prior.as_bytes());
+        assert_eq!(
+            clippy_stage::requested(source, &expected, compiled).as_deref(),
+            Some(prior.as_ref()),
+            "unchanged complete historical stage acquisition"
+        );
+        let foreign = format!("{compiled}\n");
+        assert_ne!(foreign.as_str(), compiled);
+        assert!(clippy_stage::requested(source, &expected, &foreign).is_none());
+        assert!(clippy_stage::requested(source, &"0".repeat(64), compiled).is_none());
     }
 }
