@@ -1,0 +1,10 @@
+{
+  "status": "SOURCE_ONLY_UNRUN",
+  "base": "c6bcbe6d7fb539f7fc51d23894b1562c322f9704",
+  "path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+  "before_sha256": "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b",
+  "after_sha256": "829ec5782619043f3651cf56982c3668cbadd55906690de9f50aa5800cf24a9b",
+  "inverse": "Remove exactly #[cfg(test)] immediately preceding the unique unchanged case_certified::validate_status_sources_certified reexport.",
+  "chain": "All direct uses are cfg(test) old callers/case_proof tests and receiving.rs cfg(test) export after same-ABI ordinary continuation. case_certified production module still required for retained_lookup; implementation body unchanged. No further reexport of this symbol exists.",
+  "checks": "Unique source replacement/full inverse assertion only; no Cargo/per-fix Clippy."
+}

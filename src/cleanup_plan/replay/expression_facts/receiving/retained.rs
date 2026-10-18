@@ -707,6 +707,7 @@ mod component_before_prefix;
 
 mod case_certified;
 mod case_proof;
+#[cfg(test)]
 pub(in crate::cleanup_plan::replay) use case_certified::validate_status_sources_certified;
 pub(in crate::cleanup_plan::replay) use case_proof::StatusCases;
 // Same complete validation loop; only the owned insertion builder differs.
