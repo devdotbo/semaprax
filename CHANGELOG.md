@@ -1,4 +1,6 @@
 - Select the fully paid inline clone for short two-edge plan histories whose maximum possible backing saving cannot cover the direct query and call receivers. Preserve complete prior enumerators, work/refusal/Drop controls and all compiler limits; focused runtime and application qualification remain pending.
+
+- OPT #895: source-only private starter codec regeneration compares full unverified drafts before one ordinary checked codec candidate; public replay and the final activated build remain complete. Qualification and net-cost measurement are pending.
 - Correct the native Rust SDK disposal-frame layout pin to the measured 48-byte closed-tag layout; keep exact assertions and size-based ledger accounting. Full hosted qualification remains pending.
 - Source-only #890 reuses complete ordinary HIR validation over the same immutable native emission borrow when building resource ABI descriptors. Raw builders and selected receiving validation remain intact; whole previous emission, hostile diagnostic, invocation-count and carrier-layout controls are authored. Compilation, runtime, measured cost and application-fit qualification remain pending.
 

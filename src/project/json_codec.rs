@@ -13,6 +13,11 @@ mod nested_request;
 mod nested_response;
 mod owned;
 mod plan;
+#[cfg(test)]
+pub(super) use plan::before as plan_before;
+pub(super) use plan::derive_replayed_json_codec_plan;
+#[cfg(test)]
+pub(super) use plan::tests as plan_tests;
 mod plan_input;
 pub use plan_input::decode_json_codec_plan;
 mod profile_selector;

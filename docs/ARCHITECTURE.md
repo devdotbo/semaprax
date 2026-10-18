@@ -1260,7 +1260,11 @@ and [typed native tests](PROJECT-NATIVE-TEST-COLLECTION-RECORD-PURE-V1.md) own l
 `src/project/json_codec` owns checked-source application codec derivation and
 exact regeneration replay. Its `plan` child derives a bounded set against one
 immutable retained revision and admits the complete combined candidate through
-ordinary Project construction. It retains authored sources separately from the
+ordinary Project construction. Its private starter-only draft carries unverified
+source/receipt bytes; independent complete regeneration precedes one codec
+candidate build and both ordinary HIR checks. The public derive/verify APIs
+retain checked replay, and command activation retains its distinct final build.
+It retains authored sources separately from the
 complete candidate and exact per-entry evidence; no new semantic index, hidden
 helper admission or managed publication authority is introduced.
 It emits ordinary source and rebuilds the original

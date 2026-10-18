@@ -20,7 +20,12 @@ semaprax build . --target native -o app
 The plan is the unchanged [codec plan v1](APPLICATION-JSON-CODEC-PLAN-V1.md),
 including its exact optional expected Project revision, bounds and overlapping
 selector refusals. Its decoder and profile selector are shared with json-codec;
-there is one generator and one regeneration replay. A successful derivation
+there is one generator and one regeneration replay. The private starter path first derives
+unverified source/receipt drafts twice, compares every field and complete source
+byte, releases the second draft, then builds one complete codec candidate and
+performs both ordinary entry/test HIR validations. A draft carries no checked
+candidate revision, HIR, publication operation or authority. Public codec-plan
+derive/verify APIs retain independent checked replay. A successful derivation
 replays the whole bundle, activates the explicitly supplied command source at
 one existing manifest path, formats all authored modules canonically, then
 rebuilds and independently validates the complete candidate through ordinary

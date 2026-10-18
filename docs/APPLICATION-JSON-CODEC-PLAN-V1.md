@@ -79,6 +79,16 @@ all fields and complete bytes. A changed selector, bound, member, source,
 receipt or generated inventory invalidates the claim. Evidence grants no
 filesystem, compilation exemption or mutation authority.
 
+The internal application starter additionally uses a private unverified draft:
+it independently regenerates complete source/receipt bytes, compares all draft
+fields, drops the regeneration, then performs one complete ordinary candidate
+build and both HIR validations. Candidate Project/workspace revisions are derived
+only by that ordinary build. Public derivation and public replay retain their
+original checked-candidate boundaries, and the starter's distinct activated and
+formatted candidate is still rebuilt and validated afterward. This removes one
+repeated pre-activation candidate build on successful starter preparation; it
+establishes no measured net allocation, latency, application fit or runtime gain.
+
 The raw CLI encodes the complete checked bundle before creating its private
 output file and uses the existing exclusive hard-link publication for one
 explicit new destination. Existing files, symlinks and racing destination
@@ -102,3 +112,12 @@ replays both codecs as one combined candidate before installation and retains
 its original full acceptance oracle. The committed `codec-plan.json` in
 `examples/shiftsim-typed-record-successor` provides the real one-command setup.
 Execution remains pending; these definitions do not claim qualification.
+
+Private owning controls for OPT #895 are `project::json_codec::plan::tests::`
+and `project::application_starter::tests::` in the existing library harness. They
+retain complete immediate-old plan and starter drivers, full bundle/final-file
+byte and revision parity, all draft/receipt/source fields, reminted-hash and
+wrong-revision refusal, first diagnostic order, no source writes, ordinary-check
+invocation counts and complete allocation/Drop observations. They are authored
+and unrun; existing host no-partial-publication and held-input controls remain
+required. No earlier PASS qualifies this change.
