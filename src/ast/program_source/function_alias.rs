@@ -10,7 +10,13 @@ use crate::ast::{Function, Program};
 
 #[derive(Debug)]
 pub(crate) struct FunctionView<'a> {
-    _provider: &'a Program,
+    // This is the original provider-field receiving word, not an added tag.
+    // Inline Some(provider) replaces the old reference field initialization;
+    // None is formed only by the prepaid closed finite-signature factory.
+    // Original/alias loans and its input lifetime retain exact provenance.
+    // Getters inspect this field by pattern at the former enum-variant probe;
+    // no forwarding Option helper, result carrier, or method receiver is added.
+    _provider: Option<&'a Program>,
     original: &'a Function,
     _alias: &'a str,
 }
@@ -28,7 +34,7 @@ impl<'a> FunctionView<'a> {
             return None;
         }
         Some(Self {
-            _provider: provider,
+            _provider: Some(provider),
             original,
             _alias: alias,
         })
@@ -38,8 +44,6 @@ impl<'a> FunctionView<'a> {
 pub(crate) enum FunctionEntry<'a> {
     Owned(usize),
     Borrowed(FunctionView<'a>),
-    /// Ordinary scalar signature: exact provider metadata, finite synthetic body.
-    Signature(scalar_signature::ScalarSignature<'a>),
 }
 pub(crate) struct FunctionDirectory<'a> {
     pub(crate) roots: GeneratedRoots,
@@ -52,15 +56,14 @@ impl DeclarationDirectory<Function> for FunctionDirectory<'_> {
     fn get(&self, index: usize) -> Option<&Function> {
         match &self.entries[index] {
             FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
-            FunctionEntry::Borrowed(view)
-            | FunctionEntry::Signature(scalar_signature::ScalarSignature { view }) => {
-                Some(view.original)
-            }
+            FunctionEntry::Borrowed(view) => Some(view.original),
         }
     }
     fn profile_get(&self, index: usize) -> Option<&Function> {
         match &self.entries[index] {
-            FunctionEntry::Signature(_) => None,
+            FunctionEntry::Borrowed(FunctionView {
+                _provider: None, ..
+            }) => None,
             FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
             FunctionEntry::Borrowed(view) => Some(view.original),
         }

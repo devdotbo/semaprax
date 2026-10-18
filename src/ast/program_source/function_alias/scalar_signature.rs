@@ -45,7 +45,10 @@ pub(super) static EMPTY: Vec<Expr> = Vec::new();
 /// The ordinary producer admits the complete check bank before calling this.
 #[derive(Debug)]
 pub(crate) struct ScalarSignature<'a> {
-    pub(super) view: super::FunctionView<'a>,
+    // Publishing consumes this exact field, without a forwarding helper ABI.
+    // Only FunctionView's private provider word selects the presentation;
+    // wrapping a retained Some-provider view cannot forge a finite view.
+    pub(crate) view: super::FunctionView<'a>,
 }
 impl<'a> ScalarSignature<'a> {
     pub(crate) fn checked(
@@ -95,7 +98,7 @@ impl<'a> ScalarSignature<'a> {
 
         Some(Self {
             view: super::FunctionView {
-                _provider: provider,
+                _provider: None,
                 original,
                 _alias: alias,
             },

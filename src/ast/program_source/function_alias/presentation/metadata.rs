@@ -10,12 +10,9 @@ impl<'a> FunctionSlices<'a> {
             Self::Projected {
                 directory, start, ..
             } => directory.entries.get(*start..).is_some_and(|entries| {
-                entries.iter().any(|entry| {
-                    matches!(
-                        entry,
-                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_)
-                    )
-                })
+                entries
+                    .iter()
+                    .any(|entry| matches!(entry, FunctionEntry::Borrowed(_)))
             }),
         }
     }
@@ -41,8 +38,8 @@ impl<'a> FunctionSlices<'a> {
                                 }
                             }
                         }
-                        FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) if view._alias == name => return None,
-                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => {}
+                        FunctionEntry::Borrowed(view) if view._alias == name => return None,
+                        FunctionEntry::Borrowed(_) => {}
                     }
                 }
                 None
@@ -77,7 +74,7 @@ impl<'a> FunctionSlices<'a> {
                             FunctionEntry::Owned(index) => {
                                 directory.roots.functions.get(*index).is_some_and(same)
                             }
-                            FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => false,
+                            FunctionEntry::Borrowed(_) => false,
                         })
                     })
             }
@@ -118,7 +115,7 @@ impl<'a> FunctionSlices<'a> {
                             .functions
                             .get(*index)
                             .filter(|function| same(function)),
-                        FunctionEntry::Borrowed(_) | FunctionEntry::Signature(_) => None,
+                        FunctionEntry::Borrowed(_) => None,
                     })
             }),
         }
@@ -178,7 +175,7 @@ impl<'a> FunctionSlices<'a> {
                             .functions
                             .get(*index)
                             .filter(|function| function.name == name && predicate(function)),
-                        FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) => (view._alias == name
+                        FunctionEntry::Borrowed(view) => (view._alias == name
                             && predicate(view.original))
                         .then_some(view.original),
                     })
@@ -215,7 +212,7 @@ impl<'a> FunctionSlices<'a> {
                             FunctionEntry::Owned(index) => {
                                 directory.roots.functions.get(*index).is_some_and(ordinary)
                             }
-                            FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view }) => {
+                            FunctionEntry::Borrowed(view) => {
                                 std::ptr::eq(view.original, target.payload)
                                     && target
                                         .alias_entry

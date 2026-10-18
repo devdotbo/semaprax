@@ -42,14 +42,7 @@ impl<'a> FunctionRef<'a> {
     }
     pub(crate) fn name(&self) -> &'a str {
         match self.alias_entry {
-            Some(
-                FunctionEntry::Borrowed(view)
-                | FunctionEntry::Signature(
-                    crate::ast::program_source::function_alias::scalar_signature::ScalarSignature {
-                        view,
-                    },
-                ),
-            ) => view._alias,
+            Some(FunctionEntry::Borrowed(view)) => view._alias,
             Some(FunctionEntry::Owned(_)) => unreachable!("owned entry uses its ordinary payload"),
             None => &self.payload.name,
         }
@@ -65,18 +58,28 @@ impl<'a> FunctionRef<'a> {
     /// This does not remove the function from ordinary source/HIR validation.
     pub(crate) fn classifier_payload(&self) -> Option<&'a Function> {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => None,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => None,
             _ => Some(self.payload),
         }
     }
     pub(crate) fn is_signature(&self) -> bool {
-        matches!(self.alias_entry, Some(FunctionEntry::Signature(_)))
+        matches!(
+            self.alias_entry,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None,
+                ..
+            }))
+        )
     }
     // Each getter replaces payload() plus the corresponding field loan. Its
     // receiver/return remain two references; no owning AST or extra view forms.
     pub(crate) fn body(&self) -> &'a crate::ast::Expr {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => match self.payload.return_type {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => match self.payload.return_type {
                 crate::ast::Type::I64 => &super::scalar_signature::I64,
                 crate::ast::Type::I32 => &super::scalar_signature::I32,
                 crate::ast::Type::Char => &super::scalar_signature::CHAR,
@@ -92,25 +95,33 @@ impl<'a> FunctionRef<'a> {
     }
     pub(crate) fn requires(&self) -> &'a Vec<crate::ast::Expr> {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => &super::scalar_signature::EMPTY,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &super::scalar_signature::EMPTY,
             _ => &self.payload.requires,
         }
     }
     pub(crate) fn ensures(&self) -> &'a Vec<crate::ast::Expr> {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => &super::scalar_signature::EMPTY,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &super::scalar_signature::EMPTY,
             _ => &self.payload.ensures,
         }
     }
     pub(crate) fn yields(&self) -> &'a Option<crate::ast::YieldsClause> {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => &None,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &None,
             _ => &self.payload.yields,
         }
     }
     pub(crate) fn follows(&self) -> &'a Option<Box<crate::ast::SessionProtocolFollowsClause>> {
         match self.alias_entry {
-            Some(FunctionEntry::Signature(_)) => &None,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &None,
             _ => &self.payload.follows,
         }
     }
@@ -349,7 +360,7 @@ impl<'a> FunctionSlices<'a> {
                         .functions
                         .get(*index)
                         .map(FunctionRef::ordinary),
-                    entry @ (FunctionEntry::Borrowed(view) | FunctionEntry::Signature(crate::ast::program_source::function_alias::scalar_signature::ScalarSignature { view })) => Some(FunctionRef {
+                    entry @ FunctionEntry::Borrowed(view) => Some(FunctionRef {
                         payload: view.original,
                         alias_entry: Some(entry),
                     }),

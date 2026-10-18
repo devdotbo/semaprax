@@ -108,7 +108,7 @@ fn selected_and_generated_payloads_keep_exact_reference_membership() {
 
 fn entry<'a>(provider: &'a crate::ast::Program, original: &'a Function) -> FunctionEntry<'a> {
     FunctionEntry::Borrowed(FunctionView {
-        _provider: provider,
+        _provider: Some(provider),
         original,
         _alias: "local_alias",
     })
@@ -139,7 +139,7 @@ fn bytes_aliases_cannot_enter_raw_proof_assignment_or_transitive_cursor() {
         FunctionDirectory {
             roots: GeneratedRoots::plain(Vec::new(), Vec::new()),
             entries: vec![FunctionEntry::Borrowed(FunctionView {
-                _provider: &provider,
+                _provider: Some(&provider),
                 original: leaf,
                 _alias: "leaf",
             })],

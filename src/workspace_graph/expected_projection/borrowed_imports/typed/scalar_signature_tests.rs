@@ -257,9 +257,15 @@ fn complete_old_constructor_and_actual_dispatch_remain_independent_and_same_widt
         "434640ce68332a1d96840ae10b8e4a500799a567f6d75cc903a6e272196a24b2"
     );
     #[allow(dead_code)]
+    struct OldView<'a> {
+        _provider: &'a Program,
+        original: &'a Function,
+        _alias: &'a str,
+    }
+    #[allow(dead_code)]
     enum OldEntry<'a> {
         Owned(usize),
-        Borrowed(FunctionView<'a>),
+        Borrowed(OldView<'a>),
     }
     #[allow(dead_code)]
     struct OldRef<'a> {
@@ -267,7 +273,32 @@ fn complete_old_constructor_and_actual_dispatch_remain_independent_and_same_widt
         alias: Option<&'a &'a str>,
     }
     use std::mem::size_of;
+    assert_eq!(size_of::<Option<&Program>>(), size_of::<&Program>());
+    assert_eq!(size_of::<FunctionView<'_>>(), size_of::<OldView<'_>>());
+    assert_eq!(size_of::<OldEntry<'_>>(), size_of::<OldView<'_>>());
     assert_eq!(size_of::<FunctionEntry<'_>>(), size_of::<OldEntry<'_>>());
+    // Every entry-bearing production invoice uses the actual element type:
+    // directory backing, output slots, and the unchanged Vec carrier. Neither
+    // the historical baseline nor a discarded tag receives artificial padding.
+    assert_eq!(
+        size_of::<Option<FunctionView<'_>>>(),
+        size_of::<Option<OldView<'_>>>()
+    );
+    assert_eq!(
+        size_of::<crate::ast::program_source::function_alias::scalar_signature::ScalarSignature<'_>>(
+        ),
+        size_of::<OldView<'_>>()
+    );
+    assert_eq!(
+        size_of::<Vec<FunctionEntry<'_>>>(),
+        size_of::<Vec<OldEntry<'_>>>()
+    );
+    for capacity in [0, 1, 2, 16, 492, 1024] {
+        let old = std::alloc::Layout::array::<OldEntry<'_>>(capacity).unwrap();
+        let current = std::alloc::Layout::array::<FunctionEntry<'_>>(capacity).unwrap();
+        assert_eq!(old, current);
+    }
+
     assert_eq!(size_of::<FunctionRef<'_>>(), size_of::<OldRef<'_>>());
     assert_eq!(
         size_of::<FunctionCell<'_>>(),
@@ -406,7 +437,12 @@ fn dense_real_signature_payload_savings_cover_complete_new_constructor_invoice()
                             .functions
                             .entries
                             .iter()
-                            .filter(|e| matches!(e, FunctionEntry::Signature(_)))
+                            .enumerate()
+                            .filter(|(ordinal, _)| result
+                                .function_refs()
+                                .get(programs[0].functions.len() + ordinal)
+                                .unwrap()
+                                .is_signature())
                             .count(),
                         16
                     );
@@ -448,6 +484,56 @@ fn broader_signatures_keep_owning_fallback_and_closed_provider_membership() {
             None,
             &mut owner,
         )
+        .err()
+        .expect("the original Bytes-returning default is unsupported");
+        let current = super::construct_transient(
+            &programs[0],
+            &authored,
+            &programs,
+            &registry,
+            None,
+            &mut owner,
+        )
+        .err()
+        .expect("current fallback must retain the original refusal");
+        let (Failure::One(old), Failure::One(current)) = (old, current) else {
+            panic!("ordinary single default refusal required");
+        };
+        assert_eq!(old, current);
+        assert_eq!(old.code, "SPX-G173");
+        assert_eq!(old.severity, crate::diagnostic::Severity::Error);
+        assert_eq!(
+            old.message,
+            "internal byte-data types have no synthesizable workspace default"
+        );
+        assert_eq!(old.path, None);
+        assert_eq!(old.span, None);
+        assert_eq!(old.help, None);
+    });
+    assert!(!refused && first.is_none());
+    owning_parameter_fallback_keeps_real_success_and_complete_hir_parity();
+}
+
+fn owning_parameter_fallback_keeps_real_success_and_complete_hir_parity() {
+    let mut programs = programs();
+    programs[0] = crate::parse(
+        &APP.replace("left()", "left(bytes_zeroed(0usize))"),
+        "app.spx",
+    )
+    .unwrap();
+    programs[1] = crate::parse("module left; @id(\"left.value\") fn left(input: own Bytes)->i64{if byte_len(input)==0usize{20}else{21}}", "left.spx").unwrap();
+    let authored = index_authored(&programs).unwrap();
+    let ((), refused, _, first) = with_limit_usage_refusal(LIMIT, || {
+        let registry = LayoutRegistry::new(&programs, &authored);
+        let mut owner = Receiver::acquire().unwrap();
+        let old = super::before_scalar_signature::construct_transient(
+            &programs[0],
+            &authored,
+            &programs,
+            &registry,
+            None,
+            &mut owner,
+        )
         .unwrap();
         let current = super::construct_transient(
             &programs[0],
@@ -469,6 +555,23 @@ fn broader_signatures_keep_owning_fallback_and_closed_provider_membership() {
                 .unwrap()
                 .same_ordinary_declaration(old.functions().get(i).unwrap()));
         }
+        let layout = registry.get(&programs[0], &authored, &programs).unwrap();
+        let expected = crate::hir::identity_resolution::resolve_source_nominal(
+            &old,
+            layout.presentation(&programs[0], &old).unwrap(),
+            crate::workspace_graph::reserve_builder_structure,
+        )
+        .unwrap()
+        .0;
+        let actual = crate::hir::identity_resolution::resolve_source_nominal(
+            &current,
+            layout.presentation(&programs[0], &current).unwrap(),
+            crate::workspace_graph::reserve_builder_structure,
+        )
+        .unwrap()
+        .0;
+        assert_eq!(expected, actual);
+        crate::hir::validate(&actual).unwrap();
     });
     assert!(!refused && first.is_none());
 }

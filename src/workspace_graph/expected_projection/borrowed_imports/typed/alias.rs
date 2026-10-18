@@ -268,7 +268,10 @@ pub(in crate::workspace_graph) fn construct_transient<'p>(
                     + 4 * size_of::<&Function>()
                     + 4 * size_of::<&str>()
                     + 2 * size_of::<&String>()
-                    + 2 * size_of::<ScalarSignature<'p>>()
+                    + size_of::<ScalarSignature<'p>>()
+                    // The former outer Signature binding is consumed as its
+                    // exact view field; same lifetime and publication boundary.
+                    + size_of::<FunctionView<'p>>()
                     + 2 * size_of::<Option<ScalarSignature<'p>>>()
                     + size_of::<FunctionView<'p>>()
                     + size_of::<FunctionEntry<'p>>()
@@ -311,7 +314,9 @@ pub(in crate::workspace_graph) fn construct_transient<'p>(
                             + 2 * size_of::<bool>())
                     + size_of::<Option<&Function>>(),
             )?;
-            if let Some(signature) = ScalarSignature::checked(provider, original, &import.alias) {
+            if let Some(ScalarSignature { view }) =
+                ScalarSignature::checked(provider, original, &import.alias)
+            {
                 // Keep original proof-current checks and their ordering even
                 // though primitive defaults cannot consume either permission.
                 let _owned =
@@ -323,7 +328,7 @@ pub(in crate::workspace_graph) fn construct_transient<'p>(
                     .map_err(Failure::one)?
                     .authorized(original, target.module)
                     .map_err(Failure::one)?;
-                entries.push(FunctionEntry::Signature(signature));
+                entries.push(FunctionEntry::Borrowed(view));
                 continue;
             }
         }
