@@ -289,9 +289,10 @@ fn current_selected_family_wrapper_formals_have_exact_short_zero_work_and_drop()
         Result<(), EngineError>,
     );
     let family = std::mem::size_of::<FamilyReceiving<'_>>();
+    let source = std::mem::size_of::<&crate::hir::ExpressionId>();
     let caller = std::mem::size_of::<FamilyCallReceiving<'_>>();
     let formal = std::mem::size_of::<WrapperFormalReceiving<'_>>();
-    let total = caller + formal + family + caller + std::mem::size_of::<Original<'_>>();
+    let total = caller + formal + family + source + caller + std::mem::size_of::<Original<'_>>();
     let program = program();
     let function = &program.functions[0];
     for headroom in [caller + formal + family, total - 1, total] {
@@ -313,10 +314,10 @@ fn current_selected_family_wrapper_formals_have_exact_short_zero_work_and_drop()
                 assert_eq!(result.is_ok(), headroom == total);
                 let expected = if headroom == total {
                     total
-                } else if headroom < caller + formal + family + caller {
+                } else if headroom == caller + formal + family {
                     caller + formal + family
                 } else {
-                    caller + formal + family + caller
+                    caller + formal + family + source + caller
                 };
                 assert_eq!(
                     budget.physical.as_ref().unwrap().charged() - charged,

@@ -243,7 +243,14 @@ impl<'a> Permit<'a> {
             1,
             "selected family finite receiving",
         )?;
-        budget.charge(subject, 10, "selected family finite receiving")?;
+        budget.charge(subject, 9, "selected family finite receiving")?;
+        // Preserve the complete original nine-role invoice without layout credit.
+        budget.reserve_array::<FamilySourceCloneReceiving<'_>>(
+            subject,
+            1,
+            "selected family source clone receiver",
+        )?;
+        budget.charge(subject, 1, "selected family source clone receiver")?;
         crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
             subject,
@@ -280,7 +287,7 @@ impl<'a> Permit<'a> {
 }
 
 // Actual extra family()/Receipt::family() arguments, construction values,
-// source-clone receiver/result, nested receipt return, error return, and
+// source-clone result, nested receipt return, error return, and
 // this wrapper's acquire-result slot.
 // The original Permit receiver below this layer is still paid independently.
 pub(in super::super) type FamilyReceiving<'a> = (
@@ -288,13 +295,16 @@ pub(in super::super) type FamilyReceiving<'a> = (
     super::family::Reason,
     &'a ResolvedFunction,
     super::family::Reason,
-    &'a crate::hir::ExpressionId,
     crate::hir::ExpressionId,
     semantic_refusal::Atom,
     semantic_refusal::Receipt,
     Error,
     Result<Permit<'a>, Error>,
 );
+
+// This additional actual terminal borrower is paid separately: original nine
+// fields, their old full physical invoice and their old work remain intact.
+pub(in super::super) type FamilySourceCloneReceiving<'a> = &'a crate::hir::ExpressionId;
 
 #[cfg(test)]
 pub(in super::super) type BeforeFamilyReceiving<'a> = (

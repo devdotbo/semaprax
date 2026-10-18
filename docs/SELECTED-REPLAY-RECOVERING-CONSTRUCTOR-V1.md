@@ -1012,7 +1012,7 @@ lane after sealing and independent review.
 
 The source-only #781 review successor retains the original finite-family9 and
 control12 packets and all original child charges. Current family adds the actual
-terminal source-clone reference (family10); every new family/control wrapper
+terminal source-clone reference as a separate one-role invoice (family9+1); every new family/control wrapper
 call additionally admits its own actual formal3 tuple at the lexical caller,
 separately from the original actual3 tuple, before invocation. Complete wrapper
 work is therefore family30 and control32. The complete old methods and original

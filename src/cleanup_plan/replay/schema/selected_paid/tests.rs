@@ -31,7 +31,6 @@ type Family<'a> = (
     super::Reason,
     &'a ResolvedFunction,
     super::Reason,
-    &'a crate::hir::ExpressionId,
     crate::hir::ExpressionId,
     super::super::super::semantic_refusal::Atom,
     super::super::super::semantic_refusal::Receipt,
@@ -83,7 +82,7 @@ fn owner_zero_one_many_contract_roots_pay_exact_reached_pops_short_zero_sticky_a
         // Sum(children)=nodes-roots; the counted loop performs no terminal pop.
         let pops = 2 * nodes - roots;
         let request = size_of::<Caller<'_>>() + size_of::<Formal<'_>>()
-            + 2 * size_of::<Wrapper<'_>>() + size_of::<WrapperFormal<'_>>() + size_of::<Family<'_>>()
+            + 2 * size_of::<Wrapper<'_>>() + size_of::<WrapperFormal<'_>>() + size_of::<Family<'_>>() + size_of::<&crate::hir::ExpressionId>()
             + size_of::<Acquire<'_>>()
             + size_of::<[Option<(&ResolvedExpr, usize)>; 514]>()
             + size_of::<Entry<'_>>() + pops * size_of::<Pop<'_>>();
