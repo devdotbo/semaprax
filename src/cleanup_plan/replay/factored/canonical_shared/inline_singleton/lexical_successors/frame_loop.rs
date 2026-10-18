@@ -113,19 +113,17 @@ impl<'hir> Canonicalizer<'hir> {
                     ));
                     self.open
                         .push(attempt!(share_weighted(function, budget, &state)));
-                    // These uninitialized places acquire no Vec payload on
-                    // One. Every actual vector transfer is paid before its
-                    // scalar/Vec receiving assignments, including legacy.
+                    // Exact old caller receiving places: no payload is formed
+                    // on One. Active output moves the original local result
+                    // directly here. Legacy destructures the original Some
+                    // payload with field-place assignment, constructing no
+                    // additional tuple, Vec alias, Option, callback or flag.
+                    // Every original output/Result/Vec invoice stays paid.
                     let vector_accepted: u64;
                     let vector_successors: Vec<(Label, SharedWeighted)>;
                     'vector_continuation: {
                         macro_rules! publish_vector {
                             ($a:expr, $rows:ident) => {{
-                                attempt!(budget.reserve_bytes(
-                                    function,
-                                    inline_exit::VECTOR_TRANSPORT,
-                                    "canonical vector continuation receiving",
-                                ));
                                 vector_accepted = $a;
                                 vector_successors = $rows;
                                 break 'vector_continuation;
@@ -139,15 +137,22 @@ impl<'hir> Canonicalizer<'hir> {
                                 ..
                             } => {}
                             _ => {
-                                let Some((accepted, successors)) = attempt!(self
-                                    .successors_with_receiving(
-                                        function, &state, budget, receiving
-                                    ))
-                                else {
-                                    receiving.finish_overflow();
-                                    return;
-                                };
-                                publish_vector!(accepted, successors);
+                                match attempt!(
+                                    self.successors_with_receiving(
+                                        function, &state, budget, receiving,
+                                    )
+                                ) {
+                                    Some(payload) => {
+                                        // This is the original returned Some
+                                        // payload, not a new tuple producer.
+                                        (vector_accepted, vector_successors) = payload;
+                                        break 'vector_continuation;
+                                    }
+                                    None => {
+                                        receiving.finish_overflow();
+                                        return;
+                                    }
+                                }
                             }
                         }
                         let Some((accepted, label, child)) = lexical_successors!(self, function, state, budget, receiving, attempt, publish_vector, 'canonical_frames)

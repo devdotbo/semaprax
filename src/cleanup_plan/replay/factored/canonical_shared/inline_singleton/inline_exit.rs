@@ -13,25 +13,37 @@ type FrameGrowth<'a, 'hir> = (
     usize,
     &'a str,
 );
-// Historical owned-One candidate had eight additional growth frames.
-// Keep that full invoice independently, without treating it as live credit.
+// Complete original owned-One frame shape remains a layout/invoice witness.
+// It is not an executable old oracle: that is the unchanged parent owner.
 #[cfg(test)]
-pub(super) const OWNED_SCHEDULE_PRIMITIVES: usize =
-    8 * (2 * size_of::<FrameGrowth<'static, 'static>>() + 2 * size_of::<Result<(), Diagnostic>>());
+pub(super) enum OwnedFrameBefore {
+    Enter(SharedWeighted),
+    Exit(SharedWeighted, u64, Vec<(Label, SharedWeighted)>),
+    ExitOne(SharedWeighted, u64, (Label, SharedWeighted)),
+}
+#[cfg(test)]
+type OwnedFrameGrowthBefore<'a> = (
+    &'a mut ReplayBudget,
+    &'a ResolvedFunction,
+    &'a mut Vec<OwnedFrameBefore>,
+    usize,
+    &'a str,
+);
+// Historical owned-One candidate had eight additional growth frames. Keep its
+// exact typed invoice independently, without treating it as live credit.
+#[cfg(test)]
+pub(super) const OWNED_SCHEDULE_PRIMITIVES: usize = 8
+    * (2 * size_of::<OwnedFrameGrowthBefore<'static>>() + 2 * size_of::<Result<(), Diagnostic>>());
 // Actual shared lexical continuation leaves only two scheduling expansions:
 // original vector and new One, hence two additional growth primitive sites.
 pub(super) const SCHEDULE_PRIMITIVES: usize =
     2 * (2 * size_of::<FrameGrowth<'static, 'static>>() + 2 * size_of::<Result<(), Diagnostic>>());
-// Four vector publication expansions each have one real new receiving payment.
-// All four call/formal/Result frames are acquired before any can form.
-pub(super) const VECTOR_PRIMITIVES: usize =
-    4 * (2 * size_of::<Primitive<'static>>() + 2 * size_of::<Result<(), Diagnostic>>());
-pub(super) const VECTOR_TRANSPORT: usize =
-    2 * size_of::<u64>() + 2 * size_of::<Vec<(Label, SharedWeighted)>>();
+// Direct branch assignments reuse the exact old producer-output/caller
+// receiving roles. They form no extra transport or payment call. The complete
+// old Result/Option/Vec banks remain unchanged, without a fee credit.
 pub(super) const PRIMITIVES: usize = 2
     * (2 * size_of::<Primitive<'static>>() + 2 * size_of::<Result<(), Diagnostic>>())
-    + SCHEDULE_PRIMITIVES
-    + VECTOR_PRIMITIVES;
+    + SCHEDULE_PRIMITIVES;
 
 // Actual borrowed OnePassLabels selector, its constant-pattern predicate and
 // the conditional reserve operand. PUBLICATION pays before the selector reads.

@@ -205,6 +205,10 @@ fn actual_old_and_inline_frame_and_output_layouts_keep_the_original_capacity_inv
         super::super::Canonicalizer::CONSTRUCTOR_CONTROLS
     );
     assert_eq!(OLD_CALL, NEW_CALL);
+    eprintln!(
+        "OPT889 actual historical owned-candidate frame={}",
+        size_of::<inline_exit::OwnedFrameBefore>()
+    );
     assert_eq!(
         inline_exit::OWNED_SCHEDULE_PRIMITIVES,
         4 * inline_exit::SCHEDULE_PRIMITIVES
@@ -304,9 +308,7 @@ fn genuine_long_singleton_chain_has_positive_complete_typed_net_without_padding_
         - inline_exit::PRIMITIVES as i128
         - m as i128 * extra_cold as i128
         - n as i128 * inline_exit::SELECT as i128
-        - drop_bytes as i128
-        - (current.shapes.arity[0] + current.shapes.arity[2]) as i128
-            * inline_exit::VECTOR_TRANSPORT as i128;
+        - drop_bytes as i128;
     assert_eq!(old.paid as i128 - current.paid as i128, expected);
     assert!(
         expected > 0 && current.paid < old.paid,

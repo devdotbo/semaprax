@@ -161,10 +161,12 @@ miss-clone arguments/results and explicit vector-continuation Drop boundaries
 are charged before formation. All vector branches converge lexically on one
 scheduling body. The earlier owned-label candidate's eight extra growth-site
 invoice remains an independent historical constant; the live implementation
-has two extra growth sites and four real vector-transfer payment sites. Their
-complete headers are acquired at root admission, and each reached vector
-transfer separately pays its actual scalar/Vec initializer and receiving slots.
-No initialized Option or callback carries the continuation.
+has two extra growth sites. Their complete headers are acquired at root
+admission. Direct branch assignments use the original producer-output/caller
+scalar and Vec receiving places, with every original transport fee retained.
+Legacy field-place assignment consumes the original returned Some payload; it
+constructs no additional tuple. No initialized Option, extra Vec alias,
+predicate or callback carries the continuation.
 The fixed diagnostic census records actual completed arities and reached
 vector Drop sites. It grants no authority. Empty, cold and multiple-label
 inputs can cost more; their old invoices must not be padded to report savings.

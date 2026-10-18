@@ -4,7 +4,7 @@ use std::mem::size_of;
 type Successors = (u64, Vec<(Label, SharedWeighted)>);
 type InlineSuccessors<'a> = (u64, &'a Label, SharedWeighted);
 // Exact same producer-output and caller-destructure role as old Successors:
-// accepted:u64 survives, the old Vec<Row> output is replaced by owned Label/Rc.
+// accepted:u64 survives, the old Vec<Row> output is replaced by borrowed Label/owned Rc.
 // No old output/Vec is live on this branch. The single Option receiver and
 // both complete Result compatibility slots in ORIGINAL_RECEIVING stay paid
 // at their original frontier and map individually, never to an unrelated bank.
