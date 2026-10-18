@@ -76,6 +76,9 @@ pub(super) fn complete_original_legacy(
             format!("status source call has unknown callee `{callee}`")
         }
         Atom::SelectedSession(detail) => detail.to_owned(),
+        Atom::SelectedControl(_) => {
+            panic!("new selected control must use the independent complete owning-route oracle")
+        }
         Atom::SelectedFamily(_) => {
             panic!("new selected family must use the independent complete owning-route oracle")
         }

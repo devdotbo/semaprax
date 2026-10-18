@@ -280,3 +280,47 @@ pub(in super::super) type FamilyCallReceiving<'a> = (
     &'a mut ReplayBudget,
     Result<Permit<'a>, Error>,
 );
+
+impl<'a> Permit<'a> {
+    pub(in super::super) fn control_receiver<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<ControlReceiving<'_>>(
+            subject,
+            1,
+            "selected control finite receiving",
+        )?;
+        budget.charge(subject, 12, "selected control finite receiving")?;
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected control acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
+    }
+    pub(in super::super) fn control(
+        &self,
+        reason: super::super::structural_control::selected::reason::Reason,
+    ) -> Error {
+        Error::Structural(semantic_refusal::Receipt::control(self.subject, reason))
+    }
+}
+pub(in super::super) type ControlReceiving<'a> = (
+    &'a Permit<'a>,
+    super::super::structural_control::selected::reason::Reason,
+    &'a ResolvedFunction,
+    super::super::structural_control::selected::reason::Reason,
+    // Dynamic missing-ID clone receiver/result coexist with the terminal
+    // body's source clone; these are distinct from both moved Reason roles.
+    &'a crate::hir::ExpressionId,
+    crate::hir::ExpressionId,
+    &'a crate::hir::ExpressionId,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);
