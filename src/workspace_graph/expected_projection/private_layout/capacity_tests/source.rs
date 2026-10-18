@@ -1,8 +1,8 @@
 //! Complete preceding receiver and full source closure, without clipped interiors.
 #[test]
 fn complete_old_receiver_source_and_all_new_joined_sources_stay_exact() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../docs/evidence/private-layout-entry-capacity-834/exact-source-inverses.json"
+    let rows: serde_json::Value = serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+        crate::source_reflows_merge::ReceiverFixture::PrivateLayoutCapacity,
     ))
     .unwrap();
     let files = [

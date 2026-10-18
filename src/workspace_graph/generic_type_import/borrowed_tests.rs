@@ -510,8 +510,8 @@ use function @id("identity") from fixture.provider as identity;
 
 #[test]
 fn complete_original_receiver_and_all_joined_source_inverses_remain_byte_exact() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json"
+    let rows: serde_json::Value = serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+        crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,
     ))
     .unwrap();
     let inputs=[

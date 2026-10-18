@@ -146,10 +146,50 @@ pub(super) fn main043_input() -> String {
 pub(crate) enum ReceiverFixture {
     SelectedCalls,
     Main67107,
+    // RUNTIME848_SIX_VARIANTS_BEGIN
+    PaidLiveReuse,
+    LexicalOperands,
+    PrivateLayoutCapacity,
+    RegistryScratch,
+    ColdCanonical,
+    BorrowedGeneric,
+    // RUNTIME848_SIX_VARIANTS_END
 }
 impl ReceiverFixture {
     fn spec(self) -> Spec {
         match self {
+            // RUNTIME848_SIX_SPECS_BEGIN
+            Self::PaidLiveReuse => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/paid-live-pending-reuse-3c351/whole-source-inverses.json"),
+                length: 3576034,
+                sha256: [175, 88, 101, 138, 154, 38, 252, 9, 156, 230, 194, 230, 75, 76, 213, 24, 61, 243, 206, 29, 108, 169, 97, 95, 44, 25, 206, 12, 141, 45, 83, 251],
+            },
+            Self::LexicalOperands => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/ordinary-lexical-return-operands-832/exact-source-inverses.json"),
+                length: 2485760,
+                sha256: [203, 244, 183, 123, 0, 154, 182, 125, 92, 251, 176, 112, 8, 30, 56, 131, 132, 45, 202, 131, 180, 69, 127, 109, 176, 70, 214, 65, 36, 223, 177, 243],
+            },
+            Self::PrivateLayoutCapacity => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/private-layout-entry-capacity-834/exact-source-inverses.json"),
+                length: 2435619,
+                sha256: [24, 156, 92, 39, 33, 34, 138, 91, 21, 161, 118, 59, 160, 15, 255, 156, 35, 72, 243, 38, 204, 56, 42, 130, 111, 149, 170, 5, 114, 223, 222, 8],
+            },
+            Self::RegistryScratch => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/registry-census-scratch-833/source-inverses.json"),
+                length: 1887564,
+                sha256: [224, 173, 90, 94, 217, 248, 71, 175, 109, 73, 51, 88, 246, 89, 174, 60, 88, 184, 158, 29, 152, 245, 12, 27, 153, 103, 24, 193, 57, 235, 3, 82],
+            },
+            Self::ColdCanonical => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/canonical-comment-comparison-835/source-inverses.json"),
+                length: 1821023,
+                sha256: [61, 179, 82, 168, 172, 142, 181, 238, 74, 100, 67, 195, 156, 217, 135, 74, 119, 95, 129, 9, 166, 51, 53, 135, 37, 142, 41, 228, 120, 212, 166, 140],
+            },
+            Self::BorrowedGeneric => Spec {
+                path: concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json"),
+                length: 1498202,
+                sha256: [71, 23, 207, 207, 19, 209, 138, 153, 88, 241, 15, 220, 76, 228, 59, 21, 77, 168, 152, 82, 242, 198, 111, 217, 192, 38, 52, 208, 27, 126, 215, 228],
+            },
+            // RUNTIME848_SIX_SPECS_END
             Self::SelectedCalls => Spec {
                 path: concat!(
                     env!("CARGO_MANIFEST_DIR"),
