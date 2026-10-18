@@ -77,6 +77,7 @@ fn resolved_owner_disposal_is_preallocated_and_depth_bounded() {
         disposal_layout::CURRENT_BYTES
     );
     assert!(disposal_layout::CURRENT_BYTES <= disposal_layout::HISTORICAL_BYTES);
+    assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 48);
 }
 
 #[test]

@@ -153,6 +153,9 @@ enum $name {
     };
 }
 
+// Preserve the independently measured current-generation pin from main.
+const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 48);
+
 pub(super) struct ResolvedProgramOwner {
     program: Option<ResolvedProgram>,
     frames: Vec<ResolvedDisposeFrame>,

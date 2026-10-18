@@ -1,0 +1,6 @@
+{
+  "scope": "complete owning standalone_runner_is_pinned_private_and_outside_the_root_workspace test only; full other three tests require compiler crate and remain hosted",
+  "status": "PASS",
+  "compiler_peakKiB": 159776,
+  "actual_runner_manifest_used": true
+}

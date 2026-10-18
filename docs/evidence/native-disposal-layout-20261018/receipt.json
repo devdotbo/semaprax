@@ -1,0 +1,27 @@
+{
+  "base_commit": "79bbe5f29760fc44f7f585731e72c65aebd996e2",
+  "scope": "standalone 64-bit host layout only; full native crate and runtime disposal not executed locally",
+  "compiler_versions": [
+    "1.98.0",
+    "1.88.0"
+  ],
+  "current_sizes": {
+    "declaration_id": 16,
+    "resolved_type": 40,
+    "field_liveness_shape": 48,
+    "disposal_frame": 48
+  },
+  "historical_sizes": {
+    "declaration_id": 24,
+    "resolved_type": 48,
+    "field_liveness_shape": 56,
+    "disposal_frame": 56
+  },
+  "stale_56_byte_current_pin_rejected": "E0080",
+  "source_inverse_checks": 2,
+  "rustfmt_check": "passed on both source files",
+  "current_compiler_peak_KiB": 96448,
+  "builder_limits_changed": false,
+  "census_and_retention_use_live_size_of": true,
+  "ci_full_current_head": "pending"
+}

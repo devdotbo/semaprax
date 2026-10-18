@@ -1,0 +1,332 @@
+#![allow(dead_code,unused_imports)]
+extern crate self as semaprax;
+use std::sync::Arc;
+mod vec_ops { #[derive(Clone)] pub(crate) enum VecOp {
+    WithCapacity,
+    Push,
+    Len,
+    Capacity,
+    Get,
+    ReserveExact,
+    Set,
+    Clear,
+    Sort,
+    CloneAt,
+    Replace,
+    ReserveOwned,
+    SortOwned,
+    SortBy,
+    StrAt,
+    UniqueBy,
+    UpdateField,
+} }
+mod box_ops { #[derive(Clone)] pub(crate) enum BoxOp {
+    New,
+    Get,
+    IntoInner,
+} }
+mod map_ops { #[derive(Clone)] pub(crate) enum MapOp {
+    New,
+    Add,
+    Set,
+    Remove,
+    GetOr,
+    Has,
+    Len,
+    KeyAt,
+    ValueAt,
+    SetNew,
+    SetInsert,
+    SetRemove,
+    SetHas,
+    SetLen,
+    SetKeyAt,
+} }
+mod list_ops { #[derive(Clone)] pub(crate) enum ListOp {
+    Nil,
+    Cons,
+    Uncons,
+} }
+mod iterator_ops { #[derive(Clone)] pub(crate) enum IteratorOp {
+    VecIntoIter,
+    Next,
+} }
+mod stdin_stream_ops { #[derive(Clone)] pub(crate) enum PureOp {
+    Chunk,
+    Eof,
+} }
+#[derive(Clone)] pub enum ResolvedHostCommandOperation {
+    ArgsLen,
+    ArgUtf8,
+    StdinRead,
+    StdinStreamOpen,
+    StdinStreamNext,
+    StderrWrite,
+    StdoutAppend,
+    StderrAppend,
+    NetConnect,
+    NetSend,
+    NetRecv,
+    NetStreamStdout,
+    NetWait,
+    NetClose,
+    NetTlsConnect,
+    NetListen,
+    NetAccept,
+    NetCloseListener,
+    NetTlsAccept,
+    HttpsGet,
+    HttpsPost,
+    FileRead,
+    FileWriteNew,
+    FileStat,
+    FileList,
+    FileCreateDir,
+    FileRemove,
+    FileWriteAtomic,
+    FileWriteAtomicChecked,
+    EnvLen,
+    EnvNameUtf8,
+    EnvValueUtf8,
+    ProcessRun,
+}
+#[derive(Clone)] enum CompilerDeclaration {
+    Vec,
+    VecOperation(crate::vec_ops::VecOp),
+    BoxOperation(crate::box_ops::BoxOp),
+    StdinInspection(crate::stdin_stream_ops::PureOp),
+    Box,
+    Option,
+    OptionNone,
+    OptionSome,
+    OptionSomeValue,
+    List,
+    ListStep,
+    Iter,
+    IterStep,
+    Map,
+    Set,
+    StdinReader,
+    ByteGet,
+    FunctionInvoke,
+    VecField,
+    LiteralFormat,
+    RowLoanUnbound,
+    OnceConstruct,
+    OnceInvoke,
+    OnceMixedConstruct,
+    OnceMixedInvoke,
+    OncePairConstruct,
+    OncePairInvoke,
+    OnceDrop,
+    OnceMixedDrop,
+    OncePairDrop,
+    BytesDrop,
+    StringTake,
+    StringDrop,
+    StringMapDrop,
+    CollectionDrop,
+    StdinReaderDrop,
+    VecDrop,
+    Command(ResolvedHostCommandOperation),
+    MapOperation(crate::map_ops::MapOp),
+    ListOperation(crate::list_ops::ListOp),
+    IteratorOperation(crate::iterator_ops::IteratorOp),
+}
+pub struct DeclarationId(DeclarationText);
+enum DeclarationText {
+    CompilerStatic(CompilerDeclaration),
+    Shared(Arc<str>),
+}
+pub enum ResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
+    /// A retained affine zero-argument, i64-result callable.
+    OnceFunction,
+    OnceFunctionI64,
+    OnceFunctionI64Pair,
+    /// Same-thread transactional i64 callback; unlike ordinary function
+    /// values it owns one mutable receiver state cell.
+    MutFunctionI64,
+    Function {
+        parameters: Vec<ResolvedType>,
+        result: Box<ResolvedType>,
+    },
+    Unit,
+    I64,
+    /// A checked signed 32-bit integer.
+    I32,
+    /// One Unicode scalar value.
+    Char,
+    /// One unsigned 8-bit integer value.
+    U8,
+    /// A target-independent checked unsigned 64-bit semantic integer.
+    Usize,
+    /// Inline Copy byte storage with exact target-independent length.
+    ArrayU8(u32),
+    /// IEEE-754 single precision.
+    F32,
+    /// IEEE-754 double precision.
+    F64,
+    Bool,
+    /// An owned heap UTF-8 string value; never `Copy`.
+    String,
+    /// Uniquely owned immutable bytes. This needs drop but is not a resource.
+    Bytes,
+    /// A non-owning UTF-8 view rooted in the current invocation.
+    Str,
+    /// A non-owning byte view rooted in the current invocation.
+    SliceU8,
+    /// String Collections v1: the uniquely owned `Map<string, i64>` carrier.
+    /// It needs drop, is never `Copy`, and is admitted only for local
+    /// bindings threaded through the compiler-owned `map_*` operations.
+    StringMap,
+    TypeParameter {
+        owner: DeclarationId,
+        index: u32,
+    },
+    Nominal {
+        declaration: DeclarationId,
+        arguments: Vec<ResolvedType>,
+    },
+}
+pub struct ResolvedExpr;pub struct ResolvedStatement;
+mod hir {pub use super::ResolvedHostCommandOperation;pub struct ResolvedBinding;pub struct ResolvedClosureCapture;pub struct ResolvedFieldInitializer;pub struct ResolvedMatchArm;pub struct ResolvedRecordMatchPatternField;pub struct ResolvedMatchPatternField;}
+mod cleanup {use super::*; pub struct LivenessFlagId(pub u32);pub enum FieldLivenessShape {
+    NoDrop,
+    Leaf {
+        flag: LivenessFlagId,
+        lifecycle: DeclarationId,
+    },
+    Record {
+        declaration: DeclarationId,
+        fields: Vec<FieldLiveness>,
+    },
+    /// A conditional sum inventory. Every leaf path is qualified by its stable
+    /// case identity before its stable field identity. At runtime exactly the
+    /// authenticated active case may contribute live flags.
+    Variant {
+        declaration: DeclarationId,
+        cases: Vec<VariantCaseLiveness>,
+    },
+}pub struct FieldLiveness {
+    pub field: DeclarationId,
+    pub field_index: u32,
+    pub shape: FieldLivenessShape,
+}pub struct VariantCaseLiveness {
+    pub case: DeclarationId,
+    pub case_index: u32,
+    pub fields: Vec<FieldLiveness>,
+}}
+pub(crate) enum ResolvedDisposeFrame {
+    ExprBox(Box<ResolvedExpr>),
+    Exprs(Vec<ResolvedExpr>),
+    Bindings(Vec<crate::hir::ResolvedBinding>),
+    Captures(Vec<crate::hir::ResolvedClosureCapture>),
+    Statements(Vec<ResolvedStatement>),
+    Fields(Vec<crate::hir::ResolvedFieldInitializer>),
+    Arms(Vec<crate::hir::ResolvedMatchArm>),
+    RecordPatternFields(Vec<crate::hir::ResolvedRecordMatchPatternField>),
+    VariantPatternFields(Vec<crate::hir::ResolvedMatchPatternField>),
+    Type(ResolvedType),
+    Types(Vec<ResolvedType>),
+    Shape(semaprax::cleanup::FieldLivenessShape),
+    Shapes(Vec<semaprax::cleanup::FieldLiveness>),
+}
+struct HistoricalDeclarationId(HistoricalDeclarationText);enum HistoricalDeclarationText{CompilerStatic(&'static str),Shared(Arc<str>)}
+pub enum HistoricalResolvedType {
+    /// Compiler-owned absence of normal completion; never a stored/ABI value.
+    Never,
+    /// A retained affine zero-argument, i64-result callable.
+    OnceFunction,
+    OnceFunctionI64,
+    OnceFunctionI64Pair,
+    /// Same-thread transactional i64 callback; unlike ordinary function
+    /// values it owns one mutable receiver state cell.
+    MutFunctionI64,
+    Function {
+        parameters: Vec<HistoricalResolvedType>,
+        result: Box<HistoricalResolvedType>,
+    },
+    Unit,
+    I64,
+    /// A checked signed 32-bit integer.
+    I32,
+    /// One Unicode scalar value.
+    Char,
+    /// One unsigned 8-bit integer value.
+    U8,
+    /// A target-independent checked unsigned 64-bit semantic integer.
+    Usize,
+    /// Inline Copy byte storage with exact target-independent length.
+    ArrayU8(u32),
+    /// IEEE-754 single precision.
+    F32,
+    /// IEEE-754 double precision.
+    F64,
+    Bool,
+    /// An owned heap UTF-8 string value; never `Copy`.
+    String,
+    /// Uniquely owned immutable bytes. This needs drop but is not a resource.
+    Bytes,
+    /// A non-owning UTF-8 view rooted in the current invocation.
+    Str,
+    /// A non-owning byte view rooted in the current invocation.
+    SliceU8,
+    /// String Collections v1: the uniquely owned `Map<string, i64>` carrier.
+    /// It needs drop, is never `Copy`, and is admitted only for local
+    /// bindings threaded through the compiler-owned `map_*` operations.
+    StringMap,
+    TypeParameter {
+        owner: HistoricalDeclarationId,
+        index: u32,
+    },
+    Nominal {
+        declaration: HistoricalDeclarationId,
+        arguments: Vec<HistoricalResolvedType>,
+    },
+}
+mod historical_cleanup {use super::*; pub struct LivenessFlagId(pub u32);pub enum FieldLivenessShape {
+    NoDrop,
+    Leaf {
+        flag: LivenessFlagId,
+        lifecycle: HistoricalDeclarationId,
+    },
+    Record {
+        declaration: HistoricalDeclarationId,
+        fields: Vec<FieldLiveness>,
+    },
+    /// A conditional sum inventory. Every leaf path is qualified by its stable
+    /// case identity before its stable field identity. At runtime exactly the
+    /// authenticated active case may contribute live flags.
+    Variant {
+        declaration: HistoricalDeclarationId,
+        cases: Vec<VariantCaseLiveness>,
+    },
+}pub struct FieldLiveness {
+    pub field: HistoricalDeclarationId,
+    pub field_index: u32,
+    pub shape: FieldLivenessShape,
+}pub struct VariantCaseLiveness {
+    pub case: HistoricalDeclarationId,
+    pub case_index: u32,
+    pub fields: Vec<FieldLiveness>,
+}}
+pub(crate) enum HistoricalDisposeFrame {
+    ExprBox(Box<ResolvedExpr>),
+    Exprs(Vec<ResolvedExpr>),
+    Bindings(Vec<crate::hir::ResolvedBinding>),
+    Captures(Vec<crate::hir::ResolvedClosureCapture>),
+    Statements(Vec<ResolvedStatement>),
+    Fields(Vec<crate::hir::ResolvedFieldInitializer>),
+    Arms(Vec<crate::hir::ResolvedMatchArm>),
+    RecordPatternFields(Vec<crate::hir::ResolvedRecordMatchPatternField>),
+    VariantPatternFields(Vec<crate::hir::ResolvedMatchPatternField>),
+    Type(HistoricalResolvedType),
+    Types(Vec<HistoricalResolvedType>),
+    Shape(historical_cleanup::FieldLivenessShape),
+    Shapes(Vec<historical_cleanup::FieldLiveness>),
+}
+fn main(){println!("current id={} type={} shape={} frame={}; historical id={} type={} shape={} frame={}",std::mem::size_of::<DeclarationId>(),std::mem::size_of::<ResolvedType>(),std::mem::size_of::<cleanup::FieldLivenessShape>(),std::mem::size_of::<ResolvedDisposeFrame>(),std::mem::size_of::<HistoricalDeclarationId>(),std::mem::size_of::<HistoricalResolvedType>(),std::mem::size_of::<historical_cleanup::FieldLivenessShape>(),std::mem::size_of::<HistoricalDisposeFrame>());assert_eq!(std::mem::size_of::<HistoricalDisposeFrame>(),56);}
+
+const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 48);

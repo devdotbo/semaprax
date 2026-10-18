@@ -1,0 +1,174 @@
+{
+  "status": "MERGE_CHECKPOINT_CUSTODY_REFRESH_AND_RUNTIME_PENDING",
+  "ours": "cd22edc2c868fd15468a45e03f40bc971a7fe7b3",
+  "incoming": "8db669070b657a1b8f3b3b68d80836c09eabcc2c",
+  "selected_active": "exact local current441 helper, guard, three bootstraps and source-successor packet",
+  "six_conflicts_resolved": [
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+    "docs/evidence/clippy-11a0-integration/inputs.json",
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "complete_stage_archives": [
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/docs/evidence/accepted-final6-source-binding-20261017/check-source.py.txt",
+      "length": 2253,
+      "sha256": "884bf8d9ba459c16f5e87660f86d6931bb00765db30e58129a64b0e1cae0516d"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/accepted-final6-source-binding-20261017/check-source.py.txt",
+      "length": 2253,
+      "sha256": "89ad7f443f2744e30db5bba53a0231709e003e04cc282ac51c4b48ad676f1006"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/accepted-final6-source-binding-20261017/check-source.py.txt",
+      "length": 2253,
+      "sha256": "5e61e2ae90a0f56d5d973ebc2e340bb844ea883af4089577ba8516f2f9ad72b2"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/docs/evidence/accepted-strict-guard-generation-20261017/check-source.py.txt",
+      "length": 5322,
+      "sha256": "4ce328b34fd13a32b338ea76a9a28503b2e8bb8862557e67708876b911beb079"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/accepted-strict-guard-generation-20261017/check-source.py.txt",
+      "length": 5322,
+      "sha256": "905c6f87f44700a7cc6e85de3dfba0f93da4a9904f50bd181ea0c2040961402c"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/accepted-strict-guard-generation-20261017/check-source.py.txt",
+      "length": 5322,
+      "sha256": "56d2c7d40691e60bf677a48967bc8e65ff81332dc689652607bf7d0ac580dd29"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/docs/evidence/clippy-11a0-integration/inputs.json.txt",
+      "length": 76409,
+      "sha256": "353131757d2d8f78e92929a8ba4eb705644db655808fe3cecf02181360fb813b"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/clippy-11a0-integration/inputs.json.txt",
+      "length": 61718,
+      "sha256": "5ddbe93ad5af0ee5ef4b625fbed34eda237018a2c343c72289360f7c8ffa14fd"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/clippy-11a0-integration/inputs.json.txt",
+      "length": 77047,
+      "sha256": "05a30834d0f1b2bdd4476bc35132eeca7f021c24ad646a0c0ad2b82202d9dc21"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py.txt",
+      "length": 10643,
+      "sha256": "157f804c7a81f4fdbaa681d019315a29aba5449558c68c447df2f2186526798b"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py.txt",
+      "length": 10642,
+      "sha256": "2d214e9eda5c43a850545ce96bbd5ceda56335c5e224e4016324be73aafe4586"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py.txt",
+      "length": 10630,
+      "sha256": "55e3db26ee9ec2fc7a3eeef076e6786a7e341beddd57871feaa1910faa8291eb"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py.txt",
+      "length": 2766,
+      "sha256": "ec1621c933c7f6529c716fa7d6efb28eb6b7e7f11e126b7594f078138ca9b37d"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py.txt",
+      "length": 2766,
+      "sha256": "301a30f5cc7cb45b7c1cc265c532263edbad2b90b90c0c1ddf3cb29dc5fb4d8b"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py.txt",
+      "length": 2766,
+      "sha256": "e305dcc5ffdd509afdd7a1e77c0e56bb05c250c7d72e0228f9ef058bd44812d0"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "stage": 1,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/base/src/source_reflows_merge/main_e177_final_inputs.rs.txt",
+      "length": 97847,
+      "sha256": "3439c2b1bd86faec732c23a451ecd5c12d61bce75e0736ea0e7879f41eb3f927"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "stage": 2,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/src/source_reflows_merge/main_e177_final_inputs.rs.txt",
+      "length": 97847,
+      "sha256": "2a900f74a322b205c9c160fa939b578e7cafc4fd3890d205464e3967dfb825cb"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "stage": 3,
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/src/source_reflows_merge/main_e177_final_inputs.rs.txt",
+      "length": 99271,
+      "sha256": "5896c0b8205ee481bdbc94f63490d1f8f2398cd7da28b558ba54ec55728fc795"
+    },
+    {
+      "path": "docs/evidence/remote12ad-checkpoint-20261018/guard-config.json",
+      "generation": "HEAD",
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/remote12ad-checkpoint-20261018/guard-config.json.txt",
+      "length": 91525,
+      "sha256": "ae0d4157d718ba22703f6a2a5dc2f50b7f52b38b7404f2432f0b5f1e84d28c1f"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "generation": "HEAD",
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/ours/docs/evidence/fmt-local-441-20261018/extension.json.txt",
+      "length": 208632,
+      "sha256": "2b3ef952ec4509b42a72c93185c3f7ded7f8ea1151d27d3797f9d3c5a442c54d"
+    },
+    {
+      "path": "docs/evidence/fmt-ec77-20261018/guard-config.json",
+      "generation": "MERGE_HEAD",
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/fmt-ec77-20261018/guard-config.json.txt",
+      "length": 116352,
+      "sha256": "641a6517e3dcadcfa3a6bc42e8c714a54801bdd922cfe62e5f7c424b9434c87c"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "generation": "MERGE_HEAD",
+      "archive": "docs/evidence/upstream8db-checkpoint-20261018/incoming/docs/evidence/fmt-local-441-20261018/extension.json.txt",
+      "length": 157497,
+      "sha256": "1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe"
+    }
+  ],
+  "disposal_conflicts_touched_by_this_lane": false,
+  "Cargo": false,
+  "binders_or_role_generators_executed": false,
+  "remaining": "Merged source current tuples, NEW3 complete closure, actual174/FINAL6 source bindings and role268 refresh must finish before new current qualification."
+}

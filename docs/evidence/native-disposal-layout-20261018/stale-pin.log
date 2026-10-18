@@ -1,0 +1,9 @@
+error[E0080]: evaluation panicked: assertion failed: std::mem::size_of::<ResolvedDisposeFrame>() == 56
+   --> /Volumes/Semaprax/tmp/ci-38383508340/disposal-layout-79bbe/layout-stale-pin.rs:332:15
+    |
+332 | const _: () = assert!(std::mem::size_of::<ResolvedDisposeFrame>() == 56);
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation of `_` failed here
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0080`.

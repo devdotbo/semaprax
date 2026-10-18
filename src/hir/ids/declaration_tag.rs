@@ -6,6 +6,7 @@ use std::collections::hash_map::DefaultHasher;
 use std::collections::{BTreeMap, BTreeSet};
 use std::hash::{Hash, Hasher};
 use std::mem::{align_of, size_of};
+#[rustfmt::skip] // The exact old identity prefix is restored byte for byte below.
 #[path = "declaration_tag/before.rs"]
 pub(super) mod before;
 
