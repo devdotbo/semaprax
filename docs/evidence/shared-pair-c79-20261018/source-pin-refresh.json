@@ -1,0 +1,57 @@
+{
+  "status": "SOURCE_ONLY_FINITE543_PACKET_PREDICATES_PASS",
+  "before_head": "c79cbbc272714bf1f9bc24b590a0559a72e23008",
+  "before_guard": {
+    "length": 11549,
+    "sha256": "da74e7a521f39993f311a74f19db331d72b2f81bd736e689701ddfee990a7494",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/da74e7a521f39993f311a74f19db331d72b2f81bd736e689701ddfee990a7494.txt"
+  },
+  "before_config": {
+    "length": 136458,
+    "sha256": "76a86f7df65d1b110a6a70fb7432b1e4ce4d5a2a7a8bb1d3ac09f29a2cfdda6f",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/76a86f7df65d1b110a6a70fb7432b1e4ce4d5a2a7a8bb1d3ac09f29a2cfdda6f.txt"
+  },
+  "before_helper": {
+    "length": 41016,
+    "sha256": "3312c393ba0a237927a2d4198a2827683d8c3cef6965f7c97c9766b731decaae",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/3312c393ba0a237927a2d4198a2827683d8c3cef6965f7c97c9766b731decaae.txt"
+  },
+  "before_python_overlay": {
+    "length": 13523,
+    "sha256": "ea5230258a4040d3a6ba67aab72d2e6e6391827afc87203030da11380d57f9b7",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/ea5230258a4040d3a6ba67aab72d2e6e6391827afc87203030da11380d57f9b7.txt"
+  },
+  "before_policy": {
+    "length": 15876,
+    "sha256": "82ffb556533822fc2b4526edbf02df7a33d0df4e339e408ead45fa0949d93ec4",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/82ffb556533822fc2b4526edbf02df7a33d0df4e339e408ead45fa0949d93ec4.txt"
+  },
+  "before_page": {
+    "length": 171959,
+    "sha256": "201a17af78871a58d22d6cd9ffa377b70dc941beddd1276fbbf49b17440bf683",
+    "archive": "docs/evidence/shared-pair-c79-20261018/whole/201a17af78871a58d22d6cd9ffa377b70dc941beddd1276fbbf49b17440bf683.txt"
+  },
+  "changed_sources": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/bounded_output/stage_debits/route_debits.rs",
+    "CHANGELOG.md"
+  ],
+  "module_pins_refreshed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_v2.rs"
+  ],
+  "all_543_rows_fields_view_prefixes_and_prior_current_wires_retained": true,
+  "new_literal_replacements_inserted_in_predecessor_source_order": true,
+  "original_519_extension_and_loader_unchanged": true,
+  "python_and_rust_overlay_bodies_unchanged_except_literal_membership_and_policy_seals": true,
+  "all_reader_source_program_and_runtime_caps_unchanged": true,
+  "page_bytes": 173436,
+  "policy_bytes": 15876,
+  "raw_owners": 342
+}

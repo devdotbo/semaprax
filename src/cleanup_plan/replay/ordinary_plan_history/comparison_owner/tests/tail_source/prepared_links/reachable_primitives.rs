@@ -23,7 +23,11 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+mod shared_steps;
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_stage(&shared_steps::previous_macro(current))
+}
+fn previous_macro_stage(current: &str) -> String {
     restore(current, 6956, MACRO)
 }
 #[rustfmt::skip]
@@ -32,6 +36,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (478, "pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;\n// Before inspecting the already-funded owner length, fund the new payment\n// site's complete primitive frame, match/local usize receivers and both\n// numeric pattern decisions. No dynamic payload uses this primitive bank.\npub(super) const PRIMITIVE_SELECTION: usize =\n    PAYMENT_HEADER + 3 * size_of::<usize>() + 2 * size_of::<bool>();\n", ""),
 ];
 pub(super) fn previous_owner(current: &str) -> String {
+    previous_owner_stage(&shared_steps::previous_owner(current))
+}
+fn previous_owner_stage(current: &str) -> String {
     restore(current, 23088, OWNER)
 }
 #[rustfmt::skip]
@@ -40,6 +47,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (6960, "    + lexical_cursor::PRIMITIVE_SELECTION + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE\n", "    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE\n"),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_stage(&shared_steps::previous_pair_tests(current))
+}
+fn previous_pair_tests_stage(current: &str) -> String {
     restore(current, 40579, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -142,8 +152,8 @@ mod tests {
     #[test]
     fn span_extent_and_outside_body_drift_never_match_whole_before_sources() {
         hostile(
-            include_str!("../../../lexical_cursor.rs"),
-            previous_macro,
+            &shared_steps::previous_macro(include_str!("../../../lexical_cursor.rs")),
+            previous_macro_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-macro.rs.txt"
@@ -151,8 +161,8 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../comparison_owner.rs"),
-            previous_owner,
+            &shared_steps::previous_owner(include_str!("../../../../comparison_owner.rs")),
+            previous_owner_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-owner.rs.txt"
@@ -160,8 +170,8 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &shared_steps::previous_pair_tests(include_str!("../../../pair_scope_tests.rs")),
+            previous_pair_tests_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-pair-tests.rs.txt"

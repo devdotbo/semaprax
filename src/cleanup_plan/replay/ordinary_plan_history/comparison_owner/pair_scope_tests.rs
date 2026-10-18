@@ -64,6 +64,40 @@ fn reachable_primitive_prices(paths: usize) -> (usize, usize) {
     };
     (20 * header, selector + reachable)
 }
+// Independent source-type invoice for the actual shared-step cells. The old
+// complete883 invoice stays additive; no measured debit delta is a coefficient.
+fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+        + 6 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>();
+    let step = 2 * size_of::<usize>()
+        + 3 * size_of::<bool>()
+        + 3 * size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+        + size_of::<usize>()
+        + 2 * size_of::<usize>()
+        + size_of::<bool>();
+    let retained = 4 * size_of::<usize>()
+        + if paths >= 2 { 9 * header } else { 0 }
+        + size_of::<usize>() * row.loads
+        + 3 * size_of::<bool>() * row.shared_checks
+        + (size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>()) * row.shared_patterns
+        + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata
+        + (3 * size_of::<&[Rc<SkeletonObservation>]>()
+            + 2 * size_of::<usize>()
+            + size_of::<Ordering>()
+            + size_of::<bool>())
+            * row.shared_steps;
+    ((pair + 2 * step) * row.shared_steps, retained)
+}
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -228,13 +262,15 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
         let (old_tail, tail, tail_view) = tail_receiver_prices();
         let (step, load, setup, limit) = prepared_link_prices();
         let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
+        let (shared_removed, shared_retained) = shared_step_prices(expected.len(), &row);
         assert_eq!(
             paid + 4 * PATH_INDEX * row.rounds
                 + removed_view * flat_rounds
                 + (old_tail - tail) * row.tails
                 + step * row.steps
                 + load * row.loads
-                + all_primitives,
+                + all_primitives
+                + shared_removed,
             old_paid
                 + PAIR_SCOPE * row.pairs
                 + PAIR_PRIMITIVE
@@ -244,6 +280,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
                 + setup
                 + limit * (2 * row.pairs + expected.len())
                 + reachable_primitives
+                + shared_retained
         );
         eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
             function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
@@ -649,12 +686,14 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
     let (old_tail, tail, tail_view) = tail_receiver_prices();
     let (step, load, setup, limit) = prepared_link_prices();
     let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
+    let (shared_removed, shared_retained) = shared_step_prices(expected.len(), &row);
     let removed = 4 * PATH_INDEX * row.rounds
         + removed_view * flat_rounds
         + (old_tail - tail) * row.tails
         + step * row.steps
         + load * row.loads
-        + all_primitives;
+        + all_primitives
+        + shared_removed;
     let retained = PAIR_SCOPE * row.pairs
         + PAIR_PRIMITIVE
         + PAYMENT_HEADER
@@ -662,7 +701,8 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
         + tail_view * (2 * row.pairs + expected.len())
         + setup
         + limit * (2 * row.pairs + expected.len())
-        + reachable_primitives;
+        + reachable_primitives
+        + shared_retained;
     assert_eq!(paid + removed, old_paid + retained);
     assert!(removed > retained);
     assert!(
@@ -728,7 +768,8 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
             + PAIR_PRIMITIVE
             + PAYMENT_HEADER
             + prepared_link_prices().2
-            + reachable_primitive_prices(0).1,
+            + reachable_primitive_prices(0).1
+            + shared_step_prices(0, &row).1,
         "every reachable primitive site and the complete new selector are funded"
     );
     eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
@@ -931,13 +972,15 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                 let (old_tail, tail, tail_view) = tail_receiver_prices();
                 let (step, load, setup, limit) = prepared_link_prices();
                 let (all_primitives, reachable_primitives) = reachable_primitive_prices(1);
+                let (shared_removed, shared_retained) = shared_step_prices(1, &rows[0]);
                 assert!(rows[0].complete && rows[0].ended);
                 assert_eq!(rows[0].tails, len + 1);
                 assert_eq!(
                     paid + (removed + old_tail - tail) * (len + 1)
                         + step * rows[0].steps
                         + load * rows[0].loads
-                        + all_primitives,
+                        + all_primitives
+                        + shared_removed,
                     old_paid
                         + PAIR_PRIMITIVE
                         + PAYMENT_HEADER
@@ -946,6 +989,7 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                         + setup
                         + limit
                         + reachable_primitives
+                        + shared_retained
                 );
                 if len >= 64 {
                     assert!(

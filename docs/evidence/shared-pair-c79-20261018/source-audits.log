@@ -1,0 +1,18 @@
+
+running 13 tests
+test audits::tests::complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_and_exact ... ok
+test audits::tests::lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_exact ... ok
+test audits::tests::pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete ... ok
+test audits::tests::source_format::tests::inverse_preserves_unrecognized_body_drift_for_the_original_full_check ... ok
+test audits::tests::source_format::tests::inverse_refuses_changed_known_hunks_and_unknown_source_extents ... ok
+test audits::tests::tail_source::prepared_links::reachable_primitives::shared_steps::tests::all_new_source_subjects_refuse_span_extent_and_outside_drift ... ok
+test audits::tests::tail_source::prepared_links::reachable_primitives::shared_steps::tests::complete_sources_and_all_old_controls_restore_exact_before_bytes ... ok
+test audits::tests::tail_source::prepared_links::reachable_primitives::tests::span_extent_and_outside_body_drift_never_match_whole_before_sources ... ok
+test audits::tests::tail_source::prepared_links::reachable_primitives::tests::whole_macro_owner_invoices_and_old_controls_match_exact_before_bytes ... ok
+test audits::tests::tail_source::prepared_links::tests::complete_macro_owner_and_prior_tail_controls_have_exact_before_bytes ... ok
+test audits::tests::tail_source::prepared_links::tests::unknown_span_extent_and_outside_body_drift_never_match_whole_before_sources ... ok
+test audits::tests::tail_source::tests::retained_tail_witness_covers_the_whole_macro_and_owner ... ok
+test audits::tests::tail_source::tests::retained_tail_witness_rejects_span_extent_and_unrecognized_body_drift ... ok
+
+test result: ok. 13 passed; 0 failed; 0 ignored; 0 measured; 0 filtered out; finished in 0.00s
+

@@ -68,3 +68,30 @@ exemption, refund, quota change or authority. Exact whole-source inverse stages
 and independent invoices retain every earlier control. Focused bounded
 whole-body comparisons are not full compiler, physical-allocator or application
 qualification; original native64MiB, STD-08, browser and full CI gates remain.
+
+## Identical immutable segment step continuation
+
+A prepared cursor remembers the exact arena link it most recently loaded. Its
+loaded flag implies that its retained immutable slice starts at that segment's
+current item offset. Equal loaded link identities and equal offsets therefore
+prove that a nonempty next observation is the same immutable value on both
+sides. The paired branch advances two retained slices directly. It forms no
+observation Option, pair tuple or content-comparison arguments on that branch.
+Independent terminal and full HIR comparison remain unchanged. No hash, unsafe
+code, per-call exemption, source authority or alternate oracle is introduced.
+
+Every original left cursor/segment, right cursor/segment and equal-observation
+work charge remains in its original order, including every refusal cut. Fresh
+selectors, pattern decisions, slice receivers and scalar assignments are paid
+before formation. The owner pays remembered-link fields and initializers; every
+actual load pays its scalar copy. Multipath comparisons acquire nine distinct
+complete primitive headers for four new payment and five new work sites.
+Zero/one-path groups retain their old reachable banks. Unshared or short paths
+can cost more. No universal or application saving is inferred from the model.
+
+The source-type invoice adds setup, load, selector and branch costs and removes
+only the absent paired/step payloads on each proven shared step. Complete current
+and immutable883 comparisons, independent typed invoices, old source inverses,
+physical/work-cut/Drop/diagnostic controls and unchanged limits remain owning
+gates. Fixed checked counters are observation only. Bounded models and source
+checks do not qualify the compiler, native64MiB, STD-08, browser or applications.

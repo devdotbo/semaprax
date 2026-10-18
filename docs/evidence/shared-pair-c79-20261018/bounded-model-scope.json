@@ -1,0 +1,11 @@
+{
+  "status": "BOUNDED_COMPLETE_COMPARISON_MODELS_AND_SOURCE_GUARDS_ONLY",
+  "cases_per_complete_comparison": 3500,
+  "work_failure_cuts_per_complete_comparison": 20928,
+  "all_previous_2800_cases_and_13954_cuts_retained": true,
+  "added_one_item_segments": true,
+  "model_types": "Opaque function/observation and recording payer; six-field diagnostic; exact work traces, remaining units and Rc counts",
+  "shared_HIR_only_typechecked": true,
+  "actual_compiler_physical_allocator_and_application_qualification": false,
+  "all_limits_unchanged": true
+}

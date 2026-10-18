@@ -67,11 +67,14 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan reachable cursor primitive frames" => Some(0),
         "ordinary plan history order call" => Some(1),
         "ordinary plan history sift call" => Some(2),
-        "ordinary plan history comparison receivers" => Some(3),
+        "ordinary plan history comparison receivers" | "ordinary plan history pair-local paths" => {
+            Some(3)
+        }
         "ordinary plan history sort receivers" => Some(4),
         "ordinary plan history left cursor prepare" => Some(5),
         "ordinary plan history right cursor prepare" => Some(6),
-        "ordinary plan history HIR cursor prepare" => Some(7),
+        "ordinary plan history HIR cursor prepare"
+        | "ordinary plan history flat HIR retained slice" => Some(7),
         "ordinary plan history paired cursor next" => Some(8),
         "ordinary plan history HIR cursor next" => Some(9),
         "ordinary plan retained drain swap receivers" => Some(10),
@@ -616,11 +619,11 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
         Route::UnoptedCrosscheck,
         Route::OptedOracle,
     ] {
-        for (category, label) in LABELS
-            .into_iter()
-            .enumerate()
-            .chain([(0, "ordinary plan reachable cursor primitive frames")])
-        {
+        for (category, label) in LABELS.into_iter().enumerate().chain([
+            (0, "ordinary plan reachable cursor primitive frames"),
+            (3, "ordinary plan history pair-local paths"),
+            (7, "ordinary plan history flat HIR retained slice"),
+        ]) {
             assert_eq!(comparison_phase(label), Some(category));
             let (((), metrics), refused, used, first) = with_limit_usage_refusal(8_769, || {
                 crate::test_allocation_observer::measure(|| {
@@ -809,5 +812,90 @@ fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
             original.downcast_ref::<String>()
         );
         std::panic::resume_unwind(original);
+    }
+}
+
+#[test]
+fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_site() {
+    // Closed current invocation grammar. An unfamiliar source shape fails this
+    // guard instead of silently omitting a real payment from the census.
+    fn phases<'a>(source: &'a str, token: &str, arguments: usize) -> Vec<&'a str> {
+        let mut phases = Vec::new();
+        for (start, _) in source.match_indices(token) {
+            let begin = start + token.len();
+            let bytes = source.as_bytes();
+            let mut at = begin;
+            let mut depth = 1usize;
+            let mut quoted = false;
+            let mut escaped = false;
+            while at < bytes.len() && depth != 0 {
+                let byte = bytes[at];
+                at += 1;
+                if quoted {
+                    if escaped {
+                        escaped = false;
+                    } else if byte == b'\\' {
+                        escaped = true;
+                    } else if byte == b'"' {
+                        quoted = false;
+                    }
+                } else if byte == b'"' {
+                    quoted = true;
+                } else if byte == b'(' {
+                    depth += 1;
+                } else if byte == b')' {
+                    depth -= 1;
+                }
+            }
+            assert_eq!(depth, 0, "unterminated payment invocation");
+            let body = &source[begin..at - 1];
+            assert!(!body.contains("//") && !body.contains("/*") && !body.contains('\\'));
+            assert_eq!(
+                body.matches('"').count(),
+                2,
+                "unknown payment argument shape"
+            );
+            let first = body.find('"').unwrap();
+            let last = body.rfind('"').unwrap();
+            assert_eq!(body[..first].matches(',').count(), arguments - 1);
+            assert!(body[last + 1..].trim().trim_matches(',').trim().is_empty());
+            phases.push(&body[first + 1..last]);
+        }
+        phases
+    }
+    let owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+    ));
+    let direct = phases(owner, "paid!(", 4);
+    let forwarded = phases(owner, "lexical_plan_next!(", 10);
+    let shared = phases(owner, "shared_plan_pair_step!(", 5);
+    assert_eq!(
+        (direct.len(), forwarded.len(), shared.len()),
+        (13, 4, 1),
+        "audit new lexical payment sites explicitly"
+    );
+    let lexical = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+    ));
+    let sites: Vec<_> = lexical.match_indices("paid!(").collect();
+    assert_eq!(sites.len(), 7, "audit every generic payment site");
+    for (at, _) in sites {
+        let body = &lexical[at + "paid!(".len()..];
+        let end = body.find(")?;").expect("unknown generic payment shape");
+        let phase = body[..end].trim().trim_end_matches(',').trim();
+        assert!(
+            phase
+                .rsplit_once(',')
+                .is_some_and(|(_, last)| last.trim() == "$phase"),
+            "unknown generic payment forwarding shape: {phase}"
+        );
+    }
+    for phase in direct.into_iter().chain(forwarded).chain(shared) {
+        assert!(
+            comparison_phase(phase).is_some(),
+            "unattributed actual payment phase: {phase}"
+        );
     }
 }
