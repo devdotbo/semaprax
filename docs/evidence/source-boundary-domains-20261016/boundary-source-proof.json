@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 100,
       "full_role_production": 538,
       "full_role_test_only": 973,
-      "full_raw_sha256": "ead7c8000caa6dea6f77961ce26dba9422c91dd6290f1c541e3c7252a965ad3a",
+      "full_raw_sha256": "e9b91e58330a657b257762899457b427bcce89283a533f3cc731a424b2032af3",
       "boundary_production_sha256": "4b8e39fcf994e9c43945ce693ded6267a2c61f831be421594f3e0f7d9e59e110",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -56,7 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "actual_acquisition_completion_sha256": "3cd0b22273f974cbaf5dbda9cc9ea5dfddd3842f3dff841701cec15919cc7a1f",
+  "actual_acquisition_completion_sha256": "08952ce99253b40868a9d1fe36be3dfd4778173874f1c6f51c79ac7a740a8c28",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -66,9 +66,9 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "FUSED_PLAN_FALLBACK_READERS_AND_ALL_PRIOR_CONTROLS",
-  "before_head": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
-  "incoming_main": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
+  "registration_update": "ACTUAL_FUSED_FALLBACK_BROWSER_CAPTURE_PINS",
+  "before_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "incoming_main": "487253096928c72bf2ac9180b6b65a0e3838d5af",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",

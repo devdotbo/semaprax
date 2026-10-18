@@ -1,0 +1,15 @@
+{
+  "base_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "logical_changed": [
+    "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "CHANGELOG.md"
+  ],
+  "actual_capture_head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "actual_capture_run": 39163104281,
+  "actual_capture_job": 117780935995,
+  "only_graph_budget_and_self_digest_wire_differences": true,
+  "all_assertions_and_fixture_inputs_unchanged": true,
+  "no_compiler_implementation_or_pricing_change": true,
+  "no_new_registered_Rust_classes": true,
+  "actual_browser_runtime_still_requires_current_CI": true
+}

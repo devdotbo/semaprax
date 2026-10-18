@@ -1,0 +1,28 @@
+[
+  {
+    "source": "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "before": {
+      "length": 10342,
+      "sha256": "c9dee68d0134f11a3ba10634895795f0b6f1c3b11022e2e56982851ec7b85fce",
+      "archive": "docs/evidence/browser-pins-487-20261018/whole/c9dee68d0134f11a3ba10634895795f0b6f1c3b11022e2e56982851ec7b85fce.txt"
+    },
+    "current": {
+      "length": 10343,
+      "sha256": "b0c289328e8cb8654732f9dc0fd6d166be42e82a99ff4d3720edfe51d282d4ef",
+      "archive": "docs/evidence/browser-pins-487-20261018/whole/b0c289328e8cb8654732f9dc0fd6d166be42e82a99ff4d3720edfe51d282d4ef.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 580813,
+      "sha256": "f504d1cf8ff1fc28513b6b7609f0bbb0ce98a0368a54dc05e8e967d77b2cfab9",
+      "archive": "docs/evidence/browser-pins-487-20261018/whole/f504d1cf8ff1fc28513b6b7609f0bbb0ce98a0368a54dc05e8e967d77b2cfab9.txt"
+    },
+    "current": {
+      "length": 581050,
+      "sha256": "5ad55881838face8bd094390e09d38f7a81e587164a81454578056e80e3c52ea",
+      "archive": "docs/evidence/browser-pins-487-20261018/whole/5ad55881838face8bd094390e09d38f7a81e587164a81454578056e80e3c52ea.txt"
+    }
+  }
+]
