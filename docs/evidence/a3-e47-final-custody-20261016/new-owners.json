@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "b5d9d9a6919ed148c0d727a695adca727589a1598633480dbde10e6655fc98af",
+    "sha256": "4d3e5c2c63a84422220dd83ce8c9335b100da7fbc940a053735f0902f6f533a4",
     "lines": 1235
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "93dbc6b75591508a6ea7e65c3e7ad3780f7f1e81fa9ee57d54ab996291a547cd",
+    "sha256": "eef5a3ca3bb59ef5e9ff7c61dda946fcd9c5afb76261b9802c7c68574d90fce6",
     "lines": 520
   },
   {
@@ -996,8 +996,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-    "sha256": "5bece0186359c6198d7a9e74fd74134d434c5fd62a3c2208210f37a1b080f7da",
-    "lines": 533
+    "sha256": "c5f1f2ef4ddb4090d8256a84f4df6365eb67a66bf89fd45a397afe64b2ad0978",
+    "lines": 631
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "b5769574d938f217f0b100937107a1314059f8fccddd05473be75a2972c449ae",
-    "lines": 1285
+    "sha256": "d70e247d376821cbbd2d67c9f30c81e214df3ea2fb7d741c6ce756ee74a9ef41",
+    "lines": 1290
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -1761,7 +1761,12 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
-    "sha256": "ffb43c47fdb3be64999d5b19535e6d35d687d27dfad14795470f20abe7b6673c",
-    "lines": 92
+    "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b",
+    "lines": 130
+  },
+  {
+    "source": "src/source_reflows_merge/runtime_json/sealed_io.rs",
+    "sha256": "bef85d126a5ce9c72f6f74835d9966d60d7b9bff6622302d4df864adf1701fd0",
+    "lines": 134
   }
 ]

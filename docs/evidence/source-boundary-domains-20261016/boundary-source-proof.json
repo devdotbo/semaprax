@@ -5,12 +5,12 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1232,
+      "current_boundary_members": 1233,
       "current_boundary_production": 444,
       "outside_production_still_fully_authenticated": 101,
       "full_role_production": 545,
-      "full_role_test_only": 963,
-      "full_raw_sha256": "9baf04789d360ce16c4efc5d22f22544ece4fe289bcd7f89910192887e92847f",
+      "full_role_test_only": 964,
+      "full_raw_sha256": "95ce8502fceae89ec07a719463a2a6404fee59369818fe68f7934417880d91cd",
       "boundary_production_sha256": "a7b503a20194c61af1352177d8849c6e9aa98b7fef297446422f502ab24edc2c",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 591,
       "full_role_production": 664,
       "full_role_test_only": 1020,
-      "full_raw_sha256": "5411ff2070075a86d40b262a5d422c5c49a9c82ac3f20217acc7dddcf5ecf4c6",
+      "full_raw_sha256": "958cb5bd41d08f926b5d3e690f7707ff9d79a5b39161b3012ba654f79c1a2f0a",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -65,6 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "UNCHANGED353_NAMESPACE_ONLY_EXACT_COMPILE_REPAIR_PINS",
+  "registration_update": "FINITE_INCOMING353_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_ORIGINAL_PARSER_ACTUAL_CHILDREN",
   "global_polluted_purity_result_not_claimed": true
 }

@@ -2186,6 +2186,7 @@
         "src/source_reflows_merge/runtime_json/inventory.rs",
         "src/source_reflows_merge/runtime_json/membership.rs",
         "src/source_reflows_merge/runtime_json/pair_custody.rs",
+        "src/source_reflows_merge/runtime_json/sealed_io.rs",
         "src/source_reflows_merge/runtime_json/tests.rs",
         "src/source_reflows_merge/runtime_json/transport_embedded.rs",
         "src/source_reflows_merge/runtime_json/transport_runtime.rs",
@@ -2836,9 +2837,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "5744f8ea21a678a787eeba1eb2c55ec13fed636dc4ca1d9390b054b4973b8339",
-      "full_raw_sha256": "9baf04789d360ce16c4efc5d22f22544ece4fe289bcd7f89910192887e92847f",
-      "full_authenticated_production_sha256": "a8580f561cf87a8b8aeaf92b1839be6110dab8cee12932360d1ea876fb73f977"
+      "full_manifest_sha256": "6619bb9cf4eb36b779fb365c18040c991fb7ceb57a011091cf14db6516502267",
+      "full_raw_sha256": "95ce8502fceae89ec07a719463a2a6404fee59369818fe68f7934417880d91cd",
+      "full_authenticated_production_sha256": "ab4ffea89272d505aeee07591779a2f6f37443f428ee4c4243d1c930b3eda8dc"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3892,9 +3893,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "44732ec1e26a0abfbd6d6d724848275edbfb8b12a0401851273bd0537b330eae",
-      "full_raw_sha256": "5411ff2070075a86d40b262a5d422c5c49a9c82ac3f20217acc7dddcf5ecf4c6",
-      "full_authenticated_production_sha256": "3ea306efb22c6356dc06aa641e08768e1c7ba7c687716ba50af0ed4be8ee1d55"
+      "full_manifest_sha256": "6b4251960bc1c9f20e85e80371555f9dab8bff867ed11d5487046dec0842ff17",
+      "full_raw_sha256": "958cb5bd41d08f926b5d3e690f7707ff9d79a5b39161b3012ba654f79c1a2f0a",
+      "full_authenticated_production_sha256": "dc93e48813c19472a46cf113b18edf46bee59a88476b4434eb9035e20aac72ae"
     }
   }
 }
