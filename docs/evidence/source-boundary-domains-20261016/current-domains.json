@@ -2821,8 +2821,8 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "6f9d62fcb2ea5c65668dfabee6631b6a319261b5cfdf615cf074c3b680ffe31a",
-      "full_raw_sha256": "3c2b781d712964446350c100d05f61b0914565520a3c91ff30005f41a36dfa66",
+      "full_manifest_sha256": "ffe21bb781db39a32ded5cae9dc90fa08342818f4e7dd3b21c3d40c1eb870afe",
+      "full_raw_sha256": "c43d68c4dca981bb02c915f770c8a4469001c59ff330b2a7f0813ce2ee64c3a4",
       "full_authenticated_production_sha256": "82dc380f6bbb4db7b60d1466c92148c5ecb5a49d836872102b0aef486a7adeb7"
     },
     "projection": {
