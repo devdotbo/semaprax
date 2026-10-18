@@ -1,0 +1,66 @@
+[
+  {
+    "error": "error: unused import: `super::digest_without_checked_value_cursor_budget`",
+    "location": "tests\\wasm\\scalar_browser_ci_contract\\historical_builder.rs:420:9"
+  },
+  {
+    "error": "error: unused import: `super::digest_without_checked_value_cursor_budget`",
+    "location": "tests\\wasm\\scalar_browser_ci_contract\\historical_builder.rs:769:9"
+  },
+  {
+    "error": "error: unused import: `super::digest_without_checked_value_cursor_budget`",
+    "location": "tests\\wasm\\scalar_browser_ci_contract\\historical_builder.rs:1016:9"
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_21abc.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_524.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_671.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_75b.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_7d34.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_c11.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_c451_c11.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\before_f82.rs`",
+    "location": null
+  },
+  {
+    "error": "error: file is loaded as a module multiple times: `tests\\wasm\\scalar_browser_ci_contract\\c11_before_2600.rs`",
+    "location": null
+  },
+  {
+    "error": "error: function `main7f8_digest` is never used",
+    "location": "tests\\wasm\\scalar_browser_ci_contract\\historical_builder.rs:411:15"
+  },
+  {
+    "error": "error: function `held_status_before_freeze` is never used",
+    "location": "tests\\wasm\\..\\..\\src\\source_reflows_merge\\main99f_inputs.rs:380:15"
+  },
+  {
+    "error": "error: for loop over a single element",
+    "location": "tests\\wasm\\scalar_browser_ci_contract\\historical_builder.rs:667:5"
+  },
+  {
+    "error": "error: could not compile `semaprax` (test \"wasm\") due to 15 previous errors",
+    "location": null
+  }
+]

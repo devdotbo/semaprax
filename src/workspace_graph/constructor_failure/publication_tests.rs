@@ -282,3 +282,42 @@ fn preowned_setup_complete_old_public_conversions_and_compiled_report_attempt_re
         );
     }
 }
+
+#[test]
+fn final_report_backing_is_limit_independent_and_preserves_every_diagnostic_field() {
+    let _scope = diagnostics::invocation_scope();
+    for maximum in [
+        0,
+        9,
+        10,
+        99,
+        100,
+        999_999,
+        1_000_000,
+        super::super::MAX_BUILDER_BYTES,
+        usize::MAX,
+    ] {
+        let expected = diagnostics::constructor_report_before::live_builder_refusal(maximum, None);
+        let (((), physical), refused, used, first) = with_limit_usage_refusal(usize::MAX, || {
+            measure(|| {
+                let owner = Owner::acquire(maximum, 0).unwrap();
+                let published = owner.seal().unwrap_or_else(|_| panic!("same owner"));
+                let report = published.into_report();
+                assert_eq!(report.as_slice(), std::slice::from_ref(&expected));
+                drop(report);
+            })
+        });
+        assert!(!refused && first.is_none());
+        assert!(!physical.invalid && physical.live == 0);
+        assert_eq!(physical.allocated, physical.freed);
+        assert!(physical.allocated <= used);
+        let ((), refused, reference, first) = with_limit_usage_refusal(usize::MAX, || {
+            drop(Owner::acquire(usize::MAX, 0).unwrap());
+        });
+        assert!(!refused && first.is_none());
+        assert_eq!(
+            used, reference,
+            "report backing must not change with decimal width"
+        );
+    }
+}

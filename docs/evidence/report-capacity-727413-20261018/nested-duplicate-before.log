@@ -1,0 +1,15 @@
+error: file is loaded as a module multiple times: `/Volumes/Semaprax/tmp/ci-38383508340/report-capacity-727413/shared.rs`
+ --> /Volumes/Semaprax/tmp/ci-38383508340/report-capacity-727413/duplicate-before.rs:2:1
+  |
+2 | #[path="/Volumes/Semaprax/tmp/ci-38383508340/report-capacity-727413/shared.rs"] mod a;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ first loaded here
+3 | #[path="/Volumes/Semaprax/tmp/ci-38383508340/report-capacity-727413/shared.rs"] mod b;
+  | ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ loaded again here
+  |
+  = help: replace all but one `mod` item with `use` items
+  = help: for further information visit https://rust-lang.github.io/rust-clippy/rust-1.98.0/index.html#duplicate_mod
+  = note: `-D clippy::duplicate-mod` implied by `-D warnings`
+  = help: to override `-D warnings` add `#[allow(clippy::duplicate_mod)]`
+
+error: aborting due to 1 previous error
+

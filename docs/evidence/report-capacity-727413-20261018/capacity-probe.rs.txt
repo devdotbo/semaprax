@@ -1,0 +1,351 @@
+#![allow(dead_code,unused_imports,unused_variables)]
+use std::{fmt::{self,Write},cell::{Cell,RefCell}};
+#[derive(Debug)] enum Setup { Arithmetic }
+mod bounded_output {
+/// First sticky refusal in one bounded phase. This is ledger evidence, not RSS.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) struct ReservationRefusal {
+    pub(crate) requested: usize,
+    pub(crate) remaining: usize,
+    pub(crate) floor: usize,
+    pub(crate) stage: Option<ReservationStage>,
+}
+
+/// Compiler-owned labels for the operation enclosing a required reservation.
+/// They never derive from source or from a forecast.
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub(crate) enum ReservationStage {
+    ResolvedCore,
+    CompactValidation,
+    UncachedSyntheticPeak,
+    AuthoredModuleValidation,
+    FrontendLookup,
+    SelectiveResolution,
+    FrontendRetention,
+    ImportedVecInstances,
+    CorePrebound,
+    ExpectedEdges,
+    ResolvedCallEdges,
+    StubSignatures,
+    DeclarationFacts,
+    RetainedFacts,
+    CoreDirectories,
+    EdgeProof,
+    SyntheticModule,
+    CachedValidation,
+    FreshResolution,
+    HirLowering,
+    HirLoanPlans,
+    HirInstanceLoanPlans,
+    HirCleanupInventories,
+    HirInstanceCleanupInventories,
+    HirCleanupPlans,
+    HirYieldProfiles,
+    HirValidation,
+    CanonicalLoanStorage,
+
+    LoanCandidateInventory,
+    LoanCfgDiscovery,
+    LoanCfgPoints,
+    LoanCfgEdges,
+    LoanCanonicalAppend,
+    LoanOrderedDirectoryNode,
+    LoanVectorBacking,
+
+    RetainedModule,
+    LoanIdentityInventory,
+    RetainedLoanScratch,
+    RetainedLoanSidecars,
+}
+
+impl ReservationStage {
+    pub(crate) fn label(self) -> &'static str {
+        match self {
+            Self::ResolvedCore => "resolved core construction",
+            Self::CompactValidation => "compact validation inventory construction",
+            Self::UncachedSyntheticPeak => "uncached synthetic AST peak reservation",
+            Self::AuthoredModuleValidation => "authored module signature validation",
+            Self::FrontendLookup => "frontend checked module lookup",
+            Self::SelectiveResolution => "frontend selective function resolution",
+            Self::FrontendRetention => "frontend resolved module retention",
+            Self::ImportedVecInstances => "imported Vec instance inventory",
+            Self::CorePrebound => "resolved-core prebound",
+            Self::ExpectedEdges => "expected workspace edges",
+            Self::ResolvedCallEdges => "resolved call edges",
+            Self::StubSignatures => "workspace stub signatures",
+            Self::DeclarationFacts => "workspace declaration facts",
+            Self::RetainedFacts => "retained workspace facts",
+            Self::CoreDirectories => "resolved module directories",
+            Self::EdgeProof => "workspace edge proof",
+            Self::SyntheticModule => "synthetic module construction",
+            Self::CachedValidation => "cached HIR validation",
+            Self::FreshResolution => "fresh HIR resolution",
+            Self::HirLowering => "HIR expression and type lowering",
+            Self::HirLoanPlans => "HIR function loan plans",
+            Self::HirInstanceLoanPlans => "HIR instance loan plans",
+            Self::HirCleanupInventories => "HIR function cleanup inventories",
+            Self::HirInstanceCleanupInventories => "HIR instance cleanup inventories",
+            Self::HirCleanupPlans => "HIR canonical cleanup plans",
+            Self::HirYieldProfiles => "HIR yield profile validation",
+            Self::HirValidation => "HIR final validation",
+            Self::CanonicalLoanStorage => "canonical shared-loan storage preparation",
+
+            Self::LoanCandidateInventory => "loan candidate inventory",
+            Self::LoanCfgDiscovery => "loan CFG expression discovery",
+            Self::LoanCfgPoints => "loan CFG point directory construction",
+            Self::LoanCfgEdges => "loan CFG edge construction",
+            Self::LoanCanonicalAppend => "canonical loan directory append",
+            Self::LoanOrderedDirectoryNode => "loan ordered directory node allocation",
+            Self::LoanVectorBacking => "loan vector backing allocation",
+            Self::RetainedModule => "resolved module retention",
+            Self::LoanIdentityInventory => "loan identity inventory",
+            Self::RetainedLoanScratch => "retained loan scratch allocation",
+            Self::RetainedLoanSidecars => "retained loan sidecar capacity",
+        }
+    }
+}
+
+}
+use bounded_output::ReservationRefusal;
+mod stages {
+use crate::bounded_output::ReservationStage;
+pub(super) const STAGES: &[ReservationStage] = &[
+    ReservationStage::ResolvedCore,
+    ReservationStage::CompactValidation,
+    ReservationStage::UncachedSyntheticPeak,
+    ReservationStage::AuthoredModuleValidation,
+    ReservationStage::FrontendLookup,
+    ReservationStage::SelectiveResolution,
+    ReservationStage::FrontendRetention,
+    ReservationStage::ImportedVecInstances,
+    ReservationStage::CorePrebound,
+    ReservationStage::ExpectedEdges,
+    ReservationStage::ResolvedCallEdges,
+    ReservationStage::StubSignatures,
+    ReservationStage::DeclarationFacts,
+    ReservationStage::RetainedFacts,
+    ReservationStage::CoreDirectories,
+    ReservationStage::EdgeProof,
+    ReservationStage::SyntheticModule,
+    ReservationStage::CachedValidation,
+    ReservationStage::FreshResolution,
+    ReservationStage::HirLowering,
+    ReservationStage::HirLoanPlans,
+    ReservationStage::HirInstanceLoanPlans,
+    ReservationStage::HirCleanupInventories,
+    ReservationStage::HirInstanceCleanupInventories,
+    ReservationStage::HirCleanupPlans,
+    ReservationStage::HirYieldProfiles,
+    ReservationStage::HirValidation,
+    ReservationStage::CanonicalLoanStorage,
+    ReservationStage::LoanCandidateInventory,
+    ReservationStage::LoanCfgDiscovery,
+    ReservationStage::LoanCfgPoints,
+    ReservationStage::LoanCfgEdges,
+    ReservationStage::LoanCanonicalAppend,
+    ReservationStage::LoanOrderedDirectoryNode,
+    ReservationStage::LoanVectorBacking,
+    ReservationStage::RetainedModule,
+    ReservationStage::LoanIdentityInventory,
+    ReservationStage::RetainedLoanScratch,
+    ReservationStage::RetainedLoanSidecars,
+];
+const _: () = {
+    assert!(STAGES.len() == ReservationStage::RetainedLoanSidecars as usize + 1);
+};
+pub(super) fn longest() -> &'static str {
+    STAGES
+        .iter()
+        .map(|stage| stage.label())
+        .chain(["unknown"])
+        .max_by_key(|label| label.len())
+        .expect("unknown always present")
+}
+
+}
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum BuilderPhase {
+    Precharge,
+    Live,
+}
+
+thread_local! {
+    static BUILDER_PHASE: Cell<BuilderPhase> = const { Cell::new(BuilderPhase::Live) };
+    static PRECHARGE_MODULES: Cell<usize> = const { Cell::new(0) };
+    static PRECHARGE_BYTES: Cell<usize> = const { Cell::new(0) };
+    static PRECHARGE_DOMINANT: RefCell<Option<(String, usize)>> = const { RefCell::new(None) };
+    static PRECHARGE_PENDING: RefCell<Option<String>> = const { RefCell::new(None) };
+    static PRECHARGE_SEQUENTIAL: RefCell<Option<SequentialRefusal>> = const { RefCell::new(None) };
+}
+
+/// One refused step of the final uncached forecast. That forecast is a
+/// sequential peak over retained filtered output, not a sum of complete module
+/// forecasts, so a summed attribution cannot describe it.
+#[derive(Clone)]
+struct SequentialRefusal {
+    path: String,
+    earlier: usize,
+    retained: usize,
+    additional: usize,
+    resolving: bool,
+}
+
+pub(crate) struct BorrowedBuilderHelp(pub(crate) usize);
+impl std::fmt::Display for BorrowedBuilderHelp {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write_builder_bytes_help(self.0, f)
+    }
+}
+fn write_builder_bytes_help(maximum: usize, output: &mut dyn std::fmt::Write) -> std::fmt::Result {
+    let precharge = BUILDER_PHASE.with(Cell::get) == BuilderPhase::Precharge;
+    let modules = PRECHARGE_MODULES.with(Cell::get);
+    let forecast = PRECHARGE_BYTES.with(Cell::get);
+    PRECHARGE_DOMINANT.with(|dominant| {
+        let dominant = dominant.borrow();
+        PRECHARGE_PENDING.with(|pending| {
+            let pending = pending.borrow();
+    if let (true, Some(path)) = (precharge, pending.as_ref()) {
+        return write!(output,
+            "the static admission pre-charge refused before the graph builder ran, while forecasting module `{path}` on its own: that one module does not fit the {maximum}-byte budget, which already carries {forecast} bytes for {modules} earlier module(s). Splitting `{path}` into several modules cannot reduce the forecast, because the pre-charge sums every reachable module; reducing its admitted source can."
+        );
+    }
+    PRECHARGE_SEQUENTIAL.with(|sequential| {
+        let sequential = sequential.borrow();
+    if let (true, Some(step)) = (precharge, sequential.as_ref()) {
+        let SequentialRefusal {
+            path,
+            earlier,
+            retained,
+            additional,
+            resolving,
+        } = step;
+        return if *resolving {
+            write!(output,
+                "the static admission pre-charge refused before the graph builder ran, in its final sequential uncached forecast: {earlier} earlier module(s) retain {retained} bytes of filtered output, and resolving `{path}` adds its complete {additional}-byte forecast, which exceeds the {maximum}-byte budget. Each complete module forecast is charged only while that module resolves; reducing the admitted source of `{path}` or the output retained by earlier modules can reduce this peak."
+            )
+        } else {
+            write!(output,
+                "the static admission pre-charge refused before the graph builder ran, in its final sequential uncached forecast: {earlier} earlier module(s) retain {retained} bytes of filtered output, and `{path}` retains {additional} more bytes, which exceeds the {maximum}-byte budget. Retained output sums every reachable module, so splitting one module into several cannot reduce it; removing a dependency or reducing total reachable source can."
+            )
+        };
+    }
+    match (precharge, dominant.as_ref()) {
+        (true, Some((path, bytes))) => write!(output,
+            "the static admission pre-charge refused before the graph builder ran: forecasting {modules} reachable module(s) already reaches {forecast} bytes of the {maximum}-byte budget, and `{path}` alone forecasts {bytes} bytes of retained resolver state. The pre-charge sums every reachable module, so splitting one module into several cannot reduce it; removing a dependency or reducing total reachable source can."
+        ),
+        (true, None) => write!(output,
+            "the static admission pre-charge refused before the graph builder ran, and before any single module was fully costed against the {maximum}-byte budget."
+        ),
+        (false, Some((path, bytes))) => write!(output,
+            "live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast {forecast} bytes for {modules} module(s) and fit within {maximum}, with `{path}` the largest at {bytes} bytes. Reducing reachable source is the only lever; the forecast itself was not the refusing bound."
+        ),
+        (false, None) => write!(output,
+            "live graph construction, not the static admission pre-charge, exceeded the {maximum}-byte budget while allocating workspace graph structure."
+        ),
+    }
+    })
+        })
+    })
+}
+struct Count(usize);
+impl Write for Count {
+    fn write_str(&mut self, value: &str) -> fmt::Result {
+        self.0 = self.0.checked_add(value.len()).ok_or(fmt::Error)?;
+        Ok(())
+    }
+}
+struct Fixed<'a>(&'a mut String);
+impl Write for Fixed<'_> {
+    fn write_str(&mut self, value: &str) -> fmt::Result {
+        if value.len() > self.0.capacity() - self.0.len() {
+            return Err(fmt::Error);
+        }
+        self.0.push_str(value);
+        Ok(())
+    }
+}
+fn message(out: &mut dyn Write, maximum: usize) -> fmt::Result {
+    write!(
+        out,
+        "Workspace Semantic Graph `builder_bytes` exceeds {maximum}"
+    )
+}
+fn fields(
+    out: &mut dyn Write,
+    requested: usize,
+    remaining: usize,
+    floor: usize,
+    stage: &str,
+) -> fmt::Result {
+    write!(
+        out,
+        "resolved-core phase first sticky ledger refusal: requested {} bytes with {} remaining and {} reserved floor. Authenticated internal stage: {}. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.",
+        requested, remaining, floor, stage
+    )
+}
+fn evidence(out: &mut dyn Write, first: Option<ReservationRefusal>) -> fmt::Result {
+    match first {
+        Some(first)=>fields(out,first.requested,first.remaining,first.floor,first.stage.map_or("unknown",|stage|stage.label())),
+        None=>out.write_str("resolved-core phase refused; the first reservation and exact inner operation are unknown."),
+    }
+}
+fn counted(write: impl FnOnce(&mut dyn Write) -> fmt::Result) -> Result<usize, Setup> {
+    let mut out = Count(0);
+    write(&mut out).map_err(|_| Setup::Arithmetic)?;
+    Ok(out.0)
+}
+fn before(maximum:usize)->Result<(usize,usize),Setup>{
+        let message_len = counted(|out| message(out, maximum))?;
+        let base_len = counted(|out| write!(out, "{}", BorrowedBuilderHelp(maximum)))?;
+        // This is a finite CAPACITY bound, not a claimed live payload length.
+        // All three actual fields have usize representations; no receipt is
+        // synthesized and no value is inserted into a ledger for this count.
+        let suffix_max =
+            counted(|out| fields(out, usize::MAX, usize::MAX, usize::MAX, stages::longest()))?
+                .max(counted(|out| evidence(out, None))?);
+        let help_capacity = base_len
+            .checked_add(usize::from(base_len != 0))
+            .and_then(|n| n.checked_add(suffix_max))
+            .ok_or(Setup::Arithmetic)?;
+Ok((message_len,help_capacity))
+}
+fn current(maximum:usize)->Result<(usize,usize),Setup>{
+        let message_len = counted(|out| message(out, usize::MAX))?;
+        let base_len = counted(|out| write!(out, "{}", BorrowedBuilderHelp(usize::MAX)))?;
+        // This is a finite CAPACITY bound, not a claimed live payload length.
+        // All three actual fields have usize representations; no receipt is
+        // synthesized and no value is inserted into a ledger for this count.
+        let suffix_max =
+            counted(|out| fields(out, usize::MAX, usize::MAX, usize::MAX, stages::longest()))?
+                .max(counted(|out| evidence(out, None))?);
+        let help_capacity = base_len
+            .checked_add(usize::from(base_len != 0))
+            .and_then(|n| n.checked_add(suffix_max))
+            .ok_or(Setup::Arithmetic)?;
+Ok((message_len,help_capacity))
+}
+#[path = "/Volumes/Semaprax/tmp/ci-38383508340/report-capacity-727413/test_allocation_observer/mod.rs"] mod test_allocation_observer;
+fn main() {
+ for case in 0..7 {
+  BUILDER_PHASE.with(|v|v.set(if case>=2 {BuilderPhase::Precharge}else{BuilderPhase::Live}));
+  PRECHARGE_MODULES.with(|v|v.set(3)); PRECHARGE_BYTES.with(|v|v.set(42));
+  PRECHARGE_DOMINANT.with(|v|*v.borrow_mut()=if case==1||case==6 {Some(("a.λ\0🙂.spx".into(),19))}else{None});
+  PRECHARGE_PENDING.with(|v|*v.borrow_mut()=if case==3 {Some("pending.λ\0🙂.spx".into())}else{None});
+  PRECHARGE_SEQUENTIAL.with(|v|*v.borrow_mut()=if case==4||case==5 {Some(SequentialRefusal{path:"step.λ\0🙂.spx".into(),earlier:3,retained:23,additional:31,resolving:case==4})}else{None});
+  let widest=before(usize::MAX).unwrap();
+  for maximum in [0usize,9,10,99,100,999_999,1_000_000,67_108_864,usize::MAX] {
+   let old=before(maximum).unwrap();let new=current(maximum).unwrap();assert_eq!(new,widest);
+   assert_eq!(widest.0+widest.1-old.0-old.1,2*(usize::MAX.to_string().len()-maximum.to_string().len()));
+   let expected_text=format!("Workspace Semantic Graph `builder_bytes` exceeds {maximum}");
+   let expected_help=format!("{}",BorrowedBuilderHelp(maximum));
+   let ((),m)=test_allocation_observer::measure(|| {
+    let mut text=String::with_capacity(new.0);let mut help=String::with_capacity(new.1);
+    message(&mut Fixed(&mut text),maximum).unwrap();write!(&mut Fixed(&mut help),"{}",BorrowedBuilderHelp(maximum)).unwrap();
+    assert_eq!(text,expected_text);assert_eq!(help,expected_help);
+    drop((text,help));
+   });
+   assert!(!m.invalid&&m.live==0);assert_eq!(m.allocated,m.freed);assert_eq!(m.allocated,new.0+new.1);
+  }
+ }
+ println!("63 full-formatter decimal-boundary cases: before drift reproduced; fixed capacities, exact text, actual allocator and complete Drop pass");
+}

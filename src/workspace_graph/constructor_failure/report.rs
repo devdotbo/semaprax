@@ -117,8 +117,12 @@ impl Owner {
             return Err(Setup::NoOwner);
         }
         reserve(Self::control_bytes(extra_controls).ok_or(Setup::Arithmetic)?)?;
-        let message_len = counted(|out| message(out, maximum))?;
-        let base_len = counted(|out| write!(out, "{}", BorrowedBuilderHelp(maximum)))?;
+        // Reserve the full width of the captured usize maximum. Otherwise the
+        // same successful construction acquires different report backing at
+        // each decimal limit boundary, so its exact minimum changes its bill.
+        // Rendering below still uses the actual maximum and original help.
+        let message_len = counted(|out| message(out, usize::MAX))?;
+        let base_len = counted(|out| write!(out, "{}", BorrowedBuilderHelp(usize::MAX)))?;
         // This is a finite CAPACITY bound, not a claimed live payload length.
         // All three actual fields have usize representations; no receipt is
         // synthesized and no value is inserted into a ledger for this count.

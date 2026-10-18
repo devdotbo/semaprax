@@ -1,0 +1,8 @@
+{
+  "report_whole_before_restored_by_exact_capacity_prefix_inverse": true,
+  "every_old_publication_test_byte_retained_as_exact_prefix": true,
+  "existing_full_graph_minimum_budget_test_unchanged": true,
+  "existing_runtime_ledger_caps_and_prebounds_unchanged": true,
+  "diagnostic_text_still_uses_actual_maximum": true,
+  "full_compiler_and_hosted_runtime_not_claimed": true
+}

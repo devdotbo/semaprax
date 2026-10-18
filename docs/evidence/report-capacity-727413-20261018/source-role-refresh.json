@@ -1,0 +1,62 @@
+{
+  "status": "SOURCE_ONLY_ORIGINAL_FULL_VERIFIER_AND_SIX_HOSTILE_CONTROLS_PASS",
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2459865,
+        "sha256": "db6f2312c047c56a51a22932cf49c960532c48d5c8582e62e543190a1b94e6f0",
+        "archive": "docs/evidence/report-capacity-727413-20261018/whole/db6f2312c047c56a51a22932cf49c960532c48d5c8582e62e543190a1b94e6f0.txt"
+      },
+      "current_length": 2459865,
+      "current_sha256": "41226f0e239271cc5d3499781cee80d9e4834c46667ea5576373fbfb22423ca2",
+      "all_original_classes_and_roles_unchanged": true,
+      "added_actual_data_acquisitions": []
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2745091,
+        "sha256": "8128092a44f402f8db3d343713525cd0ff543b2768dbc1aacee84ddfdf4d8868",
+        "archive": "docs/evidence/report-capacity-727413-20261018/whole/8128092a44f402f8db3d343713525cd0ff543b2768dbc1aacee84ddfdf4d8868.txt"
+      },
+      "current_length": 2745091,
+      "current_sha256": "2b3407e65ddc3f05c5ce5ccb991a962b687a26b6fe58295fa85ea48cb22b7e37",
+      "all_original_classes_and_roles_unchanged": true,
+      "added_actual_data_acquisitions": []
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 63760,
+        "sha256": "eb26c63793f927bbf6eb36405b831562c1f3164e969bc7787c34595fe1291a0c",
+        "archive": "docs/evidence/report-capacity-727413-20261018/whole/eb26c63793f927bbf6eb36405b831562c1f3164e969bc7787c34595fe1291a0c.txt"
+      },
+      "current_length": 63760,
+      "current_sha256": "a4293b92471e5d6584ada51347ba1b827bec6f39466b3d24eed18f1c5bcb8ee7",
+      "all_original_owner_fields_and_order_retained_except_current_identity": true
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 249493,
+        "sha256": "36389e5f64ca5401652cef82c67c1b3396f62c7d04f7621395f8ced20d9a35d2",
+        "archive": "docs/evidence/report-capacity-727413-20261018/whole/36389e5f64ca5401652cef82c67c1b3396f62c7d04f7621395f8ced20d9a35d2.txt"
+      },
+      "current_length": 249493,
+      "current_sha256": "5c57bd7ce3489e317e1ca311e6e7258eb03517d6759359666360b0ba9fb8e3ba"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3416,
+        "sha256": "fda8d0f56d7c1bab162c19f607908a59bd1f6d8999c2304fb888d8197b5de2a4",
+        "archive": "docs/evidence/report-capacity-727413-20261018/whole/fda8d0f56d7c1bab162c19f607908a59bd1f6d8999c2304fb888d8197b5de2a4.txt"
+      },
+      "current_length": 3415,
+      "current_sha256": "dd3d0128265ae016842f791a46197c1069ebd9cbe999a8592da89de2f5e7291b"
+    }
+  ],
+  "all_342_owner_rows_retained": true,
+  "original_authority_source_proof_unchanged": true
+}

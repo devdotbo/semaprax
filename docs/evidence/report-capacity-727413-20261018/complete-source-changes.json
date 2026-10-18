@@ -1,0 +1,54 @@
+[
+  {
+    "source": "src/workspace_graph/constructor_failure/report.rs",
+    "before": {
+      "length": 10292,
+      "sha256": "fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84.txt"
+    },
+    "current": {
+      "length": 10609,
+      "sha256": "a389503a2f7e6b241bbbaf906f71e980e564fa689d2389543d581dbc12fe5662",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/a389503a2f7e6b241bbbaf906f71e980e564fa689d2389543d581dbc12fe5662.txt"
+    }
+  },
+  {
+    "source": "src/workspace_graph/constructor_failure/publication_tests.rs",
+    "before": {
+      "length": 11807,
+      "sha256": "e4a3848d005761bf258574cd1cd5a3e9a216c6d5ccfc233c1503643acf7e2c4f",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/e4a3848d005761bf258574cd1cd5a3e9a216c6d5ccfc233c1503643acf7e2c4f.txt"
+    },
+    "current": {
+      "length": 13241,
+      "sha256": "ddbb63ee57a09f7439abfe1c8dba6b7905b8d2c4d881d73c145dc2c19545c520",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/ddbb63ee57a09f7439abfe1c8dba6b7905b8d2c4d881d73c145dc2c19545c520.txt"
+    }
+  },
+  {
+    "source": "tests/wasm/scalar_browser_ci_contract/historical_builder.rs",
+    "before": {
+      "length": 48920,
+      "sha256": "697077dc9e8e0786aec1bc92de8e073aabdf3fa8293852712838e709489de7a9",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/697077dc9e8e0786aec1bc92de8e073aabdf3fa8293852712838e709489de7a9.txt"
+    },
+    "current": {
+      "length": 49025,
+      "sha256": "203ab382b5154094e971ca0192b8dd1bfb8dee9fa5df9f57b07ec103c5ca0761",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/203ab382b5154094e971ca0192b8dd1bfb8dee9fa5df9f57b07ec103c5ca0761.txt"
+    }
+  },
+  {
+    "source": "src/source_reflows_merge/main99f_inputs.rs",
+    "before": {
+      "length": 37675,
+      "sha256": "28b86f8c94762f6404aaf048c91c48b41a5ebcdb9951433a35e7da495a56e0c0",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/28b86f8c94762f6404aaf048c91c48b41a5ebcdb9951433a35e7da495a56e0c0.txt"
+    },
+    "current": {
+      "length": 37819,
+      "sha256": "dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991",
+      "archive": "docs/evidence/report-capacity-727413-20261018/whole/dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991.txt"
+    }
+  }
+]

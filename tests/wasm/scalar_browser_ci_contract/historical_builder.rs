@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "Independent historical browser receivers must compile their complete original module trees."
+)]
 //! Exact whole-wire bridge to independently retained historical controls.
 use sha2::{Digest, Sha256};
 
@@ -408,6 +412,10 @@ pub(super) fn next_actual_drift_controls(graph: &str) {
 // Independent incoming hosted524 receiver and all its older full-wire controls.
 #[path = "historical_main_7f8.rs"]
 mod main_7f8;
+#[allow(
+    dead_code,
+    reason = "The complete independent incoming MAIN7f8 entry remains available to historical receivers."
+)]
 pub(super) fn main7f8_digest(graph: &str) -> String {
     main_7f8::digest(graph)
 }
@@ -417,7 +425,6 @@ pub(super) fn main7f8_digest(graph: &str) -> String {
 mod before_671;
 mod incoming_main671 {
     //! Whole-wire bridge from the hosted 67107c7c5 capture to every older control.
-    use super::digest_without_checked_value_cursor_budget;
     use sha2::{Digest, Sha256};
 
     use super::before_671;
@@ -664,7 +671,8 @@ mod retained_current_entry {
     }
 }
 pub(super) fn current_browser_drift_controls(graph: &str, role: &str) {
-    for (before, after) in [("\"used_call_sites\":10", "\"used_call_sites\":11")] {
+    let (before, after) = ("\"used_call_sites\":10", "\"used_call_sites\":11");
+    {
         assert_eq!(graph.matches(before).count(), 1);
         let changed = graph.replacen(before, after, 1);
         let parsed: serde_json::Value = serde_json::from_str(graph).unwrap();
@@ -766,7 +774,6 @@ fn current_browser_bridge_keeps_both_complete_trees_and_refuses_rehashed_foreign
 mod before_7d34;
 mod incoming_main7d34 {
     //! Whole-wire bridge from the hosted 7d34f1269 capture to every older control.
-    use super::digest_without_checked_value_cursor_budget;
     use sha2::{Digest, Sha256};
 
     use super::before_7d34;
@@ -1013,7 +1020,6 @@ fn main7d34_browser_bridge_preserves_three_complete_trees_and_raw_role_refusals(
 mod before_21abc;
 mod incoming_main21abc {
     //! Whole-wire bridge from the hosted 21abcda9b capture to every older control.
-    use super::digest_without_checked_value_cursor_budget;
     use sha2::{Digest, Sha256};
 
     use super::before_21abc;
