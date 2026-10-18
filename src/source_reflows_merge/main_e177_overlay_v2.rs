@@ -37,6 +37,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
+    "tests/project/standard_library/application_json.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
     "src/bounded_output/stage_debits/route_debits.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
@@ -93,8 +94,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15036; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "171d6282e8f4f649fa4bc2272824a3a6080e7570eb1b648ee3c37f8d004cd82e";
+const POLICY_LENGTH: usize = 15089; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "0fc120945ed0769da73878c14b402a77fa37651b0d055345223616cbe10f0a1b";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

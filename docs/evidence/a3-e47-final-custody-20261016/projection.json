@@ -3419,8 +3419,8 @@
       "sha256": "6795e85583b18b0cb0fa9afb24da1ae921f8f3295aee0c66c64c0a4fdcfd421f"
     },
     "src/cli/json_codec.rs": {
-      "length": 21346,
-      "sha256": "13a35648c61f74a96882d46ebdc6d20f60d42f56aaafbf57474377a2f341e6f9"
+      "length": 21590,
+      "sha256": "92bf3f38dd30c64690d06aca662d64d615f9490f756f0b5ea8cbce2222e37ef9"
     },
     "src/cli/json_codec/retained_receipt.rs": {
       "length": 1990,
@@ -6031,8 +6031,8 @@
       "sha256": "2938a32b1366d5948b7511dd5b1490b99802dbf085d35454c9ce0e619ef76aed"
     },
     "src/project/json_codec.rs": {
-      "length": 13604,
-      "sha256": "ee6195e9d264d5f9130b6d67c32abd1605d82e5fb07391cd4463eb45375ba919"
+      "length": 14527,
+      "sha256": "56ce7ad76a42f077c6dc12f0114a3587ae859fe5c3d088f8d6d6373ac39fee6b"
     },
     "src/project/json_codec/retained_receipt.rs": {
       "length": 7005,
@@ -6795,8 +6795,8 @@
       "sha256": "0e5d02afba9d12ce61316b7d85cac2aa118b5e27ac0a17e9b92f4acc5e4343fe"
     },
     "tests/project/standard_library/application_json.rs": {
-      "length": 16339,
-      "sha256": "300f16f7497580c51ebcc8daf201ecd60b2b884cee01c884b2dcd9868f27bf19"
+      "length": 16400,
+      "sha256": "2bc272193bd00e33529422e5e1c082c812c4ce1af7071f615e4a6538d661cb78"
     },
     "tests/project/standard_library/application_json/retained_receipt.rs": {
       "length": 10488,
@@ -84544,7 +84544,7 @@
             },
             {
               "parent": "tests/project/standard_library/application_json.rs",
-              "start": 566,
+              "start": 627,
               "text": "#[path = \"application_json/retained_receipt.rs\"]\nmod retained_receipt;",
               "attributes": [
                 "#[path = \"application_json/retained_receipt.rs\"]"
@@ -84583,7 +84583,7 @@
             },
             {
               "parent": "tests/project/standard_library/application_json.rs",
-              "start": 566,
+              "start": 627,
               "text": "#[path = \"application_json/retained_receipt.rs\"]\nmod retained_receipt;",
               "attributes": [
                 "#[path = \"application_json/retained_receipt.rs\"]"
