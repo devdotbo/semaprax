@@ -58,10 +58,14 @@ fn whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed() {
         }
         let expected = census.reached[0] as i128
             * (old_setup_invoice() as i128 - skeleton_work::receiving::acquisition_bytes() as i128)
-            + (census.reached[2] + census.reached[3]) as i128
+            + census.reached[2] as i128
                 * (2 * std::mem::size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>()
                     as i128
-                    - Session::into_query_bytes() as i128)
+                    - Session::added_status_query_bytes() as i128)
+            + census.reached[3] as i128
+                * (2 * std::mem::size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>()
+                    as i128
+                    - Session::added_edge_query_bytes() as i128)
             - census.reached[1] as i128 * ordinary_receiving::Failure::acquisition_bytes() as i128;
         assert_eq!(
             old.2 as i128 - current.2 as i128,

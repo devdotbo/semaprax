@@ -397,7 +397,8 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         )?;
                                         session.budget.reserve_bytes(
                                             function,
-                                            Session::EDGE_QUERY_BYTES + Session::into_query_bytes(),
+                                            Session::into_edge_local_bytes()
+                                                + Session::into_edge_query_bytes(),
                                             "retained expression-fact query result controls",
                                         )?;
                                         #[allow(

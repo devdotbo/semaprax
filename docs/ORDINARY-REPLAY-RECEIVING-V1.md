@@ -72,11 +72,12 @@ all old work/caps remain unchanged.
 For a complete successful composition, let C be reached ordinary setup owners,
 M retained lookup owners, and Ns/Ne actual status/edge queries. Let B0 be the
 literal complete immediate constructor-controls expression, B1 the new setup
-invoice, L the new query-loan invoice, E the full error/output-owner acquisition,
+invoice, Ls/Le the actual incremental status/edge query-loan invoices (whole new
+caller/local packets minus the corresponding unchanged old packet), E the full error/output-owner acquisition,
 and D the old Result<Option<&Option<CallFact>>,Diagnostic> layout. The expected
 paid-byte change, before any unrelated route difference, is:
 
-`old - new = C*(B0-B1) + (Ns+Ne)*(2*D-L) - M*E`.
+`old - new = C*(B0-B1) + Ns*(2*D-Ls) + Ne*(2*D-Le) - M*E`.
 
 All terms use actual target types. No original callback, collector backing,
 work unit or retained scratch is credited twice. Cold setup can regress; only

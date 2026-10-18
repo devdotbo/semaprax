@@ -14,6 +14,50 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
         )>() + 2 * size_of::<&mut ReplayBudget>()
             + size_of::<&mut Failure<'_>>()
     }
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn into_edge_query_bytes() -> usize
+    {
+        2 * size_of::<(
+            &mut Self,
+            &ExpressionId,
+            &mut Option<&Option<CallFact<'_>>>,
+            &mut Failure<'_>,
+            bool,
+        )>()
+    }
+    // The original self loan (and edge query-expression loan) moves to the
+    // caller's whole argument packet. Each old role remains, once; no equal-
+    // width unrelated slot is substituted or credited against another role.
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn into_local_bytes() -> usize {
+        size_of::<(
+            &Arena<'_>,
+            &ResolvedFunction,
+            &mut ReplayBudget,
+            &mut Control,
+            &mut Compared<'_>,
+        )>() + 2 * size_of::<&mut ReplayBudget>()
+            + size_of::<&crate::cleanup_plan::StatusSource>()
+            + 2 * size_of::<bool>()
+    }
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn into_edge_local_bytes() -> usize
+    {
+        size_of::<(
+            &Arena<'_>,
+            &ResolvedFunction,
+            &mut ReplayBudget,
+            &mut Control,
+            &mut Compared<'_>,
+        )>() + 2 * size_of::<&mut ReplayBudget>()
+    }
+    #[cfg(test)]
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_status_query_bytes(
+    ) -> usize {
+        Self::into_query_bytes() + Self::into_local_bytes() - Self::query_bytes()
+    }
+    #[cfg(test)]
+    pub(in crate::cleanup_plan::replay::expression_facts) const fn added_edge_query_bytes() -> usize
+    {
+        Self::into_edge_query_bytes() + Self::into_edge_local_bytes() - Self::EDGE_QUERY_BYTES
+    }
     pub(in crate::cleanup_plan::replay::expression_facts) fn fact_into(
         &mut self,
         query: &'arena ExpressionId,
@@ -55,7 +99,7 @@ impl<'arena, 'hir, 'budget> Session<'arena, 'hir, 'budget> {
             budget,
             function,
             slot,
-            Self::query_bytes(),
+            Self::into_local_bytes(),
             "retained expression-fact query result controls"
         ) {
             return false;
