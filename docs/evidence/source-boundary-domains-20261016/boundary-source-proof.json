@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1181,
-      "current_boundary_production": 419,
+      "current_boundary_members": 1184,
+      "current_boundary_production": 420,
       "outside_production_still_fully_authenticated": 84,
-      "full_role_production": 503,
-      "full_role_test_only": 917,
-      "full_raw_sha256": "cff2a5e570aa0bdec450429ba8c353f63d428dda93b010b6cb2651952a1f77a5",
-      "boundary_production_sha256": "73a510a7e3af76dd11e23203e63c177cf77df247177ed1ab8f91ab39846b0169",
+      "full_role_production": 504,
+      "full_role_test_only": 919,
+      "full_raw_sha256": "c35f9538369e11b9ab7eccb72c2761e065c0c7c91b4700c5410acba8da5aff99",
+      "boundary_production_sha256": "b5c2d62efd7de9c860eae967ad4f14332be113bdff904f5f645e3a2bd16ec678",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -33,10 +33,10 @@
       "original_roots": 179,
       "current_boundary_members": 198,
       "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 552,
-      "full_role_production": 625,
-      "full_role_test_only": 975,
-      "full_raw_sha256": "fbe03d10d534814b332545fb7e94796cfd582c2d786b663c2ad64c6ed4ae0d71",
+      "outside_production_still_fully_authenticated": 553,
+      "full_role_production": 626,
+      "full_role_test_only": 977,
+      "full_raw_sha256": "c57dd0c5b23ca276f080cf05c1699da35529c902e64b30873ec67dfd21005112",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -56,7 +56,6 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -65,6 +64,7 @@
     "whole_raw_drift_refused": true,
     "foreign_path_child_cannot_escape": true
   },
-  "registration_update": "PRESERVED_DC265_AND_INCOMING_SAME_ROLE_CHAINS_WITH_AUTHENTICATED_PHYSICAL_EDGE_SUCCESSORS",
+  "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
+  "registration_update": "FINITE_265_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_THREE_ACTUAL_CORE_CHILDREN",
   "global_polluted_purity_result_not_claimed": true
 }

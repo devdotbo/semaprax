@@ -1,0 +1,178 @@
+{
+  "status": "SOURCE_ONLY_TYPED_EDGE_PROPOSAL_UNINVOKED",
+  "source_checkpoint": "e32be37755524c57e7205044935807aab71f2b0b",
+  "whole_role_baseline": "c27382c179983118110231cc95a3d0560973ef7a",
+  "baseline_models": {
+    "hir": {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "length": 2328050,
+      "sha256": "8adfcacb9eae258317e40bf8e688f4dabc55aa21aed67d6e6631f7b6725e37ef"
+    },
+    "projection": {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "length": 2619066,
+      "sha256": "87038440ae223a6caec0a8bb99a00f402ce65fdfa37f74a67dd904ff7137bf8b"
+    }
+  },
+  "new_modules": [
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "length": 76609,
+      "sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "length": 4051,
+      "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "length": 14618,
+      "sha256": "3bf6acc672b265ae27ab9a662caeddcd02f8829b95b4fbfaaefa3d8166e99338"
+    }
+  ],
+  "actual_registration_literals": [
+    {
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "parent_length": 36862,
+      "parent_sha256": "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b",
+      "literal_start": 36734,
+      "literal": "mod ordinary_cross_phase;",
+      "literal_sha256": "2f6cc986a375b53a9dec626a6011168bf013413fc3525bb4fd6efdd8e98c6622",
+      "parent_whole_commit": "e32be37755524c57e7205044935807aab71f2b0b"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "parent_length": 76609,
+      "parent_sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+      "literal_start": 76475,
+      "literal": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_before.rs\"]\nmod before;",
+      "literal_sha256": "4fdd7b7969443725f4842ccf227e8670ad36e45b6abf784f7d4a0a35fd4ddc3c",
+      "parent_whole_commit": "e32be37755524c57e7205044935807aab71f2b0b"
+    },
+    {
+      "parent": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "child": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "parent_length": 76609,
+      "parent_sha256": "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+      "literal_start": 76543,
+      "literal": "#[cfg(test)]\n#[path = \"ordinary_cross_phase_tests.rs\"]\nmod tests;",
+      "literal_sha256": "3a037edfa3481aa6be12adfdc2b924dc76273d6f4850299e90506040790e153c",
+      "parent_whole_commit": "e32be37755524c57e7205044935807aab71f2b0b"
+    }
+  ],
+  "domain_compiled_parent_witnesses": {
+    "hir": {
+      "parent_role": "production",
+      "compiled_parent_chains": [
+        {
+          "root": "src/lib.rs",
+          "kind": "lib",
+          "package": "semaprax",
+          "edges": [
+            {
+              "parent": "src/lib.rs",
+              "start": 3508,
+              "text": "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]\npub mod cleanup_plan;",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "child": "src/cleanup_plan.rs"
+            },
+            {
+              "parent": "src/cleanup_plan.rs",
+              "start": 1409,
+              "text": "mod replay;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay.rs",
+              "start": 591,
+              "text": "mod expression_facts;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts.rs",
+              "start": 161,
+              "text": "pub(super) mod receiving;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/receiving.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+              "start": 133,
+              "text": "mod retained;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs"
+            }
+          ]
+        }
+      ],
+      "data_parent_chains": []
+    },
+    "projection": {
+      "parent_role": "production",
+      "compiled_parent_chains": [
+        {
+          "root": "src/lib.rs",
+          "kind": "lib",
+          "package": "semaprax",
+          "edges": [
+            {
+              "parent": "src/lib.rs",
+              "start": 3508,
+              "text": "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]\npub mod cleanup_plan;",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "child": "src/cleanup_plan.rs"
+            },
+            {
+              "parent": "src/cleanup_plan.rs",
+              "start": 1409,
+              "text": "mod replay;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay.rs",
+              "start": 591,
+              "text": "mod expression_facts;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts.rs",
+              "start": 161,
+              "text": "pub(super) mod receiving;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/receiving.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+              "start": 133,
+              "text": "mod retained;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs"
+            }
+          ]
+        }
+      ],
+      "data_parent_chains": []
+    }
+  },
+  "expected_namespace_suffixes": [
+    "expression_facts::receiving::retained::ordinary_cross_phase",
+    "expression_facts::receiving::retained::ordinary_cross_phase::before",
+    "expression_facts::receiving::retained::ordinary_cross_phase::tests"
+  ],
+  "role_values_derived_by_original_parser_not_assigned": true,
+  "old_owners": 265,
+  "new_owners": 268,
+  "actual_final_coupled_head_required": true,
+  "producer_invoked": false
+}
