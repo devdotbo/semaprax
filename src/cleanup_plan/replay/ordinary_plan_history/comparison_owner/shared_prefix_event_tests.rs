@@ -211,3 +211,146 @@ fn fresh_entry_suffix_refused_prefix_prices_admitted_bodies_independently_of_g()
     }
     assert!(partial_body, "a reached paid body must also be observed when its original work refuses");
 }
+
+fn main99_run(
+    function: &ResolvedFunction,
+    length: usize,
+    depth: usize,
+    units: usize,
+    limit: usize,
+    floor: usize,
+    hir_shared: bool,
+    swaps_only: bool,
+) -> Run {
+    let (actual, mut expected) = event_inputs(length, depth);
+    if hir_shared {
+        for path in &mut expected {
+            path.observations.prefix = path.observations.freeze();
+            path.observations.items.clear();
+        }
+    }
+    pair_scope_census::reset();
+    if swaps_only {
+        frontiers::reset_swaps();
+    } else {
+        frontiers::reset();
+    }
+    let observed = with_limit_usage_refusal(limit, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            budget.remaining = units;
+            assert!(crate::bounded_output::set_active_floor(floor));
+            let result = (|| {
+                paid!(
+                    &mut budget,
+                    function,
+                    COMPARE_CALL_CONTROLS,
+                    "899 complete comparison receiver"
+                )?;
+                super::super::super::before_shared_steps::compare(
+                    function, &mut budget, actual, &expected)
+            })();
+            let saved = result.as_ref().map(|_| ()).map_err(failure);
+            let retry = if result.is_err()
+                && (budget.refusal_spent || crate::bounded_output::active_refused())
+            {
+                crate::bounded_output::clear_active_floor();
+                let before = (budget.remaining, crate::bounded_output::active_remaining());
+                let retry = budget
+                    .reserve_bytes(function, 0, "899 sticky zero")
+                    .unwrap_err();
+                assert_eq!(
+                    (budget.remaining, crate::bounded_output::active_remaining()),
+                    before
+                );
+                Some(retry)
+            } else {
+                None
+            };
+            let outcome = Outcome {
+                result: saved,
+                retry: retry.as_ref().map(failure),
+                remaining: budget.remaining,
+                skeleton_spent: budget.skeleton_spent,
+            };
+            crate::bounded_output::clear_active_floor();
+            drop(result);
+            drop(retry);
+            drop(budget);
+            outcome
+        })
+    });
+    let events = frontiers::finish();
+    let (rows, lost) = pair_scope_census::finish();
+    assert_eq!(lost, 0);
+    // The original call frame can refuse before begin; that is genuinely no row.
+    let row = if rows.is_empty() {
+        assert!(observed.1);
+        assert!(observed.0 .0.result.is_err());
+        pair_scope_census::empty_for_test()
+    } else {
+        assert_eq!(rows.len(), 1);
+        assert!(rows[0].ended && !rows[0].overflow && !rows[0].truncated && !rows[0].unwound);
+        rows[0]
+    };
+    balanced(observed.0 .1);
+    Run {
+        observed,
+        events,
+        row,
+    }
+}
+
+#[test]
+fn fresh_suffix_supersedes_complete_shared_step_generation_without_polling() {
+    let program = super::super::super::super::tests::program();
+    let function = &program.functions[0];
+    let mut genuine_poll = false;
+    for length in [0, 1, 2, 8, 128] {
+        for shape in 0..4 {
+            for hir_shared in [false, true] {
+                let old = main99_run(function, length, shape, MAX_REPLAY_WORK_UNITS,
+                    usize::MAX, 0, hir_shared, true);
+                let current = event_run(function, length, shape, false,
+                    MAX_REPLAY_WORK_UNITS, usize::MAX, 0, hir_shared, true);
+                assert_eq!(old.observed.0 .0, current.observed.0 .0);
+                assert!(current.observed.0 .0.result.is_ok());
+                assert_eq!(swaps(&old), swaps(&current));
+                assert_eq!((old.observed.0 .1.live, current.observed.0 .1.live), (0, 0));
+                assert!(old.row.complete && current.row.complete);
+                assert_eq!((current.row.shared_checks, current.row.shared_patterns,
+                    current.row.shared_metadata, current.row.shared_steps), (0, 0, 0, 0),
+                    "the superseded per-round poll is physically absent");
+                if length > 1 && shape == 0 {
+                    assert!(old.row.shared_steps > 0, "genuine incoming loaded-item route executes");
+                    assert!(current.row.identity_observations > 0,
+                        "current invokes the real fresh-head suffix, not the incoming oracle");
+                    genuine_poll = true;
+                }
+                eprintln!("OPT899_SHARED_GENERATIONS length={length} shape={shape} hir_shared={hir_shared} incoming99_paid={} current_paid={} old_shared_steps={} current_Q={} current_G={} current_H={}; both complete producers, full Drop; separate independent invoices remain owning controls; no application gain claim",
+                    old.observed.2, current.observed.2, old.row.shared_steps,
+                    current.row.identity_detectors, current.row.identity_observations,
+                    current.row.identity_hits);
+            }
+        }
+    }
+    assert!(genuine_poll);
+}
+#[test]
+fn fresh_suffix_and_complete_shared_step_generation_keep_every_work_refusal_and_swap() {
+    let program = super::super::super::super::tests::program();
+    let function = &program.functions[0];
+    for (length, shape) in [(2, 0), (2, 1), (2, 2), (0, 3), (8, 3)] {
+        let complete = main99_run(function, length, shape, MAX_REPLAY_WORK_UNITS,
+            usize::MAX, 0, false, true);
+        for units in 0..=complete.observed.0 .0.skeleton_spent + 1 {
+            let old = main99_run(function, length, shape, units, usize::MAX, 0, false, true);
+            let current = event_run(function, length, shape, false, units,
+                usize::MAX, 0, false, true);
+            assert_eq!(old.observed.0 .0, current.observed.0 .0,
+                "six diagnostic fields, sticky result and remaining work: {length}/{shape}/{units}");
+            assert_eq!(swaps(&old), swaps(&current));
+            assert_eq!((old.observed.0 .1.live, current.observed.0 .1.live), (0, 0));
+        }
+    }
+}

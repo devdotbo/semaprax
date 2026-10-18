@@ -23,13 +23,11 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+mod shared_steps;
 pub(super) fn previous_macro(current: &str) -> String {
-    let stage = super::super::super::super::reachable_stage(
-        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
-        "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c",
-        current,
-    );
-    let current = stage.as_str();
+    previous_macro_stage(&shared_steps::previous_macro(current))
+}
+fn previous_macro_stage(current: &str) -> String {
     restore(current, 6956, MACRO)
 }
 #[rustfmt::skip]
@@ -38,12 +36,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (478, "pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;\n// Before inspecting the already-funded owner length, fund the new payment\n// site's complete primitive frame, match/local usize receivers and both\n// numeric pattern decisions. No dynamic payload uses this primitive bank.\npub(super) const PRIMITIVE_SELECTION: usize =\n    PAYMENT_HEADER + 3 * size_of::<usize>() + 2 * size_of::<bool>();\n", ""),
 ];
 pub(super) fn previous_owner(current: &str) -> String {
-    let stage = super::super::super::super::reachable_stage(
-        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-        "ae4705bfe4032ba2674a57c1451ded8c2cf0672f8f91cad07a127e5d599303b2",
-        current,
-    );
-    let current = stage.as_str();
+    previous_owner_stage(&shared_steps::previous_owner(current))
+}
+fn previous_owner_stage(current: &str) -> String {
     restore(current, 23088, OWNER)
 }
 #[rustfmt::skip]
@@ -52,12 +47,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (6960, "    + lexical_cursor::PRIMITIVE_SELECTION + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE\n", "    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE\n"),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
-    let stage = super::super::super::super::reachable_stage(
-        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-        "72971e2f87412bc484803b132e6cbe8aa36e24bb468be8c399658c96285065da",
-        current,
-    );
-    let current = stage.as_str();
+    previous_pair_tests_stage(&shared_steps::previous_pair_tests(current))
+}
+fn previous_pair_tests_stage(current: &str) -> String {
     restore(current, 40579, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -75,8 +67,6 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (2321, "}\n// Independent source-type invoice for the reachable primitive-site bank.\n// No measured debit difference is used as a coefficient.\nfn reachable_primitive_prices(paths: usize) -> (usize, usize) {\n    let header = 2 * size_of::<&ResolvedFunction>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<&str>()\n        + 2 * size_of::<usize>()\n        + 2 * size_of::<Result<(), Diagnostic>>();\n    let selector = header + 3 * size_of::<usize>() + 2 * size_of::<bool>();\n    let reachable = match paths {\n        0 => 0,\n        1 => 5 * header,\n        _ => 20 * header,\n    };\n    (20 * header, selector + reachable)\n", ""),
 ];
 pub(super) fn previous_prepared_controls(current: &str) -> String {
-    let stage = super::super::super::super::reachable_stage("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs", "0a5daec1673b21f90820a2d65c2932cc9019707359e596325749f2151fd6543d", current);
-    let current = stage.as_str();
     restore(current, 9965, PREPARED_CONTROLS)
 }
 #[rustfmt::skip]
@@ -162,8 +152,8 @@ mod tests {
     #[test]
     fn span_extent_and_outside_body_drift_never_match_whole_before_sources() {
         hostile(
-            include_str!("../../../lexical_cursor.rs"),
-            previous_macro,
+            &shared_steps::previous_macro(include_str!("../../../lexical_cursor.rs")),
+            previous_macro_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-macro.rs.txt"
@@ -171,8 +161,8 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../comparison_owner.rs"),
-            previous_owner,
+            &shared_steps::previous_owner(include_str!("../../../../comparison_owner.rs")),
+            previous_owner_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-owner.rs.txt"
@@ -180,8 +170,8 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &shared_steps::previous_pair_tests(include_str!("../../../pair_scope_tests.rs")),
+            previous_pair_tests_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/reachable-primitives-8390-20261018/before-pair-tests.rs.txt"

@@ -67,11 +67,14 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan reachable cursor primitive frames" => Some(0),
         "ordinary plan history order call" => Some(1),
         "ordinary plan history sift call" => Some(2),
-        "ordinary plan history comparison receivers" => Some(3),
+        "ordinary plan history comparison receivers" | "ordinary plan history pair-local paths" => {
+            Some(3)
+        }
         "ordinary plan history sort receivers" => Some(4),
         "ordinary plan history left cursor prepare" => Some(5),
         "ordinary plan history right cursor prepare" => Some(6),
-        "ordinary plan history HIR cursor prepare" => Some(7),
+        "ordinary plan history HIR cursor prepare"
+        | "ordinary plan history flat HIR retained slice" => Some(7),
         "ordinary plan history paired cursor next" => Some(8),
         "ordinary plan history HIR cursor next" => Some(9),
         "ordinary plan retained drain swap receivers" => Some(10),
@@ -616,11 +619,11 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
         Route::UnoptedCrosscheck,
         Route::OptedOracle,
     ] {
-        for (category, label) in LABELS
-            .into_iter()
-            .enumerate()
-            .chain([(0, "ordinary plan reachable cursor primitive frames")])
-        {
+        for (category, label) in LABELS.into_iter().enumerate().chain([
+            (0, "ordinary plan reachable cursor primitive frames"),
+            (3, "ordinary plan history pair-local paths"),
+            (7, "ordinary plan history flat HIR retained slice"),
+        ]) {
             assert_eq!(comparison_phase(label), Some(category));
             let (((), metrics), refused, used, first) = with_limit_usage_refusal(8_769, || {
                 crate::test_allocation_observer::measure(|| {
@@ -809,5 +812,182 @@ fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
             original.downcast_ref::<String>()
         );
         std::panic::resume_unwind(original);
+    }
+}
+
+#[test]
+fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_site() {
+    // Closed current invocation grammar. An unfamiliar source shape fails this
+    // guard instead of silently omitting a real payment from the census.
+    fn phases<'a>(source: &'a str, token: &str, arguments: usize) -> Vec<&'a str> {
+        let mut phases = Vec::new();
+        for (start, _) in source.match_indices(token) {
+            let begin = start + token.len();
+            let bytes = source.as_bytes();
+            let mut at = begin;
+            let mut depth = 1usize;
+            let mut quoted = false;
+            let mut escaped = false;
+            while at < bytes.len() && depth != 0 {
+                let byte = bytes[at];
+                at += 1;
+                if quoted {
+                    if escaped {
+                        escaped = false;
+                    } else if byte == b'\\' {
+                        escaped = true;
+                    } else if byte == b'"' {
+                        quoted = false;
+                    }
+                } else if byte == b'"' {
+                    quoted = true;
+                } else if byte == b'(' {
+                    depth += 1;
+                } else if byte == b')' {
+                    depth -= 1;
+                }
+            }
+            assert_eq!(depth, 0, "unterminated payment invocation");
+            let body = &source[begin..at - 1];
+            assert!(!body.contains("//") && !body.contains("/*") && !body.contains('\\'));
+            assert_eq!(
+                body.matches('"').count(),
+                2,
+                "unknown payment argument shape"
+            );
+            let first = body.find('"').unwrap();
+            let last = body.rfind('"').unwrap();
+            assert_eq!(body[..first].matches(',').count(), arguments - 1);
+            assert!(body[last + 1..].trim().trim_matches(',').trim().is_empty());
+            phases.push(&body[first + 1..last]);
+        }
+        phases
+    }
+    let owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+    ));
+    // Preserve the complete incoming generation's own exact site inventory.
+    // Its redundant poll remains independently compiled, never charged to shipping.
+    let incoming_owner = include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs"))
+        .split_once("\n// Complete incoming99 generation;").unwrap().0;
+    let incoming_macro = include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs"));
+    assert_eq!((phases(incoming_owner, "paid!(", 4).len(),
+        phases(incoming_owner, "lexical_plan_next!(", 10).len(),
+        phases(incoming_owner, "shared_plan_pair_step!(", 5).len()), (13, 4, 1));
+    assert_eq!(incoming_macro.matches("paid!(").count(), 7);
+    let direct = phases(owner, "paid!(", 4);
+    let forwarded = phases(owner, "lexical_plan_next!(", 10);
+    // The fresh-head continuation covers every aligned nonempty shared segment:
+    // each prepared chain visits a segment once, each ordinary round advances
+    // both item offsets equally. Polling those same items cannot add a hit.
+    assert_eq!(owner.matches("shared_plan_pair_step!(").count(), 0);
+    assert_eq!((owner.matches("lexical_plan_value!(").count(),
+        owner.matches("shared_prefix_first_comparison!(").count(),
+        owner.matches("replay_shared_prefix!(").count()), (4, 2, 1));
+    assert_eq!(
+        (direct.len(), forwarded.len()),
+        (13, 2),
+        "audit new lexical payment sites explicitly"
+    );
+    let lexical = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+    ));
+    let paired = include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"));
+    let suffix = include_str!(concat!(env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs"));
+    assert_eq!((lexical.matches("paid!(").count(), paired.matches("paid!(").count(),
+        suffix.matches("paid!(").count()), (3, 3, 3));
+    // Both lexical producers forward only the caller's already-checked phase.
+    for lexical in [lexical, paired] {
+    let sites: Vec<_> = lexical.match_indices("paid!(").collect();
+    for (at, _) in sites {
+        let body = &lexical[at + "paid!(".len()..];
+        let end = body.find(")?;").expect("unknown generic payment shape");
+        let phase = body[..end].trim().trim_end_matches(',').trim();
+        assert!(
+            phase
+                .rsplit_once(',')
+                .is_some_and(|(_, last)| last.trim() == "$phase"),
+            "unknown generic payment forwarding shape: {phase}"
+        );
+    }
+    }
+    let suffix_phases = phases(suffix, "paid!(", 4);
+    assert_eq!(suffix_phases.len(), 3);
+    // Split only top-level macro arguments, preserving nested continuation
+    // blocks. Flat comma/quote counting would silently lose their real calls.
+    fn macro_arguments<'a>(source: &'a str, token: &str) -> Vec<Vec<&'a str>> {
+        let mut calls = Vec::new();
+        for (start, _) in source.match_indices(token) {
+            let begin = start + token.len();
+            let mut field = begin;
+            let mut fields = Vec::new();
+            let mut stack = vec![b')'];
+            let mut quoted = false;
+            let mut escaped = false;
+            let mut comment = false;
+            let bytes = source.as_bytes();
+            let mut at = begin;
+            while !stack.is_empty() {
+                assert!(at < bytes.len(), "unterminated production macro");
+                let byte = bytes[at];
+                if comment {
+                    if byte == b'\n' { comment = false; }
+                } else if quoted {
+                    if escaped { escaped = false; }
+                    else if byte == b'\\' { escaped = true; }
+                    else if byte == b'"' { quoted = false; }
+                } else {
+                    match byte {
+                        b'/' if bytes.get(at + 1) == Some(&b'/') => comment = true,
+                        b'"' => quoted = true,
+                        b'(' => stack.push(b')'),
+                        b'[' => stack.push(b']'),
+                        b'{' => stack.push(b'}'),
+                        b')' | b']' | b'}' => {
+                            assert_eq!(stack.pop(), Some(byte));
+                            if stack.is_empty() {
+                                let last = source[field..at].trim();
+                                if !last.is_empty() { fields.push(last); }
+                            }
+                        }
+                        b',' if stack.len() == 1 => {
+                            fields.push(source[field..at].trim());
+                            field = at + 1;
+                        }
+                        _ => {}
+                    }
+                }
+                at += 1;
+            }
+            calls.push(fields);
+        }
+        calls
+    }
+    let bare_calls = macro_arguments(owner, "lexical_plan_value!(");
+    assert_eq!(bare_calls.len(), 4);
+    for call in bare_calls {
+        assert_eq!(call.len(), 13);
+        assert_eq!(call[10], "\"ordinary plan history paired cursor next\"");
+    }
+    for call in macro_arguments(owner, "shared_prefix_first_comparison!(") {
+        assert_eq!(call.len(), 8);
+        assert_eq!((&call[3], &call[4]), (&"function", &"budget"));
+    }
+    for call in macro_arguments(owner, "replay_shared_prefix!(") {
+        assert_eq!(call.len(), 7);
+        assert_eq!((&call[3], &call[4]), (&"function", &"budget"));
+    }
+    for phase in direct.into_iter().chain(forwarded).chain(suffix_phases)
+        .chain(["ordinary plan history paired cursor next"]) {
+        assert!(
+            comparison_phase(phase).is_some(),
+            "unattributed actual payment phase: {phase}"
+        );
     }
 }

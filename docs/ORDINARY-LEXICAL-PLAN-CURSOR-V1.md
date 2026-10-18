@@ -161,3 +161,44 @@ headers, even on zero/one paths, and identity initializer/detector/replay banks
 remain additive. Thus larger sets retain all twenty-five cursor headers; the
 reachable-selector delta is independently invoiced, not an identity-replay
 credit. Whole incoming and immediate identity-generation controls remain compiled.
+## Independent identical immutable segment step generation
+
+A prepared cursor remembers the exact arena link it most recently loaded. Its
+loaded flag implies that its retained immutable slice starts at that segment's
+current item offset. Equal loaded link identities and equal offsets therefore
+prove that a nonempty next observation is the same immutable value on both
+sides. The paired branch advances two retained slices directly. It forms no
+observation Option, pair tuple or content-comparison arguments on that branch.
+Independent terminal and full HIR comparison remain unchanged. No hash, unsafe
+code, per-call exemption, source authority or alternate oracle is introduced.
+
+Every original left cursor/segment, right cursor/segment and equal-observation
+work charge remains in its original order, including every refusal cut. Fresh
+selectors, pattern decisions, slice receivers and scalar assignments are paid
+before formation. The owner pays remembered-link fields and initializers; every
+actual load pays its scalar copy. Multipath comparisons acquire nine distinct
+complete primitive headers for four new payment and five new work sites.
+Zero/one-path groups retain their old reachable banks. Unshared or short paths
+can cost more. No universal or application saving is inferred from the model.
+
+The source-type invoice adds setup, load, selector and branch costs and removes
+only the absent paired/step payloads on each proven shared step. Complete current
+and immutable883 comparisons, independent typed invoices, old source inverses,
+physical/work-cut/Drop/diagnostic controls and unchanged limits remain owning
+gates. Fixed checked counters are observation only. Bounded models and source
+checks do not qualify the compiler, native64MiB, STD-08, browser or applications.
+
+### Composition of fresh-head and retained-item equality
+
+The independently compiled incoming shared-step generation above retains its
+remembered-link owner, twenty-nine-header multipath bank, every load copy and
+its complete controls. The shipping producer uses the fresh/fresh lexical
+continuation instead. Prepared chains visit each segment once. Equal offsets
+inside the same segment imply both cursors entered it on the same paired round;
+that first-head continuation already compares the first item and consumes the
+entire equal suffix. Asymmetric offsets cannot converge under equal advances;
+empty segments yield no item, and tail traversal clears the loaded flag. Thus a
+second per-round poll would be redundant. Its fields, load copies, polling
+payments and nine headers are physically absent from shipping, not credited to
+its invoice. Complete generation comparisons retain separate counters and costs;
+no application or whole-caller improvement follows from this source argument.

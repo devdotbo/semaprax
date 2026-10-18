@@ -1178,3 +1178,6 @@ mod reachable_pair_scope_tests;
 #[path = "shared_prefix_before_event_tests.rs"]
 #[rustfmt::skip]
 mod shared_prefix_before_event_tests;
+
+#[path = "main99_pair_scope_tests.rs"]
+mod main99_pair_scope_tests;

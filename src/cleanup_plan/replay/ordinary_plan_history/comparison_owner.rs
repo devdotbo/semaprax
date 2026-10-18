@@ -9,6 +9,8 @@ mod shared_prefix;
 #[cfg(test)]
 mod before_event_prefix;
 #[cfg(test)]
+mod before_shared_steps;
+#[cfg(test)]
 #[rustfmt::skip]
 mod before_reachable_primitives;
 #[cfg(test)]
