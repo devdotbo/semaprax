@@ -336,7 +336,10 @@ fn fixed_receiver_json_fixtures_keep_complete_inputs_inverses_and_hostile_io() {
             161, 173, 36, 105, 237, 225, 125, 49, 19, 77, 149, 155, 236
         ]
     );
-    let mut root_before = include_str!("../../source_reflows_merge.rs").to_owned();
+    let mut root_before = complete_receiver_entry_glue(
+        "src/source_reflows_merge.rs",
+        include_str!("../../source_reflows_merge.rs"),
+    );
     assert_eq!(&root_before[685..867], ";\n// Closed authenticated repository DATA only; no live-source or compiler authority.\npub(crate) use runtime_json::{receiver_fixture, receiver_fixture_source_before, ReceiverFixture}");
     root_before.replace_range(685..867, "");
     assert_eq!(
@@ -346,8 +349,10 @@ fn fixed_receiver_json_fixtures_keep_complete_inputs_inverses_and_hostile_io() {
             60, 154, 237, 154, 234, 103, 203, 114, 174, 218, 132, 112, 225
         ]
     );
-    let mut receiver_before =
-        include_str!("../../source_reflows/incoming67107_semantic_receivers.rs").to_owned();
+    let mut receiver_before = complete_receiver_entry_glue(
+        "src/source_reflows/incoming67107_semantic_receivers.rs",
+        include_str!("../../source_reflows/incoming67107_semantic_receivers.rs"),
+    );
     assert_eq!(receiver_before.matches("fn proofs() -> &'static [serde_json::Value] {\n    // Preserve the old parsed metadata cache, but authenticate the runtime\n    // dependency on every reached lookup, including an already warm cache.\n    let payload = crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::Main67107,\n    );\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n").count(), 1);
     receiver_before = receiver_before.replacen("fn proofs() -> &'static [serde_json::Value] {\n    // Preserve the old parsed metadata cache, but authenticate the runtime\n    // dependency on every reached lookup, including an already warm cache.\n    let payload = crate::source_reflows_merge::receiver_fixture(\n        crate::source_reflows_merge::ReceiverFixture::Main67107,\n    );\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n", "fn proofs() -> &'static [serde_json::Value] {\n    PROOF_RECORDS.get_or_init(|| {\n        let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();\n        let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();\n        assert_eq!(original.len(), 12);\n        assert_eq!(additional.len(), 2);\n        original.extend(additional);\n        original\n    })\n}\n", 1);
     assert_eq!(receiver_before.matches("const LIVE_AUDITS:").count(), 1);
@@ -403,6 +408,8 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         assert_eq!(rows.len(), expected_rows);
         let names: std::collections::BTreeSet<_> = rows.iter().map(|row| row["source"].as_str().unwrap()).collect();
         assert_eq!(names.len(), expected_rows, "complete unique source inventory");
+        let entry = complete_receiver_entry_glue(source, current);
+        let current = entry.as_str();
         assert_eq!(current.matches(after).count(), 1, "one transport change: {source}");
         let original = current.replacen(after, before, 1);
         assert_eq!(digest(original.as_bytes()), whole_before, "entire original consumer: {source}");
@@ -432,7 +439,7 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         "six complete physical inputs, not measured compiler memory"
     );
     let runtime = include_str!("../runtime_json.rs");
-    let mut original = runtime.to_owned();
+    let mut original = complete_receiver_entry_glue("src/source_reflows_merge/runtime_json.rs", runtime);
     for (start, end) in [
         (
             "    // RUNTIME848_SIX_VARIANTS_BEGIN\n",
@@ -462,6 +469,16 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         .unwrap()
         .0
         .to_owned();
+    // The two finite ENTRY acquisitions below preserve the complete old test
+    // body after their exact source-only glue is removed, before the unchanged
+    // formatter/transport inverse. The helper itself is outside this prefix.
+    for (after, before) in [
+        ("    let mut root_before = complete_receiver_entry_glue(\n        \"src/source_reflows_merge.rs\",\n        include_str!(\"../../source_reflows_merge.rs\"),\n    );", "    let mut root_before = include_str!(\"../../source_reflows_merge.rs\").to_owned();"),
+        ("    let mut receiver_before = complete_receiver_entry_glue(\n        \"src/source_reflows/incoming67107_semantic_receivers.rs\",\n        include_str!(\"../../source_reflows/incoming67107_semantic_receivers.rs\"),\n    );", "    let mut receiver_before =\n        include_str!(\"../../source_reflows/incoming67107_semantic_receivers.rs\").to_owned();"),
+    ] {
+        assert_eq!(original_tests.matches(after).count(), 1);
+        original_tests = original_tests.replacen(after, before, 1);
+    }
     let bridge = "    let authenticated = complete_preformat_transport(&authenticated);\n";
     assert_eq!(original_tests.matches(bridge).count(), 1);
     original_tests = original_tests.replacen(bridge, "", 1);
@@ -500,5 +517,79 @@ fn complete_preformat_transport(current: &str) -> String {
     }
     assert_eq!(original.len(), 7972);
     assert_eq!(digest(original.as_bytes()), [134, 67, 1, 208, 184, 127, 141, 233, 92, 107, 141, 31, 47, 211, 6, 195, 187, 150, 234, 201, 47, 86, 105, 152, 99, 8, 6, 95, 42, 189, 174, 239]);
+    original
+}
+
+// Exact approved ENTRY-glue inverse, separate from every original runtime-data
+// transport inverse. Full compiled bytes are bound before any literal edit;
+// no archived source is substituted and no old assertion/hash is retargeted.
+#[rustfmt::skip]
+fn complete_receiver_entry_glue(source: &str, current: &str) -> String {
+    let (length, current_sha, old_length, old_sha, edits): (usize, [u8; 32], usize, [u8; 32], &[(&str, &str)]) = match source {
+        "src/source_reflows_merge.rs" => (
+            54109, [220, 244, 224, 223, 238, 175, 36, 141, 79, 190, 146, 91, 141, 163, 27, 142, 129, 150, 45, 135, 252, 98, 241, 82, 51, 110, 137, 62, 124, 114, 39, 213],
+            47396, [103, 201, 154, 111, 183, 144, 217, 242, 102, 241, 45, 9, 134, 5, 177, 82, 54, 234, 142, 160, 125, 200, 148, 230, 143, 61, 21, 37, 149, 251, 239, 223],
+            &[
+                ("}\n\n// These three formatter inverses bind the ENTIRE actual compiled child body,\n// not merely an archived before image. No token or string-content normalization.\npub(crate) fn receiver_child_entry(source: &str, current: &str) -> String {\n    let (expected, length, compiled_sha, after, before) = match source {\n        \"src/workspace_graph/expected_projection/private_layout/before_registry.rs\" => (\n            \"0d6e2e30c78d040eafcd7c11e66a4696d17e949aa09eac7d79d6d1b6634721cd\", 8142,\n            \"986c2f1eb41715186ee5a1856e58abbcde03d53e86e53b1e903e1b0845c002b8\",\n            \"}\\n\\n#[cfg(test)]\\nthread_local! {static DERIVATIONS:\",\n            \"}\\n\\n\\n#[cfg(test)]\\nthread_local! {static DERIVATIONS:\",\n        ),\n        \"src/workspace_graph/cold_canonical/before.rs\" => (\n            \"78fbcd95f4430f0750b4ae1e8b2cfdc5277c3bf9ef02fe4776cea96bc5a494e2\", 19289,\n            \"cd153b0db9d19b6b8983fc66f3970494d1247c2180b595d839db96eeaf4f8487\",\n            \"                    staged!(\\n                        CorePrebound,\\n                        constructor_failure::attempt::reserve(resolve_builder_bytes)\\n                    )?;\",\n            \"                    staged!(CorePrebound, constructor_failure::attempt::reserve(resolve_builder_bytes))?;\",\n        ),\n        \"src/format/comments/compare/tests.rs\" => (\n            \"7adedbc8fc515199d21e71a93fbe7a1624c5500e46278f4ddf834050ef0a7b38\", 3421,\n            \"4b422dd4781d2123eddd2eabb1459c5e3bedb222fc6957729d4c444e3ca2cf2c\",\n            \"    assert_eq!(\\n        refusal.message,\\n        \\\"a module must declare at least one function\\\"\\n    );\",\n            \"    assert_eq!(refusal.message, \\\"a module must declare at least one function\\\");\",\n        ),\n        _ => return current.to_owned(),\n    };\n    // Fresh physical/compiled/archive authentication precedes historical lookup.\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        current.len(),\n        length,\n        \"complete compiled child extent: {source}\"\n    );\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))\n        ),\n        compiled_sha,\n        \"complete compiled child bytes: {source}\"\n    );\n    assert_eq!(\n        current.matches(after).count(),\n        1,\n        \"one literal child formatter inverse: {source}\"\n    );\n    let inverse = current.replacen(after, before, 1);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(inverse.as_bytes()))\n        ),\n        expected,\n        \"complete original compiled child: {source}\"\n    );\n    assert_eq!(\n        inverse, entry,\n        \"whole compiled child equals independently acquired history: {source}\"\n    );\n    inverse\n}\n\npub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {\n    let entry = receiver_child_entry(source, current);\n    let current = entry.as_str();\n    let branch = final_fix_input(source, current);\n    let current = branch.as_str();\n", "}\n\npub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {\n    let branch = final_fix_input(source, current);\n    let current = branch.as_str();\n"),
+                ("    runtime_json::project(runtime_json::Fixture::F16, source, current)\n}\n// Closed packet/source pairs only. This acquires the original consumer INPUT,\n// never its final inverse output; all caller hooks and full-byte checks remain.\npub(crate) fn receiver_fixture_entry(\n    fixture: ReceiverFixture,\n    source: &str,\n    current: &str,\n) -> String {\n    let expected = match (fixture, source) {\n        (ReceiverFixture::PaidLiveReuse, \"src/loan_plan/paid_live.rs\") => \"bcb520a64f14a76f2bac1e6053ce40f424d15e11e8b1e70f8c67d4406c450374\",\n        (ReceiverFixture::PaidLiveReuse, \"src/loan_plan/paid_plan.rs\") => \"0eb3df7863a61410f5a4547831aa399ffd03d460dad86f1f40caf626de0f2be7\",\n        (ReceiverFixture::PaidLiveReuse, \"crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\") => \"d764e8d6fbd373a2dbb40953baabf688fb4459562760fd5e1545cb9b73b9e6b0\",\n        (ReceiverFixture::BorrowedGeneric, \"src/workspace_graph/generic_type_import.rs\") => \"e4aaa275d0b6d79539a30b496844388ba9fc3b4b793499b907b803f759ee8dc9\",\n        (ReceiverFixture::BorrowedGeneric, \"src/workspace_graph/expected_projection/cost.rs\") => \"ddf8dc2e74e4c0cc193e4e592671ffcfd9118b8bfe91cef2d0cf19eca3a635ce\",\n        (ReceiverFixture::BorrowedGeneric, \"tests/workspace/semantic_graph/source_inventory.rs\") => \"4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14\",\n        (ReceiverFixture::LexicalOperands, \"src/cleanup_plan/replay/expression_facts/receiving.rs\") => \"db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7\",\n        (ReceiverFixture::LexicalOperands, \"src/cleanup_plan/replay/expression_facts/receiving/directory.rs\") => \"d161622003e500b3b9197c0f463b88eee388d9447c5a87ba75f464d3aa2a59cc\",\n        _ => return current.to_owned(),\n    };\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n        ),\n        expected,\n        \"complete fixed receiver input: {source}\"\n    );\n    entry\n}\n\npub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> String {\n    let entry = if domain == \"lexical832\" {\n        receiver_fixture_entry(ReceiverFixture::LexicalOperands, source, current)\n    } else {\n        current.to_owned()\n    };\n    let current = entry.as_str();\n    let predecessor = corrected_consumers_previous(source, current);\n    let current = predecessor.as_str();\n", "    runtime_json::project(runtime_json::Fixture::F16, source, current)\n}\npub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> String {\n    let predecessor = corrected_consumers_previous(source, current);\n    let current = predecessor.as_str();\n"),
+                ("        return current.to_owned();\n    };\n    let entry = historical_project_entry(source, row[\"current_sha256\"].as_str().unwrap(), current);\n    let acquired = main67107_inputs::compile35f_expected_input(\n        source,\n        row[\"current_sha256\"].as_str().unwrap(),\n        &entry,\n    );\n    let current = acquired.as_str();\n", "        return current.to_owned();\n    };\n    let acquired = main67107_inputs::compile35f_expected_input(\n        source,\n        row[\"current_sha256\"].as_str().unwrap(),\n        current,\n    );\n    let current = acquired.as_str();\n"),
+                ("    metadata_json::project(metadata_json::Fixture::M24, source, current)\n}\n// Only literal historical ENTRY stages are acquired here. The complete existing\n// compile35f front and every intermediate inverse below still execute in order.\nfn historical_project_entry(source: &str, expected: &str, current: &str) -> String {\n    let admitted = matches!(\n        (source, expected),\n        (\n            \"src/cleanup_plan/replay/live_oracle/source_custody/b.rs\",\n            \"ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca\"\n        ) | (\n            \"src/workspace_graph.rs\",\n            \"b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31\"\n        ) | (\n            \"tests/workspace/semantic_graph/source_inventory.rs\",\n            \"aa4e1844d2e867c519bd24fdb560535c9f07b7daa790e343c1b4b04e978d0989\"\n        ) | (\n            \"src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs\",\n            \"0bf3a868125c5d381ead3b67127f622085d8fba09b23862db68bdad13c271ec6\"\n        ) | (\n            \"src/workspace_graph/cold_canonical/tests.rs\",\n            \"ecc2a07ac366adeaddc986c5bf1c676000e95ec98f5dd526c37c78f65406d62c\"\n        )\n    );\n    if !admitted {\n        return current.to_owned();\n    }\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n        ),\n        expected,\n        \"complete fixed historical projector entry: {source}\"\n    );\n    entry\n}\nfn project(rows: &str, source: &str, current: &str) -> String {\n    let rows: serde_json::Value = serde_json::from_str(rows).expect(\"fixed merge projections\");\n", "    metadata_json::project(metadata_json::Fixture::M24, source, current)\n}\nfn project(rows: &str, source: &str, current: &str) -> String {\n    let rows: serde_json::Value = serde_json::from_str(rows).expect(\"fixed merge projections\");\n"),
+            ],
+        ),
+        "src/source_reflows/incoming67107_semantic_receivers.rs" => (
+            36321, [138, 197, 176, 188, 130, 183, 72, 150, 237, 233, 145, 134, 57, 185, 6, 147, 13, 52, 132, 244, 187, 179, 145, 232, 28, 116, 228, 171, 81, 196, 145, 42],
+            34859, [122, 20, 238, 148, 109, 68, 228, 36, 72, 199, 176, 105, 238, 13, 170, 26, 53, 222, 218, 229, 46, 140, 122, 153, 140, 186, 216, 180, 59, 55, 149, 232],
+            &[
+                ("\npub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> String {\n    // Only these six exact Main67107 entry tuples changed after this packet.\n    // The full existing MAIN21 acquisition and every inverse below still run.\n    let path = proof[\"path\"].as_str().unwrap();\n    let expected = proof[\"after_sha256\"].as_str().unwrap();\n    let entry = match (path, expected) {\n        (\n            \"src/cleanup_plan/replay.rs\",\n            \"30616d71694d393a730c0c8e49a25bbad7539b07ff96ed901b9d07be29765b9c\",\n        )\n        | (\n            \"tests/hir_module_boundaries.rs\",\n            \"f25b784eba1a2ea26a07b260b2ddff67b6dd90c0a6402fd143dc42ca68847d4e\",\n        )\n        | (\n            \"tests/workspace/semantic_graph/source_inventory.rs\",\n            \"59e5b98593c2c2d443d1479e7c89564551d515ca921f7abab2cc8f5d579c8c21\",\n        )\n        | (\n            \"src/source_verify/declaration.rs\",\n            \"c93ac4c883fe6b10c831a2603c994ea03880986fd0b7a394bfa41ec8a06d88cb\",\n        )\n        | (\n            \"src/cleanup_plan/replay/branch_clone/tests.rs\",\n            \"46bf0451ef390225f540d031f326100c7f4288cf7e9d50e30ce7ddb68a448e0f\",\n        )\n        | (\n            \"src/cleanup_plan/replay/factored.rs\",\n            \"343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6\",\n        ) => Some(\n            crate::source_reflows_merge::main_e177_final_inputs::value_direct(\n                path, expected, current,\n            ),\n        ),\n        _ => None,\n    };\n    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(\n        proof,\n        entry.as_deref().unwrap_or(current),\n    );\n    let current = acquired.as_str();\n    let path = proof[\"path\"].as_str().unwrap();\n", "\npub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> String {\n    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(proof, current);\n    let current = acquired.as_str();\n    let path = proof[\"path\"].as_str().unwrap();\n"),
+            ],
+        ),
+        "src/source_reflows_merge/runtime_json.rs" => (
+            14714, [167, 211, 139, 31, 139, 210, 147, 221, 132, 58, 13, 174, 159, 107, 39, 111, 55, 78, 173, 69, 151, 130, 153, 143, 180, 1, 53, 67, 17, 2, 106, 99],
+            12620, [42, 11, 178, 164, 170, 141, 211, 74, 103, 86, 92, 35, 245, 71, 60, 68, 151, 176, 99, 37, 230, 112, 28, 63, 135, 141, 195, 223, 24, 241, 103, 67],
+            &[
+                ("// exactly the two transport edits before applying its unchanged original inverse.\npub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {\n    // These ten exact entry images belong to the unchanged SelectedCalls\n    // inverse packet. Acquire them only after current physical/compiled/archive\n    // authentication; the original self-transport inverse below stays intact.\n    let expected = match source {\n        \"crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\" => Some(\"d764e8d6fbd373a2dbb40953baabf688fb4459562760fd5e1545cb9b73b9e6b0\"),\n        \"src/cleanup_plan/replay/lexical_replay.rs\" => Some(\"d0f2b7fcfc3815f0c1207c064d8bcb14d4323dff614d953988b962138ff975d0\"),\n        \"src/cleanup_plan/replay/live_oracle/source_custody/b.rs\" => Some(\"4d534b5433078d8d65ec9f09c7f763614a177cd743aa02465de64c023e509173\"),\n        \"src/cleanup_plan/replay/scalar_replay.rs\" => Some(\"6cbb996ba104a91029e7fb323ad2801c483d6f71b4b19ef10fd097a16f0c764a\"),\n        \"src/cleanup_plan/replay/selected_entry/tests/session_errors.rs\" => Some(\"2b27003287b4e325ed126b4e26f9f933fc039e42f66739242b63759d3d713b05\"),\n        \"src/cleanup_plan/replay/semantic_refusal.rs\" => Some(\"fc1a6f41a225e0936ede78ff9923eb0eea1e93ce5c8e37fbde9709e6ee78c823\"),\n        \"src/cleanup_plan/replay/semantic_refusal/tests.rs\" => Some(\"aca69e92356ddfb4d7bbb774ca647a981cf86d402d9b0dff71108adef777b1ad\"),\n        \"src/cleanup_plan/replay/structural_control/calls.rs\" => Some(\"17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000\"),\n        \"tests/hir_module_boundaries.rs\" => Some(\"055a8f7ddd8b9f5b2d12122154de053a0a6823b75c298580cd4770628c4e8851\"),\n        \"tests/workspace/semantic_graph/source_inventory.rs\" => Some(\"4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14\"),\n        _ => None,\n    };\n    if let Some(expected) = expected {\n        let entry = super::main_e177_final_inputs::value_direct(source, expected, current);\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(digest(entry.as_bytes()))\n            ),\n            expected,\n            \"complete SelectedCalls entry: {source}\"\n        );\n        return entry;\n    }\n    if source != \"src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs\" {\n        return current.to_owned();\n", "// exactly the two transport edits before applying its unchanged original inverse.\npub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {\n    if source != \"src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs\" {\n        return current.to_owned();\n"),
+            ],
+        ),
+        "src/loan_plan/paid_live/reuse_tests.rs" => (
+            23070, [11, 82, 121, 23, 118, 57, 133, 4, 26, 80, 11, 217, 215, 7, 45, 35, 141, 33, 3, 215, 144, 161, 83, 129, 160, 44, 213, 202, 5, 239, 120, 144],
+            22879, [29, 31, 28, 104, 175, 197, 177, 253, 65, 121, 126, 1, 143, 180, 108, 206, 220, 42, 28, 236, 134, 227, 71, 220, 92, 77, 126, 203, 41, 245, 228, 215],
+            &[
+                ("    ];\n    for (index, (input, original)) in inputs.into_iter().enumerate() {\n        let mut restored = crate::source_reflows_merge::receiver_fixture_entry(\n            crate::source_reflows_merge::ReceiverFixture::PaidLiveReuse,\n            rows[index][\"source\"].as_str().unwrap(),\n            input,\n        );\n        for hook in rows[index][\"hooks\"].as_array().unwrap() {\n            let after = hook[\"after\"].as_str().unwrap();\n", "    ];\n    for (index, (input, original)) in inputs.into_iter().enumerate() {\n        let mut restored = input.to_owned();\n        for hook in rows[index][\"hooks\"].as_array().unwrap() {\n            let after = hook[\"after\"].as_str().unwrap();\n"),
+            ],
+        ),
+        "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs" => (
+            17919, [167, 225, 70, 248, 156, 144, 177, 202, 203, 7, 163, 153, 113, 231, 213, 31, 225, 235, 50, 184, 117, 51, 5, 208, 146, 182, 174, 231, 22, 39, 200, 144],
+            17756, [77, 94, 167, 131, 177, 133, 95, 203, 10, 215, 155, 188, 10, 160, 19, 67, 13, 68, 6, 235, 139, 180, 191, 109, 225, 22, 105, 251, 8, 138, 93, 80],
+            &[
+                ("    );\n    assert_eq!(\n        crate::source_reflows_merge::receiver_child_entry(\n            \"src/workspace_graph/expected_projection/private_layout/before_registry.rs\",\n            include_str!(\"../before_registry.rs\"),\n        ),\n        old_registry\n            .replace(\n", "    );\n    assert_eq!(\n        include_str!(\"../before_registry.rs\"),\n        old_registry\n            .replace(\n"),
+            ],
+        ),
+        "src/workspace_graph/cold_canonical/tests.rs" => (
+            16089, [159, 134, 251, 182, 196, 13, 82, 133, 209, 58, 210, 185, 14, 176, 152, 96, 236, 187, 130, 146, 185, 74, 163, 104, 168, 144, 183, 195, 233, 215, 28, 198],
+            15976, [253, 251, 107, 203, 202, 134, 102, 142, 252, 216, 93, 192, 84, 194, 137, 134, 174, 45, 98, 185, 238, 250, 155, 161, 133, 185, 224, 145, 21, 45, 31, 202],
+            &[
+                ("        1,\n    );\n    assert_eq!(crate::source_reflows_merge::receiver_child_entry(\n        \"src/workspace_graph/cold_canonical/before.rs\", include_str!(\"before.rs\")\n    ),format!(\"//! Complete immutable940 cold preflight; no comparison-sink delegation.\\nuse super::super::*;\\n{body}\\n{wrapper}\"));\n    assert_eq!(\n        include_str!(\"../../format.rs\"),\n", "        1,\n    );\n    assert_eq!(include_str!(\"before.rs\"),format!(\"//! Complete immutable940 cold preflight; no comparison-sink delegation.\\nuse super::super::*;\\n{body}\\n{wrapper}\"));\n    assert_eq!(\n        include_str!(\"../../format.rs\"),\n"),
+            ],
+        ),
+        "src/workspace_graph/generic_type_import/borrowed_tests.rs" => (
+            22118, [202, 187, 147, 95, 149, 53, 150, 5, 112, 15, 89, 9, 253, 39, 249, 230, 219, 114, 190, 79, 195, 123, 12, 163, 6, 10, 89, 51, 38, 71, 247, 45],
+            21925, [122, 22, 60, 168, 39, 48, 188, 186, 198, 227, 197, 115, 185, 6, 70, 61, 229, 178, 34, 40, 205, 46, 52, 195, 119, 176, 189, 129, 168, 145, 134, 244],
+            &[
+                ("    ];\n    for (index, (input, before)) in inputs.into_iter().enumerate() {\n        let mut restored = crate::source_reflows_merge::receiver_fixture_entry(\n            crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,\n            rows[index][\"source\"].as_str().unwrap(),\n            input,\n        );\n        for hook in rows[index][\"hooks\"].as_array().unwrap() {\n            let after = hook[\"after\"].as_str().unwrap();\n", "    ];\n    for (index, (input, before)) in inputs.into_iter().enumerate() {\n        let mut restored = input.to_owned();\n        for hook in rows[index][\"hooks\"].as_array().unwrap() {\n            let after = hook[\"after\"].as_str().unwrap();\n"),
+            ],
+        ),
+        // The other two six-packet consumers are byteexact already; their
+        // unchanged whole original transport checks below remain mandatory.
+        _ => return current.to_owned(),
+    };
+    assert_eq!(current.len(), length, "complete compiled ENTRY-glue extent: {source}");
+    assert_eq!(digest(current.as_bytes()), current_sha, "complete compiled ENTRY-glue input: {source}");
+    let mut original = current.to_owned();
+    for &(after, before) in edits {
+        assert_eq!(original.matches(after).count(), 1, "one fixed ENTRY-glue hunk: {source}");
+        original = original.replacen(after, before, 1);
+    }
+    assert_eq!(original.len(), old_length, "whole original ENTRY extent: {source}");
+    assert_eq!(digest(original.as_bytes()), old_sha, "whole original ENTRY bytes: {source}");
     original
 }
