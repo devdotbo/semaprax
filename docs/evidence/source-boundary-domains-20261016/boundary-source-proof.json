@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1233,
-      "current_boundary_production": 444,
+      "current_boundary_members": 1235,
+      "current_boundary_production": 445,
       "outside_production_still_fully_authenticated": 101,
-      "full_role_production": 545,
-      "full_role_test_only": 964,
-      "full_raw_sha256": "daefec1d8e30dc6de556098f681e80f7aac4dd1ae592260f93154aab418bb8f9",
-      "boundary_production_sha256": "a7b503a20194c61af1352177d8849c6e9aa98b7fef297446422f502ab24edc2c",
+      "full_role_production": 546,
+      "full_role_test_only": 971,
+      "full_raw_sha256": "a1334d586f2887e1e58db5465f330fdc3e396ea2a8af633e36667c481b736195",
+      "boundary_production_sha256": "32db4f3cd62b2847a1b00de24628ac58773ba933c372b3f6d682b9bb745a35f0",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -31,13 +31,13 @@
     },
     "projection": {
       "original_roots": 179,
-      "current_boundary_members": 198,
-      "current_boundary_production": 73,
+      "current_boundary_members": 201,
+      "current_boundary_production": 74,
       "outside_production_still_fully_authenticated": 591,
-      "full_role_production": 664,
-      "full_role_test_only": 1020,
-      "full_raw_sha256": "958cb5bd41d08f926b5d3e690f7707ff9d79a5b39161b3012ba654f79c1a2f0a",
-      "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
+      "full_role_production": 665,
+      "full_role_test_only": 1026,
+      "full_raw_sha256": "010fc689f90270da601ef5b521823301d6e77e2dcbfc72ce5a1870536da1f99b",
+      "boundary_production_sha256": "09005dfb8384c8acd63706a98fa920757d3dc3b05ce73fcdec543e90691006e3",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -65,6 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "UNCHANGED354_NAMESPACE_ONLY_EXACT_COMPILE_REPAIR_PINS",
+  "registration_update": "FINITE_INCOMING354_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_ORIGINAL_PARSER_ACTUAL_CHILDREN",
   "global_polluted_purity_result_not_claimed": true
 }

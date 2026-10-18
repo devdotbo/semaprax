@@ -1067,6 +1067,7 @@
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
         "src/ast/program_source/function_alias/presentation/metadata/tests.rs",
+        "src/ast/program_source/function_alias/scalar_signature.rs",
         "src/bounded_output/canonical_stage_tests.rs",
         "src/bounded_output/checked_string.rs",
         "src/bounded_output/classifier_string/explicit.rs",
@@ -1225,6 +1226,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
@@ -2292,6 +2294,7 @@
         "src/ast/program_source/function_alias.rs",
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
+        "src/ast/program_source/function_alias/scalar_signature.rs",
         "src/bounded_output/checked_string.rs",
         "src/bounded_output/classifier_string/inventory_work.rs",
         "src/bounded_output/format_acceptance.rs",
@@ -2837,9 +2840,9 @@
         "src/source_verify/function_map.rs",
         "src/source_verify/funding.rs"
       ],
-      "full_manifest_sha256": "9cc060c6d1c7124d9af64c50438391507324b8e6655782e7603ccc3edabb7482",
-      "full_raw_sha256": "daefec1d8e30dc6de556098f681e80f7aac4dd1ae592260f93154aab418bb8f9",
-      "full_authenticated_production_sha256": "183d2d42174c21ef3f653eef093eca6a0aa6f9609ad74b062ce0f5dc89d1bd3f"
+      "full_manifest_sha256": "b444f743922d879a981330bc7366ee553d317fd405724672f5ac5427963b91cb",
+      "full_raw_sha256": "a1334d586f2887e1e58db5465f330fdc3e396ea2a8af633e36667c481b736195",
+      "full_authenticated_production_sha256": "79813322b69e4f0f11b9d54d012d5ce7cbcf193fc265efd21ba93c93182a89ef"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3040,6 +3043,7 @@
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
         "src/ast/program_source/function_alias/presentation/metadata/tests.rs",
+        "src/ast/program_source/function_alias/scalar_signature.rs",
         "src/ast/program_source/generated_roots.rs",
         "src/ast/program_source/receiving_roots.rs",
         "src/bounded_output/checked_string.rs",
@@ -3131,7 +3135,9 @@
         "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/before_alias.rs",
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed/name_equal.rs",
+        "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs",
         "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
         "src/workspace_graph/expected_projection/borrowed_leaf.rs",
@@ -3233,6 +3239,7 @@
         "src/ast/program_source/function_alias.rs",
         "src/ast/program_source/function_alias/presentation.rs",
         "src/ast/program_source/function_alias/presentation/metadata.rs",
+        "src/ast/program_source/function_alias/scalar_signature.rs",
         "src/ast/program_source/generated_roots.rs",
         "src/ast/program_source/receiving_roots.rs",
         "src/bounded_output/checked_string.rs",
@@ -3893,9 +3900,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "b757e7ba9762d1b6326b7dbeef180ec01966a9956c2a68f64705f1f6b855fc1e",
-      "full_raw_sha256": "958cb5bd41d08f926b5d3e690f7707ff9d79a5b39161b3012ba654f79c1a2f0a",
-      "full_authenticated_production_sha256": "623ed80423138fd940d331de7cd7c5b6a55ca708dc99da86ace8cc6787317757"
+      "full_manifest_sha256": "579cf46cb5845b873e4e3e5d1caa934c0a8f846e22c4d40de5a394503ba3f77b",
+      "full_raw_sha256": "010fc689f90270da601ef5b521823301d6e77e2dcbfc72ce5a1870536da1f99b",
+      "full_authenticated_production_sha256": "55358178b7afafafee3c89ed036f94615fbc25783f1aa444201455a1fdea15d6"
     }
   }
 }
