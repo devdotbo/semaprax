@@ -1,0 +1,26 @@
+{
+  "before_sha256": "421ccb506562067ad0711b4f1cee80c7d7452e2f7539ef21d2453e198b0fd32f",
+  "after_sha256": "df821307c144c825c86173f8baab4a8fa156544242d0b5f135849a2c98c3e039",
+  "edits": [
+    {
+      "before": "expected={'src/source_reflows/incoming090_semantic_receivers.rs','src/source_reflows_merge/ordinary_plan_inputs.rs','docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv'}",
+      "after": "expected={'src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs','src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs'}",
+      "count": 1
+    },
+    {
+      "before": "whole-pre-current174-FINAL6-current",
+      "after": "whole-67281-C5-current",
+      "count": 2
+    },
+    {
+      "before": "status='SOURCE_ONLY_TWO_BINDER_OUTPUT_SOURCE_ROWS_UNAPPLIED'",
+      "after": "status='SOURCE_ONLY_TWO_C5_COMPILE_FIX_ROWS_UNAPPLIED'",
+      "count": 1
+    },
+    {
+      "before": "logical_rows=441",
+      "after": "logical_rows=444",
+      "count": 1
+    }
+  ]
+}

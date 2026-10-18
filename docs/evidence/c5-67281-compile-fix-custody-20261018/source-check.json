@@ -1,0 +1,11 @@
+{
+  "status": "PASS_SOURCE_ONLY_TWO_SOURCE_RESEAL",
+  "rows": 444,
+  "modules": 94,
+  "ordered_rows": 975,
+  "views_authenticated": 1327,
+  "all174_actual_subject_bytes_unchanged": true,
+  "all6_actual_subject_bytes_unchanged": true,
+  "producer_reexecution": false,
+  "Cargo": false
+}
