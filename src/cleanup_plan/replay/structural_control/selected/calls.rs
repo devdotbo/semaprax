@@ -70,15 +70,45 @@ macro_rules! signature_parameter {
         )>($function, 1, "selected signature parameter query")?;
         $budget.charge($function, 18, "selected signature parameter query")?;
         match &$signature {
-            Signature::Byte(op) => match op.param_types().get($index) {
+            Signature::Byte(op) => match dynamic_get!(
+                $budget,
+                $function,
+                op.param_types(),
+                &[ResolvedType],
+                $index,
+                usize,
+                Option<&ResolvedType>,
+                (&ResolvedType),
+                4
+            ) {
                 Some(ty) => Some((op.param_ownership($index), ty)),
                 None => None,
             },
-            Signature::String(op) => match op.param_types().get($index) {
+            Signature::String(op) => match dynamic_get!(
+                $budget,
+                $function,
+                op.param_types(),
+                &[ResolvedType],
+                $index,
+                usize,
+                Option<&ResolvedType>,
+                (&ResolvedType),
+                4
+            ) {
                 Some(ty) => Some((op.param_ownership($index), ty)),
                 None => None,
             },
-            Signature::Str(op) => match op.param_types().get($index) {
+            Signature::Str(op) => match dynamic_get!(
+                $budget,
+                $function,
+                op.param_types(),
+                &[ResolvedType],
+                $index,
+                usize,
+                Option<&ResolvedType>,
+                (&ResolvedType),
+                4
+            ) {
                 Some(ty) => Some((
                     if *ty == ResolvedType::Str {
                         OwnershipMode::Borrow
@@ -89,11 +119,31 @@ macro_rules! signature_parameter {
                 )),
                 None => None,
             },
-            Signature::Function(target) => match target.params.get($index) {
+            Signature::Function(target) => match dynamic_get!(
+                $budget,
+                $function,
+                target.params,
+                &[crate::hir::ResolvedParam],
+                $index,
+                usize,
+                Option<&crate::hir::ResolvedParam>,
+                (&crate::hir::ResolvedParam),
+                4
+            ) {
                 Some(p) => Some((p.ownership, &p.ty)),
                 None => None,
             },
-            Signature::Vector(op, owned, element, args) => match args.get($index) {
+            Signature::Vector(op, owned, element, args) => match dynamic_get!(
+                $budget,
+                $function,
+                args,
+                &[ResolvedExpr],
+                $index,
+                usize,
+                Option<&ResolvedExpr>,
+                (&ResolvedExpr),
+                4
+            ) {
                 Some(arg) => Some((
                     if *owned {
                         op.param_ownership_for($index, element)
@@ -104,7 +154,17 @@ macro_rules! signature_parameter {
                 )),
                 None => None,
             },
-            Signature::Field(args) => match args.get($index) {
+            Signature::Field(args) => match dynamic_get!(
+                $budget,
+                $function,
+                args,
+                &[ResolvedExpr],
+                $index,
+                usize,
+                Option<&ResolvedExpr>,
+                (&ResolvedExpr),
+                4
+            ) {
                 Some(arg) => Some((
                     if $index == 0 {
                         OwnershipMode::Borrow
@@ -358,7 +418,20 @@ fn signature<'a>(
         program.functions().len(),
         "structural current callee lookup",
     )?;
-    let Some(target) = program.resolve_call_target(&fact.callee, None) else {
+    let Some(target) = receive!(
+        budget,
+        function,
+        (
+            &dyn ReplayContext,
+            &DeclarationId,
+            Option<&FunctionInstanceId>,
+            Option<&ResolvedFunction>,
+            &ResolvedFunction
+        ),
+        5,
+        "selected current call target receiving",
+        program.resolve_call_target(&fact.callee, None)
+    ) else {
         return Err(Error::missing_callee(&permit, &fact.callee));
     };
     if !target.effects.is_empty() || target.yields.is_some() {
@@ -525,7 +598,34 @@ pub(super) fn validate<'a>(
             && args.len() == fact.arguments.len()
             && schema::borrowed::same_schema(function, callee, fact.callee.as_str(), budget)?;
         if agrees {
-            for (arg, id) in args.iter().zip(&fact.arguments) {
+            receive!(
+                budget,
+                function,
+                (
+                    std::slice::Iter<'_, ResolvedExpr>,
+                    crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                    std::iter::Zip<
+                        std::slice::Iter<'_, ResolvedExpr>,
+                        crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                    >
+                ),
+                3,
+                "selected metered argument iterator headers",
+                ()
+            );
+            let mut argument_entries = args.iter().zip(&fact.arguments);
+            while let Some((arg, id)) = dynamic_next!(
+                budget,
+                function,
+                argument_entries,
+                std::iter::Zip<
+                    std::slice::Iter<'_, ResolvedExpr>,
+                    crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                >,
+                (&ResolvedExpr, &ExpressionId),
+                (&ResolvedExpr, &ExpressionId),
+                4
+            ) {
                 budget.charge(function, 1, "borrowed commit actual argument probe")?;
                 if !schema::borrowed::same_schema(function, arg.id.as_str(), id.as_str(), budget)? {
                     agrees = false;
@@ -559,7 +659,19 @@ pub(super) fn validate<'a>(
                 "selected call argument equality scan receiving",
                 {
                     let mut same = true;
-                    for (arg, id) in args.iter().zip(&fact.arguments) {
+                    let mut argument_entries = args.iter().zip(&fact.arguments);
+                    while let Some((arg, id)) = dynamic_next!(
+                        budget,
+                        function,
+                        argument_entries,
+                        std::iter::Zip<
+                            std::slice::Iter<'_, ResolvedExpr>,
+                            crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                        >,
+                        (&ResolvedExpr, &ExpressionId),
+                        (&ResolvedExpr, &ExpressionId),
+                        4
+                    ) {
                         if &arg.id != id {
                             same = false;
                             break;
@@ -594,7 +706,19 @@ pub(super) fn validate<'a>(
             "selected call argument equality scan receiving",
             {
                 let mut same = true;
-                for (arg, id) in args.iter().zip(&fact.arguments) {
+                let mut argument_entries = args.iter().zip(&fact.arguments);
+                while let Some((arg, id)) = dynamic_next!(
+                    budget,
+                    function,
+                    argument_entries,
+                    std::iter::Zip<
+                        std::slice::Iter<'_, ResolvedExpr>,
+                        crate::cleanup_plan::replay::call_payload::ArgumentIds<'_>,
+                    >,
+                    (&ResolvedExpr, &ExpressionId),
+                    (&ResolvedExpr, &ExpressionId),
+                    4
+                ) {
                     if &arg.id != id {
                         same = false;
                         break;
@@ -662,11 +786,19 @@ pub(super) fn validate<'a>(
         ));
     }
     let mut actual = arguments.iter();
-    for (index, arg) in args
+    let mut parameter_entries = args
         .iter()
         .enumerate()
-        .take(signature_len!(signature, budget, function))
-    {
+        .take(signature_len!(signature, budget, function));
+    while let Some((index, arg)) = dynamic_next!(
+        budget,
+        function,
+        parameter_entries,
+        std::iter::Take<std::iter::Enumerate<std::slice::Iter<'_, ResolvedExpr>>>,
+        (usize, &ResolvedExpr),
+        (usize, &ResolvedExpr),
+        4
+    ) {
         budget.charge(function, 1, "structural call parameters")?;
         let (mode, ty) = signature_parameter!(signature, index, budget, function)
             .expect("exact signature bound");
@@ -734,7 +866,15 @@ pub(super) fn validate<'a>(
                 3,
                 "selected owned argument next query receiving",
                 {
-                    match actual.next() {
+                    match dynamic_next!(
+                        budget,
+                        function,
+                        actual,
+                        std::slice::Iter<'_, CallArgumentTransfer>,
+                        &CallArgumentTransfer,
+                        (&CallArgumentTransfer),
+                        3
+                    ) {
                         Some(arg) => arg.parameter_index != expected,
                         None => true,
                     }
@@ -747,7 +887,17 @@ pub(super) fn validate<'a>(
             }
         }
     }
-    if actual.next().is_some() {
+    if dynamic_next!(
+        budget,
+        function,
+        actual,
+        std::slice::Iter<'_, CallArgumentTransfer>,
+        &CallArgumentTransfer,
+        (),
+        2
+    )
+    .is_some()
+    {
         return Err(Error::static_error(
             &permit,
             CallKind::CallCommitDoesNotContainEveryAndOnlyOwnedDroppableParameter,
@@ -755,7 +905,16 @@ pub(super) fn validate<'a>(
     }
     let mut previous = None;
     let mut consumed = BTreeSet::new();
-    for argument in arguments {
+    let mut transfer_entries = arguments.iter();
+    while let Some(argument) = dynamic_next!(
+        budget,
+        function,
+        transfer_entries,
+        std::slice::Iter<'_, CallArgumentTransfer>,
+        &CallArgumentTransfer,
+        (&CallArgumentTransfer),
+        3
+    ) {
         budget.charge(function, 1, "structural call epochs")?;
         if receive!(
             budget,
@@ -783,7 +942,18 @@ pub(super) fn validate<'a>(
             usize,
             CallKind::CallCommitParameterIndexDoesNotFitUsize
         ))?;
-        let expected = fact.arguments.get(index).ok_or_else(call_refusal!(
+        let expected = dynamic_get!(
+            budget,
+            function,
+            fact.arguments,
+            &crate::cleanup_plan::replay::call_payload::Arguments<'_>,
+            index,
+            usize,
+            Option<&ExpressionId>,
+            (&ExpressionId),
+            4
+        )
+        .ok_or_else(call_refusal!(
             budget,
             function,
             permit,
@@ -797,7 +967,7 @@ pub(super) fn validate<'a>(
                 CallKind::CallCommitDoesNotConsumeItsMatchingWholeArgumentEpoch,
             ));
         }
-        for flag in crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        let mut flag_entries = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
             function,
             (
@@ -811,7 +981,17 @@ pub(super) fn validate<'a>(
             6,
             "selected control validate_place call receiving",
             helpers::validate_place(function, &argument.source, storage, leaves, budget)
-        )? {
+        )?
+        .into_iter();
+        while let Some(flag) = dynamic_next!(
+            budget,
+            function,
+            flag_entries,
+            std::vec::IntoIter<LivenessFlagId>,
+            LivenessFlagId,
+            (LivenessFlagId),
+            3
+        ) {
             if consumed.contains(&flag) {
                 return Err(Error::static_error(
                     &permit,

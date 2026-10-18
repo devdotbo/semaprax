@@ -31,16 +31,24 @@ fn successor(
         Permit::control_receiver::<Option<BlockId>>(function, budget)
     )?;
     let plan = &function.cleanup_plan;
-    let item = plan
-        .blocks
-        .get(block.0 as usize)
-        .ok_or_else(control_refusal!(
-            budget,
-            function,
-            permit,
-            &crate::cleanup_plan::CleanupBlock,
-            Kind::CleanupCfgReferencesAnUnknownBlock
-        ))?;
+    let item = dynamic_get!(
+        budget,
+        function,
+        plan.blocks,
+        &[crate::cleanup_plan::CleanupBlock],
+        block.0 as usize,
+        usize,
+        Option<&crate::cleanup_plan::CleanupBlock>,
+        (&crate::cleanup_plan::CleanupBlock),
+        4
+    )
+    .ok_or_else(control_refusal!(
+        budget,
+        function,
+        permit,
+        &crate::cleanup_plan::CleanupBlock,
+        Kind::CleanupCfgReferencesAnUnknownBlock
+    ))?;
     let edge = match &item.terminator {
         CleanupTerminator::Goto(edge) => (index == 0).then_some(*edge),
         CleanupTerminator::Branch(edges) => {
@@ -49,26 +57,56 @@ fn successor(
                     Kind::CleanupBranchMustOwnExactlyTwoDistinctEdges,
                 )));
             }
-            edges.get(index).copied()
+            dynamic_get!(
+                budget,
+                function,
+                edges,
+                &[EdgeId],
+                index,
+                usize,
+                Option<&EdgeId>,
+                (&EdgeId),
+                4
+            )
+            .copied()
         }
         CleanupTerminator::Exit(exit) => {
-            let target = plan
-                .exits
-                .get(exit.0 as usize)
-                .ok_or_else(control_refusal!(
-                    budget,
-                    function,
-                    permit,
-                    &ExitTarget,
-                    Kind::CleanupCfgReferencesAnUnknownExit
-                ))?;
+            let target = dynamic_get!(
+                budget,
+                function,
+                plan.exits,
+                &[ExitTarget],
+                exit.0 as usize,
+                usize,
+                Option<&ExitTarget>,
+                (&ExitTarget),
+                4
+            )
+            .ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                &ExitTarget,
+                Kind::CleanupCfgReferencesAnUnknownExit
+            ))?;
             match &target.continuation {
                 ExitContinuation::Continue(edge)
                 | ExitContinuation::LoopBreak { edge, .. }
                 | ExitContinuation::FunctionReturn { edge, .. } => (index == 0).then_some(*edge),
                 ExitContinuation::LoopLatch { .. } => {
                     return Ok(if index == 0 {
-                        lexical_cert::latch_resume(plan, *exit)
+                        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                            budget,
+                            function,
+                            (
+                                &crate::cleanup_plan::CleanupPlan,
+                                crate::cleanup_plan::ExitTargetId,
+                                Option<BlockId>
+                            ),
+                            3,
+                            "selected latch resume receiving",
+                            lexical_cert::latch_resume(plan, *exit)
+                        )
                     } else {
                         None
                     })
@@ -91,7 +129,18 @@ fn successor(
     match edge {
         None => Ok(None),
         Some(id) => {
-            let item = plan.edges.get(id.0 as usize).ok_or_else(control_refusal!(
+            let item = dynamic_get!(
+                budget,
+                function,
+                plan.edges,
+                &[crate::cleanup_plan::CleanupEdge],
+                id.0 as usize,
+                usize,
+                Option<&crate::cleanup_plan::CleanupEdge>,
+                (&crate::cleanup_plan::CleanupEdge),
+                4
+            )
+            .ok_or_else(control_refusal!(
                 budget,
                 function,
                 permit,
@@ -150,10 +199,30 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
     let mut stack = Vec::new();
     budget.reserve_vec(function, &mut stack, 1, "structural CFG entry")?;
     stack.push((plan.entry, false));
-    while let Some((block, expanded)) = stack.pop() {
+    while let Some((block, expanded)) = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &mut Vec<(BlockId, bool)>,
+            Option<(BlockId, bool)>,
+            BlockId,
+            bool
+        ),
+        4,
+        "selected dynamic CFG pop receiving",
+        stack.pop()
+    ) {
         budget.charge(function, 1, "structural CFG traversal")?;
         let index = block.0 as usize;
-        let color = colors.get_mut(index).ok_or_else(control_refusal!(
+        let color = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (&mut [u8], usize, Option<&mut u8>, &mut u8),
+            4,
+            "selected dynamic mutable get receiving",
+            colors.get_mut(index)
+        )
+        .ok_or_else(control_refusal!(
             budget,
             function,
             permit,
@@ -173,7 +242,16 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
         stack.push((block, true));
         // The authenticated terminator has at most two successors. Read it
         // directly in the same reverse order as the legacy owned scratch Vec.
-        for next in (0..2).rev() {
+        let mut successor_indices = (0usize..2).rev();
+        while let Some(next) = dynamic_next!(
+            budget,
+            function,
+            successor_indices,
+            std::iter::Rev<std::ops::Range<usize>>,
+            usize,
+            (usize),
+            3
+        ) {
             let Some(target) = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
                 budget,
                 function,
@@ -191,7 +269,18 @@ pub(in crate::cleanup_plan::replay) fn validate_reachable_acyclic_cfg(
             else {
                 continue;
             };
-            let color = colors.get(target.0 as usize).ok_or_else(control_refusal!(
+            let color = dynamic_get!(
+                budget,
+                function,
+                colors,
+                &[u8],
+                target.0 as usize,
+                usize,
+                Option<&u8>,
+                (&u8),
+                4
+            )
+            .ok_or_else(control_refusal!(
                 budget,
                 function,
                 permit,

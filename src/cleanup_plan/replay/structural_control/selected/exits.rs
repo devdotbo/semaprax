@@ -48,7 +48,16 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
     let plan = &function.cleanup_plan;
 
     let mut continuation_edges = BTreeSet::new();
-    for (index, exit) in plan.exits.iter().enumerate() {
+    let mut exit_entries = plan.exits.iter().enumerate();
+    while let Some((index, exit)) = dynamic_next!(
+        budget,
+        function,
+        exit_entries,
+        std::iter::Enumerate<std::slice::Iter<'_, ExitTarget>>,
+        (usize, &ExitTarget),
+        (usize, &ExitTarget),
+        4
+    ) {
         budget.charge(
             function,
             exit.leaves_regions.len().saturating_add(1),
@@ -105,8 +114,27 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
             )));
         }
         let mut prior: Option<super::CleanupRegionId> = None;
-        for region in &exit.leaves_regions {
-            let Some(item) = plan.regions.get(region.0 as usize) else {
+        let mut left_region_entries = exit.leaves_regions.iter();
+        while let Some(region) = dynamic_next!(
+            budget,
+            function,
+            left_region_entries,
+            std::slice::Iter<'_, CleanupRegionId>,
+            &CleanupRegionId,
+            (&CleanupRegionId),
+            3
+        ) {
+            let Some(item) = dynamic_get!(
+                budget,
+                function,
+                plan.regions,
+                &[crate::cleanup_plan::CleanupRegion],
+                region.0 as usize,
+                usize,
+                Option<&crate::cleanup_plan::CleanupRegion>,
+                (&crate::cleanup_plan::CleanupRegion),
+                4
+            ) else {
                 return Err(
                     permit.control(Reason::Finite(Kind::CleanupExitReferencesUnknownRegion))
                 );
@@ -274,7 +302,16 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                     "selected exit status source scan receiving",
                     {
                         let mut found = false;
-                        for candidate in &plan.status_sources {
+                        let mut status_entries = plan.status_sources.iter();
+                        while let Some(candidate) = dynamic_next!(
+                            budget,
+                            function,
+                            status_entries,
+                            std::slice::Iter<'_, crate::cleanup_plan::StatusSource>,
+                            &crate::cleanup_plan::StatusSource,
+                            (&crate::cleanup_plan::StatusSource),
+                            3
+                        ) {
                             if &candidate.id == source {
                                 found = true;
                                 break;
@@ -311,7 +348,15 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                 );
                 let mut selected = plan.blocks[exit.from.0 as usize].transitions.iter();
                 let first = loop {
-                    match selected.next() {
+                    match dynamic_next!(
+                        budget,
+                        function,
+                        selected,
+                        std::slice::Iter<'_, CleanupTransition>,
+                        &CleanupTransition,
+                        (&StatusSourceId),
+                        3
+                    ) {
                         Some(CleanupTransition::SelectFailure { source }) => break Some(source),
                         Some(_) => {}
                         None => break None,
@@ -319,7 +364,15 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
                 };
                 if first != Some(source) || {
                     let second = loop {
-                        match selected.next() {
+                        match dynamic_next!(
+                            budget,
+                            function,
+                            selected,
+                            std::slice::Iter<'_, CleanupTransition>,
+                            &CleanupTransition,
+                            (&StatusSourceId),
+                            3
+                        ) {
                             Some(CleanupTransition::SelectFailure { source }) => {
                                 break Some(source)
                             }
@@ -341,7 +394,16 @@ pub(in crate::cleanup_plan::replay) fn validate_exits(
             }
         }
     }
-    for region in &plan.regions {
+    let mut region_entries = plan.regions.iter();
+    while let Some(region) = dynamic_next!(
+        budget,
+        function,
+        region_entries,
+        std::slice::Iter<'_, crate::cleanup_plan::CleanupRegion>,
+        &crate::cleanup_plan::CleanupRegion,
+        (&crate::cleanup_plan::CleanupRegion),
+        3
+    ) {
         if plan.lexical_control.is_some() && region.normal_scope_end == UNRESOLVED_NORMAL_END {
             // Authenticated as abrupt-only by the lexical certificate replay.
             continue;
@@ -384,17 +446,24 @@ fn owned_edge(
         "selected control permit call receiving",
         Permit::control_receiver::<()>(function, budget)
     )?;
-    let item = function
-        .cleanup_plan
-        .edges
-        .get(edge.0 as usize)
-        .ok_or_else(control_refusal!(
-            budget,
-            function,
-            permit,
-            &crate::cleanup_plan::CleanupEdge,
-            Kind::CleanupTerminatorReferencesUnknownEdge
-        ))?;
+    let item = dynamic_get!(
+        budget,
+        function,
+        function.cleanup_plan.edges,
+        &[crate::cleanup_plan::CleanupEdge],
+        edge.0 as usize,
+        usize,
+        Option<&crate::cleanup_plan::CleanupEdge>,
+        (&crate::cleanup_plan::CleanupEdge),
+        4
+    )
+    .ok_or_else(control_refusal!(
+        budget,
+        function,
+        permit,
+        &crate::cleanup_plan::CleanupEdge,
+        Kind::CleanupTerminatorReferencesUnknownEdge
+    ))?;
     if item.id != edge || item.from != owner {
         return Err(permit.control(Reason::Finite(
             Kind::CleanupEdgeHasTheWrongOwnerOrIsReferencedRepeatedly,
@@ -460,17 +529,24 @@ fn ancestor_contains(
             usize,
             Kind::CleanupRegionTreeContainsACycle
         ))?;
-        let item = function
-            .cleanup_plan
-            .regions
-            .get(region.0 as usize)
-            .ok_or_else(control_refusal!(
-                budget,
-                function,
-                permit,
-                &crate::cleanup_plan::CleanupRegion,
-                Kind::CleanupRegionChainReferencesAnUnknownRegion
-            ))?;
+        let item = dynamic_get!(
+            budget,
+            function,
+            function.cleanup_plan.regions,
+            &[crate::cleanup_plan::CleanupRegion],
+            region.0 as usize,
+            usize,
+            Option<&crate::cleanup_plan::CleanupRegion>,
+            (&crate::cleanup_plan::CleanupRegion),
+            4
+        )
+        .ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &crate::cleanup_plan::CleanupRegion,
+            Kind::CleanupRegionChainReferencesAnUnknownRegion
+        ))?;
         found |= region == wanted;
         current = item.parent;
     }
@@ -512,17 +588,25 @@ pub(super) fn regions_match(
         Permit::control_receiver::<bool>(function, budget)
     )?;
     let plan = &function.cleanup_plan;
-    let source = plan
-        .blocks
-        .get(exit.from.0 as usize)
-        .ok_or_else(control_refusal!(
-            budget,
-            function,
-            permit,
-            &crate::cleanup_plan::CleanupBlock,
-            Kind::CleanupExitHasAnUnknownSourceBlock
-        ))?
-        .region;
+    let source = dynamic_get!(
+        budget,
+        function,
+        plan.blocks,
+        &[crate::cleanup_plan::CleanupBlock],
+        exit.from.0 as usize,
+        usize,
+        Option<&crate::cleanup_plan::CleanupBlock>,
+        (&crate::cleanup_plan::CleanupBlock),
+        4
+    )
+    .ok_or_else(control_refusal!(
+        budget,
+        function,
+        permit,
+        &crate::cleanup_plan::CleanupBlock,
+        Kind::CleanupExitHasAnUnknownSourceBlock
+    ))?
+    .region;
     let mut latch = None;
     let mut target = None;
     match &exit.continuation {
@@ -546,7 +630,16 @@ pub(super) fn regions_match(
                 {
                     let mut owned = false;
                     if let Some(control) = plan.lexical_control.as_deref() {
-                        for lp in &control.loops {
+                        let mut loop_entries = control.loops.iter();
+                        while let Some(lp) = dynamic_next!(
+                            budget,
+                            function,
+                            loop_entries,
+                            std::slice::Iter<'_, crate::cleanup_plan::LoopCertificate>,
+                            &crate::cleanup_plan::LoopCertificate,
+                            (&crate::cleanup_plan::LoopCertificate),
+                            3
+                        ) {
                             if lp.target == *control_target
                                 && matches!(
                                     &lp.latch,
@@ -565,14 +658,26 @@ pub(super) fn regions_match(
                     Kind::SelectedPrimitiveExitsDoNotAdmitOwnedIteratorScopes,
                 )));
             }
-            let region =
-                lexical_cert::loop_region(plan, control_target).ok_or_else(control_refusal!(
-                    budget,
-                    function,
-                    permit,
-                    CleanupRegionId,
-                    Kind::LoopLatchNamesAnUnknownLexicalLoop
-                ))?;
+            let region = receive!(
+                budget,
+                function,
+                (
+                    &crate::cleanup_plan::CleanupPlan,
+                    &crate::hir::ControlTarget,
+                    Option<CleanupRegionId>,
+                    CleanupRegionId
+                ),
+                4,
+                "selected loop region receiving",
+                lexical_cert::loop_region(plan, control_target)
+            )
+            .ok_or_else(control_refusal!(
+                budget,
+                function,
+                permit,
+                CleanupRegionId,
+                Kind::LoopLatchNamesAnUnknownLexicalLoop
+            ))?;
             if !crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
                 budget,
                 function,
@@ -608,8 +713,28 @@ pub(super) fn regions_match(
                     3,
                     "selected continuation target query receiving",
                     {
-                        match plan.edges.get(edge.0 as usize) {
-                            Some(edge) => plan.blocks.get(edge.to.0 as usize),
+                        match dynamic_get!(
+                            budget,
+                            function,
+                            plan.edges,
+                            &[crate::cleanup_plan::CleanupEdge],
+                            edge.0 as usize,
+                            usize,
+                            Option<&crate::cleanup_plan::CleanupEdge>,
+                            (&crate::cleanup_plan::CleanupEdge),
+                            4
+                        ) {
+                            Some(edge) => dynamic_get!(
+                                budget,
+                                function,
+                                plan.blocks,
+                                &[crate::cleanup_plan::CleanupBlock],
+                                edge.to.0 as usize,
+                                usize,
+                                Option<&crate::cleanup_plan::CleanupBlock>,
+                                (&crate::cleanup_plan::CleanupBlock),
+                                4
+                            ),
                             None => None,
                         }
                     }
@@ -641,16 +766,24 @@ pub(super) fn regions_match(
             usize,
             Kind::CleanupRegionTreeContainsACycle
         ))?;
-        let item = plan
-            .regions
-            .get(region.0 as usize)
-            .ok_or_else(control_refusal!(
-                budget,
-                function,
-                permit,
-                &crate::cleanup_plan::CleanupRegion,
-                Kind::CleanupRegionChainReferencesAnUnknownRegion
-            ))?;
+        let item = dynamic_get!(
+            budget,
+            function,
+            plan.regions,
+            &[crate::cleanup_plan::CleanupRegion],
+            region.0 as usize,
+            usize,
+            Option<&crate::cleanup_plan::CleanupRegion>,
+            (&crate::cleanup_plan::CleanupRegion),
+            4
+        )
+        .ok_or_else(control_refusal!(
+            budget,
+            function,
+            permit,
+            &crate::cleanup_plan::CleanupRegion,
+            Kind::CleanupRegionChainReferencesAnUnknownRegion
+        ))?;
         stopped |= latch == Some(region);
         if let Some(target) = target {
             stopped |= crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
@@ -669,7 +802,18 @@ pub(super) fn regions_match(
             )?;
         }
         if !stopped {
-            if exit.leaves_regions.get(index) != Some(&region) {
+            if dynamic_get!(
+                budget,
+                function,
+                exit.leaves_regions,
+                &[CleanupRegionId],
+                index,
+                usize,
+                Option<&CleanupRegionId>,
+                (&CleanupRegionId),
+                4
+            ) != Some(&region)
+            {
                 return Ok(false);
             }
             index += 1;
@@ -806,7 +950,16 @@ fn result_source(
                 "selected provisional result leaf scan receiving",
                 {
                     let mut found = false;
-                    for leaf in leaves.values() {
+                    let mut leaf_values = leaves.values();
+                    while let Some(leaf) = dynamic_next!(
+                        budget,
+                        function,
+                        leaf_values,
+                        std::collections::btree_map::Values<'_, LivenessFlagId, super::super::Leaf>,
+                        &super::super::Leaf,
+                        (&super::super::Leaf),
+                        3
+                    ) {
                         if leaf.place.storage == StorageId::ProvisionalResult {
                             found = true;
                             break;

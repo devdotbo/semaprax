@@ -1,5 +1,5 @@
 use super::*;
-const SOURCE: &str = r#"module replay.flat_records;
+pub(super) const SOURCE: &str = r#"module replay.flat_records;
 @id("flat.Packet") record Packet {
  @id("flat.Packet.n") n:i64,@id("flat.Packet.text") text:string,@id("flat.Packet.data") data:Bytes,
 }

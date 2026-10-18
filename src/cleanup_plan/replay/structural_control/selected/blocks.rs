@@ -98,7 +98,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
     } else {
         None
     };
-    for source in &plan.status_sources {
+    let mut status_entries = plan.status_sources.iter();
+    while let Some(source) = dynamic_next!(
+        budget,
+        function,
+        status_entries,
+        std::slice::Iter<'_, StatusSource>,
+        &StatusSource,
+        (&StatusSource),
+        3
+    ) {
         budget.charge(function, 1, "structural status references")?;
         #[cfg(test)]
         if let Some(ids) = &mut borrowed_statuses {
@@ -114,7 +123,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
             statuses.insert(source.id.clone());
         }
     }
-    for (index, edge) in plan.edges.iter().enumerate() {
+    let mut edge_entries = plan.edges.iter().enumerate();
+    while let Some((index, edge)) = dynamic_next!(
+        budget,
+        function,
+        edge_entries,
+        std::iter::Enumerate<std::slice::Iter<'_, crate::cleanup_plan::CleanupEdge>>,
+        (usize, &crate::cleanup_plan::CleanupEdge),
+        (usize, &crate::cleanup_plan::CleanupEdge),
+        4
+    ) {
         budget.charge(function, 1, "structural edges")?;
         if edge.id.0
             != crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
@@ -197,7 +215,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
         "structural call cursor header",
     )?;
     let mut cursor = None;
-    for (index, block) in plan.blocks.iter().enumerate() {
+    let mut block_entries = plan.blocks.iter().enumerate();
+    while let Some((index, block)) = dynamic_next!(
+        budget,
+        function,
+        block_entries,
+        std::iter::Enumerate<std::slice::Iter<'_, crate::cleanup_plan::CleanupBlock>>,
+        (usize, &crate::cleanup_plan::CleanupBlock),
+        (usize, &crate::cleanup_plan::CleanupBlock),
+        4
+    ) {
         budget.charge(function, 1, "structural blocks")?;
         if block.id.0
             != crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
@@ -238,7 +265,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
             )));
         }
         let mut selected = None;
-        for transition in &block.transitions {
+        let mut transition_entries = block.transitions.iter();
+        while let Some(transition) = dynamic_next!(
+            budget,
+            function,
+            transition_entries,
+            std::slice::Iter<'_, CleanupTransition>,
+            &CleanupTransition,
+            (&CleanupTransition),
+            3
+        ) {
             budget.charge(function, 1, "structural transitions")?;
             match transition {
                 CleanupTransition::Initialize { at, destination } => {
@@ -445,7 +481,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
                             Kind::CleanupTransferHasIncompatibleStructuralPlaces,
                         )));
                     }
-                    for flag in &source_flags {
+                    let mut source_flag_entries = source_flags.iter();
+                    while let Some(flag) = dynamic_next!(
+                        budget,
+                        function,
+                        source_flag_entries,
+                        std::slice::Iter<'_, LivenessFlagId>,
+                        &LivenessFlagId,
+                        (&LivenessFlagId),
+                        3
+                    ) {
                         budget.charge(
                             function,
                             destination_flags.len(),
@@ -687,7 +732,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
                         Kind::CleanupBranchMustOwnExactlyTwoDistinctEdges,
                     )));
                 }
-                for edge in edges {
+                let mut branch_edge_entries = edges.iter();
+                while let Some(edge) = dynamic_next!(
+                    budget,
+                    function,
+                    branch_edge_entries,
+                    std::slice::Iter<'_, EdgeId>,
+                    &EdgeId,
+                    (&EdgeId),
+                    3
+                ) {
                     crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
                         budget,
                         function,
@@ -793,7 +847,7 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
     }
     if plan.lexical_control.is_none() {
         let mut expected_count = 0usize;
-        for (expression, fact) in crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        let mut fact_entries = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
             function,
             (
@@ -805,7 +859,16 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
             4,
             "selected control expressions entries_paid call receiving",
             expressions.entries_paid(function, budget)
-        )? {
+        )?;
+        while let Some((expression, fact)) = dynamic_next!(
+            budget,
+            function,
+            fact_entries,
+            expression_facts::Entries<'_>,
+            (&ExpressionId, &Option<CallFact<'_>>),
+            (&ExpressionId, &Option<CallFact<'_>>),
+            4
+        ) {
             budget.charge(function, 1, "structural call coverage")?;
             if fact.is_some() {
                 expected_count = expected_count.checked_add(1).ok_or_else(control_refusal!(
@@ -876,7 +939,17 @@ fn owned_edge(
     )?;
     // Validate endpoint/owner before charging a new tree key, preserving refusal
     // precedence and never inserting a forged edge into the reference inventory.
-    let Some(item) = function.cleanup_plan.edges.get(edge.0 as usize) else {
+    let Some(item) = dynamic_get!(
+        budget,
+        function,
+        function.cleanup_plan.edges,
+        &[crate::cleanup_plan::CleanupEdge],
+        edge.0 as usize,
+        usize,
+        Option<&crate::cleanup_plan::CleanupEdge>,
+        (&crate::cleanup_plan::CleanupEdge),
+        4
+    ) else {
         return Err(permit.control(Reason::Finite(Kind::CleanupTerminatorReferencesUnknownEdge)));
     };
     if item.id != edge || item.from != owner || referenced.contains(&edge) {

@@ -53,7 +53,16 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
     } else {
         None
     };
-    for source in &function.cleanup_plan.status_sources {
+    let mut status_entries = function.cleanup_plan.status_sources.iter();
+    while let Some(source) = dynamic_next!(
+        budget,
+        function,
+        status_entries,
+        std::slice::Iter<'_, StatusSource>,
+        &StatusSource,
+        (&StatusSource),
+        3
+    ) {
         #[cfg(test)]
         let inserted = match &mut borrowed_ids {
             Some(ids) => ids.insert(
@@ -82,9 +91,11 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
             ids.insert(source.id.clone())
         };
         if !inserted {
-            return Err(Error::structural(
+            return Err(existing_structural_error!(
+                budget,
                 function,
-                semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
+                source.id.expression,
+                RepeatedStatus
             ));
         }
         if crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
@@ -103,9 +114,11 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
         )?
         .is_none()
         {
-            return Err(Error::structural(
+            return Err(existing_structural_error!(
+                budget,
                 function,
-                semantic_refusal::Atom::UnknownStatus(source.id.expression.clone()),
+                source.id.expression,
+                UnknownStatus
             ));
         }
         match (&source.id.lane, &source.producer) {
@@ -158,7 +171,16 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
                 },
             ) => {
                 let mut repeated = false;
-                for (index, case) in normalized_cases.iter().enumerate() {
+                let mut case_entries = normalized_cases.iter().enumerate();
+                while let Some((index, case)) = dynamic_next!(
+                    budget,
+                    function,
+                    case_entries,
+                    std::iter::Enumerate<std::slice::Iter<'_, StatusCase>>,
+                    (usize, &StatusCase),
+                    (usize, &StatusCase),
+                    4
+                ) {
                     budget.charge(function, index, "checked arithmetic case uniqueness")?;
                     repeated |= normalized_cases[..index].contains(case);
                 }

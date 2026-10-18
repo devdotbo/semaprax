@@ -34,17 +34,37 @@ pub(in crate::cleanup_plan::replay) fn validate_entry(
         "selected control permit call receiving",
         Permit::control_receiver::<()>(function, budget)
     )?;
-    if function
-        .cleanup_plan
-        .blocks
-        .get(function.cleanup_plan.entry.0 as usize)
-        .is_none()
+    if dynamic_get!(
+        budget,
+        function,
+        function.cleanup_plan.blocks,
+        &[crate::cleanup_plan::CleanupBlock],
+        function.cleanup_plan.entry.0 as usize,
+        usize,
+        Option<&crate::cleanup_plan::CleanupBlock>,
+        (),
+        3
+    )
+    .is_none()
     {
         return Err(permit.control(Reason::Finite(Kind::CleanupEntryBlockIsUnknown)));
     }
     let mut flags = BTreeSet::new();
-    for place in &function.cleanup_plan.entry_state.live_owned_parameters {
-        for flag in crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+    let mut place_entries = function
+        .cleanup_plan
+        .entry_state
+        .live_owned_parameters
+        .iter();
+    while let Some(place) = dynamic_next!(
+        budget,
+        function,
+        place_entries,
+        std::slice::Iter<'_, CleanupPlace>,
+        &CleanupPlace,
+        (&CleanupPlace),
+        3
+    ) {
+        let mut flag_entries = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
             function,
             (
@@ -58,7 +78,17 @@ pub(in crate::cleanup_plan::replay) fn validate_entry(
             6,
             "selected control validate_place call receiving",
             helpers::validate_place(function, place, storage, leaves, budget)
-        )? {
+        )?
+        .into_iter();
+        while let Some(flag) = dynamic_next!(
+            budget,
+            function,
+            flag_entries,
+            std::vec::IntoIter<LivenessFlagId>,
+            LivenessFlagId,
+            (LivenessFlagId),
+            3
+        ) {
             if !insert_copy(function, budget, &mut flags, flag, "structural entry flags")? {
                 return Err(permit.control(Reason::Finite(
                     Kind::CleanupEntryPlacesOverlapOrRepeatLivenessFlags,

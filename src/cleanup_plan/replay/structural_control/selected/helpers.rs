@@ -48,7 +48,16 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
     // Two full flag-order scans preserve the old count-then-publication order.
     // Their concrete iterator, next-result and binding roles are paid above.
     let mut count = 0;
-    for leaf in leaves.values() {
+    let mut leaf_values = leaves.values();
+    while let Some(leaf) = dynamic_next!(
+        budget,
+        function,
+        leaf_values,
+        std::collections::btree_map::Values<'_, LivenessFlagId, super::super::Leaf>,
+        &super::super::Leaf,
+        (&super::super::Leaf),
+        3
+    ) {
         if leaf.place.storage == place.storage
             && leaf.place.projections.starts_with(&place.projections)
         {
@@ -60,7 +69,16 @@ pub(in crate::cleanup_plan::replay) fn validate_place(
     }
     budget.reserve_array::<LivenessFlagId>(function, count, "entry place leaves")?;
     let mut result = Vec::with_capacity(count);
-    for (flag, leaf) in leaves.iter() {
+    let mut leaf_entries = leaves.iter();
+    while let Some((flag, leaf)) = dynamic_next!(
+        budget,
+        function,
+        leaf_entries,
+        std::collections::btree_map::Iter<'_, LivenessFlagId, super::super::Leaf>,
+        (&LivenessFlagId, &super::super::Leaf),
+        (&LivenessFlagId, &super::super::Leaf),
+        4
+    ) {
         if leaf.place.storage == place.storage
             && leaf.place.projections.starts_with(&place.projections)
         {
@@ -119,10 +137,26 @@ pub(super) fn validate_binding_selected(
             3,
             "selected renewal binding query receiving",
             {
-                match sites.get(at) {
+                match dynamic_get!(
+                    budget,
+                    function,
+                    sites,
+                    &crate::cleanup_plan::ReplayRenewalBindings<'_>,
+                    at,
+                    &ExpressionId,
+                    Option<&crate::hir::ResolvedBinding>,
+                    (&crate::hir::ResolvedBinding),
+                    4
+                ) {
                     Some(binding) => {
-                        matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
-                            && place.projections.is_empty()
+                        receive!(
+                            budget,
+                            function,
+                            &crate::hir::ValueId,
+                            1,
+                            "selected renewal value binding receiving",
+                            matches!(&place.storage, StorageId::Value(id) if id == &binding.id)
+                        ) && place.projections.is_empty()
                     }
                     None => false,
                 }
@@ -310,7 +344,16 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
         ()
     );
     let mut finalized = BTreeSet::new();
-    for action in actions {
+    let mut action_entries = actions.iter();
+    while let Some(action) = dynamic_next!(
+        budget,
+        function,
+        action_entries,
+        std::slice::Iter<'_, crate::cleanup_plan::FinalizeAction>,
+        &crate::cleanup_plan::FinalizeAction,
+        (&crate::cleanup_plan::FinalizeAction),
+        3
+    ) {
         if !known.contains(&action.source.storage) {
             return Err(permit.control(Reason::Finite(Kind::CleanupPlaceReferencesUnknownStorage)));
         }
@@ -330,7 +373,16 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
         );
         let mut first = None;
         let mut second = None;
-        for (candidate_flag, candidate_leaf) in leaves.iter() {
+        let mut leaf_entries = leaves.iter();
+        while let Some((candidate_flag, candidate_leaf)) = dynamic_next!(
+            budget,
+            function,
+            leaf_entries,
+            std::collections::btree_map::Iter<'_, LivenessFlagId, super::super::Leaf>,
+            (&LivenessFlagId, &super::super::Leaf),
+            (&LivenessFlagId, &super::super::Leaf),
+            4
+        ) {
             if candidate_leaf.place.storage == action.source.storage
                 && candidate_leaf
                     .place
@@ -393,7 +445,16 @@ pub(in crate::cleanup_plan::replay) fn finalizer_actions(
                     "selected finalizer variant slot query receiving",
                     {
                         let mut agrees = false;
-                        for slot in &function.cleanup_plan.slots {
+                        let mut slot_entries = function.cleanup_plan.slots.iter();
+                        while let Some(slot) = dynamic_next!(
+                            budget,
+                            function,
+                            slot_entries,
+                            std::slice::Iter<'_, crate::cleanup_plan::CleanupSlot>,
+                            &crate::cleanup_plan::CleanupSlot,
+                            (&crate::cleanup_plan::CleanupSlot),
+                            3
+                        ) {
                             if slot.storage == condition.storage {
                                 agrees = matches!(&slot.ty, ResolvedType::Nominal { declaration, .. }
                                 if declaration == &condition.variant);
