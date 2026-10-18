@@ -230,3 +230,38 @@ impl ReplayBudget {
     }
 }
 pub(in super::super) mod receiving;
+
+impl<'a> Permit<'a> {
+    /// Actual new finite reason and child result slots, plus the existing full
+    /// EngineError/receipt receiver. Uses this invocation's existing budget.
+    pub(in super::super) fn family_receiver<T>(
+        subject: &'a ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Self, Error> {
+        budget.reserve_array::<FamilyReceiving<'_>>(
+            subject,
+            1,
+            "selected family finite receiving",
+        )?;
+        budget.charge(subject, 9, "selected family finite receiving")?;
+        Self::acquire::<T>(subject, budget)
+    }
+    pub(in super::super) fn family(&self, reason: super::family::Reason) -> Error {
+        Error::Structural(semantic_refusal::Receipt::family(self.subject, reason))
+    }
+}
+
+// Actual extra family()/Receipt::family() arguments, construction values,
+// nested receipt return, error return, and this wrapper's acquire-result slot.
+// The original Permit receiver below this layer is still paid independently.
+pub(in super::super) type FamilyReceiving<'a> = (
+    &'a Permit<'a>,
+    super::family::Reason,
+    &'a ResolvedFunction,
+    super::family::Reason,
+    crate::hir::ExpressionId,
+    semantic_refusal::Atom,
+    semantic_refusal::Receipt,
+    Error,
+    Result<Permit<'a>, Error>,
+);

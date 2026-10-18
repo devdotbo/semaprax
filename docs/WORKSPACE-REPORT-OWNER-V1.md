@@ -110,3 +110,19 @@ The original Vec-returning APIs and CLI callers remain explicit compatibility
 routes. Dynamic proposal, filesystem, authentication, rendering and commit errors
 remain ordinary legacy reports. This addition does not establish funding for
 those errors, activate new source profiles, or establish complete OPT781 closure.
+
+### Selected-family receiving candidate (#781)
+
+The source-only selected schema/inventory candidate is specified in
+`SELECTED-REPLAY-RECOVERING-CONSTRUCTOR-V1.md`. It changes the child receipt
+transport and receiving funding on the existing paid replay path, while keeping
+the original acquired report carrier and affine ledger. A real selected
+inventory mismatch is observed in the existing selected-entry paid-report
+harness: the original Diagnostic slot/text pointer and shared source identity
+survive publication, a later receipt cannot replace the first, and full owner
+Drop releases report, scratch and ledger. Detailed legacy diagnostics are
+compared outside the paid no-allocation cut with complete independent original
+owners. Runtime qualification is still pending; neither this candidate nor its
+typed finite receipt grants source, replay or report authority. Unmigrated
+internal Session semantic Diagnostic descendants remain explicit unpaid
+production residuals. Named external compatibility exclusions are unchanged.

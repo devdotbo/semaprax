@@ -61,10 +61,40 @@ pub(super) fn validate_paid(
     #[cfg(test)]
     let selected_schema = match &borrowed {
         Some(lease) => lease.schema(program, function, budget)?,
-        None => schema::selected_schema_with_index(program, function, None)?,
+        None => crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &crate::hir::ResolvedFunction,
+                &mut crate::cleanup_plan::replay::ReplayBudget,
+                Result<
+                    &'static str,
+                    crate::cleanup_plan::replay::expression_facts::errors::EngineError,
+                >
+            ),
+            4,
+            "selected scalar schema call receiving",
+            schema::selected_paid::selected(program, function, budget)
+        )?,
     };
     #[cfg(not(test))]
-    let selected_schema = schema::selected_schema_with_index(program, function, None)?;
+    let selected_schema = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        (
+            &dyn crate::cleanup::ReplayContext,
+            &crate::hir::ResolvedFunction,
+            &mut crate::cleanup_plan::replay::ReplayBudget,
+            Result<
+                &'static str,
+                crate::cleanup_plan::replay::expression_facts::errors::EngineError,
+            >
+        ),
+        4,
+        "selected scalar schema call receiving",
+        schema::selected_paid::selected(program, function, budget)
+    )?;
     let plan = &function.cleanup_plan;
     if !budget.selected() || plan.lexical_control.is_some() || plan.schema != selected_schema {
         return Err(permit.refuse(
@@ -348,3 +378,8 @@ pub(in crate::cleanup_plan::replay) mod before_status_scalar;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_certificate;
+
+#[cfg(test)]
+mod paid_before;
+#[cfg(test)]
+mod selected_family_tests;

@@ -151,3 +151,5 @@ pub(super) mod original_materializer;
 
 #[cfg(test)]
 mod ordinary_tests;
+
+pub(super) mod selected_paid;

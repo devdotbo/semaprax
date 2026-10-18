@@ -188,3 +188,49 @@ fn is_nested_owned_bytes(
     }
     Ok(nested)
 }
+
+/// Only called after the complete unchanged selected profile and owner scans.
+/// Those scans reject every UpdateRecord before schema entry. Keep the exact
+/// ordinary pop/push order and authenticate call; no attached plan is authority.
+/// The general authentication descendants remain ordinary compatibility code.
+pub(in crate::cleanup_plan::replay) fn selected_contains_paid(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    budget: &mut super::super::ReplayBudget,
+) -> Result<bool, Diagnostic> {
+    type Receiving<'a> = (
+        &'a dyn crate::cleanup::ReplayContext,
+        &'a ResolvedFunction,
+        &'a mut super::super::ReplayBudget,
+        Vec<&'a ResolvedExpr>,
+        Option<&'a ResolvedExpr>,
+        &'a ResolvedExpr,
+        usize,
+        bool,
+        Result<bool, Diagnostic>,
+        Diagnostic,
+    );
+    budget.reserve_array::<Receiving<'_>>(function, 1, "selected update scan receiving")?;
+    budget.charge(function, 10, "selected update scan receiving")?;
+    let mut pending = Vec::new();
+    for root in function
+        .requires
+        .iter()
+        .chain(std::iter::once(&function.body))
+        .chain(&function.ensures)
+    {
+        budget.reserve_vec(function, &mut pending, 1, "selected update scan roots")?;
+        pending.push(root);
+    }
+    let mut nested = false;
+    while let Some(expression) = pending.pop() {
+        nested |= authenticate(program, function, expression)?;
+        let mut index = 0usize;
+        while let Some(child) = super::super::replay_expression_child(expression, index) {
+            budget.reserve_vec(function, &mut pending, 1, "selected update scan children")?;
+            pending.push(child);
+            index += 1;
+        }
+    }
+    Ok(nested)
+}

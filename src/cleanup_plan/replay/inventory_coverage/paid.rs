@@ -1,11 +1,21 @@
-//! Sealed selected raw constructor boundary. Outer inventory comparison and
-//! supplemental checker are still the exact original owning Diagnostic route;
-//! they are explicit #781 residuals, not relabelled budget provenance.
-use super::{
-    collect_supplemental, inventory_storage_id, replay_error, ReplayBudget, ReplayContext,
-    ResolvedFunction,
-};
+//! Complete selected inventory comparison and supplemental finite-error receiver.
+use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError;
+use crate::cleanup_plan::replay::selected_context::{child::Permit, family::Reason};
+pub(in crate::cleanup_plan::replay) mod queries;
+mod shape;
+mod supplemental;
+use supplemental::collect_supplemental;
+// Lexical admission before new child arguments/results exist. No forwarding
+// helper, closure capture, erased argument vector or authority is introduced.
+macro_rules! receive {
+    ($budget:ident, $function:ident, $roles:ty, $fields:expr, $phase:literal, $call:expr) => {{
+        $budget.reserve_array::<$roles>($function, 1, $phase)?;
+        $budget.charge($function, $fields, $phase)?;
+        $call
+    }};
+}
+pub(in crate::cleanup_plan::replay) use receive;
 // This lexical frontier introduces no preflight helper or forwarding Result.
 // The authenticated physical primitive and original checked/zeroing field debit
 // both finish before any raw argument.
@@ -53,9 +63,24 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             .inventory(program, function, budget)
             .map_err(EngineError::Owned);
     }
-    let permit = crate::cleanup_plan::replay::selected_context::child::Permit::acquire::<()>(
-        function, budget,
+    let permit = Permit::family_receiver::<()>(function, budget)?;
+    type Receiving<'a> = (
+        &'a dyn ReplayContext,
+        &'a ResolvedFunction,
+        &'a mut ReplayBudget,
+        crate::cleanup::CleanupInventory,
+        usize,
+        u32,
+        Vec<ExpectedSupplementalSlot>,
+        Result<(), EngineError>,
+        &'a crate::cleanup_plan::CleanupPlan,
+    );
+    budget.reserve_array::<Receiving<'_>>(
+        function,
+        1,
+        "selected inventory comparison receiving",
     )?;
+    budget.charge(function, 9, "selected inventory comparison receiving")?;
     admit_initial!(budget, function, permit);
     let inventory = {
         let ReplayBudget {
@@ -64,10 +89,7 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             ..
         } = budget;
         let physical = physical.as_deref_mut().ok_or_else(|| {
-            replay_error(
-                function,
-                "selected inventory coverage requires a physical ledger",
-            )
+            permit.family(Reason::SelectedInventoryCoverageRequiresAPhysicalLedger)
         })?;
         match crate::cleanup::build_prepaid_typed_flat_record_inventory(
             program, function, physical, remaining,
@@ -83,20 +105,14 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
         }
     };
     if inventory != function.cleanup {
-        return Err(replay_error(
-            function,
-            "cleanup inventory disagrees with independently rebuilt typed HIR",
-        )
-        .into());
+        return Err(
+            permit.family(Reason::CleanupInventoryDisagreesWithIndependentlyRebuiltTypedHir)
+        );
     }
     let plan = &function.cleanup_plan;
     let base_len = inventory.slots.len();
     if plan.slots.len() < base_len {
-        return Err(replay_error(
-            function,
-            "cleanup plan omits storage required by the cleanup inventory",
-        )
-        .into());
+        return Err(permit.family(Reason::CleanupPlanOmitsStorageRequiredByTheCleanupInventory));
     }
     for (index, slot) in inventory.slots.iter().enumerate() {
         let actual = &plan.slots[index];
@@ -107,13 +123,7 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             || actual.ty != slot.ty
             || actual.field_liveness_shape != slot.shape
         {
-            return Err(replay_error(
-                function,
-                format_args!(
-                    "cleanup plan base slot {index} disagrees with the independent inventory"
-                ),
-            )
-            .into());
+            return Err(permit.family(Reason::BaseSlot(index)));
         }
     }
     if !inventory
@@ -122,20 +132,16 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
         .is_empty()
         || !plan.entry_state.conditional_owned_parameters.is_empty()
     {
-        return Err(replay_error(
-            function,
-            "selected inventory coverage does not support conditional entry owners",
-        )
-        .into());
+        return Err(
+            permit.family(Reason::SelectedInventoryCoverageDoesNotSupportConditionalEntryOwners)
+        );
     }
     if inventory.entry_state.live_owned_parameters.len()
         != plan.entry_state.live_owned_parameters.len()
     {
-        return Err(replay_error(
-            function,
-            "cleanup plan entry ownership disagrees with the independent inventory",
-        )
-        .into());
+        return Err(
+            permit.family(Reason::CleanupPlanEntryOwnershipDisagreesWithTheIndependentInventory)
+        );
     }
     for (id, place) in inventory
         .entry_state
@@ -147,22 +153,14 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             .slots
             .iter()
             .find(|slot| &slot.id == id)
-            .ok_or_else(|| {
-                replay_error(
-                    function,
-                    "cleanup inventory entry references unknown storage",
-                )
-            })?;
+            .ok_or_else(|| permit.family(Reason::CleanupInventoryEntryReferencesUnknownStorage))?;
         if !place.projections.is_empty() || place.storage != inventory_storage_id(&slot.origin) {
-            return Err(replay_error(
-                function,
-                "cleanup plan entry ownership disagrees with the independent inventory",
-            )
-            .into());
+            return Err(permit
+                .family(Reason::CleanupPlanEntryOwnershipDisagreesWithTheIndependentInventory));
         }
     }
     let mut next_flag = u32::try_from(inventory.flags.len())
-        .map_err(|_| replay_error(function, "too many inventory liveness flags"))?;
+        .map_err(|_| permit.family(Reason::TooManyInventoryLivenessFlags))?;
     let mut supplemental = Vec::new();
     for expression in function
         .requires
@@ -170,39 +168,46 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
         .chain(std::iter::once(&function.body))
         .chain(&function.ensures)
     {
-        collect_supplemental(
-            program,
-            function,
-            expression,
-            &mut next_flag,
-            &mut supplemental,
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
             budget,
+            function,
+            (
+                &dyn crate::cleanup::ReplayContext,
+                &crate::hir::ResolvedFunction,
+                &crate::hir::ResolvedExpr,
+                &mut u32,
+                &mut Vec<ExpectedSupplementalSlot>,
+                &mut crate::cleanup_plan::replay::ReplayBudget,
+                Result<(), crate::cleanup_plan::replay::expression_facts::errors::EngineError>
+            ),
+            7,
+            "selected supplemental call receiving",
+            collect_supplemental(
+                program,
+                function,
+                expression,
+                &mut next_flag,
+                &mut supplemental,
+                budget,
+            )
         )?;
     }
     if plan.slots.len() - base_len != supplemental.len() {
-        return Err(replay_error(
-            function,
-            "cleanup plan has missing or extra call-argument storage",
-        )
-        .into());
+        return Err(permit.family(Reason::CleanupPlanHasMissingOrExtraCallArgumentStorage));
     }
     for (offset, (actual, expected)) in plan.slots[base_len..].iter().zip(&supplemental).enumerate()
     {
         let index = base_len
             .checked_add(offset)
             .and_then(|index| u32::try_from(index).ok())
-            .ok_or_else(|| replay_error(function, "too many cleanup slots"))?;
+            .ok_or_else(|| permit.family(Reason::TooManyCleanupSlots))?;
         if actual.id.0 != index
             || actual.storage_index != index
             || actual.storage != expected.storage
             || actual.ty != expected.ty
             || actual.field_liveness_shape != expected.shape
         {
-            return Err(replay_error(
-                function,
-                format_args!("supplemental call-argument slot {offset} disagrees with typed HIR"),
-            )
-            .into());
+            return Err(permit.family(Reason::SupplementalSlot(offset)));
         }
     }
     Ok(())

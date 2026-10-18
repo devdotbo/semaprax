@@ -807,3 +807,74 @@ entry and retained ledger/remaining pointers, irreversible charge across result
 conversion/Drop, exact/one-short/zero physical frontiers, work zero/short/exact,
 floors and first refusal. They are authored only; no Rust execution, numerical
 benefit, application admission or #781 closure is claimed.
+
+### Selected schema and inventory family candidate (#781)
+
+The next isolated source candidate extends the existing paid Session path at
+`scalar_replay::validate_paid` and `inventory_coverage::paid`. It is not runtime
+qualification or closure of #781. The original general APIs remain available,
+and the complete pre-batch paid inventory and scalar owners are compiled only
+as independent controls in their existing owning harnesses.
+
+The scalar receiver preserves profile and owner validation before schema
+selection. Its order is the original local helper-potential predicate and helper
+census, lexical selection, complete inventory summary, record destructure/update
+classification, then owner admission and the original schema choices. Imported
+helper directory membership does not enlarge the original local potential
+predicate. The summary uses the existing same-payer type-fact constructors;
+their already funded dynamic Strings move into their original diagnostics. A
+Diagnostic-shaped result alone is not evidence of an unpaid allocation.
+
+The always-run update expression scan now pays its pending Vec header, actual
+root/child growth and receiving controls before formation. Complete selected
+profile validation already refuses every UpdateRecord before this scan. The
+original general update authenticator and its generic descendants are preserved;
+this selected call does not add admission to those excluded shapes.
+
+Selected inventory comparison and the exact selected supplemental walk retain
+the original raw typed inventory constructor, requires/body/ensures order,
+1028-frame bound, parameter lookup order, probe prepayment, type/drop queries,
+flat shapes and all original payload debits. Finite refusals retain a closed
+`selected_context::family::Reason`; base and supplemental slot indices remain
+actual usize operands. The receipt retains the exact shared body identity.
+Detailed text is rendered only by the explicit legacy observation, after the
+paid route. Report publication consumes the caller's same preacquired carrier
+and same affine ledger; no new report vector, text or ownership permission is
+created by the receipt.
+
+Every new receiving declaration uses its actual Rust type in `size_of` through
+`reserve_array`, including helper results, Reason/Atom/Receipt/Error transport,
+shape and supplemental receiving frames, query activation fields and closed
+metadata match results/bindings. The new family layer pays
+`size_of::<FamilyReceiving>()` and nine field initializer/transfer units, then
+retains the existing full `Permit::acquire<T>` debit and eleven units. It takes
+no old-header credit. Per-query activation tuples and each actual closed query
+match have separate debits; fixed cursor backing and original lifecycle/type/
+identity charges remain. An old/new bill comparison must include every reached
+family activation, helper proof/census and summary/update allocation, all
+transport layouts, active floor refusal and complete Drop. No byte, work or
+performance result is asserted from source alone.
+
+The owning new selectors are:
+
+- `inventory_coverage::typed_tests::selected_family` (complete old success,
+  hostile base/entry/supplemental six-field diagnostics, receiving floors/work,
+  same ledger and full Drop).
+- `scalar_replay::selected_family_tests` (complete original schema and scalar
+  owner, owned local/call argument storage, schema/loan first refusal).
+- `selected_entry::tests::paid::selected_family` (a real inventory child refusal,
+  original carrier/text/source/ledger pointers, first sticky receipt, later
+  receipt non-replacement, allocation-free publication and full Drop).
+
+Existing raw inventory, typed-child, profile, report, authority and source
+identity controls retain their assertions. Source-custody inverses must include
+new module registrations and joined production children without reducing the
+whole original authenticated subjects. These tests are selected but unrun in
+this source-only lane.
+
+This family is not a claim that all paid Session descendants are migrated.
+Later lexical HIR validation, path-state and factored comparison descendants
+still include original semantic Diagnostic producers. They remain explicit
+unpaid production residuals, rather than being reclassified as allocating
+legacy compatibility. The outward named Legacy APIs retain their existing,
+separate compatibility classification.
