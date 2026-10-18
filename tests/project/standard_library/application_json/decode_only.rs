@@ -4,6 +4,30 @@ use std::io::Write as _;
 use std::path::Path;
 use std::process::Stdio;
 
+type DiagnosticFields<'a> = (
+    &'static str,
+    semaprax::diagnostic::Severity,
+    &'a str,
+    Option<&'a str>,
+    Option<semaprax::ast::Span>,
+    Option<&'a str>,
+);
+
+fn diagnostic_fields(rows: &[semaprax::diagnostic::Diagnostic]) -> Vec<DiagnosticFields<'_>> {
+    rows.iter()
+        .map(|row| {
+            (
+                row.code,
+                row.severity,
+                row.message.as_ref(),
+                row.path.as_deref(),
+                row.span,
+                row.help.as_deref(),
+            )
+        })
+        .collect()
+}
+
 const UTF8_SCHEMA: &str = r#"module consumer.schema;
 @id("unicode.row") record Row {
  @id("unicode.row.number") number:i64,
@@ -169,29 +193,33 @@ fn four_public_selectors_keep_every_retained_function_and_reject_cross_profile_s
                 .unwrap_err();
                 for (source, wrong) in [(&old, selected), (&current, full)] {
                     assert_eq!(
-                        project::verify_json_codec_source_with_profile(
-                            &revision,
-                            "src/schema.spx",
-                            root_id(utf8),
-                            source,
-                            wrong
-                        )
-                        .unwrap_err(),
-                        expected
+                        diagnostic_fields(
+                            &project::verify_json_codec_source_with_profile(
+                                &revision,
+                                "src/schema.spx",
+                                root_id(utf8),
+                                source,
+                                wrong
+                            )
+                            .unwrap_err()
+                        ),
+                        diagnostic_fields(&expected)
                     );
                 }
                 let forged =
                     format!("{current}\n@id(\"forged.decode-only\") fn forged()->i64{{0}}\n");
                 assert_eq!(
-                    project::verify_json_codec_source_with_profile(
-                        &revision,
-                        "src/schema.spx",
-                        root_id(utf8),
-                        &forged,
-                        selected
-                    )
-                    .unwrap_err(),
-                    expected
+                    diagnostic_fields(
+                        &project::verify_json_codec_source_with_profile(
+                            &revision,
+                            "src/schema.spx",
+                            root_id(utf8),
+                            &forged,
+                            selected
+                        )
+                        .unwrap_err()
+                    ),
+                    diagnostic_fields(&expected)
                 );
                 Ok(())
             })
