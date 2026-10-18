@@ -498,7 +498,10 @@ fn complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remai
         }
         assert_eq!(restored, original);
     }
-    let old_live = include_str!("original.rs");
+    let old_live = original_test_receiver(
+        "src/loan_plan/paid_live/original.rs",
+        include_str!("original.rs"),
+    );
     let test_path = "#[path = \"tests.rs\"]\n";
     assert_eq!(old_live.matches(test_path).count(), 1);
     assert_eq!(old_live.replacen(test_path, "", 1), inputs[0].1);
@@ -506,7 +509,10 @@ fn complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remai
     let plan_alias = "use super::super::paid_live::before_plan_live as paid_live;\n";
     assert_eq!(before_plan.matches(plan_alias).count(), 1);
     assert_eq!(before_plan.replacen(plan_alias, "", 1), inputs[1].1);
-    let mut before_facade = include_str!("funded_before.rs").to_owned();
+    let mut before_facade = original_test_receiver(
+        "src/loan_plan/paid_live/funded_before.rs",
+        include_str!("funded_before.rs"),
+    );
     let alias = "use super::before_plan as paid_plan;\n";
     assert_eq!(before_facade.matches(alias).count(), 1);
     before_facade = before_facade.replacen(alias, "", 1);
@@ -538,4 +544,59 @@ fn complete_original_helpers_planner_facade_and_all_source_inventory_hooks_remai
     assert!(originals.contains(
         "complete_old_btree_receiver_constructor_drop_exact_short_and_original_applications"
     ));
+}
+
+// Only test-module lint/namespace glue separates these compiled receivers from
+// their complete original bodies. Authenticate current bytes before inversion.
+fn original_test_receiver(source: &str, compiled: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let (length, current_hash, count, schema_import, old_length, old_hash) = match source {
+        "src/loan_plan/paid_live/original.rs" => (
+            2893,
+            "53f1bf0c833c8bf88d391938c958e05b4210a78f7a26fd787cd7e06e0f27c210",
+            1,
+            false,
+            2786,
+            "9315163a396ddc3f3905dc8b56dd220ccbb6d852dd270d18f59a171308af4c26",
+        ),
+        "src/loan_plan/paid_live/funded_before.rs" => (
+            3628,
+            "9934c14303d48cf9f221065b9525628edc69919a65e8002e85444d03d7eee918",
+            3,
+            true,
+            3264,
+            "8acbf4f2aef5cb26524261c8ac27a9d0b6adce6334d43e11eb972fb88ef61401",
+        ),
+        _ => panic!("unknown complete receiver source"),
+    };
+    let mut original = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source,
+        current_hash,
+        compiled,
+    );
+    assert_eq!(original.len(), length);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
+        current_hash
+    );
+    let lint = "#[allow(\n    clippy::duplicate_mod,\n    reason = \"Run the same controls against independent receivers.\"\n)]\n";
+    assert_eq!(original.matches(lint).count(), count);
+    original = original.replace(lint, "");
+    if schema_import {
+        let import = "use crate::loan_plan::LOAN_PLAN_SCHEMA_V3;\n";
+        assert_eq!(original.matches(import).count(), 1);
+        original = original.replacen(import, "", 1);
+    }
+    assert_eq!(original.len(), old_length);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(original.as_bytes()))
+        ),
+        old_hash
+    );
+    original
 }
