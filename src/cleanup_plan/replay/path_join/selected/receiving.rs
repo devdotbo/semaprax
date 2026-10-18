@@ -423,10 +423,10 @@ pub(super) type JoinPairsNext<'a> = (
 );
 
 pub(super) type JoinDegreesNext<'a> = (
-    &'a mut std::collections::btree_map::Iter<'a, LivenessFlagId, usize>,
-    Option<(&'a LivenessFlagId, &'a usize)>,
+    &'a mut std::collections::btree_map::Iter<'a, LivenessFlagId, u32>,
+    Option<(&'a LivenessFlagId, &'a u32)>,
     &'a LivenessFlagId,
-    &'a usize,
+    &'a u32,
 );
 
 pub(super) type JoinSuccessorsNext<'a> = (
@@ -511,9 +511,9 @@ pub(super) type SuccessorMapInsert<'a> = (
 
 pub(super) type DegreeMapInsert<'a> = (
     &'a ResolvedFunction,
-    &'a mut BTreeMap<LivenessFlagId, usize>,
+    &'a mut BTreeMap<LivenessFlagId, u32>,
     LivenessFlagId,
-    usize,
+    u32,
     &'a mut ReplayBudget,
     &'a str,
     Result<(), Diagnostic>,
