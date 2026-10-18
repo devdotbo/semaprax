@@ -61,17 +61,21 @@ fn heads_run_generation(
         });
         actual.paths[1].history.previous = Some(suffix);
         actual.paths[3].history.previous = Some(suffix);
-        actual.max_depth = 2;
+        // The unmodified paths still retain the original complete chain.
+        actual.max_depth = actual.max_depth.max(2);
     } else if shape == 2 {
+        // Extend the actual parent chain; declared depth must remain contiguous.
+        let previous = actual.paths[1].history.previous.unwrap();
+        let empty_depth = actual.arena[previous].depth + 1;
         let empty = actual.arena.len();
         actual.arena.push(Segment {
-            previous: Some(0),
+            previous: Some(previous),
             items: Vec::new(),
-            depth: depth + 1,
+            depth: empty_depth,
         });
         actual.paths[1].history.previous = Some(empty);
         actual.paths[3].history.previous = Some(empty);
-        actual.max_depth = depth + 1;
+        actual.max_depth = actual.max_depth.max(empty_depth);
     }
     if shape == 3 {
         let empty = actual.arena.len();
@@ -89,7 +93,7 @@ fn heads_run_generation(
         });
         actual.paths[1].history.previous = Some(next);
         actual.paths[3].history.previous = Some(next);
-        actual.max_depth = 2;
+        actual.max_depth = actual.max_depth.max(2);
     }
     if shape == 4 {
         let values = actual.arena[0].items.clone();
@@ -1028,14 +1032,27 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
     let program = super::super::super::super::tests::program();
     let function = &program.functions[0];
     let success = observe_heads(function, 2, 1, true, 0, true, MAX_REPLAY_WORK_UNITS, true);
+    let current_success =
+        observe_heads(function, 2, 1, true, 0, false, MAX_REPLAY_WORK_UNITS, true);
+    assert!(success.observed.0.0.result.is_ok() && success.row.complete);
+    assert!(current_success.observed.0.0.result.is_ok() && current_success.row.complete);
+    let old_matching = super::legacy_matching();
     let matching = success
         .events
         .iter()
         .find(|e| {
             e.phase == "ordinary plan history paired cursor next"
-                && e.after == Some(e.before + PAIR_MATCH)
+                && e.after == e.before.checked_add(old_matching)
         })
-        .unwrap();
+        .expect("the complete frozen generation must admit its independently typed MATCH");
+    let left_step = current_success
+        .events
+        .iter()
+        .find(|e| {
+            e.phase == "ordinary plan history paired cursor next"
+                && e.after == e.before.checked_add(paired_value::STEP + paired_value::EMPTY)
+        })
+        .expect("the actual current left STEP follows its unchanged forward-work frontier");
     let mut changed_priority = false;
     for units in 0..=MAX_REPLAY_WORK_UNITS - success.observed.0.0.remaining {
         let old = heads_run(
@@ -1046,7 +1063,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
             0,
             true,
             units,
-            matching.before + PAIR_MATCH - 1,
+            matching.before + old_matching - 1,
             0,
             false,
             false,
@@ -1060,15 +1077,9 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
             0,
             false,
             units,
-            matching.before
-                + paired_value::TAIL_OWNER
-                + size_of::<u8>()
-                + paired_value::TAIL_SELECT
-                + 22 * PAYMENT_HEADER
-                + 2 * paired_value::LINK_VIEW
-                + certified_heads::BOUNDARY_CHECK
-                + PAIR_MATCH
-                - 1,
+            // The actual prefix is fully funded, then work fails before
+            // this STEP can request physical payment. No old MATCH is restored.
+            left_step.before,
             0,
             false,
             false,
@@ -1077,7 +1088,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         if old.observed.1 && !current.observed.1 && current.row.pairs == 1 {
             assert_eq!(
                 old.observed.0.0.result.as_ref().unwrap_err(),
-                &primitive_failure(function, *matching, matching.before + PAIR_MATCH - 1, 0)
+                &primitive_failure(function, *matching, matching.before + old_matching - 1, 0)
             );
             assert!(current.observed.0.0.result.is_err());
             assert_eq!(current.observed.0.0.remaining, 0);
@@ -1090,8 +1101,6 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         changed_priority,
         "new v2 order must not restore the absent old MATCH fee to hide its mixed-limit consequence"
     );
-    let current_success =
-        observe_heads(function, 2, 1, true, 0, false, MAX_REPLAY_WORK_UNITS, true);
     let base = current_success
         .events
         .iter()

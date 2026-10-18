@@ -75,7 +75,10 @@ fn paired_tail_composition_keeps_complete_real_generations_and_typed_invoices() 
                 assert!(
                     old.observed.0.0.result.is_ok()
                         && current.observed.0.0.result.is_ok()
-                        && main.observed.0.0.result.is_ok()
+                        && main.observed.0.0.result.is_ok(),
+                    "length={length} shape={shape} shared_hir={shared_hir}; old={:?} current={:?} pure_main={:?}; rows old={:?} current={:?} pure_main={:?}",
+                    old.observed.0.0, current.observed.0.0, main.observed.0.0,
+                    old.row, current.row, main.row
                 );
                 assert_eq!(old.observed.0.0, current.observed.0.0);
                 assert_eq!(main.observed.0.0, current.observed.0.0);

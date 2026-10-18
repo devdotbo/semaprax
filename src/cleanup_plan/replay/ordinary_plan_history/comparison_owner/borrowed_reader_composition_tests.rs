@@ -88,7 +88,9 @@ fn borrowed_reader_composition_keeps_both_real_generations_complete_and_reconcil
                 );
                 assert_eq!(old.observed.0.0, current.observed.0.0);
                 assert!(
-                    old.observed.0.0.result.is_ok() && old.row.complete && current.row.complete
+                    old.observed.0.0.result.is_ok() && old.row.complete && current.row.complete,
+                    "length={length} shape={shape} shared_hir={shared_hir}; pure2c={:?} current={:?}; rows pure2c={:?} current={:?}",
+                    old.observed.0.0, current.observed.0.0, old.row, current.row
                 );
                 assert_eq!(swaps(&old), swaps(&current));
                 assert_eq!(old.row.pairs, current.row.pairs);
@@ -167,7 +169,8 @@ fn borrowed_reader_composition_keeps_every_work_cut_six_fields_terminal_and_swap
             false,
             true,
         );
-        for units in 0..=complete.observed.0.0.skeleton_spent {
+        // This comparator spends ordinary work, not the reserved skeleton loan.
+        for units in 0..=MAX_REPLAY_WORK_UNITS - complete.observed.0.0.remaining {
             for shared_hir in [false, true] {
                 let old = run(
                     function,
@@ -220,7 +223,11 @@ fn borrowed_right_and_content_frontiers_are_real_exact_short_zero_floor_sticky_a
             false,
             false,
         );
-        assert!(complete.observed.0.0.result.is_ok() && complete.row.complete);
+        assert!(
+            complete.observed.0.0.result.is_ok() && complete.row.complete,
+            "shape={shape}; outcome={:?}; row={:?}",
+            complete.observed.0.0, complete.row
+        );
         for (i, price, count) in [
             (0, paired_value::RIGHT_STEP, complete.row.pair_right_steps),
             (
