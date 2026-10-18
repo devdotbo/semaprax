@@ -716,7 +716,7 @@ pub(super) fn validate_join_compatibility<'a>(
         retained_insert!(
             budget,
             function,
-            DegreeMapInsert,
+            RenewalDegreeMapInsert,
             7,
             path_join::storage::insert_map(
                 function,
@@ -771,7 +771,7 @@ pub(super) fn validate_join_compatibility<'a>(
                     indegree,
                     slice_index!(budget, function, pair, 1, LivenessFlagId),
                     LivenessFlagId,
-                    u32
+                    usize
                 ) {
                     *degree += 1;
                 }
@@ -833,7 +833,7 @@ pub(super) fn validate_join_compatibility<'a>(
             receiving::RenewalSuccessorsNext<'_>,
             3
         ) {
-            let degree = mutable_get!(budget, function, indegree, successor, LivenessFlagId, u32)
+            let degree = mutable_get!(budget, function, indegree, successor, LivenessFlagId, usize)
                 .expect("replayed successor flag is indexed");
             *degree -= 1;
             if *degree == 0 {

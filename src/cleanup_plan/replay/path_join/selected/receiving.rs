@@ -519,6 +519,16 @@ pub(super) type DegreeMapInsert<'a> = (
     Result<(), Diagnostic>,
 );
 
+pub(super) type RenewalDegreeMapInsert<'a> = (
+    &'a ResolvedFunction,
+    &'a mut BTreeMap<LivenessFlagId, usize>,
+    LivenessFlagId,
+    usize,
+    &'a mut ReplayBudget,
+    &'a str,
+    Result<(), Diagnostic>,
+);
+
 pub(super) type OwnershipClone<'a> = (
     &'a ResolvedFunction,
     &'a PathState,
