@@ -667,12 +667,12 @@ fn complete_three_fixture_runtime_glue(source: &str, current: &str) -> String {
     if source != "src/source_reflows_merge/runtime_json.rs" {
         return current.to_owned();
     }
-    assert_eq!(current.len(), 19161);
+    assert_eq!(current.len(), 20520);
     assert_eq!(
         digest(current.as_bytes()),
         [
-            201, 208, 170, 144, 181, 150, 166, 179, 101, 103, 154, 150, 68, 55, 199, 251, 233, 167,
-            49, 60, 199, 124, 106, 95, 121, 148, 168, 39, 179, 223, 84, 62
+            128, 135, 79, 202, 72, 83, 188, 103, 239, 228, 64, 98, 116, 61, 101, 98, 170, 240, 248,
+            47, 111, 143, 17, 194, 137, 222, 39, 131, 196, 126, 8, 85
         ]
     );
     let mut before = current.to_owned();
@@ -871,6 +871,19 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
         assert_eq!(
             read_fixture(&path, spec.length, spec.sha256).unwrap(),
             payload
+        );
+    }
+    let signature =
+        include_str!("../../workspace_graph/expected_projection/type_rewrite/receiving.rs");
+    drop(ReceiverFixture::signature_rewrite_source_before(signature));
+    for foreign in [
+        format!("{signature} "),
+        signature.replacen("use ", "uSe ", 1),
+    ] {
+        assert_ne!(foreign, signature);
+        assert!(
+            std::panic::catch_unwind(|| ReceiverFixture::signature_rewrite_source_before(&foreign))
+                .is_err()
         );
     }
     let runtime = include_str!("../runtime_json.rs");

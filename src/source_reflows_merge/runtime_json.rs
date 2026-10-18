@@ -162,15 +162,36 @@ pub(crate) enum ReceiverFixture {
 }
 impl ReceiverFixture {
     // RUNTIME848_THREE_SOURCE_BEGIN
-    // The one self-reading consumer acquires its complete original input before
-    // every unchanged signature/source inverse below. The reader authenticates
-    // current physical/compiled/archive bytes before returning this fixed view.
+    // This callback receives the complete compiled self-source, not a path or
+    // canonical-row request. Authenticate it before the three exact transport
+    // reversals and every unchanged original signature/source proof pipeline.
     pub(crate) fn signature_rewrite_source_before(current: &str) -> String {
-        let before = super::main_e177_final_inputs::value_direct(
-            "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
-            "ebf3d82bcd0c46c3c7b86c2b37c24d1e0f942ee3feddae85d63aed23786dc718",
-            current,
+        assert_eq!(current.len(), 28277);
+        assert_eq!(
+            digest(current.as_bytes()),
+            [
+                198, 17, 126, 152, 25, 183, 254, 171, 26, 83, 8, 219, 9, 71, 3, 107, 176, 194, 125,
+                45, 139, 98, 251, 184, 50, 47, 197, 221, 238, 199, 127, 102
+            ]
         );
+        let mut before = current.to_owned();
+        for (after, original) in [
+            (
+                "        let rows: serde_json::Value =\n            serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n                crate::source_reflows_merge::ReceiverFixture::SignatureRewrite,\n            ))\n            .unwrap();",
+                "        let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/docs/evidence/constructor-signature-rewrite-825/source-inverses.json\"\n        )))\n        .unwrap();",
+            ),
+            (
+                "        let current_receiver =\n            crate::source_reflows_merge::ReceiverFixture::signature_rewrite_source_before(\n                include_str!(\"receiving.rs\"),\n            );\n",
+                "",
+            ),
+            (
+                "current_receiver.as_str()",
+                "include_str!(concat!(\n                    env!(\"CARGO_MANIFEST_DIR\"),\n                    \"/src/workspace_graph/expected_projection/type_rewrite/receiving.rs\"\n                ))",
+            ),
+        ] {
+            assert_eq!(before.matches(after).count(), 1);
+            before = before.replacen(after, original, 1);
+        }
         assert_eq!(before.len(), 28245);
         assert_eq!(
             digest(before.as_bytes()),
