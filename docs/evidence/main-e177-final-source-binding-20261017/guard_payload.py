@@ -16,7 +16,7 @@ def bounded(path,length,digest):
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/merge-2e92-browser-20261018/guard-config.json'
 _CONFIG_LENGTH=111000
-_CONFIG_SHA256='a8f729e58fb3c76b6b336ebce9bd0dd503d2ac708a745eae46c9ea4772d4c4f5'
+_CONFIG_SHA256='7cec14ef2bdf62e470e3e89d5834934b2f49b223515479562e961529f9a9f7e0'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
