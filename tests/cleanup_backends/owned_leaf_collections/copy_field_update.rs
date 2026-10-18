@@ -1,4 +1,5 @@
 //! Actual generated C11 O0/O2 stores, full construction through settlement.
+#[allow(dead_code, reason = "Shared full fixture.")]
 #[path = "../../support/record_copy_field_update.rs"]
 mod corpus;
 use semaprax::{codegen, hir};
