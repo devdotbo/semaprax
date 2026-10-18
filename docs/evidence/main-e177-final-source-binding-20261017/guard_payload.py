@@ -15,8 +15,8 @@ def bounded(path,length,digest):
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/fmt-local-441-20261018/guard-config.json'
-_CONFIG_LENGTH=88676
-_CONFIG_SHA256='27a62aac98a9b304a5e33bcf8a712b809d38b42c097985d5be24285c7d71c38f'
+_CONFIG_LENGTH=88677
+_CONFIG_SHA256='c9a2c910b540cd6dd0042365c0ff08de885e7f1cb258d69a691632f28c47a793'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
