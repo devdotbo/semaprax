@@ -165,6 +165,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
             AllocationPayer::SelectedReservation => {
                 crate::workflow_profile::plan_comparison::Payer::SelectedReservation
             }
+            #[cfg(test)]
             AllocationPayer::Oracle(_) => crate::workflow_profile::plan_comparison::Payer::Oracle,
         },
         budget.admission == allocation::AdmissionMode::SelectedRetained,
