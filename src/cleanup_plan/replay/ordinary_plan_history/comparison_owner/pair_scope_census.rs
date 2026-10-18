@@ -480,6 +480,12 @@ impl Drop for Scope {
             sum(|r| r.value_tails),
             sum(|r| r.steps),
             sum(|r| r.loads),
+            sum(|r| r.identity_detectors),
+            sum(|r| r.identity_hits),
+            sum(|r| r.identity_observations),
+            sum(|r| r.identity_work),
+            sum(|r| r.identity_captures),
+            sum(|r| r.identity_extent_captures),
         ];
         let total_overflow = totals.iter().any(Option::is_none);
         let complete = self
@@ -518,6 +524,34 @@ impl Drop for Scope {
             NEW_PAIR_REFERENCES,
             paired_value::ADDITIONAL_PRIMITIVES
         );
+        // These are already-collected invocation counters, not authority or
+        // a net saving inferred from an incomplete refused prefix. In particular,
+        // pair/round counts are not the number of identity-replayed observations.
+        eprintln!(
+            "OPT899 whole-caller complete={} partial_prefix={} M={} K={:?} hits={:?} detectors_D={:?} captures_C={:?} extent_captures_E={:?} replayed_work={:?} total_overflow={} lost={}; identity component only, no LOAD/tail credit; reachable primitive-site funding is separate",
+            complete,
+            !complete,
+            rows.iter().filter(|r| !r.old && r.owner_admitted).count(),
+            totals[9],
+            totals[8],
+            totals[7],
+            totals[11],
+            totals[12],
+            totals[10],
+            total_overflow,
+            lost
+        );
+        eprintln!(
+            "OPT899 typed-invoice owner_current={} owner_before_identity={} additive_fields_and_headers={} removed_per_K={} replay_per_K={} detector={} capture_link={} capture_extent={}; complete-only old-new=K*(removed_per_K-replay_per_K)-M*(owner_current-owner_before_identity+additive_fields_and_headers)-D*detector-C*capture_link-E*capture_extent; no whole-shipping net claim",
+            size_of::<ComparisonOwner<'static>>(),
+            size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
+            shared_prefix::OWNER,
+            PAIR_MATCH + 2 * (paired_value::STEP + paired_value::EMPTY),
+            shared_prefix::REPLAY,
+            shared_prefix::DETECTOR,
+            shared_prefix::CAPTURE_LINK,
+            shared_prefix::CAPTURE_EXTENT
+        );
         for row in rows {
             let function = std::str::from_utf8(&row.function[..row.function_len])
                 .unwrap_or("<truncated UTF-8>");
@@ -538,6 +572,26 @@ impl Drop for Scope {
                 row.value_tails,
                 row.steps,
                 row.loads,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow,
+                row.truncated
+            );
+            eprintln!(
+                "OPT899 row={} generation={} serial={} function={:?} old={} owner_admitted={} K={} hits={} detectors_D={} captures_C={} extent_captures_E={} replayed_work={} complete={} ended={} unwound={} overflow={} truncated={}",
+                row.invocation,
+                row.generation,
+                row.serial,
+                function,
+                row.old,
+                row.owner_admitted,
+                row.identity_observations,
+                row.identity_hits,
+                row.identity_detectors,
+                row.identity_captures,
+                row.identity_extent_captures,
+                row.identity_work,
                 row.complete,
                 row.ended,
                 row.unwound,
