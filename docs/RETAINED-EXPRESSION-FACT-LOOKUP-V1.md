@@ -3,6 +3,10 @@
 Status: SOURCE ONLY; private candidate, executable qualification pending.
 Audience: compiler contributors and source-accounting reviewers.
 
+The original v1 boundary and equations below remain executable against the
+complete immediate predecessor. The transition continuation successor is specified
+at the end of this document; it has no runtime qualification yet.
+
 ## Boundary
 
 This candidate retains the dense certified ordinary status-source scratch through
@@ -245,3 +249,55 @@ layout or later source change that invalidates that equality fails the owning
 control; it does not authorize a tariff adjustment. All measurements and controls
 are authored but unrun. General source custody/recursive joins are deferred to
 the next combined batch, and #885 remains open pending actual qualification.
+
+## Transition continuation successor (source revision 2)
+
+The selected dense ActiveBuilder receiver retains that same Session and its
+already paid terminal/output slots through the final expression lookup in the
+ordinary block-transition loop. No new owner, activation selector, ledger clone,
+status lookup saving, or initial-edge saving is credited here. The immediate v1
+receiver is separately compiled in `ordinary_block_before.rs`; its body is kept
+verbatim with one test-registration exclusion whose exact inverse authenticates
+the complete original source. Original C5 equations continue to select that old
+receiver. New controls select the shipping continuation directly.
+
+Each transition query preserves the old zero-byte/work authentication and exact
+ordered AVL comparison work. It resets every `Control`, `Compared`, and output
+field through `fact_edge_into_prepaid`. Its actual/formal argument packet and
+internal field reborrows are paid on every query, plus its copied optional output
+receiver. The old compound query Results physically disappear at these sites;
+all unrelated returning Results and all old ordinary fees remain paid.
+
+The immutable arena and function remain borrowed. A callback never receives the
+Session, scratch fields or output/error slots: original helpers receive only a
+temporary reborrow of the original budget. Before a renewal binding callback,
+variant declaration callback, or complete CallCommit parameter/drop-type helper
+sequence, the known original payer reserves the full fresh borrowed-ledger guard
+controls and its reserve macro's initialized byte/phase/acceptance locals and terminal reason/phase references. After
+a successful callback sequence, the captured status owner's ledger must again be
+the exact current, non-refused ledger. This borrowed check holds no TLS guard
+across a callback and clones no Rc. A restored outer invocation is legal; a
+foreign or sticky invocation refuses before another scratch query. Callback
+errors return their original complete diagnostic before this guard is evaluated.
+
+CallCommit custody covers target/interface/provider resolution AND all later
+owned-parameter/type-needs-drop callbacks. Variant and renewal semantic failures
+keep their original left-to-right priority. Concrete place/directory/status
+helpers retain their original calls and charges. Session and error/output slots
+end immediately after the transition loop, before exit/path/skeleton callbacks.
+No retained query occurs in those later continuations.
+
+For successful selected traversal, let `q` be actual transition lookups and `c`
+actual guarded callback sequences. The complete additional comparison is:
+
+- old tail: `q * (OLD_SCRATCH + 2*sizeof(Result<Option<&Option<CallFact>>, Diagnostic>))`;
+- new tail: `q * (into_edge_local_bytes + into_edge_query_bytes + sizeof(Option<&Option<CallFact>>))`
+  plus `c * (STORAGE_PARENT_CURRENT_CONTROLS + sizeof((usize, &str, bool, &str, &str)))`.
+
+These are actual target-layout costs. The positive gate uses the complete
+immediate invocation, including its unchanged acquisition, prior retained phases,
+all callback guards and whole-caller work. No CPU, application-fit, physical RSS,
+or runtime benefit follows from the source equation. New success, full-field
+error/work cuts, zero/short/exact/floor, callback reentry/restoration, foreign and
+sticky ledger, source immutability and whole-Drop controls remain unexecuted until
+the consolidated owning qualification.

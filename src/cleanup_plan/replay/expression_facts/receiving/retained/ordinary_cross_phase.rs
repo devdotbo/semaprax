@@ -481,7 +481,8 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         function,
                                         failure,
                                         ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
-                                            + std::mem::size_of::<(usize, &str, bool)>(),
+                                            + std::mem::size_of::<(usize, &str, bool, &str, &str)>(
+                                            ),
                                         "retained transition callback identity controls"
                                     ) {
                                         return Err(failure.error.take().expect(
@@ -493,16 +494,15 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             macro_rules! transition_callback_complete {
                                 () => {
                                     if !statuses.ledger.storage_parent_current() {
-                                        // This same affine slot's one terminal layout was
-                                        // prepaid at activation. No foreign allocation.
-                                        failure.error = Some(Diagnostic {
-                                            code: "SPX-H006",
-                                            severity: crate::diagnostic::Severity::Error,
-                                            message: std::borrow::Cow::Owned(String::new()),
-                                            path: None,
-                                            span: None,
-                                            help: None,
-                                        });
+                                        // The original prepaid renderer keeps the complete
+                                        // sticky-builder diagnostic; no foreign debit.
+                                        refuse_into!(
+                                            session.budget,
+                                            function,
+                                            failure,
+                                            "ordinary builder already failed",
+                                            ""
+                                        );
                                         return Err(failure
                                             .error
                                             .take()
@@ -510,7 +510,8 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                     }
                                 };
                             }
-                            // The existing owner ends before every program-dependent transition callback.
+                            // Helpers borrow only the original budget; scratch remains inaccessible
+                            // until the complete callback sequence has returned successfully.
                             let expressions: &dyn Lookup = facts;
                             {
                                 let storage = &storage;

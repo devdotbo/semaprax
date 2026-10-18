@@ -835,3 +835,8 @@ pub(in crate::cleanup_plan::replay) use ordinary_cross_phase::validate_structure
 
 #[cfg(test)]
 mod ordinary_cross_phase_before_receiving;
+
+#[cfg(test)]
+#[allow(dead_code, reason = "complete immediate receiver retains its original historical child")]
+#[rustfmt::skip]
+mod ordinary_block_before;

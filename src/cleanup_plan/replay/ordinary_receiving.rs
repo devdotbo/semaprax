@@ -383,6 +383,10 @@ pub(super) fn observe_site(site: usize) {
     });
 }
 #[cfg(test)]
+pub(super) fn peek_census() -> Census {
+    CENSUS.with(std::cell::Cell::get)
+}
+#[cfg(test)]
 pub(super) fn take_census() -> Census {
     CENSUS.with(|cell| cell.replace(Census::default()))
 }
