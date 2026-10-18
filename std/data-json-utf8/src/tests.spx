@@ -10,6 +10,8 @@ use function @id("std.data.json.utf8.scalar_at") from std.data.json.utf8 as scal
 use function @id("std.data.json.utf8.sequence_end") from std.data.json.utf8 as sequence_end;
 use function @id("std.data.json.utf8.sequence_kind") from std.data.json.utf8 as sequence_kind;
 use function @id("std.data.json.utf8.utf8_end") from std.data.json.utf8 as utf8_end;
+use function @id("std.data.json.utf8.bounded_valid") from std.data.json.utf8 as bounded_valid;
+use function @id("std.data.json.utf8.quoted_len") from std.data.json.utf8 as quoted_len;
 
 @id("std.data.json.utf8.tests.leads")
 fn leads() -> bool
@@ -48,7 +50,7 @@ fn rejections() -> bool
     let paired = array_as_slice(cesu);
     let cut = array_as_slice(truncated);
     let over = array_as_slice(beyond);
-    scalar_at(short, 0usize) == -1 && scalar_at(wide, 0usize) == -1 && scalar_at(paired, 0usize) == -1 && scalar_at(cut, 0usize) == -1 && scalar_at(over, 0usize) == -1 && !is_utf8(short) && !is_utf8(wide) && !is_utf8(paired) && !is_utf8(cut) && !is_utf8(over)
+    scalar_at(short, 0usize) == -1 && scalar_at(wide, 0usize) == -1 && scalar_at(paired, 0usize) == -1 && scalar_at(cut, 0usize) == -1 && scalar_at(over, 0usize) == -1 && !is_utf8(short) && !is_utf8(wide) && !is_utf8(paired) && !is_utf8(cut) && !is_utf8(over) && !bounded_valid(short, 64usize) && !bounded_valid(wide, 64usize) && !bounded_valid(paired, 64usize) && !bounded_valid(cut, 64usize) && !bounded_valid(over, 64usize) && quoted_len(short, 64usize) == 18446744073709551615usize && quoted_len(cut, 64usize) == 18446744073709551615usize
 }
 
 @id("std.data.json.utf8.tests.surrogates")
@@ -72,7 +74,9 @@ fn documents() -> bool
     let broken = [65u8, 66u8, 226u8, 130u8, 67u8];
     let view = array_as_slice(sample);
     let mixed = array_as_slice(broken);
-    utf8_end(view, 0usize) == 10usize && utf8_end(view, 1usize) == 10usize && utf8_end(view, 6usize) == 10usize && utf8_end(view, 12usize) == 10usize && is_utf8(view) && utf8_end(mixed, 0usize) > byte_len(mixed) && utf8_end(mixed, 0usize) - byte_len(mixed) - 1usize == 2usize && !is_utf8(mixed)
+    let escaped = [34u8, 92u8, 8u8, 12u8, 10u8, 13u8, 9u8, 0u8, 31u8, 65u8];
+    let escaped_view = array_as_slice(escaped);
+    utf8_end(view, 0usize) == 10usize && utf8_end(view, 1usize) == 10usize && utf8_end(view, 6usize) == 10usize && utf8_end(view, 12usize) == 10usize && is_utf8(view) && utf8_end(mixed, 0usize) > byte_len(mixed) && utf8_end(mixed, 0usize) - byte_len(mixed) - 1usize == 2usize && !is_utf8(mixed) && bounded_valid(view, 10usize) && !bounded_valid(view, 9usize) && !bounded_valid(view, 65usize) && quoted_len(view, 10usize) == 12usize && quoted_len(view, 9usize) == 18446744073709551615usize && quoted_len(view, 65usize) == 18446744073709551615usize && bounded_valid(escaped_view, 10usize) && quoted_len(escaped_view, 10usize) == 29usize
 }
 
 @id("std.data.json.utf8.tests.offset_case")

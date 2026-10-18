@@ -896,6 +896,9 @@ jobs:
     name: Private Wasmtime Component result runtime
     runs-on: ubuntu-24.04
     timeout-minutes: 240
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
     steps:
       - name: Allow Windows to check out long evidence paths
         shell: bash

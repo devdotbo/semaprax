@@ -20,12 +20,12 @@ mod tests {
         assert_eq!(scoped("new", true).unwrap(), format!("{public}{full}"));
     }
     #[test]
-    fn exhaustive_catalog_hides_only_the_full_new_shape_from_the_public_host() {
+    fn exhaustive_catalog_preserves_the_qualified_full_new_shape() {
         let public = catalog(false);
         let full = catalog(true);
         assert!(public.contains("\nsemaprax new <destination>"));
         assert!(full.contains("\nsemaprax new <destination>"));
-        assert!(!public.contains("\nsemaprax-full new "));
+        assert_eq!(public.matches("\nsemaprax-full new ").count(), 1);
         assert_eq!(full.matches("\nsemaprax-full new ").count(), 1);
     }
 }

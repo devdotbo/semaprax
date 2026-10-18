@@ -865,7 +865,7 @@ pub(crate) fn catalog(private: bool) -> String {
         .iter()
         .filter(|s| s.global && available(s, private))
     {
-        for usage in usages::visible(spec, private) {
+        for usage in spec.usages {
             if spec.canonical == "build" && !private {
                 out.push_str(&usage.replace("|rust", ""));
             } else {

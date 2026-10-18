@@ -1,0 +1,15 @@
+{
+  "before_head": "1c87c0f125d2e02878fff8a1ae568f8a6fad99b3",
+  "actual_before_failure_job": 117666506791,
+  "change": "one-build-job_and_no_incremental_cache_for_Component_job",
+  "debug_symbols_assertions_features_toolchain_all_commands_and_test_inventory_unchanged": true,
+  "outside_finite_role_and_physical174_domains": true,
+  "candidate_applied_to_repository": false,
+  "root_cause_of_runner_shutdown_NOT_proven": true,
+  "actual_new_config_runtime_UNEXECUTED": true,
+  "before_sha256": "860ae90a5dec0359dec6aeb0a13d54cb1e3459e1dddb83f1b1d009cd4ed40eb7",
+  "candidate_sha256": "5b15919eff6ba324795194c3ff3cd2e95f9b8affa5281d9e1327cdd21c45546d",
+  "owning_whole_source_contract_body_and_read_helpers_unmodified": true,
+  "whole_existing_source_contract_passes_before_and_after": true,
+  "compile_peakKiB": 131360
+}
