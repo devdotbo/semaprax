@@ -304,11 +304,16 @@ fn exact_one_short_zero_and_whole_allocation_drop_controls() {
     // Freed slots are already reclaimed; this is simultaneous HIR backing,
     // not a tombstone leak. Use the existing explicit whole-HIR registry size;
     // its backing is prepared outside observation, with exhaustion still fatal.
-    let ((), allocation) = crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
-        let resolved = crate::hir::resolve(&checked).unwrap();
-        crate::hir::validate(&resolved).unwrap();
-        drop(resolved);
-    });
+    let ((after_resolve, after_validate, resolved_functions), allocation) =
+        crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
+            let resolved = crate::hir::resolve(&checked).unwrap();
+            let after_resolve = crate::test_allocation_observer::current_metrics();
+            crate::hir::validate(&resolved).unwrap();
+            let after_validate = crate::test_allocation_observer::current_metrics();
+            let resolved_functions = resolved.functions.len();
+            drop(resolved);
+            (after_resolve, after_validate, resolved_functions)
+        });
     assert!(
         !allocation.invalid,
         "complete HIR allocation observation: reason={:?}, metrics={allocation:?}",
@@ -317,8 +322,25 @@ fn exact_one_short_zero_and_whole_allocation_drop_controls() {
     assert_eq!(allocation.live, 0);
     assert_eq!(allocation.allocated, allocation.freed);
     assert!(allocation.allocations > 0);
-    let (_, forecast, _, _) = costs(&source, 5, cached_exact::Retention::Parsed);
-    assert!(allocation.highwater <= forecast);
+    let (old_hir, forecast, old_clone_and_hir, current_clone_and_hir) =
+        costs(&source, 5, cached_exact::Retention::Parsed);
+    // These are snapshots of ONE observation, not independently measured phase
+    // costs. Parse/check/authored inputs and the fixed registry are excluded;
+    // public resolve (including its source verification), explicit validation,
+    // and complete resolved-owner Drop remain inside the original window.
+    eprintln!(
+        "ORDINARY_CALL_WHOLE_HIR dense_calls=64 source_bytes={} modules={} authored_declarations={} checked_functions={} resolved_functions={resolved_functions} mode=5 retention=Parsed old_retained_hir={old_hir} current_retained_hir={forecast} old_retained_clone_and_hir={old_clone_and_hir} current_retained_clone_and_hir={current_clone_and_hir} after_resolve={after_resolve:?} after_validate={after_validate:?} after_drop={allocation:?}; phase snapshots are cumulative requested-layout metrics, not RSS or reservation debits",
+        source.len(),
+        programs.len(),
+        authored.len(),
+        checked.functions.len(),
+    );
+    assert!(
+        allocation.highwater <= forecast,
+        "whole public resolve + validate + Drop exceeds mode-5 Parsed retained-HIR forecast: forecast={forecast}, old_retained_hir={old_hir}, current_retained_clone_and_hir={current_clone_and_hir}, old_retained_clone_and_hir={old_clone_and_hir}, after_resolve={after_resolve:?}, after_validate={after_validate:?}, after_drop={allocation:?}, dense_calls=64, source_bytes={}, checked_functions={}, resolved_functions={resolved_functions}; parse/check inputs and observer registry excluded",
+        source.len(),
+        checked.functions.len(),
+    );
 }
 
 // Independently reconstruct every typed fee of the closed no-binding dense
