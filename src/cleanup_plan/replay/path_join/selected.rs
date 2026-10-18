@@ -136,7 +136,7 @@ fn successors(
     budget.charge(function, 8, "selected path successors formal receiving")?;
 
     let plan = &function.cleanup_plan;
-    let values = match plan_at!(budget, function, plan, blocks, block.0 as usize).terminator {
+    let values = match &plan_at!(budget, function, plan, blocks, block.0 as usize).terminator {
         CleanupTerminator::Goto(edge) => [
             Some(plan_at!(budget, function, plan, edges, edge.0 as usize).to),
             None,

@@ -540,9 +540,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             edges,
                             index!(budget, function, edges, 0, EdgeId).0 as usize
                         );
+                        let retained = retained_units!(budget, function, &state);
                         budget.charge(
                             function,
-                            retained_units!(budget, function, &state),
+                            retained,
                             "renewal branch history clone",
                         )?;
                         let cloned = {
@@ -608,9 +609,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             edges,
                             index!(budget, function, edges, 1, EdgeId).0 as usize
                         );
+                        let retained = retained_units!(budget, function, &state);
                         budget.charge(
                             function,
-                            retained_units!(budget, function, &state),
+                            retained,
                             "renewal branch history clone",
                         )?;
                         let next = path_child!(
@@ -662,9 +664,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             3
                         ) {
                             let edge = plan_at!(budget, function, plan, edges, edge.0 as usize);
+                            let retained = retained_units!(budget, function, &state);
                             budget.charge(
                                 function,
-                                retained_units!(budget, function, &state),
+                                retained,
                                 "renewal branch history clone",
                             )?;
                             let cloned = {
@@ -1110,9 +1113,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             edges,
                             index!(budget, function, edges, 0, EdgeId).0 as usize
                         );
+                        let retained = retained_units!(budget, function, &state);
                         budget.charge(
                             function,
-                            retained_units!(budget, function, &state),
+                            retained,
                             "renewal branch history clone",
                         )?;
                         let cloned = {
@@ -1178,9 +1182,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             edges,
                             index!(budget, function, edges, 1, EdgeId).0 as usize
                         );
+                        let retained = retained_units!(budget, function, &state);
                         budget.charge(
                             function,
-                            retained_units!(budget, function, &state),
+                            retained,
                             "renewal branch history clone",
                         )?;
                         let next = path_child!(
@@ -1232,9 +1237,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
                             3
                         ) {
                             let edge = plan_at!(budget, function, plan, edges, edge.0 as usize);
+                            let retained = retained_units!(budget, function, &state);
                             budget.charge(
                                 function,
-                                retained_units!(budget, function, &state),
+                                retained,
                                 "renewal branch history clone",
                             )?;
                             let cloned = {

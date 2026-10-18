@@ -2,7 +2,6 @@
 use super::*;
 use crate::cleanup_plan::replay::expression_facts::errors::EngineError as Error;
 use crate::cleanup_plan::replay::selected_context::child::Permit;
-use crate::cleanup_plan::{ExitTargetId, CLEANUP_PLAN_SCHEMA_V18, CLEANUP_PLAN_SCHEMA_V19};
 // The closure capture and its new typed Result are admitted before the
 // closure is formed. Macro expansion adds no forwarding helper activation.
 macro_rules! control_refusal {
