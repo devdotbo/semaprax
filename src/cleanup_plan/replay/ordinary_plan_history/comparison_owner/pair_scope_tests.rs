@@ -48,6 +48,22 @@ fn prepared_link_prices() -> (usize, usize, usize, usize) {
     let limit = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();
     (old_step - new_step, old_load - new_load, setup, limit)
 }
+// Independent source-type invoice for the reachable primitive-site bank.
+// No measured debit difference is used as a coefficient.
+fn reachable_primitive_prices(paths: usize) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let selector = header + 3 * size_of::<usize>() + 2 * size_of::<bool>();
+    let reachable = match paths {
+        0 => 0,
+        1 => 5 * header,
+        _ => 20 * header,
+    };
+    (20 * header, selector + reachable)
+}
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -211,12 +227,14 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             + 2 * size_of::<&[Rc<SkeletonObservation>]>();
         let (old_tail, tail, tail_view) = tail_receiver_prices();
         let (step, load, setup, limit) = prepared_link_prices();
+        let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
         assert_eq!(
             paid + 4 * PATH_INDEX * row.rounds
                 + removed_view * flat_rounds
                 + (old_tail - tail) * row.tails
                 + step * row.steps
-                + load * row.loads,
+                + load * row.loads
+                + all_primitives,
             old_paid
                 + PAIR_SCOPE * row.pairs
                 + PAIR_PRIMITIVE
@@ -225,6 +243,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
                 + tail_view * (2 * row.pairs + expected.len())
                 + setup
                 + limit * (2 * row.pairs + expected.len())
+                + reachable_primitives
         );
         eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
             function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
@@ -629,18 +648,21 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
         .sum();
     let (old_tail, tail, tail_view) = tail_receiver_prices();
     let (step, load, setup, limit) = prepared_link_prices();
+    let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
     let removed = 4 * PATH_INDEX * row.rounds
         + removed_view * flat_rounds
         + (old_tail - tail) * row.tails
         + step * row.steps
-        + load * row.loads;
+        + load * row.loads
+        + all_primitives;
     let retained = PAIR_SCOPE * row.pairs
         + PAIR_PRIMITIVE
         + PAYMENT_HEADER
         + retained_view * expected.len()
         + tail_view * (2 * row.pairs + expected.len())
         + setup
-        + limit * (2 * row.pairs + expected.len());
+        + limit * (2 * row.pairs + expected.len())
+        + reachable_primitives;
     assert_eq!(paid + removed, old_paid + retained);
     assert!(removed > retained);
     assert!(
@@ -701,9 +723,13 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
         (0, 0, 0, 0)
     );
     assert_eq!(
-        paid,
-        old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + prepared_link_prices().2,
-        "all retained primitive frames are funded even on this unused path"
+        paid + reachable_primitive_prices(0).0,
+        old_paid
+            + PAIR_PRIMITIVE
+            + PAYMENT_HEADER
+            + prepared_link_prices().2
+            + reachable_primitive_prices(0).1,
+        "every reachable primitive site and the complete new selector are funded"
     );
     eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
 }
@@ -904,12 +930,14 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                     + 2 * size_of::<&[Rc<SkeletonObservation>]>();
                 let (old_tail, tail, tail_view) = tail_receiver_prices();
                 let (step, load, setup, limit) = prepared_link_prices();
+                let (all_primitives, reachable_primitives) = reachable_primitive_prices(1);
                 assert!(rows[0].complete && rows[0].ended);
                 assert_eq!(rows[0].tails, len + 1);
                 assert_eq!(
                     paid + (removed + old_tail - tail) * (len + 1)
                         + step * rows[0].steps
-                        + load * rows[0].loads,
+                        + load * rows[0].loads
+                        + all_primitives,
                     old_paid
                         + PAIR_PRIMITIVE
                         + PAYMENT_HEADER
@@ -917,6 +945,7 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                         + tail_view
                         + setup
                         + limit
+                        + reachable_primitives
                 );
                 if len >= 64 {
                     assert!(

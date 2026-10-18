@@ -124,7 +124,7 @@ const STATE_TESTS: usize = 9 * size_of::<bool>(); // build,drain,leaf2+OR,child,
                                                   // The first acquisition replaces the identical old compare-entry call and is
                                                   // already caller-received under COMPARE_CALL_CONTROLS; no new payment ABI.
 const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
-    + lexical_cursor::PRIMITIVE_FRAMES + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
+    + lexical_cursor::PRIMITIVE_SELECTION + lexical_cursor::INITIALIZERS + PAIR_PRIMITIVE
     + size_of::<HistorySet>() // retained original owning input header
     + 16 * PAYMENT_HEADER // original thirteen, two swap sites and final Zip-next site
     + PAYMENT_HEADER // one new sequential flat-view payment site, no dynamic payload credit
@@ -190,6 +190,21 @@ pub(in crate::cleanup_plan::replay) fn compare(
         right: 0,
         ordering: Ordering::Equal,
     };
+    // Zero paths enter no cursor expansion. One path skips sorting and enters
+    // exactly one of the mutually exclusive flat/shared final expansions.
+    // Larger sets retain all four independent primitive-site banks. Every
+    // selected bank is acquired before any cursor expansion can execute.
+    let cursor_primitives = match owner.len {
+        0 => 0,
+        1 => lexical_cursor::SINGLE_PRIMITIVE_FRAMES,
+        _ => lexical_cursor::PRIMITIVE_FRAMES,
+    };
+    paid!(
+        budget,
+        function,
+        cursor_primitives,
+        "ordinary plan reachable cursor primitive frames"
+    )?;
     owner.build = owner.len / 2;
     owner.drain = owner.len;
     backing!(

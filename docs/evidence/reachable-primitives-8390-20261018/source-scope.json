@@ -1,0 +1,16 @@
+{
+  "logical_changed": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "CHANGELOG.md"
+  ],
+  "nonlogical_existing": [
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md"
+  ],
+  "new_test_only_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+  "all_existing_physical_diagnostic_work_cut_and_prior_source_controls_retained": true,
+  "complete_prior_stage_inverses_are_separate": true,
+  "full_compiler_and_current_application_qualification_UNEXECUTED": true
+}
