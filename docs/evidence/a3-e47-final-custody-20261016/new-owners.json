@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "a75032b594c1e6aaf61998ad01c6b1f0c689fd532994eec60ab8dabd421fab67",
+    "sha256": "816aa37de809cdd0d041cec3afc6506d82add092ce21b27fc3716625020cf68c",
     "lines": 1235
   },
   {
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "c08d3e427c924691d2a7c52d6258d325c41a618f11637bc4eb758d990a86e3ef",
+    "sha256": "078cc808b03f53f1c9f06d4b3adef194628f4a7cbabfa5d334089af1eacd5ff1",
     "lines": 1399
   },
   {
@@ -2041,8 +2041,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs",
-    "sha256": "9cafdb4eeb776936a231504599baf7189afa4c908a55ea555aa62c5b442e7265",
-    "lines": 1416
+    "sha256": "14a0e6ea0e450c4eab3fafc4491af240ee455ebc46072384641abff27ef3e259",
+    "lines": 1417
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs",
@@ -2111,8 +2111,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs",
-    "sha256": "a4d6a61f4d32bc1cdbdebd02b125eb8a9408800f3920fbd418db8bbe1effa38d",
-    "lines": 367
+    "sha256": "a506a12c22e96ab0e1ae7c48cf0e36276c24aa50de6d6f4a6b40b37e3a34761d",
+    "lines": 366
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs",
@@ -2156,8 +2156,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs",
-    "sha256": "f20b334110916fcc87fe341dd151ed04c66b372a2eaca3a0d4eccd6272b5a249",
-    "lines": 1333
+    "sha256": "0a76af1059064eaeaef23136068d1a35cdc77e5ad931e28eb0ee304a5a8baaa6",
+    "lines": 1332
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs",
@@ -2201,28 +2201,28 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
-    "sha256": "0cc57b0d6f2755e9588ff4d5adcc1e8d6d8513a9ac4bb5e93ded4869ee1b2ae3",
-    "lines": 609
+    "sha256": "9fb7af33a5df12e64b70bce38e63636abb10f0866e22e485b250ff43550482fa",
+    "lines": 607
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
-    "sha256": "1a91d382cfa3d5937451f9e2d2e4bda15a290d7aeaead1728a4529520bb2e72f",
-    "lines": 142
+    "sha256": "753fcdc6ea3302c8f33a0355746d7d75b5fdc2c971d95aea6403467a8d8ef810",
+    "lines": 140
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs",
-    "sha256": "de799c2a80b88a1325c3d0023ce814b9bc81e5f46a8f18a6c4591b2c03243e9f",
-    "lines": 436
+    "sha256": "e09551afc0701df358eb2a9df2144c71b3908d594417eb415bbdeb76fa53e1ef",
+    "lines": 434
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
-    "sha256": "e3b9feaf7aefcd3c4b37cd3064a2611db56c7e93f060b228fef3b313327cbc02",
-    "lines": 181
+    "sha256": "d5e2c99c048b76596ffd9e58412cf5a1f2eb467fe5c4855e62c96be80d84768b",
+    "lines": 179
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
-    "sha256": "6a8bfbc1742f8e80afde519c6cd6ffa1ecb7c7fbb59fca250db66e0fc33c14bf",
-    "lines": 415
+    "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2",
+    "lines": 413
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_compiled.rs",

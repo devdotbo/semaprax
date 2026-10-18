@@ -2855,9 +2855,9 @@
         "src/workspace_graph/expected_projection/call_carriers_directory.rs",
         "src/workspace_graph/expected_projection/cost.rs"
       ],
-      "full_manifest_sha256": "e1ef81e461f578f46c9fe696dd0200e94effbbf28da248fa055d334b4cedbf9b",
-      "full_raw_sha256": "81dabaf4151722b42903906c0597f9971ac5bc599fe33ad31a3cb535967e6304",
-      "full_authenticated_production_sha256": "715ececd2e96442a73129192596e5d5afcc9d82adf2d4530b75e8f830881f0c2"
+      "full_manifest_sha256": "9037d206647d3780def0a08404d6905c82e6609a9a676fbc5f9d78202ebb5eac",
+      "full_raw_sha256": "df4414c906297c08230d5ac47238695d73b9389de32a2c3323e30355495b3b85",
+      "full_authenticated_production_sha256": "b238613537c01975c501376e679c3e394280323fc453d950e086c516031dc5cf"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3930,9 +3930,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "41135eda83edfe9db6f6b0ccdcbe5dc8695f447f655012a15635d8151bff21b5",
-      "full_raw_sha256": "b9744e15e4f7e0179f6c37669cf52a9b17004992c594d0398e8c73aee73a7aa8",
-      "full_authenticated_production_sha256": "5d47ae67768acbf91bbef194611900084c518815feb6972df555abedca9f67e1"
+      "full_manifest_sha256": "81949dea84813e8b4a6fdcd1748b134c801007acb3489ef64ac03489a218362e",
+      "full_raw_sha256": "ff3d727c6e609f606aa784c511575caff5ee5c92e4d3263b3806355719e1416f",
+      "full_authenticated_production_sha256": "e9314dd902a9adf43e2582540f6fc512f6aca7702f8528cb5666d95dd13b02e1"
     }
   }
 }
