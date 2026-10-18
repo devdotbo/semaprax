@@ -1,6 +1,12 @@
 //! Closed final-batch historical acquisition. No production authority or raw-audit projection.
 #[path = "main_e177_overlay_v2.rs"]
 mod overlay_v2;
+#[macro_use]
+#[path = "main_e177_historical_data.rs"]
+mod historical_json_data;
+#[cfg(test)]
+#[path = "main_e177_historical_before_data.rs"]
+mod historical_before_data;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 const SOURCE_CAP: usize = 9753094;
@@ -18,7 +24,7 @@ fn packet_before_overlay() -> serde_json::Value {
     assert_eq!((data.len(),digest(data.as_bytes())),(262076,"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
-    let ext:serde_json::Value=serde_json::from_str(data).unwrap();
+    let ext:serde_json::Value=historical_json!(data).unwrap();
     assert_eq!(ext["schema"],"semaprax.fmt433-local133-extension.v1");
     assert_eq!(ext["base_sha256"],"de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc");
     assert_eq!(ext["compiled_upgrades"],serde_json::json!(["src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"]));
@@ -44,7 +50,7 @@ fn packet_before_overlay() -> serde_json::Value {
     let local_data=include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
     assert_eq!((local_data.len(),digest(local_data.as_bytes())),(123158,"319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045".to_owned()));
     assert_eq!(read_view(&ext["whole_local133"]),local_data,"whole local133 physical/compiled anchor");
-    let local=packet_local133();assert_eq!(local,serde_json::from_str::<serde_json::Value>(local_data).unwrap(),"entire original133 loader replay");assert_eq!(local["rows"].as_array().unwrap().len(),133);
+    let local=packet_local133();assert_eq!(local,historical_json!(local_data).unwrap(),"entire original133 loader replay");assert_eq!(local["rows"].as_array().unwrap().len(),133);
     for prior in local["rows"].as_array().unwrap(){
         let row=rows.iter().find(|r|r["source"]==prior["source"]).unwrap();assert_eq!(row["compiled"],prior["compiled"]);
         let views=row["views"].as_array().unwrap();assert!(prior["views"].as_array().unwrap().iter().all(|v|views.contains(v)));
@@ -62,13 +68,13 @@ fn packet_local133() -> serde_json::Value {
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical=held(&root.join("docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt"),data.len(),&digest(data.as_bytes())).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 133);
     {
-    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let packet: serde_json::Value = historical_json!(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
     {
-    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
+    let packet: serde_json::Value = historical_json!(&read_view(&packet["whole_current99_before"])).unwrap();
     let before=read_view(&packet["immediate_before"]);
     let mut restored=packet.clone();
     let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
@@ -78,10 +84,10 @@ fn packet_local133() -> serde_json::Value {
     assert_eq!(previous["name"],"whole886-next-big");
     previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
     restored.as_object_mut().unwrap().remove("immediate_before");
-    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
+    assert_eq!(restored,historical_json!(&before).unwrap(),"complete original98 source table retained");
     }
     {
-    let previous: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
+    let previous: serde_json::Value = historical_json!(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
     let mut restored=packet.clone();
     let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
     assert_eq!(added["source"], "src/workspace_graph/tests.rs");
@@ -98,7 +104,7 @@ fn packet_local133() -> serde_json::Value {
     let _remote = packet_remote_d88();
     }
     {
-    let previous:serde_json::Value=serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let previous:serde_json::Value=historical_json!(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
     let mut restored=packet.clone();
     restored["rows"]=previous["rows"].clone();
     restored["complete_old_table_anchors"]=previous["complete_old_table_anchors"].clone();
@@ -164,7 +170,7 @@ fn packet_fmt433() -> serde_json::Value {
         data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["source_cap"].as_u64(), Some(SOURCE_CAP as u64));
     let rows = packet["rows"].as_array().unwrap();
@@ -251,12 +257,12 @@ fn packet_a110() -> serde_json::Value {
         physical, data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 124);
     {
         let packet: serde_json::Value =
-            serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
+            historical_json!(&read_view(&packet["whole_current99_before"])).unwrap();
         let before = read_view(&packet["immediate_before"]);
         let mut restored = packet.clone();
         let added = restored["rows"].as_array_mut().unwrap().pop().unwrap();
@@ -277,13 +283,13 @@ fn packet_a110() -> serde_json::Value {
         restored.as_object_mut().unwrap().remove("immediate_before");
         assert_eq!(
             restored,
-            serde_json::from_str::<serde_json::Value>(&before).unwrap(),
+            historical_json!(&before).unwrap(),
             "complete original98 source table retained"
         );
     }
     {
         let previous: serde_json::Value =
-            serde_json::from_str(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
+            historical_json!(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
         let mut restored = packet.clone();
         let added = restored["rows"].as_array_mut().unwrap().pop().unwrap();
         assert_eq!(added["source"], "src/workspace_graph/tests.rs");
@@ -338,7 +344,7 @@ fn packet_remote_d88() -> serde_json::Value {
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     let mut restored = packet.clone();
     let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs").unwrap();
     let mut previous = row["views"].as_array_mut().unwrap().pop().unwrap();
@@ -365,7 +371,7 @@ fn packet_previous_remote_d88() -> serde_json::Value {
         physical, data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 99);
     let before = read_view(&packet["immediate_before"]);
@@ -388,7 +394,7 @@ fn packet_previous_remote_d88() -> serde_json::Value {
     restored.as_object_mut().unwrap().remove("immediate_before");
     assert_eq!(
         restored,
-        serde_json::from_str::<serde_json::Value>(&before).unwrap(),
+        historical_json!(&before).unwrap(),
         "complete original98 source table retained"
     );
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
