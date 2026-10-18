@@ -32,7 +32,7 @@ pub(super) fn validate_entry_before_dynamic(
         crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
         3,
         "selected control permit call receiving",
-        Permit::control_receiver_before_formals::<()>(function, budget)
+        Permit::control_receiver::<()>(function, budget)
     )?;
     if function
         .cleanup_plan
