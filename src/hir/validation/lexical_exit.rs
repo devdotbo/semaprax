@@ -96,6 +96,7 @@ impl HirValidator<'_> {
 }
 
 impl HirValidator<'_> {
+    #[cfg(test)]
     pub(super) fn join_lexical_match(
         &self,
         result: &mut Option<(ResolvedType, OwnershipMode)>,
