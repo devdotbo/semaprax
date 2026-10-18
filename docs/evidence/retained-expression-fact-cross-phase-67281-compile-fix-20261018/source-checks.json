@@ -1,0 +1,18 @@
+{
+  "status": "SOURCE_PARSE_AND_COMPLETE_INVERSES_ONLY",
+  "checks": [
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "rustfmt_parse_exit": 0,
+      "whole_base_inverse": "PASS"
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "rustfmt_parse_exit": 0,
+      "whole_base_inverse": "PASS"
+    }
+  ],
+  "git_diff_check": "PASS",
+  "Cargo": false,
+  "rustfmt_check": "PASS"
+}

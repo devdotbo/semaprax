@@ -1,0 +1,21 @@
+{
+  "status": "SOURCE_ONLY_COMPILE_REPAIR_UNRUN",
+  "base": "67281d0166b024a0c13e36eb16d271065c1da8f8",
+  "production_binding": "super::super::require_expression is receiving.rs helper with &dyn Lookup and &mut ReplayBudget; replay.rs legacy helper has BTreeMap/three args and cannot be the intended call.",
+  "production_function_body_byteexact": true,
+  "production_api_fees_work_and_result_abi_unchanged": true,
+  "test_hex": "Existing crate::digest_hex::LowerHex handles exactly32 digest bytes and preserves canonical lowercase64hex; four operands only, immutable expected hashes/assertions unchanged.",
+  "new_Rust_modules": [],
+  "selectors_changed": [],
+  "original_controls_retained": true,
+  "source_inverses_sha256": "b11bd79b37cea1fe04efb0ade24b7246c73a78fdbed05553db480be696b84e0e",
+  "Cargo": false,
+  "ROOT_mutated": false,
+  "qualification": "Source-only; actual build/tests/Clippy pending parent",
+  "pending": [
+    "Review and normal integration",
+    "Minimum affected source custody/model pin updates owned by Main9",
+    "Parent actual owning build/128/runtime/Clippy"
+  ],
+  "formatting": "Only intended import sorting and two new wrapper format expressions; rustfmt check PASS. Literal bytes and old controls preserved."
+}
