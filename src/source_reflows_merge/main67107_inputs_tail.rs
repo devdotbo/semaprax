@@ -1007,6 +1007,10 @@ mod before_future57 {
             supplied.to_owned()
         }
     }
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     fn accepted_base_previous(source: &str, supplied: &str) -> String {
         let packet = accepted_records();
         let Some(row) = packet["rows"]
@@ -1027,6 +1031,10 @@ mod before_future57 {
         };
         accepted_select(row, prior, supplied)
     }
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     pub(crate) fn accepted_expected_value(source: &str, expected: &str, supplied: &str) -> String {
         let packet = accepted_records();
         let Some(row) = packet["rows"]

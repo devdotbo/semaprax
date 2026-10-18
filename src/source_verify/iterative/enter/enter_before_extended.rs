@@ -26,6 +26,10 @@ use std::collections::HashSet;
 // Parent registers the complete prior component receiver.
 
 impl<'a, 'v, 'p> IterativeVerifier<'a, 'v, 'p> {
+    #[allow(
+        clippy::needless_borrow,
+        reason = "The complete saved control retains its original expressions for independent parity checks."
+    )]
     pub(super) fn before_extended_frame_enter(
         &mut self,
         expression: &'p Expr,

@@ -24,6 +24,10 @@ use crate::source_verify::IterativeVerifier;
 use std::collections::HashSet;
 
 impl<'a, 'v, 'p> IterativeVerifier<'a, 'v, 'p> {
+    #[allow(
+        clippy::needless_borrow,
+        reason = "The complete saved control retains its original expressions for independent parity checks."
+    )]
     pub(in crate::source_verify) fn recovery_old_frame_enter(
         &mut self,
         expression: &'p Expr,

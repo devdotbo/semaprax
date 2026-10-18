@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Complete report fields, original formatters, and the actual affine owner.
 use super::{stages, Owner, Setup};
 use crate::bounded_output::{reserve_active_required, with_limit_usage_refusal, ReservationStage};

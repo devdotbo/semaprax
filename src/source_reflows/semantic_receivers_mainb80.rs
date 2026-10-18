@@ -53,6 +53,10 @@ pub(super) fn predecessor(path: &str, current: &str) -> Option<String> {
     Some(invert(proof, current))
 }
 
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn contains(path: &str) -> bool {
     proofs().iter().any(|proof| proof["path"] == path)
 }

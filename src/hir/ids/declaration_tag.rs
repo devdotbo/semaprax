@@ -633,10 +633,22 @@ fn complete_source_inverses_keep_all_raw_children_and_refuse_foreign_stages() {
         ("docs/DECLARATION-IDENTITY-BACKING-V1.md",include_str!("../../../docs/DECLARATION-IDENTITY-BACKING-V1.md")),
     ];
     for (source, actual_current) in sources {
-        let proof:serde_json::Value=serde_json::from_str(include_str!("../../../docs/evidence/declaration-tag-identity-20261018/sources.json")).unwrap();
-        let row=proof.as_array().unwrap().iter().find(|row|row["source"]==source).unwrap();
-        let acquired=crate::source_reflows_merge::next_big_batch_inputs::value(source,row["after"]["sha256"].as_str().unwrap(),actual_current);
-        let current=acquired.as_str();
+        let proof: serde_json::Value = serde_json::from_str(include_str!(
+            "../../../docs/evidence/declaration-tag-identity-20261018/sources.json"
+        ))
+        .unwrap();
+        let row = proof
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)
+            .unwrap();
+        let acquired = crate::source_reflows_merge::next_big_batch_inputs::value(
+            source,
+            row["after"]["sha256"].as_str().unwrap(),
+            actual_current,
+        );
+        let current = acquired.as_str();
         let old = old_source(source, current).unwrap();
         assert_ne!(current, old);
         for foreign in [

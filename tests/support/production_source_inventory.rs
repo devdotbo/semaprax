@@ -332,17 +332,27 @@ fn accepted_raw_prefix_keeps_all_twenty_eight_subjects_old_guards_and_nonempty_t
 // children at their parent's existing raw slot; raw input is never rewritten.
 fn before_format_current_accepted_batch_relocated_prefix() -> String {
     let previous = accepted_batch_relocated_prefix();
-    let slot = include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs");
+    let slot = include_str!(
+        "../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"
+    );
     let complete = concat!(
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/tests.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"),
     );
     assert!(!slot.is_empty());
-    assert_eq!(previous.matches(slot).count(), 1, "unique original lexical child slot");
+    assert_eq!(
+        previous.matches(slot).count(),
+        1,
+        "unique original lexical child slot"
+    );
     let current = previous.replacen(slot, complete, 1);
     assert_eq!(current.matches(complete).count(), 1);
-    assert_eq!(current.replacen(complete, slot, 1), previous, "complete original prefix inverse");
+    assert_eq!(
+        current.replacen(complete, slot, 1),
+        previous,
+        "complete original prefix inverse"
+    );
     current
 }
 fn current_accepted_batch_relocated_prefix() -> String {
@@ -381,33 +391,56 @@ fn current_accepted_batch_relocated_prefix() -> String {
     ).to_owned()
 }
 fn assert_before_format_accepted_prefix(raw: &str) {
-    let prefix=before_format_current_accepted_batch_relocated_prefix();
-    let rest=raw.strip_prefix(prefix.as_str()).expect("complete independent pre-format thirty-subject prefix");
-    assert!(!rest.is_empty());assert!(!rest.starts_with(prefix.as_str()));
+    let prefix = before_format_current_accepted_batch_relocated_prefix();
+    let rest = raw
+        .strip_prefix(prefix.as_str())
+        .expect("complete independent pre-format thirty-subject prefix");
+    assert!(!rest.is_empty());
+    assert!(!rest.starts_with(prefix.as_str()));
 }
 fn assert_current_accepted_batch_relocated_prefix(raw: &str) {
     let prefix = current_accepted_batch_relocated_prefix();
     let rest = raw.strip_prefix(prefix.as_str()).expect("all original twenty-eight subjects and both nested lexical children enter the raw owner in order");
-    assert!(!rest.is_empty(), "current relocated prefix requires the remaining raw inventory");
-    assert!(!rest.starts_with(prefix.as_str()), "duplicate current relocated inventory prefix");
+    assert!(
+        !rest.is_empty(),
+        "current relocated prefix requires the remaining raw inventory"
+    );
+    assert!(
+        !rest.starts_with(prefix.as_str()),
+        "duplicate current relocated inventory prefix"
+    );
 }
 #[test]
 fn current_accepted_prefix_keeps_nested_lexical_children_and_all_original_subjects() {
     let prefix = current_accepted_batch_relocated_prefix();
     let original = accepted_batch_relocated_prefix();
-    let before_format=before_format_current_accepted_batch_relocated_prefix();
-    assert_eq!(before_format,formatted_accepted_batch_relocated_prefix());
+    let before_format = before_format_current_accepted_batch_relocated_prefix();
+    assert_eq!(before_format, formatted_accepted_batch_relocated_prefix());
     assert_before_format_accepted_prefix(&format!("{before_format}remaining raw inventory"));
-    for bad in [String::new(),before_format.clone(),format!("sentinel{before_format}"),format!("{before_format}{before_format}"),format!("{original}remaining raw inventory")] {
-        assert!(std::panic::catch_unwind(||assert_before_format_accepted_prefix(&bad)).is_err());
+    for bad in [
+        String::new(),
+        before_format.clone(),
+        format!("sentinel{before_format}"),
+        format!("{before_format}{before_format}"),
+        format!("{original}remaining raw inventory"),
+    ] {
+        assert!(std::panic::catch_unwind(|| assert_before_format_accepted_prefix(&bad)).is_err());
     }
     let valid = format!("{prefix}remaining raw inventory");
     assert_current_accepted_batch_relocated_prefix(&valid);
     assert_accepted_batch_relocated_prefix(&format!("{original}remaining raw inventory"));
-    for bad in [String::new(), prefix.clone(), format!("sentinel{prefix}"),
-        format!("{prefix}{prefix}"), format!("{original}remaining raw inventory")] {
+    for bad in [
+        String::new(),
+        prefix.clone(),
+        format!("sentinel{prefix}"),
+        format!("{prefix}{prefix}"),
+        format!("{original}remaining raw inventory"),
+    ] {
         assert_ne!(bad, valid, "identity mutation cannot prove refusal");
-        assert!(std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad)).is_err());
+        assert!(
+            std::panic::catch_unwind(|| assert_current_accepted_batch_relocated_prefix(&bad))
+                .is_err()
+        );
     }
     for subject in [
         include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/matched.rs"),

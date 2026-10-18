@@ -321,6 +321,10 @@ fn bypasses_and_sticky_refusals_leave_the_complete_input_untouched() {
 }
 
 #[test]
+#[allow(
+    clippy::assertions_on_constants,
+    reason = "These assertions pin the exact control layout and resource limits."
+)]
 fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {
     use sha2::{Digest, Sha256};
     assert_eq!(

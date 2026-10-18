@@ -222,6 +222,10 @@ fn deep_paid_type_order_exact_short_zero_retains_first_refusal_and_drop() {
 }
 
 #[test]
+#[allow(
+    clippy::err_expect,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn compact_staged_receiving_keeps_floor_and_foreign_owner_first_refusal() {
     use crate::bounded_output::{
         active_remaining, set_active_floor, with_limit_usage_refusal_site,

@@ -666,6 +666,10 @@ impl Canonicalizer<'_> {
     pub(super) fn states(&self) -> &BTreeMap<SharedWeighted, usize> {
         &self.states
     }
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
         &self.ids
     }

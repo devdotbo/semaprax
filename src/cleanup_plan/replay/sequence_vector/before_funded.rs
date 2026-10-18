@@ -1,4 +1,8 @@
 use crate::cleanup_plan::replay::*;
+#[allow(
+    clippy::if_same_then_else,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 pub(super) fn sequence_skeleton_paths(
     prefixes: Vec<ExprSkeletonPath>,
     suffixes: &[ExprSkeletonPath],

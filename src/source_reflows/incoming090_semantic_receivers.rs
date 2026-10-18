@@ -924,6 +924,10 @@ fn main090_entry(entry: &serde_json::Value, current: &str) -> String {
     assert!(current == raw || current == before, "foreign MAIN090 stage");
     before
 }
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 fn main090_project(path: &str, current: &str) -> String {
     let manifest = main090_manifest();
     match main090_row(&manifest, "main", path) {
@@ -958,6 +962,10 @@ fn main090_read(path: impl AsRef<Path>) -> std::io::Result<String> {
         "unknown MAIN090 read subject",
     ))
 }
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(in crate::source_reflows) fn ours_input(path: &str, current: &str) -> String {
     let manifest = main090_manifest();
     match main090_row(&manifest, "ours", path) {
@@ -965,6 +973,10 @@ pub(in crate::source_reflows) fn ours_input(path: &str, current: &str) -> String
         None => current.to_owned(),
     }
 }
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(in crate::source_reflows) fn ours_expected_input(
     proof: &serde_json::Value,
     current: &str,
@@ -976,6 +988,10 @@ pub(in crate::source_reflows) fn ours_expected_input(
         _ => current.to_owned(), // Preserve an already selected older MAIN domain.
     }
 }
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn ours_contains(path: &str) -> bool {
     main090_row(&main090_manifest(), "ours", path).is_some()
 }

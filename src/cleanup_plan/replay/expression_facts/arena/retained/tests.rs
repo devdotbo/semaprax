@@ -131,6 +131,10 @@ fn every_old_query_work_cut_keeps_all_six_diagnostic_fields() {
 }
 
 #[test]
+#[allow(
+    clippy::cloned_ref_to_slice_refs,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn exact_short_first_and_later_query_payments_are_sticky_without_allocation_or_refund() {
     let program = program();
     let function = &program.functions[0];
@@ -174,6 +178,10 @@ fn exact_short_first_and_later_query_payments_are_sticky_without_allocation_or_r
 }
 
 #[test]
+#[allow(
+    clippy::cloned_ref_to_slice_refs,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn unwind_releases_the_exclusive_budget_loan_without_any_scratch_backing() {
     let program = program();
     let function = &program.functions[0];
@@ -197,6 +205,10 @@ fn unwind_releases_the_exclusive_budget_loan_without_any_scratch_backing() {
 }
 
 #[test]
+#[allow(
+    clippy::cloned_ref_to_slice_refs,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn zero_budget_and_reserved_floor_refuse_without_later_retry_authority() {
     let program = program();
     let function = &program.functions[0];

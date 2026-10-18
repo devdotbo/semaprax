@@ -27,6 +27,10 @@ impl SourceAbort {
         &self.storage[0].prefix
     }
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     pub(crate) fn stop(&self) -> SourceStop {
         self.storage[0].stop.expect("sealed source abort")
     }

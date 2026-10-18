@@ -995,6 +995,10 @@ impl<'v, 'p> Resolver<'v, 'p> {
     }
 
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     pub(super) fn resolve_function_in_scope(
         &self,
         function: &crate::ast::Function,

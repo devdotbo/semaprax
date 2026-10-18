@@ -37,6 +37,10 @@ fn rendered(
     }
 }
 #[test]
+#[allow(
+    clippy::single_element_loop,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn complete_old_child_receivers_keep_success_raw_errors_prefix_and_order() {
     let program = fixture();
     let context = primitive_fixture::Context::new(&program);

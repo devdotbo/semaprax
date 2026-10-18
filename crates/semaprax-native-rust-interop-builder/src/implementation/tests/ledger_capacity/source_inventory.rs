@@ -16,7 +16,9 @@ macro_rules! held_call_profile_source_inventory {
 macro_rules! fixed_operation_identity_source_inventory {
     () => {
         audit_source_join!(
-            include_str!("../../../../../src/hir/ids/fixed_operation_tests.rs"), include_str!("../../../../../src/hir/ids/declaration_tag.rs"), include_str!("../../../../../src/hir/ids/declaration_tag/before.rs"),
+            include_str!("../../../../../src/hir/ids/fixed_operation_tests.rs"),
+            include_str!("../../../../../src/hir/ids/declaration_tag.rs"),
+            include_str!("../../../../../src/hir/ids/declaration_tag/before.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/map/identity_tests.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/list/identity_tests.rs"),
             include_str!("../../../../../src/hir/resolve_box_call/iterator/identity_tests.rs"),

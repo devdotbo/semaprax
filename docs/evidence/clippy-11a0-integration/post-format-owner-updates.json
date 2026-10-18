@@ -1,0 +1,8 @@
+{
+  "owners": 260,
+  "only_SHA_and_line_fields_refreshed": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs"
+  ],
+  "all_order_preserved": true
+}

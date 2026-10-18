@@ -185,6 +185,10 @@ mod borrowed_single {
 }
 
 impl Canonicalizer<'_> {
+    #[allow(
+        clippy::iter_next_slice,
+        reason = "The iterator receiver is explicitly prepaid and compared with the complete predecessor."
+    )]
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn before_arity_dispatch_id_inner_into(
         &mut self,
         function: &ResolvedFunction,

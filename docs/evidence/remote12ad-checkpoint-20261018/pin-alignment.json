@@ -1,0 +1,24 @@
+{
+  "status": "SOURCE_CHECKPOINT_PIN_ALIGNMENT_NO_FINAL_REAUTH_OR_RUNTIME_CLAIM",
+  "preserved_whole_remote121": {
+    "length": 59384,
+    "sha256": "f564fa5deb6b69d47df856813e2540cdc9ca203bc16befb81fc5566588238072",
+    "archive": "docs/evidence/remote12ad-checkpoint-20261018/whole/f564fa5deb6b69d47df856813e2540cdc9ca203bc16befb81fc5566588238072.txt"
+  },
+  "changed_remote_current_rows": [
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs",
+    "src/hir/ids/declaration_tag.rs",
+    "src/hir/ids/declaration_tag/before.rs"
+  ],
+  "current121": {
+    "length": 75443,
+    "sha256": "6431e2a0102ca0c4b7c3dfeb09ac03b03c30c28fb967bd7ed61615308d503ff3"
+  },
+  "guard": {
+    "length": 10643,
+    "sha256": "25ee47a25c50bd1a01d1cb2455202dfacd5bf89a5559134b3a96b7c46ab21f7c"
+  },
+  "metadata_current_regeneration_pending": true
+}

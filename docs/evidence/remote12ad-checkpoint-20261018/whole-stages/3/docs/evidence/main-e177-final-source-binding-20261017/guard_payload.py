@@ -1,0 +1,136 @@
+"""Closed final current source admission before the complete afa strict guard."""
+from pathlib import Path
+import hashlib,json,os,stat
+R=Path(__file__).resolve().parents[3]
+CARRIER='tests/workspace/semantic_graph/source_inventory.rs'
+SCRATCH=('src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch.rs','src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs')
+def bounded(path,length,digest):
+ assert 0<=length<=262144 and hasattr(os,'O_NOFOLLOW')
+ fd=os.open(path,os.O_RDONLY|os.O_NOFOLLOW|os.O_NONBLOCK|os.O_CLOEXEC)
+ identity=lambda s:(s.st_dev,s.st_ino,s.st_mode,s.st_size,s.st_mtime_ns,s.st_ctime_ns)
+ try:
+  st=os.fstat(fd);assert stat.S_ISREG(st.st_mode)and st.st_size==length
+  with os.fdopen(fd,'rb',closefd=False)as f:b=f.read(length);assert len(b)==length and not f.read(1)
+  assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
+  assert hashlib.sha256(b).hexdigest()==digest;return b
+ finally:os.close(fd)
+_CONFIG_PATH=R/'docs/evidence/clippy-11a0-integration/guard-config.json'
+_CONFIG_LENGTH=89856
+_CONFIG_SHA256='5d476082c47add2dca832a549f73297ad8e7f16287836d656f71a9e77984aed3'
+_CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
+CONFIG=json.loads(_CONFIG_RAW)
+def _configuration_current():
+ assert bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)==_CONFIG_RAW
+
+def read(pin):
+ _configuration_current()
+ return bounded(R/pin['archive'],pin['length'],pin['sha256'])
+def packet():
+ _configuration_current()
+ p=CONFIG['packet'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ assert v['schema']=='semaprax.main-e177-final-whole-inputs.v1'and len(v['rows'])==CONFIG['rows']
+ assert len(v['rows'])==len({x['source']for x in v['rows']})
+ return v
+
+def _successor_rows_4a6eb():
+ _configuration_current()
+ p=CONFIG['previous_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ assert v['schema']=='semaprax.clippy-complete-source-successor.v1'and len(v['rows'])==105
+ assert v['source_cap']==9753094 and len(v['rows'])==len({x['source']for x in v['rows']})
+ assert v['base_packet']==CONFIG['packet']
+ p=v['base_packet'];bounded(R/p['path'],p['length'],p['sha256'])
+ return v['rows']
+def _successor_rows():
+ _configuration_current()
+ p=CONFIG['source_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ old_rows=_successor_rows_4a6eb();p=CONFIG['previous_successor'];old=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ assert old_rows==old['rows']and v['previous_packet']==CONFIG['previous_successor']
+ assert len(v['rows'])==121 and len(v['rows'])==len({x['source']for x in v['rows']})
+ for before,after in zip(old_rows,v['rows']):
+  assert before['source']==after['source']
+  if before['current']!=after['current']:assert any({k:x for k,x in pin.items()if k!='name'}==before['current']for pin in after['views'])
+  restored=dict(after);restored['current']=before['current']
+  if 'views'in before:restored['views']=before['views']
+  else:restored.pop('views',None)
+  assert restored==before
+ restored=dict(v);restored['rows']=old_rows;restored.pop('previous_packet');assert restored==old
+ return v['rows']
+def _successor_pin(path,length,digest):
+ row=next((r for r in _successor_rows()if r['source']==path),None)
+ if row is None:return None
+ return next((p for p in [row['before'],row['current'],*row.get('views',[])]if(length,digest)==(p['length'],p['sha256'])),None)
+def _stage_source(path,pin):
+ row=next((r for r in _successor_rows()if r['source']==path),None)
+ if row is None:return bounded(R/path,pin['length'],pin['sha256'])
+ p=row['current'];actual=bounded(R/path,p['length'],p['sha256']);assert actual==read(p)
+ if(pin['length'],pin['sha256'])==(p['length'],p['sha256']):return actual
+ p=row['before']
+ if(pin['length'],pin['sha256'])==(p['length'],p['sha256']):return read(p)
+ views=[v for v in row.get('views',[])if(pin['length'],pin['sha256'])==(v['length'],v['sha256'])]
+ assert views,('foreign successor tuple',path)
+ result=read(views[0]);assert all(read(v)==result for v in views);return result
+
+def latest_source(path,length,digest):
+ assert path in CONFIG['closed_prior_sources'],('foreign named source acquisition',path)
+ row=next((r for r in packet()['rows']if r['source']==path),None)
+ if row is None:return _stage_source(path,dict(length=length,sha256=digest))
+ p=row['current'];actual=_stage_source(path,p);assert actual==read(p)
+ for child in row.get('fragments',[]):
+  assert not child.get('fragments')and child['compiled']is True
+  pin=child['current'];value=_stage_source(child['source'],pin);assert value==read(pin)
+ if(length,digest)==(p['length'],p['sha256']):return actual
+ if _successor_pin(path,length,digest)is not None:return _stage_source(path,dict(length=length,sha256=digest))
+ views=[v for v in row['views']if(length,digest)==(v['length'],v['sha256'])];assert views,('foreign prior tuple',path,length,digest)
+ b=read(views[0]);assert all(read(v)==b for v in views);return b
+
+def public_previous():
+ p=CONFIG['public'];before=read(p);s=before.decode();program=_AUTHENTICATED_PROGRAM
+ assert isinstance(program,bytes)and len(program)<=65536
+ assert bounded(R/CONFIG['this_guard'],len(program),hashlib.sha256(program).hexdigest())==program
+ for e in CONFIG['public_edits']:
+  new=e['after'].replace('@GUARD_LENGTH@',str(len(program))).replace('@GUARD_SHA256@',hashlib.sha256(program).hexdigest())
+  assert s.count(e['before'])==e['count'];s=s.replace(e['before'],new)
+ actual=s.encode();assert bounded(R/p['path'],len(actual),hashlib.sha256(actual).hexdigest())==actual
+ return before
+
+def legacy_module():
+ p=CONFIG['guard'];raw=bounded(R/p['path'],p['length'],p['sha256']);assert raw==read(p);s=raw.decode()
+ edits=[
+  ("actual=bounded(R/path,current['length'],current['sha256'])","actual=_latest_source(path,current['length'],current['sha256'])",1),
+  ("actual=bounded(R/path,row['length'],row['sha256']).decode()","actual=_latest_source(path,row['length'],row['sha256']).decode()",1),
+  ("for owner,pin in CONFIG['required_modules'].items():bounded(R/owner,pin['length'],pin['sha256'])","for owner,pin in CONFIG['required_modules'].items():_latest_source(owner,pin['length'],pin['sha256'])",1),
+  ("assert bounded(R/CONFIG['public_path'],len(actual),hashlib.sha256(actual).hexdigest())==actual","assert _latest_public()==actual",1),
+ ]
+ for old,new,count in edits:assert s.count(old)==count;s=s.replace(old,new)
+ restored=s
+ for old,new,count in reversed(edits):assert restored.count(new)==count;restored=restored.replace(new,old)
+ assert restored.encode()==raw
+ ns=dict(__file__=str(R/p['path']),_AUTHENTICATED_PROGRAM=raw,_latest_source=latest_source,_latest_public=public_previous)
+ exec(compile(s,ns['__file__'],'exec'),ns);return ns
+
+def authenticate_current(path,supplied):
+ assert path in CONFIG['carriers'];p=CONFIG['carriers'][path];actual=bounded(R/path,p['length'],p['sha256']).decode();assert supplied==actual
+ for source,pin in CONFIG['modules'].items():bounded(R/source,pin['length'],pin['sha256'])
+ t=CONFIG['table'];raw=bounded(R/t['path'],t['length'],t['sha256']);prior=read(t['prior']);expected=prior.decode().splitlines()
+ for x in t['insertions']:assert x['path']not in expected;expected.insert(x['at'],x['path'])
+ assert raw==('\n'.join(expected)+'\n').encode()and len(expected)==len(set(expected))==t['rows']
+ for source in CONFIG['modules']:
+  assert actual.count('include_str!("'+p['base']+source+'")')==1,('required/max-one literal owner',path,source)
+ owner=CONFIG['workspace_owner'];latest_source(owner['path'],owner['length'],owner['sha256'])
+ return actual
+
+def accepted_guard_extensions(root):
+ assert Path(root).resolve()==R
+ ns=legacy_module();old=ns['accepted_guard_extensions'](R);verify=old['verify_guard'];extract=old['fragments']
+ def prior(path):
+  p=CONFIG['prior_carriers'][path];return latest_source(path,p['length'],p['sha256']).decode()
+ def verify_guard(path,current,original,refresh=False):
+  assert not refresh;authenticate_current(path,current);return verify(path,prior(path),original,False)
+ def fragments(path,current,original):
+  authenticate_current(path,current);return extract(path,prior(path),original)
+ result=dict(old);result.update(verify_guard=verify_guard,fragments=fragments)
+ return result
+
+def source(parent,path,length,digest):
+ # Exact existing definition reader keeps its original whole root stage.
+ return legacy_module()['source'](parent,path,length,digest)

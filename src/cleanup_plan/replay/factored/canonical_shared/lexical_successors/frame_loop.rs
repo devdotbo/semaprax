@@ -7,6 +7,11 @@ mod before_borrowed_single;
 mod borrowed_single;
 
 impl Canonicalizer<'_> {
+    #[allow(
+        clippy::iter_next_slice,
+        clippy::single_match,
+        reason = "The iterator receiver is explicitly prepaid and compared with the complete predecessor. The retained arity dispatch and its exact paid receiving controls are intentionally unchanged."
+    )]
     pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn id_inner_into(
         &mut self,
         function: &ResolvedFunction,

@@ -244,6 +244,11 @@ fn staged_header_preserves_complete_fields_work_growth_and_drop() {
 }
 
 #[test]
+#[allow(
+    clippy::assertions_on_constants,
+    clippy::int_plus_one,
+    reason = "These assertions pin the exact control layout and resource limits. The bounded fixture keeps the original allocation-width arithmetic for exact comparison."
+)]
 fn staged_probe_reports_every_paid_and_heap_delta_with_exact_sticky_accounts() {
     let program = path_array_main8a::fixture_program();
     let function = &program.functions[0];

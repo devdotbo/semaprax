@@ -24,6 +24,10 @@ use crate::source_verify::diagnostics::{
 use crate::source_verify::iterative::check_expr_with_signature_cell as check_expr_with_helpers_view;
 use crate::source_verify::type_table::TypeTable;
 use std::collections::{BTreeSet, HashMap, HashSet};
+#[allow(
+    clippy::borrow_deref_ref,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 pub(in crate::source_verify) fn check_function_declarations<'p>(
     program: &'p dyn ProgramSource,
     cells: &'p [crate::ast::program_source::FunctionCell<'p>],
@@ -566,6 +570,10 @@ const MAX_STATIC_MAPPING_DEPTH: usize = 128;
 /// Carries the lexical scope, declaration table, and bounded traversal state
 /// required to authenticate an omitted symbolic mapping before body checking.
 #[allow(clippy::too_many_arguments)]
+#[allow(
+    clippy::needless_borrow,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn check_omitted_generic_mappings(
     program: &dyn ProgramSource,
     current: &crate::ast::program_source::FunctionRef<'_>,
@@ -987,6 +995,10 @@ fn clear_record_pattern_bindings(
         RecordMatchFieldPattern::Wildcard { .. } => {}
     }
 }
+#[allow(
+    clippy::needless_borrow,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 pub(in crate::source_verify) fn check_function_bodies<'p>(
     program: &'p dyn ProgramSource,
     cells: &'p [crate::ast::program_source::FunctionCell<'p>],

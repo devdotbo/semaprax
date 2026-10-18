@@ -26,6 +26,10 @@ fn values(
     values
 }
 #[test]
+#[allow(
+    clippy::int_plus_one,
+    reason = "The bounded fixture keeps the original allocation-width arithmetic for exact comparison."
+)]
 fn production_fused_probe_preserves_every_original_take_decision_and_bounds_copy_receivers() {
     let program = program(0);
     let function = &program.functions[0];
@@ -257,6 +261,10 @@ struct FrontierOutcome {
     events: usize,
     sticky: Option<Failure>,
 }
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn frontier_observe(
     function: &ResolvedFunction,
     limit: usize,
@@ -380,6 +388,10 @@ fn frontier_expected(
     (first, sticky)
 }
 #[test]
+#[allow(
+    clippy::drop_non_drop,
+    reason = "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+)]
 fn production_fused_earlier_bank_and_original_take_frontiers_keep_six_fields_first_receipt_and_whole_drop(
 ) {
     let program = program(42);

@@ -1,0 +1,427 @@
+{
+  "base_local_commit": "a5c804e592ba330521d4f9dad0a9deab3ba2eb79",
+  "incoming_main": "11a0a46b70502896ba832ece6d9c3afb85ec5909",
+  "all_changed_existing_source_and_guard_metadata_before_images_preserved": true,
+  "records": [
+    {
+      "source": "CHANGELOG.md",
+      "before": {
+        "length": 575879,
+        "sha256": "a92da372406f997b6e79fcfddf0abbdd64b3de49a0711ece8e29266b07585725",
+        "archive": "docs/evidence/clippy-11a0-integration/qS2jckBvmXtuefz93wq73WSz3kmgcR7OjikmawdYVyU.txt"
+      },
+      "current": {
+        "length": 576277,
+        "sha256": "4ef276fa6ec7c0d930cf5bb892c15b3682edd4a60b05d23e2d21030a09cdf030"
+      }
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": {
+        "length": 181377,
+        "sha256": "116caa5c360e66c915742f64827dd789c93fa2e42edf8a0337b3a4de0e22af42",
+        "archive": "docs/evidence/clippy-11a0-integration/EWyqXDYOZskVdC9kgn3Xick_ouQu34oDN7Ok3g4ir0I.txt"
+      },
+      "current": {
+        "length": 181907,
+        "sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab"
+      }
+    },
+    {
+      "source": "docs/ARCHITECTURE.md",
+      "before": {
+        "length": 389929,
+        "sha256": "548dbe5aa82aeb0022cbe49a821d4a88870c1fdb2d8040de776f261aa0d25874",
+        "archive": "docs/evidence/clippy-11a0-integration/VI2-Wqgq6wAiy-Sagh1KiIcMH9stgEDed28mGqDSWHQ.txt"
+      },
+      "current": {
+        "length": 390780,
+        "sha256": "d33214948cd4fd4760c8278b562326b350aaec21cc14e778453d26cd9b4450fd"
+      }
+    },
+    {
+      "source": "docs/DECLARATION-IDENTITY-BACKING-V1.md",
+      "before": {
+        "length": 26752,
+        "sha256": "341254bf82e2f225ac334a6d5db35110b6a89755a531d3fe4525eb155ffc87af",
+        "archive": "docs/evidence/clippy-11a0-integration/NBJUv4Li8iWsM0ptXbNRELaol1WlMdP-RSXrFV_8h68.txt"
+      },
+      "current": {
+        "length": 28773,
+        "sha256": "3bd6bc60ee4633016f426463f7c4c2dce8734b0018864ec9b51562d0614bf232"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2303513,
+        "sha256": "8dec5da63580a5a0edd989fdd00984e1082fec76a0bfc4c65e7178181c819e33",
+        "archive": "docs/evidence/clippy-11a0-integration/jexdpjWApaDt2Yn90AmE4Qgv7Hagv8TGXnF4GByBnjM.txt"
+      },
+      "current": {
+        "length": 2328047,
+        "sha256": "7dec3557afbb8d2b2f37a97a5b85157b62b86e557449256be90a6ca7c1df91bb"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 48378,
+        "sha256": "bc2242c262acca2c0afa5148b35faba6a2032c186dab6c928b817a5c04a1274f",
+        "archive": "docs/evidence/clippy-11a0-integration/vCJCwmKsyiwK-lFIs1-rpqIDLBhtq2ySi4F6XAShJ08.txt"
+      },
+      "current": {
+        "length": 48378,
+        "sha256": "ddf3db0384b28f32583f5f067c449eaa91dc5a0d2293e08c561737d33707cc89"
+      }
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2594574,
+        "sha256": "65b01872af25e7d34c8fb8a3fe7a109d5a38fa40f820c917dd550ceaefd6fc02",
+        "archive": "docs/evidence/clippy-11a0-integration/ZbAYcq8l59NMj7ij_noQnVo4-kD4IMkX3VUM6u_W_AI.txt"
+      },
+      "current": {
+        "length": 2619063,
+        "sha256": "a14704cf15e1c1b853e322a08ae5137c956a4d9948e6438161110d0322722ce4"
+      }
+    },
+    {
+      "source": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "before": {
+        "length": 2252,
+        "sha256": "c6d993985d906a23cc61a69e8596e6d50d1394cd958c43d72f302bab878b428e",
+        "archive": "docs/evidence/clippy-11a0-integration/xtmTmF2QaiPMYaaehZbm1Q0TlM2VjEPXLzArq4eLQo4.txt"
+      },
+      "current": {
+        "length": 2252,
+        "sha256": "a090217fb692e90b7afdaa18dd9888494c417e4f20f4cf51410e2d4c7a4d102a"
+      }
+    },
+    {
+      "source": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "before": {
+        "length": 5321,
+        "sha256": "3d6cc4aa7821f7d07aa4be1386541c3d680515b90dca27c2a7cffd0391d2eab4",
+        "archive": "docs/evidence/clippy-11a0-integration/PWzEqngh99B6pL4ThlQcPWgFFbkNyifCp8_9A5HS6rQ.txt"
+      },
+      "current": {
+        "length": 5321,
+        "sha256": "34ebe4881d99f45e32416cbbb67a67ac052a2bc42135df305040841d52105e80"
+      }
+    },
+    {
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
+      "before": {
+        "length": 51553,
+        "sha256": "be841269ad3b6267b4cc759ec1584a1016c638a49427f7d0cf90012c32e9b4a4",
+        "archive": "docs/evidence/clippy-11a0-integration/voQSaa07Yme0zHWewVhKEBbGOKSUJ_fQz5ABLDLptKQ.txt"
+      },
+      "current": {
+        "length": 51810,
+        "sha256": "99769871560553e88c3493f27515fad0ef847b4b3f62feb429f38d044ab60ab5"
+      }
+    },
+    {
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "before": {
+        "length": 6901,
+        "sha256": "d29151607bf94f1ddcb165f900858d08ece5103ec9ab925bba0cf7c993623707",
+        "archive": "docs/evidence/clippy-11a0-integration/0pFRYHv5Tx3csWX5AIWNCOzlED7Jq5Jbugz3yZNiNwc.txt"
+      },
+      "current": {
+        "length": 8434,
+        "sha256": "93fffd412c8b465f557c829aea0e25053f9ce2b01d2a236e2996709c0908cc76"
+      }
+    },
+    {
+      "source": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "before": {
+        "length": 2765,
+        "sha256": "488a612e378f564ee660dafc14dafb84130d84743efc31deddc6b0c40853c37b",
+        "archive": "docs/evidence/clippy-11a0-integration/SIphLjePVk7mYNr8FNr7hBMNhHQ-_DHe3cawxAhTw3s.txt"
+      },
+      "current": {
+        "length": 2765,
+        "sha256": "b87e9e9f343479c0a056283996ef81fd9e6d1da8a12c8429ca61a58c33b693eb"
+      }
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3345,
+        "sha256": "b4cfe62a04998551fc0ef0e9b795157520f5e165109269fabdbceabecc12ccf7",
+        "archive": "docs/evidence/clippy-11a0-integration/tM_mKgSZhVH8DvDpt5UVdSD14WUQkmn6vbzqvswSzPc.txt"
+      },
+      "current": {
+        "length": 3408,
+        "sha256": "885dcf1be055e02f43084b6b2c6503a8215a7418f2a5db34b05a767d6ab08758"
+      }
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 241354,
+        "sha256": "1e5db46a52091add9f1f56fde3de21298dc3a9ca0a23ae909bc87ecd965a40b8",
+        "archive": "docs/evidence/clippy-11a0-integration/Hl20alIJGt2fH1b9494hKY3DqcoKI66Qm8h-zZZaQLg.txt"
+      },
+      "current": {
+        "length": 241644,
+        "sha256": "3e2b3cc6c755337f6791c2ae0f5015db89b3e6415d3c84bfcbd00dec6b6b65b4"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before": {
+        "length": 20277,
+        "sha256": "a5092ded75e8bddb71b11752ce4163e7a5835c1c88bb04f31f18f2eed504118e",
+        "archive": "docs/evidence/clippy-11a0-integration/pQkt7XXovdtxsRdSzkFj56WDXByIuwTzHxjy7tUEEY4.txt"
+      },
+      "current": {
+        "length": 20361,
+        "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+      "before": {
+        "length": 11205,
+        "sha256": "0e78dbe7a5413c43cbf87f087508b89822b57c28cf67b0ea648fd309815fc0ab",
+        "archive": "docs/evidence/clippy-11a0-integration/Dnjb56VBPEPL-H8IdQi4mCK1fCjPZ7DqZI_TCYFfwKs.txt"
+      },
+      "current": {
+        "length": 11437,
+        "sha256": "e20c77a4d5b6f2b01fc5dff98936f266f80348b6a6cba81af722a39249eea44b"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+      "before": {
+        "length": 57331,
+        "sha256": "a3ae4e55e648f1beed54374674c6a110ca13cb86d3307969e91fc036b80559b8",
+        "archive": "docs/evidence/clippy-11a0-integration/o65OVeZI8b7tVDdGdMahEMoTy4bTMHlp6R_ANrgFWbg.txt"
+      },
+      "current": {
+        "length": 57375,
+        "sha256": "1da86902db41fff6b77d8e991fac7aa29bf536be60332ffee633e021566ca4c2"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_child_scratch/current_tests.rs",
+      "before": {
+        "length": 6202,
+        "sha256": "667ee461134a294e622a9ce9521f412eb143979310089aaf12fb5da126dccac3",
+        "archive": "docs/evidence/clippy-11a0-integration/Zn7kYRNKKU5iKpzpUh9BLrFDl5MQCJqvEvtdoSbcysM.txt"
+      },
+      "current": {
+        "length": 8726,
+        "sha256": "26e8d0ad5fe3c34e40315634b9bc718a77ce4f42a7ef933073a3d40420219933"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+      "before": {
+        "length": 17960,
+        "sha256": "33988a4c6fdf44c9fe9e046b0a90f975cb221d962d17335027eaa4b85403273c",
+        "archive": "docs/evidence/clippy-11a0-integration/M5iKTG_fRMn-ngRrCpD5dcsiHZYtFzNQJ-qkuFQDJzw.txt"
+      },
+      "current": {
+        "length": 18307,
+        "sha256": "d452d127a17c3d076fcc9e2e66f64e4609eebed8c9f840ba0a126f82117bb065"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+      "before": {
+        "length": 37458,
+        "sha256": "80df83fbefe5b94e7aa03a282ff74d72d5a1e42c9bc35d9698b15ce84399d7df",
+        "archive": "docs/evidence/clippy-11a0-integration/gN-D--_luU56oDooL_dNctWh5Cybw12WmLFc6EOZ198.txt"
+      },
+      "current": {
+        "length": 37623,
+        "sha256": "3a690560fa0fed1ce01cffed9cefab0753a4660cc6774f9dd68375759790b00a"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+      "before": {
+        "length": 57824,
+        "sha256": "f73af679fffc8962f6ff5c0137c1dace91cc151cd03d4b7b01c6f64b0fea80a9",
+        "archive": "docs/evidence/clippy-11a0-integration/9zr2ef_8iWL2_1wBN8HazpHMFRzQPUt7Acb2Sw_qgKk.txt"
+      },
+      "current": {
+        "length": 57825,
+        "sha256": "8b2707b9d876b769350a9fb194ec8a0e591511683b74aaaf1ac68859284a3826"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+      "before": {
+        "length": 29399,
+        "sha256": "fe4a7c11dccf718a09642bf4854dbdd513d50d7eb8dc50bada776a294f25c8bc",
+        "archive": "docs/evidence/clippy-11a0-integration/_kp8EdzPcYoJZCv0hU291RPVDX643FC62ndqKU8lyLw.txt"
+      },
+      "current": {
+        "length": 32403,
+        "sha256": "c854830d8e6340647187c3e747f75439ecfcd57544ccf024f6dde8f8180e91dc"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs",
+      "before": {
+        "length": 7032,
+        "sha256": "4d3137d1016a91c0e6adfb98042f6c7a96976d211a33998402eaefd96d2f8140",
+        "archive": "docs/evidence/clippy-11a0-integration/TTE30QFqkcDmrfuYBC9sepaXbSEaM5mEAurv2W0vgUA.txt"
+      },
+      "current": {
+        "length": 7319,
+        "sha256": "819a98fa2a846ed770093fdb822bfde36010d769995e7eddd40eb88328a544dd"
+      }
+    },
+    {
+      "source": "src/codegen/native_emit/emission.rs",
+      "before": {
+        "length": 19844,
+        "sha256": "047f3ffe509fe22ab01acd079e0568c58578e147b4fbfa50f40ccc79c4be7630",
+        "archive": "docs/evidence/clippy-11a0-integration/BH8__lCf4iqwGs0HngVoxYV44Ue0-_pQ9AzMecS-djA.txt"
+      },
+      "current": {
+        "length": 20234,
+        "sha256": "d96f0e685e8674f78afe1ec3ab9876cff2a7f59fba05646c0640036b3a68311d"
+      }
+    },
+    {
+      "source": "src/codegen/native_resource.rs",
+      "before": {
+        "length": 19672,
+        "sha256": "c7fdcb62cd7d3d48b30b93947d9a0c6cca8f5aebd58ee6b153542955edc5e9df",
+        "archive": "docs/evidence/clippy-11a0-integration/x_3LYs19PUizC5OUfZoMbMqPWuvVjuaxU1QpVe3F6d8.txt"
+      },
+      "current": {
+        "length": 21200,
+        "sha256": "6c8b246fcfaffabc35d71a031129d8cfb27577bd29dfbe21061155402c4fd22d"
+      }
+    },
+    {
+      "source": "src/codegen/native_resource/tests.rs",
+      "before": {
+        "length": 6847,
+        "sha256": "33218900eabc9e2ef6c8caba8b7e78f770227a8ccf6e4a43e2def729915dc03f",
+        "archive": "docs/evidence/clippy-11a0-integration/MyGJAOq8ni72yMq6i35493AieozPbkpD4t73KZFdwD8.txt"
+      },
+      "current": {
+        "length": 8074,
+        "sha256": "8e9ebdfeda1ee99310ca35c8a18187ad620bef1c6cd3e4ddb4870a0dd22dc5a0"
+      }
+    },
+    {
+      "source": "src/hir/ids.rs",
+      "before": {
+        "length": 23249,
+        "sha256": "186e98de002cd77f1e546a34423a6ca4792d8fbedc8ff7decc8d8a6a3e03b306",
+        "archive": "docs/evidence/clippy-11a0-integration/GG6Y3gAs138eVGo0QjpspHktj77cj_fezI2Kaj4DswY.txt"
+      },
+      "current": {
+        "length": 23379,
+        "sha256": "5e56cda454fa3f14f61e2db5f410eea13ac7795d0887e680348eefdc64e80e64"
+      }
+    },
+    {
+      "source": "src/hir/ids/declaration_backing_tests.rs",
+      "before": {
+        "length": 24588,
+        "sha256": "a729acfdc5f1c7a65560468a9e1af2426d94a6791638dbb11cbd995c8ebdfec2",
+        "archive": "docs/evidence/clippy-11a0-integration/pyms_cXxx6ZVYEaKnhryQm2UpnkWONuxHL2ZXI69_sI.txt"
+      },
+      "current": {
+        "length": 24729,
+        "sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c"
+      }
+    },
+    {
+      "source": "src/source_reflows/semantic_receivers/status_inline.rs",
+      "before": {
+        "length": 8216,
+        "sha256": "92b2d3736c595a0847cc19b67ec4ee909f5f5257e0f9e248f5a36d13bb306be4",
+        "archive": "docs/evidence/clippy-11a0-integration/krLTc2xZWghHzBm2fsTukJ9fUlfg-eJI9aNtE7swa-Q.txt"
+      },
+      "current": {
+        "length": 8381,
+        "sha256": "181c3470264c6296140754f439fcc148c90f3039b105f0be248ffa7ac72d0879"
+      }
+    },
+    {
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "before": {
+        "length": 75871,
+        "sha256": "acdb8679457b6567d87d0210c94a39e65cf3ed544bad74a9028a8165a083291f",
+        "archive": "docs/evidence/clippy-11a0-integration/rNuGeUV7ZWfYfQIQyUo55lzz7VRLrXSpAoqBZaCDKR8.txt"
+      },
+      "current": {
+        "length": 82509,
+        "sha256": "03cbf57636c7329bb26326edecc988f4f7ac92db64771fd79777ec43ae12873c"
+      }
+    },
+    {
+      "source": "src/workspace_graph/source_schema/static_text/tests.rs",
+      "before": {
+        "length": 26923,
+        "sha256": "0c3842e2552f2ee445c4f47e698d3ae1639943003fc01d5b838e8e5056daa995",
+        "archive": "docs/evidence/clippy-11a0-integration/DDhC4lUvLuRFxPR-aY064WOZQwA_wB1bg46OUFbaqZU.txt"
+      },
+      "current": {
+        "length": 27511,
+        "sha256": "c81103f67bfad868ee79c7c71a19b980c8a9bd9643fdf776d6d1d463d0f20163"
+      }
+    },
+    {
+      "source": "src/workspace_graph/tests.rs",
+      "before": {
+        "length": 67696,
+        "sha256": "a5a072ac941db6ad65a76335b081490d8ba23ad9105270d66231bfae9d4fe091",
+        "archive": "docs/evidence/clippy-11a0-integration/paByrJQdtq1lp2M1sIFJDYuiOtkQUnDWYjG_rp1P4JE.txt"
+      },
+      "current": {
+        "length": 67877,
+        "sha256": "5db393a08ce55e502c818d5454d7e011b0611008d28ef4c6cbb2dd85d6992122"
+      }
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "before": {
+        "length": 124629,
+        "sha256": "917e6a4b5475c4d59fec77dedbda01ff177f3fcda331d6c32759816e76bf26d8",
+        "archive": "docs/evidence/clippy-11a0-integration/kX5qS1R1xNWf7Hfe29oB_xd_P82jMdbDJ1mBbna_Jtg.txt"
+      },
+      "current": {
+        "length": 125075,
+        "sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051"
+      }
+    },
+    {
+      "source": "tests/support/production_source_inventory.rs",
+      "before": {
+        "length": 14872,
+        "sha256": "07a2aa7bc1881232696432395eb2d30dbc62ca27da585834e4ac18ee77b60948",
+        "archive": "docs/evidence/clippy-11a0-integration/B6Kqe8GIEjJpZDI5XrLTDbxiyifaWFg05KwY7ne2CUg.txt"
+      },
+      "current": {
+        "length": 25203,
+        "sha256": "8ebfa7f693a69f7b22005e0720b3e571f35ead3967aa415b5b94481c83e5ba8f"
+      }
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": {
+        "length": 141101,
+        "sha256": "4b3e77ffe85e502cab46eeaddb4d09e1f8fb1ea205145d7f6e0f92db62133fcb",
+        "archive": "docs/evidence/clippy-11a0-integration/Sz53_-heUCyrRu6t200J4fj7HqIFFF1_bg-S22ITP8s.txt"
+      },
+      "current": {
+        "length": 141562,
+        "sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e"
+      }
+    }
+  ]
+}

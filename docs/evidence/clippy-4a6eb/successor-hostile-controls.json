@@ -1,0 +1,16 @@
+{
+  "status": "PASS",
+  "all105_source_pairs_rechecked": true,
+  "checks": [
+    "current source tamper blocks complete before view",
+    "current archive tamper blocks complete before view",
+    "before archive tamper refused",
+    "successor packet tamper after module load refused",
+    "whole immutable base packet tamper refused",
+    "CONFIG tamper after module load refused",
+    "CONFIG symlink refused",
+    "CONFIG FIFO refused",
+    "foreign named source refused"
+  ],
+  "original_bounds_unchanged": true
+}

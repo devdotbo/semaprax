@@ -5,6 +5,10 @@ use super::super::{
     StatusSources, CONTROL_BYTES,
 };
 
+#[allow(
+    clippy::explicit_counter_loop,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 pub(in crate::cleanup_plan::replay) fn validate_status_sources_certified<'hir>(
     function: &'hir ResolvedFunction,
     facts: &Facts<'_>,

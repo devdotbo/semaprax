@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Ordered states retain their complete value; tree nodes hold pointers rather
 //! than eleven inline copies of the state layout. Moving a held box between
 //! frontiers transfers its paid backing without cloning or refunding it.

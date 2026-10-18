@@ -122,6 +122,10 @@ fn corpus(function: &ResolvedFunction, shape: usize) -> (Automaton, usize, Vec<u
     (graph, sink, roots)
 }
 
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe(
     function: &ResolvedFunction,
     graph: &Automaton,
@@ -442,6 +446,10 @@ fn vec_borrowed_queries_and_zipped_misses_keep_full_old_key_order() {
 // Complete immediate f6ae receiver: independent methods, never delegates to new successors.
 use super::*;
 impl Canonicalizer<'_> {
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     fn previous_selected_successors(
         &mut self,
         function: &ResolvedFunction,
@@ -464,6 +472,10 @@ impl Canonicalizer<'_> {
         let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
         self.previous_selected_successors_with_receiving(function, state, budget, &mut receiving)
     }
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     fn previous_selected_successors_with_receiving(
         &mut self,
         function: &ResolvedFunction,
@@ -1030,6 +1042,10 @@ fn selected_failure(error: &Diagnostic) -> SelectedFailure {
 fn selected_state(values: &[(usize, u64)]) -> SharedWeighted {
     Rc::new(SmallWeighted::Many(values.to_vec()))
 }
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn selected_successors(
     old: bool,
     function: &ResolvedFunction,

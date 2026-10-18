@@ -1,0 +1,16 @@
+{
+  "status": "PASS_SOURCE_ONLY",
+  "guard_length": 8434,
+  "guard_sha256": "93fffd412c8b465f557c829aea0e25053f9ce2b01d2a236e2996709c0908cc76",
+  "whole_bootstrap_inverses": [
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py"
+  ],
+  "immutable105_and433_packets_and_CONFIGs_unchanged": true,
+  "rows": 121,
+  "Rust_source_cap_unchanged": 9753094,
+  "Python_source_cap_unchanged": 262144,
+  "Python_program_cap_unchanged": 65536,
+  "full_Cargo_hosted_and_Lean_results_not_claimed": true
+}

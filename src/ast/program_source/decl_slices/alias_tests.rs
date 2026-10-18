@@ -9,6 +9,10 @@ impl DeclarationDirectory<i32> for Directory {
     }
 }
 #[test]
+#[allow(
+    clippy::useless_vec,
+    reason = "The control deliberately owns Vec backing while observing borrowed declaration slices."
+)]
 fn ordinary_and_projected_views_keep_complete_old_size_order_suffix_and_iteration() {
     assert!(
         std::mem::size_of::<DeclSlices<'_, i32>>()

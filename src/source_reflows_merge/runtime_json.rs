@@ -14,6 +14,10 @@ mod membership;
 mod pair_custody;
 #[path = "runtime_json/transport_runtime.rs"]
 mod selected_transport;
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn pair_normalize(source: &str, current: &str) -> String {
     pair_custody::normalize(source, current)
 }

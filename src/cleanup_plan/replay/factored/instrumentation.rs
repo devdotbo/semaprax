@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Test-scoped observation only. No proof debits, diagnostics or verdicts change.
 use super::*;
 use std::cell::Cell;

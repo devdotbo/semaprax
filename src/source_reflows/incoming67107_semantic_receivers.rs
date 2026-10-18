@@ -775,6 +775,10 @@ const MAINBCC_MANIFEST_LEN: usize = 12232;
 const MAINBCC_MANIFEST_SHA: &str =
     "3b66d32488e373f260b8f37b4046c6929e3f22a7c6c01834e66951a1b29141ee";
 const MAINBCC_CAP: usize = 1_048_576;
+#[allow(
+    clippy::assertions_on_constants,
+    reason = "These assertions pin the exact control layout and resource limits."
+)]
 fn mainbcc_manifest() -> serde_json::Value {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     assert!(MAINBCC_MANIFEST_LEN <= MAINBCC_CAP);

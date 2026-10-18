@@ -288,6 +288,10 @@ fn composed_paid_producer_measures_both_receiving_paths_and_exact_short_zero_who
 }
 
 #[test]
+#[allow(
+    clippy::unnecessary_mut_passed,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn composed_actual_successors_preserve_sorted_children_weights_and_competing_overflow() {
     let function = fixture();
     let (automaton, sink, root) = graph(&function, 4, 2);
@@ -456,6 +460,10 @@ fn composed_flat_helpers_keep_sorted_sparse_multiplicity_overflow_and_prepublica
 }
 
 #[test]
+#[allow(
+    clippy::needless_borrow,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order() {
     use super::super::super::{compare_with_index_storage, lexical_plan_tests};
     use std::fmt::Write as _;
@@ -1193,6 +1201,10 @@ fn standalone_comparison_fixture_retains_unsupported_inventory_as_six_field_nega
 // Exercise its real complete linked metadata as the unsupported context it is;
 // neither production type predicates nor compiler-owned declarations are hidden.
 #[test]
+#[allow(
+    clippy::needless_borrow,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn original_literal_free_linked_comparison_keeps_exact_selected_inventory_refusal() {
     use super::super::super::{compare_with_index_storage, lexical_plan_tests};
     let expected = Diagnostic::io(

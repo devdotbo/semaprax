@@ -49,6 +49,10 @@ fn complete_immediate_old_ordinary_caller_preserves_results_and_funds_real_dense
     }
 }
 #[test]
+#[allow(
+    clippy::useless_conversion,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn earlier_schema_error_and_query_free_prefix_keep_all_six_fields_and_debits() {
     let mut program = checked_program(64);
     let function = program

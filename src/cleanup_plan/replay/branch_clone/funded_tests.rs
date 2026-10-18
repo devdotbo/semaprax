@@ -37,6 +37,10 @@ fn failure(value: Diagnostic) -> Failure {
     result
 }
 
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe(
     current: bool,
     values: &Vec<Rc<usize>>,

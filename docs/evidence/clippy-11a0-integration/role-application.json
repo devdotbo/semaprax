@@ -1,0 +1,50 @@
+{
+  "status": "APPLIED_FULL_ORIGINAL_DOMAINS_AND_ALL_SIX_HOSTILE_CONTROLS_PASS",
+  "records": [
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "whole_before_archive": "docs/evidence/clippy-11a0-integration/jexdpjWApaDt2Yn90AmE4Qgv7Hagv8TGXnF4GByBnjM.txt",
+      "before_sha256": "8dec5da63580a5a0edd989fdd00984e1082fec76a0bfc4c65e7178181c819e33",
+      "current_sha256": "7dec3557afbb8d2b2f37a97a5b85157b62b86e557449256be90a6ca7c1df91bb"
+    },
+    {
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "whole_before_archive": "docs/evidence/clippy-11a0-integration/ZbAYcq8l59NMj7ij_noQnVo4-kD4IMkX3VUM6u_W_AI.txt",
+      "before_sha256": "65b01872af25e7d34c8fb8a3fe7a109d5a38fa40f820c917dd550ceaefd6fc02",
+      "current_sha256": "a14704cf15e1c1b853e322a08ae5137c956a4d9948e6438161110d0322722ce4"
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "whole_before_archive": "docs/evidence/clippy-11a0-integration/Hl20alIJGt2fH1b9494hKY3DqcoKI66Qm8h-zZZaQLg.txt",
+      "before_sha256": "1e5db46a52091add9f1f56fde3de21298dc3a9ca0a23ae909bc87ecd965a40b8",
+      "current_sha256": "3e2b3cc6c755337f6791c2ae0f5015db89b3e6415d3c84bfcbd00dec6b6b65b4"
+    },
+    {
+      "source": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "whole_before_archive": "docs/evidence/clippy-11a0-integration/tM_mKgSZhVH8DvDpt5UVdSD14WUQkmn6vbzqvswSzPc.txt",
+      "before_sha256": "b4cfe62a04998551fc0ef0e9b795157520f5e165109269fabdbceabecc12ccf7",
+      "current_sha256": "885dcf1be055e02f43084b6b2c6503a8215a7418f2a5db34b05a767d6ab08758"
+    }
+  ],
+  "verification_result": {
+    "status": "SOURCE_ONLY_ORIGINAL_FULL_DOMAIN_AND_HOSTILE_CONTROLS_PASS",
+    "domains": [
+      "hir",
+      "projection"
+    ],
+    "negative_controls": {
+      "dropped_actual_child_refused": true,
+      "coordinated_class_drop_not_original_generated_output": true,
+      "production_reclassification_refused": true,
+      "actual_source_drift_refused": true,
+      "whole_raw_drift_refused": true,
+      "foreign_path_child_cannot_escape": true
+    },
+    "generation_receipt_sha256": "0fe59367649e9fdf47b01e5c6af2bfe71334e954a639d050a7811e39f78a1967",
+    "complete_chain_receipt_sha256": "6401e85997920b954f808738b171414a236bb9a97aa7ff3e97d765dbf882c707",
+    "peak_RSS_bytes": 133447680,
+    "no_Rust_or_hosted_qualification_claimed": true,
+    "must_refresh_if_header_or_other_source_changes": true
+  },
+  "historical_authority_source_proof_unchanged": true
+}

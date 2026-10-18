@@ -375,6 +375,10 @@ mod tests;
 
 pub(crate) trait SourceHelpers {
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     fn target(&self, function: &Function) -> bool;
     fn target_ref(&self, function: &crate::ast::program_source::FunctionRef<'_>) -> bool;
     fn assignment(&self, binding: &str, value: &Expr) -> bool;

@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Compact exact evidence retained between sequential workspace HIR resolutions.
 //!
 //! The uncached final builder path must prove imports against their authored

@@ -1,0 +1,16 @@
+[
+  {
+    "gate": "module_size",
+    "passed": true,
+    "runtime_peak_KiB": 5968,
+    "source_and_compile_time_ledger_unchanged_from_existing_actual_binary": true,
+    "runtime_reads_current_same_SSD_tree": true
+  },
+  {
+    "gate": "source_locked_contracts",
+    "passed": true,
+    "runtime_peak_KiB": 4720,
+    "source_and_compile_time_ledger_unchanged_from_existing_actual_binary": true,
+    "runtime_reads_current_same_SSD_tree": true
+  }
+]

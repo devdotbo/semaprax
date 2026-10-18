@@ -15,6 +15,10 @@ fn function() -> ResolvedFunction {
 }
 
 #[test]
+#[allow(
+    clippy::collapsible_match,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn held_zero_gateway_all_production_payers_preserve_full_diagnostic_first_receipt_floor_and_drop() {
     let function = function();
     for payer in 0..3 {

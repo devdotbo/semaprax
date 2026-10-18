@@ -343,6 +343,10 @@ pub(super) fn arguments(
     )
 }
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn expression_type(
     program: &dyn ProgramSource,
     current: &Function,

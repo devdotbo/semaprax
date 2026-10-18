@@ -167,6 +167,10 @@ fn fixed_projection_json_transport_refuses_hostile_io_before_parsing() {
     );
     struct RefuseEof(Cursor<&'static [u8]>);
     impl Read for RefuseEof {
+        #[allow(
+            clippy::io_other_error,
+            reason = "The complete saved control retains its original expressions for independent parity checks."
+        )]
         fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {
             if self.0.position() as usize == self.0.get_ref().len() {
                 Err(Error::new(ErrorKind::Other, "refused EOF check"))

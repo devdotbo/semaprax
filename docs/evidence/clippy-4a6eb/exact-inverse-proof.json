@@ -1,0 +1,2168 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
+    "before_length": 20986,
+    "before_sha256": "d0bee1c29066ddc887c71a928e8e4d660bc522f070ffb48297a43ad349b86675",
+    "current_length": 21419,
+    "current_sha256": "f3d7537478217593f2ef363386cd349add440fd5dd43c7bfe8cede6e2da53e87",
+    "all_original_bytes_restored": true,
+    "lines": 489,
+    "edits": [
+      {
+        "line": 383,
+        "item": "fn production_fused_earlier_bank_and_original_take_frontiers_keep_six_fields_first_receipt_and_whole_drop(",
+        "lints": [
+          "clippy::drop_non_drop"
+        ],
+        "reason": "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+      },
+      {
+        "line": 260,
+        "item": "fn frontier_observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 29,
+        "item": "fn production_fused_probe_preserves_every_original_take_decision_and_bounds_copy_receivers() {",
+        "lints": [
+          "clippy::int_plus_one"
+        ],
+        "reason": "The bounded fixture keeps the original allocation-width arithmetic for exact comparison."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs",
+    "before_length": 33201,
+    "before_sha256": "174196e798795f8aa9ccf288398493305ea8e23435ce52ebc260cac6f8f22213",
+    "current_length": 33447,
+    "current_sha256": "e166901cc775c3fc326571d406635946bf6ff476f6848783072315e7305d1479",
+    "all_original_bytes_restored": true,
+    "lines": 729,
+    "edits": [
+      {
+        "line": 247,
+        "item": "fn staged_probe_reports_every_paid_and_heap_delta_with_exact_sticky_accounts() {",
+        "lints": [
+          "clippy::assertions_on_constants",
+          "clippy::int_plus_one"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits. The bounded fixture keeps the original allocation-width arithmetic for exact comparison."
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/source_schema/nominal_context/main8a.rs",
+    "before_length": 2541,
+    "before_sha256": "9c7556bdd986149d2bf9308a06e933ee55a0ae18a74b767f5d2da4aa2b1e81b1",
+    "current_length": 2510,
+    "current_sha256": "d39423cdb7f1f285a2878824b112ad6211739d1b68839ad298a8894c0d7aa480",
+    "all_original_bytes_restored": true,
+    "lines": 67,
+    "edits": [
+      {
+        "removed_unused_import": "use crate::workspace_graph::*;"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "before_length": 17675,
+    "before_sha256": "9e6d7876bf04dde77554d2bcf5da93b1fe4ff841184d0a24385f38f6a702bc15",
+    "current_length": 17960,
+    "current_sha256": "33988a4c6fdf44c9fe9e046b0a90f975cb221d962d17335027eaa4b85403273c",
+    "all_original_bytes_restored": true,
+    "lines": 370,
+    "edits": [
+      {
+        "line": 10,
+        "item": "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn id_inner_into(",
+        "lints": [
+          "clippy::iter_next_slice",
+          "clippy::single_match"
+        ],
+        "reason": "The iterator receiver is explicitly prepaid and compared with the complete predecessor. The retained arity dispatch and its exact paid receiving controls are intentionally unchanged."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs",
+    "before_length": 19121,
+    "before_sha256": "fc27c9559aa25b5dbe8906289fd61905fc0c7ba46d2129218a834e129351fe1f",
+    "current_length": 19110,
+    "current_sha256": "712a2ffade119937fa6133d027c4faddc6864a60b6495ddfab472b97e7cf8d3b",
+    "all_original_bytes_restored": true,
+    "lines": 500,
+    "edits": [
+      {
+        "private_constructor": "Only this module and descendants use the private Automaton constructor; no parent caller exists."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/incoming090_semantic_receivers.rs",
+    "before_length": 49376,
+    "before_sha256": "eb6e0d21b291f6bd5c00455b7bc216dbf3781306f0f7db91b834a4db087020f1",
+    "current_length": 49904,
+    "current_sha256": "715ffa67a02985b31228264a07b0b81e46307e80845b319d5ba9a1cdf024156a",
+    "all_original_bytes_restored": true,
+    "lines": 1235,
+    "edits": [
+      {
+        "line": 979,
+        "item": "pub(super) fn ours_contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 968,
+        "item": "pub(in crate::source_reflows) fn ours_expected_input(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 961,
+        "item": "pub(in crate::source_reflows) fn ours_input(path: &str, current: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 927,
+        "item": "fn main090_project(path: &str, current: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_mainb80.rs",
+    "before_length": 3697,
+    "before_sha256": "4d7957a6af18777974c1136d16054693b706e0cc2e5e389108f85050cf136ca3",
+    "current_length": 3829,
+    "current_sha256": "a63d7b93fc1910d2ca2211f3891c0d5ae6ac3571c499d3a794b9eb3bc78df35a",
+    "all_original_bytes_restored": true,
+    "lines": 102,
+    "edits": [
+      {
+        "line": 56,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_main7c6.rs",
+    "before_length": 3933,
+    "before_sha256": "87a59afef395d730fcf53cdd2a3bd63efb4f4a60926ff4bb246b20b9bf5bae6e",
+    "current_length": 4065,
+    "current_sha256": "5e5a8f584174f05ed638cf3b6739150228a5b898632f5f323d85d41b5681aa17",
+    "all_original_bytes_restored": true,
+    "lines": 105,
+    "edits": [
+      {
+        "line": 56,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_main_afba.rs",
+    "before_length": 3931,
+    "before_sha256": "9934a7458520814c902820aab4e5d7f7fa89a041a9dad2e48d44f6179cc3513c",
+    "current_length": 4063,
+    "current_sha256": "66e4d473ee9531811286f3e7784e9913e5df20262df27f46e99636cb722a2128",
+    "all_original_bytes_restored": true,
+    "lines": 105,
+    "edits": [
+      {
+        "line": 56,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_main_f1.rs",
+    "before_length": 6707,
+    "before_sha256": "24c5eb8af317278b40fee0b6a70ca5e7458ecf5b25667c890a740f2a4b56a8d5",
+    "current_length": 6839,
+    "current_sha256": "38f1d7c6cf417d4b8b3a33f049c82ab878d75368965881b97881b8c4d2c07ef3",
+    "all_original_bytes_restored": true,
+    "lines": 169,
+    "edits": [
+      {
+        "line": 57,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_main8a.rs",
+    "before_length": 3851,
+    "before_sha256": "2c7ec7667afa4742d396bb3e518d8b4e1dc14565ea39bfbc0521407660abb24f",
+    "current_length": 3983,
+    "current_sha256": "a4f2e0b0234449d34d919dce6db6e57919e3b695caa99a4cd5991381e394b233",
+    "all_original_bytes_restored": true,
+    "lines": 109,
+    "edits": [
+      {
+        "line": 63,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_maina3.rs",
+    "before_length": 3739,
+    "before_sha256": "8dec599cd4b12121b968940b3de9e5af68735f626004b9839a508f677ac372ed",
+    "current_length": 3871,
+    "current_sha256": "16b7d14b28a0c0700cdf1974751e18b8f4f26b10f17be110724128a71bd0cc4e",
+    "all_original_bytes_restored": true,
+    "lines": 105,
+    "edits": [
+      {
+        "line": 59,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/semantic_receivers_main44.rs",
+    "before_length": 3739,
+    "before_sha256": "9eb6cec060f15d39098e35bf3d319cecca00cfac639ca30fab9617f80df30f44",
+    "current_length": 3871,
+    "current_sha256": "ac2c7d526faf81f42b2d80d89ac307dd63e61010a420b7fcee2ae69182a939cc",
+    "all_original_bytes_restored": true,
+    "lines": 105,
+    "edits": [
+      {
+        "line": 59,
+        "item": "pub(super) fn contains(path: &str) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows_merge.rs",
+    "before_length": 47082,
+    "before_sha256": "fee6e72b6cec39bcac6e86d8072f2b96ecdf97210e7194b5b2fef630326ef244",
+    "current_length": 47214,
+    "current_sha256": "2fc7516bf108a35387c3a4e32c7e15d2665a153c9aed9aea67cb72aeda8470e1",
+    "all_original_bytes_restored": true,
+    "lines": 1077,
+    "edits": [
+      {
+        "line": 738,
+        "item": "pub(crate) fn bulk848_arm_input(source: &str, current: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows_merge/runtime_json.rs",
+    "before_length": 8008,
+    "before_sha256": "d890cc9618b745bb3af9cad63b4f1d43d1ac72d561d9b88bd72617bfc8de2dc8",
+    "current_length": 8140,
+    "current_sha256": "5a95fa1f07fac99c62f6572817df247695a4d2e274d5accc5ce231d7dc150bc4",
+    "all_original_bytes_restored": true,
+    "lines": 198,
+    "edits": [
+      {
+        "line": 17,
+        "item": "pub(super) fn pair_normalize(source: &str, current: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows_merge/main67107_inputs_tail.rs",
+    "before_length": 59095,
+    "before_sha256": "6bfe04c69b4809cc3faf40d6e5fdf6a8575bf5d7f9294131c33986468bdfebcd",
+    "current_length": 59391,
+    "current_sha256": "00121e0ed4e0a3cce18d33f63777b7012a99b8f8b1b20abf3095bfd53750792d",
+    "all_original_bytes_restored": true,
+    "lines": 1247,
+    "edits": [
+      {
+        "line": 1030,
+        "item": "pub(crate) fn accepted_expected_value(source: &str, expected: &str, supplied: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 1010,
+        "item": "fn accepted_base_previous(source: &str, supplied: &str) -> String {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/ast/program_source/decl_slices/before_alias.rs",
+    "before_length": 3996,
+    "before_sha256": "2dbd704d16e38656ccd8b7aa035a1b2e2ddf6b5bfaf74ab7fe572cff858f7681",
+    "current_length": 4144,
+    "current_sha256": "e617189c5ed68aa8bbfad885bdcad72cefdc7616015bc4483668c0e6d5dad587",
+    "all_original_bytes_restored": true,
+    "lines": 135,
+    "edits": [
+      {
+        "line": 49,
+        "item": "pub(crate) fn first(&self) -> Option<&'a T> {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/ast/program_source/function_alias/presentation.rs",
+    "before_length": 13883,
+    "before_sha256": "9ddbcd42161ca0a2c2a348aa32ad6568c499d69d29aefdfdb2fcdedb1c544fc0",
+    "current_length": 14031,
+    "current_sha256": "076f005021e81bc404a33b597d0659f32145084470856b784c011238cefe2097",
+    "all_original_bytes_restored": true,
+    "lines": 402,
+    "edits": [
+      {
+        "line": 18,
+        "item": "pub(crate) fn name(&self) -> &str {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/box_ops/wrappers.rs",
+    "before_length": 11493,
+    "before_sha256": "a0e37541e83562ab63291c155d75afc57542a30e1679196efa4547d2dcad6a1f",
+    "current_length": 11889,
+    "current_sha256": "a1b7eb85baa21759aec582cafa7e9305b2785049f4f726ee7ff371789db0acb1",
+    "all_original_bytes_restored": true,
+    "lines": 330,
+    "edits": [
+      {
+        "line": 186,
+        "item": "pub(crate) fn source_parameter_is_admitted_ref(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 174,
+        "item": "pub(crate) fn source_arguments_are_admitted(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 44,
+        "item": "pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/hir/resolve_program_methods.rs",
+    "before_length": 62285,
+    "before_sha256": "39a921a9c9dd0fe0327ab20b5afdbca14a3feae9868207ddef9d9ba1a4e518e9",
+    "current_length": 62433,
+    "current_sha256": "8b68aa63384ec2f05c38c05daa5b320f4b79f5e8060a547384519fa23d2cef8b",
+    "all_original_bytes_restored": true,
+    "lines": 1470,
+    "edits": [
+      {
+        "line": 998,
+        "item": "pub(super) fn resolve_function_in_scope(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/hir/resolve_yield.rs",
+    "before_length": 44896,
+    "before_sha256": "ccf21881d5ce8dc37a171de909a4a2620e2adbdcad5b4ca253f976e3680657e0",
+    "current_length": 45044,
+    "current_sha256": "e9a5ff91b58b544b3edd4574cece6df0d0d1f7c099e23688d46e6f73bed96c94",
+    "all_original_bytes_restored": true,
+    "lines": 1194,
+    "edits": [
+      {
+        "line": 166,
+        "item": "pub(super) fn resolve_yields_clause(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/hir/identity_resolution/nominal.rs",
+    "before_length": 16055,
+    "before_sha256": "6ffc8c764bb2638cb174473f95eb88cc8dfc4894af95e08295dfafa4b50ff49a",
+    "current_length": 16599,
+    "current_sha256": "92360748e76da16e6302d5b4d45ae5cdc73a70a25f9b68f56a7589bb176d5c46",
+    "all_original_bytes_restored": true,
+    "lines": 424,
+    "edits": [
+      {
+        "line": 342,
+        "item": "pub(crate) fn resolve_source_checked_previous_with_base_cells<'p>(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 217,
+        "item": "pub(crate) fn resolve_source_checked_previous_with_owner<'p>(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 194,
+        "item": "pub(crate) fn resolve_source_checked_previous_with_base<'p>(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 185,
+        "item": "SourceStop(crate::source_verify::funding::SourceAbort),",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/loop_calls/byte_writer/source_index.rs",
+    "before_length": 13505,
+    "before_sha256": "6b5d4943365b08b9418a95c28e1601e3240d9d43b1c9c686530f4568c515756d",
+    "current_length": 13653,
+    "current_sha256": "b9d6c88c410f5fbff4b9db94a895ac4324ba126d43d769afc67e6232b72cf8f6",
+    "all_original_bytes_restored": true,
+    "lines": 403,
+    "edits": [
+      {
+        "line": 378,
+        "item": "fn target(&self, function: &Function) -> bool;",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/vec_ops/wrappers.rs",
+    "before_length": 16277,
+    "before_sha256": "e71ef6e24db5699c7c8cf2d96c44c75401002a6987ce4c26a6e8bb3160a8b74c",
+    "current_length": 16541,
+    "current_sha256": "612d7e2e018bba48e90cfde0d9a425d4126ed97fafdad45bff156f48c9546e4e",
+    "all_original_bytes_restored": true,
+    "lines": 498,
+    "edits": [
+      {
+        "line": 285,
+        "item": "pub(crate) fn source_arguments_are_admitted(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 88,
+        "item": "pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/funding.rs",
+    "before_length": 6757,
+    "before_sha256": "327b03847971fc78fd7acdbca4ce71a7c73c4b8443c1dbe38db41d32a8c80fc3",
+    "current_length": 6905,
+    "current_sha256": "40704347e7fe09224ffff2e634747a24e911e851c196743ba55f3f1d3c4ad87b",
+    "all_original_bytes_restored": true,
+    "lines": 157,
+    "edits": [
+      {
+        "line": 30,
+        "item": "pub(crate) fn stop(&self) -> SourceStop {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/generic_inference.rs",
+    "before_length": 11622,
+    "before_sha256": "0d67492e3dd93c552b6bfe5f12fdf4e2ba6f7a2fda78a8ff38dda88cc5809358",
+    "current_length": 11754,
+    "current_sha256": "0a0241a85c7d0d6a9819703b0da3e2e31b515195b51e6cdc568f1f4aa161d17b",
+    "all_original_bytes_restored": true,
+    "lines": 366,
+    "edits": [
+      {
+        "line": 346,
+        "item": "pub(super) fn expression_type(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/hints.rs",
+    "before_length": 49095,
+    "before_sha256": "31bb888dba750bbe9d226d02ce3c632015e9d87cfa4c289a467c6b4170db362f",
+    "current_length": 49359,
+    "current_sha256": "38203fb96f8ac4a2c50613189f048257372b66f84c96119ccbef4b98991375b2",
+    "all_original_bytes_restored": true,
+    "lines": 1136,
+    "edits": [
+      {
+        "line": 696,
+        "item": "pub(super) fn missing_effect(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      },
+      {
+        "line": 658,
+        "item": "pub(super) fn unpermitted_effect(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/iterative.rs",
+    "before_length": 16020,
+    "before_sha256": "449cfa088c1f6aa53791665a60a9c6c00d9950d27a376ffb5b76db2a5c30df3b",
+    "current_length": 16152,
+    "current_sha256": "b239cccdf699d245fd9f2b7ea2e92b7e7309ed44f2d273e11ff4498fec0b99e1",
+    "all_original_bytes_restored": true,
+    "lines": 534,
+    "edits": [
+      {
+        "line": 407,
+        "item": "pub(super) fn check_expr_with_signature_view_ref<'a, 'p>(",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/vec_field.rs",
+    "before_length": 2315,
+    "before_sha256": "28cabac2cb4033059ecffa84888c1c93effcc185be023e572a3f1cec6ee4009e",
+    "current_length": 2447,
+    "current_sha256": "a4fb2414070a7eb519bbc7cb83de6207176d19dd99029fec62db59e60e69ac50",
+    "all_original_bytes_restored": true,
+    "lines": 79,
+    "edits": [
+      {
+        "line": 63,
+        "item": "pub(super) fn reserved_function(function: &crate::ast::Function) -> bool {",
+        "lints": [
+          "dead_code"
+        ],
+        "reason": "Retained compatibility entry for independently compiled historical and semantic controls."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows/incoming67107_semantic_receivers.rs",
+    "before_length": 34564,
+    "before_sha256": "bece004991e952b9e0a5249aba35f66d320a50be19385ffd757f963131712a7f",
+    "current_length": 34695,
+    "current_sha256": "2741ae801dcf4a4d2e416812576bcbf69f66e94ad69746ea81989a554f1cfd3f",
+    "all_original_bytes_restored": true,
+    "lines": 893,
+    "edits": [
+      {
+        "line": 778,
+        "item": "fn mainbcc_manifest() -> serde_json::Value {",
+        "lints": [
+          "clippy::assertions_on_constants"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits."
+      }
+    ]
+  },
+  {
+    "source": "src/source_reflows_merge/runtime_json/tests.rs",
+    "before_length": 8345,
+    "before_sha256": "9b3cdcdc4f256a6174c3b4f1157ef6042aa3c4053faa2294bf368275781bad88",
+    "current_length": 8523,
+    "current_sha256": "3e4ef71ab948399cfe2ff8797815092207636b01d139dc71fb6e2b6c67fceaf1",
+    "all_original_bytes_restored": true,
+    "lines": 232,
+    "edits": [
+      {
+        "line": 170,
+        "item": "fn read(&mut self, output: &mut [u8]) -> std::io::Result<usize> {",
+        "lints": [
+          "clippy::io_other_error"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/renewal_profile/ordinary/direct_presence_tests.rs",
+    "before_length": 8598,
+    "before_sha256": "67016ed77a9173b68114258d131ccfae3c24b6191d3f5c03129fa44534b5f0ba",
+    "current_length": 8746,
+    "current_sha256": "129adb971708ccbba0b790b0258e2f2b7a0ae47fd6847205e3f154c1c5ee599e",
+    "all_original_bytes_restored": true,
+    "lines": 203,
+    "edits": [
+      {
+        "line": 38,
+        "item": "fn direct_presence_keeps_complete_old_directory_work_and_real_receiving_drop() {",
+        "lints": [
+          "clippy::drop_non_drop"
+        ],
+        "reason": "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/funded_tests.rs",
+    "before_length": 6576,
+    "before_sha256": "d893c4f2ba3ce7d8a4a538f70f61a248f3bb74a9ab3484d43ac869c96e4c9a83",
+    "current_length": 6719,
+    "current_sha256": "b2c16f4b1a5f86070630f896a666bc68e573a6fe5ab7e818f37fe84873e549ee",
+    "all_original_bytes_restored": true,
+    "lines": 173,
+    "edits": [
+      {
+        "line": 40,
+        "item": "fn observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/branch_clone/tests.rs",
+    "before_length": 33988,
+    "before_sha256": "af10b003c667d378d205511b6093e086a23e4bc8c53a6a7b1ca538d07d06c8b3",
+    "current_length": 34279,
+    "current_sha256": "8b2d648beed922295d90513d54949a49f4dcf9d021cde4579ba1d2789924f908",
+    "all_original_bytes_restored": true,
+    "lines": 781,
+    "edits": [
+      {
+        "line": 483,
+        "item": "fn real_generic_probe_receiving_frontier_exact_short_zero_floor_is_sticky_and_drops_completely() {",
+        "lints": [
+          "clippy::drop_non_drop"
+        ],
+        "reason": "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+      },
+      {
+        "line": 425,
+        "item": "fn observe_generic_probe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/path_array/sequence_minimum/before.rs",
+    "before_length": 9133,
+    "before_sha256": "8d3860b0e4815b429e26ede02c88157397f42ada971ae5f020dedd9c6b03cbe8",
+    "current_length": 9310,
+    "current_sha256": "5b8dc912e931c4665d113eedba677b23d6c04bda29c39cda317a77831c85c723",
+    "all_original_bytes_restored": true,
+    "lines": 262,
+    "edits": [
+      {
+        "line": 3,
+        "item": "pub(super) fn sequence_skeleton_paths(",
+        "lints": [
+          "clippy::collapsible_if",
+          "clippy::if_same_then_else"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "before_length": 21088,
+    "before_sha256": "32514218b0d85745ed14d8d1b73a82ea303519ac63e6883bd5a26681e0bceff8",
+    "current_length": 21556,
+    "current_sha256": "0fec2ef3299749bacce9d479e60f7389c994064f5b186cdd3d4abd4200846fb5",
+    "all_original_bytes_restored": true,
+    "lines": 468,
+    "edits": [
+      {
+        "line": 200,
+        "item": "fn zero_budget_and_reserved_floor_refuse_without_later_retry_authority() {",
+        "lints": [
+          "clippy::cloned_ref_to_slice_refs"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 177,
+        "item": "fn unwind_releases_the_exclusive_budget_loan_without_any_scratch_backing() {",
+        "lints": [
+          "clippy::cloned_ref_to_slice_refs"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 134,
+        "item": "fn exact_short_first_and_later_query_payments_are_sticky_without_allocation_or_refund() {",
+        "lints": [
+          "clippy::cloned_ref_to_slice_refs"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs",
+    "before_length": 5509,
+    "before_sha256": "fcd7d9dd5225d910329d88c93397f10b249d3343de7f52de4ac975cd42f9e437",
+    "current_length": 5662,
+    "current_sha256": "4502e16a1a7d61f12895032a2500e5828b1502dc81473f70fb49f65d7ad5fe61",
+    "all_original_bytes_restored": true,
+    "lines": 130,
+    "edits": [
+      {
+        "line": 8,
+        "item": "pub(in crate::cleanup_plan::replay) fn validate_status_sources_certified<'hir>(",
+        "lints": [
+          "clippy::explicit_counter_loop"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "before_length": 11055,
+    "before_sha256": "64c2ae308738ddc1cbe38d5903e9651c987075461ead3ef7de1ba3c945e68fe8",
+    "current_length": 11205,
+    "current_sha256": "0e78dbe7a5413c43cbf87f087508b89822b57c28cf67b0ea648fd309815fc0ab",
+    "all_original_bytes_restored": true,
+    "lines": 297,
+    "edits": [
+      {
+        "line": 52,
+        "item": "fn earlier_schema_error_and_query_free_prefix_keep_all_six_fields_and_debits() {",
+        "lints": [
+          "clippy::useless_conversion"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/flat_records/tests/receiving_status_scalar.rs",
+    "before_length": 13518,
+    "before_sha256": "8b7333c9db4358599f65af2790311da74ec3e25f38207c332f4eb838295d7ed6",
+    "current_length": 13671,
+    "current_sha256": "60c3afea4da37f940939fba6ddcf22b31be011676c8517e37b34393e7052ec61",
+    "all_original_bytes_restored": true,
+    "lines": 313,
+    "edits": [
+      {
+        "line": 149,
+        "item": "fn nodes(e: &ResolvedExpr) -> Vec<&ResolvedExpr> {",
+        "lints": [
+          "clippy::while_let_on_iterator"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
+    "before_length": 8225,
+    "before_sha256": "4a58ee535efe103682066701d42b4b53015cd4ee68901353b15d0fff0081311d",
+    "current_length": 8381,
+    "current_sha256": "3c2c88bbf5783ed369a48d8cb92dadbba26455880f89355ae82ec6cbf3068fb0",
+    "all_original_bytes_restored": true,
+    "lines": 209,
+    "edits": [
+      {
+        "line": 109,
+        "item": "fn full_owned_transition_residual_and_scalar_corpus_keeps_flat_predecessor() {",
+        "lints": [
+          "clippy::match_like_matches_macro"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/physical_budget/authentication/tests.rs",
+    "before_length": 8555,
+    "before_sha256": "d95020bc36bcc60548a81651c23dddd6166f3dc8c5b8c8c45fea538fdb181aa7",
+    "current_length": 8704,
+    "current_sha256": "af063dd39d477077ede3c362504258e307d9fa5895b5c047a485053a510a30bf",
+    "all_original_bytes_restored": true,
+    "lines": 208,
+    "edits": [
+      {
+        "line": 18,
+        "item": "fn held_zero_gateway_all_production_payers_preserve_full_diagnostic_first_receipt_floor_and_drop() {",
+        "lints": [
+          "clippy::collapsible_match"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/selected_context/child/tests.rs",
+    "before_length": 14462,
+    "before_sha256": "8e9c8c35e73341d1b13affe0323a972fc62b526f2d0e84171b23646e6db9659c",
+    "current_length": 14613,
+    "current_sha256": "df85ed36848f04ac186d8f9ee23f1436f0a1085445f7016e59112df2a1393644",
+    "all_original_bytes_restored": true,
+    "lines": 346,
+    "edits": [
+      {
+        "line": 40,
+        "item": "fn complete_old_child_receivers_keep_success_raw_errors_prefix_and_order() {",
+        "lints": [
+          "clippy::single_element_loop"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_vector/before_funded.rs",
+    "before_length": 8346,
+    "before_sha256": "1906c615c2be66426e20c3176ed1e8d3c5d8cd008f5a7d2520bedf4ff5b8fa71",
+    "current_length": 8495,
+    "current_sha256": "53675df4322ac9d0ca4166ff56a0f1f056e230b9d5534976e423c424ba73cd9a",
+    "all_original_bytes_restored": true,
+    "lines": 239,
+    "edits": [
+      {
+        "line": 2,
+        "item": "pub(super) fn sequence_skeleton_paths(",
+        "lints": [
+          "clippy::if_same_then_else"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_vector/funded_tests.rs",
+    "before_length": 21816,
+    "before_sha256": "0a177d36f88e5febf77558507f5bdf1f1a74f5851e000c3637512f1ec069fba1",
+    "current_length": 21962,
+    "current_sha256": "9f5c0ff45b5deec393dcf55bdd72e4dfe20deeb47126a8a07b5c876165c2c719",
+    "all_original_bytes_restored": true,
+    "lines": 469,
+    "edits": [
+      {
+        "line": 350,
+        "item": "fn lexical_vector_first_work_keeps_six_fields_before_selection_floor_and_real_limits() {",
+        "lints": [
+          "clippy::let_and_return"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/structural_control/calls/custody_tests.rs",
+    "before_length": 25888,
+    "before_sha256": "a7f69b65ad3183e68e8e3a13de4438b4ba2cf99e228cbab7bb1d5bd30d480053",
+    "current_length": 26036,
+    "current_sha256": "376431e1d430dd739c2cca22e9315e56f362439d7b15f0330df016cdde006b97",
+    "all_original_bytes_restored": true,
+    "lines": 675,
+    "edits": [
+      {
+        "line": 146,
+        "item": "fn actual_call_controls_exact_short_zero_keep_same_first_ledger_without_refunding() {",
+        "lints": [
+          "clippy::drop_non_drop"
+        ],
+        "reason": "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs",
+    "before_length": 29125,
+    "before_sha256": "eff9ffb148a3a192a052602738ee839aecd1c267131c5e10c06c965c56a90374",
+    "current_length": 29284,
+    "current_sha256": "9c44a903630b6f2be8e8578e6ff30815d3144d976080e7732f5e495cb64446e1",
+    "all_original_bytes_restored": true,
+    "lines": 676,
+    "edits": [
+      {
+        "line": 669,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_empty.rs",
+    "before_length": 35500,
+    "before_sha256": "519a3f7b0d85d24d205b7c78f6cc4a22dd68da61abca8e8da343298eac2a07c6",
+    "current_length": 35659,
+    "current_sha256": "81a572765b5f7826aea4e9c1dba47afa7ca05bbf13c44b11520cbbc504cd2c50",
+    "all_original_bytes_restored": true,
+    "lines": 825,
+    "edits": [
+      {
+        "line": 146,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_held.rs",
+    "before_length": 28982,
+    "before_sha256": "c7fd0c2bfe63649f27c13a2464e7503d2d9fe82187c0af694a4e34cd2b2b8178",
+    "current_length": 29141,
+    "current_sha256": "7a2f0daf3578f32bd2f9c0d2f67f24a7788237a41ee687511b1c3ba3255a0f7d",
+    "all_original_bytes_restored": true,
+    "lines": 675,
+    "edits": [
+      {
+        "line": 665,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
+    "before_length": 26792,
+    "before_sha256": "ef1ea78f2a522be6d12ec4683747dbdd71d453d97deb3098c2186523a37b606a",
+    "current_length": 26951,
+    "current_sha256": "1d7d039e01aaaecec948390abef67e6d9b9b4ceb592989367355c8f626a0e759",
+    "all_original_bytes_restored": true,
+    "lines": 625,
+    "edits": [
+      {
+        "line": 615,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs",
+    "before_length": 23078,
+    "before_sha256": "a614a6832405d3620e4d074b9d7e9c4aafddce1868f8e91dd11c9f81ff43e3a4",
+    "current_length": 23237,
+    "current_sha256": "cf9c599c24162727e7be6b364ab80e01219c6628aed377249d2570051e0e36f4",
+    "all_original_bytes_restored": true,
+    "lines": 518,
+    "edits": [
+      {
+        "line": 508,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs",
+    "before_length": 15096,
+    "before_sha256": "1673f76c171c8bb0e6ea312e6f32cd3b7bf1de40b69f7b4af85e485056168b74",
+    "current_length": 15255,
+    "current_sha256": "cbff64fb2e0039c3a8a362dd42758d3a34e5009459ebcb6353049b78b736cf64",
+    "all_original_bytes_restored": true,
+    "lines": 360,
+    "edits": [
+      {
+        "line": 350,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs",
+    "before_length": 49916,
+    "before_sha256": "87fd1f290d85fed32cba9f92a5b58b528712031121007b1f2a6875bde2e6fa5e",
+    "current_length": 50234,
+    "current_sha256": "e7f32250a3ca754185580f434b27097053302aed51ef81ee37af67f3150f15b4",
+    "all_original_bytes_restored": true,
+    "lines": 1139,
+    "edits": [
+      {
+        "line": 1125,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 140,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "before_length": 57376,
+    "before_sha256": "e4cb20cf6b8d9a7839b6303fd295c31dbb4710aee259f6f560b9576da26a2d78",
+    "current_length": 57824,
+    "current_sha256": "f73af679fffc8962f6ff5c0137c1dace91cc151cd03d4b7b01c6f64b0fea80a9",
+    "all_original_bytes_restored": true,
+    "lines": 1279,
+    "edits": [
+      {
+        "line": 1196,
+        "item": "fn original_literal_free_linked_comparison_keeps_exact_selected_inventory_refusal() {",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 459,
+        "item": "fn composed_frozen_actual_comparison_keeps_full_source_trace_and_diagnostic_order() {",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 291,
+        "item": "fn composed_actual_successors_preserve_sorted_children_weights_and_competing_overflow() {",
+        "lints": [
+          "clippy::unnecessary_mut_passed"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "before_length": 36926,
+    "before_sha256": "5e25a30b8307403bd404fedd2d9b0afe16ee5d25fdc056c90d802c08274e3a97",
+    "current_length": 37458,
+    "current_sha256": "80df83fbefe5b94e7aa03a282ff74d72d5a1e42c9bc35d9698b15ce84399d7df",
+    "all_original_bytes_restored": true,
+    "lines": 907,
+    "edits": [
+      {
+        "line": 658,
+        "item": "fn observe_matched(",
+        "lints": [
+          "clippy::too_many_arguments",
+          "clippy::type_complexity"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks. The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 102,
+        "item": "fn observe(",
+        "lints": [
+          "clippy::too_many_arguments",
+          "clippy::type_complexity"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks. The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs",
+    "before_length": 30989,
+    "before_sha256": "adc8e6e8ef2ddef4bfe05be245d4d79ff58165b00ccaea21f701553eabf4f2d8",
+    "current_length": 31149,
+    "current_sha256": "982fe65b29a26a38efb7dc8e7aee0e5cb6d45484e0137dfbf58897d4656557cd",
+    "all_original_bytes_restored": true,
+    "lines": 652,
+    "edits": [
+      {
+        "line": 188,
+        "item": "pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn before_arity_dispatch_id_inner_into(",
+        "lints": [
+          "clippy::iter_next_slice"
+        ],
+        "reason": "The iterator receiver is explicitly prepaid and compared with the complete predecessor."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs",
+    "before_length": 60497,
+    "before_sha256": "7530bd8e7bf14c99c625e5259f6b0c22f83df75b5ed53773355d35310356d60f",
+    "current_length": 60656,
+    "current_sha256": "4f78b6234a37dad7db095065587590f409f85ef01a1e7f8176ff8f12a62fa630",
+    "all_original_bytes_restored": true,
+    "lines": 1352,
+    "edits": [
+      {
+        "line": 91,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+    "before_length": 64003,
+    "before_sha256": "6c1dd2550cbaf5b02d998ba5d231ac1d9a1c70f877c6c605c50d1608e80e1c64",
+    "current_length": 64162,
+    "current_sha256": "93f1a5398b1457363dd40cc3bdfa52a71a276d2e814c43761051957ffae269fd",
+    "all_original_bytes_restored": true,
+    "lines": 1446,
+    "edits": [
+      {
+        "line": 252,
+        "item": "pub(super) fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs",
+    "before_length": 59861,
+    "before_sha256": "83bdb4382be0baebd02f6e7d5fce48582488a2e27cb1d00d3192a46a9aafc4c9",
+    "current_length": 60020,
+    "current_sha256": "8eed1b35b64756b5ba617cfabd9ebe711cf115600c8815f290ca6eed78afd183",
+    "all_original_bytes_restored": true,
+    "lines": 1342,
+    "edits": [
+      {
+        "line": 91,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs",
+    "before_length": 60616,
+    "before_sha256": "7013834572f4d1cffe7794c5c424d57059fed3db14f19041a9cc339762cdef6d",
+    "current_length": 60775,
+    "current_sha256": "0c261c6c9148990f48149c6e87bd0cf2410ea28ceaf80dd90870c0e11670c498",
+    "all_original_bytes_restored": true,
+    "lines": 1364,
+    "edits": [
+      {
+        "line": 91,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "before_length": 12728,
+    "before_sha256": "e4606c2d623dfd77693da7dd6bb7a4ed5af6972605d66c8b122cfaebf4617502",
+    "current_length": 12878,
+    "current_sha256": "4a240d0e8551d4bad8e026aa08c15c15a6532337576991647f86a9af839aa638",
+    "all_original_bytes_restored": true,
+    "lines": 313,
+    "edits": [
+      {
+        "line": 44,
+        "item": "fn observe(",
+        "lints": [
+          "clippy::too_many_arguments"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs",
+    "before_length": 56775,
+    "before_sha256": "7719f3e5f811cb8d3ea64c6a256dcb231985a6dbdbf2e0cd249d698f71277dbe",
+    "current_length": 57093,
+    "current_sha256": "04f2eb6d3e62e56933b0289d2cee582e4b212ca9bfd094954473d19997cd3bd6",
+    "all_original_bytes_restored": true,
+    "lines": 1302,
+    "edits": [
+      {
+        "line": 1288,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 231,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs",
+    "before_length": 28787,
+    "before_sha256": "91487b9e763c1c714e0c970fc189ff7a623b71b95348932200d3a46d04ff93e3",
+    "current_length": 28946,
+    "current_sha256": "b85034bb2d539684b30d475b3e994b0c9dd7448c2116568c45e0f538e505143f",
+    "all_original_bytes_restored": true,
+    "lines": 669,
+    "edits": [
+      {
+        "line": 659,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared.rs",
+    "before_length": 57172,
+    "before_sha256": "09ad1595bbf16bef93e5c5921ededa0fc64d9b75c8419b0051423ce1ae15c376",
+    "current_length": 57331,
+    "current_sha256": "a3ae4e55e648f1beed54374674c6a110ca13cb86d3307969e91fc036b80559b8",
+    "all_original_bytes_restored": true,
+    "lines": 1375,
+    "edits": [
+      {
+        "line": 332,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/tests.rs",
+    "before_length": 31313,
+    "before_sha256": "583406f48b1384c84b02600e71d9245b1af09dacdb27f38c01dba6ea2d6a38f6",
+    "current_length": 31488,
+    "current_sha256": "cad2d4ad158fa67414ffa278b3a8b15dde4ec2f267600d0d4624d8b8967de69b",
+    "all_original_bytes_restored": true,
+    "lines": 776,
+    "edits": [
+      {
+        "line": 686,
+        "item": "fn inspect<T: std::ops::Deref<Target = [(usize, u64)]>>(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs",
+    "before_length": 17547,
+    "before_sha256": "72100459dacbbba4cda1aef1c2d927ba61063079feb05079123dfee38457fc52",
+    "current_length": 17706,
+    "current_sha256": "3860cc19e5132ec020034633002e239f2c760a6dd3d3d733399e24af18d4f93a",
+    "all_original_bytes_restored": true,
+    "lines": 409,
+    "edits": [
+      {
+        "line": 399,
+        "item": "pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+    "before_length": 29113,
+    "before_sha256": "d3c915fde1453d1e11572280755131fea722306f96f52dcd6d0f8d3773fa19ad",
+    "current_length": 29399,
+    "current_sha256": "fe4a7c11dccf718a09642bf4854dbdd513d50d7eb8dc50bada776a294f25c8bc",
+    "all_original_bytes_restored": true,
+    "lines": 743,
+    "edits": [
+      {
+        "line": 587,
+        "item": "fn arity_dispatch_observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 287,
+        "item": "fn borrowed_single_observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs",
+    "before_length": 35896,
+    "before_sha256": "f960bc941b2e4d73a60ac6726e205567f4aba6a2203fb71a932432b1393b34a8",
+    "current_length": 36055,
+    "current_sha256": "5bea1d98e4323464ef61fd04291f63e70de261b9af85875d14c8a2b06cbb32ec",
+    "all_original_bytes_restored": true,
+    "lines": 837,
+    "edits": [
+      {
+        "line": 137,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
+    "before_length": 60413,
+    "before_sha256": "04528a729e6ff157594c4002b67ca2ecd944bfe8ced3b37e01a54346b97da99b",
+    "current_length": 61017,
+    "current_sha256": "bbea8b7b87880ecc7e4f0070815f2d153533275e936b41d4696eb8f0c921a6e6",
+    "all_original_bytes_restored": true,
+    "lines": 1354,
+    "edits": [
+      {
+        "line": 1033,
+        "item": "fn selected_successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 467,
+        "item": "fn previous_selected_successors_with_receiving(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 445,
+        "item": "fn previous_selected_successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 125,
+        "item": "fn observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs",
+    "before_length": 14811,
+    "before_sha256": "ddf8ea40570c11ac55fd260ef5df7a460091abb60d0a7f3f2508687c8a19e3a5",
+    "current_length": 15129,
+    "current_sha256": "00262caa57f8a1eded7f93aeb18901f09a62f2abc2749a967d4c93e6ce392b4e",
+    "all_original_bytes_restored": true,
+    "lines": 344,
+    "edits": [
+      {
+        "line": 71,
+        "item": "fn previous_successors_before_owner_preflight(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      },
+      {
+        "line": 55,
+        "item": "fn current_successors_before_owner_preflight(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs",
+    "before_length": 59764,
+    "before_sha256": "432411d41b99adbb0141165b73ec89e0fb9b56dce2dd21d07265f618ae69fc34",
+    "current_length": 59923,
+    "current_sha256": "f435a0b6e48d0561d7e4ff3761677101ecfe8d15a436ce5b98e6ade2e334926e",
+    "all_original_bytes_restored": true,
+    "lines": 1351,
+    "edits": [
+      {
+        "line": 237,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs",
+    "before_length": 10176,
+    "before_sha256": "4a13fff38d152df1a419a3f02ac8ae7ef36600a8ebeb3126255344440e4394c0",
+    "current_length": 10450,
+    "current_sha256": "fdbbe050b4b2e8af75cace6deb09e3d7167f747a96d3a8245aeb3305c821457a",
+    "all_original_bytes_restored": true,
+    "lines": 264,
+    "edits": [
+      {
+        "line": 176,
+        "item": "fn empty_signature_carriers_and_complete_original_receiver_are_bound() {",
+        "lints": [
+          "clippy::assertions_on_constants"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits."
+      },
+      {
+        "line": 84,
+        "item": "fn observe(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs",
+    "before_length": 62787,
+    "before_sha256": "b6fcda1fb7ed4dd53ebd9c40bc71f369b675a37ab9b0d8e0e8624f4562282399",
+    "current_length": 62946,
+    "current_sha256": "8179fd3ebd05001dbc14e311a266b8ecfa43414e73f59b5447f5535d92e36763",
+    "all_original_bytes_restored": true,
+    "lines": 1413,
+    "edits": [
+      {
+        "line": 236,
+        "item": "fn successors(",
+        "lints": [
+          "clippy::type_complexity"
+        ],
+        "reason": "The independently compiled control retains its exact tuple layout and receiving types."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs",
+    "before_length": 10378,
+    "before_sha256": "4a7407b16ddb793c7024ebbb0a85d162004b1f6f380fa256313b9daf338df5a7",
+    "current_length": 10509,
+    "current_sha256": "94e914603967715203fedcfeb4f6e004f2bdd05c3992d5c75cccc58a078da9c2",
+    "all_original_bytes_restored": true,
+    "lines": 266,
+    "edits": [
+      {
+        "line": 89,
+        "item": "fn joined_data() -> String {",
+        "lints": [
+          "clippy::assertions_on_constants"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/compact_nodes/tests.rs",
+    "before_length": 25295,
+    "before_sha256": "b126aeb95d27f2fdaab9ba926633c316c2beaa89ca315cf28dec715d6ea0a875",
+    "current_length": 25448,
+    "current_sha256": "71d8e989ea489d41c9c3054d4462e9bfd75ef2f116eaf3efb8050ea09256c1f1",
+    "all_original_bytes_restored": true,
+    "lines": 614,
+    "edits": [
+      {
+        "line": 57,
+        "item": "fn exhaustive_small_order_parallel_epsilon_and_weighted_languages_match_complete_old() {",
+        "lints": [
+          "clippy::manual_range_patterns"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/oracle_order/tests.rs",
+    "before_length": 21474,
+    "before_sha256": "6591cb4e5d974f726311cd55fe2fc246875f0f59f229177111735a65db055add",
+    "current_length": 21616,
+    "current_sha256": "bd69a7c25d0b254fe038507e0cdd8f238e6142571a547bad24f3c4aa50f7bbdc",
+    "all_original_bytes_restored": true,
+    "lines": 505,
+    "edits": [
+      {
+        "line": 225,
+        "item": "fn compact_staged_receiving_keeps_floor_and_foreign_owner_first_refusal() {",
+        "lints": [
+          "clippy::err_expect"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/moderate_tests.rs",
+    "before_length": 12763,
+    "before_sha256": "fa5435e51f225b44d4800014ed3d8ae443d865fa131f357a7e09e222aa2f9ff7",
+    "current_length": 12894,
+    "current_sha256": "0e3c100eef6708ff77be409f9d9299ab1d1cce3cfc96c22c1677cebda56d543b",
+    "all_original_bytes_restored": true,
+    "lines": 321,
+    "edits": [
+      {
+        "line": 230,
+        "item": "fn joined_data() -> String {",
+        "lints": [
+          "clippy::assertions_on_constants"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+    "before_length": 32568,
+    "before_sha256": "eba7357db3e8be14b556163c5ef27ae6513325fe262fe8b7886854e8d0e2c8c9",
+    "current_length": 32715,
+    "current_sha256": "cc3646f442a0853a7c16a05712d2e5b8ec8824c00aa5b5973754a5246e85723e",
+    "all_original_bytes_restored": true,
+    "lines": 755,
+    "edits": [
+      {
+        "line": 695,
+        "item": "fn retained_merge_owner_preserves_complete_immediate_and_earlier_sources_without_hidden_callback() {",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs",
+    "before_length": 566,
+    "before_sha256": "396256767d71e4c19febef1bae88fafeeb86047f7283480c7482939bc63fb728",
+    "current_length": 703,
+    "current_sha256": "d8510857414438a04b0289ce18ba48c0b23bd3813c73359c73f5af8d6a9b62d1",
+    "all_original_bytes_restored": true,
+    "lines": 16,
+    "edits": [
+      {
+        "line": 10,
+        "item": "pub(super) mod before_wrapper;",
+        "lints": [
+          "clippy::module_inception"
+        ],
+        "reason": "The nested control deliberately reproduces the predecessor lexical module path."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_prefix/main24/tests.rs",
+    "before_length": 15038,
+    "before_sha256": "e5dd149fc6bcf9a0bb064a576134e94f2ddda30f443ebd21922caf1bdea69a4b",
+    "current_length": 15169,
+    "current_sha256": "183efa3a63801753892878006c273731a5967647e673a4f959aa5eaf65e59c42",
+    "all_original_bytes_restored": true,
+    "lines": 359,
+    "edits": [
+      {
+        "line": 324,
+        "item": "fn thin_header_and_complete_shipped_wrapper_and_tests_stay_source_bound() {",
+        "lints": [
+          "clippy::assertions_on_constants"
+        ],
+        "reason": "These assertions pin the exact control layout and resource limits."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs",
+    "before_length": 567,
+    "before_sha256": "787b0e9578dee32f85ab7385cea4b5016838672923fe7b57eceae492214bd4b2",
+    "current_length": 704,
+    "current_sha256": "b9277d262e11dcea8ab79100b48ddb809f015750d8cc85d89a392160c076cf37",
+    "all_original_bytes_restored": true,
+    "lines": 17,
+    "edits": [
+      {
+        "line": 11,
+        "item": "pub(super) mod before_wrapper;",
+        "lints": [
+          "clippy::module_inception"
+        ],
+        "reason": "The nested control deliberately reproduces the predecessor lexical module path."
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs",
+    "before_length": 567,
+    "before_sha256": "787b0e9578dee32f85ab7385cea4b5016838672923fe7b57eceae492214bd4b2",
+    "current_length": 704,
+    "current_sha256": "b9277d262e11dcea8ab79100b48ddb809f015750d8cc85d89a392160c076cf37",
+    "all_original_bytes_restored": true,
+    "lines": 17,
+    "edits": [
+      {
+        "line": 11,
+        "item": "pub(super) mod before_wrapper;",
+        "lints": [
+          "clippy::module_inception"
+        ],
+        "reason": "The nested control deliberately reproduces the predecessor lexical module path."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/declaration/functions/old.rs",
+    "before_length": 57027,
+    "before_sha256": "eb05bff41a5c161eee87320b58f9c0e1476947bf7686e89c8ed8f889f1aa1367",
+    "current_length": 57469,
+    "current_sha256": "54843eebe21d1cb091365f443b530eb9b6c772f09788a7d75443fd9324a67ba1",
+    "all_original_bytes_restored": true,
+    "lines": 1458,
+    "edits": [
+      {
+        "line": 993,
+        "item": "pub(in crate::source_verify::declaration) fn check_function_bodies<'p>(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 572,
+        "item": "fn check_omitted_generic_mappings(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 29,
+        "item": "pub(in crate::source_verify::declaration) fn check_function_declarations<'p>(",
+        "lints": [
+          "clippy::borrow_deref_ref"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/declaration/functions/public_signature_before.rs",
+    "before_length": 57266,
+    "before_sha256": "05cb069082838883c82b5b638e7acdbedd1a3ffc089894528c3b5105839217f8",
+    "current_length": 57708,
+    "current_sha256": "1a55c2794cbbf0e6983345aa9688c8db9ec644ebee11a9e13b5e702d1fb623cf",
+    "all_original_bytes_restored": true,
+    "lines": 1466,
+    "edits": [
+      {
+        "line": 990,
+        "item": "pub(in crate::source_verify) fn check_function_bodies<'p>(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 569,
+        "item": "fn check_omitted_generic_mappings(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 27,
+        "item": "pub(in crate::source_verify) fn check_function_declarations<'p>(",
+        "lints": [
+          "clippy::borrow_deref_ref"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/iterative/enter/enter_before_components.rs",
+    "before_length": 69657,
+    "before_sha256": "b2ba677d2dce0ce94b974200ff62e8eb590cf39e65e1a1b1bdca99ff05394f47",
+    "current_length": 69820,
+    "current_sha256": "5ac3b02c8a15607c4a37759ebd32d0e49a93115b144bcc7758d41aac9d336f59",
+    "all_original_bytes_restored": true,
+    "lines": 1477,
+    "edits": [
+      {
+        "line": 27,
+        "item": "pub(super) fn before_components_frame_enter(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/iterative/enter/enter_before_extended.rs",
+    "before_length": 70029,
+    "before_sha256": "243c7c57ab6707716a6bc6fd36cd15aa04641c080caa1b000eebd6a3bd91dd34",
+    "current_length": 70192,
+    "current_sha256": "93c8a1f4b46511977e0f0d635753ba73b68add15c2ea012a5c4f40cbd834537d",
+    "all_original_bytes_restored": true,
+    "lines": 1487,
+    "edits": [
+      {
+        "line": 29,
+        "item": "pub(super) fn before_extended_frame_enter(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/source_verify/recovery_legacy/enter.rs",
+    "before_length": 68862,
+    "before_sha256": "87fe396734719f04352b64fcd342adf01492c2d6cdbf674311f1b79712563b86",
+    "current_length": 69025,
+    "current_sha256": "2d399769fdbce56fb8195e44316eeb8c23f960c2411061fc9931447503ae4c4a",
+    "all_original_bytes_restored": true,
+    "lines": 1462,
+    "edits": [
+      {
+        "line": 27,
+        "item": "pub(in crate::source_verify) fn recovery_old_frame_enter(",
+        "lints": [
+          "clippy::needless_borrow"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs",
+    "before_length": 41752,
+    "before_sha256": "21982111a61623779da848289241fc39bd6214f34739ce1fbf8a12348892794f",
+    "current_length": 41916,
+    "current_sha256": "f2f3e2251e1f07a737eeeca4e0f12ffea68b1612f67c59b83c2ae5f46a68da01",
+    "all_original_bytes_restored": true,
+    "lines": 1022,
+    "edits": [
+      {
+        "line": 680,
+        "item": "fn typed_constructor_census_keeps_all_original_raw_fields_order_and_teardown_formulas() {",
+        "lints": [
+          "clippy::drop_non_drop"
+        ],
+        "reason": "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs",
+    "before_length": 23969,
+    "before_sha256": "fdd92e3f7dd1a2064a727f478bdc15f217c5c93edc9d4bb32d0d901d510ec1da",
+    "current_length": 24267,
+    "current_sha256": "97d414632c2eb68e7c1e6d27785e78a003d4ff9d439306629f23fa5a1cf256cb",
+    "all_original_bytes_restored": true,
+    "lines": 633,
+    "edits": [
+      {
+        "line": 139,
+        "item": "fn actual_identity_owner_lends_one_frozen_inventory_through_source_and_hir() {",
+        "lints": [
+          "clippy::redundant_closure"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      },
+      {
+        "line": 28,
+        "item": "fn retained_same_name_views_lend_actual_provider_payload_in_original_order_and_hir() {",
+        "lints": [
+          "clippy::redundant_closure"
+        ],
+        "reason": "The complete saved control retains its original expressions for independent parity checks."
+      }
+    ]
+  },
+  {
+    "source": "src/ast/program_source/decl_slices/alias_tests.rs",
+    "before_length": 2515,
+    "before_sha256": "5533f1fdf357b7b0ccfef93fe663599b6ecf2b1604f848d35f2f08e2479d38f8",
+    "current_length": 2654,
+    "current_sha256": "39fd09d8158363578022884cf77daf22b0e838696506dde5e9be8aaad02c42ce",
+    "all_original_bytes_restored": true,
+    "lines": 62,
+    "edits": [
+      {
+        "line": 12,
+        "item": "fn ordinary_and_projected_views_keep_complete_old_size_order_suffix_and_iteration() {",
+        "lints": [
+          "clippy::useless_vec"
+        ],
+        "reason": "The control deliberately owns Vec backing while observing borrowed declaration slices."
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs",
+    "before_length": 43012,
+    "before_sha256": "95827daaee64d85e7b0a75f28c267e7947ec0f3bbb1e82e4703a6461be67329a",
+    "current_length": 43004,
+    "current_sha256": "eabd3dd512c776254a5d5e3a1c1307f65c68db089d27872a1e96d60803340d32",
+    "all_original_bytes_restored": true,
+    "lines": 1010,
+    "edits": [
+      {
+        "removed_unenforced_alias_bound": true
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+    "before_length": 54774,
+    "before_sha256": "a21aafa21df53dab9a25661bd16149ddfd979d137b74f6261cc5fdff6c7a548e",
+    "current_length": 54932,
+    "current_sha256": "96f3344239af80ebe85eb637e5933bd596afde32f88c2e2184bd8edf32c96375",
+    "all_original_bytes_restored": true,
+    "lines": 1353,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs",
+    "before_length": 2182,
+    "before_sha256": "8b9f0dbc469b1f450897eafec680c8a8af910e605edf0637a161b23bd01ef3f7",
+    "current_length": 2340,
+    "current_sha256": "f8d7934ce7d1bb6837fc628975acc54f717fb1e96047f47df51002e10a35ab5e",
+    "all_original_bytes_restored": true,
+    "lines": 52,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/amortized_source.rs",
+    "before_length": 6373,
+    "before_sha256": "117ec6ee9b19cfdedc7266e71f72b2fc342c74a76873e215c052be2c3e04919e",
+    "current_length": 6531,
+    "current_sha256": "afeef21a6b47ab8b66a9f4a1fd3619f837d08414e0f6bb8fd177b0d3651bff0d",
+    "all_original_bytes_restored": true,
+    "lines": 139,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/source.rs",
+    "before_length": 6323,
+    "before_sha256": "16d5dca335dfc1378296a65c63d0765f790f6db81f85b47c57eaf43af1b8bb77",
+    "current_length": 6481,
+    "current_sha256": "07a729c193774a16fda0c9068479a6c3dff57fa6d72f733dae8b43de303a74e6",
+    "all_original_bytes_restored": true,
+    "lines": 134,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+    "before_length": 8158,
+    "before_sha256": "6fc9fc8cbfa6e665d260e5dac211dda6ce7a864a641cfc288d4ea95331504e73",
+    "current_length": 8316,
+    "current_sha256": "f1f9d9a57cf518ab4edce3abf5c186c29677a843e0c4fee422e91999ce5c7d98",
+    "all_original_bytes_restored": true,
+    "lines": 192,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/factored/instrumentation.rs",
+    "before_length": 5220,
+    "before_sha256": "6e9813abab2679cc9ff1c182450c34a92620cb7a2fa6868d96ebe50be466baad",
+    "current_length": 5378,
+    "current_sha256": "d4e1d369674e9e692225c7cd0a49df6e57c0e53d36424296e697c2ff8c4bac1c",
+    "all_original_bytes_restored": true,
+    "lines": 162,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/path_join/boxed_states/before.rs",
+    "before_length": 1559,
+    "before_sha256": "8926cae74dacd2a61904447c85edf5f2b05ab65dcb6c7854092be9403e628229",
+    "current_length": 1717,
+    "current_sha256": "8cc375ba75dd81ff3819acbf5df3b48cb3b7bb5eebd074c51aa72074c8893cb5",
+    "all_original_bytes_restored": true,
+    "lines": 48,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/path_join/tests.rs",
+    "before_length": 5167,
+    "before_sha256": "6a00500ce95449c9d08ebba90cdaef85c7ce0d4e5a69769bedcdde62502725eb",
+    "current_length": 5325,
+    "current_sha256": "d7841a842bf900a756905b56623fca40766ae1c3344bfb1dc4e1f86efe396df0",
+    "all_original_bytes_restored": true,
+    "lines": 143,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_prefix/main24/before.rs",
+    "before_length": 2047,
+    "before_sha256": "3fa771c3f26552812dfb64d4851ced843418501674c96e3847a8d14119b95e13",
+    "current_length": 2205,
+    "current_sha256": "366b96754e27d96461e7d35a3000c86b18c1188b638b2caf67553c78c7d25d07",
+    "all_original_bytes_restored": true,
+    "lines": 62,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/cleanup_plan/replay/sequence_vector/observation_parity.rs",
+    "before_length": 6311,
+    "before_sha256": "f71b2f61c5011890429672176cc2e757c9b7f37d7aad860db6105cf4dafa69a0",
+    "current_length": 6469,
+    "current_sha256": "61f593fd00f3a431cf9cadf5b8b6586b190c9177c3f8b61529828aa614689196",
+    "all_original_bytes_restored": true,
+    "lines": 171,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/constructor_failure/report/stages.rs",
+    "before_length": 2153,
+    "before_sha256": "632333d7a819ce23b6ede242775da89cabd0d9795d908047a56ea8ec58dccc2a",
+    "current_length": 2311,
+    "current_sha256": "fdfbc8c20782be5b3af2537c4cee8cda100937c62bdd6f3bb049497a24eee1f9",
+    "all_original_bytes_restored": true,
+    "lines": 59,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/constructor_failure/report/tests.rs",
+    "before_length": 13129,
+    "before_sha256": "af45b89feb162b01acd2bb858d3d0d704108d07951f6f4f5320a61bfa836ea5e",
+    "current_length": 13287,
+    "current_sha256": "96b2af4f54da82fbcea13dc50d0ead551725f8d2551e92e0894c23fb22b17cbf",
+    "all_original_bytes_restored": true,
+    "lines": 306,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs",
+    "before_length": 2648,
+    "before_sha256": "9a6053ae31c2f69d35309f6972b0292292650b7c904b7329119296b4e42eeae1",
+    "current_length": 2806,
+    "current_sha256": "61f5fac330efd4d423528f01d9abe3d0acd5f6a10628c5ee2804d6a7df791d4d",
+    "all_original_bytes_restored": true,
+    "lines": 59,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs",
+    "before_length": 6395,
+    "before_sha256": "5c1c7a222988623663003420306a4b28e6b363b634978975e624c4e04b9355ba",
+    "current_length": 6553,
+    "current_sha256": "1d650664072a7ebee8e05b493928f05722e15125e11bf12b642f7501a0f8633b",
+    "all_original_bytes_restored": true,
+    "lines": 214,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  },
+  {
+    "source": "src/workspace_graph/validation/before_roots.rs",
+    "before_length": 41314,
+    "before_sha256": "2e41e2e6190bb2cefb36594022f88d3f1cde09a0eb51054e32d5f70a0d45120b",
+    "current_length": 41472,
+    "current_sha256": "91fdb56c10c42940667c261cf315256ad89579f6a03f38b8ac2c950455888584",
+    "all_original_bytes_restored": true,
+    "lines": 1020,
+    "edits": [
+      {
+        "module_file": "duplicate_mod"
+      }
+    ]
+  }
+]

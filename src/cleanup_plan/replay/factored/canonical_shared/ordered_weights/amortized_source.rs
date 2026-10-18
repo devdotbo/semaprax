@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Authenticate the complete current source through the paid-insertion checkpoint.
 pub(super) fn checkpoint(path: &str, source: &str) -> String {
     let projected = current40f(path, source);

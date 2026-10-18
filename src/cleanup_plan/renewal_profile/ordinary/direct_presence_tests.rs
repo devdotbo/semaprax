@@ -35,6 +35,10 @@ fn equal(a: &Directory<'_>, b: &Directory<'_>) {
     }
 }
 #[test]
+#[allow(
+    clippy::drop_non_drop,
+    reason = "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+)]
 fn direct_presence_keeps_complete_old_directory_work_and_real_receiving_drop() {
     for record in [false, true] {
         let p = program(record);

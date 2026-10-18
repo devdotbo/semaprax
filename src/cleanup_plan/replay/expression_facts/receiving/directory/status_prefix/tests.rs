@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Full old AVL shape and complete actual receiver/last-Drop controls.
 use super::super::{ExpressionId, StatusLane, StatusProducer, StatusSource, MAX_REPLAY_WORK_UNITS};
 use super::{

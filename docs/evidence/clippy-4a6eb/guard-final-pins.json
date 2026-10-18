@@ -1,0 +1,15 @@
+{
+  "guard_length": 6901,
+  "guard_sha256": "d29151607bf94f1ddcb165f900858d08ece5103ec9ab925bba0cf7c993623707",
+  "config_length": 89213,
+  "config_sha256": "4119cc196787aee7e5f1c0662e15007cc1d9960aad80e3bccddbd9a3bc708332",
+  "bootstrap_whole_inverses": [
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py"
+  ],
+  "old_CONFIG_whole_unchanged": true,
+  "source_cap": 9753094,
+  "bounded_api_cap": 262144,
+  "program_cap": 65536
+}

@@ -7,6 +7,10 @@ use crate::cleanup_plan::replay::{
 };
 use old_current::sequence_skeleton_paths;
 #[path = "before_wrapper.rs"]
+#[allow(
+    clippy::module_inception,
+    reason = "The nested control deliberately reproduces the predecessor lexical module path."
+)]
 pub(super) mod before_wrapper;
 #[path = "old_current.rs"]
 mod old_current;
