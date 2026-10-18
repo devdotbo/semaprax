@@ -1,0 +1,43 @@
+{
+  "status": "SOURCE_ONLY_DOC_HELP_CHANGE",
+  "base": "81660fdb38074ae75145a810ee16cdcbd361e216",
+  "rows": [
+    {
+      "path": "docs/AGENT-QUICK-REFERENCE.md",
+      "before_sha256": "4d9277c5d1221ab49dcf465a0a1c988d767fbe8d497a1eba224b70645abb8c68",
+      "after_sha256": "a918b0583646327eced9dcf5828efe42b91f6772f6ad4f90b0d167d81585e7e1"
+    },
+    {
+      "path": "src/cli/help/authoring.rs",
+      "before_sha256": "b71e914399e1f316e573bfa4022d699ce20ce982aabf01cb053ad62c67f49b72",
+      "after_sha256": "9536e6ce4774e522d2d0b9ef98b57d816c639478f3545bd078101250b337f02f"
+    }
+  ],
+  "owning_rule": [
+    "source_verify/declared_type.rs709 generic_function_expression_is_admitted rejects ExprKind::LexicalExit before traversal",
+    "LEXICAL-STRUCTURED-EXITS-V1.md lexical exits are separate selective statement-tail admission and grant no generic family",
+    "RFC-0002-ALGEBRAIC-DATA.md SPX-T226 bounded generic expression/call profile"
+  ],
+  "help_surface": [
+    "help language control-flow uses embedded quick-reference section directly",
+    "help language author:lexical-exits existing card contains narrow generic warning"
+  ],
+  "source_byte_counts": {
+    "control_flow_topic": 4999,
+    "control_flow_limit": 5000,
+    "author_lexical_exits_card": 2047,
+    "author_card_limit": 2048
+  },
+  "preserved": [
+    "All headings",
+    "All fenced source examples byteexact",
+    "No Rust semantics or verifier diagnostics changed",
+    "No T226 entry existed in generated AGENT-DIAGNOSTIC-HELP.json; no index edits/generator needed"
+  ],
+  "future_owning_selectors": [
+    "cli::help::tests::language_reference_and_exact_topics_are_bounded_repository_sections",
+    "cli::help::authoring::tests::traversal_and_buffer_cards_match_selective_typed_profiles_without_promoting_qualification",
+    "cli::help::authoring::tests::routes_and_search_are_bounded_exact_and_have_complete_continuations"
+  ],
+  "execution": "No Cargo/build/test/per-doc test/generator/GraftCLI; literal byte counting and source diff only."
+}

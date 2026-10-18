@@ -268,6 +268,8 @@ fn main() -> i64
   `string_concat`. Only the selected branch runs; the other's text is never
   built.
 
+- Generic templates reject lexical exits (`SPX-T226`): move `break`/`continue`/early `return` bodies to a monomorphic function. Admitted scalar/collection loops stay valid.
+
 ## Records, variants, classes
 
 ```semaprax
