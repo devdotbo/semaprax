@@ -96,6 +96,25 @@ pub(super) fn previous_boundary_controls(current: &str) -> String {
         ))
     {
         use sha2::{Digest, Sha256};
+        assert_eq!(current.len(), 23784);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+            ),
+            "921932de646b2be17d4f64a8a2f8e499d6ba0098a4e145d326ed0e88f66f90ca",
+        );
+        let glue = "    let stage = shared_runs::previous_shared_step_controls(&stage);\n";
+        assert_eq!(current.matches(glue).count(), 1);
+        let current = current.replacen(glue, "", 1);
+        assert_eq!(current.len(), 23716);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+            ),
+            "6c805d362018fbb4a84f47bba80ca9481ab1b2439d70e90374399e7265ba815a",
+        );
         let registration = "#[path = \"shared_boundaries/shared_runs.rs\"]\n";
         assert_eq!(current.matches(registration).count(), 1);
         let before = current.replacen(registration, "", 1);
@@ -281,3 +300,58 @@ mod tests {
         );
     }
 }
+
+// Preserve the complete pure7e control before its unchanged offset inverse.
+// Only the literal compiled current subject may enter this finite glue inverse.
+pub(super) fn previous_shared_step_controls(current: &str) -> String {
+    let compiled = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+    ));
+    if current != compiled {
+        return current.to_owned();
+    }
+    use sha2::{Digest, Sha256};
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+        "651542d472bf505cc7f9c5eacebaf31718b83f8043ab40ead8e90a706e0be3f4",
+        current,
+    );
+    assert_eq!(acquired.len(), 21023);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(acquired.as_bytes()))
+        ),
+        "651542d472bf505cc7f9c5eacebaf31718b83f8043ab40ead8e90a706e0be3f4"
+    );
+    let before = restore(&acquired, 21023, SHARED_STEP_CONTROLS);
+    assert_eq!(before.len(), 18577);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))
+        ),
+        "329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255"
+    );
+    before
+}
+#[rustfmt::skip]
+const SHARED_STEP_CONTROLS: &[(usize, &str, &str)] = &[
+    (20792, "            (\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs\", \"fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921\", 11132),\n", ""),
+    (20301, "            (\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\", \"ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5\", 12959),\n", ""),
+    (20017, "            include_str!(\"../../../../pair_scope_census.rs\"),\n            previous_census,\n", "            &shared_boundaries::previous_census(include_str!(\"../../../../pair_scope_census.rs\")),\n            previous_census_stage,\n"),
+    (19814, "            (\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\", \"10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5\", 42740),\n", ""),
+    (19519, "            include_str!(\"../../../../pair_scope_tests.rs\"),\n            previous_pair_tests,\n", "            &shared_boundaries::previous_pair_tests(include_str!(\n                \"../../../../pair_scope_tests.rs\"\n            )),\n            previous_pair_tests_stage,\n"),
+    (19333, "            (\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs\", \"a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8\", 23539),\n", ""),
+    (18849, "            (\"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs\", \"e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded\", 10841),\n", ""),
+    (18571, "            include_str!(\"../../../../lexical_cursor.rs\"),\n            previous_macro,\n", "            &shared_boundaries::previous_macro(include_str!(\"../../../../lexical_cursor.rs\")),\n            previous_macro_stage,\n"),
+    (15045, "        // Public current-first acquisition must still reject physical drift.\n        assert_eq!(inverse(current), before);\n        assert!(std::panic::catch_unwind(|| inverse(&format!(\"{current} \"))).is_err());\n        let acquired = super::super::super::super::super::super::reachable_stage(\n            stage.0, stage.1, current);\n        assert_eq!(acquired.len(), stage.2);\n        let current = acquired.as_str();\n        // Archived inverse offsets apply to this authenticated complete stage,\n        // not to the later physical source which legitimately has another size.\n        let inverse = |current: &str| restore(current, stage.2, edits);\n        assert_eq!(inverse(current), before);\n", ""),
+    (15001, "        stage: (&str, &str, usize),\n", ""),
+    (13199, "    let stage = super::super::super::super::super::reachable_stage(\n        \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs\", \"fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921\", current);\n    let current = stage.as_str();\n", ""),
+    (10326, "    let stage = super::super::super::super::super::reachable_stage(\n        \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\", \"ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5\", current);\n    let current = stage.as_str();\n", "    previous_census_stage(&shared_boundaries::previous_census(current))\n}\nfn previous_census_stage(current: &str) -> String {\n"),
+    (7080, "    let stage = super::super::super::super::super::reachable_stage(\n        \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\", \"10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5\", current);\n    let current = stage.as_str();\n", "    previous_pair_tests_stage(&shared_boundaries::previous_pair_tests(current))\n}\nfn previous_pair_tests_stage(current: &str) -> String {\n"),
+    (6119, "    let stage = super::super::super::super::super::reachable_stage(\n        \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs\", \"a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8\", current);\n    let current = stage.as_str();\n", ""),
+    (774, "    let stage = super::super::super::super::super::reachable_stage(\n        \"src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs\", \"e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded\", current);\n    let current = stage.as_str();\n", "    previous_macro_stage(&shared_boundaries::previous_macro(current))\n}\nfn previous_macro_stage(current: &str) -> String {\n"),
+    (718, "", "mod shared_boundaries;\n"),
+];

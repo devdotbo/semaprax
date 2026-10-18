@@ -67,6 +67,7 @@ pub(super) fn previous_shared_steps(current: &str) -> String {
     } else {
         current.to_owned()
     };
+    let stage = shared_runs::previous_shared_step_controls(&stage);
     let current = stage.as_str();
     restore(current, 18577, SHARED_STEPS)
 }
