@@ -174,7 +174,8 @@ fn projection344_stage(supplied: &str) -> String {
         "ab922dd2f58ea4dc32b7e5ddfbae934a8353b7fe9eefbb2927414cbbdf7e4b3b"
     );
     let read = |path: &str, length: usize, sha: &str| {
-        reader::read(&root.join(path), length, sha, 2_097_152).unwrap()
+        reader::read(&root.join(path), length, sha, 2_097_152)
+            .unwrap_or_else(|error| panic!("exact projection344 part {path}: {error:?}"))
     };
     assert_eq!(
         read(
@@ -218,7 +219,10 @@ fn projection344_stage(supplied: &str) -> String {
             let text = if matches!(source,
                 "src/workspace_graph/expected_projection/borrowed_imports.rs"
                 | "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs"
-                | "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs")
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs"
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed.rs"
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs"
+                | "src/ast/program_source/decl_slices.rs")
             {
                 // The same exact current-image owner authenticates before
                 // selecting this immutable, named historical part.
