@@ -50,11 +50,13 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
     "src/cleanup_plan/replay/semantic_refusal.rs",
     "src/cleanup_plan/replay/semantic_refusal/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs",
     "src/cleanup_plan/replay/structural_control/calls.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
     "src/hir/resolve_program_methods.rs",
+    "src/hir/validation.rs",
     "src/loan_plan/paid_live.rs",
     "src/project/json_codec.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
@@ -218,11 +220,42 @@ const ADDITIONS: &[&str] = &[
     "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs",
     "src/workspace_graph/cold_canonical/tests.rs",
     "src/workspace_graph/expected_projection/cost.rs",
+    "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main001_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_paired_tails.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+    "src/source_reflows_merge/main_e177_overlay_compiled.rs",
+    "src/source_reflows_merge/main_e177_packet_lookup.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 69173; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "fb6ff1c2069a1230346295dfcddb8b382caf8a3a39f8d50821dbee0e619b6aa2";
+const POLICY_LENGTH: usize = 89944; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "a2ef7f5dec282dcc06038d69221162fa6d361a8f424056cf3e68c072ea6bcb06";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
