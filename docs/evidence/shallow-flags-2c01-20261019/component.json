@@ -1,0 +1,9 @@
+{
+  "result": "PASS_COMPONENT_ONLY",
+  "compile_peak_KiB": 178000,
+  "run_peak_KiB": 2640,
+  "scope": "Current type enum and derived Clone/type census/Payer/budget core; current allocation observer without unrelated self-tests; opaque unexercised compiler-selector identity adapter, no-op diagnostic test callbacks and uncalled BTree/failure adapters. Not a full compiler or native-provider gate.",
+  "actual_tests": 6,
+  "one_and_two_leaf_combinations": 462,
+  "current_head_all_CI_still_required": true
+}

@@ -95,6 +95,28 @@ impl TypeFactsPayer for Payer {
         } {
             return Ok(ty.clone());
         }
+        // A one- or two-leaf nominal has only its argument-vector backing.
+        // Slice patterns visit at most two immediate children and never enter
+        // the 514-frame recursive census. Other shapes keep that exact route.
+        let shallow_payload = match ty {
+            ResolvedType::Nominal { arguments, .. } => match arguments.as_slice() {
+                [first] if first.clone_payload_bytes_without_type_cursor() == Some(0) => {
+                    Some(size_of::<ResolvedType>())
+                }
+                [first, second]
+                    if first.clone_payload_bytes_without_type_cursor() == Some(0)
+                        && second.clone_payload_bytes_without_type_cursor() == Some(0) =>
+                {
+                    Some(2 * size_of::<ResolvedType>())
+                }
+                _ => None,
+            },
+            _ => None,
+        };
+        if let Some(payload) = shallow_payload {
+            pay(Some(payload))?;
+            return Ok(ty.clone());
+        }
         if !self.clone_cursor_paid {
             pay(Some(size_of::<[Option<(&ResolvedType, usize)>; 514]>()))?;
             self.clone_cursor_paid = true;
