@@ -309,6 +309,17 @@ semantic_graph_private_layout_owned_source_inventory!(core),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs"),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs"),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_runs.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_runs.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main7e_pair_scope_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_certified.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_certified.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"),
     ) };
 }
 
