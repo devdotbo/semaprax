@@ -52,8 +52,8 @@ pub(in crate::cleanup_plan::replay) fn reserve_append(
     receive!(
         budget,
         function,
-        (usize, Option<usize>),
-        2,
+        (usize, Option<usize>, usize),
+        3,
         "selected append arithmetic receiving",
         ()
     );
@@ -178,12 +178,13 @@ pub(in crate::cleanup_plan::replay) fn publish_append(
     budget.reserve_array::<(
         Vec<LivenessFlagId>,
         usize,
+        usize,
         Vec<LivenessFlagId>,
         &Vec<LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
         std::slice::Iter<'_, LivenessFlagId>,
     )>(function, 1, "selected path publish_append body receiving")?;
-    budget.charge(function, 6, "selected path publish_append body receiving")?;
+    budget.charge(function, 7, "selected path publish_append body receiving")?;
     budget.reserve_array::<(
         &ResolvedFunction,
         Option<Vec<LivenessFlagId>>,

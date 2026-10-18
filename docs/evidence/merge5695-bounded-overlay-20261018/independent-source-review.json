@@ -1,0 +1,13 @@
+{
+  "status": "PASS_READONLY_AUTO_MERGED_REPLAY_SOURCE",
+  "ours": "dc36922792196bceee223c9769a0bfdaabf5341c",
+  "incoming": "6465284748dbefaf89843b00158e85965ebc446b",
+  "common_base": "b5a7f2ba01b2a17a943603e57e9fa8a3b0988a56",
+  "merged_replay_sha256": "73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651",
+  "only_replay_change_from_ours": "Byteexact incoming short-plan runtime patch payload, excluding line offsets/diff headers.",
+  "incoming_short_plan_runtime_patch_exact": true,
+  "all_19_compiler_repair_subjects_byteexact_ours": true,
+  "all_9_892_correction_subjects_byteexact_ours": true,
+  "Cargo": false,
+  "ROOT_mutated": false
+}

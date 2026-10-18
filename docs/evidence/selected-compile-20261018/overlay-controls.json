@@ -1,0 +1,23 @@
+{
+  "status": "SOURCE_ONLY_PASS",
+  "logical_rows": 520,
+  "all_original_519_subjects_and_order_retained": true,
+  "complete_current_sources_passed": 516,
+  "unchanged_bound_oversize_refusals": 4,
+  "hostile_controls": [
+    "overlay drift",
+    "complete current reader drift",
+    "complete current reader archive drift",
+    "whole old census stage drift",
+    "overlay symlink",
+    "overlay FIFO",
+    "duplicate current subject",
+    "missing whole prior current pin",
+    "changed original compiled field",
+    "unknown overlay header field",
+    "foreign added reader subject",
+    "foreign complete519 predecessor",
+    "old stage offered as current reader"
+  ],
+  "all_actual_source_bytes_restored": true
+}

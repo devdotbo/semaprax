@@ -1,0 +1,74 @@
+{
+  "status": "SOURCE_RESOLVED_TWO_ASSIGNED_FILES_AND_AUTO_MERGE_REVIEWED",
+  "ours": "d7cab52290f4e56bbd2411d2e6be37bf5a4c9eea",
+  "incoming": "5695a47657600c68b25fc602fd8dbf451c46b8c6",
+  "base": "6465284748dbefaf89843b00158e85965ebc446b",
+  "records": [
+    {
+      "path": "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
+      "images": {
+        "base": {
+          "length": 16419,
+          "sha256": "2e089e2528eec50400176687639fe9ce3a744a015e57daf8e29bf132c38c5a08",
+          "archive": "base/src/cleanup_plan/replay/inventory_coverage/paid/queries.rs"
+        },
+        "ours": {
+          "length": 16589,
+          "sha256": "1179d874b5efb90e44ba7404ce8c35bdc78dc06dda85f8082c8047a27e5b2089",
+          "archive": "ours/src/cleanup_plan/replay/inventory_coverage/paid/queries.rs"
+        },
+        "incoming": {
+          "length": 16444,
+          "sha256": "1dcf1b349387a317b00e26d48a52c6af7d58392cca85f6c281e61fa0eca1a92e",
+          "archive": "incoming/src/cleanup_plan/replay/inventory_coverage/paid/queries.rs"
+        },
+        "resolved": {
+          "length": 16589,
+          "sha256": "1179d874b5efb90e44ba7404ce8c35bdc78dc06dda85f8082c8047a27e5b2089",
+          "archive": "resolved/src/cleanup_plan/replay/inventory_coverage/paid/queries.rs"
+        }
+      }
+    },
+    {
+      "path": "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+      "images": {
+        "base": {
+          "length": 30494,
+          "sha256": "c9154e93ca10739b1e7b88e6d4c9256d2cf5133a0a638213a572ea676e53ec4b",
+          "archive": "base/src/cleanup_plan/replay/path_join/selected/renewal.rs"
+        },
+        "ours": {
+          "length": 30585,
+          "sha256": "fda02c011ce59880bc77106f5fd6febb1bc1a067e55594050919fdb1c45a8c46",
+          "archive": "ours/src/cleanup_plan/replay/path_join/selected/renewal.rs"
+        },
+        "incoming": {
+          "length": 30499,
+          "sha256": "963b5a0929e4afd6ed24cf6939a22b637ec7385d653e5af4683862095c63f6f2",
+          "archive": "incoming/src/cleanup_plan/replay/path_join/selected/renewal.rs"
+        },
+        "resolved": {
+          "length": 30585,
+          "sha256": "fda02c011ce59880bc77106f5fd6febb1bc1a067e55594050919fdb1c45a8c46",
+          "archive": "resolved/src/cleanup_plan/replay/path_join/selected/renewal.rs"
+        }
+      }
+    }
+  ],
+  "both_resolved_files_byteexact_ours": true,
+  "range_counted_actual_bank": "(&mut Range<Box<PathState>>,Option<&Box<PathState>>),fields2",
+  "range_collected_actual_bank": "(&mut Range<Box<PathState>>,Option<&Box<PathState>>,&Box<PathState>),fields3",
+  "tuple_macro_spellings": "Ours5-argument exact tuple roles retained; same typed expansions as incoming7-argument spellings.",
+  "five_other_automerge_sources_byteexact_incoming": [
+    "src/cleanup_plan/replay/path_join/selected/strings.rs",
+    "src/cleanup_plan/replay/structural_control/selected.rs",
+    "src/hir/ids/declaration_backing_tests.rs",
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/source_reflows_merge/main67107_inputs.rs"
+  ],
+  "macro_reorder": "Specific7-argument arm precedes generic5 arm; both whole receiving bodies retained.",
+  "strings_new_usize_roles": "Arithmetic receiving2\u21923 and body6\u21927 pay new lookup_work/publication_work locals.",
+  "source_helper": "Evidence conflict owned by Main9, not mutated or accepted here.",
+  "staged_only_assigned_two": true,
+  "Cargo": false
+}

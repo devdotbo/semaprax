@@ -1,0 +1,22 @@
+[
+  {
+    "mode": "before",
+    "expected_compile_failure": true
+  },
+  {
+    "mode": "after",
+    "rust_version": "188",
+    "compile_peak_kib": 95776,
+    "runtime_peak_kib": 32,
+    "actual_borrowed_box_range_shape_passed": true,
+    "short_and_long_macro_arms_and_terminal_next_passed": true
+  },
+  {
+    "mode": "after",
+    "rust_version": "198",
+    "compile_peak_kib": 105712,
+    "runtime_peak_kib": 32,
+    "actual_borrowed_box_range_shape_passed": true,
+    "short_and_long_macro_arms_and_terminal_next_passed": true
+  }
+]

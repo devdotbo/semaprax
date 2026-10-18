@@ -509,8 +509,8 @@
       "sha256": "fda02c011ce59880bc77106f5fd6febb1bc1a067e55594050919fdb1c45a8c46"
     },
     "src/cleanup_plan/replay/path_join/selected/strings.rs": {
-      "length": 9388,
-      "sha256": "8a53fddb121f9130e1d3bb6f409fa4e249aae29a085bd3ebaccc67556a37e06d"
+      "length": 9410,
+      "sha256": "70d39574a019409036e6f5c1a846d647db0923d2dcc8b679df9687348193cc40"
     },
     "src/cleanup_plan/replay/path_join/selected/tests/boundary.rs": {
       "length": 8107,
@@ -629,8 +629,8 @@
       "sha256": "4c1f11609aab86b845013b820a4a9557c85e216251200b7308fe0147d6e8fdec"
     },
     "src/cleanup_plan/replay/structural_control/selected.rs": {
-      "length": 4854,
-      "sha256": "7ca2f7292917c9b72289252e44c7128e6c8c6682400d8ce2b09bfb69cad2c1b2"
+      "length": 4945,
+      "sha256": "7cc864553f771319f97aacc37280775c3ee5221177fd9b3817f0083fcb7de55e"
     },
     "src/cleanup_plan/replay/structural_control/selected/blocks.rs": {
       "length": 42825,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 39843,
-      "sha256": "5d3bd3930a27c1e86af98e99d5eaf1c2875f45d9ea6ddcb30d8171ae3cdf90a7"
+      "length": 39997,
+      "sha256": "670ec2b6d45bb4bfafd68240f570414fd3c73964c0a46d351a29c30a30d82b80"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -3766,7 +3766,8 @@
     "src/hir/lexical_exit/owner_funded_receiving.rs",
     "src/literal_format/funded_receiving.rs",
     "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "src/string_ops/conditions/funded_receiving.rs"
+    "src/string_ops/conditions/funded_receiving.rs",
+    "src/hir/ids/declaration_backing_tests.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

@@ -30,6 +30,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
+    "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
@@ -52,6 +53,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/path_join/selected/tests/history.rs",
     "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs",
     "src/cleanup_plan/replay/schema/selected_paid.rs",
+    "src/cleanup_plan/replay/structural_control/selected.rs",
     "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
     "src/cleanup_plan/replay/structural_control/selected/calls.rs",
     "src/cleanup_plan/replay/structural_control/selected/helpers.rs",
@@ -84,11 +86,12 @@ const ADDITIONS: &[&str] = &[
     "src/string_ops/conditions/funded_receiving.rs",
     "src/cleanup_plan/replay/expression_facts/errors.rs",
     "docs/ORDINARY-REPLAY-RECEIVING-V1.md",
+    "src/hir/ids/declaration_backing_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 14765; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "00e29a1286ba5ce53fe431e65dff49b188f47e359a5d58c1efe9c9f6a6315afa";
+const POLICY_LENGTH: usize = 14932; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "fc01b42a17886089c55a9fe167f4881de17d02db51dc769c42190816286426d1";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
