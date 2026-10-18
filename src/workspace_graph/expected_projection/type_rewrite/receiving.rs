@@ -584,17 +584,18 @@ use type @id("row") from vector.provider as ImportedRow;
     fn typed_signature_rewrite_complete_old_helpers_live_callers_and_whole_source_inverses_are_bound(
     ) {
         use sha2::{Digest, Sha256};
-        let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
-            env!("CARGO_MANIFEST_DIR"),
-            "/docs/evidence/constructor-signature-rewrite-825/source-inverses.json"
-        )))
-        .unwrap();
+        let rows: serde_json::Value =
+            serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+                crate::source_reflows_merge::ReceiverFixture::SignatureRewrite,
+            ))
+            .unwrap();
+        let current_receiver =
+            crate::source_reflows_merge::ReceiverFixture::signature_rewrite_source_before(
+                include_str!("receiving.rs"),
+            );
         let sources = [
             (
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/workspace_graph/expected_projection/type_rewrite/receiving.rs"
-                )),
+                current_receiver.as_str(),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/docs/evidence/constructor-signature-rewrite-825/original/00.before"

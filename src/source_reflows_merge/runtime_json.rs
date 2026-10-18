@@ -154,8 +154,34 @@ pub(crate) enum ReceiverFixture {
     ColdCanonical,
     BorrowedGeneric,
     // RUNTIME848_SIX_VARIANTS_END
+    // RUNTIME848_THREE_VARIANTS_BEGIN
+    RegionEntry,
+    DiagnosticWriter,
+    SignatureRewrite,
+    // RUNTIME848_THREE_VARIANTS_END
 }
 impl ReceiverFixture {
+    // RUNTIME848_THREE_SOURCE_BEGIN
+    // The one self-reading consumer acquires its complete original input before
+    // every unchanged signature/source inverse below. The reader authenticates
+    // current physical/compiled/archive bytes before returning this fixed view.
+    pub(crate) fn signature_rewrite_source_before(current: &str) -> String {
+        let before = super::main_e177_final_inputs::value_direct(
+            "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
+            "ebf3d82bcd0c46c3c7b86c2b37c24d1e0f942ee3feddae85d63aed23786dc718",
+            current,
+        );
+        assert_eq!(before.len(), 28245);
+        assert_eq!(
+            digest(before.as_bytes()),
+            [
+                235, 243, 216, 43, 205, 12, 70, 195, 199, 184, 108, 43, 55, 194, 77, 30, 15, 148,
+                46, 227, 254, 221, 174, 133, 214, 58, 237, 35, 120, 109, 199, 24
+            ]
+        );
+        before
+    }
+    // RUNTIME848_THREE_SOURCE_END
     fn spec(self) -> Spec {
         match self {
             // RUNTIME848_SIX_SPECS_BEGIN
@@ -190,6 +216,41 @@ impl ReceiverFixture {
                 sha256: [71, 23, 207, 207, 19, 209, 138, 153, 88, 241, 15, 220, 76, 228, 59, 21, 77, 168, 152, 82, 242, 198, 111, 217, 192, 38, 52, 208, 27, 126, 215, 228],
             },
             // RUNTIME848_SIX_SPECS_END
+            // RUNTIME848_THREE_SPECS_BEGIN
+            Self::RegionEntry => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"
+                ),
+                length: 3841085,
+                sha256: [
+                    218, 167, 174, 164, 251, 148, 90, 158, 250, 93, 6, 233, 174, 206, 237, 156, 6,
+                    92, 144, 192, 122, 218, 66, 73, 60, 119, 244, 243, 41, 189, 21, 199,
+                ],
+            },
+            Self::DiagnosticWriter => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/diagnostic-writer-846/source-inverses.json"
+                ),
+                length: 2446626,
+                sha256: [
+                    165, 242, 11, 99, 243, 34, 176, 86, 112, 114, 117, 252, 130, 218, 100, 219,
+                    130, 146, 175, 189, 109, 65, 32, 181, 200, 188, 186, 108, 73, 86, 91, 104,
+                ],
+            },
+            Self::SignatureRewrite => Spec {
+                path: concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/constructor-signature-rewrite-825/source-inverses.json"
+                ),
+                length: 2353229,
+                sha256: [
+                    78, 171, 172, 57, 131, 198, 179, 97, 165, 22, 99, 105, 44, 105, 216, 167, 92,
+                    221, 121, 110, 125, 156, 175, 164, 99, 160, 55, 91, 22, 173, 120, 35,
+                ],
+            },
+            // RUNTIME848_THREE_SPECS_END
             Self::SelectedCalls => Spec {
                 path: concat!(
                     env!("CARGO_MANIFEST_DIR"),

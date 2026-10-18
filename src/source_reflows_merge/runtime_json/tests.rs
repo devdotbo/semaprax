@@ -600,6 +600,8 @@ fn complete_receiver_entry_glue(source: &str, current: &str) -> String {
 // restoring its complete predecessor. Every original transport proof still runs.
 #[rustfmt::skip]
 fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
+    let three_before = complete_three_fixture_runtime_glue(source, current);
+    let current = three_before.as_str();
     let (length, current_sha, old_length, old_sha, edits): (usize, [u8; 32], usize, [u8; 32], &[(&str, &str)]) = match source {
         "src/source_reflows_merge/runtime_json.rs" => (
             16413, [115, 31, 40, 89, 151, 87, 160, 144, 206, 18, 193, 29, 161, 8, 204, 10, 234, 91, 62, 62, 24, 10, 192, 187, 90, 213, 109, 83, 22, 95, 253, 236],
@@ -656,3 +658,238 @@ fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
     assert_eq!(digest(before.as_bytes()), old_sha, "complete prior ENTRY helper body: {source}");
     before
 }
+
+// RUNTIME848_THREE_CONTROLS_BEGIN
+// Only these fixed DATA acquisitions change. Every historical source assertion
+// below receives its complete original input; nothing is read under a compiler
+// allocation or budget probe and no parsed/verdict cache is introduced.
+fn complete_three_fixture_runtime_glue(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge/runtime_json.rs" {
+        return current.to_owned();
+    }
+    assert_eq!(current.len(), 19161);
+    assert_eq!(
+        digest(current.as_bytes()),
+        [
+            201, 208, 170, 144, 181, 150, 166, 179, 101, 103, 154, 150, 68, 55, 199, 251, 233, 167,
+            49, 60, 199, 124, 106, 95, 121, 148, 168, 39, 179, 223, 84, 62
+        ]
+    );
+    let mut before = current.to_owned();
+    for (start, end) in [
+        (
+            "    // RUNTIME848_THREE_VARIANTS_BEGIN\n",
+            "    // RUNTIME848_THREE_VARIANTS_END\n",
+        ),
+        (
+            "            // RUNTIME848_THREE_SPECS_BEGIN\n",
+            "            // RUNTIME848_THREE_SPECS_END\n",
+        ),
+        (
+            "    // RUNTIME848_THREE_SOURCE_BEGIN\n",
+            "    // RUNTIME848_THREE_SOURCE_END\n",
+        ),
+    ] {
+        assert_eq!(before.matches(start).count(), 1);
+        assert_eq!(before.matches(end).count(), 1);
+        let first = before.find(start).unwrap();
+        let last = before.find(end).unwrap() + end.len();
+        assert!(first < last);
+        before.replace_range(first..last, "");
+    }
+    assert_eq!(before.len(), 16413);
+    assert_eq!(
+        digest(before.as_bytes()),
+        [
+            115, 31, 40, 89, 151, 87, 160, 144, 206, 18, 193, 29, 161, 8, 204, 10, 234, 91, 62, 62,
+            24, 10, 192, 187, 90, 213, 109, 83, 22, 95, 253, 236
+        ]
+    );
+    before
+}
+
+fn three_fixture_test_source_before(current: &str) -> String {
+    let marker = "\n// RUNTIME848_THREE_CONTROLS_BEGIN\n";
+    assert_eq!(current.matches(marker).count(), 1);
+    assert!(current.ends_with("// RUNTIME848_THREE_CONTROLS_END\n"));
+    let (original, _) = current.split_once(marker).unwrap();
+    let mut before = original.to_owned();
+    let hook = "    let three_before = complete_three_fixture_runtime_glue(source, current);\n    let current = three_before.as_str();\n";
+    assert_eq!(before.matches(hook).count(), 1);
+    before = before.replacen(hook, "", 1);
+    assert_eq!(before.len(), 62885);
+    assert_eq!(
+        digest(before.as_bytes()),
+        [
+            181, 109, 123, 172, 36, 153, 196, 35, 87, 18, 76, 84, 94, 250, 107, 184, 83, 146, 44,
+            213, 28, 171, 77, 54, 40, 235, 237, 68, 179, 186, 120, 89
+        ]
+    );
+    before
+}
+
+#[test]
+fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read() {
+    let directory = std::env::temp_dir().join(format!(
+        "semaprax-three-history-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed),
+    ));
+    std::fs::create_dir(&directory).unwrap();
+    let directory = Directory(directory);
+    let path = directory.0.join("fixture.json");
+    for (fixture, row_count, current, length, sha, old_length, old_sha, edits) in [
+        (
+            ReceiverFixture::RegionEntry,
+            6,
+            include_str!(
+                "../../cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs"
+            ),
+            22278,
+            [
+                97, 105, 89, 24, 61, 78, 70, 62, 242, 87, 227, 223, 90, 253, 33, 23, 14, 43, 174,
+                114, 178, 200, 144, 81, 63, 167, 81, 105, 255, 173, 118, 45,
+            ],
+            22284,
+            [
+                231, 253, 211, 212, 17, 178, 96, 176, 103, 228, 106, 74, 97, 180, 107, 36, 70, 160,
+                211, 7, 12, 100, 113, 117, 59, 87, 200, 121, 61, 251, 98, 168,
+            ],
+            &[(
+                "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::RegionEntry,\n        ))\n        .unwrap();",
+                "    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json\"\n    )))\n    .unwrap();",
+            )][..],
+        ),
+        (
+            ReceiverFixture::DiagnosticWriter,
+            10,
+            include_str!("../../diagnostic/writer/tests.rs"),
+            12196,
+            [
+                190, 196, 111, 129, 149, 10, 242, 87, 98, 82, 198, 98, 135, 70, 2, 108, 198, 53,
+                196, 200, 24, 87, 21, 100, 62, 176, 202, 77, 21, 123, 146, 235,
+            ],
+            12183,
+            [
+                155, 180, 211, 126, 240, 24, 153, 35, 56, 69, 157, 144, 92, 117, 88, 31, 126, 66,
+                20, 135, 80, 136, 13, 252, 139, 246, 134, 243, 251, 103, 100, 240,
+            ],
+            &[(
+                "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::DiagnosticWriter,\n        ))\n        .unwrap();",
+                "    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/docs/evidence/diagnostic-writer-846/source-inverses.json\"\n    )))\n    .unwrap();",
+            )][..],
+        ),
+        (
+            ReceiverFixture::SignatureRewrite,
+            7,
+            include_str!("../../workspace_graph/expected_projection/type_rewrite/receiving.rs"),
+            28277,
+            [
+                198, 17, 126, 152, 25, 183, 254, 171, 26, 83, 8, 219, 9, 71, 3, 107, 176, 194, 125,
+                45, 139, 98, 251, 184, 50, 47, 197, 221, 238, 199, 127, 102,
+            ],
+            28245,
+            [
+                235, 243, 216, 43, 205, 12, 70, 195, 199, 184, 108, 43, 55, 194, 77, 30, 15, 148,
+                46, 227, 254, 221, 174, 133, 214, 58, 237, 35, 120, 109, 199, 24,
+            ],
+            &[
+                (
+                    "        let rows: serde_json::Value =\n            serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n                crate::source_reflows_merge::ReceiverFixture::SignatureRewrite,\n            ))\n            .unwrap();",
+                    "        let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/docs/evidence/constructor-signature-rewrite-825/source-inverses.json\"\n        )))\n        .unwrap();",
+                ),
+                (
+                    "        let current_receiver =\n            crate::source_reflows_merge::ReceiverFixture::signature_rewrite_source_before(\n                include_str!(\"receiving.rs\"),\n            );\n",
+                    "",
+                ),
+                (
+                    "current_receiver.as_str()",
+                    "include_str!(concat!(\n                    env!(\"CARGO_MANIFEST_DIR\"),\n                    \"/src/workspace_graph/expected_projection/type_rewrite/receiving.rs\"\n                ))",
+                ),
+            ][..],
+        ),
+    ] {
+        let spec = fixture.spec();
+        assert!(spec.length <= OUTPUT_CAP);
+        let payload = receiver_fixture(fixture);
+        assert_eq!(payload.len(), spec.length);
+        assert_eq!(digest(payload.as_bytes()), spec.sha256);
+        let rows: serde_json::Value = serde_json::from_str(&payload).unwrap();
+        assert_eq!(rows.as_array().unwrap().len(), row_count);
+        assert_eq!(current.len(), length);
+        assert_eq!(digest(current.as_bytes()), sha);
+        let restore = |subject: &str| {
+            assert_eq!(subject.len(), length);
+            assert_eq!(digest(subject.as_bytes()), sha);
+            let mut before = subject.to_owned();
+            for &(after, prior) in edits {
+                assert_eq!(before.matches(after).count(), 1);
+                before = before.replacen(after, prior, 1);
+            }
+            assert_eq!(before.len(), old_length);
+            assert_eq!(digest(before.as_bytes()), old_sha);
+            before
+        };
+        drop(restore(current));
+        for foreign in [
+            format!("{current} "),
+            current[..current.len() - 1].to_owned(),
+            current.replacen("use ", "use  ", 1),
+        ] {
+            assert_ne!(foreign, current);
+            assert!(std::panic::catch_unwind(|| restore(&foreign)).is_err());
+        }
+        assert_eq!(
+            read_fixture(&directory.0.join("missing"), spec.length, spec.sha256),
+            Err(Failure::Input)
+        );
+        std::fs::write(&path, &payload).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256).unwrap(),
+            payload
+        );
+        std::fs::write(&path, &payload.as_bytes()[..spec.length - 1]).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Bound)
+        );
+        let mut altered = payload.as_bytes().to_vec();
+        altered.push(b' ');
+        std::fs::write(&path, &altered).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Bound)
+        );
+        altered.pop();
+        altered[0] ^= 1;
+        std::fs::write(&path, &altered).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256),
+            Err(Failure::Digest)
+        );
+        std::fs::write(&path, &payload).unwrap();
+        assert_eq!(
+            read_fixture(&path, spec.length, spec.sha256).unwrap(),
+            payload
+        );
+    }
+    let runtime = include_str!("../runtime_json.rs");
+    drop(complete_three_fixture_runtime_glue(
+        "src/source_reflows_merge/runtime_json.rs",
+        runtime,
+    ));
+    assert!(
+        std::panic::catch_unwind(|| complete_three_fixture_runtime_glue(
+            "src/source_reflows_merge/runtime_json.rs",
+            &format!("{runtime} "),
+        ))
+        .is_err()
+    );
+    let controls = include_str!("tests.rs");
+    drop(three_fixture_test_source_before(controls));
+    assert!(
+        std::panic::catch_unwind(|| three_fixture_test_source_before(&format!("{controls} ")))
+            .is_err()
+    );
+}
+// RUNTIME848_THREE_CONTROLS_END

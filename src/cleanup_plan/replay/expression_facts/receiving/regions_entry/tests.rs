@@ -523,11 +523,11 @@ fn region_entry_original_input(source: &str, current: &str) -> String {
             source, current,
         );
     let current = before_885.as_str();
-    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"
-    )))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::RegionEntry,
+        ))
+        .unwrap();
     let row = rows
         .as_array()
         .unwrap()
