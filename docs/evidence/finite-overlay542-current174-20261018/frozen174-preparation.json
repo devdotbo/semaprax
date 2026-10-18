@@ -1,0 +1,148 @@
+{
+  "status": "PREPARED_NOT_EXECUTED",
+  "membership": 174,
+  "changed": {
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": [
+      189358,
+      "583a7311433f3fa96d3807dd09659230f528e82c89ed9c04e06a83e2a23a8471"
+    ],
+    "src/cleanup_plan/renewal_profile.rs": [
+      12919,
+      "89e8b816520b77a576591815ce40ff8ec681c00979f772fd338e4a26a2ecb18c"
+    ],
+    "src/cleanup_plan/renewal_profile/funded.rs": [
+      20248,
+      "a43f0efa2fc0f3ca008ab156343ef31c0d9c0a6edb68e7ab83c8c34535b37225"
+    ],
+    "src/cleanup_plan/replay.rs": [
+      324158,
+      "db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c"
+    ],
+    "src/cleanup_plan/replay/expression_facts/receiving/retained.rs": [
+      36932,
+      "74cc8eceace6dc734e1a6a2631bab7d85baee2d2e7f19df35f26cdd6e98f9d74"
+    ],
+    "src/cleanup_plan/replay/skeleton_work.rs": [
+      48210,
+      "087f973c5c08945976d8e0ebb4fc7efc8a98e9d01da0229ee7e1305654424f3b"
+    ],
+    "src/hir/lexical_exit.rs": [
+      7015,
+      "deed9c8d6adbdadc334408b52fd6bb57ddedd9c3312f72b29a5b6b0a2062ce7a"
+    ],
+    "src/hir/lexical_exit/owner_funded.rs": [
+      16659,
+      "39915eff569984463db6c40544a89f9fa37d86675e44b89b321f6ba80ba832b3"
+    ],
+    "src/literal_format.rs": [
+      8897,
+      "2b45ce68f7f0f00950660b4b4c1d1b42ae79166a69bd771c9860318916347e2a"
+    ],
+    "src/literal_format/funded.rs": [
+      3845,
+      "6799cdf6f3c76e0e86743bcc6840f2733fc63063d3652376e817ac04564552fb"
+    ],
+    "src/string_ops/conditions.rs": [
+      5598,
+      "42662e6d42c813018ec31c9b47602031a33787891cd6188a4d1ed7f2fdbf8ac3"
+    ],
+    "src/string_ops/conditions/funded.rs": [
+      7354,
+      "1e79b88cee2643de354b0048c72a6d457bb417cfc29f7ec2a4538e903ae090c6"
+    ],
+    "tests/hir_module_boundaries.rs": [
+      131602,
+      "bead460b4bd510b260bd6759a235dcecffb9d1e183d463e7d54cd02e324740a1"
+    ],
+    "tests/workspace/semantic_graph/source_inventory.rs": [
+      148320,
+      "13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d"
+    ]
+  },
+  "strict_dependencies": 2300,
+  "strict_cap": 262144,
+  "unreadable_Rust_only_dependencies_not_added": [
+    {
+      "path": "CHANGELOG.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "successor-Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "CHANGELOG.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "docs/ARCHITECTURE.md",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/hir/validation.rs",
+      "reason": "Rust-only-current-exceeds-unchanged-Python-bound"
+    },
+    {
+      "path": "src/cleanup_plan/replay.rs",
+      "reason": "page-current-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "e/db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/views/6cdfce6c20964d62f360cd147d0c6ca8b4d9cb86f671d6d5b5773d8c6e446ae7.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current/733505ad93eda40bcbfa03ed0d2978f5e1dd5f0aa93020daff78d833def3b464.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current/e688f57ac691a478b7c751ad69975d3ba447ffdc6ac8f71b018a5d438e8f3d0c.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current/e688f57ac691a478b7c751ad69975d3ba447ffdc6ac8f71b018a5d438e8f3d0c.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-a110/i42wkfgzCcx6Ul8MUMKT2gVaS2lJ1affk2LIN7ni4O0.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-a110/i42wkfgzCcx6Ul8MUMKT2gVaS2lJ1affk2LIN7ni4O0.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/whole/8b8db091f83309cc7a525f0c50c293da055a4b6949d5a7df9362c837b9e2e0ed.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    },
+    {
+      "path": "docs/evidence/merge-e32-browser-20261018/whole/3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e.txt",
+      "reason": "page-view-exceeds-original-Python-perread-bound"
+    }
+  ],
+  "logical_rows": 542,
+  "only_inherited317943_exception_exact": true,
+  "binder_unchanged_sha256": "4921dedbcd93d865cafc825f176f5598891864f35c605096185dfb49c6887546",
+  "whole_wrapper_before_sha256": "d48f0f705fa50db9afe5de5a2c15ed42d6f8850bfdfacb14624195a1f82cbff9",
+  "wrapper_after_sha256": "be26e1b198cc0395e6951022cec4425808231bef2de0ed26ab265edea3bf7609",
+  "explicit_execution_expected_repo_and_HEAD_required": true
+}
