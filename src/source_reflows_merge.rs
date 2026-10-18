@@ -407,29 +407,64 @@ fn corrected_consumers_previous(source: &str, current: &str) -> String {
     fixes
 }
 
+// These three formatter inverses bind the ENTIRE actual compiled child body,
+// not merely an archived before image. No token or string-content normalization.
 pub(crate) fn receiver_child_entry(source: &str, current: &str) -> String {
-    let expected = match source {
-        "src/workspace_graph/expected_projection/private_layout/before_registry.rs" => {
-            "0d6e2e30c78d040eafcd7c11e66a4696d17e949aa09eac7d79d6d1b6634721cd"
-        }
-        "src/workspace_graph/cold_canonical/before.rs" => {
-            "78fbcd95f4430f0750b4ae1e8b2cfdc5277c3bf9ef02fe4776cea96bc5a494e2"
-        }
-        "src/format/comments/compare/tests.rs" => {
-            "7adedbc8fc515199d21e71a93fbe7a1624c5500e46278f4ddf834050ef0a7b38"
-        }
+    let (expected, length, compiled_sha, after, before) = match source {
+        "src/workspace_graph/expected_projection/private_layout/before_registry.rs" => (
+            "0d6e2e30c78d040eafcd7c11e66a4696d17e949aa09eac7d79d6d1b6634721cd", 8142,
+            "986c2f1eb41715186ee5a1856e58abbcde03d53e86e53b1e903e1b0845c002b8",
+            "}\n\n#[cfg(test)]\nthread_local! {static DERIVATIONS:",
+            "}\n\n\n#[cfg(test)]\nthread_local! {static DERIVATIONS:",
+        ),
+        "src/workspace_graph/cold_canonical/before.rs" => (
+            "78fbcd95f4430f0750b4ae1e8b2cfdc5277c3bf9ef02fe4776cea96bc5a494e2", 19289,
+            "cd153b0db9d19b6b8983fc66f3970494d1247c2180b595d839db96eeaf4f8487",
+            "                    staged!(\n                        CorePrebound,\n                        constructor_failure::attempt::reserve(resolve_builder_bytes)\n                    )?;",
+            "                    staged!(CorePrebound, constructor_failure::attempt::reserve(resolve_builder_bytes))?;",
+        ),
+        "src/format/comments/compare/tests.rs" => (
+            "7adedbc8fc515199d21e71a93fbe7a1624c5500e46278f4ddf834050ef0a7b38", 3421,
+            "4b422dd4781d2123eddd2eabb1459c5e3bedb222fc6957729d4c444e3ca2cf2c",
+            "    assert_eq!(\n        refusal.message,\n        \"a module must declare at least one function\"\n    );",
+            "    assert_eq!(refusal.message, \"a module must declare at least one function\");",
+        ),
         _ => return current.to_owned(),
     };
+    // Fresh physical/compiled/archive authentication precedes historical lookup.
     let entry = main_e177_final_inputs::value_direct(source, expected, current);
+    assert_eq!(
+        current.len(),
+        length,
+        "complete compiled child extent: {source}"
+    );
     assert_eq!(
         format!(
             "{:x}",
-            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        compiled_sha,
+        "complete compiled child bytes: {source}"
+    );
+    assert_eq!(
+        current.matches(after).count(),
+        1,
+        "one literal child formatter inverse: {source}"
+    );
+    let inverse = current.replacen(after, before, 1);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(inverse.as_bytes()))
         ),
         expected,
-        "complete fixed historical child input: {source}"
+        "complete original compiled child: {source}"
     );
-    entry
+    assert_eq!(
+        inverse, entry,
+        "whole compiled child equals independently acquired history: {source}"
+    );
+    inverse
 }
 
 pub(crate) fn consumer_child(domain: &str, source: &str, current: &str) -> String {
