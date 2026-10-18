@@ -1271,8 +1271,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
-    "sha256": "912e395a250f4ef36eaf8aa573d7afa532bf4098073d7d1aded519cb922ac9bd",
-    "lines": 1213
+    "sha256": "8484121abb7afd47a3baf21d1eb36875622f31ef72e65a867728b7af1ec34d26",
+    "lines": 1214
   },
   {
     "source": "src/workspace_graph/shape_identity/before785.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "a5853c159d11f996a36be2f05e528c3a0c05064537a76e6ccaccfdbac1430382",
+    "sha256": "4bf7f8e78fdfb4f163b98f9f23b39b3f3b729ccd47a1be7506e67068aff12351",
     "lines": 970
   },
   {

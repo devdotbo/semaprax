@@ -51,7 +51,11 @@ const MACRO: &[(usize, &str, &str)] = &[
     (489, "pub(super) const PRIMITIVE_FRAMES: usize = 41 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 42 * PAYMENT_HEADER;\n"),
     (339, "// The shared immutable-step branch adds five payment and five work sites.\n", "// The shared immutable-step branch adds six payment and five work sites.\n"),
 ];
+mod constructor;
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_stage(&constructor::previous_pair_tests(current))
+}
+fn previous_pair_tests_stage(current: &str) -> String {
     restore(current, 50482, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -241,8 +245,10 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &super::constructor::previous_pair_tests(include_str!(
+                "../../../../pair_scope_tests.rs"
+            )),
+            previous_pair_tests_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/pair-links-7e-20261018/before-pair-tests.rs.txt"

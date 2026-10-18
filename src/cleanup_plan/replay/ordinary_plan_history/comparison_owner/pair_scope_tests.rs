@@ -1201,7 +1201,8 @@ fn sealed_unit_driver_is_exactly_unit_only_and_never_allocates_or_owns_cleanup()
     assert!(!std::mem::needs_drop::<SharedUnitDriver>());
     for length in [0, 1, 2, 4, 257] {
         let ((), heap) = measure(|| {
-            let mut driver: SharedUnitDriver = std::iter::repeat(()).take(length);
+            let repeating = std::iter::repeat(());
+            let mut driver: SharedUnitDriver = repeating.take(length);
             unit_iter(&driver);
             for _ in 0..length {
                 assert_eq!(driver.next(), Some(()));

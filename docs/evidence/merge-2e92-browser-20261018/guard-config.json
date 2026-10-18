@@ -317,8 +317,8 @@
       "sha256": "b0caf3a16b37f3eb69418ae93a7e405bb06388b78795c4fa34a491ef3ee66ef5"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 50482,
-      "sha256": "912e395a250f4ef36eaf8aa573d7afa532bf4098073d7d1aded519cb922ac9bd"
+      "length": 50521,
+      "sha256": "8484121abb7afd47a3baf21d1eb36875622f31ef72e65a867728b7af1ec34d26"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 41016,
-      "sha256": "a5853c159d11f996a36be2f05e528c3a0c05064537a76e6ccaccfdbac1430382"
+      "sha256": "4bf7f8e78fdfb4f163b98f9f23b39b3f3b729ccd47a1be7506e67068aff12351"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
