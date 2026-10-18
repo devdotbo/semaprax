@@ -2,7 +2,7 @@
 use super::super::*;
 pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) mod borrowed_single;
 
-impl Canonicalizer<'_> {
+impl<'hir> Canonicalizer<'hir> {
     #[allow(
         clippy::iter_next_slice,
         clippy::single_match,
@@ -113,54 +113,74 @@ impl Canonicalizer<'_> {
                     ));
                     self.open
                         .push(attempt!(share_weighted(function, budget, &state)));
-                    // Keep the complete general API and its old result/error
-                    // order for every non-ActiveBuilder payer.
-                    match budget {
-                        ReplayBudget {
-                            payer: AllocationPayer::ActiveBuilder,
-                            ..
-                        } => {}
-                        _ => {
-                            let Some((accepted, successors)) = attempt!(
-                                self.successors_with_receiving(function, &state, budget, receiving)
-                            ) else {
-                                receiving.finish_overflow();
-                                return;
-                            };
-                            schedule_vector!(state, accepted, successors);
-                            continue;
+                    // These uninitialized places acquire no Vec payload on
+                    // One. Every actual vector transfer is paid before its
+                    // scalar/Vec receiving assignments, including legacy.
+                    let vector_accepted: u64;
+                    let vector_successors: Vec<(Label, SharedWeighted)>;
+                    'vector_continuation: {
+                        macro_rules! publish_vector {
+                            ($a:expr, $rows:ident) => {{
+                                attempt!(budget.reserve_bytes(
+                                    function,
+                                    inline_exit::VECTOR_TRANSPORT,
+                                    "canonical vector continuation receiving",
+                                ));
+                                vector_accepted = $a;
+                                vector_successors = $rows;
+                                break 'vector_continuation;
+                            }};
                         }
-                    }
-                    macro_rules! publish_vector {
-                        ($a:ident, $rows:ident) => {
-                            schedule_vector!(state, $a, $rows)
+                        // Keep the complete general API and its old result/error
+                        // order for every non-ActiveBuilder payer.
+                        match budget {
+                            ReplayBudget {
+                                payer: AllocationPayer::ActiveBuilder,
+                                ..
+                            } => {}
+                            _ => {
+                                let Some((accepted, successors)) = attempt!(self
+                                    .successors_with_receiving(
+                                        function, &state, budget, receiving
+                                    ))
+                                else {
+                                    receiving.finish_overflow();
+                                    return;
+                                };
+                                publish_vector!(accepted, successors);
+                            }
+                        }
+                        let Some((accepted, label, child)) = lexical_successors!(self, function, state, budget, receiving, attempt, publish_vector, 'canonical_frames)
+                        else {
+                            receiving.finish_overflow();
+                            return;
                         };
+                        attempt!(budget.reserve_vec(
+                            function,
+                            &mut self.frames,
+                            1,
+                            "factored canonical exit frame"
+                        ));
+                        let exit_index = self.frames.len();
+                        self.frames
+                            .push(CanonicalFrame::ExitOne(state, accepted, (label, child)));
+                        let CanonicalFrame::ExitOne(_, _, (_, child)) = &self.frames[exit_index]
+                        else {
+                            unreachable!("inline exit retained below child")
+                        };
+                        let child = attempt!(share_weighted(function, budget, child));
+                        attempt!(budget.reserve_vec(
+                            function,
+                            &mut self.frames,
+                            1,
+                            "factored canonical child frames"
+                        ));
+                        self.frames.push(CanonicalFrame::Enter(child));
+                        continue 'canonical_frames;
                     }
-                    let Some((accepted, label, child)) = lexical_successors!(self, function, state, budget, receiving, attempt, publish_vector, 'canonical_frames)
-                    else {
-                        receiving.finish_overflow();
-                        return;
-                    };
-                    attempt!(budget.reserve_vec(
-                        function,
-                        &mut self.frames,
-                        1,
-                        "factored canonical exit frame"
-                    ));
-                    let exit_index = self.frames.len();
-                    self.frames
-                        .push(CanonicalFrame::ExitOne(state, accepted, (label, child)));
-                    let CanonicalFrame::ExitOne(_, _, (_, child)) = &self.frames[exit_index] else {
-                        unreachable!("inline exit retained below child")
-                    };
-                    let child = attempt!(share_weighted(function, budget, child));
-                    attempt!(budget.reserve_vec(
-                        function,
-                        &mut self.frames,
-                        1,
-                        "factored canonical child frames"
-                    ));
-                    self.frames.push(CanonicalFrame::Enter(child));
+                    // One real vector scheduling site for all four source
+                    // branches; no callback or initialized Option carrier.
+                    schedule_vector!(state, vector_accepted, vector_successors);
                 }
                 CanonicalFrame::ExitOne(state, accepted, row) => {
                     self.open.retain(|entry| entry != &state);
@@ -182,7 +202,7 @@ impl Canonicalizer<'_> {
                     };
                     let query = borrowed_single::OneQuery {
                         accepted,
-                        label: &row.0,
+                        label: row.0,
                         child: child_id,
                     };
                     let id = match self.ids.get(&query) {
@@ -206,7 +226,7 @@ impl Canonicalizer<'_> {
                             let mut key = Vec::with_capacity(1);
                             {
                                 let (label, _child) = row;
-                                key.push((label, *child_id));
+                                key.push((Label::clone(label), *child_id));
                             }
                             let key = (accepted, key);
                             intern_arena::prepare_insert!(

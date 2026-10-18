@@ -2,16 +2,17 @@
 use super::*;
 use std::mem::size_of;
 type Successors = (u64, Vec<(Label, SharedWeighted)>);
-type InlineSuccessors = (u64, Label, SharedWeighted);
+type InlineSuccessors<'a> = (u64, &'a Label, SharedWeighted);
 // Exact same producer-output and caller-destructure role as old Successors:
 // accepted:u64 survives, the old Vec<Row> output is replaced by owned Label/Rc.
 // No old output/Vec is live on this branch. The single Option receiver and
 // both complete Result compatibility slots in ORIGINAL_RECEIVING stay paid
 // at their original frontier and map individually, never to an unrelated bank.
-const _: () = assert!(size_of::<InlineSuccessors>() <= size_of::<Successors>());
-const _: () = assert!(size_of::<Option<InlineSuccessors>>() <= size_of::<Option<Successors>>());
+const _: () = assert!(size_of::<InlineSuccessors<'static>>() <= size_of::<Successors>());
+const _: () =
+    assert!(size_of::<Option<InlineSuccessors<'static>>>() <= size_of::<Option<Successors>>());
 const _: () = assert!(
-    size_of::<Result<Option<InlineSuccessors>, Diagnostic>>()
+    size_of::<Result<Option<InlineSuccessors<'static>>, Diagnostic>>()
         <= size_of::<Result<Option<Successors>, Diagnostic>>()
 );
 
@@ -161,157 +162,128 @@ const _: () = assert!(PER_USE_SELECTION < PRIMITIVE_FRAMES);
 macro_rules! lexical_one_pass_successors {
     ($function:ident, $budget:ident, $automaton:expr, $closed:ident, $accepted:ident, $receiving:ident, $attempt:ident, $closed_owner:ident, $closed_type:ty, $unit:expr, $vector:ident, $frames:lifetime) => {{
         'one_pass: {
-        // The actual canonical caller has already authenticated its Memo and held
-        // receiver. Keep zero-byte sticky authentication even for no movements.
-        $attempt!($budget.reserve_bytes(
-            $function,
-            0,
-            "factored one-pass successor authentication"
-        ));
-        $attempt!($budget.charge($function, 0, "factored one-pass successor authentication"));
-        let mut labels = lexical_successors::OnePassLabels::Empty;
-        macro_rules! add {
-            ($targets:ident, $child:ident, $weight:ident) => {
-                match $targets {
-                    paid_many::Targets::One {
-                        child: first,
-                        weight: total,
-                    } if *first == *$child => {
-                        let Some(sum) = total.checked_add(*$weight) else {
-                            $receiving.finish_overflow();
-                            return;
-                        };
-                        *total = sum;
-                    }
-                    paid_many::Targets::One {
-                        child: first,
-                        weight: total,
-                    } => {
-                        $attempt!($budget.reserve_bytes(
-                            $function,
-                            paid_many::PROMOTE_RECEIVING,
-                            "factored one-pass distinct-target receivers"
-                        ));
-                        #[cfg(test)]
-                        if $budget.pays_allocations() {
-                            paid_many::note_branch(true);
+            // The actual canonical caller has already authenticated its Memo and held
+            // receiver. Keep zero-byte sticky authentication even for no movements.
+            $attempt!($budget.reserve_bytes(
+                $function,
+                0,
+                "factored one-pass successor authentication"
+            ));
+            $attempt!($budget.charge($function, 0, "factored one-pass successor authentication"));
+            let mut labels = lexical_successors::OnePassLabels::Empty;
+            macro_rules! add {
+                ($targets:ident, $child:ident, $weight:ident) => {
+                    match $targets {
+                        paid_many::Targets::One {
+                            child: first,
+                            weight: total,
+                        } if *first == *$child => {
+                            let Some(sum) = total.checked_add(*$weight) else {
+                                $receiving.finish_overflow();
+                                return;
+                            };
+                            *total = sum;
                         }
-                        *$targets = $attempt!(paid_many::promote(
-                            $function, $budget, *first, *total, *$child, *$weight
-                        ));
-                    }
-                    paid_many::Targets::PaidMany(flat) => {
-                        $attempt!($budget.reserve_bytes(
-                            $function,
-                            paid_many::ADD_RECEIVING,
-                            "factored one-pass flat-target receivers"
-                        ));
-                        if !$attempt!(paid_many::add($function, $budget, flat, *$child, *$weight)) {
-                            $receiving.finish_overflow();
-                            return;
-                        }
-                    }
-                    paid_many::Targets::Many(targets) => {
-                        if !targets.contains_key($child) {
-                            $attempt!($budget.reserve_btree_node::<usize, u64>(
+                        paid_many::Targets::One {
+                            child: first,
+                            weight: total,
+                        } => {
+                            $attempt!($budget.reserve_bytes(
                                 $function,
-                                "factored successor target node"
+                                paid_many::PROMOTE_RECEIVING,
+                                "factored one-pass distinct-target receivers"
+                            ));
+                            #[cfg(test)]
+                            if $budget.pays_allocations() {
+                                paid_many::note_branch(true);
+                            }
+                            *$targets = $attempt!(paid_many::promote(
+                                $function, $budget, *first, *total, *$child, *$weight
                             ));
                         }
-                        let slot = targets.entry(*$child).or_insert(0);
-                        let Some(sum) = slot.checked_add(*$weight) else {
-                            $receiving.finish_overflow();
-                            return;
-                        };
-                        *slot = sum;
+                        paid_many::Targets::PaidMany(flat) => {
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                paid_many::ADD_RECEIVING,
+                                "factored one-pass flat-target receivers"
+                            ));
+                            if !$attempt!(paid_many::add(
+                                $function, $budget, flat, *$child, *$weight
+                            )) {
+                                $receiving.finish_overflow();
+                                return;
+                            }
+                        }
+                        paid_many::Targets::Many(targets) => {
+                            if !targets.contains_key($child) {
+                                $attempt!($budget.reserve_btree_node::<usize, u64>(
+                                    $function,
+                                    "factored successor target node"
+                                ));
+                            }
+                            let slot = targets.entry(*$child).or_insert(0);
+                            let Some(sum) = slot.checked_add(*$weight) else {
+                                $receiving.finish_overflow();
+                                return;
+                            };
+                            *slot = sum;
+                        }
                     }
-                }
-            };
-        }
-        for (node, weight) in $closed.iter() {
-            let moves = ($automaton).nodes[*node].moves();
-            // This is the complete before_index subset request, at the same point.
-            // No label census, search-charge prepass or four-op selector is run.
-            $attempt!($budget.charge(
-                $function,
-                moves.len().saturating_add(1),
-                "factored skeleton subset construction"
-            ));
-            for (label, child) in moves {
-                $attempt!($budget.reserve_bytes(
+                };
+            }
+            for (node, weight) in $closed.iter() {
+                let moves = ($automaton).nodes[*node].moves();
+                // This is the complete before_index subset request, at the same point.
+                // No label census, search-charge prepass or four-op selector is run.
+                $attempt!($budget.charge(
                     $function,
-                    lexical_successors::ONE_PASS_MOVEMENT,
-                    "factored one-pass movement receivers"
+                    moves.len().saturating_add(1),
+                    "factored skeleton subset construction"
                 ));
-                match &mut labels {
-                    lexical_successors::OnePassLabels::Empty => {
-                        $attempt!($budget.reserve_bytes(
-                            $function,
-                            0,
-                            "factored singleton target authentication"
-                        ));
-                        let weight = 0_u64
-                            .checked_add(*weight)
-                            .expect("zero plus u64 cannot overflow");
-                        labels = lexical_successors::OnePassLabels::One(
-                            label,
-                            paid_many::Targets::One {
-                                child: *child,
-                                weight,
-                            },
-                        );
-                    }
-                    lexical_successors::OnePassLabels::One(first, targets) if *first == label => {
-                        add!(targets, child, weight);
-                    }
-                    lexical_successors::OnePassLabels::One(_, _) => {
-                        // All receiving and both new label nodes precede moving
-                        // the existing inline entry. A refusal retains that entry.
-                        $attempt!($budget.reserve_bytes(
-                            $function,
-                            lexical_successors::ONE_PASS_PROMOTION,
-                            "factored one-pass label promotion receivers"
-                        ));
-                        $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
-                            $function,
-                            "factored one-pass first label node"
-                        ));
-                        $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
-                            $function,
-                            "factored one-pass second label node"
-                        ));
-                        $attempt!($budget.reserve_bytes(
-                            $function,
-                            0,
-                            "factored singleton target authentication"
-                        ));
-                        let weight = 0_u64
-                            .checked_add(*weight)
-                            .expect("zero plus u64 cannot overflow");
-                        let mut many = BTreeMap::new();
-                        let lexical_successors::OnePassLabels::One(first, targets) =
-                            std::mem::replace(
-                                &mut labels,
-                                lexical_successors::OnePassLabels::Empty,
-                            )
-                        else {
-                            unreachable!("occupied inline label")
-                        };
-                        many.insert(first, targets);
-                        many.insert(
-                            label,
-                            paid_many::Targets::One {
-                                child: *child,
-                                weight,
-                            },
-                        );
-                        labels = lexical_successors::OnePassLabels::Many(many);
-                    }
-                    lexical_successors::OnePassLabels::Many(many) => {
-                        if !many.contains_key(label) {
+                for (label, child) in moves {
+                    $attempt!($budget.reserve_bytes(
+                        $function,
+                        lexical_successors::ONE_PASS_MOVEMENT,
+                        "factored one-pass movement receivers"
+                    ));
+                    match &mut labels {
+                        lexical_successors::OnePassLabels::Empty => {
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                0,
+                                "factored singleton target authentication"
+                            ));
+                            let weight = 0_u64
+                                .checked_add(*weight)
+                                .expect("zero plus u64 cannot overflow");
+                            labels = lexical_successors::OnePassLabels::One(
+                                label,
+                                paid_many::Targets::One {
+                                    child: *child,
+                                    weight,
+                                },
+                            );
+                        }
+                        lexical_successors::OnePassLabels::One(first, targets)
+                            if *first == label =>
+                        {
+                            add!(targets, child, weight);
+                        }
+                        lexical_successors::OnePassLabels::One(_, _) => {
+                            // All receiving and both new label nodes precede moving
+                            // the existing inline entry. A refusal retains that entry.
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                lexical_successors::ONE_PASS_PROMOTION,
+                                "factored one-pass label promotion receivers"
+                            ));
                             $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
                                 $function,
-                                "factored one-pass label node"
+                                "factored one-pass first label node"
+                            ));
+                            $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
+                                $function,
+                                "factored one-pass second label node"
                             ));
                             $attempt!($budget.reserve_bytes(
                                 $function,
@@ -321,6 +293,16 @@ macro_rules! lexical_one_pass_successors {
                             let weight = 0_u64
                                 .checked_add(*weight)
                                 .expect("zero plus u64 cannot overflow");
+                            let mut many = BTreeMap::new();
+                            let lexical_successors::OnePassLabels::One(first, targets) =
+                                std::mem::replace(
+                                    &mut labels,
+                                    lexical_successors::OnePassLabels::Empty,
+                                )
+                            else {
+                                unreachable!("occupied inline label")
+                            };
+                            many.insert(first, targets);
                             many.insert(
                                 label,
                                 paid_many::Targets::One {
@@ -328,61 +310,74 @@ macro_rules! lexical_one_pass_successors {
                                     weight,
                                 },
                             );
-                        } else {
-                            let targets = many.get_mut(label).expect("present immutable label");
-                            add!(targets, child, weight);
+                            labels = lexical_successors::OnePassLabels::Many(many);
+                        }
+                        lexical_successors::OnePassLabels::Many(many) => {
+                            if !many.contains_key(label) {
+                                $attempt!($budget
+                                    .reserve_btree_node::<&Label, paid_many::Targets>(
+                                        $function,
+                                        "factored one-pass label node"
+                                    ));
+                                $attempt!($budget.reserve_bytes(
+                                    $function,
+                                    0,
+                                    "factored singleton target authentication"
+                                ));
+                                let weight = 0_u64
+                                    .checked_add(*weight)
+                                    .expect("zero plus u64 cannot overflow");
+                                many.insert(
+                                    label,
+                                    paid_many::Targets::One {
+                                        child: *child,
+                                        weight,
+                                    },
+                                );
+                            } else {
+                                let targets = many.get_mut(label).expect("present immutable label");
+                                add!(targets, child, weight);
+                            }
                         }
                     }
                 }
             }
-        }
-        // Publication owns its actual iterator/enum transport. This new fee is not
-        // an old map/Vec-header credit and may regress many-label charged totals.
-        $attempt!($budget.reserve_bytes(
-            $function,
-            lexical_successors::ONE_PASS_PUBLICATION,
-            "factored one-pass publication receivers"
-        ));
-        let count = match &labels {
-            lexical_successors::OnePassLabels::Empty => 0,
-            lexical_successors::OnePassLabels::One(_, _) => 1,
-            lexical_successors::OnePassLabels::Many(many) => many.len(),
-        };
-        $attempt!($budget.reserve_array::<(Label, SharedWeighted)>(
-            $function,
-            if count == 1 { 0 } else { count },
-            "factored successor vector"
-        ));
-        // The completed One publishes only owned fields. Its outer result
-        // stays inside the old complete Option/Result layout ceiling.
-        #[cfg(test)] inline_exit::census::arity(count, $function, $budget);
-        if let lexical_successors::OnePassLabels::One(..) = &labels {
-            $attempt!($budget.reserve_bytes($function, lexical_successors::ONE_PASS_FINAL_TRANSPORT + inline_exit::FIELDS, "factored one-pass consuming publication transport"));
-            let lexical_successors::OnePassLabels::One(label, targets) = labels else { unreachable!("selected singleton") };
-            $attempt!($budget.reserve_bytes($function, lexical_successors::ONE_PASS_PUBLISHED_ROW, "factored one-pass published row receivers"));
-            let state = match targets {
-                paid_many::Targets::One { child, weight } => {
-                    $attempt!($budget.reserve_bytes($function, 2 * size_of::<SmallWeighted>() + size_of::<[(usize, u64); 1]>(), "factored inline weighted enum and array receiving"));
-                    $attempt!($budget.reserve_bytes($function, physical_clone::rc_backing_bytes::<SmallWeighted>(), "factored weighted shared header"));
-                    Rc::new(SmallWeighted::One([(child, weight)]))
-                }
-                paid_many::Targets::PaidMany(flat) => {
-                    $attempt!($budget.reserve_bytes($function, paid_many::FINISH_RECEIVING, "factored one-pass flat finish receivers"));
-                    $attempt!(own_weighted($function, $budget, flat))
-                }
-                paid_many::Targets::Many(targets) => $attempt!(weighted_successor($function, $budget, targets)),
+            // Publication owns its actual iterator/enum transport. This new fee is not
+            // an old map/Vec-header credit and may regress many-label charged totals.
+            $attempt!($budget.reserve_bytes(
+                $function,
+                lexical_successors::ONE_PASS_PUBLICATION,
+                "factored one-pass publication receivers"
+            ));
+            let count = match &labels {
+                lexical_successors::OnePassLabels::Empty => 0,
+                lexical_successors::OnePassLabels::One(_, _) => 1,
+                lexical_successors::OnePassLabels::Many(many) => many.len(),
             };
-            break 'one_pass Some(($accepted, label.clone(), state));
-        }
-        let mut result = Vec::with_capacity(count);
-        macro_rules! publish {
-            ($label:ident, $targets:ident) => {{
+            $attempt!($budget.reserve_array::<(Label, SharedWeighted)>(
+                $function,
+                if count == 1 { 0 } else { count },
+                "factored successor vector"
+            ));
+            // The completed One publishes only owned fields. Its outer result
+            // stays inside the old complete Option/Result layout ceiling.
+            #[cfg(test)]
+            inline_exit::census::arity(count, $function, $budget);
+            if let lexical_successors::OnePassLabels::One(..) = &labels {
+                $attempt!($budget.reserve_bytes(
+                    $function,
+                    lexical_successors::ONE_PASS_FINAL_TRANSPORT + inline_exit::FIELDS,
+                    "factored one-pass consuming publication transport"
+                ));
+                let lexical_successors::OnePassLabels::One(label, targets) = labels else {
+                    unreachable!("selected singleton")
+                };
                 $attempt!($budget.reserve_bytes(
                     $function,
                     lexical_successors::ONE_PASS_PUBLISHED_ROW,
                     "factored one-pass published row receivers"
                 ));
-                let state = match $targets {
+                let state = match targets {
                     paid_many::Targets::One { child, weight } => {
                         $attempt!($budget.reserve_bytes(
                             $function,
@@ -408,38 +403,75 @@ macro_rules! lexical_one_pass_successors {
                         $attempt!(weighted_successor($function, $budget, targets))
                     }
                 };
-                result.push(($label.clone(), state));
-            }};
-        }
-        // This is a distinct consuming publication, not either initial Empty
-        // construction. Pay enum transport and both possible owned pattern bindings
-        // before the match can move One's tuple/Targets or Many's map out of labels.
-        $attempt!($budget.reserve_bytes(
-            $function,
-            lexical_successors::ONE_PASS_FINAL_TRANSPORT + 2 * size_of::<$closed_type>(),
-            "factored one-pass consuming publication transport"
-        ));
-        match labels {
-            lexical_successors::OnePassLabels::Empty => {}
-            lexical_successors::OnePassLabels::One(..) => unreachable!("singleton returned without a vector"),
-            lexical_successors::OnePassLabels::Many(many) => {
-                $attempt!($budget.reserve_bytes(
-                    $function,
-                    lexical_successors::ONE_PASS_OWNING_ITERATOR,
-                    "factored one-pass owning label iterator receivers"
-                ));
-                for (label, targets) in many {
-                    publish!(label, targets);
+                break 'one_pass Some(($accepted, label, state));
+            }
+            let mut result = Vec::with_capacity(count);
+            macro_rules! publish {
+                ($label:ident, $targets:ident) => {{
+                    $attempt!($budget.reserve_bytes(
+                        $function,
+                        lexical_successors::ONE_PASS_PUBLISHED_ROW,
+                        "factored one-pass published row receivers"
+                    ));
+                    let state = match $targets {
+                        paid_many::Targets::One { child, weight } => {
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                2 * size_of::<SmallWeighted>() + size_of::<[(usize, u64); 1]>(),
+                                "factored inline weighted enum and array receiving"
+                            ));
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                physical_clone::rc_backing_bytes::<SmallWeighted>(),
+                                "factored weighted shared header"
+                            ));
+                            Rc::new(SmallWeighted::One([(child, weight)]))
+                        }
+                        paid_many::Targets::PaidMany(flat) => {
+                            $attempt!($budget.reserve_bytes(
+                                $function,
+                                paid_many::FINISH_RECEIVING,
+                                "factored one-pass flat finish receivers"
+                            ));
+                            $attempt!(own_weighted($function, $budget, flat))
+                        }
+                        paid_many::Targets::Many(targets) => {
+                            $attempt!(weighted_successor($function, $budget, targets))
+                        }
+                    };
+                    result.push(($label.clone(), state));
+                }};
+            }
+            // This is a distinct consuming publication, not either initial Empty
+            // construction. Pay enum transport and both possible owned pattern bindings
+            // before the match can move One's tuple/Targets or Many's map out of labels.
+            $attempt!($budget.reserve_bytes(
+                $function,
+                lexical_successors::ONE_PASS_FINAL_TRANSPORT + 2 * size_of::<$closed_type>(),
+                "factored one-pass consuming publication transport"
+            ));
+            match labels {
+                lexical_successors::OnePassLabels::Empty => {}
+                lexical_successors::OnePassLabels::One(..) => {
+                    unreachable!("singleton returned without a vector")
+                }
+                lexical_successors::OnePassLabels::Many(many) => {
+                    $attempt!($budget.reserve_bytes(
+                        $function,
+                        lexical_successors::ONE_PASS_OWNING_ITERATOR,
+                        "factored one-pass owning label iterator receivers"
+                    ));
+                    for (label, targets) in many {
+                        publish!(label, targets);
+                    }
                 }
             }
-        }
-        // The explicit drop has its complete new actual/formal owner packet.
-        // It preserves the old return-scope Drop before caller frame growth.
-        #[cfg(test)] inline_exit::census::vector_drop($unit, $function, $budget);
-        drop($closed_owner);
-        let successors = result;
-        $vector!($accepted, successors);
-        continue $frames;
+            // The explicit drop has its complete new actual/formal owner packet.
+            // It preserves the old return-scope Drop before caller frame growth.
+            #[cfg(test)]
+            inline_exit::census::vector_drop($unit, $function, $budget);
+            drop($closed_owner);
+            $vector!($accepted, result);
         }
     }};
 }
@@ -466,12 +498,11 @@ macro_rules! lexical_successors {
                         0,
                         "factored successor vector",
                     ));
-                    #[cfg(test)] inline_exit::census::arity(0, $function, $budget);
+                    #[cfg(test)]
+                    inline_exit::census::arity(0, $function, $budget);
                     let accepted = 0;
                     let result = Vec::with_capacity(0);
-                    let successors = result;
-                    $vector!(accepted, successors);
-                    continue $frames;
+                    $vector!(accepted, result);
                 }
                 if $budget.pays_allocations() {
                     $attempt!($budget.reserve_bytes(
@@ -501,7 +532,11 @@ macro_rules! lexical_successors {
                     $this.successor_unit_paid,
                     $function,
                     $budget,
-                    if $this.successor_unit_paid {lexical_successors::WARM_RECEIVING} else {lexical_successors::COLD_RECEIVING},
+                    if $this.successor_unit_paid {
+                        lexical_successors::WARM_RECEIVING
+                    } else {
+                        lexical_successors::COLD_RECEIVING
+                    },
                 );
                 $attempt!($budget.reserve_bytes(
                     $function,
@@ -522,7 +557,12 @@ macro_rules! lexical_successors {
                     closed,
                     accepted,
                     $receiving,
-                    $attempt, borrowed, Rc<ordered_weights::OrderedWeights>, true, $vector, $frames
+                    $attempt,
+                    borrowed,
+                    Rc<ordered_weights::OrderedWeights>,
+                    true,
+                    $vector,
+                    $frames
                 );
             }
             if $budget.pays_allocations() {
@@ -573,7 +613,11 @@ macro_rules! lexical_successors {
                 $this.successor_general_paid,
                 $function,
                 $budget,
-                if $this.successor_general_paid {lexical_successors::WARM_RECEIVING} else {lexical_successors::COLD_RECEIVING},
+                if $this.successor_general_paid {
+                    lexical_successors::WARM_RECEIVING
+                } else {
+                    lexical_successors::COLD_RECEIVING
+                },
             );
             $attempt!($budget.reserve_bytes(
                 $function,
@@ -594,12 +638,17 @@ macro_rules! lexical_successors {
                 closed,
                 accepted,
                 $receiving,
-                $attempt, owned, ordered_weights::OrderedWeights, false, $vector, $frames
+                $attempt,
+                owned,
+                ordered_weights::OrderedWeights,
+                false,
+                $vector,
+                $frames
             );
         }
     }};
 }
 
 #[cfg(test)]
-use super::super::lexical_successors::census;
+pub(super) use super::super::lexical_successors::census;
 pub(super) mod frame_loop;

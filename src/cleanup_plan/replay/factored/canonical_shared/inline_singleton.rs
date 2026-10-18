@@ -81,13 +81,14 @@ macro_rules! publish_closure {
 
 type SharedWeighted = Rc<SmallWeighted>;
 
-enum CanonicalFrame {
+enum CanonicalFrame<'hir> {
     Enter(SharedWeighted),
     Exit(SharedWeighted, u64, Vec<(Label, SharedWeighted)>),
-    ExitOne(SharedWeighted, u64, (Label, SharedWeighted)),
+    ExitOne(SharedWeighted, u64, (&'hir Label, SharedWeighted)),
 }
-const _: () =
-    assert!(std::mem::size_of::<CanonicalFrame>() == std::mem::size_of::<super::CanonicalFrame>());
+const _: () = assert!(
+    std::mem::size_of::<CanonicalFrame<'static>>() == std::mem::size_of::<super::CanonicalFrame>()
+);
 
 // The caller has already paid the moved vector's complete allocated backing.
 // Rc owns that vector without copying it; its counters and full enum header are
@@ -160,7 +161,7 @@ pub(in crate::cleanup_plan::replay::factored) struct Canonicalizer<'a> {
     ids: intern_arena::Arena<intern_arena::Signature>,
     child_ids: Vec<usize>,
     cursor: Vec<(usize, bool)>,
-    frames: Vec<CanonicalFrame>,
+    frames: Vec<CanonicalFrame<'a>>,
     open: Vec<SharedWeighted>,
     scratch_paid: bool,
     successor_unit_paid: bool,
@@ -447,7 +448,7 @@ impl<'a> Canonicalizer<'a> {
                 if let Err(error) = budget.reserve_bytes(
                     function,
                     std::mem::size_of::<Vec<(usize, bool)>>()
-                        + std::mem::size_of::<Vec<CanonicalFrame>>()
+                        + std::mem::size_of::<Vec<CanonicalFrame<'_>>>()
                         + std::mem::size_of::<Vec<SharedWeighted>>()
                         + std::mem::size_of::<bool>(),
                     "factored retained canonical scratch controls",
@@ -1196,7 +1197,7 @@ impl<'a> Canonicalizer<'a> {
         Ok(Some((accepted, result)))
     }
 
-    pub(super) fn id_with_receiving(
+    pub(in crate::cleanup_plan::replay::factored) fn id_with_receiving(
         &mut self,
         function: &ResolvedFunction,
         root: Weighted,
@@ -1237,7 +1238,7 @@ impl<'a> Canonicalizer<'a> {
                 budget.reserve_bytes(
                     function,
                     std::mem::size_of::<Vec<(usize, bool)>>()
-                        + std::mem::size_of::<Vec<CanonicalFrame>>()
+                        + std::mem::size_of::<Vec<CanonicalFrame<'_>>>()
                         + std::mem::size_of::<Vec<SharedWeighted>>()
                         + std::mem::size_of::<bool>(),
                     "factored retained canonical scratch controls",

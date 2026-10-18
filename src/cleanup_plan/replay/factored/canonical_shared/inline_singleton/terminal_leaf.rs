@@ -127,7 +127,7 @@ impl Canonicalizer<'_> {
         budget: &mut ReplayBudget,
     ) -> Result<Option<usize>, Diagnostic> {
         #[cfg(test)]
-        tests::note_actual_entry(budget);
+        super::super::tests::note_actual_entry(budget);
         authenticate_terminal!(self, function, budget);
         if budget.pays_allocations() {
             budget.reserve_bytes(

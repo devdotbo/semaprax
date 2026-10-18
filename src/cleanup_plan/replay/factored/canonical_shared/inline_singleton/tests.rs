@@ -3,6 +3,7 @@ use super::super::lexical_successors::census as old_census;
 use super::*;
 use crate::bounded_output::with_limit_usage_refusal;
 use crate::cleanup_plan::replay::MAX_REPLAY_WORK_UNITS;
+use crate::hir::ResolvedProgram;
 use crate::test_allocation_observer::{measure, Metrics};
 use inline_exit::census as shape_census;
 use std::mem::{align_of, size_of};
@@ -189,13 +190,13 @@ fn same(old: &Run, current: &Run) {
 #[test]
 fn actual_old_and_inline_frame_and_output_layouts_keep_the_original_capacity_invoice() {
     type OldOutput = (u64, Vec<(Label, SharedWeighted)>);
-    type NewOutput = (u64, Label, SharedWeighted);
+    type NewOutput = (u64, &'static Label, SharedWeighted);
     assert_eq!(
-        size_of::<CanonicalFrame>(),
+        size_of::<CanonicalFrame<'static>>(),
         size_of::<super::super::CanonicalFrame>()
     );
     assert_eq!(
-        align_of::<CanonicalFrame>(),
+        align_of::<CanonicalFrame<'static>>(),
         align_of::<super::super::CanonicalFrame>()
     );
     assert!(size_of::<Option<NewOutput>>() <= size_of::<Option<OldOutput>>());
@@ -204,7 +205,11 @@ fn actual_old_and_inline_frame_and_output_layouts_keep_the_original_capacity_inv
         super::super::Canonicalizer::CONSTRUCTOR_CONTROLS
     );
     assert_eq!(OLD_CALL, NEW_CALL);
-    eprintln!("OPT889 actual layouts frame old={} current={} align old={} current={} output old={} current={} fields={} query={} selectors={} root_primitives={}",size_of::<super::super::CanonicalFrame>(),size_of::<CanonicalFrame>(),align_of::<super::super::CanonicalFrame>(),align_of::<CanonicalFrame>(),size_of::<Option<OldOutput>>(),size_of::<Option<NewOutput>>(),inline_exit::FIELDS,inline_exit::RECEIVING,inline_exit::SELECT,inline_exit::PRIMITIVES);
+    assert_eq!(
+        inline_exit::OWNED_SCHEDULE_PRIMITIVES,
+        4 * inline_exit::SCHEDULE_PRIMITIVES
+    );
+    eprintln!("OPT889 actual layouts frame old={} current={} align old={} current={} output old={} current={} fields={} query={} selectors={} root_primitives={}",size_of::<super::super::CanonicalFrame>(),size_of::<CanonicalFrame<'static>>(),align_of::<super::super::CanonicalFrame>(),align_of::<CanonicalFrame<'static>>(),size_of::<Option<OldOutput>>(),size_of::<Option<NewOutput>>(),inline_exit::FIELDS,inline_exit::RECEIVING,inline_exit::SELECT,inline_exit::PRIMITIVES);
 }
 #[test]
 fn zero_one_many_and_repeated_labels_preserve_complete_immediate_ids_work_and_drop() {
@@ -299,7 +304,9 @@ fn genuine_long_singleton_chain_has_positive_complete_typed_net_without_padding_
         - inline_exit::PRIMITIVES as i128
         - m as i128 * extra_cold as i128
         - n as i128 * inline_exit::SELECT as i128
-        - drop_bytes as i128;
+        - drop_bytes as i128
+        - (current.shapes.arity[0] + current.shapes.arity[2]) as i128
+            * inline_exit::VECTOR_TRANSPORT as i128;
     assert_eq!(old.paid as i128 - current.paid as i128, expected);
     assert!(
         expected > 0 && current.paid < old.paid,

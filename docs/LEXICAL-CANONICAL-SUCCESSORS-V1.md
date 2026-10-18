@@ -147,14 +147,24 @@ The candidate requires exact equality of the actual old and current Frame
 widths, alignment and constructor invoice. Capacity growth still uses the
 actual Frame type and original push order. It does not buy smaller singleton
 backing by increasing every frame slot. The one-label result is a narrow
-`(u64, Label, Rc<SmallWeighted>)`; no wide result enum or runtime callback is
-introduced. The old zero-byte authentication, full Result transport invoices,
+`(u64, &Label, Rc<SmallWeighted>)`. Its label borrow points into the immutable
+automaton held for the complete Canonicalizer lifetime. A miss alone clones the
+label into the final owned signature; the original automaton-owned Rc backing
+cannot die earlier. Both state and child Rc owners retain their old Drop points.
+No wide result enum or runtime callback is introduced. The old zero-byte authentication, full Result transport invoices,
 ordered target accumulation, work charges and checked overflow remain. The
 child Rc on a signature miss dies before arena insertion; a hit retains the
 whole row through state insertion, matching the old Vec teardown order.
 
-New selectors, retained primitive sites, actual output/row/borrow receivers and
-explicit vector-continuation Drop boundaries are charged before formation.
+New selectors, retained primitive sites, actual output/row/borrow receivers,
+miss-clone arguments/results and explicit vector-continuation Drop boundaries
+are charged before formation. All vector branches converge lexically on one
+scheduling body. The earlier owned-label candidate's eight extra growth-site
+invoice remains an independent historical constant; the live implementation
+has two extra growth sites and four real vector-transfer payment sites. Their
+complete headers are acquired at root admission, and each reached vector
+transfer separately pays its actual scalar/Vec initializer and receiving slots.
+No initialized Option or callback carries the continuation.
 The fixed diagnostic census records actual completed arities and reached
 vector Drop sites. It grants no authority. Empty, cold and multiple-label
 inputs can cost more; their old invoices must not be padded to report savings.
