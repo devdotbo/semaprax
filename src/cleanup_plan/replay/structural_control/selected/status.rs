@@ -33,6 +33,17 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
         "selected control permit call receiving",
         Permit::control_receiver::<()>(function, budget)
     )?;
+    // Test-only optional callback scratch carriers are distinct from the
+    // original Ids::new backing charge, which remains unchanged below.
+    #[cfg(test)]
+    {
+        budget.reserve_array::<(Option<structural_control::borrowed_ids::Ids<'_>>,)>(
+            function,
+            1,
+            "selected borrowed scratch optional receiving",
+        )?;
+        budget.charge(function, 1, "selected borrowed scratch optional receiving")?;
+    }
     let mut ids = BTreeSet::new();
     #[cfg(test)]
     let mut borrowed_ids = if expressions.is_metered() {

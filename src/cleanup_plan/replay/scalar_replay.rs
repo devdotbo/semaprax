@@ -195,10 +195,11 @@ pub(super) fn validate_paid(
             &BTreeSet<StorageId>,
             &Leaves,
             &BTreeSet<ExpressionId>,
+            BTreeSet<ExpressionId>,
             &mut ReplayBudget,
             Result<(), expression_facts::errors::EngineError>
         ),
-        7,
+        8,
         "selected structural driver call receiving",
         structural_control::selected::validate_exits(
             program,

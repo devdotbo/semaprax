@@ -79,6 +79,17 @@ pub(in crate::cleanup_plan::replay) fn validate_blocks_and_edges_paid(
     #[cfg(not(test))]
     const STATUS_FIELDS: usize = 5;
     let plan = &function.cleanup_plan;
+    // Test-only optional callback scratch carriers are distinct from the
+    // original Ids::new backing charge, which remains unchanged below.
+    #[cfg(test)]
+    {
+        budget.reserve_array::<(Option<borrowed_ids::Ids<'_>>, Option<borrowed_ids::Ids<'_>>)>(
+            function,
+            1,
+            "selected borrowed scratch optional receiving",
+        )?;
+        budget.charge(function, 2, "selected borrowed scratch optional receiving")?;
+    }
     let mut statuses = BTreeSet::new();
     #[cfg(test)]
     let mut borrowed_statuses = if expressions.is_metered() {
