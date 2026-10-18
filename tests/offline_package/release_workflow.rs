@@ -76,7 +76,7 @@ fn tag_artifacts_are_exact_blocking_children_of_the_release_gate() {
         "scripts/package-release.sh \"$GITHUB_REF_NAME\" \"$GITHUB_SHA\" \"${{ matrix.target }}\" dist",
         "scripts/package-release-linux-container.sh \"$GITHUB_REF_NAME\" \"$GITHUB_SHA\" \"${{ matrix.target }}\" dist",
         "scripts/package-release.ps1 -Tag $env:GITHUB_REF_NAME -Commit $env:GITHUB_SHA -Target \"${{ matrix.target }}\" -OutputRoot dist",
-        "actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a",
+        "actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9",
         "if-no-files-found: error",
         "compression-level: 0",
     ] {
@@ -118,7 +118,7 @@ fn publication_waits_for_all_artifacts_and_owns_the_only_write_authority() {
         // This is what makes "the gate's commit binding is dropped" a local
         // test failure here rather than only inside `release-gate`.
         "test \"$(git rev-parse HEAD)\" = \"$GITHUB_SHA\"",
-        "actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c",
+        "actions/download-artifact@9000827ccba6bdab643e8b6fd33ac0654aef8333",
         "pattern: release-*",
         "merge-multiple: true",
         "sha256sum \"${archives[@]}\"",
