@@ -1,10 +1,10 @@
 {
   "status": "BOUND_SOURCE_ONLY_UNEXECUTED_FINAL_INGRESS",
-  "head": "e85297a64901e94210e7db5d88f191b17e034a26",
+  "head": "9b4179129e5bbd97662b3905dcfbaccd1c30e70a",
   "checkpoint": "787d9810480209532fa645b8cb97f2585ce5f426",
   "sources": 6,
-  "packet_length": 369490,
-  "packet_sha256": "62fe59b11ce0885e8f74432368e21467f8c253d31be929a926e710c223284310",
+  "packet_length": 373320,
+  "packet_sha256": "890fe04c38301f4ad72e9088adc5da7068deb360906fc07a8e24dad058580e90",
   "runtime": "UNEXECUTED",
   "old_packets_unchanged": true,
   "authority_refresh_required_after_source_pins": true
