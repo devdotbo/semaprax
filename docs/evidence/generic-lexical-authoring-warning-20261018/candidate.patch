@@ -1,0 +1,33 @@
+diff --git a/docs/AGENT-QUICK-REFERENCE.md b/docs/AGENT-QUICK-REFERENCE.md
+index 57f128282..d798eda8d 100644
+--- a/docs/AGENT-QUICK-REFERENCE.md
++++ b/docs/AGENT-QUICK-REFERENCE.md
+@@ -268,6 +268,8 @@ fn main() -> i64
+   `string_concat`. Only the selected branch runs; the other's text is never
+   built.
+ 
++- Generic templates reject lexical exits (`SPX-T226`): move `break`/`continue`/early `return` bodies to a monomorphic function. Admitted scalar/collection loops stay valid.
++
+ ## Records, variants, classes
+ 
+ ```semaprax
+diff --git a/src/cli/help/authoring.rs b/src/cli/help/authoring.rs
+index b73bed467..e0c6cb224 100644
+--- a/src/cli/help/authoring.rs
++++ b/src/cli/help/authoring.rs
+@@ -46,11 +46,12 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
+             "Inside an admitted loop: if skip { continue; }; if done { break; }; followed by the ordinary body tail. An unconditional exit ends its block: do not append dummy 0 or unreachable effects.\n",
+             "An intermediate Copy-valued if/else can discard its result with a semicolon. A bare guard containing an exit may end with or without one before the next item: if skip { continue; } else { 0 }; canonical text drops it. let _ = guard or an operator suffix stays SPX-T312; a final ; } stays SPX-P106.\n",
+             "Normal guard arm: exact else { 0 }; nonzero/bool/owned/view arms refuse SPX-T312. Move work after the guard.\n",
+-            "break; and continue; target the nearest loop. while continue checks its condition; for continue advances its authenticated iterator exactly once; for own break settles remaining items. No labels or valued break.\n",
+-            "return value; targets this function with its exact result type. A loop may hand off a whole named owner; its operand still follows ordinary loop operation/loan rules. Accepted acyclic guard/terminal returns keep their value projection.\n",
++            "break; and continue; target the nearest loop. while continue checks its condition; for continue advances its authenticated iterator exactly once; for own break settles remaining items. No labels/valued break.\n",
++            "return value; targets this function's exact result type. A loop may hand off a whole named owner; its operand still follows ordinary loop operation/loan rules. Accepted acyclic guard/terminal returns keep their value projection.\n",
+             "Exits are direct function/loop/control-block statement tails, never inside initializers, call arguments, aggregates, return operands, closures, unsafe or yields functions. SPX-T312: move the exit to a statement guard. SPX-T313: break/continue need an enclosing loop. SPX-T103/O104: preserve exact result type and owner transfer.\n",
++            "Generic exits: SPX-T226; use monomorphic fn.\n",
+             "Owned returns stage the result before inner cleanup; root locals remain through ensures. Failure never publishes a result; existing staged-argument failure rules remain. A moved outer owner cannot be revived by break/continue.\n",
+-            "No public bottom type, ABI, capability, new carrier or old report-profile admission. H006 refuses forged target/latch identities. Cleanup v18 and loan v3 are selective; authenticated Bytes-helper renewal additionally selects v19. Old functions retain their schemas. Contract and pending gates: docs/LEXICAL-STRUCTURED-EXITS-V1.md.\n"
++            "No public bottom type, ABI, capability, new carrier or old report-profile admission. H006 refuses forged target/latch identities. Cleanup v18 and loan v3 are selective; authenticated Bytes-helper renewal additionally selects v19. Old functions retain their schemas. Contract/pending gates: docs/LEXICAL-STRUCTURED-EXITS-V1.md.\n"
+         ).to_owned()),
+         "author:stdin-json" => Ok(concat!(
+             "Native stream data route (complete guidance; exact library lookup follows):\n",
