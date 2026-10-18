@@ -87,3 +87,11 @@ now compares the full first Diagnostic with the unchanged real reserve
 primitive at the independently observed prefix, and verifies retry allocation
 counters are unchanged as well as work and ledger balance. That oracle is
 test-only state replication, never a production allowance or fee credit.
+
+The reachable cursor primitive-bank payment is attributed to the existing
+comparison-owner diagnostic category. All thirteen original categories,
+indices, fixed backing capacities and checked counters remain; the complete
+route/counter/refusal test additionally exercises the new owner-bank alias.
+An explicit ignored STD-08 preparation-prefix witness prints settled ledger
+data after the original result and resumes its original failure. This unit
+observation is not an integration, backend or application qualification.

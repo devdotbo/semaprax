@@ -591,6 +591,7 @@ jobs:
       - name: Fetch locked workspace dependencies
         run: cargo fetch --locked
       - name: Require bounded line and path depth on every internal backend
+        id: std08_conformance
         shell: bash
         run: |
           set -euo pipefail
@@ -660,6 +661,18 @@ jobs:
             standard_library::every_public_declaration_has_a_std_identity_contracts_examples_and_conformance
           cargo test --locked -p semaprax --test examples -- --nocapture
           cargo test --locked -p semaprax --test documentation -- --nocapture
+
+      - name: Capture the unchanged STD-08 preparation ledger after its owning gate fails
+        if: failure() && steps.std08_conformance.outcome == 'failure'
+        timeout-minutes: 20
+        env:
+          CARGO_BUILD_JOBS: "1"
+        shell: bash
+        run: |
+          set -euo pipefail
+          cargo test --locked --offline -p semaprax --lib \
+            bounded_output::stage_debits::route_debits::std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure \
+            -- --exact --ignored --nocapture --test-threads 1
 
   release-claim-reconcile:
     name: Release claim reconciliation

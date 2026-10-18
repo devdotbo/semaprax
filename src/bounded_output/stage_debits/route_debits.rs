@@ -62,9 +62,9 @@ impl ComparisonCell {
 }
 fn comparison_phase(phase: &str) -> Option<usize> {
     match phase {
-        "ordinary plan history comparator controls" | "ordinary plan retained comparison owner" => {
-            Some(0)
-        }
+        "ordinary plan history comparator controls"
+        | "ordinary plan retained comparison owner"
+        | "ordinary plan reachable cursor primitive frames" => Some(0),
         "ordinary plan history order call" => Some(1),
         "ordinary plan history sift call" => Some(2),
         "ordinary plan history comparison receivers" => Some(3),
@@ -616,7 +616,11 @@ fn comparison_all_thirteen_categories_keep_real_routes_8769_calls_and_checked_ov
         Route::UnoptedCrosscheck,
         Route::OptedOracle,
     ] {
-        for (category, label) in LABELS.into_iter().enumerate() {
+        for (category, label) in LABELS
+            .into_iter()
+            .enumerate()
+            .chain([(0, "ordinary plan reachable cursor primitive frames")])
+        {
             assert_eq!(comparison_phase(label), Some(category));
             let (((), metrics), refused, used, first) = with_limit_usage_refusal(8_769, || {
                 crate::test_allocation_observer::measure(|| {
@@ -775,4 +779,35 @@ fn fixed_route_banks_are_lazy_and_reused_without_allocating_in_callbacks() {
     })
     .join()
     .unwrap();
+}
+
+// Diagnostic-only first-manifest prefix of the unchanged STD-08 owner.
+// The integration gate and every backend assertion remain on main.
+#[test]
+#[ignore = "explicit hosted diagnostic; not an application qualification"]
+fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
+    let manifest =
+        std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join("std/io-lines/semaprax.toml");
+    let _observation = observe();
+    super::take_completed();
+    super::take_last_completed();
+    let result = std::panic::catch_unwind(|| {
+        // Same first manifest and authentication/check prefix used by
+        // run_examples_and_conformance; no replacement program or allowance.
+        crate::project::with_authenticated_project(&manifest, |snapshot| snapshot.check()).unwrap()
+    });
+    // Read and print only after all original ledger ownership has settled.
+    let maximum = super::take_completed();
+    let last = super::take_last_completed();
+    eprintln!("STD08_PREFIX diagnostic expected source forecast=4345378 layouts=4; unit observation profile, not an integration/backend pass");
+    eprintln!("STD08_PREFIX maximum core trace: {maximum:?}");
+    eprintln!("STD08_PREFIX final core trace: {last:?}");
+    print_settled();
+    if let Err(original) = result {
+        eprintln!(
+            "STD08_PREFIX preserved original panic String: {:?}",
+            original.downcast_ref::<String>()
+        );
+        std::panic::resume_unwind(original);
+    }
 }
