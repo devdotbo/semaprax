@@ -383,17 +383,30 @@ fn block_run(
     let ((result, work), refused, paid) = crate::bounded_output::with_limit_usage(cap, || {
         let mut budget = ReplayBudget::new();
         budget.remaining = work;
-        let result = if current {
-            validate_structure_with_budget_storage(context, function, &mut budget, None, None)
-        } else {
-            super::super::ordinary_block_before::validate_structure_with_budget_storage(
-                context,
-                function,
-                &mut budget,
-                None,
-                None,
-            )
-        };
+        // The production caller establishes this allowance on the same payer.
+        let result =
+            match reserve_program_skeleton_work(context, std::iter::once(function), &mut budget) {
+                Err(error) => Err(error),
+                Ok(_) => {
+                    if current {
+                        validate_structure_with_budget_storage(
+                            context,
+                            function,
+                            &mut budget,
+                            None,
+                            None,
+                        )
+                    } else {
+                        super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                            context,
+                            function,
+                            &mut budget,
+                            None,
+                            None,
+                        )
+                    }
+                }
+            };
         (result, work - budget.remaining)
     });
     (result, refused, paid, work)
@@ -438,7 +451,10 @@ fn transition_scratch_has_complete_immediate_typed_invoice_and_unchanged_work() 
         let old = block_run(&program, function, false, CAP, MAX_REPLAY_WORK_UNITS);
         let current = block_run(&program, function, true, CAP, MAX_REPLAY_WORK_UNITS);
         assert_eq!(current.0, old.0, "all six fields rows={rows}");
-        assert!(current.0.is_ok() && !old.1 && !current.1);
+        assert!(
+            current.0.is_ok() && !old.1 && !current.1,
+            "rows={rows}: old={old:?} current={current:?}"
+        );
         assert_eq!(current.3, old.3, "every original query work debit remains");
         if function.cleanup_plan.status_sources.len() < retained_lookup::MIN_ROWS {
             assert_eq!(current, old, "ineligible route acquires no tail owner");
@@ -469,9 +485,9 @@ fn transition_scratch_exact_short_zero_floor_and_work_cuts_keep_full_refusals() 
     let program = fixture(4, true);
     let function = function(&program);
     let complete = block_run(&program, function, true, CAP, MAX_REPLAY_WORK_UNITS);
-    assert!(complete.0.is_ok() && !complete.1);
+    assert!(complete.0.is_ok() && !complete.1, "complete={complete:?}");
     let exact = block_run(&program, function, true, complete.2, MAX_REPLAY_WORK_UNITS);
-    assert!(exact.0.is_ok() && !exact.1);
+    assert!(exact.0.is_ok() && !exact.1, "exact={exact:?}");
     for cap in [0, complete.2 - 1] {
         let short = block_run(&program, function, true, cap, MAX_REPLAY_WORK_UNITS);
         assert!(short.0.is_err() && short.1);
@@ -601,21 +617,34 @@ impl crate::cleanup::ReplayContext for CallbackContext<'_> {
                         CAP,
                         || {
                             let mut budget = ReplayBudget::new();
-                            let result = if self.current {
-                                validate_structure_with_budget_storage(
-                                    self.nested,
-                                    nested_function,
-                                    &mut budget,
-                                    None,
-                                    None,
-                                )
-                            } else {
-                                super::super::ordinary_block_before::validate_structure_with_budget_storage(self.nested, nested_function, &mut budget, None, None)
+                            let result = match reserve_program_skeleton_work(
+                                self.nested,
+                                std::iter::once(nested_function),
+                                &mut budget,
+                            ) {
+                                Err(error) => Err(error),
+                                Ok(_) => {
+                                    if self.current {
+                                        validate_structure_with_budget_storage(
+                                            self.nested,
+                                            nested_function,
+                                            &mut budget,
+                                            None,
+                                            None,
+                                        )
+                                    } else {
+                                        super::super::ordinary_block_before::validate_structure_with_budget_storage(self.nested, nested_function, &mut budget, None, None)
+                                    }
+                                }
                             };
                             (result, budget.remaining)
                         },
                     );
-                    assert!(result.is_ok() && !refused);
+                    assert!(
+                        result.is_ok() && !refused,
+                        "nested current={}: result={result:?} refused={refused}",
+                        self.current
+                    );
                 }
                 2 => {
                     assert!(!crate::bounded_output::reserve_active_required(usize::MAX));
@@ -658,22 +687,31 @@ fn callback_run(
             outer: ClassifierLedger::capture(),
         };
         let mut budget = ReplayBudget::new();
-        let result = if current {
-            validate_structure_with_budget_storage(
-                &context,
-                function(program),
-                &mut budget,
-                None,
-                None,
-            )
-        } else {
-            super::super::ordinary_block_before::validate_structure_with_budget_storage(
-                &context,
-                function(program),
-                &mut budget,
-                None,
-                None,
-            )
+        let result = match reserve_program_skeleton_work(
+            &context,
+            std::iter::once(function(program)),
+            &mut budget,
+        ) {
+            Err(error) => Err(error),
+            Ok(_) => {
+                if current {
+                    validate_structure_with_budget_storage(
+                        &context,
+                        function(program),
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                } else {
+                    super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                        &context,
+                        function(program),
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                }
+            }
         };
         (result, context.fired_at.get())
     })
@@ -696,7 +734,10 @@ fn transition_callback_restored_nested_sticky_foreign_and_original_error_keep_cu
             "complete original callback diagnostic, mode={mode}"
         );
         if mode <= 1 {
-            assert!(current.0 .0.is_ok() && !current.1);
+            assert!(
+                current.0 .0.is_ok() && !current.1,
+                "mode={mode}: old={old:?} current={current:?}"
+            );
         } else {
             assert!(current.0 .0.is_err());
             if mode != 4 {
@@ -714,6 +755,10 @@ fn transition_callback_restored_nested_sticky_foreign_and_original_error_keep_cu
 
 #[test]
 fn transition_scratch_callback_unwind_success_and_refusal_drop_all_backing() {
+    // Warm only the thread panic runtime before observing real compiler owners.
+    let runtime = std::panic::catch_unwind(|| panic!("885 initialize thread panic hook"));
+    assert!(runtime.is_err());
+    drop(runtime);
     let program = fixture(8, true);
     let nested = fixture(0, false);
     for mode in [0, 2, 3, 5] {
@@ -752,4 +797,48 @@ fn immediate_transition_oracle_restores_every_original_byte_and_keeps_all_old_qu
     assert!(restored.contains("drop(failure);\n"));
     assert_eq!(restored.matches("require_expression(\n").count(), 9);
     assert!(restored.contains("expressions.fact(function, call, budget)?"));
+}
+
+#[test]
+fn transition_without_skeleton_preflight_keeps_complete_root_refusal_and_drop() {
+    let program = fixture(0, false);
+    let function = function(&program);
+    for current in [false, true] {
+        let (_, metrics) = measure(|| {
+            let (result, refused, _) = crate::bounded_output::with_limit_usage(CAP, || {
+                let mut budget = ReplayBudget::new();
+                if current {
+                    validate_structure_with_budget_storage(
+                        &program,
+                        function,
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                } else {
+                    super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                        &program,
+                        function,
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                }
+            });
+            assert_eq!(
+                result,
+                Err(replay_error(
+                    function,
+                    "cleanup replay work budget exhausted during HIR root path"
+                )),
+                "current={current}, refused={refused}"
+            );
+            assert!(!refused, "work refusal does not forge a byte refusal");
+            drop(result);
+        });
+        assert!(
+            !metrics.invalid && metrics.live == 0,
+            "current={current}: {metrics:?}"
+        );
+    }
 }
