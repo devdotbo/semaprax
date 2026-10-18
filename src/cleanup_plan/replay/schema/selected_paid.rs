@@ -264,13 +264,15 @@ fn owner_admission(
         "selected owner admission receiving",
     )?;
     budget.charge(function, 5, "selected owner admission receiving")?;
+    // One retained compound frame. Every completed root drains it with take();
+    // the next root overwrites slot zero after the previous len reached zero.
+    let mut stack = [None; 514];
     for root in function
         .requires
         .iter()
         .chain(&function.ensures)
         .chain(std::iter::once(&function.body))
     {
-        let mut stack = [None; 514];
         stack[0] = Some((root, 0usize));
         let mut len = 1usize;
         while len != 0 {

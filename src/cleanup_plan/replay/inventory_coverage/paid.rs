@@ -95,9 +95,12 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             physical,
             ..
         } = budget;
-        let physical = physical.as_deref_mut().ok_or_else(|| {
-            permit.family(Reason::SelectedInventoryCoverageRequiresAPhysicalLedger)
-        })?;
+        let physical = match physical.as_deref_mut() {
+            Some(physical) => physical,
+            None => {
+                return Err(permit.family(Reason::SelectedInventoryCoverageRequiresAPhysicalLedger))
+            }
+        };
         match crate::cleanup::build_prepaid_typed_flat_record_inventory(
             program, function, physical, remaining,
         ) {
@@ -156,18 +159,21 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
         .iter()
         .zip(&plan.entry_state.live_owned_parameters)
     {
-        let slot = inventory
-            .slots
-            .iter()
-            .find(|slot| &slot.id == id)
-            .ok_or_else(|| permit.family(Reason::CleanupInventoryEntryReferencesUnknownStorage))?;
+        let slot = match inventory.slots.iter().find(|slot| &slot.id == id) {
+            Some(slot) => slot,
+            None => {
+                return Err(permit.family(Reason::CleanupInventoryEntryReferencesUnknownStorage))
+            }
+        };
         if !place.projections.is_empty() || place.storage != inventory_storage_id(&slot.origin) {
             return Err(permit
                 .family(Reason::CleanupPlanEntryOwnershipDisagreesWithTheIndependentInventory));
         }
     }
-    let mut next_flag = u32::try_from(inventory.flags.len())
-        .map_err(|_| permit.family(Reason::TooManyInventoryLivenessFlags))?;
+    let mut next_flag = match u32::try_from(inventory.flags.len()) {
+        Ok(next_flag) => next_flag,
+        Err(_) => return Err(permit.family(Reason::TooManyInventoryLivenessFlags)),
+    };
     let mut supplemental = Vec::new();
     for expression in function
         .requires
@@ -204,10 +210,13 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
     }
     for (offset, (actual, expected)) in plan.slots[base_len..].iter().zip(&supplemental).enumerate()
     {
-        let index = base_len
+        let index = match base_len
             .checked_add(offset)
             .and_then(|index| u32::try_from(index).ok())
-            .ok_or_else(|| permit.family(Reason::TooManyCleanupSlots))?;
+        {
+            Some(index) => index,
+            None => return Err(permit.family(Reason::TooManyCleanupSlots)),
+        };
         if actual.id.0 != index
             || actual.storage_index != index
             || actual.storage != expected.storage
