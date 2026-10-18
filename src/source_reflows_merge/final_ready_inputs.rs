@@ -212,11 +212,30 @@ fn projection344_stage(supplied: &str) -> String {
         if let Some(literal) = part["literal"].as_str() {
             actual.push_str(literal);
         } else {
-            actual.push_str(&read(
-                part["source"].as_str().unwrap(),
-                part["length"].as_u64().unwrap() as usize,
-                part["sha256"].as_str().unwrap(),
-            ));
+            let source = part["source"].as_str().unwrap();
+            let length = part["length"].as_u64().unwrap() as usize;
+            let sha = part["sha256"].as_str().unwrap();
+            let text = if matches!(source,
+                "src/workspace_graph/expected_projection/borrowed_imports.rs"
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs"
+                | "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs")
+            {
+                // The same exact current-image owner authenticates before
+                // selecting this immutable, named historical part.
+                assert!(length <= 2_097_152);
+                let text = crate::source_reflows_merge::main_e177_final_inputs::file(
+                    &root.join(source),
+                    length,
+                    sha,
+                )
+                .expect("authenticated complete projection part");
+                assert_eq!(text.len(), length);
+                assert_eq!(digest(&text), sha);
+                text
+            } else {
+                read(source, length, sha)
+            };
+            actual.push_str(&text);
         }
     }
     let image = |name: &str| {
