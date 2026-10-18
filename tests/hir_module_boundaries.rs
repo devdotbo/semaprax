@@ -663,7 +663,7 @@ include_str!("../src/source_reflows_merge/current344.rs"), include_str!("../src/
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/exit_tests.rs"),
             include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/tests.rs")),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs"),
-        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"),
+        include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs"), include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"),
         include_str!("../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"),

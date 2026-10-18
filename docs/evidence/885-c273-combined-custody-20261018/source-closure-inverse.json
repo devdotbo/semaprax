@@ -1,0 +1,54 @@
+{
+  "base": "1d5071fb3143d03e1f9fe90609fe7a805c70945a",
+  "c5": "c5a66317ada06b8ceceb7a9c9257a62375a33115",
+  "new_modules": [
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"
+  ],
+  "edits": [
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "before": "include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\")",
+      "after": "include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\")"
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "before": "include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\")",
+      "after": "include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\")"
+    },
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\")",
+      "after": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs\")"
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "before": "        let restored_c336 = before_bare_pattern_source(path, current);",
+      "after": "        // Acquire the exact whole c5 caller generation before its unchanged\n        // c5 -> c336 -> 847 inverse authorities. Combined CI/raw-source edits\n        // are authenticated by the existing current whole-source reader first.\n        let expected_c5 = match path {\n            \"src/cleanup_plan/replay.rs\" => \"3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e\",\n            \"src/cleanup_plan/replay/expression_facts/arena/retained.rs\" => \"663cc41755cb8083333cb1702352ea59478a35ff427a6bc1039c96007b2a5093\",\n            \"src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs\" => \"8368b0a218ceedd2e55dcd4c9176ccd4579b6a8389a9bc6b875c906688d0799f\",\n            \"src/cleanup_plan/replay/expression_facts/receiving.rs\" => \"67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44\",\n            \"src/cleanup_plan/replay/expression_facts/receiving/retained.rs\" => \"8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b\",\n            \"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\" => \"d9826beee4de70f840309b81447450a4e0373cdee3bb4a7c1a7f8e4f14e77709\",\n            \"src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\" => \"c567429125b11ddaa563be75a0bfbb93330f581279bcd68544a2033e3dc6cbfc\",\n            _ => unreachable!(\"closed seven-authority source set\"),\n        };\n        let acquired_c5 = crate::source_reflows_merge::main_e177_final_inputs::value_direct(\n            path, expected_c5, current,\n        );\n        let current = acquired_c5.as_str();\n        let restored_c336 = before_bare_pattern_source(path, current);"
+    }
+  ],
+  "before": [
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "length": 125075,
+      "sha256": "b00e9f92ec92d719eb0f5441e03db93afebe6116c1fad6842621b6d00f833051"
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "length": 141562,
+      "sha256": "7420b1b6cbbeff3f4be6b0e0baf96be37ce911819cd5c57a96ba1fe96eea781e"
+    },
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "length": 181907,
+      "sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab"
+    },
+    {
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+      "length": 13041,
+      "sha256": "c4ad474a7b093d140a4f58eb8bcf6dc74f545c835dd4e45d5c2274c7ff0eb64c"
+    }
+  ],
+  "Cargo": false
+}

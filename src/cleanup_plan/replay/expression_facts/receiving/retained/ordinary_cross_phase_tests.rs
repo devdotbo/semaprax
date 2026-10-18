@@ -262,6 +262,23 @@ fn exact_source_inverses_restore_every_whole_immediate_owner() {
         ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",include_str!("case_certified.rs")),
         ("src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",include_str!("case_certified/retained_lookup.rs")),
     ] {
+        // Acquire the exact whole c5 caller generation before its unchanged
+        // c5 -> c336 -> 847 inverse authorities. Combined CI/raw-source edits
+        // are authenticated by the existing current whole-source reader first.
+        let expected_c5 = match path {
+            "src/cleanup_plan/replay.rs" => "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e",
+            "src/cleanup_plan/replay/expression_facts/arena/retained.rs" => "663cc41755cb8083333cb1702352ea59478a35ff427a6bc1039c96007b2a5093",
+            "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs" => "8368b0a218ceedd2e55dcd4c9176ccd4579b6a8389a9bc6b875c906688d0799f",
+            "src/cleanup_plan/replay/expression_facts/receiving.rs" => "67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained.rs" => "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs" => "d9826beee4de70f840309b81447450a4e0373cdee3bb4a7c1a7f8e4f14e77709",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs" => "c567429125b11ddaa563be75a0bfbb93330f581279bcd68544a2033e3dc6cbfc",
+            _ => unreachable!("closed seven-authority source set"),
+        };
+        let acquired_c5 = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            path, expected_c5, current,
+        );
+        let current = acquired_c5.as_str();
         let restored_c336 = before_bare_pattern_source(path, current);
         let current = restored_c336.as_str();
         let row=records["sources"].as_array().unwrap().iter().find(|r|r["path"]==path).unwrap();
