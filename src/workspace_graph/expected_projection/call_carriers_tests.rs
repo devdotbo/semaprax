@@ -368,7 +368,14 @@ fn independent_cold_invoice_prices_zero_and_every_closed_dense_proof_role() {
         let (p, allocation) =
             crate::test_allocation_observer::measure(|| count(&programs[0], &authored, true));
         assert_eq!(p.roots, n);
-        assert_eq!(p.bytes, dense_invoice(n));
+        let before = super::before_directory::count(&programs[0], &authored, true);
+        assert_eq!(
+            before.bytes,
+            dense_invoice(n),
+            "complete pre-directory tariff"
+        );
+        assert_eq!(p.bytes, dense_invoice(n) + super::directory::EMPTY_SELECTOR);
+        assert_eq!(p.roots, before.roots);
         assert!(!allocation.invalid);
         assert_eq!(allocation.allocations, 0);
         assert_eq!(allocation.reallocations, 0);

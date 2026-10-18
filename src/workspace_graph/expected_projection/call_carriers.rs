@@ -200,7 +200,7 @@ fn target(
     admitted
 }
 
-pub(super) fn count(
+fn count_linear(
     program: &Program,
     authored: &BTreeMap<&str, AuthoredDeclaration<'_>>,
     imports: bool,
@@ -348,3 +348,10 @@ mod tests;
 #[cfg(test)]
 #[path = "call_carriers_inverse.rs"]
 pub(in crate::workspace_graph) mod inverse;
+
+#[path = "call_carriers_directory.rs"]
+mod directory;
+pub(super) use directory::count;
+#[cfg(test)]
+#[path = "call_carriers_before_directory.rs"]
+mod before_directory;

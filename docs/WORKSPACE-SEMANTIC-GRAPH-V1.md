@@ -307,6 +307,17 @@ footprints, the complete expression, children, identities, strings, plans and
 bookkeeping remain charged. A separate typed proof invoice is added once to
 each participating module forecast, including zero-qualified and failed proofs;
 it receives no AST/HIR expansion multiplier or semantic-cache copy factor.
+For modules with 64–512 participating raw headers, the proof uses a bounded
+sorted multiset of borrowed interface, local-function and enabled-import
+headers, with one invocation-local last-position hint. The hint selects only a
+raw row; it retains no admission verdict. Every selected query rechecks the
+original compiler-operation, multiplicity, import kind, provider/module/ID,
+generic and arity predicates. Duplicate spellings remain separate rows. Its
+array capacities, initialization, sorting, selector, receiving slots and
+queries all enter the module proof invoice; small and oversized modules retain
+the complete linear scan plus the selector invoice. Cold and sparse programs
+can therefore cost more. Whole immediate-linear and pre-proof forecasts remain
+independent controls; application fit and net savings require current execution.
 Source and regression definitions await executable qualification (#898).
 
 [Prelude forecast accounting v1](WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md)
