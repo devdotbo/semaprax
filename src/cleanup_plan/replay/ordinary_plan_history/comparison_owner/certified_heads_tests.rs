@@ -84,6 +84,30 @@ fn heads_run(
         }
         actual.max_depth = actual.arena.len();
     }
+    if shape == 5 {
+        // Same actual observations represented by a right tail, so a fresh
+        // left segment reaches the right's exhausted-segment envelope.
+        actual.paths.truncate(2);
+        let common = actual.arena[0].items.clone();
+        let mut tail = common.clone();
+        tail.extend(actual.paths[1].history.tail.iter().cloned());
+        actual.paths[1].history.previous = None;
+        actual.paths[1].history.tail = tail;
+        expected.clear();
+        for (index, path) in actual.paths.iter().enumerate() {
+            let mut observations = if index == 0 {
+                common.clone()
+            } else {
+                Vec::new()
+            };
+            observations.extend(path.history.tail.iter().cloned());
+            expected.push(SkeletonPath {
+                observations: observations.into(),
+                terminal: path.terminal,
+            });
+        }
+        expected.sort();
+    }
     if hir_shared {
         for path in &mut expected {
             path.observations.prefix = path.observations.freeze();
@@ -235,7 +259,7 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         (paired_value::STEP + paired_value::EMPTY, paired_value::LOAD)
     );
     (
-        7 * header
+        8 * header
             + base * r.certified_bases
             + pop * r.certified_pops
             + head * r.certified_heads
@@ -288,6 +312,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
             (1, true, 2),
             (1, true, 3),
             (1, true, 4),
+            (1, true, 5),
         ] {
             for hir_shared in [false, true] {
                 let old = heads_run(
@@ -357,7 +382,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                 }
                 if length == 0 {
                     assert_eq!(current.row.certified_bases, 0);
-                    assert_eq!(current.observed.2, old.observed.2 + 7 * PAYMENT_HEADER);
+                    assert_eq!(current.observed.2, old.observed.2 + 8 * PAYMENT_HEADER);
                 }
                 if shape == 4 && length == 128 {
                     assert!(
@@ -366,7 +391,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     );
                     assert!(
                         current.observed.2 < old.observed.2,
-                        "full genuine d458 invoice including all seven cold headers must win on this dense witness"
+                        "full genuine d458 invoice including all eight cold headers must win on this dense witness"
                     );
                 }
                 if !shared {
@@ -376,7 +401,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     "OPT900902 length={length} depth={depth} shared={shared} shape={shape} hir_shared={hir_shared} old_d458={} current={} cold={} base={} pop={} view={} head={} rhs={} first={} old_Q={} current_Q={} G={} H={}; full individual work and Drop; source candidate only, no shipping gain claim",
                     old.observed.2,
                     current.observed.2,
-                    7 * PAYMENT_HEADER,
+                    8 * PAYMENT_HEADER,
                     current.row.certified_bases,
                     current.row.certified_pops,
                     current.row.certified_views,
@@ -404,6 +429,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
         (8, 1, true, 1),
         (8, 1, true, 2),
         (8, 1, true, 3),
+        (8, 1, true, 5),
     ] {
         for fault in 0..9 {
             for hir_shared in [false, true] {
@@ -464,7 +490,7 @@ fn certified_heads_every_work_cut_retains_all_six_fields_swaps_and_malformed_pre
 fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_controls() {
     let program = super::super::super::super::tests::program();
     let function = &program.functions[0];
-    let mut reached = [false; 8];
+    let mut reached = [false; 9];
     let phases = [
         "ordinary plan fresh right segment base",
         "ordinary plan fresh right link pop",
@@ -472,10 +498,18 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         "ordinary plan certified first observation",
         "ordinary plan foreign right segment view and head",
         "ordinary plan loaded right head",
+        "ordinary plan exhausted right step retained envelope",
         "ordinary plan fresh segment identity event",
         "ordinary plan history paired cursor next",
     ];
-    for (shared, shape) in [(true, 0), (false, 0), (true, 1), (true, 2), (true, 3)] {
+    for (shared, shape) in [
+        (true, 0),
+        (false, 0),
+        (true, 1),
+        (true, 2),
+        (true, 3),
+        (true, 5),
+    ] {
         let complete = observe_heads(
             function,
             8,
@@ -540,7 +574,7 @@ fn certified_heads_every_new_packet_has_exact_short_zero_floor_sticky_and_drop_c
         }
     }
     assert_eq!(
-        reached, [true; 8],
+        reached, [true; 9],
         "all actual packet frontiers must have a genuine witness"
     );
 }
@@ -555,7 +589,11 @@ fn certified_heads_refused_prefix_distinguishes_admitted_first_banks_from_comple
         let admitted = |phase| {
             r.events
                 .iter()
-                .filter(|e| e.phase == phase)
+                .filter(|e| {
+                    e.phase == phase
+                        || (phase == "ordinary plan loaded right head"
+                            && e.phase == "ordinary plan exhausted right step retained envelope")
+                })
                 .filter_map(|e| e.after.map(|after| after - e.before))
                 .sum::<usize>()
         };
@@ -904,7 +942,7 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
             0,
             false,
             units,
-            matching.before + 7 * PAYMENT_HEADER + PAIR_MATCH - 1,
+            matching.before + 8 * PAYMENT_HEADER + PAIR_MATCH - 1,
             0,
             false,
             false,

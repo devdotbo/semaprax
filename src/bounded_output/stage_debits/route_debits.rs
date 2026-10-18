@@ -82,6 +82,7 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan certified first observation"
         | "ordinary plan foreign right segment view and head"
         | "ordinary plan loaded right head"
+        | "ordinary plan exhausted right step retained envelope"
         | "ordinary plan fresh segment identity event"
         | "ordinary plan shared suffix pattern probe"
         | "ordinary plan shared suffix scalar receivers" => Some(8),
@@ -1079,7 +1080,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             heads.matches(".charge(").count(),
             heads.matches("shared_prefix_first_comparison!(").count()
         ),
-        (9, 2, 3, 1)
+        (10, 2, 3, 1)
     ); // one paid! belongs to the MATCH macro, expanded four times
     assert_eq!(
         (
@@ -1090,8 +1091,8 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
     );
     // Old loop: MATCH + four five-site producers + two first-work sites +
     // eight event/suffix sites. New loop: seven-site left + two old producers
-    // + fourteen-site right + seven suffix sites. These are real expansions.
-    assert_eq!((7 + 2 * 5 + 14 + 7) - (1 + 4 * 5 + 2 + 8), 7);
+    // + fifteen-site right + seven suffix sites. These are real expansions.
+    assert_eq!((7 + 2 * 5 + 15 + 7) - (1 + 4 * 5 + 2 + 8), 8);
     for phase in phases(heads, "paid!(", 4)
         .into_iter()
         .chain(phases(suffix, "paid!(", 4))

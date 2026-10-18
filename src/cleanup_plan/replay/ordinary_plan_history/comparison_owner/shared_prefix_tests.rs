@@ -5,7 +5,7 @@ use super::*;
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
-        + (15 + 7) * PAYMENT_HEADER;
+        + (15 + 8) * PAYMENT_HEADER;
     let event = 2 * size_of::<usize>() + size_of::<bool>();
     let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
     let body =

@@ -245,12 +245,12 @@ order. These mixed-limit differences must not be hidden by phantom old fees.
 | Certified right | RHS before slice/loaded/item publication; FIRST before Equal; original comparison work before suffix |
 | Foreign/loaded right | VIEW_HEAD before fresh views or HEAD before loaded pattern; item/slice updates, then MATCH before as_ref/content comparison |
 | Left fallback/tail | MATCH immediately before left observation as_ref or tail match (including exhaustion); ordinary right advance follows |
-| Right tail under fresh left | Original TAIL admission, MATCH, original tail pattern/state updates and comparison |
+| Right tail under fresh left | BASE and the retained unused old HEAD/as_ref envelope before original TAIL admission, MATCH, original tail pattern/state updates and comparison |
 | Suffix | Original probe/body admission, left step/segment work and state, right step/segment work and state, Equal, comparison work; empty probe remains paid |
 
-The real expanded producer adds seven complete PAYMENT_HEADER sites: three for
+The real expanded producer adds eight complete PAYMENT_HEADER sites: four for
 the split right producer, three additional MATCH positions replacing the old
-one, and one first-head certificate site. All old cold fees remain; no fee,
+one, and one first-head certificate site. The terminal-limit branch retains the complete old unused HEAD/as_ref envelope; no unrelated fallback tariff is credited. All old cold fees remain; no fee,
 limit or cap is reduced. Typed BASE, POP, RHS, VIEW_HEAD, HEAD and FIRST packets
 are acquired before their named formations. Acquired FIRST and completed first
 work are separate counters, as are suffix acquired bodies and completed items.

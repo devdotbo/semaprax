@@ -1,8 +1,8 @@
 //! Two lexical first heads certify an immutable segment, never a saved verdict.
 use super::{Ordering, PAYMENT_HEADER, Rc, Segment, SkeletonObservation, size_of};
 // Additional actual reserve/work sites relative to the complete d458 owner:
-// split right producer +3, relocated MATCH +3, first-head certificate +1.
-pub(super) const OWNER: usize = 7 * PAYMENT_HEADER;
+// split right producer +4, relocated MATCH +3, first-head certificate +1.
+pub(super) const OWNER: usize = 8 * PAYMENT_HEADER;
 pub(super) const BASE: usize =
     2 * size_of::<usize>() + 3 * size_of::<bool>() + super::paired_value::EMPTY;
 pub(super) const POP: usize = 2 * size_of::<&mut Vec<usize>>()
@@ -62,7 +62,18 @@ macro_rules! certified_right_value {
                     $crate::workflow_profile::plan_comparison::event(
                         $crate::workflow_profile::plan_comparison::Site::CertifiedBaseAdmitted,
                         certified_heads::BASE);
-                if $owner.right_cursor.segment >= $owner.right_segments { break; }
+                if $owner.right_cursor.segment >= $owner.right_segments {
+                    // Preserve the complete old unused head/as_ref envelope on
+                    // this noncertified sentinel, before the original tail fee.
+                    paid!($budget, $function, certified_heads::HEAD,
+                        "ordinary plan exhausted right step retained envelope")?;
+                    #[cfg(test)] $census.certified_head();
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    $crate::workflow_profile::plan_comparison::event(
+                        $crate::workflow_profile::plan_comparison::Site::CertifiedHeadAdmitted,
+                        certified_heads::HEAD);
+                    break;
+                }
                 $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
                 if !$owner.right_loaded {
                     paid!($budget, $function, certified_heads::POP,
