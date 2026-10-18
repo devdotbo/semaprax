@@ -1,6 +1,7 @@
 //! Authenticated test-only repository data. No compiler or budget authority.
 //! Runtime files are required at the exact compile-time repository location.
 #![cfg(test)]
+use std::io::Read;
 #[path = "runtime_json/sealed_io.rs"]
 mod sealed_io;
 pub(super) use sealed_io::{additional, AdditionalFixture};
