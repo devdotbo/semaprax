@@ -9,7 +9,14 @@ pub(in crate::cleanup_plan::replay) fn selected(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<&'static str, EngineError> {
-    let _permit = Permit::family_receiver::<&'static str>(function, budget)?;
+    let _permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<&'static str>(function, budget)
+    )?;
     // Actual arguments, summary/choice locals and the funded Diagnostic child
     // receiving controls are charged before entering any selected child.
     type Receiving<'a> = (
@@ -159,7 +166,14 @@ fn helper_sites<'a>(
 ) -> Result<bool, EngineError> {
     use crate::cleanup_plan::renewal_profile::child_refusal::Refusal;
     use crate::loop_calls::byte_writer::HelperBindings;
-    let permit = Permit::family_receiver::<HelperBindings<'a>>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<HelperBindings<'a>>(function, budget)
+    )?;
     type Receiving<'a> = (
         &'a dyn crate::cleanup::ReplayContext,
         &'a ResolvedFunction,
@@ -231,7 +245,14 @@ fn owner_admission(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<bool, EngineError> {
-    let permit = Permit::family_receiver::<bool>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<bool>(function, budget)
+    )?;
     budget.reserve_array::<[Option<(&ResolvedExpr, usize)>; 514]>(
         function,
         1,

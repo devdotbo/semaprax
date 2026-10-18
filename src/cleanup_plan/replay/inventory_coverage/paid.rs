@@ -63,7 +63,14 @@ pub(in crate::cleanup_plan::replay) fn validate_inventory_coverage(
             .inventory(program, function, budget)
             .map_err(EngineError::Owned);
     }
-    let permit = Permit::family_receiver::<()>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<()>(function, budget)
+    )?;
     type Receiving<'a> = (
         &'a dyn ReplayContext,
         &'a ResolvedFunction,

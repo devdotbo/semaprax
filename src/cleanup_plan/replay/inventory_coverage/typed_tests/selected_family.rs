@@ -175,7 +175,7 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
     use super::super::super::{
         selected_context::{
             self,
-            child::{FamilyReceiving, Permit},
+            child::{FamilyCallReceiving, FamilyReceiving, Permit},
         },
         semantic_refusal,
     };
@@ -197,18 +197,34 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
         Result<(), EngineError>,
     );
     let family = std::mem::size_of::<FamilyReceiving<'_>>();
-    let total = family + std::mem::size_of::<Original<'_>>();
+    let caller = std::mem::size_of::<FamilyCallReceiving<'_>>();
+    let total = caller + family + caller + std::mem::size_of::<Original<'_>>();
     let program = program();
     let function = &program.functions[0];
-    for headroom in [family, total - 1, total] {
+    for headroom in [caller + family, total - 1, total] {
         let mut budget = ReplayBudget::with_physical(function, usize::MAX).unwrap();
         let charged = budget.physical.as_ref().unwrap().charged();
         let (((), observed), refused, _, _) = with_limit_usage_refusal(1 << 20, || {
             assert!(set_active_floor((1 << 20) - headroom));
             measure(|| {
-                let result = Permit::family_receiver::<()>(function, &mut budget);
+                let result = (|| {
+                    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                        budget,
+                        function,
+                        FamilyCallReceiving<'_>,
+                        3,
+                        "selected family call receiving",
+                        Permit::family_receiver::<()>(function, &mut budget)
+                    )
+                })();
                 assert_eq!(result.is_ok(), headroom == total);
-                let expected = if headroom == total { total } else { family };
+                let expected = if headroom == total {
+                    total
+                } else if headroom < caller + family + caller {
+                    caller + family
+                } else {
+                    caller + family + caller
+                };
                 assert_eq!(
                     budget.physical.as_ref().unwrap().charged() - charged,
                     expected
@@ -224,12 +240,23 @@ fn selected_family_exact_full_receiving_floor_and_work_have_no_unpriced_success(
         );
         assert!(!observed.invalid);
     }
-    for work in [8, 9, 19, 20] {
+    for work in [0, 2, 3, 11, 12, 14, 15, 25, 26] {
         let mut budget = ReplayBudget::with_physical(function, usize::MAX).unwrap();
         budget.remaining = work;
-        let (succeeded, observed) =
-            measure(|| Permit::family_receiver::<()>(function, &mut budget).is_ok());
-        assert_eq!(succeeded, work == 20);
+        let (succeeded, observed) = measure(|| {
+            let result = (|| {
+                crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+                    budget,
+                    function,
+                    FamilyCallReceiving<'_>,
+                    3,
+                    "selected family call receiving",
+                    Permit::family_receiver::<()>(function, &mut budget)
+                )
+            })();
+            result.is_ok()
+        });
+        assert_eq!(succeeded, work == 26);
         assert_eq!(budget.remaining, 0);
         assert_eq!((observed.allocations, observed.reallocations), (0, 0));
     }

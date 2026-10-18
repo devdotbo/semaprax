@@ -7,8 +7,14 @@ fn parameter<'a>(
     index: usize,
     budget: &mut ReplayBudget,
 ) -> Result<Option<(OwnershipMode, &'a ResolvedType)>, EngineError> {
-    let permit =
-        Permit::family_receiver::<Option<(OwnershipMode, &ResolvedType)>>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<Option<(OwnershipMode, &ResolvedType)>>(function, budget)
+    )?;
     budget.reserve_array::<(
         &dyn ReplayContext,
         &ResolvedFunction,
@@ -85,7 +91,14 @@ pub(super) fn collect_supplemental(
     slots: &mut Vec<ExpectedSupplementalSlot>,
     budget: &mut ReplayBudget,
 ) -> Result<(), EngineError> {
-    let permit = Permit::family_receiver::<()>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<()>(function, budget)
+    )?;
     budget.reserve_array::<(
         &dyn ReplayContext,
         &ResolvedFunction,

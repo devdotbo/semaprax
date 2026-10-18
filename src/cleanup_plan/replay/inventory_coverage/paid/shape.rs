@@ -7,7 +7,14 @@ fn leaf(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = Permit::family_receiver::<FieldLivenessShape>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<FieldLivenessShape>(function, budget)
+    )?;
     budget.reserve_array::<(
         &ResolvedFunction,
         &ResolvedType,
@@ -51,7 +58,14 @@ fn lifecycle_leaf(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = Permit::family_receiver::<FieldLivenessShape>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<FieldLivenessShape>(function, budget)
+    )?;
     budget.reserve_array::<(
         &ResolvedFunction,
         crate::hir::CompilerDeclaration,
@@ -81,7 +95,14 @@ pub(super) fn shape(
     next: &mut u32,
     budget: &mut ReplayBudget,
 ) -> Result<FieldLivenessShape, EngineError> {
-    let permit = Permit::family_receiver::<FieldLivenessShape>(function, budget)?;
+    let permit = crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>,
+        3,
+        "selected family call receiving",
+        Permit::family_receiver::<FieldLivenessShape>(function, budget)
+    )?;
     budget.reserve_array::<(
         &dyn ReplayContext,
         &ResolvedFunction,

@@ -3,18 +3,22 @@ use super::*;
 use crate::cleanup_plan::replay::selected_context::family::Reason;
 use crate::cleanup_plan::replay::{inventory_coverage, selected_context::child::Permit};
 
-fn exercise(observe_publish: bool) {
-    let program = program();
-    let mut subject = members(&program)[0].clone();
+fn exercise(program: &crate::hir::ResolvedProgram, observe_publish: bool) {
+    let mut subject = members(program)[0].clone();
     subject.cleanup.schema = "hostile.selected.inventory".into();
     let mut preparation = prepared(&subject);
     let backing = preparation.report_backing();
     let ledger = std::ptr::from_ref(preparation.budget.physical.as_deref().unwrap());
     // A genuinely second prepaid receiver; no receipt is manufactured after
     // the first failure by retrying the already sticky ledger.
+    preparation.budget.reserve_array::<crate::cleanup_plan::replay::selected_context::child::FamilyCallReceiving<'_>>(&subject,1,"selected family call receiving").unwrap();
+    preparation
+        .budget
+        .charge(&subject, 3, "selected family call receiving")
+        .unwrap();
     let later = Permit::family_receiver::<()>(&subject, &mut preparation.budget).unwrap();
     let error = inventory_coverage::paid::validate_inventory_coverage(
-        &program,
+        program,
         &subject,
         &mut preparation.budget,
     )
@@ -67,8 +71,9 @@ fn exercise(observe_publish: bool) {
 }
 #[test]
 fn actual_selected_child_keeps_exact_report_source_ledger_first_receipt_and_full_drop() {
-    exercise(true);
-    let (_, observed) = measure(|| exercise(false));
+    let program = program();
+    exercise(&program, true);
+    let (_, observed) = measure(|| exercise(&program, false));
     assert!(!observed.invalid && observed.live == 0);
     assert_eq!(observed.allocated, observed.freed);
 }

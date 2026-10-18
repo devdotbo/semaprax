@@ -848,7 +848,13 @@ shape and supplemental receiving frames, query activation fields and closed
 metadata match results/bindings. The new family layer pays
 `size_of::<FamilyReceiving>()` and nine field initializer/transfer units, then
 retains the existing full `Permit::acquire<T>` debit and eleven units. It takes
-no old-header credit. Per-query activation tuples and each actual closed query
+no old-header credit. A separate lexical `FamilyCallReceiving` tuple pays the
+function/budget arguments and returned Permit/Error before every family call,
+and again before the new family wrapper calls the existing acquire method;
+these are two real caller boundaries, each with three field units. Thus the
+complete new family invocation retains all existing callee charges and adds
+both caller frontiers rather than funding arguments after they already exist.
+Per-query activation tuples and each actual closed query
 match have separate debits; fixed cursor backing and original lifecycle/type/
 identity charges remain. An old/new bill comparison must include every reached
 family activation, helper proof/census and summary/update allocation, all

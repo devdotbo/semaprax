@@ -244,7 +244,14 @@ impl<'a> Permit<'a> {
             "selected family finite receiving",
         )?;
         budget.charge(subject, 9, "selected family finite receiving")?;
-        Self::acquire::<T>(subject, budget)
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            subject,
+            FamilyCallReceiving<'_>,
+            3,
+            "selected family acquire call receiving",
+            Self::acquire::<T>(subject, budget)
+        )
     }
     pub(in super::super) fn family(&self, reason: super::family::Reason) -> Error {
         Error::Structural(semantic_refusal::Receipt::family(self.subject, reason))
@@ -263,5 +270,13 @@ pub(in super::super) type FamilyReceiving<'a> = (
     semantic_refusal::Atom,
     semantic_refusal::Receipt,
     Error,
+    Result<Permit<'a>, Error>,
+);
+
+// Caller-side arguments and result, admitted lexically BEFORE a new family or
+// acquire invocation forms them; distinct from each callee's retained roles.
+pub(in super::super) type FamilyCallReceiving<'a> = (
+    &'a ResolvedFunction,
+    &'a mut ReplayBudget,
     Result<Permit<'a>, Error>,
 );
