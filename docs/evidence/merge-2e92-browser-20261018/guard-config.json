@@ -409,8 +409,8 @@
       "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs": {
-      "length": 34714,
-      "sha256": "07ba09146551154e91b34c3fe9a870bc33371e289b5806e80c2cf90f33d4dc46"
+      "length": 34775,
+      "sha256": "01839373f37c9da3aec1e57906bcf9f1544868e9884248929a3036214d44a4a2"
     },
     "src/cleanup_plan/replay/inventory_coverage.rs": {
       "length": 17186,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 69020,
-      "sha256": "7fc0d74b5f727923e8ffb4ae0781bb117455f7c8fbc591d4f51d9bc52c869aa5"
+      "sha256": "af681cea0afabef5fac6c5c85dd10595647964790bc5a7be4c39a4a2a8d108eb"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -921,8 +921,8 @@
       "sha256": "f9e75926f5df0b6b7746a78cf3d2f705bf76d342356346c3581ddd8b6c04aba9"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs": {
-      "length": 9673,
-      "sha256": "51cb131aee4bb8e75181b5d531193f50f99ba859bc40e2280d298bda5e224b23"
+      "length": 9701,
+      "sha256": "1ecdb3b9a539c7fe40ab99bd0b60fb41e5fecc41f642837a52687f1903ccd96f"
     },
     "src/workspace_graph/expected_projection/call_carriers_before_directory.rs": {
       "length": 12075,
@@ -933,8 +933,8 @@
       "sha256": "1a61d40677748f217a193754f9be21184a8dfbf7e9ca82550f28f3146c99d999"
     },
     "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs": {
-      "length": 16409,
-      "sha256": "e99dea3e086c62ef27198c1dc5f7294f118365d7ba547af07cfd587ed2d686af"
+      "length": 16540,
+      "sha256": "1fa5437896757f581f9b9d03c88bcbdf44992e6c019bc2f733f2c58b6b5139fc"
     },
     "src/workspace_graph/expected_projection.rs": {
       "length": 59698,
@@ -961,8 +961,8 @@
       "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
-      "length": 30460,
-      "sha256": "c7add844c7148ee77287dbefab83250b1e780096d11baeed7e7f8e6ffab04e41"
+      "length": 30509,
+      "sha256": "e5a6535a0aa6d8afeec4d0d2a5a06347ae84ff10d9aecdb725d774908a918cb2"
     }
   },
   "carriers": {
