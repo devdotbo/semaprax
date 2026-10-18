@@ -1,0 +1,58 @@
+{
+  "before_head": "9211c0158b3d58dfb03aaeda70dbc01eebe9c5bb",
+  "source_rows": 121,
+  "logical_rows": 444,
+  "extension_overrides": 187,
+  "tables": [
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "before": {
+        "length": 85979,
+        "sha256": "e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/e30f146746789340601b02cb2cf3fd29f21659d7cf37267bb175440b4d156d0a.txt"
+      },
+      "current_length": 86292,
+      "current_sha256": "bfbc7fda10c3e4efb3fad374524ff5493b91e43ac9f73df55bd14831c21e8cf7",
+      "updated_sources": [
+        "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs"
+      ]
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "before": {
+        "length": 228268,
+        "sha256": "762e3c6221da8df3a43a58a941e3b4f17fa4500084971fee6743eb6f09778cd9",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/762e3c6221da8df3a43a58a941e3b4f17fa4500084971fee6743eb6f09778cd9.txt"
+      },
+      "current_length": 229009,
+      "current_sha256": "b67d7a84ae4818268562e701bf80ff623d03e84cc791110cfbe7161d196265f1",
+      "updated_sources": [
+        "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving.rs"
+      ]
+    }
+  ],
+  "before_helper": {
+    "length": 99927,
+    "sha256": "8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d",
+    "archive": "docs/evidence/clippy-9211-20261018/whole/8d8d8c91186046742c963d50801db81b1f1e973f52f52f16af7a5f9e60aaae8d.txt"
+  },
+  "before_guard": {
+    "length": 10640,
+    "sha256": "c2a64c7de118002e4f0e47708c712f23ffafc6487346cf0f725c279ddd86d1fa",
+    "archive": "docs/evidence/clippy-9211-20261018/whole/c2a64c7de118002e4f0e47708c712f23ffafc6487346cf0f725c279ddd86d1fa.txt"
+  },
+  "before_config": {
+    "length": 117696,
+    "sha256": "58ba9380e339397a54f176011500b0db3a293716dbf4359b113b774c5ec69159",
+    "archive": "docs/evidence/clippy-9211-20261018/whole/58ba9380e339397a54f176011500b0db3a293716dbf4359b113b774c5ec69159.txt"
+  },
+  "module_pins_refreshed": [
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"
+  ],
+  "all_prior_fields_views_and_current_wires_retained": true,
+  "source_reader_and_program_caps_unchanged": true
+}

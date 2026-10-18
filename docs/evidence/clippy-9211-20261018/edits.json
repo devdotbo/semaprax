@@ -1,0 +1,83 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "edits": [
+      {
+        "old": "pub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_exits_retained, validate_status_sources_certified,\n    validate_structure_with_budget_storage, StatusCases,\n};",
+        "new": "#[cfg(test)]\npub(in crate::cleanup_plan::replay) use retained::validate_status_sources_certified;\npub(in crate::cleanup_plan::replay) use retained::{\n    validate_blocks_and_edges_retained, validate_exits_retained,\n    validate_structure_with_budget_storage, StatusCases,\n};",
+        "occurrences": 1
+      }
+    ],
+    "before": {
+      "length": 27977,
+      "sha256": "67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44",
+      "archive": "docs/evidence/clippy-9211-20261018/whole/67f00fcd1acb1f5cd3d218670af3acc80c7ba245d21a7fb2b43d9fd3867a5d44.txt"
+    },
+    "exact_inverse_verified": true,
+    "current_length": 28040,
+    "current_sha256": "fcede38f302d56c3cf61344350cc1b4b8d6d2f03c0e123aefbc6565841bdd421",
+    "current_lines": 648
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "edits": [
+      {
+        "old": "fn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, &[function.body.id.clone()]);",
+        "new": "fn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, std::slice::from_ref(&function.body.id));",
+        "occurrences": 1
+      },
+      {
+        "old": "fn prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, &[function.body.id.clone()]);",
+        "new": "fn prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing() {\n    let program = program();\n    let function = &program.functions[0];\n    let arena = arena(function, std::slice::from_ref(&function.body.id));",
+        "occurrences": 1
+      }
+    ],
+    "before": {
+      "length": 27693,
+      "sha256": "8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0",
+      "archive": "docs/evidence/clippy-9211-20261018/whole/8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0.txt"
+    },
+    "exact_inverse_verified": true,
+    "current_length": 27717,
+    "current_sha256": "c9c6d545a86b013d16b1beeacfa85e8452c1fdadf0a8ff78d45ce7255c7099a5",
+    "current_lines": 624
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+    "edits": [
+      {
+        "old": "0 => function.cleanup_plan.schema = \"foreign.cleanup.schema\".into(),",
+        "new": "0 => function.cleanup_plan.schema = \"foreign.cleanup.schema\",",
+        "occurrences": 1
+      }
+    ],
+    "before": {
+      "length": 14802,
+      "sha256": "990aec163cc046175cc3867ec75bfbee6cf3e54feece0528689faefc8728bf85",
+      "archive": "docs/evidence/clippy-9211-20261018/whole/990aec163cc046175cc3867ec75bfbee6cf3e54feece0528689faefc8728bf85.txt"
+    },
+    "exact_inverse_verified": true,
+    "current_length": 14795,
+    "current_sha256": "eba9e17ad42de748c18fd93ecbb8c897aa93ceb82ecb01f9b6484aabca8d2449",
+    "current_lines": 359
+  },
+  {
+    "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+    "before": {
+      "length": 36862,
+      "sha256": "8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b",
+      "archive": "docs/evidence/clippy-9211-20261018/whole/8e54417f73a57f98c016451910680f81dcc0ba7da32b08c5dea2e9b91473c63b.txt"
+    },
+    "edits": [
+      {
+        "old": "pub(in crate::cleanup_plan::replay) use case_certified::validate_status_sources_certified;",
+        "new": "#[cfg(test)]\npub(in crate::cleanup_plan::replay) use case_certified::validate_status_sources_certified;",
+        "occurrences": 1
+      }
+    ],
+    "exact_inverse_verified": true,
+    "current_length": 36875,
+    "current_sha256": "829ec5782619043f3651cf56982c3668cbadd55906690de9f50aa5800cf24a9b",
+    "current_lines": 834
+  }
+]

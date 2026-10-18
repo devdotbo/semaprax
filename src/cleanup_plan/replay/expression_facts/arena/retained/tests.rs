@@ -521,7 +521,7 @@ fn prepaid_edge_entry_keeps_all_old_work_cuts_and_complete_payload_identity() {
 fn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {
     let program = program();
     let function = &program.functions[0];
-    let arena = arena(function, &[function.body.id.clone()]);
+    let arena = arena(function, std::slice::from_ref(&function.body.id));
     let observe = |bytes, count| {
         let mut budget = ReplayBudget::with_physical(function, bytes).unwrap();
         let result = (|| {
@@ -588,7 +588,7 @@ fn prepaid_edge_entry_exact_short_later_and_floor_refusals_remain_sticky() {
 fn prepaid_edge_entry_unwind_releases_the_same_loan_without_scratch_backing() {
     let program = program();
     let function = &program.functions[0];
-    let arena = arena(function, &[function.body.id.clone()]);
+    let arena = arena(function, std::slice::from_ref(&function.body.id));
     let mut budget = ReplayBudget::unobserved();
     let (_, metrics) = measure(|| {
         let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {

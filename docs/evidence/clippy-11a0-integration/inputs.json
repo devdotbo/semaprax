@@ -554,9 +554,9 @@
         "archive": "docs/evidence/clippy-4a6eb/MlFCGLDYV0XtFNjRtzqC6jA1Gaxj5og71aJmgeC87_g.txt"
       },
       "current": {
-        "length": 27693,
-        "sha256": "8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0",
-        "archive": "docs/evidence/merge-e32-browser-20261018/whole/8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0.txt"
+        "length": 27717,
+        "sha256": "c9c6d545a86b013d16b1beeacfa85e8452c1fdadf0a8ff78d45ce7255c7099a5",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/c9c6d545a86b013d16b1beeacfa85e8452c1fdadf0a8ff78d45ce7255c7099a5.txt"
       },
       "views": [
         {
@@ -582,6 +582,12 @@
           "length": 27693,
           "sha256": "8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0",
           "archive": "docs/evidence/fmt-local-441-20261018/whole/8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0.txt"
+        },
+        {
+          "name": "whole-9211-before-lint",
+          "length": 27693,
+          "sha256": "8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0",
+          "archive": "docs/evidence/merge-e32-browser-20261018/whole/8c765aec2cbb503a280ce3b23770c4b835ed319e56337c4908d4a7fd4fc6fbf0.txt"
         }
       ]
     },
