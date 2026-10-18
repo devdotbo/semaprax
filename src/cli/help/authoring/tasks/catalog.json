@@ -261,6 +261,57 @@
   "layout": "tables",
   "scaffold_name": "task-demo",
   "schema": "semaprax.authoring-tasks.v6",
+  "selected_file_task": {
+    "capabilities": [
+      "fs.read",
+      "process.args.read",
+      "process.stderr.write",
+      "process.stdout.write"
+    ],
+    "command": "loglens.main",
+    "command_head": [
+      "fn main() -> i64",
+      "    uses { fs.read, process.args.read, process.stderr.write, process.stdout.write }"
+    ],
+    "declarations": [],
+    "dependencies": {},
+    "files": [
+      {
+        "path": "build.sh",
+        "sha256": "5fb6f6bc7051f06917933dd8acb165791461b771e8eb37096d228104c1c8e1cd"
+      },
+      {
+        "path": "loglens.spx",
+        "sha256": "7dd74a108a6263d137c957d511787973730c23ba8649f13d682c2dadbd2a8d05"
+      },
+      {
+        "path": "run.sh",
+        "sha256": "1eb6a10b749270c6b08c0a0fe3d7eed5c4e01273f37181e91810be6d4c8fdec6"
+      },
+      {
+        "path": "semaprax.toml",
+        "sha256": "5223529ee00c4cca862b4e61b295a9d0ca4c7b345de682f343bf8647f25bc7aa"
+      },
+      {
+        "path": "tests.mjs",
+        "sha256": "d691f08c8809fe80c4fb7e3194953b0a0f5f3839900fb0985ed3000a21ac0afd"
+      },
+      {
+        "path": "unit.spx",
+        "sha256": "02f0d43cfac00a54e85119a737f07dfeab03d361f435b16c9d7d7d5e000e4c82"
+      }
+    ],
+    "input": "argv-utf8-256+selected-file.follow.v1",
+    "manifest": "schema = \"semaprax.manifest.v1\"\n\n[package]\nname = \"loglens\"\nversion = \"0.1.0\"\nprofile = \"source-command.selected-file.resource-output.v1\"\n\n[modules]\nentry = \"loglens\"\nsources = [\"loglens.spx\", \"unit.spx\"]\ntests = [\"loglens.tests\"]\n\n[exports]\nweb = []\n\n[command]\nfunction = \"loglens.main\"\ninput = \"argv-utf8-256+selected-file.follow.v1\"\n\n[capabilities]\nrequired = [\"fs.read\", \"process.args.read\", \"process.stderr.write\", \"process.stdout.write\"]\n\n[targets]\nmatrix = [\"native64\"]\n",
+    "project_profile": "source-command.selected-file.resource-output.v1",
+    "sources": [
+      "loglens.spx",
+      "unit.spx"
+    ],
+    "specimen": "experiments/selected-file-input/loglens",
+    "target": "native64",
+    "task": "selected-file"
+  },
   "tasks": [
     {
       "capabilities": [

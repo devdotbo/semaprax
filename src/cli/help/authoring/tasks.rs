@@ -8,7 +8,8 @@ const INDEX: &str = concat!(
     "help language author:task:file-text:source-command.v1:native64:0\n",
     "help language author:task:stdin-stream:language-command-io.stream-data.v1:native64:0\n",
     "help language author:task:stdin-json:language-command-io.collection-record.v1:native64:0\n",
-    "JSON specimen: ordinary compiler admission and executable qualification pending.\n",
+    "help language author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0\n",
+    "JSON and selected-file specimens: ordinary compiler admission and executable qualification pending.\n",
     "Other profiles/tasks: outside this pilot; help language author:routes.\n",
     "Full/exact catalog remains: help library all; help library <module|name|stable-id>.\n"
 );
@@ -34,6 +35,15 @@ pub(super) fn lookup(query: &str, budget: usize) -> Result<String, String> {
         .filter(|n| n.to_string() == *offset)
         .ok_or_else(|| "task offset must be canonical unsigned decimal".to_owned())?;
     let descriptors: Value = serde_json::from_str(DESCRIPTORS).expect("checked task descriptors");
+    if *task == "selected-file" {
+        let route = &descriptors["selected_file_task"];
+        if text(route, "project_profile") != *profile || text(route, "target") != *target {
+            return Err("selected-file task requires source-command.selected-file.resource-output.v1 and native64; source-command.v1 and v33 remain distinct; use author:selected-file-resource".to_owned());
+        }
+        let catalog: Value =
+            serde_json::from_str(super::super::LIBRARY_INDEX).expect("checked library catalog");
+        return selected_file_page(route, &catalog, start, budget);
+    }
     if *task == "stdin-json" {
         let route = &descriptors["json_task"];
         if text(route, "project_profile") != *profile || text(route, "target") != *target {
@@ -281,5 +291,76 @@ fn json_page(
         return Err("JSON task prerequisite capsule plus whole entry exceeds byte budget; use help library <stable-id> or docs/CLI-HELP-V6.md".to_owned());
     }
     output.push_str(&json_continuation(next, items.len()));
+    Ok(output)
+}
+
+fn selected_file_capsule(route: &Value) -> String {
+    format!("Task v6: LogLens selected-file; source specimen, executable qualification pending.\nProfile {}; target native64 Unix only; input {}\nCommand {} -> i64; sources {}\nCapabilities (declare AND grant): {}\nBounds: 256 argv, 65536 aggregate argv bytes, 4096 path bytes, 65536 UTF-8 file bytes, 64 read attempts/1MiB reserved reads, 1048576-byte String/combined output.\nPrefix: --spx-selected-file-v1 INDEX -- <unchanged app args>; INDEX=0..255 canonical decimal. No prefix means no file grant. Source checks usage before read; selected symlinks followed, one regular-file descriptor held until settlement; metadata mutation checks are not an atomic snapshot.\nInterpreter/Web/Wasm/npm/non-Unix refuse. Ordinary admission may refuse (including G171); help grants no authority.\n", text(route,"project_profile"), text(route,"input"), text(route,"command"), list(&route["sources"]), list(&route["capabilities"]))
+}
+fn selected_file_items(route: &Value, catalog: &Value) -> Result<Vec<String>, String> {
+    let ids = route["declarations"]
+        .as_array()
+        .expect("checked imported identities");
+    if !ids
+        .windows(2)
+        .all(|p| p[0].as_str().unwrap() < p[1].as_str().unwrap())
+    {
+        return Err("selected-file identities are not strictly ordered and unique".to_owned());
+    }
+    // Resolve every identity before pagination, including identities on later pages.
+    let rows = ids
+        .iter()
+        .map(|id| declaration(catalog, id.as_str().unwrap()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut items = vec![
+        format!("Existing specimen checkout: {}. This is NOT a new template. Copy/authorship is separate from help; keep its exact manifest and sources.\nManifest (complete):\n{}", text(route,"specimen"), text(route,"manifest")),
+        format!("From the unchanged specimen checkout:\np={}\nsemaprax check \"$p\"\nsemaprax test \"$p\" --target native\nsemaprax build \"$p\" --target native -o app-bin\n./app-bin --spx-selected-file-v1 0 -- <file> [--top N] [--json]\nWithout app arguments invoke ./app-bin directly: source reports usage, no selected-file grant. The old source-command-file-text template stays source-command.v1.\n", text(route,"specimen")),
+        format!("Exact source command {}:\n{}\nManifest dependencies: {}. Compiler profile operations are not external library imports; no JSON codec/generator is required. Detail: help language author:selected-file-resource; docs/INVOCATION-SELECTED-FILE-RESOURCE-V1.md.\n", text(route,"command"), list(&route["command_head"]), serde_json::to_string(&route["dependencies"]).unwrap()),
+    ];
+    for file in route["files"]
+        .as_array()
+        .expect("complete specimen bindings")
+    {
+        items.push(format!(
+            "Specimen input {} sha256 {}\n",
+            text(file, "path"),
+            text(file, "sha256")
+        ));
+    }
+    items.extend(rows);
+    Ok(items)
+}
+fn selected_file_continuation(next: usize, total: usize) -> String {
+    if next == total {
+        "\nCoverage: complete selected-file specimen prerequisites/inputs/imports; executable qualification pending.\n".to_owned()
+    } else {
+        format!("\nCoverage: partial selected-file ({next}/{total}); next: help language author:task:selected-file:source-command.selected-file.resource-output.v1:native64:{next}\n")
+    }
+}
+fn selected_file_page(
+    route: &Value,
+    catalog: &Value,
+    start: usize,
+    budget: usize,
+) -> Result<String, String> {
+    let items = selected_file_items(route, catalog)?;
+    if start >= items.len() {
+        return Err("selected-file offset is outside its complete entry inventory".to_owned());
+    }
+    let mut output = selected_file_capsule(route);
+    let mut next = start;
+    while next < items.len()
+        && output.len()
+            + items[next].len()
+            + selected_file_continuation(next + 1, items.len()).len()
+            <= budget
+    {
+        output.push_str(&items[next]);
+        next += 1;
+    }
+    if next == start {
+        return Err("selected-file complete prerequisite capsule plus whole entry exceeds byte budget; use author:selected-file-resource".to_owned());
+    }
+    output.push_str(&selected_file_continuation(next, items.len()));
     Ok(output)
 }

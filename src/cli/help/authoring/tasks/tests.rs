@@ -322,3 +322,121 @@ fn json_task_exact_specimen_has_ordinary_paired_starter_compiler_admission() {
         "fixed JSON task must pass the same ordinary paired-plan/activated-command compiler owner",
     );
 }
+
+#[test]
+fn selected_file_task_pages_keep_full_prerequisites_inputs_and_exact_byte_bounds() {
+    let descriptors: Value = serde_json::from_str(DESCRIPTORS).unwrap();
+    let route = &descriptors["selected_file_task"];
+    assert_eq!(
+        route["project_profile"],
+        "source-command.selected-file.resource-output.v1"
+    );
+    assert_eq!(route["input"], "argv-utf8-256+selected-file.follow.v1");
+    assert!(route["dependencies"].as_object().unwrap().is_empty());
+    assert!(route["declarations"].as_array().unwrap().is_empty());
+    let catalog: Value = serde_json::from_str(super::super::super::LIBRARY_INDEX).unwrap();
+    let items = selected_file_items(route, &catalog).unwrap();
+    let capsule = selected_file_capsule(route);
+    let mut collected = String::new();
+    let mut start = 0usize;
+    loop {
+        let query = format!("author:task:selected-file:source-command.selected-file.resource-output.v1:native64:{start}");
+        let output = lookup(&query, 2048).unwrap();
+        assert_eq!(lookup(&query, 2048).unwrap(), output);
+        assert!(output.len() <= 2048 && output.starts_with(&capsule));
+        for cap in route["capabilities"].as_array().unwrap() {
+            assert!(output.contains(cap.as_str().unwrap()));
+        }
+        for fact in [
+            "256 argv",
+            "65536 aggregate argv bytes",
+            "4096 path bytes",
+            "65536 UTF-8 file bytes",
+            "64 read attempts/1MiB",
+            "1048576-byte",
+            "INDEX=0..255",
+            "no file grant",
+            "one regular-file descriptor",
+            "not an atomic snapshot",
+            "Interpreter/Web/Wasm/npm/non-Unix refuse",
+            "qualification pending",
+            "including G171",
+        ] {
+            assert!(
+                output.contains(fact),
+                "missing complete prerequisite: {fact}"
+            );
+        }
+        collected.push_str(output.strip_prefix(&capsule).unwrap());
+        if let Some(next) = output.lines().find_map(|line| {
+            line.split_once("next: help language ")
+                .map(|(_, next)| next)
+        }) {
+            start = next.rsplit(':').next().unwrap().parse().unwrap();
+        } else {
+            assert!(output.ends_with("executable qualification pending.\n"));
+            break;
+        }
+    }
+    assert!(collected.contains(route["manifest"].as_str().unwrap()));
+    assert!(collected.contains("This is NOT a new template"));
+    assert!(collected.contains("semaprax test \"$p\" --target native"));
+    assert!(collected.contains("./app-bin --spx-selected-file-v1 0 -- <file> [--top N] [--json]"));
+    for file in route["files"].as_array().unwrap() {
+        assert_eq!(
+            collected.matches(file["sha256"].as_str().unwrap()).count(),
+            1
+        );
+        assert!(collected.contains(file["path"].as_str().unwrap()));
+    }
+    for start in 0..items.len() {
+        let exact = capsule.len()
+            + items[start].len()
+            + selected_file_continuation(start + 1, items.len()).len();
+        let page = selected_file_page(route, &catalog, start, exact).unwrap();
+        assert_eq!(page.len(), exact);
+        assert!(selected_file_page(route, &catalog, start, exact - 1).is_err());
+        assert_eq!(
+            selected_file_page(route, &catalog, start, exact + 1).unwrap(),
+            page
+        );
+    }
+    assert!(selected_file_page(route, &catalog, 0, 0).is_err());
+    assert!(selected_file_page(route, &catalog, items.len(), 2048).is_err());
+    let existing = super::super::lookup("author:selected-file-resource").unwrap();
+    for bound in ["256", "65536", "4096", "64", "1048576"] {
+        assert!(existing.contains(bound) && capsule.contains(bound));
+    }
+}
+
+#[test]
+fn selected_file_task_refuses_foreign_profiles_stale_ids_and_malformed_continuations() {
+    for query in [
+        "author:task:selected-file:source-command.v1:native64:0",
+        "author:task:selected-file:source-command.selected-file.v1:native64:0",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:wasm32:0",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:web:0",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:00",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:-1",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:18446744073709551616",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0:extra",
+    ] {
+        assert!(lookup(query, 2048).is_err(), "{query}");
+    }
+    let descriptors: Value = serde_json::from_str(DESCRIPTORS).unwrap();
+    let catalog: Value = serde_json::from_str(super::super::super::LIBRARY_INDEX).unwrap();
+    let mut stale = descriptors["selected_file_task"].clone();
+    stale["declarations"] = serde_json::json!(["zz.foreign.late.identity"]);
+    assert!(selected_file_page(&stale, &catalog, 0, 2048)
+        .unwrap_err()
+        .contains("stale/ambiguous"));
+    stale["declarations"] = serde_json::json!(["std.text.equals", "std.text.equals"]);
+    assert!(selected_file_page(&stale, &catalog, 0, 2048)
+        .unwrap_err()
+        .contains("ordered and unique"));
+    assert!(
+        lookup("author:task:file-text:source-command.v1:native64:0", 2048)
+            .unwrap()
+            .contains("source-command-file-text")
+    );
+}

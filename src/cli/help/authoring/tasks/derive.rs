@@ -53,7 +53,7 @@ pub(super) fn descriptors_from_catalog(catalog: &Value) -> Value {
             .collect();
         tasks.push(serde_json::json!({"task":task,"template":template,"card":card,"project_profile":manifest.profile().unwrap(),"target":"native64","input":manifest.command_input().unwrap(),"capabilities":manifest.capabilities(),"dependencies":dependencies,"sources":manifest.sources(),"files":files,"declarations":ids.into_iter().collect::<Vec<_>>()}));
     }
-    serde_json::json!({"schema":"semaprax.authoring-tasks.v6","scaffold_name":"task-demo","layout":"tables","tasks":tasks,"json_task":json_descriptor(catalog)})
+    serde_json::json!({"schema":"semaprax.authoring-tasks.v6","scaffold_name":"task-demo","layout":"tables","tasks":tasks,"json_task":json_descriptor(catalog),"selected_file_task":selected_file_descriptor()})
 }
 
 // The same fixed paired-plan specimen already has complete compiler/backend
@@ -172,4 +172,56 @@ fn json_descriptor(catalog: &Value) -> Value {
         "input":manifest.command_input().unwrap(),"capabilities":manifest.capabilities(),
         "sources":manifest.sources(),"dependencies":dependencies,"dependency_closure":closure,"dependency_versions":versions,
         "declarations":declarations,"files":files,"plan":plan,"pipeline":pipeline})
+}
+
+// This is the existing LogLens49 source specimen, not a new scaffold template.
+fn selected_file_descriptor() -> Value {
+    let specimen = "experiments/selected-file-input/loglens";
+    let directory = repository().join(specimen);
+    let manifest_text = std::fs::read_to_string(directory.join("semaprax.toml")).unwrap();
+    let manifest = ProjectManifest::parse(&manifest_text).unwrap();
+    let command = manifest.command().unwrap();
+    let mut declarations = BTreeSet::new();
+    let mut command_head = None;
+    for source in manifest.sources() {
+        let text = std::fs::read_to_string(directory.join(source)).unwrap();
+        let (program, comments) = semaprax::parse_with_comments(&text, source).unwrap();
+        for import in &program.module_uses {
+            if import.target_module.starts_with("std.") {
+                declarations.insert(import.persistent_id.clone());
+            }
+        }
+        let document = semaprax::doc::document(&program, &comments);
+        if let Some(entry) = document.entries.iter().find(|entry| entry.id == command) {
+            assert!(command_head.is_none(), "one actual command identity");
+            command_head = Some(
+                entry
+                    .signature
+                    .lines()
+                    .filter(|line| !line.trim_start().starts_with("@id("))
+                    .map(str::to_owned)
+                    .collect::<Vec<_>>(),
+            );
+        }
+    }
+    let dependencies: serde_json::Map<String, Value> = manifest
+        .dependencies()
+        .iter()
+        .map(|d| (d.name().to_owned(), Value::String(d.range().to_owned())))
+        .collect();
+    let mut paths: BTreeSet<_> = manifest.sources().iter().cloned().collect();
+    paths.extend(["semaprax.toml", "run.sh", "build.sh", "tests.mjs"].map(str::to_owned));
+    let files: Vec<_> = paths
+        .into_iter()
+        .map(|path| {
+            let bytes = std::fs::read(directory.join(&path)).unwrap();
+            serde_json::json!({"path":path,"sha256":digest(&bytes)})
+        })
+        .collect();
+    serde_json::json!({"task":"selected-file","specimen":specimen,
+        "project_profile":manifest.profile().unwrap(),"target":"native64",
+        "input":manifest.command_input().unwrap(),"command":command,
+        "command_head":command_head.unwrap(),"capabilities":manifest.capabilities(),
+        "sources":manifest.sources(),"dependencies":dependencies,"declarations":declarations,
+        "manifest":manifest_text,"files":files})
 }

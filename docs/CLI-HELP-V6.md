@@ -156,3 +156,27 @@ inertness. No new top-level test binary or production source module is introduce
 No build, compiler execution, Rust tests, Clippy or live-agent trial ran while
 writing this addition. Source-derived metadata is not qualification or a measured
 reduction of requests, authored tokens, delivered/net input, wall time or billing.
+
+## Exact selected-file task
+
+`author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0`
+uses the existing LogLens specimen under `experiments/selected-file-input/loglens`.
+It is a source-bound v34 recipe, with executable qualification pending, and is
+separate from the `source-command.v1` file-text scaffold and the v33 selected-file
+profile. It introduces no scaffold template. The descriptor producer reparses the
+actual manifest and source declarations, records every source and launcher/test
+input hash, and retains the exact command signature. LogLens has no external
+library imports or JSON generator prerequisite.
+
+Every page repeats the v34 profile, native64 Unix restriction, input and four
+capabilities, invocation-selection/descriptor lifetime rules, unchanged argv,
+file, attempt, reserved-read and output bounds, and ordinary-admission caveat.
+Whole entries supply the complete manifest, check/test/build/invocation route,
+command signature and input hashes. Strict canonical continuation and all-identity
+validation precede pagination. Exact/one-short/one-extra byte limits and malformed,
+stale, duplicate and foreign-profile selectors use the existing help harnesses;
+help remains inert in an empty directory. Existing full/exact/card/library routes
+are unchanged. The original LogLens CLI49 and native O0/O2 owner remains required:
+`source_command::loglens_selected_file::original_cli49_and_all_retained_assertions_run_on_native_o0_o2`.
+This does not claim current application admission or the five-fresh-trials-per-arm
+acceptance required by #722.
