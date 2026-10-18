@@ -50,7 +50,10 @@ fn whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed() {
         let current = run(&program, false, 64 * 1024 * 1024);
         let census = ordinary_receiving::take_census();
         assert_eq!(current.0, old.0); // complete Result and all six error fields
-        assert!(current.0.is_ok() && !old.1 && !current.1);
+        assert!(
+            current.0.is_ok() && !old.1 && !current.1,
+            "rows={rows} old(result,refused,paid)={old:?} current(result,refused,paid)={current:?} census={census:?}"
+        );
         assert!(!census.incomplete);
         assert!(census.reached[0] > 0);
         if census.reached[1] > 0 {
