@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 101,
       "full_role_production": 545,
       "full_role_test_only": 964,
-      "full_raw_sha256": "95ce8502fceae89ec07a719463a2a6404fee59369818fe68f7934417880d91cd",
+      "full_raw_sha256": "daefec1d8e30dc6de556098f681e80f7aac4dd1ae592260f93154aab418bb8f9",
       "boundary_production_sha256": "a7b503a20194c61af1352177d8849c6e9aa98b7fef297446422f502ab24edc2c",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -65,6 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "FINITE_INCOMING353_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_ORIGINAL_PARSER_ACTUAL_CHILDREN",
+  "registration_update": "UNCHANGED354_NAMESPACE_ONLY_EXACT_COMPILE_REPAIR_PINS",
   "global_polluted_purity_result_not_claimed": true
 }
