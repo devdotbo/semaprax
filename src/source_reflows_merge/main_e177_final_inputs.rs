@@ -9,7 +9,7 @@ fn packet() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(154720,"daeccf6d61ff97540b741c372d1a3f3d830f26617f0873fc90e8ab968d41a315".to_owned()));
+    assert_eq!((data.len(),digest(data.as_bytes())),(156176,"ea89e70b831094e0219c586ed02c86e5b71a7bdf12d03c4b87a5b08a6bb6da49".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
     let ext:serde_json::Value=serde_json::from_str(data).unwrap();

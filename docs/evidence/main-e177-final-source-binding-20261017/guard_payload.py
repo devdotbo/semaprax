@@ -16,7 +16,7 @@ def bounded(path,length,digest):
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/fmt-local-441-20261018/guard-config.json'
 _CONFIG_LENGTH=88676
-_CONFIG_SHA256='c214f307ece69a1534db5818e4df17cbb3c23ed0102520f5f3e38a6eca5108d0'
+_CONFIG_SHA256='27a62aac98a9b304a5e33bcf8a712b809d38b42c097985d5be24285c7d71c38f'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
