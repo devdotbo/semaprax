@@ -1,0 +1,19 @@
+{
+  "status": "MERGE_SOURCE_PIN_CHECK_ONLY",
+  "ours": "dc36922792196bceee223c9769a0bfdaabf5341c",
+  "incoming": "6465284748dbefaf89843b00158e85965ebc446b",
+  "rows": 542,
+  "channels": 1597,
+  "model_edges": 15578,
+  "old_stage_tuples": 66,
+  "raw_modules": 180,
+  "owners": 342,
+  "page": {
+    "length": 121639,
+    "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+    "sha256": "6da1f76813f695251993f5be660d6a38708be7928b4822c8758fb6b8689e1fe7"
+  },
+  "Rust_tests": false,
+  "Cargo": false,
+  "broad_qualification": false
+}

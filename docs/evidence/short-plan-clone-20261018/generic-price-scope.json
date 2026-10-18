@@ -1,0 +1,21 @@
+{
+  "scope": "Const syntax and generic layout equations only; not compiler execution, real SkeletonObservation layout, physical funding, or application fit.",
+  "whole_actual_fee_functions_and_query_layouts_copied": true,
+  "actual_value_fields": [
+    "Diagnostic",
+    "Severity",
+    "Span",
+    "BlockId",
+    "Bound",
+    "Query"
+  ],
+  "opaque_pointees": "Only thin references to Sized types occur. Opaque pointees have no methods and are never executed.",
+  "generic_payload_sizes": [
+    0,
+    8,
+    16,
+    96,
+    512
+  ],
+  "source_sha256": "962802804ae2b2a62b230bdf96fee7ec86fb4dc72d4f1880a801ad56f82a54fc"
+}

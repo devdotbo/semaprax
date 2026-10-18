@@ -1,0 +1,2126 @@
+{
+  "status": "MERGE_SOURCE_CHECKPOINT_PENDING_RUST_AND_BOUNDARY_REQUALIFICATION",
+  "ours": "dc36922792196bceee223c9769a0bfdaabf5341c",
+  "incoming": "6465284748dbefaf89843b00158e85965ebc446b",
+  "resolved": [
+    "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+    "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+    "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+    "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+    "docs/evidence/source-boundary-domains-20261016/current-domains.json"
+  ],
+  "old_extension_retained": true,
+  "incoming_extension_whole_archived": true,
+  "incoming_stage121_whole_archived": true,
+  "rawchanged": [
+    "CHANGELOG.md",
+    "src/cleanup_plan/replay.rs",
+    "src/cleanup_plan/replay/branch_clone/direct.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+    "src/cleanup_plan/replay/branch_clone/direct/tests.rs"
+  ],
+  "imported_views": [
+    {
+      "source": "CHANGELOG.md",
+      "view": {
+        "name": "f94",
+        "length": 576654,
+        "sha256": "4f1b65dbf1c0ee0a498f75c426f106954b5b1f9ef11b3293617f6299351066dd",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/4f1b65dbf1c0ee0a498f75c426f106954b5b1f9ef11b3293617f6299351066dd.txt"
+      }
+    },
+    {
+      "source": "CHANGELOG.md",
+      "view": {
+        "length": 576964,
+        "sha256": "2aecb41c4b93a00d26c26bac5161706f0deef87b01a254a0e9fd285ec2d2c0dc",
+        "archive": "e/q0",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "view": {
+        "length": 187935,
+        "sha256": "7b91a25c74891cde619fb142e13da7ee4408bb4b87f1546941521dd8a7bd8be0",
+        "archive": "e/7b91a25c74891cde619fb142e13da7ee4408bb4b87f1546941521dd8a7bd8be0",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "view": {
+        "name": "f94",
+        "length": 321849,
+        "sha256": "3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/3f59678dffcd84f1fe09fd3e7dae5530501ab63ded29f032ad0831bc4244ee3e.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "view": {
+        "length": 322785,
+        "sha256": "70c0ce82d4865d4fd0be470838cf4f106090931a9a6e4af0ab8bb1aa16803dac",
+        "archive": "e/q1",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 13556,
+        "sha256": "5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975",
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "view": {
+        "length": 18408,
+        "sha256": "a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488",
+        "archive": "e/q2",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "view": {
+        "name": "whole-fmt433-current",
+        "length": 33216,
+        "sha256": "6e6772615546625651a3772f4685a92b816b44fb9eddd0d9ad83b20d43885c99",
+        "archive": "docs/evidence/fmt-a110/bmdyYVVGYlZRo3cvRoWpK4FrRPue3dDZrYOyDUOIXJk.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "view": {
+        "length": 60395,
+        "sha256": "a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65",
+        "archive": "e/q3",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "view": {
+        "name": "f94",
+        "length": 20361,
+        "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283",
+        "archive": "docs/evidence/fmt-local-441-20261018/whole/97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283.txt"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "view": {
+        "length": 28500,
+        "sha256": "26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f",
+        "archive": "e/q4",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work.rs",
+      "view": {
+        "length": 48091,
+        "sha256": "daf80d75a2b54337da2c687fc8deb2e2c69f7b97226ae4a947239d0cc31c7031",
+        "archive": "docs/evidence/fmt-a110/2vgNdaK1QzfaLGh_yN6y4safe5ciauSpRyOdDMMccDE.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "view": {
+        "length": 130347,
+        "sha256": "d550b900ad4629be5bdb9e22b966b1d563d04b31384e49df8e8737696f222aea",
+        "archive": "e/d550b900ad4629be5bdb9e22b966b1d563d04b31384e49df8e8737696f222aea",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "view": {
+        "length": 147023,
+        "sha256": "c0bc1507f41c0e498b836f525474a311f504ce84501f173f01676adf38783774",
+        "archive": "e/c0bc1507f41c0e498b836f525474a311f504ce84501f173f01676adf38783774",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+      "view": {
+        "length": 36875,
+        "sha256": "829ec5782619043f3651cf56982c3668cbadd55906690de9f50aa5800cf24a9b",
+        "archive": "e/829ec5782619043f3651cf56982c3668cbadd55906690de9f50aa5800cf24a9b",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "view": {
+        "length": 15587,
+        "sha256": "663cc41755cb8083333cb1702352ea59478a35ff427a6bc1039c96007b2a5093",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/663cc41755cb8083333cb1702352ea59478a35ff427a6bc1039c96007b2a5093.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+      "view": {
+        "length": 27717,
+        "sha256": "c9c6d545a86b013d16b1beeacfa85e8452c1fdadf0a8ff78d45ce7255c7099a5",
+        "archive": "e/c9c6d545a86b013d16b1beeacfa85e8452c1fdadf0a8ff78d45ce7255c7099a5",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+      "view": {
+        "length": 13422,
+        "sha256": "e993c0cc5d04e4f4b316484e6f045eeddf6d48c645770b4b15a492790b2ec946",
+        "archive": "e/e993c0cc5d04e4f4b316484e6f045eeddf6d48c645770b4b15a492790b2ec946",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
+      "view": {
+        "length": 7342,
+        "sha256": "c567429125b11ddaa563be75a0bfbb93330f581279bcd68544a2033e3dc6cbfc",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/c567429125b11ddaa563be75a0bfbb93330f581279bcd68544a2033e3dc6cbfc.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/physical_budget.rs",
+      "view": {
+        "length": 17102,
+        "sha256": "61650b886b8d3adafc1a2e4a30883e518eaeb3ee94c27424a935704026403a57",
+        "archive": "docs/evidence/fmt-a110/YWULiGuNOtr8Gi5KMIg-UY6us-6UwnQkqTVwQCZAOlc.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/hir/lexical_exit.rs",
+      "view": {
+        "length": 6957,
+        "sha256": "ef9fdd2f4d38c41ea78c61e8fb0555055298db38c3770dcdca7028a743b7f897",
+        "archive": "docs/evidence/fmt-a110/75_dL004xB6njGHo-wVVBVKY2zjDdw3NynAop0O3-Jc.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/source_reflows/incoming090_semantic_receivers.rs",
+      "view": {
+        "length": 49904,
+        "sha256": "f4a8a6763d26560133b5e0c15a6aa68a5af81efb9332709752eb49f9fe53647a",
+        "archive": "e/f4a8a6763d26560133b5e0c15a6aa68a5af81efb9332709752eb49f9fe53647a",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
+      "view": {
+        "length": 19742,
+        "sha256": "c94f8dabd8c1572a9d2306ea2f1a82396cbe8e8a18bb49dd97fefbc7b997dcc1",
+        "archive": "e/c94f8dabd8c1572a9d2306ea2f1a82396cbe8e8a18bb49dd97fefbc7b997dcc1",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
+      "view": {
+        "length": 54095,
+        "sha256": "f850468a3ebc44a9851e410ecdc665ae80c33f85b8416f57fa8ec1e6af354904",
+        "archive": "e/f850468a3ebc44a9851e410ecdc665ae80c33f85b8416f57fa8ec1e6af354904",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/bounded_output/stage_debits/route_debits.rs",
+      "view": {
+        "length": 29422,
+        "sha256": "4949cec4e9d4740093b5c9f6bd209e49570f12dc965445a7c7fbcde6ef165721",
+        "archive": "e/q5",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "view": {
+        "length": 18477,
+        "sha256": "d9826beee4de70f840309b81447450a4e0373cdee3bb4a7c1a7f8e4f14e77709",
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/d9826beee4de70f840309b81447450a4e0373cdee3bb4a7c1a7f8e4f14e77709.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
+      "view": {
+        "length": 4410,
+        "sha256": "46f5e7917928ff472768e6c14073ee83d3f641dc6ae86f14f40b1e96b7b4be89",
+        "archive": "e/q6",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/hir/ids/declaration_tag/before.rs",
+      "view": {
+        "length": 8897,
+        "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355",
+        "archive": "e/q7",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+      "view": {
+        "length": 76611,
+        "sha256": "fd9a33482f749d39d63010e414114c95b5958a3315bbeff887b3e22002e3c984",
+        "archive": "docs/evidence/fmt-local-441-20261018/whole/fd9a33482f749d39d63010e414114c95b5958a3315bbeff887b3e22002e3c984.txt",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+      "view": {
+        "length": 4051,
+        "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3",
+        "archive": "e/q8",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
+      "view": {
+        "length": 16419,
+        "sha256": "2e089e2528eec50400176687639fe9ce3a744a015e57daf8e29bf132c38c5a08",
+        "archive": "e/2e089e2528eec50400176687639fe9ce3a744a015e57daf8e29bf132c38c5a08",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/inventory_coverage/paid_before.rs",
+      "view": {
+        "length": 7155,
+        "sha256": "a63ce2f63ec91428511d3bdf45f93c19192218ab2c1caf3e635c9ca0b0dd592c",
+        "archive": "e/a63ce2f63ec91428511d3bdf45f93c19192218ab2c1caf3e635c9ca0b0dd592c",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected.rs",
+      "view": {
+        "length": 6914,
+        "sha256": "053d7d00897529061e67db4a773830a3da73b331b9a07af925ee694c7b255919",
+        "archive": "e/053d7d00897529061e67db4a773830a3da73b331b9a07af925ee694c7b255919",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/joins.rs",
+      "view": {
+        "length": 12622,
+        "sha256": "7b56b8755eea384c7eece929bdd5731e69e34e725c31d25070efda2f25e104b5",
+        "archive": "e/7b56b8755eea384c7eece929bdd5731e69e34e725c31d25070efda2f25e104b5",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs",
+      "view": {
+        "length": 13995,
+        "sha256": "8e86a4825d13a37ea1b411210f8ef35d72ced91294ede3e7cc32e0c174e9349f",
+        "archive": "e/8e86a4825d13a37ea1b411210f8ef35d72ced91294ede3e7cc32e0c174e9349f",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/queries.rs",
+      "view": {
+        "length": 22014,
+        "sha256": "790f3bd784fc00a3b9ca433ae8d6f4242fe18847592f540cbe046dd5c3bfac6f",
+        "archive": "e/790f3bd784fc00a3b9ca433ae8d6f4242fe18847592f540cbe046dd5c3bfac6f",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/renewal.rs",
+      "view": {
+        "length": 30494,
+        "sha256": "c9154e93ca10739b1e7b88e6d4c9256d2cf5133a0a638213a572ea676e53ec4b",
+        "archive": "e/c9154e93ca10739b1e7b88e6d4c9256d2cf5133a0a638213a572ea676e53ec4b",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/strings.rs",
+      "view": {
+        "length": 9372,
+        "sha256": "187cf73f6d7aea60ba2cf029e429c89d478f394efa86aeab0565c4c89ad2407c",
+        "archive": "e/187cf73f6d7aea60ba2cf029e429c89d478f394efa86aeab0565c4c89ad2407c",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/tests/history.rs",
+      "view": {
+        "length": 13700,
+        "sha256": "d39bdc13f09d0bafe381d9e50cabb7af4cccd7c7e04279d34220a807e385f3e9",
+        "archive": "e/d39bdc13f09d0bafe381d9e50cabb7af4cccd7c7e04279d34220a807e385f3e9",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs",
+      "view": {
+        "length": 6866,
+        "sha256": "451e761e4e8167d9521e7517a0e3b799cb9971a19909655ccb7d7b6f8d798494",
+        "archive": "e/451e761e4e8167d9521e7517a0e3b799cb9971a19909655ccb7d7b6f8d798494",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/schema/selected_paid.rs",
+      "view": {
+        "length": 12759,
+        "sha256": "307e4cc46d89f4ebec6d1c755d0fa36c6040c31ba1ce0f0caf8835c36cfaeffb",
+        "archive": "e/307e4cc46d89f4ebec6d1c755d0fa36c6040c31ba1ce0f0caf8835c36cfaeffb",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected/blocks.rs",
+      "view": {
+        "length": 42718,
+        "sha256": "13cbed04bc76f9a2efd083a40d98cb2a9e64481ab7ff8d6f014644644a8bc094",
+        "archive": "e/13cbed04bc76f9a2efd083a40d98cb2a9e64481ab7ff8d6f014644644a8bc094",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected/calls.rs",
+      "view": {
+        "length": 35549,
+        "sha256": "0ef9a1e23c56d26040651ee0ed3017f900a909a81d3143e27d896bd5c5a0812c",
+        "archive": "e/0ef9a1e23c56d26040651ee0ed3017f900a909a81d3143e27d896bd5c5a0812c",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected/helpers.rs",
+      "view": {
+        "length": 20271,
+        "sha256": "67e9a67335b5c3b25b1c2f5bbf54137f4ee04cc8ee8d3bfb3a47e758fe430c09",
+        "archive": "e/67e9a67335b5c3b25b1c2f5bbf54137f4ee04cc8ee8d3bfb3a47e758fe430c09",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected/place_before_formals.rs",
+      "view": {
+        "length": 3347,
+        "sha256": "7626eb36ea3bc07486b3e58f9c4dd4d1b253d9f142846ea8cf8ef8b02c477f99",
+        "archive": "e/7626eb36ea3bc07486b3e58f9c4dd4d1b253d9f142846ea8cf8ef8b02c477f99",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs",
+      "view": {
+        "length": 30319,
+        "sha256": "7b7a6c113ddfd9a5933ca7a2b8a7b3d1d778445596a584b6938a447ceafca0ab",
+        "archive": "e/7b7a6c113ddfd9a5933ca7a2b8a7b3d1d778445596a584b6938a447ceafca0ab",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/inventory_coverage.rs",
+      "view": {
+        "length": 17175,
+        "sha256": "111ef023135a7623bdc1bb8e657073f2339b82955767110c17777924f6f9db0a",
+        "archive": "e/111ef023135a7623bdc1bb8e657073f2339b82955767110c17777924f6f9db0a",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/inventory_coverage/paid.rs",
+      "view": {
+        "length": 9161,
+        "sha256": "2b0d4ee5533635f18f4b92bea07f6e3c6467841fc0942db108e0bbe107d16b1f",
+        "archive": "e/2b0d4ee5533635f18f4b92bea07f6e3c6467841fc0942db108e0bbe107d16b1f",
+        "name": "whole-incoming646-current"
+      }
+    },
+    {
+      "source": "src/hir/ids/declaration_tag/before.rs",
+      "view": {
+        "name": "whole-12ad-current",
+        "length": 8895,
+        "sha256": "fd91e8af94a655332df52ec62fb45a2e097b25b33428ac1b72240c702ce02948",
+        "archive": "docs/evidence/clippy-11a0-integration/_ZHor5SmVTMt9S7GL7RaLgl7JbM0KKwbciQMcCzgKUg.txt"
+      }
+    },
+    {
+      "source": "CHANGELOG.md",
+      "view": {
+        "archive": "docs/evidence/merge-e32-browser-20261018/whole/4f1b65dbf1c0ee0a498f75c426f106954b5b1f9ef11b3293617f6299351066dd.txt",
+        "length": 576654,
+        "sha256": "4f1b65dbf1c0ee0a498f75c426f106954b5b1f9ef11b3293617f6299351066dd",
+        "name": "whole-pre-overlay-v2-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay.rs",
+      "view": {
+        "archive": "e/db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c",
+        "length": 324158,
+        "sha256": "db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c",
+        "name": "whole-before-merge646-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "view": {
+        "archive": "docs/evidence/main-e177-final-source-binding-20261017/current/5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975.txt",
+        "length": 13556,
+        "sha256": "5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975",
+        "name": "whole-pre-overlay-v2-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "view": {
+        "archive": "docs/evidence/fmt-a110/bmdyYVVGYlZRo3cvRoWpK4FrRPue3dDZrYOyDUOIXJk.txt",
+        "length": 33216,
+        "sha256": "6e6772615546625651a3772f4685a92b816b44fb9eddd0d9ad83b20d43885c99",
+        "name": "whole-pre-overlay-v2-current"
+      }
+    },
+    {
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "view": {
+        "archive": "docs/evidence/fmt-local-441-20261018/whole/97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283.txt",
+        "length": 20361,
+        "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283",
+        "name": "whole-pre-overlay-v2-current"
+      }
+    }
+  ],
+  "logical_rows": 542,
+  "raw_modules": 180,
+  "ordered_rows": 1020,
+  "owners": 342,
+  "page_length": 121639,
+  "old519_inverse": true,
+  "model_source_changes": [
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay.rs",
+      "before": {
+        "length": 324158,
+        "sha256": "db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c"
+      },
+      "after": {
+        "length": 325094,
+        "sha256": "73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "before": {
+        "length": 13556,
+        "sha256": "5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975"
+      },
+      "after": {
+        "length": 18408,
+        "sha256": "a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "before": {
+        "length": 33216,
+        "sha256": "6e6772615546625651a3772f4685a92b816b44fb9eddd0d9ad83b20d43885c99"
+      },
+      "after": {
+        "length": 60395,
+        "sha256": "a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before": {
+        "length": 20361,
+        "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283"
+      },
+      "after": {
+        "length": 28500,
+        "sha256": "26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f"
+      }
+    },
+    {
+      "domain": "hir",
+      "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+      "before": {
+        "length": 39347,
+        "sha256": "4ee2541a1e4df1d9cc316a75f2ba9104838a2abb066676eb6ea0472834780c5e"
+      },
+      "after": {
+        "length": 39843,
+        "sha256": "5d3bd3930a27c1e86af98e99d5eaf1c2875f45d9ea6ddcb30d8171ae3cdf90a7"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay.rs",
+      "before": {
+        "length": 324158,
+        "sha256": "db2f46f18957f68557a403a4e79255e5f26d6288b29bf7cd24a49add8ecf3a4c"
+      },
+      "after": {
+        "length": 325094,
+        "sha256": "73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "before": {
+        "length": 13556,
+        "sha256": "5f43434478af597206ee62ea0ca626c60b5c37d3fa5df1904676eb919a60c975"
+      },
+      "after": {
+        "length": 18408,
+        "sha256": "a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "before": {
+        "length": 33216,
+        "sha256": "6e6772615546625651a3772f4685a92b816b44fb9eddd0d9ad83b20d43885c99"
+      },
+      "after": {
+        "length": 60395,
+        "sha256": "a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65"
+      }
+    },
+    {
+      "domain": "projection",
+      "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before": {
+        "length": 20361,
+        "sha256": "97acd7fb6a679653825d5e9fcc06d8fb6d01145bdb7de3a37a91a266a887e283"
+      },
+      "after": {
+        "length": 28500,
+        "sha256": "26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f"
+      }
+    }
+  ],
+  "typed_edge_offset_changes": [
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_owned_records_tests.rs",
+      "before": 321336,
+      "after": 322272,
+      "text": "#[cfg(test)]\n#[path = \"nested_owned_records_tests.rs\"]\nmod nested_owned_records_tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_record_destructure_tests.rs",
+      "before": 321424,
+      "after": 322360,
+      "text": "#[cfg(test)]\n#[path = \"nested_record_destructure_tests.rs\"]\nmod nested_record_destructure_tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_record_destructure_tests.rs",
+      "before": 321424,
+      "after": 322360,
+      "text": "#[cfg(test)]\n#[path = \"nested_record_destructure_tests.rs\"]\nmod nested_record_destructure_tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "before": 13531,
+      "after": 13537,
+      "text": "#[cfg(test)]\nmod before;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before": 13506,
+      "after": 13512,
+      "text": "#[cfg(test)]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/main8a.rs",
+      "before": 321960,
+      "after": 322896,
+      "text": "#[cfg(test)]\n#[path = \"replay/branch_clone/main8a.rs\"]\nmod branch_clone_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/main8a.rs",
+      "before": 321960,
+      "after": 322896,
+      "text": "#[cfg(test)]\n#[path = \"replay/branch_clone/main8a.rs\"]\nmod branch_clone_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/oracle_controls.rs",
+      "before": 321248,
+      "after": 322184,
+      "text": "#[cfg(test)]\nmod oracle_controls;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/phase_measurement.rs",
+      "before": 321522,
+      "after": 322458,
+      "text": "#[cfg(test)]\npub(super) mod phase_measurement;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/selected_type_drop.rs",
+      "before": 321749,
+      "after": 322685,
+      "text": "mod selected_type_drop;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "hir",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_owned_records_tests.rs",
+      "before": 321336,
+      "after": 322272,
+      "text": "#[cfg(test)]\n#[path = \"nested_owned_records_tests.rs\"]\nmod nested_owned_records_tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_record_destructure_tests.rs",
+      "before": 321424,
+      "after": 322360,
+      "text": "#[cfg(test)]\n#[path = \"nested_record_destructure_tests.rs\"]\nmod nested_record_destructure_tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/nested_record_destructure_tests.rs",
+      "before": 321424,
+      "after": 322360,
+      "text": "#[cfg(test)]\n#[path = \"nested_record_destructure_tests.rs\"]\nmod nested_record_destructure_tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
+      "before": 13531,
+      "after": 13537,
+      "text": "#[cfg(test)]\nmod before;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay/branch_clone/direct.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+      "before": 13506,
+      "after": 13512,
+      "text": "#[cfg(test)]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/main8a.rs",
+      "before": 321960,
+      "after": 322896,
+      "text": "#[cfg(test)]\n#[path = \"replay/branch_clone/main8a.rs\"]\nmod branch_clone_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/branch_clone/main8a.rs",
+      "before": 321960,
+      "after": 322896,
+      "text": "#[cfg(test)]\n#[path = \"replay/branch_clone/main8a.rs\"]\nmod branch_clone_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/live_oracle.rs",
+      "before": 321570,
+      "after": 322506,
+      "text": "#[cfg(test)]\nmod live_oracle;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/oracle_controls.rs",
+      "before": 321248,
+      "after": 322184,
+      "text": "#[cfg(test)]\nmod oracle_controls;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main44/mod.rs",
+      "before": 322303,
+      "after": 323239,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main44/mod.rs\"]\nmod path_array_main44;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/path_array/main8a/mod.rs",
+      "before": 322040,
+      "after": 322976,
+      "text": "#[cfg(test)]\n#[path = \"replay/path_array/main8a/mod.rs\"]\nmod path_array_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/phase_measurement.rs",
+      "before": 321522,
+      "after": 322458,
+      "text": "#[cfg(test)]\npub(super) mod phase_measurement;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/selected_type_drop.rs",
+      "before": 321749,
+      "after": 322685,
+      "text": "mod selected_type_drop;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main24/mod.rs",
+      "before": 321774,
+      "after": 322710,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main24/mod.rs\"]\nmod sequence_prefix_main24;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main8a/mod.rs",
+      "before": 322120,
+      "after": 323056,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main8a/mod.rs\"]\nmod sequence_prefix_main8a;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_prefix/main_c11/mod.rs",
+      "before": 321865,
+      "after": 322801,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_prefix/main_c11/mod.rs\"]\nmod sequence_prefix_main_c11;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay/sequence_vector/main_a3/mod.rs",
+      "before": 322211,
+      "after": 323147,
+      "text": "#[cfg(test)]\n#[path = \"replay/sequence_vector/main_a3/mod.rs\"]\nmod sequence_vector_maina3;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    },
+    {
+      "domain": "projection",
+      "parent": "src/cleanup_plan/replay.rs",
+      "child": "src/cleanup_plan/replay_tests.rs",
+      "before": 321283,
+      "after": 322219,
+      "text": "#[cfg(test)]\n#[path = \"replay_tests.rs\"]\nmod tests;"
+    }
+  ],
+  "incoming_extra_chains": [],
+  "fullarchives": [
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/6703e58544055f368e1cf8ea2bfb1c565de4b38b38b98a7a343d2e75b53fcb45.txt",
+      "length": 2459791,
+      "sha256": "6703e58544055f368e1cf8ea2bfb1c565de4b38b38b98a7a343d2e75b53fcb45"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/80e83e0444a7c50476d2ca377203aab38c2bacac13b111488802a6ce2adf3254.txt",
+      "length": 2432321,
+      "sha256": "80e83e0444a7c50476d2ca377203aab38c2bacac13b111488802a6ce2adf3254"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/33418857ecab33e5b39a17a20a3fe044e38339efbd4cb40b85eb083530fe3cf6.txt",
+      "length": 63759,
+      "sha256": "33418857ecab33e5b39a17a20a3fe044e38339efbd4cb40b85eb083530fe3cf6"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/f7346a8044b03b98cd36f5d2bcdaecccb3eb4dbd2896845b845b5082faa58a7b.txt",
+      "length": 61123,
+      "sha256": "f7346a8044b03b98cd36f5d2bcdaecccb3eb4dbd2896845b845b5082faa58a7b"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/6fa505044940d729d077f53bc5f7350f9d42bee028170d3781b7e3ae7fcb7b8e.txt",
+      "length": 2745017,
+      "sha256": "6fa505044940d729d077f53bc5f7350f9d42bee028170d3781b7e3ae7fcb7b8e"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/666e24570a4e62ccd003ff24afceaf5bb46350335828b83eb01b94c0ffbbddb8.txt",
+      "length": 2723085,
+      "sha256": "666e24570a4e62ccd003ff24afceaf5bb46350335828b83eb01b94c0ffbbddb8"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/2b3f41f3ee3643468e2229a5097d71deb0994758fc3c9984c6349ea7b405ea0e.txt",
+      "length": 2253,
+      "sha256": "2b3f41f3ee3643468e2229a5097d71deb0994758fc3c9984c6349ea7b405ea0e"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/166fdbb7da64ad989876286b7b10c793bc2e81a1bb58eb8df6b3c4f9118b4781.txt",
+      "length": 2253,
+      "sha256": "166fdbb7da64ad989876286b7b10c793bc2e81a1bb58eb8df6b3c4f9118b4781"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/48cb9d57cff76bd2fa80f7954fc445516595b3c8d32111a0dfac1ed80357886c.txt",
+      "length": 5322,
+      "sha256": "48cb9d57cff76bd2fa80f7954fc445516595b3c8d32111a0dfac1ed80357886c"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/7d211bb299e8603fda29aa8f09d43e3e8e2792a7acaf9516933c89c6ac29b07b.txt",
+      "length": 5322,
+      "sha256": "7d211bb299e8603fda29aa8f09d43e3e8e2792a7acaf9516933c89c6ac29b07b"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/0cf6101a06748c4ddd990e250e9aeb884f5bef4728a6a3816139c2ee8ea4e271.txt",
+      "length": 11549,
+      "sha256": "0cf6101a06748c4ddd990e250e9aeb884f5bef4728a6a3816139c2ee8ea4e271"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/f6dc5d82c83da37b142dbf56dc889c1556d1d59c07373c0ece0fd53130c95609.txt",
+      "length": 10638,
+      "sha256": "f6dc5d82c83da37b142dbf56dc889c1556d1d59c07373c0ece0fd53130c95609"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/3032eeb07581a6551ec6a3fe5209a64dd39aeddd848766b95866d668fefee3bd.txt",
+      "length": 2766,
+      "sha256": "3032eeb07581a6551ec6a3fe5209a64dd39aeddd848766b95866d668fefee3bd"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/3fe2ba18709b537b8ac01a10427a4724dd1c7a0b2e7ab0e601b04481e4e43668.txt",
+      "length": 2766,
+      "sha256": "3fe2ba18709b537b8ac01a10427a4724dd1c7a0b2e7ab0e601b04481e4e43668"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/58e3835d69f9e6e6e908e40e179ec9852b5c4c6c340eae17b2e90427c1a159d4.txt",
+      "length": 2804,
+      "sha256": "58e3835d69f9e6e6e908e40e179ec9852b5c4c6c340eae17b2e90427c1a159d4"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/a4838813d3a15a2283076ca9e93f53ae971f6489e61e446264cc609ba50603d6.txt",
+      "length": 3403,
+      "sha256": "a4838813d3a15a2283076ca9e93f53ae971f6489e61e446264cc609ba50603d6"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/420d70f23d3d88c7753038c629defd51e4d14ba7ddcedd908ba22c51bcef040b.txt",
+      "length": 249493,
+      "sha256": "420d70f23d3d88c7753038c629defd51e4d14ba7ddcedd908ba22c51bcef040b"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/ea528f180654c3bab7fb4a75d922277647752a890d3f092c8ced3684d5245ccd.txt",
+      "length": 247965,
+      "sha256": "ea528f180654c3bab7fb4a75d922277647752a890d3f092c8ced3684d5245ccd"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/e5bba8ed4ce2c5ce0a75c53b5ecbef76e4bc260a266ef88a03f52dafc467a328.txt",
+      "length": 113387,
+      "sha256": "e5bba8ed4ce2c5ce0a75c53b5ecbef76e4bc260a266ef88a03f52dafc467a328"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/dec0980fb03d2fb6fb7b4d31e66ecd9951991c27bb90cb8c3cf896df008fbe18.txt",
+      "length": 112756,
+      "sha256": "dec0980fb03d2fb6fb7b4d31e66ecd9951991c27bb90cb8c3cf896df008fbe18"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6.txt",
+      "length": 262076,
+      "sha256": "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/25013204bb0f5ac77b9b14909befe1473c8e983c3be2850459a481e345d3cb92.txt",
+      "length": 262141,
+      "sha256": "25013204bb0f5ac77b9b14909befe1473c8e983c3be2850459a481e345d3cb92"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/fd11fdc6330063376d95f97a77b3e4c83f75147bff01dd34118c48d34ff96211.txt",
+      "length": 74925,
+      "sha256": "fd11fdc6330063376d95f97a77b3e4c83f75147bff01dd34118c48d34ff96211"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/11b1415f94ff8fcb09ace29f90619b070432b1e16a4494284eb22b933149c86c.txt",
+      "length": 75182,
+      "sha256": "11b1415f94ff8fcb09ace29f90619b070432b1e16a4494284eb22b933149c86c"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1.txt",
+      "length": 139534,
+      "sha256": "91c8fff37dbfe09209fde7ea9f0c8f025cb0ac45fb249dd10f78ef64a4194de1"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/5f8994b95a8524a4785e3c49769faa73c20cff2982b0259756b525ebd5b4f50f.txt",
+      "length": 391299,
+      "sha256": "5f8994b95a8524a4785e3c49769faa73c20cff2982b0259756b525ebd5b4f50f"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/2aecb41c4b93a00d26c26bac5161706f0deef87b01a254a0e9fd285ec2d2c0dc.txt",
+      "length": 576964,
+      "sha256": "2aecb41c4b93a00d26c26bac5161706f0deef87b01a254a0e9fd285ec2d2c0dc"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651.txt",
+      "length": 325094,
+      "sha256": "73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488.txt",
+      "length": 18408,
+      "sha256": "a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65.txt",
+      "length": 60395,
+      "sha256": "a16f3c0c7e34c3f5cc179c61665979941ecf0e17c75ad43185ad4128a8ac6a65"
+    },
+    {
+      "path": "docs/evidence/merge646-bounded-overlay-20261018/whole/26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f.txt",
+      "length": 28500,
+      "sha256": "26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f"
+    }
+  ],
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "length": 3624163,
+      "sha256": "02520706c1d6035c67919564c469223803c34d99bb7d0c90fdbaf29f8d852f85"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "length": 63760,
+      "sha256": "0d7fa29fc466e9c535b7cfc66c2619599ce3bca3129d74923a65c9dd225c9429"
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "length": 4007292,
+      "sha256": "0f3ec424acb5035ff62f495c3770892f828832129a812f7a983d4ed61438356e"
+    },
+    {
+      "path": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "length": 2253,
+      "sha256": "8eab577c8519e8425ac022bd085211d3c1ba1542b77288190483f0659deac57d"
+    },
+    {
+      "path": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "length": 5322,
+      "sha256": "469fa0f7a359279ad2ef51da477e824831a3da35386047332ef398091eaab35e"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 11549,
+      "sha256": "1a61c763f1639be8cc185114b9e45b3d708e127845201de82ded2657c4bfc5c6"
+    },
+    {
+      "path": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "length": 2766,
+      "sha256": "d5029003caad0bbc90060379a82ec078f15c0eb252ca62ab5ce6a724eee2f86d"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "length": 2804,
+      "sha256": "58e3835d69f9e6e6e908e40e179ec9852b5c4c6c340eae17b2e90427c1a159d4"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "length": 249493,
+      "sha256": "420d70f23d3d88c7753038c629defd51e4d14ba7ddcedd908ba22c51bcef040b"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 113387,
+      "sha256": "e5bba8ed4ce2c5ce0a75c53b5ecbef76e4bc260a266ef88a03f52dafc467a328"
+    },
+    {
+      "path": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "length": 262076,
+      "sha256": "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6"
+    },
+    {
+      "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "length": 74925,
+      "sha256": "fd11fdc6330063376d95f97a77b3e4c83f75147bff01dd34118c48d34ff96211"
+    },
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+      "length": 121639,
+      "sha256": "6da1f76813f695251993f5be660d6a38708be7928b4822c8758fb6b8689e1fe7"
+    },
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/policy.json",
+      "length": 14765,
+      "sha256": "00e29a1286ba5ce53fe431e65dff49b188f47e359a5d58c1efe9c9f6a6315afa"
+    },
+    {
+      "path": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+      "length": 39843,
+      "sha256": "5d3bd3930a27c1e86af98e99d5eaf1c2875f45d9ea6ddcb30d8171ae3cdf90a7"
+    },
+    {
+      "path": "docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py",
+      "length": 12422,
+      "sha256": "815adb2eff8b387619d50e013e6eaadba69240b86555591189b95764273f222c"
+    },
+    {
+      "path": "docs/evidence/merge-2e92-browser-20261018/guard-config.json",
+      "length": 136409,
+      "sha256": "7269bdcdf39b72f00cde6c07da4d8224403fd4f78868a14cb20e9d4521c69d3c"
+    }
+  ],
+  "Cargo": false
+}

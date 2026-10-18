@@ -1,0 +1,175 @@
+#![allow(dead_code)]
+use std::mem::size_of;
+use std::borrow::Cow;
+pub struct Span {
+    pub start: usize,
+    pub end: usize,
+    pub line: usize,
+    pub column: usize,
+}pub enum Severity {
+    Error,
+    Warning,
+}pub struct Diagnostic {
+    pub code: &'static str,
+    pub severity: Severity,
+    pub message: Cow<'static, str>,
+    pub path: Option<String>,
+    pub span: Option<Span>,
+    pub help: Option<String>,
+}
+struct ResolvedFunction;
+mod cleanup_plan {
+macro_rules! numeric_id {
+    ($name:ident) => {
+        #[derive(Clone, Copy, Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]
+        pub struct $name(pub u32);
+    };
+}
+numeric_id!(BlockId); numeric_id!(EdgeId); numeric_id!(ExitTargetId);
+pub struct CleanupPlan; pub struct CleanupBlock; pub struct CleanupEdge; pub struct ExitTarget; pub struct CleanupTransition; pub struct CleanupTerminator; pub struct ExitContinuation;
+pub mod replay {
+use super::*; use crate::*;
+struct ReplayBudget; struct AllocationPayer; type SkeletonObservation = [u8; 0];
+mod branch_clone {
+use super::*;
+pub(super) const fn inline_controls<T: Clone>() -> usize {
+    size_of::<Result<(), Diagnostic>>() // caller payment result
+        + 4 * size_of::<Result<(), Diagnostic>>() // clone/push work, clone census, conversion
+        + 2 * size_of::<Result<(), Diagnostic>>() // backing wrapper and nested byte payment
+        + size_of::<Result<usize, Diagnostic>>() // checked array size conversion
+        + size_of::<Option<usize>>()
+        + 2 * size_of::<Vec<T>>() // initializer and the enumerator's named branch
+        + size_of::<&mut ReplayBudget>() + size_of::<&ResolvedFunction>()
+        + size_of::<&Vec<T>>() // direct clone census argument
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<&mut Vec<T>>() + size_of::<&[T]>()
+        + 2 * size_of::<std::slice::Iter<'_, T>>()
+        + 2 * size_of::<std::iter::Cloned<std::slice::Iter<'_, T>>>()
+}
+pub mod direct {
+use super::*;
+struct Bound {
+    required: usize,
+    forked: bool,
+}
+struct Query<'a> {
+    plan: &'a crate::cleanup_plan::CleanupPlan,
+    next: BlockId,
+    remaining: usize,
+    pushes: usize,
+    forked: bool,
+    block: Option<&'a crate::cleanup_plan::CleanupBlock>,
+    edge: Option<&'a crate::cleanup_plan::CleanupEdge>,
+    exit: Option<&'a crate::cleanup_plan::ExitTarget>,
+}
+pub(in crate::cleanup_plan::replay) const QUERY_CONTROLS: usize = size_of::<Query<'static>>()
+    + 2 * size_of::<&crate::cleanup_plan::CleanupPlan>()
+    + 2 * size_of::<BlockId>()
+    + 2 * size_of::<usize>()
+    + 2 * size_of::<Option<Bound>>()
+    + 2 * size_of::<Bound>() // terminal initializer and returned caller binding
+    + 6 * CHECKED_ARITHMETIC // transition, goto, branch, lexical marker, terminal2
+    + 7 * size_of::<usize>() // transition len and three get actual/formal index pairs
+    + 2 * size_of::<Option<&crate::cleanup_plan::CleanupBlock>>()
+    + 2 * size_of::<Option<&crate::cleanup_plan::CleanupEdge>>()
+    + 2 * size_of::<Option<&crate::cleanup_plan::ExitTarget>>()
+    + 2 * size_of::<&Vec<crate::cleanup_plan::CleanupBlock>>()
+    + 2 * size_of::<&[crate::cleanup_plan::CleanupBlock]>()
+    + 2 * size_of::<&Vec<crate::cleanup_plan::CleanupEdge>>()
+    + 2 * size_of::<&[crate::cleanup_plan::CleanupEdge]>()
+    + 2 * size_of::<&Vec<crate::cleanup_plan::ExitTarget>>()
+    + 2 * size_of::<&[crate::cleanup_plan::ExitTarget]>()
+    + 2 * size_of::<&Vec<crate::cleanup_plan::CleanupTransition>>()
+    + 2 * size_of::<&Vec<EdgeId>>()
+    + 2 * size_of::<&[EdgeId]>()
+    + 2 * size_of::<Option<&EdgeId>>()
+    + 5 * size_of::<&EdgeId>() // Goto, last edge, two lexical variants, common edge
+    + 2 * size_of::<&crate::cleanup_plan::CleanupBlock>()
+    + 2 * size_of::<&crate::cleanup_plan::CleanupEdge>()
+    + 2 * size_of::<&crate::cleanup_plan::ExitTarget>()
+    + size_of::<&crate::cleanup_plan::CleanupTerminator>()
+    + size_of::<&crate::cleanup_plan::ExitContinuation>()
+    + size_of::<&BlockId>()
+    + size_of::<&crate::cleanup_plan::ExitTargetId>()
+    + 8 * size_of::<bool>();
+
+// checked_add/sub/mul take their receiver and operand by value: each has an
+// actual and formal usize, plus the Option return before pattern consumption.
+const CHECKED_ARITHMETIC: usize = 4 * size_of::<usize>() + size_of::<Option<usize>>();
+// Separate actual current-probe additions, before its first input is formed.
+// No callback/closure values exist: every result is consumed by a named match.
+pub(in crate::cleanup_plan::replay) const PROBE_CONTROLS: usize = QUERY_CONTROLS
+    + 3 * CHECKED_ARITHMETIC // required checked_add, avoided checked_mul, spare checked_sub
+    + 4 * size_of::<usize>() // growth-capacity actual/formal inputs
+    + size_of::<Option<usize>>() // growth-capacity return
+    + 6 * size_of::<usize>() // required,growth,avoided binding,spare binding,two len values
+    + 2 * size_of::<Option<usize>>() // named avoided/spare receivers
+    + size_of::<bool>(); // named sufficiently_large receiver
+pub(in crate::cleanup_plan::replay) const fn inline_controls<T: Clone, V>() -> usize {
+    size_of::<Result<(), Diagnostic>>() // caller payment result
+        + 4 * size_of::<Result<(), Diagnostic>>() // clone/push work, clone census, conversion
+        + 2 * size_of::<Result<(), Diagnostic>>() // backing wrapper and nested byte payment
+        + size_of::<Result<usize, Diagnostic>>() // checked array size conversion
+        + size_of::<Option<usize>>()
+        + 2 * size_of::<Vec<T>>() // initializer and the enumerator's named branch
+        + size_of::<&mut ReplayBudget>() + size_of::<&ResolvedFunction>()
+        + size_of::<&Vec<T>>() // direct clone census argument
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<&mut Vec<T>>() + size_of::<&[T]>()
+        + 2 * size_of::<std::slice::Iter<'_, T>>()
+        + 2 * size_of::<std::iter::Cloned<std::slice::Iter<'_, T>>>()
+    + (
+QUERY_CONTROLS
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&Vec<T>>()
+        + 2 * size_of::<V>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<&crate::cleanup_plan::CleanupPlan>()
+        + 2 * size_of::<BlockId>()
+        + 2 * size_of::<Result<Vec<T>, Diagnostic>>()
+        + CHECKED_ARITHMETIC // required checked_add actual/formal/Option
+        + 4 * size_of::<usize>() // growth-capacity actual/formal inputs
+        + 4 * size_of::<Option<usize>>() // required/original/capacity initializer/receivers
+        + 7 * size_of::<usize>() // required/original/capacity bindings and four len results
+        + 4 * size_of::<&AllocationPayer>() // equality actual/formal left and right
+        + 2 * size_of::<&ReplayBudget>() // selected actual/formal
+        + 8 * size_of::<&Vec<T>>() // four len actual/formal pairs
+        + 5 * size_of::<bool>() // payer, selected, lazy result, enabled, capacity fit
+    )
+}
+pub(in crate::cleanup_plan::replay) const SMALL_SELECTION_CONTROLS: usize =
+    2 * size_of::<&ReplayBudget>() // pays_allocations actual/formal reborrow
+    + 4 * size_of::<&AllocationPayer>() // inequality actual/formal left and right
+    + size_of::<Vec<std::rc::Rc<SkeletonObservation>>>() // moved uninitialized named branch
+    + 2 * size_of::<&Vec<std::rc::Rc<SkeletonObservation>>>() // len actual/formal
+    + 4 * size_of::<usize>() // length result, comparison inputs and cutoff receiver
+    + 6 * size_of::<bool>(); // inequality, return/receive, negation, length and condition
+
+// For shorter histories even the largest possible reduction from doubled
+// capacity to len+1 cannot cover the full direct-call/query bank and selection.
+// This is a storage choice, never a program admission or work limit.
+pub(in crate::cleanup_plan::replay) const SMALL_COPY_LIMIT: usize =
+    (inline_controls::<std::rc::Rc<SkeletonObservation>, SkeletonObservation>()
+        - super::inline_controls::<std::rc::Rc<SkeletonObservation>>()
+        - SMALL_SELECTION_CONTROLS
+        - 1)
+        / size_of::<std::rc::Rc<SkeletonObservation>>()
+        + 2;
+pub fn check<V: Clone>() {
+ let old = inline_controls::<std::rc::Rc<usize>, V>();
+ let inline = super::inline_controls::<std::rc::Rc<usize>>();
+ assert!(old > inline + SMALL_SELECTION_CONTROLS);
+ let limit = (old-inline-SMALL_SELECTION_CONTROLS-1)/size_of::<std::rc::Rc<usize>>() + 2;
+ for width in 0..limit { assert!(inline+SMALL_SELECTION_CONTROLS+width.saturating_sub(1)*size_of::<std::rc::Rc<usize>>() < old); }
+ assert!(inline+SMALL_SELECTION_CONTROLS+(limit-1)*size_of::<std::rc::Rc<usize>>() >= old);
+ println!("generic_payload={} direct={} inline={} selection={} cutoff={}",size_of::<V>(),old,inline,SMALL_SELECTION_CONTROLS,limit);
+}
+}}
+pub fn run() { branch_clone::direct::check::<[u8;0]>(); branch_clone::direct::check::<[u8;8]>(); branch_clone::direct::check::<[u8;16]>(); branch_clone::direct::check::<[u8;96]>(); branch_clone::direct::check::<[u8;512]>(); }
+}}
+fn main() { cleanup_plan::replay::run(); }

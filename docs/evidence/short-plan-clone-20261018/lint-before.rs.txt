@@ -1,0 +1,2 @@
+mod disposal_layout { pub const CURRENT_BYTES: usize = 1; pub const HISTORICAL_BYTES: usize = 2; }
+fn main() { assert!(disposal_layout::CURRENT_BYTES <= disposal_layout::HISTORICAL_BYTES); }

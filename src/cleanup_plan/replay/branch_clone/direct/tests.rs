@@ -476,3 +476,187 @@ fn continue_return_break_and_latch_have_real_bounded_continuation_controls() {
     latch.exits[exit.0 as usize].continuation = ExitContinuation::LoopLatch { target };
     assert!(bound(&latch, start, 64).is_none());
 }
+
+// Complete current and immediate-old enumerators, with all original input held
+// outside the measured ledger. The old function is an exact whole-body copy.
+fn tiny_plan_program() -> ResolvedProgram {
+    let source = "module branch_inline; @id(\"f\") fn f(a:bool,b:bool)->i64 {let n=if a {1}else{2};if b {n+1}else{n+2}} @id(\"main\") fn main()->i64 {f(true,false)}";
+    let checked = crate::check(source, "branch-inline.spx").unwrap();
+    let canonical = crate::format::canonical(&checked);
+    let checked = crate::check(&canonical, "branch-inline.spx").unwrap();
+    assert_eq!(crate::format::canonical(&checked), canonical);
+    crate::hir::resolve(&checked).unwrap()
+}
+
+fn observe_small_plan(
+    old: bool,
+    function: &ResolvedFunction,
+    limit: usize,
+    floor: usize,
+    work: usize,
+) -> (
+    (Outcome, crate::test_allocation_observer::Metrics),
+    bool,
+    usize,
+    Option<crate::bounded_output::ReservationRefusal>,
+) {
+    let answer = with_limit_usage_refusal(limit, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(work);
+            assert!(crate::bounded_output::set_active_floor(floor));
+            let begin = skeleton_materializations();
+            let result = (|| {
+                let paths = if old {
+                    before::plan_skeleton_paths_before_small_copy(function, &mut budget)?
+                } else {
+                    super::super::super::plan_skeleton_paths(function, &mut budget)?
+                };
+                let count = paths.len();
+                drop(paths);
+                Ok(count)
+            })()
+            .map_err(failure);
+            let ordinary = budget.remaining;
+            let work = budget.skeleton_remaining;
+            let events = skeleton_materializations() - begin;
+            if result.is_err() {
+                let bytes = crate::bounded_output::active_remaining();
+                let first = failure(
+                    budget
+                        .reserve_bytes(function, 0, "small copy sticky")
+                        .unwrap_err(),
+                );
+                let second = failure(
+                    budget
+                        .reserve_bytes(function, 0, "small copy sticky")
+                        .unwrap_err(),
+                );
+                assert_eq!(first, second);
+                assert_eq!(first, failure(Diagnostic::io("SPX-H006", String::new())));
+                assert_eq!(crate::bounded_output::active_remaining(), bytes);
+                assert_eq!(budget.remaining, ordinary);
+                assert_eq!(budget.skeleton_remaining, work);
+            }
+            crate::bounded_output::clear_active_floor();
+            drop(budget);
+            Outcome {
+                result,
+                work,
+                ordinary,
+                events,
+            }
+        })
+    });
+    assert!(!answer.0 .1.invalid);
+    assert_eq!(answer.0 .1.live, 0);
+    assert_eq!(answer.0 .1.allocated, answer.0 .1.freed);
+    assert!(answer.0 .1.allocated <= answer.2);
+    answer
+}
+
+#[test]
+fn small_copy_keeps_complete_immediate_paths_and_original_work_refusals() {
+    for program in [tiny_plan_program(), program()] {
+        for function in &program.functions {
+            let (spent, refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
+                let mut old = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let mut current = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                let begin = skeleton_materializations();
+                let expected =
+                    before::plan_skeleton_paths_before_small_copy(function, &mut old).unwrap();
+                let events = skeleton_materializations() - begin;
+                let begin = skeleton_materializations();
+                let actual =
+                    super::super::super::plan_skeleton_paths(function, &mut current).unwrap();
+                assert_eq!(actual, expected);
+                assert_eq!(skeleton_materializations() - begin, events);
+                assert_eq!(old.remaining, current.remaining);
+                assert_eq!(old.skeleton_remaining, current.skeleton_remaining);
+                assert_eq!(old.skeleton_spent, current.skeleton_spent);
+                let spent = old.skeleton_spent;
+                drop((actual, expected, old, current));
+                spent
+            });
+            assert!(!refused && first.is_none());
+            assert!(spent > 1);
+            for work in [0, 1, spent - 1, spent] {
+                let old = observe_small_plan(true, function, usize::MAX, 0, work);
+                let actual = observe_small_plan(false, function, usize::MAX, 0, work);
+                assert_eq!(actual.0 .0, old.0 .0);
+                assert_eq!(actual.1, old.1);
+                assert_eq!(actual.0 .0.result.is_ok(), work == spent);
+            }
+        }
+    }
+}
+
+#[test]
+fn small_copy_whole_caller_keeps_exact_short_floor_sticky_and_complete_drop() {
+    let program = tiny_plan_program();
+    let function = &program.functions[0];
+    let old = observe_small_plan(true, function, usize::MAX, 0, MAX_REPLAY_WORK_UNITS);
+    take_small_copies();
+    let current = observe_small_plan(false, function, usize::MAX, 0, MAX_REPLAY_WORK_UNITS);
+    assert!(take_small_copies() > 0);
+    assert!(old.0 .0.result.is_ok() && current.0 .0.result.is_ok());
+    assert_eq!(current.0 .0, old.0 .0);
+    assert!(!old.1 && !current.1 && old.3.is_none() && current.3.is_none());
+    assert!(current.2 < old.2);
+    let exact = current.2;
+    assert!(exact <= 64 * 1024 * 1024);
+    for limit in [0, exact - 1, exact] {
+        let step = observe_small_plan(false, function, limit, 0, MAX_REPLAY_WORK_UNITS);
+        let again = observe_small_plan(false, function, limit, 0, MAX_REPLAY_WORK_UNITS);
+        assert_eq!(step.0 .0, again.0 .0);
+        assert_eq!(step.1, again.1);
+        assert_eq!(step.2, again.2);
+        assert_eq!(step.3, again.3);
+        assert_eq!(step.0 .0.result.is_ok(), limit == exact);
+    }
+    let mut limit = 0;
+    let mut completed = false;
+    for _ in 0..20_000 {
+        let step = observe_small_plan(false, function, limit, 0, MAX_REPLAY_WORK_UNITS);
+        if step.0 .0.result.is_ok() {
+            completed = true;
+            break;
+        }
+        assert!(step.1);
+        let request = step.3.unwrap();
+        let end = step.2.checked_add(request.requested).unwrap();
+        assert!(end > limit);
+        let short = observe_small_plan(false, function, end - 1, 0, MAX_REPLAY_WORK_UNITS);
+        let again = observe_small_plan(false, function, end - 1, 0, MAX_REPLAY_WORK_UNITS);
+        assert_eq!(short.0 .0, again.0 .0);
+        assert_eq!(short.3, again.3);
+        assert!(short.1 && short.0 .0.result.is_err());
+        let floored = observe_small_plan(false, function, end, 1, MAX_REPLAY_WORK_UNITS);
+        assert!(floored.1 && floored.0 .0.result.is_err());
+        assert_eq!(short.0 .0.result, floored.0 .0.result);
+        let admitted = observe_small_plan(false, function, end, 0, MAX_REPLAY_WORK_UNITS);
+        assert!(admitted.2 >= end);
+        limit = end;
+    }
+    assert!(
+        completed,
+        "complete caller receipt staircase reaches the producer"
+    );
+}
+
+#[test]
+fn small_copy_cutoff_uses_actual_full_receivers_without_a_backing_credit() {
+    let old = inline_controls::<Rc<SkeletonObservation>, SkeletonObservation>();
+    let inline = super::super::inline_controls::<Rc<SkeletonObservation>>();
+    assert_eq!(small_inline_controls::<Rc<SkeletonObservation>>(), inline);
+    assert_eq!(
+        PLAN_SMALL_SELECTION_CONTROLS,
+        super::super::super::final_output::PLAN_SELECTION_CONTROLS + SMALL_SELECTION_CONTROLS
+    );
+    assert!(old > inline + SMALL_SELECTION_CONTROLS);
+    let word = size_of::<Rc<SkeletonObservation>>();
+    for width in 0..SMALL_COPY_LIMIT {
+        let most_extra_backing = width.saturating_sub(1) * word;
+        assert!(inline + SMALL_SELECTION_CONTROLS + most_extra_backing < old);
+    }
+    assert!(inline + SMALL_SELECTION_CONTROLS + (SMALL_COPY_LIMIT - 1) * word >= old);
+}

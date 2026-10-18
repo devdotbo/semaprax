@@ -1,0 +1,6 @@
+{
+  "scope": "Only the exact constant assertion construct with symbolic true/false sizes; not a new ABI layout measurement.",
+  "original_lint_reproduced": true,
+  "after_compile_peak_kib": 147664,
+  "false_predicate_still_refuses_compilation": true
+}
