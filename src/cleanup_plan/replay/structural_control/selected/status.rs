@@ -87,9 +87,21 @@ pub(in crate::cleanup_plan::replay) fn validate_core(
                 semantic_refusal::Atom::RepeatedStatus(source.id.expression.clone()),
             ));
         }
-        if expressions
-            .fact(function, &source.id.expression, budget)?
-            .is_none()
+        if crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            (
+                &dyn expression_facts::Lookup,
+                &ResolvedFunction,
+                &ExpressionId,
+                &mut ReplayBudget,
+                Result<Option<&Option<CallFact<'_>>>, Diagnostic>
+            ),
+            5,
+            "selected control expressions fact call receiving",
+            expressions.fact(function, &source.id.expression, budget)
+        )?
+        .is_none()
         {
             return Err(Error::structural(
                 function,
