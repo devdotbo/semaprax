@@ -95,3 +95,30 @@ and immutable883 comparisons, independent typed invoices, old source inverses,
 physical/work-cut/Drop/diagnostic controls and unchanged limits remain owning
 gates. Fixed checked counters are observation only. Bounded models and source
 checks do not qualify the compiler, native64MiB, STD-08, browser or applications.
+
+## Shared immutable segment boundary continuation
+
+When both loaded slices are empty, inspect only the next already validated
+link from each prepared cursor. Equal next indices and a nonempty immutable
+segment prove that both next observations are identical. No prefix scan or new
+traversal is introduced. An empty, absent or different successor keeps the
+complete original fallback. Both original prepares and final HIR comparison
+remain independent. No source, hash or pointer claim grants admission authority.
+
+The successful branch retains the original seven work requests in order:
+left forward/current segment/next segment, then right forward/current segment/
+next segment, then the equal-observation continuation. Each cursor's exhausted
+segment, item, loaded flag and consumed link move at their old work boundaries.
+No observation Option, paired tuple or content-cmp payload is formed on this
+branch. New link views, pattern decisions, arena query, pop slots, scalar
+transports and retained slices are paid before formation. Four payment and seven
+work sites add eleven full primitive headers only to the multipath bank.
+Zero/one-path banks and all original limits stay unchanged. Failed lookahead
+pays its real selectors; short or divergent paths can cost more.
+
+Additive source-type invoices and checked diagnostic cells retain every older
+invoice and control. An actual compiler test exercises one-item and empty
+segments against the complete883 comparator at every work cut. Complete bounded
+models additionally cover shared/divergent and alternating empty segments.
+Source/model results remain separate from full compiler, physical allocator,
+application, native64MiB, STD-08, browser and current hosted qualification.

@@ -66,6 +66,59 @@ fn reachable_primitive_prices(paths: usize) -> (usize, usize) {
 }
 // Independent source-type invoice for the actual shared-step cells. The old
 // complete883 invoice stays additive; no measured debit delta is a coefficient.
+// Independent additive invoice for the boundary branch. Original invoices
+// and every older physical/work/diagnostic assertion remain complete.
+fn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+        + 6 * size_of::<&SkeletonObservation>()
+        + 4 * size_of::<&SkeletonTerminal>()
+        + 2 * size_of::<Ordering>();
+    let step = 2 * size_of::<usize>()
+        + 3 * size_of::<bool>()
+        + 3 * size_of::<&Rc<SkeletonObservation>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<&SkeletonObservation>()
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+        + 3 * size_of::<usize>()
+        + size_of::<bool>();
+    let load = 2 * size_of::<&mut Vec<usize>>()
+        + size_of::<Option<usize>>()
+        + 4 * size_of::<usize>()
+        + 2 * size_of::<bool>()
+        + 2 * size_of::<&[Segment]>()
+        + size_of::<&Segment>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+    let links = 4 * size_of::<&Vec<usize>>()
+        + 4 * size_of::<&[usize]>()
+        + 4 * size_of::<usize>()
+        + 3 * size_of::<bool>();
+    let query = 2 * size_of::<&[Segment]>()
+        + 2 * size_of::<usize>()
+        + size_of::<&Segment>()
+        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<bool>();
+    let advance = 4 * size_of::<&mut Vec<usize>>()
+        + 2 * size_of::<Option<usize>>()
+        + 10 * size_of::<usize>()
+        + 6 * size_of::<bool>()
+        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<Ordering>();
+    (
+        (pair + 4 * step + 2 * load) * row.shared_boundaries,
+        if paths >= 2 { 11 * header } else { 0 }
+            + size_of::<bool>() * row.shared_empty_checks
+            + links * row.shared_links
+            + query * row.shared_queries
+            + advance * row.shared_boundaries,
+    )
+}
 fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
     let header = 2 * size_of::<&ResolvedFunction>()
         + 2 * size_of::<&mut ReplayBudget>()
@@ -96,7 +149,11 @@ fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usi
             + size_of::<Ordering>()
             + size_of::<bool>())
             * row.shared_steps;
-    ((pair + 2 * step) * row.shared_steps, retained)
+    let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
+    (
+        (pair + 2 * step) * row.shared_steps + boundary_removed,
+        retained + boundary_retained,
+    )
 }
 fn observe_pair(
     function: &ResolvedFunction,
@@ -1001,5 +1058,74 @@ fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagno
                 assert_eq!(current.0.unwrap_err().code, "SPX-H006");
             }
         }
+    }
+}
+
+#[test]
+fn shared_boundary_one_item_and_empty_segments_preserve_real_883_status_and_work_cuts() {
+    let program = super::super::super::tests::program();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "f")
+        .unwrap();
+    let item = Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(),
+        value: true,
+    });
+    let expected = vec![
+        SkeletonPath {
+            observations: vec![item.clone(); 3].into(),
+            terminal: SkeletonTerminal::Success
+        };
+        2
+    ];
+    let actual = || HistorySet {
+        arena: (0usize..4)
+            .map(|at| Segment {
+                previous: at.checked_sub(1),
+                depth: at + 1,
+                items: if at == 1 {
+                    Vec::new()
+                } else {
+                    vec![item.clone()]
+                },
+            })
+            .collect(),
+        paths: (0..2)
+            .map(|_| PlanPath {
+                history: History {
+                    previous: Some(3),
+                    tail: Vec::new(),
+                },
+                terminal: SkeletonTerminal::Success,
+            })
+            .collect(),
+        max_depth: 4,
+    };
+    pair_scope_census::reset();
+    let (old, old_heap, _) =
+        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    pair_scope_census::reset();
+    let (new, new_heap, _) =
+        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(false);
+    assert!(
+        row.shared_boundaries > 0,
+        "exercise the actual boundary branch"
+    );
+    assert_eq!(new, old);
+    assert!(new.result.is_ok());
+    assert_eq!(new_heap, old_heap);
+    let spent = MAX_REPLAY_WORK_UNITS - old.remaining;
+    for cut in 0..=spent {
+        pair_scope_census::reset();
+        let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
+        pair_scope_census::reset();
+        let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
+        assert_eq!(
+            new, old,
+            "all six diagnostic fields and exact remaining work at cut {cut}"
+        );
     }
 }

@@ -14,7 +14,11 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+mod shared_boundaries;
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_stage(&shared_boundaries::previous_macro(current))
+}
+fn previous_macro_stage(current: &str) -> String {
     restore(current, 10841, MACRO)
 }
 #[rustfmt::skip]
@@ -36,6 +40,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (640, "    left_link: usize,\n    right_link: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_stage(&shared_boundaries::previous_pair_tests(current))
+}
+fn previous_pair_tests_stage(current: &str) -> String {
     restore(current, 42740, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -53,6 +60,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (2956, "}\n// Independent source-type invoice for the actual shared-step cells. The old\n// complete883 invoice stays additive; no measured debit delta is a coefficient.\nfn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {\n    let header = 2 * size_of::<&ResolvedFunction>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<&str>()\n        + 2 * size_of::<usize>()\n        + 2 * size_of::<Result<(), Diagnostic>>();\n    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()\n        + 6 * size_of::<&SkeletonObservation>()\n        + 4 * size_of::<&SkeletonTerminal>()\n        + 2 * size_of::<Ordering>();\n    let step = 2 * size_of::<usize>()\n        + 3 * size_of::<bool>()\n        + 3 * size_of::<&Rc<SkeletonObservation>>()\n        + 2 * size_of::<&[Rc<SkeletonObservation>]>()\n        + size_of::<&SkeletonObservation>()\n        + 2 * size_of::<Option<&SkeletonObservation>>()\n        + size_of::<usize>()\n        + 2 * size_of::<usize>()\n        + size_of::<bool>();\n    let retained = 4 * size_of::<usize>()\n        + if paths >= 2 { 9 * header } else { 0 }\n        + size_of::<usize>() * row.loads\n        + 3 * size_of::<bool>() * row.shared_checks\n        + (size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>()) * row.shared_patterns\n        + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata\n        + (3 * size_of::<&[Rc<SkeletonObservation>]>()\n            + 2 * size_of::<usize>()\n            + size_of::<Ordering>()\n            + size_of::<bool>())\n            * row.shared_steps;\n    ((pair + 2 * step) * row.shared_steps, retained)\n", ""),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    previous_census_stage(&shared_boundaries::previous_census(current))
+}
+fn previous_census_stage(current: &str) -> String {
     restore(current, 12959, CENSUS)
 }
 #[rustfmt::skip]
@@ -155,8 +165,8 @@ mod tests {
     #[test]
     fn all_new_source_subjects_refuse_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../lexical_cursor.rs"),
-            previous_macro,
+            &shared_boundaries::previous_macro(include_str!("../../../../lexical_cursor.rs")),
+            previous_macro_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-macro.rs.txt"
@@ -173,8 +183,10 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &shared_boundaries::previous_pair_tests(include_str!(
+                "../../../../pair_scope_tests.rs"
+            )),
+            previous_pair_tests_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-pair-tests.rs.txt"
@@ -182,8 +194,8 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../../../../pair_scope_census.rs"),
-            previous_census,
+            &shared_boundaries::previous_census(include_str!("../../../../pair_scope_census.rs")),
+            previous_census_stage,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-census.rs.txt"

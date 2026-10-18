@@ -1,0 +1,1 @@
+complete_current_boundary_cases=5000 work_cuts=57885 proven_shared_boundaries=16592; opaque model types; shared-HIR only typechecked; no full compiler/allocator/application fit claim

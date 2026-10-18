@@ -1,0 +1,93 @@
+[
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "before": {
+      "length": 10841,
+      "sha256": "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded.txt"
+    },
+    "current": {
+      "length": 17308,
+      "sha256": "4a5f8e69c53b7b71a1a297f422168860aaf1b539e5aa81dd0d97544826d93259",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/4a5f8e69c53b7b71a1a297f422168860aaf1b539e5aa81dd0d97544826d93259.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "before": {
+      "length": 42740,
+      "sha256": "10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5.txt"
+    },
+    "current": {
+      "length": 47414,
+      "sha256": "dbd006e0ad3409f5c2adc88e4af2ce80b3f32741dbb2eb5686907d42fe7bc3e9",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/dbd006e0ad3409f5c2adc88e4af2ce80b3f32741dbb2eb5686907d42fe7bc3e9.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+    "before": {
+      "length": 12959,
+      "sha256": "ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5.txt"
+    },
+    "current": {
+      "length": 15306,
+      "sha256": "07422696b4c547d69e6a382783377daac2abfd3b9a3e70a061f1a057642ce4d7",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/07422696b4c547d69e6a382783377daac2abfd3b9a3e70a061f1a057642ce4d7.txt"
+    }
+  },
+  {
+    "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+    "before": {
+      "length": 18005,
+      "sha256": "0225192c3c2c152325980d1e22959801e3ed7f4d8433ff86fdd340294b4f859d",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/0225192c3c2c152325980d1e22959801e3ed7f4d8433ff86fdd340294b4f859d.txt"
+    },
+    "current": {
+      "length": 18577,
+      "sha256": "329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255.txt"
+    }
+  },
+  {
+    "source": "src/bounded_output/stage_debits/route_debits.rs",
+    "before": {
+      "length": 34750,
+      "sha256": "703505cd18f3710c875a444d23cb5d3826e3efba5407df12e5be0cdc26f902b1",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/703505cd18f3710c875a444d23cb5d3826e3efba5407df12e5be0cdc26f902b1.txt"
+    },
+    "current": {
+      "length": 35044,
+      "sha256": "26bc7b632a6b5265a2478adabda8f7e86ecd630ea1e2b4d4df7c168d040ffd18",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/26bc7b632a6b5265a2478adabda8f7e86ecd630ea1e2b4d4df7c168d040ffd18.txt"
+    }
+  },
+  {
+    "source": "docs/ORDINARY-LEXICAL-PLAN-CURSOR-V1.md",
+    "before": {
+      "length": 6412,
+      "sha256": "f9fe5398ab56d9448b99b307928c17a597cbb5ffb1b734769f0eb45955684c24",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/f9fe5398ab56d9448b99b307928c17a597cbb5ffb1b734769f0eb45955684c24.txt"
+    },
+    "current": {
+      "length": 8146,
+      "sha256": "b622e2607918b37b85223818465abca3505d70cd5a77b61c737acdfce305867f",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/b622e2607918b37b85223818465abca3505d70cd5a77b61c737acdfce305867f.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 577940,
+      "sha256": "ca1c0d5196b1712ea3a4345a657477275673aa678f1d78814e253cb445413b15",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/ca1c0d5196b1712ea3a4345a657477275673aa678f1d78814e253cb445413b15.txt"
+    },
+    "current": {
+      "length": 578304,
+      "sha256": "5e3c64a2a8e9e91712b9706b012f0d2b51643a1a234bb7729cb6fde8e3d0c5bb",
+      "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/5e3c64a2a8e9e91712b9706b012f0d2b51643a1a234bb7729cb6fde8e3d0c5bb.txt"
+    }
+  }
+]

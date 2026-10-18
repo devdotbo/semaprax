@@ -1,0 +1,1 @@
+Actual complete additive invoice functions typechecked; independent scalar cases pass; opaque reference carriers only, no real compiler budget/allocator proof

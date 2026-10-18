@@ -880,7 +880,15 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
     let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 7, "audit every generic payment site");
+    assert_eq!(sites.len(), 11, "audit every generic payment site");
+    assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
+    let compact: String = lexical.split_whitespace().collect();
+    assert_eq!(
+        compact
+            .matches("shared_plan_boundary!($owner,$census,$function,$budget,$phase);")
+            .count(),
+        1
+    );
     for (at, _) in sites {
         let body = &lexical[at + "paid!(".len()..];
         let end = body.find(")?;").expect("unknown generic payment shape");

@@ -1,0 +1,66 @@
+{
+  "status": "SOURCE_ONLY_ORIGINAL_FULL_VERIFIER_AND_SIX_HOSTILE_CONTROLS_PASS",
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2472695,
+        "sha256": "4b8d0ee25eb2deb5b8f0067c4cecf2b23dff5c4c13d8d4bdd0c1cf5daa2d9dae",
+        "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/4b8d0ee25eb2deb5b8f0067c4cecf2b23dff5c4c13d8d4bdd0c1cf5daa2d9dae.txt"
+      },
+      "current_length": 2476095,
+      "current_sha256": "bbf01a863d603cf8dc24f464d0a0dfb877925bebfdd27d7bad6c6b7c65ee72ea",
+      "all_original_classes_and_roles_unchanged": true,
+      "added_actual_registered_sources": [
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+      ]
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2757912,
+        "sha256": "4fb4fc5f8bc09b05391bc4fe12195358442aa1e9a9c43348decc49a9a744dce7",
+        "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/4fb4fc5f8bc09b05391bc4fe12195358442aa1e9a9c43348decc49a9a744dce7.txt"
+      },
+      "current_length": 2761312,
+      "current_sha256": "494c4e3823b0f26bcefa57b9229a6112bb13a7fd6bc2f7b9f463bba821ab7f89",
+      "all_original_classes_and_roles_unchanged": true,
+      "added_actual_registered_sources": [
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+      ]
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 63761,
+        "sha256": "55f5501f22c71689d48e20d1b16f98c718a96a644b4b06f405793c7f515b9256",
+        "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/55f5501f22c71689d48e20d1b16f98c718a96a644b4b06f405793c7f515b9256.txt"
+      },
+      "current_length": 63761,
+      "current_sha256": "95fb7ed7514e44c63c9b8caea005dfc05948943e95704b574ea6d4d8c15a8e1b",
+      "all_original_owner_fields_and_order_retained_except_current_identity": true
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 249493,
+        "sha256": "0cbe4270396341d36b6b38adc3893b8064bff974dba65444eee8489e26c709d6",
+        "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/0cbe4270396341d36b6b38adc3893b8064bff974dba65444eee8489e26c709d6.txt"
+      },
+      "current_length": 249493,
+      "current_sha256": "c6bde1561cd13c65e6c5ff52bd2174ff59813bf21a346250ff14cfee405b6802"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3408,
+        "sha256": "add6073f39d7e32a688aec9499a5088d180dbfb714b99ed5efa5e99de6700c9a",
+        "archive": "docs/evidence/shared-boundaries-99b-20261018/whole/add6073f39d7e32a688aec9499a5088d180dbfb714b99ed5efa5e99de6700c9a.txt"
+      },
+      "current_length": 3404,
+      "current_sha256": "a368e57e2f4a492bb7b28da34f1be97c35679ee2dd1ee9be9315785d8e91c09a"
+    }
+  ],
+  "all_342_owner_rows_retained": true,
+  "original_authority_source_proof_unchanged": true
+}
