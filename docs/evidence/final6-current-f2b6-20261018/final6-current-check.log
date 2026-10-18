@@ -1,0 +1,8 @@
+Traceback (most recent call last):
+  File "/Volumes/Semaprax/tmp/ci-38383508340/current-producers-f2b6/final6-current-grammar.py", line 20, in <module>
+    exec(compile(s,str(P),'exec'),{'__name__':'__main__','__file__':str(P)})
+  File "/Volumes/Semaprax/worktrees/ci-format-26eeb/docs/evidence/ordinary-plan-final-ingress-20261017/bind-current-inputs.py", line 134, in <module>
+  File "/Volumes/Semaprax/worktrees/ci-format-26eeb/docs/evidence/ordinary-plan-final-ingress-20261017/bind-current-inputs.py", line 128, in main
+    print(json.dumps(receipt))
+            ^^^^^^^^^^^^^^^^^^^
+AssertionError: stale final source endpoint

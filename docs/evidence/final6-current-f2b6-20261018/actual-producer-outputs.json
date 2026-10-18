@@ -1,0 +1,44 @@
+{
+  "status": "ACTUAL_ORIGINAL_FINAL6_WRITE_AND_NO_WRITE_EXECUTED_SOURCE_ONLY",
+  "base_head": "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
+  "six_whole_current_archives": [
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651.txt",
+      "length": 325094,
+      "sha256": "73a3f6013227cf0af2475046ccd2f2ed7f73bb96aef9a8a0c9e7f69906f0a651"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/2fc7516bf108a35387c3a4e32c7e15d2665a153c9aed9aea67cb72aeda8470e1.txt",
+      "length": 47214,
+      "sha256": "2fc7516bf108a35387c3a4e32c7e15d2665a153c9aed9aea67cb72aeda8470e1"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/b70bae63e6dbccdfe619efdc6a65193a05912f04fad6a378e9309dda1490ff04.txt",
+      "length": 48426,
+      "sha256": "b70bae63e6dbccdfe619efdc6a65193a05912f04fad6a378e9309dda1490ff04"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/bead460b4bd510b260bd6759a235dcecffb9d1e183d463e7d54cd02e324740a1.txt",
+      "length": 131602,
+      "sha256": "bead460b4bd510b260bd6759a235dcecffb9d1e183d463e7d54cd02e324740a1"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d.txt",
+      "length": 148320,
+      "sha256": "13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d"
+    },
+    {
+      "path": "docs/evidence/ordinary-plan-final-ingress-20261017/current/583a7311433f3fa96d3807dd09659230f528e82c89ed9c04e06a83e2a23a8471.txt",
+      "length": 189358,
+      "sha256": "583a7311433f3fa96d3807dd09659230f528e82c89ed9c04e06a83e2a23a8471"
+    }
+  ],
+  "all_actual_candidate_outputs_match": true,
+  "complete_original_packet_retained": {
+    "path": "docs/evidence/ordinary-plan-final-ingress-20261017/retained-packets/packet-3a32b3a5909f5e073c05345ea28ee4822ee115bdc0aa262ae3aba36aa5b85f9e.json",
+    "length": 286397,
+    "sha256": "3a32b3a5909f5e073c05345ea28ee4822ee115bdc0aa262ae3aba36aa5b85f9e"
+  },
+  "runtime": "UNEXECUTED",
+  "original_producer_body_unchanged": true
+}

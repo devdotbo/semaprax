@@ -1,0 +1,40 @@
+{
+  "status": "ACTUAL_HOSTED_GRAPH_CAPTURE_NO_BROWSER_RUNTIME_PASS",
+  "head": "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
+  "subjects": [
+    {
+      "subject": "baseline",
+      "whole_recursive_differences": [
+        [
+          "/graph_digest",
+          "sha256:0cb5ccd157858151b84f2e7069c84c6deed365b5925d7fe4e93e9d0d65c7dada",
+          "sha256:85864dc966940b71740f1418965faa8c4ebdcfc80837b4bba5ff279e1f7404cf"
+        ],
+        [
+          "/budget/used_builder_bytes",
+          12293349,
+          12252909
+        ]
+      ],
+      "all_other_fields_and_vector_positions_equal": true,
+      "actual_digest_recomputed_from_exact_wire": true
+    },
+    {
+      "subject": "renamed",
+      "whole_recursive_differences": [
+        [
+          "/graph_digest",
+          "sha256:8949f1e7077c9b33b26e46789d7b7111f8d6d290fd3dfcd0b30082ac87cd414c",
+          "sha256:f52933fcffe5edab913a8af1dc2adbeed63cc0276ccd8f867d4a207e128b693f"
+        ],
+        [
+          "/budget/used_builder_bytes",
+          12293349,
+          12252909
+        ]
+      ],
+      "all_other_fields_and_vector_positions_equal": true,
+      "actual_digest_recomputed_from_exact_wire": true
+    }
+  ]
+}

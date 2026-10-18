@@ -1,0 +1,18 @@
+{
+  "argv": [
+    "python",
+    "-B",
+    "docs/evidence/final6-current-f2b6-20261018/run-final6.py",
+    "--repo",
+    "/Volumes/Semaprax/worktrees/ci-format-26eeb",
+    "--expected-head",
+    "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
+    "--write"
+  ],
+  "working_directory": "/Volumes/Semaprax/worktrees/ci-format-26eeb",
+  "TMPDIR": "/Volumes/Semaprax/runtime-tmp",
+  "original_program": "docs/evidence/ordinary-plan-final-ingress-20261017/bind-current-inputs.py",
+  "original_program_length": 9387,
+  "original_program_sha256": "cb1a3b7568fa0490b7fabf826d3f4389d64d786ea1b62ea7aa0c242c0ea45562",
+  "exit_code": 0
+}

@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 100,
       "full_role_production": 538,
       "full_role_test_only": 959,
-      "full_raw_sha256": "c2b2ace24ea0b69fa160e1e82cc70ad5638714e11ef7190f54997b25de0d43cc",
+      "full_raw_sha256": "8367a0b3aa71a9761475266d1a6af20f61e365f4260b27b303e37834ed85cf9f",
       "boundary_production_sha256": "4b8e39fcf994e9c43945ce693ded6267a2c61f831be421594f3e0f7d9e59e110",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 584,
       "full_role_production": 657,
       "full_role_test_only": 1016,
-      "full_raw_sha256": "d0fcb45fd3b128f6654925835444ca14b9606d4b52650d39b056c7c2b8d17d0c",
+      "full_raw_sha256": "f7ef35fb74e8fa8b3c921e17ecea693eb1202ff83e7b95d65d71f05f8f781a1a",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -56,7 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "actual_acquisition_completion_sha256": "2e29ce4a1f0eb6aa7b8dbdce810b172df99dddddbc82ce64b9532c1cc41df22c",
+  "actual_acquisition_completion_sha256": "f19739ff1e66cff09c7859906e44f15ac0692c8ca2337fc1a14732c9742b6245",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -66,9 +66,9 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "CURRENT_RETAINED_FLAT_HIR_VIEW_AND_OBSERVER_CAUSE_DIAGNOSTICS",
-  "before_head": "a8977f09194a8f3bc461361428e3d4c73ffb5c72",
-  "incoming_main": "a8977f09194a8f3bc461361428e3d4c73ffb5c72",
+  "registration_update": "CURRENT_GENUINE_FINAL6_AND_ACTUAL_HOSTED_BROWSER_PINS",
+  "before_head": "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
+  "incoming_main": "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",

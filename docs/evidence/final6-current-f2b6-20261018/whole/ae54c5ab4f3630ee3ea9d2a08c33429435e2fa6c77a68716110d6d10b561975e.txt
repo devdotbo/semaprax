@@ -1,0 +1,11 @@
+{
+  "status": "BOUND_SOURCE_ONLY_UNEXECUTED_FINAL_INGRESS",
+  "head": "5133f4b606d1a4e39a74e2880c3222dd8cc2840f",
+  "checkpoint": "787d9810480209532fa645b8cb97f2585ce5f426",
+  "sources": 6,
+  "packet_length": 286397,
+  "packet_sha256": "3a32b3a5909f5e073c05345ea28ee4822ee115bdc0aa262ae3aba36aa5b85f9e",
+  "runtime": "UNEXECUTED",
+  "old_packets_unchanged": true,
+  "authority_refresh_required_after_source_pins": true
+}

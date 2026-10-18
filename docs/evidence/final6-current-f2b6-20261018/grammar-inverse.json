@@ -1,0 +1,9 @@
+{
+  "whole_prior_adapter_sha256": "6c496ddd3577735c8e27589a6d417d8f6fa2431bc9351c2fdb8897a090421f5f",
+  "only_root_selection_and_two_exact_helper_states_changed": true,
+  "current_and_generated_helper_body_identical_except_original_two_mutable_pins": true,
+  "all_original_producer_predicates_and_2MiB_reader_caps_retained": true,
+  "explicit_repo_required": true,
+  "current_before_helper_sha256": "c470186c3d0aa988a34d85218f3417c2d83a455f8c6cf7588e65a05776499fb6",
+  "actual_full_producer_candidate_helper_sha256": "8f26d7449b9965e1b9f5fe7eec3ef92e8d77277241a02aa27a1595f1111c23e7"
+}

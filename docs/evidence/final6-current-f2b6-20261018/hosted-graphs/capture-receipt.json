@@ -1,0 +1,24 @@
+{
+  "head": "f2b6bfd9131490a6b656f9a1385b306fec6b0433",
+  "run": 39108055938,
+  "job": 117618452878,
+  "raw_log_sha256": "cf3f537c9d2410f1569c9aef59a0049fc35ff3d14402600d5195c831ee8f77be",
+  "subjects": [
+    {
+      "subject": "calculator-baseline.json",
+      "length": 9895,
+      "sha256": "52977ea14d2e94054e5d14e75a610a1eec2006d23636878a461452198e8cb476"
+    },
+    {
+      "subject": "calculator-renamed.json",
+      "length": 9895,
+      "sha256": "3fba65b763855df83b830cd624987b1856d09b83365ac413daeb5e8010e38b9b"
+    },
+    {
+      "subject": "provenance.json",
+      "length": 354,
+      "sha256": "342429f83fb9289ef8e36698e164376ff9631b38437e865c9b6362aa519ba98a"
+    }
+  ],
+  "full_actual_payload_pins_verified": true
+}
