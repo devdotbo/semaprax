@@ -265,12 +265,22 @@ mod tests {
     #[test]
     fn compiled_lookup_split_preserves_the_complete_predecessor_and_every_old_mapping() {
         assert_eq!(restore_whole_before(ROOT, CHILD), before());
-        for line in lookup(before())
+        let old_lookup = lookup(before());
+        let sources: Vec<_> = old_lookup
             .lines()
             .map(str::trim)
             .filter(|line| line.starts_with('"'))
-        {
-            let source: String = serde_json::from_str(line.split_once(" => ").unwrap().0).unwrap();
+            // A wrapped include_str! argument is source DATA, not a match key.
+            .filter_map(|line| line.split_once(" => ").map(|(source, _)| source))
+            .collect();
+        assert_eq!(old_lookup.matches("_ => None").count(), 1);
+        assert_eq!(
+            sources.len() + 1,
+            old_lookup.matches("=>").count(),
+            "every old literal match arm plus its sole fallback must be covered"
+        );
+        for source in sources {
+            let source: String = serde_json::from_str(source).unwrap();
             assert!(
                 super::compiled(&source).is_some(),
                 "missing old compiled source {source}"
