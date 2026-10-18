@@ -1,0 +1,14 @@
+{
+  "status": "SOURCE_ONLY_POST_CONSTRUCTION_DIAGNOSTIC_UNCHANGED_ASSERTIONS_AND_LIMITS",
+  "source": "src/workspace_graph/tests.rs",
+  "before_sha256": "a5a072ac941db6ad65a76335b081490d8ba23ad9105270d66231bfae9d4fe091",
+  "after_sha256": "5db393a08ce55e502c818d5454d7e011b0611008d28ef4c6cbb2dd85d6992122",
+  "edits": [
+    {
+      "before": "    build_owned(vec![exact, leaf.clone()]).expect(\"exact callable limit must advance\");",
+      "after": "    let exact_result = build_owned(vec![exact, leaf.clone()]);\n    let trace = crate::bounded_output::stage_debits::take_completed();\n    eprintln!(\"callable-limit-exact post-construction trace={trace:?}\");\n    exact_result.expect(\"exact callable limit must advance\");"
+    }
+  ],
+  "no_new_modules": true,
+  "Cargo": false
+}
