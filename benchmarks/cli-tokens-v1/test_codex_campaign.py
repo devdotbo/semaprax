@@ -273,6 +273,14 @@ class CodexCampaignTests(unittest.TestCase):
             )
 
             self.assertEqual(set(inventory), set(codex_campaign.HARNESS_SOURCE_FILES))
+            imported_helpers = {
+                "benchmarks/cli_typescript_bootstrap.py": codex_campaign.ts_bootstrap,
+                "benchmarks/webapp-tokens-v2/dependency_bundle.py": codex_campaign.ts_bootstrap._deps,
+            }
+            for relative, module in imported_helpers.items():
+                actual = Path(module.__file__).read_bytes()
+                self.assertEqual(inventory[relative], hashlib.sha256(actual).hexdigest())
+                self.assertEqual((artifacts / "harness-source" / relative).read_bytes(), actual)
             self.assertEqual(snapshot["files_sha256"], inventory)
             copied = artifacts / "harness-source"
             copied_files = {
@@ -289,6 +297,39 @@ class CodexCampaignTests(unittest.TestCase):
             self.assertEqual(manifest, snapshot)
             self.assertEqual(manifest["frozen_spec"]["sha256"], "frozen-spec-seed-hash")
             self.assertEqual(prior.read_bytes(), prior_before)
+
+    def test_typescript_import_drift_or_absence_refuses_campaign_snapshot(self):
+        with tempfile.TemporaryDirectory() as directory:
+            root = Path(directory)
+            repo = root / "repo"
+            for relative in codex_campaign.HARNESS_SOURCE_FILES:
+                target = repo / relative
+                target.parent.mkdir(parents=True, exist_ok=True)
+                target.write_bytes((codex_campaign.REPO / relative).read_bytes())
+            inventory = codex_campaign.harness_source_inventory(repo)
+            helpers = (
+                "benchmarks/cli_typescript_bootstrap.py",
+                "benchmarks/webapp-tokens-v2/dependency_bundle.py",
+            )
+            for index, relative in enumerate(helpers):
+                path = repo / relative
+                before = path.read_bytes()
+                for failure in ("drift", "missing"):
+                    with self.subTest(helper=relative, failure=failure):
+                        artifacts = root / f"campaign-{index}-{failure}"
+                        if failure == "drift":
+                            path.write_bytes(before + b"\n# unplanned helper drift\n")
+                            message = "source changed after the immutable plan"
+                        else:
+                            path.unlink()
+                            message = "source is not a regular file"
+                        with self.assertRaisesRegex(ValueError, message):
+                            codex_campaign.snapshot_harness_sources(
+                                repo, artifacts, inventory, "frozen-spec-seed-hash",
+                            )
+                        self.assertFalse(artifacts.exists())
+                        path.write_bytes(before)
+                        self.assertEqual(codex_campaign.harness_source_inventory(repo), inventory)
 
 
 if __name__ == "__main__":
