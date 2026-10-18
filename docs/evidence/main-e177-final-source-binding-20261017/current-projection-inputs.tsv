@@ -50,6 +50,7 @@ src/cleanup_plan/replay/skeleton_work/merge_search.rs
 src/source_reflows/main_e177_controllers.rs
 src/source_reflows/main_e177_support.rs
 src/source_reflows_merge/main_e177_final_inputs.rs
+src/source_reflows_merge/main_e177_overlay_v2.rs
 src/source_reflows_merge/main_e177_inputs.rs
 tests/workspace/pin_capture.rs
 src/cleanup_plan/replay/branch_clone/direct.rs
@@ -260,6 +261,9 @@ src/source_reflows/factored_sources.rs
 src/cleanup_plan/replay/allocation/tests/clone_cursor.rs
 src/cleanup_plan/replay/allocation/tests/clone_cursor/before.rs
 src/cleanup_plan/replay.rs
+src/cleanup_plan/replay/ordinary_receiving.rs
+src/cleanup_plan/replay/ordinary_receiving/caller_before.rs
+src/cleanup_plan/replay/ordinary_receiving/tests.rs
 src/cleanup_plan/replay/constructed_variant.rs
 src/cleanup_plan/replay/context_closure.rs
 src/cleanup_plan/replay/continuation_storage.rs
@@ -268,6 +272,7 @@ src/cleanup_plan/replay/call_paths.rs
 src/cleanup_plan/replay/call_payload.rs
 src/cleanup_plan/replay/expression_children.rs
 src/cleanup_plan/replay/expression_facts.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs
 src/cleanup_plan/replay/expression_facts/borrowed.rs
 src/cleanup_plan/replay/expression_facts/capacity.rs
 src/cleanup_plan/replay/expression_facts/saved.rs
@@ -296,6 +301,7 @@ src/cleanup_plan/replay/primitive_fixture.rs
 src/cleanup_plan/replay/path_summary.rs
 src/cleanup_plan/replay/skeleton_bound.rs
 src/cleanup_plan/replay/skeleton_work.rs
+src/cleanup_plan/replay/skeleton_work/receiving.rs
 src/cleanup_plan/replay/skeleton_work/dag_storage.rs
 src/cleanup_plan/replay/skeleton_work/oracle_entry.rs
 src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs
@@ -427,6 +433,8 @@ src/cleanup_plan/replay/ordinary_plan_history/source_custody.rs
 src/cleanup_plan/replay/expression_facts/arena.rs
 src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs
 src/cleanup_plan/replay/expression_facts/arena/retained.rs
+src/cleanup_plan/replay/expression_facts/arena/retained_into.rs
+src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs
 src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs
 src/cleanup_plan/replay/expression_facts/arena/prefix.rs
 src/cleanup_plan/replay/expression_facts/arena/producer.rs
@@ -937,6 +945,7 @@ src/loan_plan/paid_live/dense/tests.rs
 src/loan_plan/paid_plan/retained_before_dense.rs
 src/loan_plan/funded_flat/before_dense.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs
@@ -944,6 +953,7 @@ src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs
+src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs
 src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof.rs

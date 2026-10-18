@@ -1,0 +1,826 @@
+{
+  "head": "f3db66f4240ca6b3cc986d6080d428438b606141",
+  "new_physical": 14,
+  "business_new": 13,
+  "children": [
+    {
+      "source": "src/cleanup_plan/renewal_profile/funded_receiving.rs",
+      "anchor": "src/cleanup_plan/renewal_profile/funded.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 30,
+          "module": "renewal_profile",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/renewal_profile.rs",
+          "line": 3,
+          "module": "funded",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/renewal_profile/funded.rs",
+          "line": 500,
+          "module": "receiving",
+          "attributes": [
+            "#[path = \"funded_receiving.rs\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs",
+      "anchor": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 19,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 3,
+          "module": "arena",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+          "line": 5,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+          "line": 392,
+          "module": "into_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
+      "anchor": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 19,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 3,
+          "module": "arena",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/arena.rs",
+          "line": 5,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
+          "line": 389,
+          "module": "into",
+          "attributes": [
+            "#[path = \"retained_into.rs\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs",
+      "anchor": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 19,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 5,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 708,
+          "module": "case_certified",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+          "line": 388,
+          "module": "lookup_tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+          "line": 362,
+          "module": "receiving",
+          "attributes": []
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs",
+      "anchor": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 19,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 5,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 708,
+          "module": "case_certified",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
+          "line": 392,
+          "module": "retained_lookup_before_receiving",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
+      "anchor": "src/cleanup_plan/replay/expression_facts.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 19,
+          "module": "expression_facts",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts.rs",
+          "line": 8,
+          "module": "receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+          "line": 5,
+          "module": "retained",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+          "line": 837,
+          "module": "ordinary_cross_phase_before_receiving",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_receiving.rs",
+      "anchor": "src/cleanup_plan/replay.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 149,
+          "module": "ordinary_receiving",
+          "attributes": []
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs",
+      "anchor": "src/cleanup_plan/replay.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 149,
+          "module": "ordinary_receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/ordinary_receiving.rs",
+          "line": 336,
+          "module": "caller_before",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_receiving/tests.rs",
+      "anchor": "src/cleanup_plan/replay.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 149,
+          "module": "ordinary_receiving",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/ordinary_receiving.rs",
+          "line": 391,
+          "module": "tests",
+          "attributes": [
+            "#[cfg(test)]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/skeleton_work/receiving.rs",
+      "anchor": "src/cleanup_plan/replay/skeleton_work.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 120,
+          "module": "cleanup_plan",
+          "attributes": [
+            "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/cleanup_plan.rs",
+          "line": 32,
+          "module": "replay",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay.rs",
+          "line": 121,
+          "module": "skeleton_work",
+          "attributes": []
+        },
+        {
+          "source_path": "src/cleanup_plan/replay/skeleton_work.rs",
+          "line": 24,
+          "module": "receiving",
+          "attributes": []
+        }
+      ]
+    },
+    {
+      "source": "src/hir/lexical_exit/owner_funded_receiving.rs",
+      "anchor": "src/hir/lexical_exit/owner_funded.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 178,
+          "module": "hir",
+          "attributes": [
+            "#[allow(\n    unused_imports,\n    clippy::needless_borrows_for_generic_args,\n    clippy::too_many_arguments,\n    clippy::unnecessary_map_or,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+          ]
+        },
+        {
+          "source_path": "src/hir.rs",
+          "line": 127,
+          "module": "lexical_exit",
+          "attributes": []
+        },
+        {
+          "source_path": "src/hir/lexical_exit.rs",
+          "line": 74,
+          "module": "owner_funded",
+          "attributes": []
+        },
+        {
+          "source_path": "src/hir/lexical_exit/owner_funded.rs",
+          "line": 377,
+          "module": "receiving",
+          "attributes": [
+            "#[path = \"owner_funded_receiving.rs\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/literal_format/funded_receiving.rs",
+      "anchor": "src/literal_format/funded.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 214,
+          "module": "literal_format",
+          "attributes": []
+        },
+        {
+          "source_path": "src/literal_format.rs",
+          "line": 216,
+          "module": "funded",
+          "attributes": []
+        },
+        {
+          "source_path": "src/literal_format/funded.rs",
+          "line": 98,
+          "module": "receiving",
+          "attributes": [
+            "#[path = \"funded_receiving.rs\"]"
+          ]
+        }
+      ]
+    },
+    {
+      "source": "src/string_ops/conditions/funded_receiving.rs",
+      "anchor": "src/string_ops/conditions/funded.rs",
+      "chain": [
+        {
+          "source_path": "src/lib.rs",
+          "line": 449,
+          "module": "string_ops",
+          "attributes": []
+        },
+        {
+          "source_path": "src/string_ops.rs",
+          "line": 84,
+          "module": "conditions",
+          "attributes": []
+        },
+        {
+          "source_path": "src/string_ops/conditions.rs",
+          "line": 15,
+          "module": "funded",
+          "attributes": []
+        },
+        {
+          "source_path": "src/string_ops/conditions/funded.rs",
+          "line": 184,
+          "module": "receiving",
+          "attributes": [
+            "#[path = \"funded_receiving.rs\"]"
+          ]
+        }
+      ]
+    }
+  ],
+  "old_ordered_rows": 1010,
+  "new_ordered_rows": 1020,
+  "insertions": [
+    {
+      "at": 52,
+      "path": "src/source_reflows_merge/main_e177_overlay_v2.rs"
+    },
+    {
+      "at": 263,
+      "path": "src/cleanup_plan/replay/ordinary_receiving.rs"
+    },
+    {
+      "at": 264,
+      "path": "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs"
+    },
+    {
+      "at": 265,
+      "path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs"
+    },
+    {
+      "at": 274,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs"
+    },
+    {
+      "at": 303,
+      "path": "src/cleanup_plan/replay/skeleton_work/receiving.rs"
+    },
+    {
+      "at": 435,
+      "path": "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs"
+    },
+    {
+      "at": 436,
+      "path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs"
+    },
+    {
+      "at": 947,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs"
+    },
+    {
+      "at": 955,
+      "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs"
+    }
+  ],
+  "grammar": {
+    "source_length": 148320,
+    "source_sha256": "13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d",
+    "temporary_grammar_length": 147767,
+    "temporary_grammar_sha256": "fad92641ee3e9961ac4f356a9a8d3ea6c8e04a8bcaf438522b2537bcd9b6deaf",
+    "exact_inverse": true,
+    "finite_edits": [
+      {
+        "at": 2460,
+        "before": "macro_rules! audit_source_join { ($($piece:expr),* $(,)?) => {{ let pieces: &[&str] = &[$(&$piece),*]; pieces.concat() }}; }",
+        "after": "",
+        "after_at": 2460
+      },
+      {
+        "at": 2825,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 2701
+      },
+      {
+        "at": 7559,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 7424
+      },
+      {
+        "at": 56774,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 56628
+      },
+      {
+        "at": 59946,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 59789
+      },
+      {
+        "at": 78678,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 78510
+      },
+      {
+        "at": 88739,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 88560
+      },
+      {
+        "at": 89197,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 89007
+      },
+      {
+        "at": 89233,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 89032
+      },
+      {
+        "at": 89273,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 89061
+      },
+      {
+        "at": 90782,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 90559
+      },
+      {
+        "at": 90801,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 90567
+      },
+      {
+        "at": 90820,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 90575
+      },
+      {
+        "at": 107651,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 107395
+      },
+      {
+        "at": 111950,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 111683
+      },
+      {
+        "at": 127652,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 127374
+      },
+      {
+        "at": 129577,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 129288
+      },
+      {
+        "at": 131251,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 130951
+      },
+      {
+        "at": 133484,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 133173
+      },
+      {
+        "at": 134028,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 133706
+      },
+      {
+        "at": 134421,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 134088
+      },
+      {
+        "at": 135122,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 134778
+      },
+      {
+        "at": 135895,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 135540
+      },
+      {
+        "at": 136672,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 136306
+      },
+      {
+        "at": 136887,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 136510
+      },
+      {
+        "at": 137327,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 136939
+      },
+      {
+        "at": 137579,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 137180
+      },
+      {
+        "at": 137611,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 137201
+      },
+      {
+        "at": 138010,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 137589
+      },
+      {
+        "at": 139152,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 138720
+      },
+      {
+        "at": 139733,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 139290
+      },
+      {
+        "at": 139761,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 139307
+      },
+      {
+        "at": 139793,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 139328
+      },
+      {
+        "at": 142706,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 142230
+      },
+      {
+        "at": 143461,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 142974
+      },
+      {
+        "at": 144846,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 144348
+      },
+      {
+        "at": 145704,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 145195
+      },
+      {
+        "at": 146852,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 146332
+      },
+      {
+        "at": 147750,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 147219
+      },
+      {
+        "at": 148090,
+        "before": "audit_source_join!",
+        "after": "concat!",
+        "after_at": 147548
+      }
+    ],
+    "actual_source_bytes_unchanged": true,
+    "parser_sha256": "87a903ce0f9927d3d90063fdd686b50b5302e2ac10cfea324918f7c030b28599",
+    "generator_sha256": "0c4b31857cdb8a4f645d61c6f0d2453c33c6adddb8c6f26d9c37b56620841590"
+  },
+  "files": [
+    {
+      "path": "tests/hir_module_boundaries.rs",
+      "length": 131602,
+      "sha256": "bead460b4bd510b260bd6759a235dcecffb9d1e183d463e7d54cd02e324740a1"
+    },
+    {
+      "path": "tests/workspace/semantic_graph/source_inventory.rs",
+      "length": 148320,
+      "sha256": "13ed80386aef084b919f357cf37de0fd3f2931772b2e68529013c50d2561e36d"
+    },
+    {
+      "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "length": 189358,
+      "sha256": "583a7311433f3fa96d3807dd09659230f528e82c89ed9c04e06a83e2a23a8471"
+    },
+    {
+      "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
+      "length": 54800,
+      "sha256": "0227d9e2079821b6ccbc6fdbc657cbef8c27e8a7a1979482c66d8a3ed442bc5f"
+    }
+  ],
+  "Cargo": false
+}

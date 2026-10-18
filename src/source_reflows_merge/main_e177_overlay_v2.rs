@@ -436,24 +436,40 @@ fn current_identity(
     require!(archive == physical, "complete current archive");
     Ok(())
 }
-fn current(row: &Value) -> Result<String, &'static str> {
-    let (length, sha, _) = pin(&row["current"])?;
+fn current_tree(
+    row: &Value,
+    read_source: &impl Fn(&Value) -> Result<String, &'static str>,
+    compiled: &impl Fn(&str) -> Option<&'static str>,
+    read_archive: &impl Fn(&Value) -> Result<String, &'static str>,
+) -> Result<String, &'static str> {
+    let raw = read_source(row)?;
     let source = row["source"].as_str().ok_or("source")?;
-    let raw = held_4a6eb(
-        &Path::new(env!("CARGO_MANIFEST_DIR")).join(source),
-        length,
-        sha,
-    )?;
-    current_identity(row, &raw, super::compiled(source), &image(&row["current"])?)?;
+    current_identity(row, &raw, compiled(source), &read_archive(&row["current"])?)?;
     for child in row
         .get("fragments")
         .and_then(Value::as_array)
         .into_iter()
         .flatten()
     {
-        current(child)?;
+        current_tree(child, read_source, compiled, read_archive)?;
     }
     Ok(raw)
+}
+fn current(row: &Value) -> Result<String, &'static str> {
+    current_tree(
+        row,
+        &|row| {
+            let (length, sha, _) = pin(&row["current"])?;
+            held_4a6eb(
+                &Path::new(env!("CARGO_MANIFEST_DIR"))
+                    .join(row["source"].as_str().ok_or("source")?),
+                length,
+                sha,
+            )
+        },
+        &super::compiled,
+        &image,
+    )
 }
 fn affected_row(source: &str) -> Option<Value> {
     if !REPLACEMENTS.contains(&source) && !ADDITIONS.contains(&source) {
@@ -774,6 +790,50 @@ mod tests {
             ("new", Some("new"), "old"),
         ] {
             assert!(current_identity(&row, physical, compiled, archive).is_err());
+        }
+        let mut root = record("src/root.rs", "root");
+        root["compiled"] = true.into();
+        let mut child = record("src/leaf.rs", "new");
+        child["compiled"] = true.into();
+        root["fragments"] = serde_json::json!([child]);
+        for broken in ["physical", "compiled", "archive"] {
+            let history = std::cell::Cell::new(false);
+            let source = |r: &Value| {
+                Ok(if r["source"] == "src/root.rs" {
+                    "root".to_owned()
+                } else if broken == "physical" {
+                    "old".to_owned()
+                } else {
+                    "new".to_owned()
+                })
+            };
+            let compiled = |path: &str| {
+                Some(if path == "src/root.rs" {
+                    "root"
+                } else if broken == "compiled" {
+                    "old"
+                } else {
+                    "new"
+                })
+            };
+            let archive = |p: &Value| {
+                Ok(if p["sha256"] == digest(b"root") {
+                    "root".to_owned()
+                } else if broken == "archive" {
+                    "old".to_owned()
+                } else {
+                    "new".to_owned()
+                })
+            };
+            let result = current_tree(&root, &source, &compiled, &archive).map(|_| {
+                history.set(true);
+                "historical"
+            });
+            assert!(result.is_err());
+            assert!(
+                !history.get(),
+                "a changed leaf must refuse before historical selection"
+            );
         }
     }
     #[test]

@@ -1,0 +1,10 @@
+{
+  "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
+  "before_archive": "docs/evidence/finite-source-overlay-v2-20261018/current-tree-whole-before.rs.txt",
+  "before_length": 29754,
+  "before_sha256": "382fafd5ff109d40a2bceeffcfe77666521fde5114cf373dfa37a8bb42520a99",
+  "after_length": 31904,
+  "after_sha256": "646993e7ef10920a26b81269044f18c03951b9ae422146b58efb1ac8ff361e96",
+  "inverse": "replace complete authenticated after image with complete authenticated before image",
+  "scope": "shared actual current_tree + existing owning refusal selector; no source authority expansion"
+}

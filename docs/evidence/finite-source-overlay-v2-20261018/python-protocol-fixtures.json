@@ -1,6 +1,6 @@
 {
   "status": "PASS_PYTHON_PROTOCOL_FIXTURES_ONLY",
-  "checks": 34,
+  "checks": 36,
   "names": [
     "whole_predecessor_and_unknown_metadata_inverse",
     "page_schema",
@@ -29,6 +29,8 @@
     "wrong_current_before_history",
     "wrong_current_archive_before_history",
     "unlisted_historical_digest",
+    "changed_audit_leaf_physical_before_parent_history",
+    "changed_audit_leaf_archive_before_parent_history",
     "directory_refusal",
     "symlink_refusal",
     "fifo_refusal",

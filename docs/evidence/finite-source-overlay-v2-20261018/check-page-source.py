@@ -59,6 +59,18 @@ with tempfile.TemporaryDirectory(prefix='semaprax-page-source-',dir='/Volumes/Se
  historical.clear();path.write_bytes(b'BAD');check('wrong_current_before_history',lambda:refuses(lambda:overlay.stage_source('src/item.rs',before['rows'][0]['current'])));assert not historical
  path.write_bytes(b'new');historical.clear();(root/'e'/H(b'new')).write_bytes(b'BAD');check('wrong_current_archive_before_history',lambda:refuses(lambda:overlay.stage_source('src/item.rs',before['rows'][0]['current'])));assert not historical
  (root/'e'/H(b'new')).write_bytes(b'new');check('unlisted_historical_digest',lambda:refuses(lambda:overlay.stage_source('src/item.rs',dict(length=3,sha256='0'*64))))
+ # The actual current-tree reader must refuse a changed audited child before
+ # selecting even the unchanged parent's historical view.
+ child=record('src/leaf.rs',b'leaf');child['compiled']=True
+ root_row=copy.deepcopy(row);root_row['fragments']=[child]
+ (root/'src/leaf.rs').write_bytes(b'leaf');(root/'e'/H(b'leaf')).write_bytes(b'leaf')
+ def root_then_history():
+  overlay.current(root_row);return read(before['rows'][0]['current'])
+ historical.clear();assert root_then_history()==b'old' and historical
+ historical.clear();(root/'src/leaf.rs').write_bytes(b'BAD!')
+ check('changed_audit_leaf_physical_before_parent_history',lambda:refuses(root_then_history));assert not historical
+ (root/'src/leaf.rs').write_bytes(b'leaf');historical.clear();(root/'e'/H(b'leaf')).write_bytes(b'BAD!')
+ check('changed_audit_leaf_archive_before_parent_history',lambda:refuses(root_then_history));assert not historical
  ns['REPLACEMENTS']=()
  check('directory_refusal',lambda:refuses(lambda:bounded(root,0,H(b''))))
  if hasattr(os,'symlink'):
