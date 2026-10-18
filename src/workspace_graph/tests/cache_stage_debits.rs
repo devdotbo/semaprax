@@ -194,7 +194,7 @@ fn original_mixed_byte_traversal_checked_cold_and_warm_preserve_ordinary_graph_w
 
 #[test]
 fn no_possible_wrapper_routes_are_paid_symmetric_and_keep_complete_results_and_drop() {
-    use crate::test_allocation_observer::measure;
+    use crate::test_allocation_observer::{measure, measure_with_capacity};
     use crate::workspace_graph::constructor_failure::typed::{
         may_borrow_wrapper, with_original_alias_dispatch,
     };
@@ -243,7 +243,11 @@ fn no_possible_wrapper_routes_are_paid_symmetric_and_keep_complete_results_and_d
         let expected_image = image(Arc::clone(&expected));
         let observe = |saved: bool| {
             let run = || {
-                measure(|| {
+                // The complete Project revisions and three Images exceed the
+                // default observer's 16,384 live-pointer table. Use the existing
+                // bounded whole-producer registry for both arms; every Layout,
+                // replacement overlap and final Drop remains in the observation.
+                measure_with_capacity(1 << 16, || {
                     take_completed();
                     let direct =
                         with_authenticated_project(&fixture.0.join("semaprax.toml"), |snapshot| {
