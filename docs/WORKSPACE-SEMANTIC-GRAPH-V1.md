@@ -296,6 +296,19 @@ all ten fields from authenticated AST occurrences, rejects missing, extra and
 duplicate occurrences, then checks retained HIR and capability projections.
 Every allocation still consumes the live ledger; the 64 MiB cap is unchanged.
 
+The authored ordinary-call absence proof applies only to the final exact
+profiles' already carrier-free boxed/argument-vector positions outside closures.
+It authenticates unique local or imported monomorphic function headers and
+excludes every spelling bound anywhere in the owner, native imports, compiler
+operations and generic owners/targets. Incomplete bounded name/traversal scratch
+keeps the historical carrier charge. Only six auxiliary carrier footprints are
+omitted per qualified root per retained HIR copy; all four cleanup-storage
+footprints, the complete expression, children, identities, strings, plans and
+bookkeeping remain charged. A separate typed proof invoice is added once to
+each participating module forecast, including zero-qualified and failed proofs;
+it receives no AST/HIR expansion multiplier or semantic-cache copy factor.
+Source and regression definitions await executable qualification (#898).
+
 [Prelude forecast accounting v1](WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md)
 corrects the missing unconditional Option/Result retained-declaration term in
 all private forecast modes. For that term only it supersedes the historical

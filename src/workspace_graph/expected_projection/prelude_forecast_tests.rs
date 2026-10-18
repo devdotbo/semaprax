@@ -56,15 +56,18 @@ fn complete_saved_forecast_differs_only_by_base_prelude_retention() {
         let authored = crate::workspace_graph::index_authored(&programs).unwrap();
         let maximum = dependency_identity_max(&programs[0], &authored, &programs).unwrap();
         let delta = retained_upper(&BASE, maximum).unwrap();
+        let proof = super::super::call_carriers::count(&programs[0], &authored, true);
+        assert_eq!(proof.roots, 0);
         for mode in 0..=7 {
             for retention in [cached_exact::Retention::Parsed, cached_exact::Retention::Semantic] {
                 let current = super::super::held_projection::synthetic_builder_bytes_scoped_with_retention_with_registry(
                     &programs[0], &authored, &programs, Some(maximum), true, (mode, retention), None).unwrap();
                 let saved = super::super::prelude_forecast_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
                     &programs[0], &authored, &programs, Some(maximum), true, (mode, retention), None).unwrap();
-                assert_eq!(current.retained_hir, saved.retained_hir + delta);
-                assert_eq!(current.retained_clone_and_hir, saved.retained_clone_and_hir + delta);
-                assert_eq!(current.raw_clone_and_hir, saved.raw_clone_and_hir + delta);
+                let invoice = if mode >= 5 { proof.bytes } else { 0 };
+                assert_eq!(current.retained_hir, saved.retained_hir + delta + invoice);
+                assert_eq!(current.retained_clone_and_hir, saved.retained_clone_and_hir + delta + invoice);
+                assert_eq!(current.raw_clone_and_hir, saved.raw_clone_and_hir + delta + invoice);
                 assert_eq!(current.runtime, saved.runtime);
                 assert_eq!(current.synthetic_ast, saved.synthetic_ast);
                 assert_eq!(current.transient_import_clone, saved.transient_import_clone);
@@ -217,7 +220,7 @@ fn complete_receiving_sources_reconstruct_pinned_originals() {
             digest
         );
         assert_eq!(record["sha256"].as_str().unwrap(), digest);
-        let mut restored = current.to_owned();
+        let mut restored = super::super::call_carriers::inverse::pre898(current);
         for edit in record["edits"].as_array().unwrap().iter().rev() {
             let after = edit["after"].as_str().unwrap();
             assert_eq!(restored.matches(after).count(), 1);
@@ -226,4 +229,33 @@ fn complete_receiving_sources_reconstruct_pinned_originals() {
         assert_eq!(restored, original);
     }
     assert_eq!(include_str!("prelude_forecast_original.rs"), originals[2]);
+}
+
+#[test]
+fn historical_pre898_complete_saved_forecast_differs_only_by_base_prelude_retention() {
+    for source in [
+        "module prelude.forecast; @id(\"entry\") fn main() -> i64 { 0 }",
+        // A parser-only shadow control: resolution admission remains separate.
+        "module prelude.forecast; @id(\"shadow.option\") record Option { } @id(\"entry\") fn main() -> i64 { 0 }",
+        "module prelude.forecast; @id(\"shadow.result\") record Result { } @id(\"entry\") fn main() -> i64 { 0 }",
+    ] {
+        let programs = [crate::parse(source, "forecast.spx").unwrap()];
+        let authored = crate::workspace_graph::index_authored(&programs).unwrap();
+        let maximum = dependency_identity_max(&programs[0], &authored, &programs).unwrap();
+        let delta = retained_upper(&BASE, maximum).unwrap();
+        for mode in 0..=7 {
+            for retention in [cached_exact::Retention::Parsed, cached_exact::Retention::Semantic] {
+                let current = super::super::call_carriers_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
+                    &programs[0], &authored, &programs, Some(maximum), true, (mode, retention), None).unwrap();
+                let saved = super::super::prelude_forecast_original::synthetic_builder_bytes_scoped_with_retention_with_registry(
+                    &programs[0], &authored, &programs, Some(maximum), true, (mode, retention), None).unwrap();
+                assert_eq!(current.retained_hir, saved.retained_hir + delta);
+                assert_eq!(current.retained_clone_and_hir, saved.retained_clone_and_hir + delta);
+                assert_eq!(current.raw_clone_and_hir, saved.raw_clone_and_hir + delta);
+                assert_eq!(current.runtime, saved.runtime);
+                assert_eq!(current.synthetic_ast, saved.synthetic_ast);
+                assert_eq!(current.transient_import_clone, saved.transient_import_clone);
+            }
+        }
+    }
 }
