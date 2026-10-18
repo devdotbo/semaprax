@@ -1376,3 +1376,5 @@ mod lexical_child_scratch;
 
 #[cfg(test)]
 mod matched_receiving_layers;
+
+pub(in crate::cleanup_plan::replay::factored) mod inline_singleton;

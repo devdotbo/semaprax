@@ -279,14 +279,14 @@ fn compare_with_index_storage<'hir>(
 
     budget.reserve_bytes(
         function,
-        canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
+        canonical_shared::inline_singleton::Canonicalizer::CONSTRUCTOR_CONTROLS,
         "canonical ordered dictionary owner receiving",
     )?;
-    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
+    let mut canonical = canonical_shared::inline_singleton::Canonicalizer::new(&automaton, sink);
     if budget.pays_allocations() {
         budget.reserve_bytes(
             function,
-            canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
+            canonical_shared::inline_singleton::Canonicalizer::COLD_NODE_CONTROLS,
             "factored cold terminal node predicate",
         )?;
     }
