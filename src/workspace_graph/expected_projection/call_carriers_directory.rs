@@ -1,8 +1,10 @@
 //! Immutable header DATA, not checked-call authority. Every query still checks
 //! the exact selected import's provider/ID/header and full spelling equality.
-use super::*;
+use super::{AuthoredDeclaration, Names, Proof, call_identity};
+use crate::ast::{Expr, ExprKind, ModuleUseKind, Program, Statement};
 use crate::ast::{Function, ImportDeclaration, InterfaceDeclaration, ModuleUse};
 use std::cmp::Ordering;
+use std::collections::BTreeMap;
 use std::mem::size_of;
 type Index<'a> = BTreeMap<&'a str, AuthoredDeclaration<'a>>;
 
