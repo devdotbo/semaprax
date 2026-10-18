@@ -1,0 +1,6 @@
+{
+  "source_sha256": "cf015316d4d632f2ac8525a7221336fd9263fbe54bbe1714cf38e078cde1c9fb",
+  "all_14_actual_layout_definitions_unchanged": true,
+  "original_disposal_layout_body_retained_verbatim": true,
+  "scope": "Type geometry and key-payload census only; no full compiler or owning allocation test execution"
+}

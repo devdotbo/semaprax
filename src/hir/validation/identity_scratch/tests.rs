@@ -98,7 +98,10 @@ fn borrowed_identity_scratch_preserves_saved_text_order_and_removes_owning_key_s
         }
     }
     assert_eq!(actual.3.len(), 64);
-    assert_eq!(size_of::<DeclarationId>(), 3 * size_of::<usize>());
+    // Current closed tags use two words; the complete former identity oracle
+    // retains the independent three-word String layout check.
+    assert_eq!(size_of::<DeclarationId>(), 2 * size_of::<usize>());
+    assert_eq!(size_of::<std::string::String>(), 3 * size_of::<usize>());
     assert_eq!(size_of::<&DeclarationId>(), size_of::<usize>());
     // Literal logical key census is distinct from private BTree node backing.
     // The current resolver appends the two exact compiler Option/Result types.
@@ -119,6 +122,12 @@ fn borrowed_identity_scratch_preserves_saved_text_order_and_removes_owning_key_s
     let keys = (64 + 2) + 1 + 64 + 64;
     assert_eq!(
         keys * (size_of::<DeclarationId>() - size_of::<&DeclarationId>()),
+        195 * size_of::<usize>()
+    );
+    // Preserve the historical logical census separately from the current key
+    // width. Neither formula describes private BTree node backing or RSS.
+    assert_eq!(
+        keys * (size_of::<std::string::String>() - size_of::<&DeclarationId>()),
         390 * size_of::<usize>()
     );
     drop((actual, expected));

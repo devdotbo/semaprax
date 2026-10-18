@@ -1,0 +1,11 @@
+{
+  "status": "PASS_ACTUAL_TYPE_LAYOUT_AND_COMPLETE_LITERAL_KEY_CENSUS",
+  "results": {
+    "compile-current": 150720,
+    "run-current": 128,
+    "compile-1.88": 140304,
+    "run-1.88": 32,
+    "stale_24_byte_current_pin_rejected": "E0080"
+  },
+  "owning_allocation_and_lookup_test_not_run_locally": true
+}

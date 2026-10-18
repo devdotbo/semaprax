@@ -249,7 +249,9 @@ makes no new execution claim.
 | --- | --- | --- |
 | `examples/catalog-scoped-record-successor` | Typed Catalog records, stable owned sorting, and scoped field reads | [Guide](catalog-scoped-record-successor/README.md); application qualification pending |
 | `examples/collection-record-order` | Stable ordering and consuming traversal of owned record rows | [Guide](collection-record-order/README.md) |
+| `examples/inventory-field-update` | Scalar `count` and `active` updates in owned record vectors | [Guide](inventory-field-update/README.md); execution qualification pending |
 | `examples/nested-order-json-project` | Finite nested owned-data request decoder | [Guide](nested-order-json-project/README.md); current-head execution pending |
+| `examples/nested-scheduler-json-project` | Bounded nested scheduler request decoder and owned job rows | [Guide](nested-scheduler-json-project/README.md); source-only preparation, execution pending |
 | `examples/shiftsim-typed-record-successor` | Named scheduler records and borrowed vector reads | [Guide](shiftsim-typed-record-successor/README.md); source successor |
 | `examples/stream-nested-order-json-project` | Streamed finite nested requests | [Guide](stream-nested-order-json-project/README.md); current-head execution pending |
 | `examples/stream-utf8-owned-json-project` | Streamed UTF-8 owned request decoding and encoding | [Guide](stream-utf8-owned-json-project/README.md) |

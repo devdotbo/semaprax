@@ -1,0 +1,12 @@
+{
+  "source": "src/hir/ids/declaration_tag/before.rs",
+  "source_length": 8897,
+  "source_sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355",
+  "contract_start_byte": 1200,
+  "contract_length": 584,
+  "contract_sha256": "bac49922d160caeaab76ac40709d4399e9bdde61502fb2e10738ca1cfb2954ae",
+  "contract": "// The former `String` footprint, which frame constants, layout pins and\n// size-of forecasts are written against, including through `Option`. These\n// check the actual layout rather than assuming it.\n#[cfg(target_pointer_width = \"64\")]\nconst _: () = {\n    assert!(std::mem::size_of::<DeclarationId>() == 24);\n    assert!(std::mem::size_of::<DeclarationId>() == std::mem::size_of::<String>());\n    assert!(std::mem::align_of::<DeclarationId>() == std::mem::align_of::<String>());\n    assert!(std::mem::size_of::<Option<DeclarationId>>() == std::mem::size_of::<Option<String>>());\n};\n\n",
+  "meaning": "The unchanged complete old identity producer statically equates its 24-byte footprint with String. The separate historical 390-word census uses that existing equality; it does not rebind current DeclarationId to an old or surrogate receiver.",
+  "current_layout_evidence": "definition-fingerprints.json and layout-census-results.json",
+  "full_owning_allocation_and_lookup_gate_still_required": true
+}

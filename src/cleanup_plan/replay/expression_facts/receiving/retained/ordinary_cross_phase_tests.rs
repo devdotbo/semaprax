@@ -121,7 +121,7 @@ fn schema_regions_entry_and_edge_identity_keep_first_six_field_diagnostics() {
             .find(|f| f.name == "main")
             .unwrap();
         match mode {
-            0 => function.cleanup_plan.schema = "foreign.cleanup.schema".into(),
+            0 => function.cleanup_plan.schema = "foreign.cleanup.schema",
             1 => function.cleanup_plan.regions[0].id.0 = u32::MAX,
             2 => function.cleanup_plan.entry.0 = u32::MAX,
             _ => function.cleanup_plan.edges[0].id.0 = u32::MAX,

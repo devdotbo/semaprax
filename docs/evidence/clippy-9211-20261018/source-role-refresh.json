@@ -1,0 +1,60 @@
+{
+  "status": "SOURCE_ONLY_ORIGINAL_FULL_VERIFIER_AND_SIX_HOSTILE_CONTROLS_PASS",
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2334554,
+        "sha256": "9a2e1cc15d2c834c747e8f5083cfe8462e0a0a243998bca16978c6edb88b40ae",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/9a2e1cc15d2c834c747e8f5083cfe8462e0a0a243998bca16978c6edb88b40ae.txt"
+      },
+      "current_length": 2334554,
+      "current_sha256": "ce5aa504f330572690fb03b9666b4af319e0015a953c83085a1251118d375e99",
+      "all_original_classes_and_roles_unchanged": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2625543,
+        "sha256": "d39903f3af0f91fbcc2d0da85a805d7aa5041945d1302f393c79ec8b1fba63a7",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/d39903f3af0f91fbcc2d0da85a805d7aa5041945d1302f393c79ec8b1fba63a7.txt"
+      },
+      "current_length": 2625543,
+      "current_sha256": "a0d564fca6abdbd2ae70813f5052f09c9092a66ce0360d834ff64472f96659f1",
+      "all_original_classes_and_roles_unchanged": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 49971,
+        "sha256": "1dedefb30106366ea1ec0ca9a00e955b18227f8c1c719180080999b6cf7b022c",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/1dedefb30106366ea1ec0ca9a00e955b18227f8c1c719180080999b6cf7b022c.txt"
+      },
+      "current_length": 49971,
+      "current_sha256": "6d30988a835dabe043468a35dafe4b722c55b802d2a4e13fa17242c66f1a881b",
+      "all_original_owner_fields_and_order_retained_except_current_identity": true
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 242132,
+        "sha256": "e156700640de289396093ef8beedb7bf55dd306258d46a683e1230bdedc0a783",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/e156700640de289396093ef8beedb7bf55dd306258d46a683e1230bdedc0a783.txt"
+      },
+      "current_length": 242132,
+      "current_sha256": "69cfd5f9908485558cfd7c15f1443dc1f059e3359162620140c2a62d9c372585"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3389,
+        "sha256": "958f5f97f9fa95f9699adaff3543fd9abf8bf97dab3a8141cbd8bde3436cde4f",
+        "archive": "docs/evidence/clippy-9211-20261018/whole/958f5f97f9fa95f9699adaff3543fd9abf8bf97dab3a8141cbd8bde3436cde4f.txt"
+      },
+      "current_length": 3406,
+      "current_sha256": "59d3a3002484d80ac696ac914c734df5de708be18698d39c248ded3483a93c82"
+    }
+  ],
+  "all_268_owner_rows_retained": true,
+  "original_authority_source_proof_unchanged": true
+}

@@ -1,0 +1,221 @@
+{
+  "status": "MERGE_SOURCE_CHECKPOINT_COUPLING_REFRESH_PENDING",
+  "ours": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+  "upstream": "8925503d5e598cfbb24180f17899c00000637187",
+  "resolved_using_complete_519_328_generation": [
+    "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+    "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+    "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+    "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+    "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+    "docs/evidence/clippy-11a0-integration/inputs.json",
+    "docs/evidence/fmt-local-441-20261018/extension.json",
+    "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+    "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+    "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+    "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+    "src/cleanup_plan/replay/expression_facts/receiving.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "whole_sources": [
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "length": 2432321,
+      "sha256": "ee9d5a96a7acbaab41caac1f302d84f9c62203de1b5bfaea407f4ef8b19d9204",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "length": 61122,
+      "sha256": "f511d80698783b5fccb51ea08aada97ed349f18a4505cc97a8b0605649817f46",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "length": 2723085,
+      "sha256": "8be1910c2bed1d3be7e7c66bd6e5e9bae4d5f71c5bff4c3fb4e4da46c6bae273",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "length": 2253,
+      "sha256": "6c2d15932a86528a7678fbb994687bef681dc66a0bd35dcf11b7436d6b3606d2",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__accepted-final6-source-binding-20261017__check-source.py.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "length": 5322,
+      "sha256": "58b7beb8b5bf7d230a386b55c506222cee1deb9773290f0f7fcee1edf015ddd2",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__accepted-strict-guard-generation-20261017__check-source.py.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "length": 71435,
+      "sha256": "9e1fedcfc034122f0cea77ed67129461947d37125f0013c0cdaf5e25a86801c6",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__clippy-11a0-integration__inputs.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "length": 261817,
+      "sha256": "9d0c8d8fe8dc609323cdb980a8a81d780aed4bd4228ce0a3ae56d6471cc0d311",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__fmt-local-441-20261018__extension.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 10640,
+      "sha256": "41c8adefaac6c38ab3707a4eec9cd7d66d51c39dbce9210f16bb3ba4e8142465",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__main-e177-final-source-binding-20261017__guard_payload.py.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "length": 2766,
+      "sha256": "730fea3314bb861571dcec85e76d2f966bf3ce43f2999515fa3fad38214ea383",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__main043-independent-custody-20261016__verify-or-refresh.py.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "length": 2803,
+      "sha256": "bde2fbad0a2f4985b480dbf9c68411385bed98639369070a68929ee539b5a1b7",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "length": 247965,
+      "sha256": "36ec7ef3d6fe3a0b739547279884aaba15cd8214733326d62775a64d1a3f9a28",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "length": 27986,
+      "sha256": "d44da2c3d647fa0e9dadeb06898b54f12292a582f3db4020036af2bb2b2b0a25",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/src__cleanup_plan__replay__expression_facts__receiving.rs.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 112756,
+      "sha256": "11eeea8c67f6dce0421524b0474e0239b6792d6a4925fcad857059e3842a9398",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/src__source_reflows_merge__main_e177_final_inputs.rs.txt"
+    },
+    {
+      "generation": "78b75b45d48f252b01f999b5323237c1ab1f5fbc",
+      "source": "docs/evidence/merge-2e92-browser-20261018/guard-config.json",
+      "length": 111000,
+      "sha256": "7cec14ef2bdf62e470e3e89d5834934b2f49b223515479562e961529f9a9f7e0",
+      "archive": "docs/evidence/merge892-selected519-20261018/ours/docs__evidence__merge-2e92-browser-20261018__guard-config.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "length": 2334554,
+      "sha256": "5552a354ee9e2077f3fbc9942649c588d6e00285061640512665c61f45804381",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__a3-e47-final-custody-20261016__hir.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "length": 49971,
+      "sha256": "6d30988a835dabe043468a35dafe4b722c55b802d2a4e13fa17242c66f1a881b",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__a3-e47-final-custody-20261016__new-owners.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "length": 2625543,
+      "sha256": "b392fefb43836a88752068fc86de52a3cadb33823025e1f48df3c25a09b18884",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__a3-e47-final-custody-20261016__projection.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/accepted-final6-source-binding-20261017/check-source.py",
+      "length": 2253,
+      "sha256": "2fead2d17d414955c7ec0163b9f7bab5f72ed1150f510f8ed2d195ae98c24a63",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__accepted-final6-source-binding-20261017__check-source.py.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/accepted-strict-guard-generation-20261017/check-source.py",
+      "length": 5322,
+      "sha256": "9edd763b17f5292640bbed8632706f5075d81369b94434d47398237ba0a9981c",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__accepted-strict-guard-generation-20261017__check-source.py.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/clippy-11a0-integration/inputs.json",
+      "length": 86292,
+      "sha256": "bfbc7fda10c3e4efb3fad374524ff5493b91e43ac9f73df55bd14831c21e8cf7",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__clippy-11a0-integration__inputs.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/fmt-local-441-20261018/extension.json",
+      "length": 229256,
+      "sha256": "6cde749331e6be1f3614585d3f3cf181f6cbed1d37927d8959865510aaf829f0",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__fmt-local-441-20261018__extension.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 10633,
+      "sha256": "8b6cce6e6356e839e6c7afc2588af378e6c81a188e6ea8377912f45c742bff64",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__main-e177-final-source-binding-20261017__guard_payload.py.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/main043-independent-custody-20261016/verify-or-refresh.py",
+      "length": 2766,
+      "sha256": "9ef2dc9ea00ad9521d7f6f463d55474efe34fea3217b02e4ae2b841fe7d59e82",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__main043-independent-custody-20261016__verify-or-refresh.py.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "length": 3415,
+      "sha256": "8c06eb16314951e92f657dc35990838d2f001ae7b9ee9c4d49971589a460abb2",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__source-boundary-domains-20261016__boundary-source-proof.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "length": 242132,
+      "sha256": "2d5032201b865b0cf3d804894e6add1ae8b891efec86ccbc115efab666f938ca",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__source-boundary-domains-20261016__current-domains.json.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "src/cleanup_plan/replay/expression_facts/receiving.rs",
+      "length": 28040,
+      "sha256": "fcede38f302d56c3cf61344350cc1b4b8d6d2f03c0e123aefbc6565841bdd421",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/src__cleanup_plan__replay__expression_facts__receiving.rs.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 99927,
+      "sha256": "89867b786f52abbcd3bc51014c3f74e8129c2b4c6811574c7cce9546d471f50a",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/src__source_reflows_merge__main_e177_final_inputs.rs.txt"
+    },
+    {
+      "generation": "8925503d5e598cfbb24180f17899c00000637187",
+      "source": "docs/evidence/clippy-9211-20261018/guard-config.json",
+      "length": 117696,
+      "sha256": "7dfca4151216ea6c6cf2703c2cccbc951e81b8cb086ea8f182f988ffe3f0747d",
+      "archive": "docs/evidence/merge892-selected519-20261018/upstream/docs__evidence__clippy-9211-20261018__guard-config.json.txt"
+    }
+  ],
+  "incoming_class_roles_preserved": true,
+  "source_changes": "Incoming fixture lint/current16-historical24 controls retained; complete current funded receiving preflight retained",
+  "Cargo": false
+}

@@ -1,0 +1,9 @@
+error[E0080]: evaluation panicked: assertion failed: std::mem::size_of::<DeclarationId>() == 3 * std::mem::size_of::<usize>()
+   --> /Volumes/Semaprax/tmp/ci-38383508340/identity-scratch-layout-9211/layout-census.rs:350:15
+    |
+350 | const _: () = assert!(std::mem::size_of::<DeclarationId>() == 3 * std::mem::size_of::<usize>());
+    |               ^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^^ evaluation of `_` failed here
+
+error: aborting due to 1 previous error
+
+For more information about this error, try `rustc --explain E0080`.
