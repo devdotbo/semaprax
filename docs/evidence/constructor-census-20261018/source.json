@@ -1,0 +1,8 @@
+{
+  "path": "src/hir/ids/declaration_backing_tests.rs",
+  "sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c",
+  "length": 24729,
+  "probe_start": 17769,
+  "probe_end": 22484,
+  "complete_original_scan_and_test": true
+}

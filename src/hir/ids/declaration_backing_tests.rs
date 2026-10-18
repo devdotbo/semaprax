@@ -512,6 +512,9 @@ fn qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier() {
         ),
     ] {
         assert_eq!(std::fs::read_to_string(root.join(path)).unwrap(), compiled);
+        let compiled = crate::source_reflows_merge::main_e177_final_inputs::value(
+            &format!("src/{path}"), expected, compiled,
+        );
         assert_eq!(
             format!(
                 "{:x}",

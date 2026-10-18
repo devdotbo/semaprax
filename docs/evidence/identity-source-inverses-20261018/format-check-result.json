@@ -1,0 +1,9 @@
+{
+  "status": "PASS",
+  "whole_three_changed_Rust_files": [
+    "src/hir/ids/fixed_operation_tests.rs",
+    "src/hir/ids/declaration_tag.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs"
+  ],
+  "peak_kib": 31792
+}

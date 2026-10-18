@@ -1,0 +1,14 @@
+{
+  "status": "PASS_SOURCE_ONLY",
+  "exact_original_after_pin": {
+    "length": 24729,
+    "sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c"
+  },
+  "exact_original_before_pin": {
+    "length": 24588,
+    "sha256": "a729acfdc5f1c7a65560468a9e1af2426d94a6791638dbb11cbd995c8ebdfec2",
+    "archive": "declaration_backing_tests.whole-before.rs.txt"
+  },
+  "all_original_unique_inverse_edits_applied": 1,
+  "whole_pre_census_source_view_authenticates_at_original_identity_inverse_boundary": true
+}

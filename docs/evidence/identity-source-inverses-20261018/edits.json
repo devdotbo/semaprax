@@ -1,0 +1,28 @@
+[
+  {
+    "source": "src/hir/ids/fixed_operation_tests.rs",
+    "before": {
+      "length": 34819,
+      "sha256": "cdb8a89006175943b2892457b75bff85151dce6248019fcc62406c1121381ef9",
+      "archive": "docs/evidence/identity-source-inverses-20261018/whole/cdb8a89006175943b2892457b75bff85151dce6248019fcc62406c1121381ef9.txt"
+    },
+    "current": {
+      "length": 38126,
+      "sha256": "e32587707f61abdcaa6795035bf2d266005159aadc93998d0bc8537639ea9347"
+    },
+    "whole_before_retained": true
+  },
+  {
+    "source": "src/hir/ids/declaration_tag.rs",
+    "before": {
+      "length": 27629,
+      "sha256": "a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294",
+      "archive": "docs/evidence/identity-source-inverses-20261018/whole/a544be94402ceb7d36ce51749cab988d184b2e0318e8c8598d7f767dcc755294.txt"
+    },
+    "current": {
+      "length": 29433,
+      "sha256": "45c2827ad4c1476b531c1de56c6aa128cea01a71bc848609747d2c971b431165"
+    },
+    "whole_before_retained": true
+  }
+]

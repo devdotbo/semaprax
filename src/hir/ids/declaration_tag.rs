@@ -526,6 +526,55 @@ fn complete_old_owned_overlap_and_new_backing_have_the_same_physical_frontiers()
     }
 }
 
+// A later exact raw-site census retains this whole immediate source stage.
+// Authenticate the complete current reader and complete archive before the old
+// identity assertions acquire their historical view. No source bytes are edited.
+fn backing_test_source_before_census(current: &str) -> &'static str {
+    use sha2::{Digest, Sha256};
+    let previous = include_str!("../../../docs/evidence/constructor-census-20261018/before.rs.txt");
+    let current = crate::source_reflows_merge::main_e177_final_inputs::value(
+        "src/hir/ids/declaration_backing_tests.rs",
+        "24214f246c6d7eaaeb41d618e59bdd4959f87294b0054508280a07a003e3089f",
+        current,
+    );
+    assert_eq!(current.len(), 25016);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ),
+        "24214f246c6d7eaaeb41d618e59bdd4959f87294b0054508280a07a003e3089f"
+    );
+    assert_eq!(previous.len(), 24729);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(previous.as_bytes()))
+        ),
+        "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c"
+    );
+    previous
+}
+
+#[test]
+fn complete_backing_source_stage_refuses_drift_before_historical_assertions() {
+    let current = include_str!("declaration_backing_tests.rs");
+    assert_eq!(
+        backing_test_source_before_census(current),
+        include_str!("../../../docs/evidence/constructor-census-20261018/before.rs.txt")
+    );
+    for foreign in [
+        String::new(),
+        format!("{current} "),
+        format!("{current}{current}"),
+        current[..current.len() - 1].to_owned(),
+        format!("X{}", &current[1..]),
+        include_str!("../../../docs/evidence/constructor-census-20261018/before.rs.txt").to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| backing_test_source_before_census(&foreign)).is_err());
+    }
+}
+
 #[test]
 fn complete_original_identity_prefix_codec_and_old_width_control_are_exact() {
     let whole = include_str!(
@@ -552,11 +601,8 @@ fn complete_original_identity_prefix_codec_and_old_width_control_are_exact() {
             .unwrap();
     assert_eq!(codec.trim(), current_codec[start..end].trim());
     let old_tests=include_str!("../../../docs/evidence/declaration-tag-identity-20261018/declaration_backing_tests.whole-before.rs.txt");
-    let current_tests = crate::source_reflows_merge::main_e177_final_inputs::value(
-        "src/hir/ids/declaration_backing_tests.rs",
-        "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c",
-        include_str!("declaration_backing_tests.rs"),
-    );
+    let current_tests =
+        backing_test_source_before_census(include_str!("declaration_backing_tests.rs"));
     assert_eq!(current_tests.replace("    // Preserve the complete original width/backing control on its real old producer.\n    use super::declaration_tag::before::DeclarationId;\n", ""),old_tests);
 }
 
@@ -587,7 +633,7 @@ fn closed_variant_corpus_covers_every_named_compiler_tag_without_static_text_adm
     assert!(!source.contains("CompilerStatic(&'static str)"));
 }
 
-fn old_source(source: &str, current: &str) -> Result<String, &'static str> {
+pub(super) fn old_source(source: &str, current: &str) -> Result<String, &'static str> {
     use sha2::{Digest, Sha256};
     let proof: serde_json::Value = serde_json::from_str(include_str!(
         "../../../docs/evidence/declaration-tag-identity-20261018/sources.json"
@@ -631,7 +677,7 @@ fn old_source(source: &str, current: &str) -> Result<String, &'static str> {
 fn complete_source_inverses_keep_all_raw_children_and_refuse_foreign_stages() {
     let sources=[
         ("src/hir/ids.rs",include_str!("../ids.rs")),
-        ("src/hir/ids/declaration_backing_tests.rs",include_str!("declaration_backing_tests.rs")),
+        ("src/hir/ids/declaration_backing_tests.rs",backing_test_source_before_census(include_str!("declaration_backing_tests.rs"))),
         ("tests/hir_module_boundaries.rs",include_str!("../../../tests/hir_module_boundaries.rs")),
         ("tests/workspace/semantic_graph/source_inventory.rs",include_str!("../../../tests/workspace/semantic_graph/source_inventory.rs")),
         ("crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",include_str!("../../../crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs")),

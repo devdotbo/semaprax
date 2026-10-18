@@ -1,0 +1,30 @@
+macro_rules! include_str { ($p:literal) => { ::std::include_str!(concat!("/Volumes/Semaprax/worktrees/ci-format-26eeb/src/hir/ids/", $p)) }; }
+#[test]
+fn complete_original_identity_prefix_codec_and_old_width_control_are_exact() {
+    let whole = include_str!(
+        "../../../docs/evidence/declaration-tag-identity-20261018/ids.whole-before.rs.txt"
+    );
+    let prefix = whole
+        .split(
+            "#[derive(Debug, Eq, Hash, Ord, PartialEq, PartialOrd)]\npub struct FunctionInstanceId",
+        )
+        .next()
+        .unwrap();
+    let compiled = include_str!("declaration_tag/before.rs");
+    let (compiled,codec)=compiled.split_once("\n// Complete unchanged DeclarationId cache codec; outside the identity prefix.\nuse crate::cache_codec::{Codec, Decoder, Encoder};\n").unwrap();
+    let restored=compiled.replacen("use std::fmt;\n", "use std::fmt;\nuse std::fmt::Write as _;\n",1)
+        .replacen("use std::sync::Arc;\n\n\nuse crate::hir::ids::compiler::CompilerDeclaration;", "use std::sync::Arc;\n\nuse super::nodes::ResolvedType;\n\nmod compiler;\npub(crate) use compiler::CompilerDeclaration;",1);
+    assert_eq!(restored, prefix);
+    let current_codec = include_str!("../cache_codec.rs");
+    let start = current_codec
+        .find("impl Codec for DeclarationId {")
+        .unwrap();
+    let end = start
+        + current_codec[start..]
+            .find("\ncodec_tuple!(FunctionInstanceId")
+            .unwrap();
+    assert_eq!(codec.trim(), current_codec[start..end].trim());
+    let old_tests=include_str!("../../../docs/evidence/declaration-tag-identity-20261018/declaration_backing_tests.whole-before.rs.txt");
+    let current_tests = include_str!("declaration_backing_tests.rs");
+    assert_eq!(current_tests.replace("    // Preserve the complete original width/backing control on its real old producer.\n    use super::declaration_tag::before::DeclarationId;\n", ""),old_tests);
+}

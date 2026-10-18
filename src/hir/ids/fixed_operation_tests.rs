@@ -160,6 +160,15 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     let registration = "\n#[cfg(test)]\npub(crate) mod original_constructor;\n";
     assert_eq!(projected.matches(registration).count(), 1);
     projected = projected.replacen(registration, "", 1);
+    // Retained ProgramSource functions expose the same AST through payload().
+    // Account for that exact accessor hook; keep every original iterator byte.
+    let retained_functions = "program\n        .functions()\n        .iter()\n        .any(|function| uses_function(function.payload()))";
+    assert_eq!(projected.matches(retained_functions).count(), 1);
+    projected = projected.replacen(
+        retained_functions,
+        "program.functions().iter().any(uses_function)",
+        1,
+    );
     assert_eq!(projected, original);
     assert_eq!(original.matches("pub(crate) const fn id(self)").count(), 1);
 
@@ -223,7 +232,13 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         ),
         "4c4f9dd06f00371bb571d1c7122e292fccabd7608b55160469c13350407555fd"
     );
-    let current = ci_str!("../../../src/hir/ids.rs");
+    // Reuse the complete closed-tag inverse and its exact current/prior pins.
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::value(
+        "src/hir/ids.rs",
+        "5e56cda454fa3f14f61e2db5f410eea13ac7795d0887e680348eefdc64e80e64",
+        ci_str!("../../../src/hir/ids.rs"),
+    );
+    let current = super::declaration_tag::old_source("src/hir/ids.rs", &acquired).unwrap();
     assert_eq!(
         current
             .matches("\n#[cfg(test)]\npub(in crate::hir) mod fixed_operation_tests;\n")
@@ -234,6 +249,11 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         "\n#[cfg(test)]\npub(in crate::hir) mod fixed_operation_tests;\n",
         "",
     );
+    // The separately owned streaming instance comparator adds one registration.
+    let registration =
+        "\n#[path = \"ids/instance_match.rs\"]\npub(in crate::hir) mod instance_match;\n";
+    assert_eq!(inverse.matches(registration).count(), 1);
+    let inverse = inverse.replacen(registration, "", 1);
     assert_eq!(inverse, old);
     let old = ci_str!("../../../docs/evidence/fixed-operation-identities-785/src__hir__ids__compiler.rs.before.txt");
     assert_eq!(
@@ -246,7 +266,16 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     let current = ci_str!("../../../src/hir/ids/compiler.rs");
     assert_eq!(current.matches("    MapOperation(crate::map_ops::MapOp),\n    ListOperation(crate::list_ops::ListOp),\n    IteratorOperation(crate::iterator_ops::IteratorOp),\n").count(), 1);
     assert_eq!(current.matches("            Self::MapOperation(op) => op.id(),\n            Self::ListOperation(op) => op.id(),\n            Self::IteratorOperation(op) => op.id(),\n").count(), 1);
-    let inverse = current.replace("    MapOperation(crate::map_ops::MapOp),\n    ListOperation(crate::list_ops::ListOp),\n    IteratorOperation(crate::iterator_ops::IteratorOp),\n", "").replace("            Self::MapOperation(op) => op.id(),\n            Self::ListOperation(op) => op.id(),\n            Self::IteratorOperation(op) => op.id(),\n", "");
+    let mut inverse = current.replace("    MapOperation(crate::map_ops::MapOp),\n    ListOperation(crate::list_ops::ListOp),\n    IteratorOperation(crate::iterator_ops::IteratorOp),\n", "").replace("            Self::MapOperation(op) => op.id(),\n            Self::ListOperation(op) => op.id(),\n            Self::IteratorOperation(op) => op.id(),\n", "");
+    // Later closed Vec/Box/stdin operation identities have exact additive hooks.
+    for addition in [
+        "    VecOperation(crate::vec_ops::VecOp),\n    BoxOperation(crate::box_ops::BoxOp),\n    StdinInspection(crate::stdin_stream_ops::PureOp),\n",
+        "            Self::VecOperation(op) => op.id(),\n            Self::BoxOperation(op) => op.id(),\n            Self::StdinInspection(op) => op.id(),\n",
+        "\n// These existing owned-call sites formerly received an &str into new(). The\n// closed enum replaces that receiver; it introduces no larger call carrier.\nconst _: () = assert!(std::mem::size_of::<CompilerDeclaration>() <= std::mem::size_of::<&str>());\n",
+    ] {
+        assert_eq!(inverse.matches(addition).count(), 1);
+        inverse = inverse.replacen(addition, "", 1);
+    }
     assert_eq!(inverse, old);
     let old =
         ci_str!("../../../docs/evidence/fixed-operation-identities-785/src__map_ops.rs.before.txt");
@@ -270,6 +299,9 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         "fb4ddcbbb38a9b81bd2f11d3781532729f869eaa890e1ac718806dc3d2d592a8"
     );
     let current = ci_str!("../../../src/hir/resolve_box_call/map.rs");
+    // The later retained resolver separates its two input lifetimes.
+    assert_eq!(current.matches("&Resolver<'_, '_>").count(), 2);
+    let current = current.replace("&Resolver<'_, '_>", "&Resolver<'_>");
     assert_eq!(
         current
             .matches("\n#[cfg(test)]\n#[path = \"map/identity_tests.rs\"]\nmod identity_tests;\n")
@@ -319,6 +351,9 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         "4dcfc2ca08c79396747d598370a743fb91bcd670bdb0f0820036626d8e78070b"
     );
     let current = ci_str!("../../../src/hir/resolve_box_call/list.rs");
+    // The later retained resolver separates its two input lifetimes.
+    assert_eq!(current.matches("&Resolver<'_, '_>").count(), 2);
+    let current = current.replace("&Resolver<'_, '_>", "&Resolver<'_>");
     assert_eq!(
         current
             .matches("\n#[cfg(test)]\n#[path = \"list/identity_tests.rs\"]\nmod identity_tests;\n")
@@ -368,6 +403,17 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         "6badd599deed511632f2cfc396a09ef8b04dbace494c1496a75a6bfdef8f200d"
     );
     let current = ci_str!("../../../src/hir/resolve_box_call/iterator.rs");
+    // The later retained resolver separates its two input lifetimes.
+    assert_eq!(current.matches("&Resolver<'_, '_>").count(), 3);
+    let current = current.replace("&Resolver<'_, '_>", "&Resolver<'_>");
+    // The retained source-function receiver keeps the same generic lookup body.
+    let retained_lookup = "if let Some(candidate) = resolver.source_functions().find(|candidate| {\n            candidate.payload().stable_id == owner.as_str()\n                && crate::source_verify::generic_collection_profile(candidate.payload())\n        }) {\n            return resolver.resolve_function_type_ref(candidate, ty, span);\n        }";
+    assert_eq!(current.matches(retained_lookup).count(), 1);
+    let current = current.replacen(
+        retained_lookup,
+        "if let Some(candidate) = resolver.program.functions().iter().find(|candidate| {\n            candidate.stable_id == owner.as_str()\n                && crate::source_verify::generic_collection_profile(candidate)\n        }) {\n            return resolver.resolve_function_type(candidate, ty, span);\n        }",
+        1,
+    );
     assert_eq!(
         current
             .matches(
