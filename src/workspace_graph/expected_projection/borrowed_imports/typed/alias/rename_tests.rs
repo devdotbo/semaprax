@@ -642,7 +642,7 @@ fn ordinary_project_import_as_vec_alias_preserves_real_provider_declarations_and
 // Type-only receiving ledgers: no tuple/array below is instantiated.
 // Each comparison frame pays both operand borrows and four call/return/chain
 // verdict slots. Each sequence names Vec/slice/iterator/item receivers too.
-type CommonCompareFrame<'a, T: ?Sized> = (&'a T, &'a T, [bool; 4]);
+type CommonCompareFrame<'a, T> = (&'a T, &'a T, [bool; 4]);
 type CommonSequenceFrame<'a, T> = (
     [&'a Vec<T>; 4],
     [&'a [T]; 4],

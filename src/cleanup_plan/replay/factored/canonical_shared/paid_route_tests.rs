@@ -41,6 +41,10 @@ struct Outcome {
     paid: usize,
     work: usize,
 }
+#[allow(
+    clippy::too_many_arguments,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn observe(
     function: &ResolvedFunction,
     graph: &Automaton,

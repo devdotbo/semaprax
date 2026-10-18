@@ -227,6 +227,10 @@ fn joined_digest(bytes: &[u8]) -> String {
     use sha2::{Digest, Sha256};
     format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)))
 }
+#[allow(
+    clippy::assertions_on_constants,
+    reason = "These assertions pin the exact control layout and resource limits."
+)]
 fn joined_data() -> String {
     use std::io::Read;
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));

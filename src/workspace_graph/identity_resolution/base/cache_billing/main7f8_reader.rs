@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Closed Main7f8 fixture reader implementation and bounded owning controls.
 use sha2::{Digest, Sha256};
 use std::fs::File;

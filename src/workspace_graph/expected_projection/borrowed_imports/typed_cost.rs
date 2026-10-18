@@ -677,6 +677,10 @@ mod tests {
         ]
     }
     #[test]
+    #[allow(
+        clippy::drop_non_drop,
+        reason = "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+    )]
     fn typed_constructor_census_keeps_all_original_raw_fields_order_and_teardown_formulas() {
         let sources = [
             "module test; @id(\"main\") fn main()->i64 { let x=1; x }",

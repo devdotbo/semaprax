@@ -46,6 +46,10 @@ impl<'a, T> DeclSlices<'a, T> {
     pub(crate) fn len(&self) -> usize {
         self.length
     }
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     pub(crate) fn first(&self) -> Option<&'a T> {
         self.get(0)
     }

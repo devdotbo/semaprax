@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Finite closed labels used only to bound owned diagnostic capacity.
 //! They grant no source/budget authority and record no fabricated refusal.
 use crate::bounded_output::ReservationStage;

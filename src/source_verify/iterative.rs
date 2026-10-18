@@ -404,6 +404,10 @@ pub(super) fn check_expr_with_signature_view<'a, 'p>(
 
 #[allow(clippy::too_many_arguments)]
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn check_expr_with_signature_view_ref<'a, 'p>(
     program: &'p dyn ProgramSource,
     current: crate::ast::program_source::FunctionRef<'p>,

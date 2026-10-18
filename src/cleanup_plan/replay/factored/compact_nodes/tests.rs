@@ -54,6 +54,10 @@ fn compact_layout_and_original_label_order_are_actual_and_source_independent() {
 }
 
 #[test]
+#[allow(
+    clippy::manual_range_patterns,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn exhaustive_small_order_parallel_epsilon_and_weighted_languages_match_complete_old() {
     let (_, function) = fixture();
     // Three forward pairs, six cases each: absent, one move, one epsilon,

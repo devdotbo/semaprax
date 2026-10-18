@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Full immediate source custody in both directions; no excluded interiors.
 pub(super) fn apply(source: &str, patch: &str, reverse: bool) -> String {
     let mut input = source.split_inclusive('\n');

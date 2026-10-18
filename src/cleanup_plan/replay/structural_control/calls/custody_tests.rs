@@ -143,6 +143,10 @@ fn actual_unknown_callee_and_competing_call_errors_keep_full_old_text_and_zero_p
     }
 }
 #[test]
+#[allow(
+    clippy::drop_non_drop,
+    reason = "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+)]
 fn actual_call_controls_exact_short_zero_keep_same_first_ledger_without_refunding() {
     let p = program();
     let f = subject(&p);

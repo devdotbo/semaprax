@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Complete unchanged sequencing receiver before owned prefix transfer.
 use super::super::*;
 

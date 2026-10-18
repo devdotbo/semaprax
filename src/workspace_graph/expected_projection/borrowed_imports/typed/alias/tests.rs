@@ -25,6 +25,10 @@ pub(super) fn linked<T>(f: impl FnOnce() -> T) -> T {
     })
 }
 #[test]
+#[allow(
+    clippy::redundant_closure,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn retained_same_name_views_lend_actual_provider_payload_in_original_order_and_hir() {
     let programs = sources(CALLER);
     let authored = index_authored(&programs).unwrap();
@@ -136,6 +140,10 @@ fn retained_same_name_views_lend_actual_provider_payload_in_original_order_and_h
     assert!(!refused && first.is_none());
 }
 #[test]
+#[allow(
+    clippy::redundant_closure,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn actual_identity_owner_lends_one_frozen_inventory_through_source_and_hir() {
     let programs = sources(CALLER);
     let authored = index_authored(&programs).unwrap();

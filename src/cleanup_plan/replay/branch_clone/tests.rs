@@ -422,6 +422,10 @@ struct ProbeOutcome {
     ordinary_work: usize,
     skeleton_work: usize,
 }
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe_generic_probe(
     function: &ResolvedFunction,
     limit: usize,
@@ -480,6 +484,10 @@ fn observe_generic_probe(
 }
 
 #[test]
+#[allow(
+    clippy::drop_non_drop,
+    reason = "This explicit lifetime endpoint is part of the complete ownership and allocation observation."
+)]
 fn real_generic_probe_receiving_frontier_exact_short_zero_floor_is_sticky_and_drops_completely() {
     let mut source = String::from("module physical_prefix; @id(\"f\") fn f(x:i64)->i64 {");
     for index in 0..48 {

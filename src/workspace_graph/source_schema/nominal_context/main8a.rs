@@ -2,7 +2,6 @@
 use super::*;
 use crate::hir::items::{ItemSource, View};
 use crate::workspace_graph::source_schema::*;
-use crate::workspace_graph::*;
 
 pub(super) struct Types<'a> {
     module: &'a WorkspaceResolvedModule,

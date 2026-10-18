@@ -99,6 +99,11 @@ struct Outcome {
     sticky: Option<Failure>,
     report: census::Report,
 }
+#[allow(
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    reason = "The complete saved control retains its original expressions for independent parity checks. The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe(
     old: bool,
     f: &ResolvedFunction,
@@ -655,6 +660,11 @@ fn equal_observation_contents_with_distinct_rc_keep_complete_immediate_grouping(
 }
 
 // Complete original observer, selecting only the whole matched frame route.
+#[allow(
+    clippy::too_many_arguments,
+    clippy::type_complexity,
+    reason = "The complete saved control retains its original expressions for independent parity checks. The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe_matched(
     old: bool,
     f: &ResolvedFunction,

@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Cold terminal singleton producer: no general frame/cursor/output owner exists.
 use super::*;
 use std::mem::size_of;

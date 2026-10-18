@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Independent pre-change copied-prefix oracle; never runtime authority.
 use super::{
     validate_control_group, BTreeMap, BTreeSet, BlockId, Diagnostic, LivenessFlagId, PathState,

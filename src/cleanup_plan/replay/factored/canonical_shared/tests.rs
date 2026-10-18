@@ -683,6 +683,10 @@ mod successor_labels {
     fn complete_paid_outer_storage_keeps_last_drop_and_physical_boundaries() {
         let function = function();
         let (automaton, closed) = subject(64, false);
+        #[allow(
+            clippy::type_complexity,
+            reason = "The independently compiled control retains its exact tuple layout and receiving types."
+        )]
         fn inspect<T: std::ops::Deref<Target = [(usize, u64)]>>(
             result: Result<Option<(u64, Vec<(Label, Rc<T>)>)>, Diagnostic>,
         ) -> bool {

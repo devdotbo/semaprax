@@ -106,6 +106,10 @@ fn budget(program: &ResolvedProgram, function: &ResolvedFunction) -> ReplayBudge
     budget
 }
 #[test]
+#[allow(
+    clippy::match_like_matches_macro,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn full_owned_transition_residual_and_scalar_corpus_keeps_flat_predecessor() {
     let program = program();
     let transitions = program

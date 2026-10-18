@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/fmt-a110/guard-config.json'
-_CONFIG_LENGTH=86480
-_CONFIG_SHA256='e6312f4af17854c28542cdaa42cf3e34d954d9be8a00dffe657cd425c408a24a'
+_CONFIG_PATH=R/'docs/evidence/clippy-4a6eb/guard-config.json'
+_CONFIG_LENGTH=89213
+_CONFIG_SHA256='4119cc196787aee7e5f1c0662e15007cc1d9960aad80e3bccddbd9a3bc708332'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -32,14 +32,30 @@ def packet():
  assert len(v['rows'])==len({x['source']for x in v['rows']})
  return v
 
+def _successor_rows():
+ _configuration_current()
+ p=CONFIG['source_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
+ assert v['schema']=='semaprax.clippy-complete-source-successor.v1'and len(v['rows'])==105
+ assert v['source_cap']==9753094 and len(v['rows'])==len({x['source']for x in v['rows']})
+ assert v['base_packet']==CONFIG['packet']
+ p=v['base_packet'];bounded(R/p['path'],p['length'],p['sha256'])
+ return v['rows']
+def _stage_source(path,pin):
+ row=next((r for r in _successor_rows()if r['source']==path),None)
+ if row is None:return bounded(R/path,pin['length'],pin['sha256'])
+ p=row['current'];actual=bounded(R/path,p['length'],p['sha256']);assert actual==read(p)
+ if(pin['length'],pin['sha256'])==(p['length'],p['sha256']):return actual
+ p=row['before'];assert(pin['length'],pin['sha256'])==(p['length'],p['sha256']),('foreign successor tuple',path)
+ return read(p)
+
 def latest_source(path,length,digest):
  assert path in CONFIG['closed_prior_sources'],('foreign named source acquisition',path)
  row=next((r for r in packet()['rows']if r['source']==path),None)
- if row is None:return bounded(R/path,length,digest)
- p=row['current'];actual=bounded(R/path,p['length'],p['sha256']);assert actual==read(p)
+ if row is None:return _stage_source(path,dict(length=length,sha256=digest))
+ p=row['current'];actual=_stage_source(path,p);assert actual==read(p)
  for child in row.get('fragments',[]):
   assert not child.get('fragments')and child['compiled']is True
-  pin=child['current'];value=bounded(R/child['source'],pin['length'],pin['sha256']);assert value==read(pin)
+  pin=child['current'];value=_stage_source(child['source'],pin);assert value==read(pin)
  if(length,digest)==(p['length'],p['sha256']):return actual
  views=[v for v in row['views']if(length,digest)==(v['length'],v['sha256'])];assert views,('foreign prior tuple',path,length,digest)
  b=read(views[0]);assert all(read(v)==b for v in views);return b

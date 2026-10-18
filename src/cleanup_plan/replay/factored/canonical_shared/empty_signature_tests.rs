@@ -81,6 +81,10 @@ fn empty_signatures_match_complete_d962_ids_states_six_fields_and_all_work_front
         }
     }
 }
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn observe(
     function: &ResolvedFunction,
     graph: &super::Automaton,
@@ -173,6 +177,10 @@ fn real_empty_signature_old_current_paid_heap_peak_and_exact_short_zero_drop() {
     }
 }
 #[test]
+#[allow(
+    clippy::assertions_on_constants,
+    reason = "These assertions pin the exact control layout and resource limits."
+)]
 fn empty_signature_carriers_and_complete_original_receiver_are_bound() {
     use std::mem::size_of;
     assert!(

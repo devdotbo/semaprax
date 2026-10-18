@@ -96,7 +96,7 @@ pub(super) struct Canonicalizer<'a> {
 }
 
 impl<'a> Canonicalizer<'a> {
-    pub(super) fn new(automaton: &'a Automaton, sink: usize) -> Self {
+    fn new(automaton: &'a Automaton, sink: usize) -> Self {
         Self {
             automaton,
             sink,

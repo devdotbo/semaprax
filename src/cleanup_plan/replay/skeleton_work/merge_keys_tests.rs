@@ -692,6 +692,10 @@ fn retained_search_actual_owner_query_and_step_frontiers_keep_six_fields_sticky_
 }
 
 #[test]
+#[allow(
+    clippy::needless_borrow,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn retained_merge_owner_preserves_complete_immediate_and_earlier_sources_without_hidden_callback() {
     let original = include_str!("../../../../docs/evidence/opt881-retained-merge-owner-20261017/before/src/cleanup_plan/replay/skeleton_work/merge_keys.rs");
     let mut complete = include_str!("merge_keys_878.rs").to_owned();

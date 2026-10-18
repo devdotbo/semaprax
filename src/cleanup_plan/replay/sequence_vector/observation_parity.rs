@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! Complete ordered structural equality for independently synthesized DAGs.
 //! Test drivers call this outside allocation observers. Production Observations
 //! equality deliberately compares merged-root identity and remains unchanged.

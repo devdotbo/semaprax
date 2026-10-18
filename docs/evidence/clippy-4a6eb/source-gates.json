@@ -1,0 +1,14 @@
+[
+  {
+    "gate": "module_size",
+    "compiler_peak_KiB": 170688,
+    "runtime_peak_KiB": 5808,
+    "actual_complete_original_gate": true
+  },
+  {
+    "gate": "source_locked_contracts",
+    "compiler_peak_KiB": 126976,
+    "runtime_peak_KiB": 4592,
+    "actual_complete_original_gate": true
+  }
+]

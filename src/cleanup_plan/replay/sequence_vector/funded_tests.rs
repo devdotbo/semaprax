@@ -347,6 +347,10 @@ fn lexical_vector_transfer_keeps_complete_fields_work_and_reports_all_shapes() {
 }
 
 #[test]
+#[allow(
+    clippy::let_and_return,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn lexical_vector_first_work_keeps_six_fields_before_selection_floor_and_real_limits() {
     let program = path_array_main8a::fixture_program();
     let function = &program.functions[0];

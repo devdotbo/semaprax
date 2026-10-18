@@ -735,6 +735,10 @@ fn reference_family_input(source: &str, current: &str) -> String {
 }
 
 // A later compositor uses this normalization-only front BEFORE its raw table.
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn bulk848_arm_input(source: &str, current: &str) -> String {
     let final_input = main8a_previous(source, current);
     let current = final_input.as_str();

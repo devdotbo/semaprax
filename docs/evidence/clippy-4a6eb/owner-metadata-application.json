@@ -1,0 +1,51 @@
+{
+  "status": "REFRESHED_CURRENT_SOURCE_PINS_PENDING_FULL_VERIFICATION",
+  "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+  "owners": 260,
+  "original241_prefix_plus_published19_preserved": true,
+  "all_source_order_and_other_fields_preserved": true,
+  "changed_pins": [
+    "src/ast/program_source/function_alias/presentation.rs",
+    "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/moderate_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
+    "src/cleanup_plan/replay/path_array/sequence_minimum/before.rs",
+    "src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs",
+    "src/cleanup_plan/replay/sequence_vector/before_funded.rs",
+    "src/cleanup_plan/replay/sequence_vector/funded_tests.rs",
+    "src/cleanup_plan/replay/sequence_vector/observation_parity.rs",
+    "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs",
+    "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows/incoming67107_semantic_receivers.rs",
+    "src/source_reflows/semantic_receivers_main44.rs",
+    "src/source_reflows/semantic_receivers_maina3.rs",
+    "src/source_verify/funding.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs",
+    "src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs",
+    "src/workspace_graph/validation/before_roots.rs",
+    "src/source_reflows_merge/main_e177_final_inputs.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs"
+  ],
+  "before": {
+    "length": 48377,
+    "sha256": "8acadd5ea15e5c8446ff057b292c387b5f384a302ec351c75bbe2f9812af4023",
+    "archive": "docs/evidence/clippy-4a6eb/isrdXqFeXIRG_wV7KSw4e184SjAuw1HHW74vmBKvQCM.txt"
+  },
+  "after": {
+    "length": 48378,
+    "sha256": "bc2242c262acca2c0afa5148b35faba6a2032c186dab6c928b817a5c04a1274f"
+  }
+}

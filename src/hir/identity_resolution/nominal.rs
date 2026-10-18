@@ -182,6 +182,10 @@ pub(crate) fn resolve_source_nominal<'p, E>(
 
 #[derive(Debug)]
 pub(crate) enum NominalReceiverFailure {
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     SourceStop(crate::source_verify::funding::SourceAbort),
     Resolve(Failure<crate::bounded_output::identity_reservation::Refused>),
     Base(
@@ -191,6 +195,10 @@ pub(crate) enum NominalReceiverFailure {
     ),
 }
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn resolve_source_checked_previous_with_base<'p>(
     program: &'p dyn ProgramSource,
     previous_program: Option<&dyn ProgramSource>,
@@ -214,6 +222,10 @@ pub(crate) fn resolve_source_checked_previous_with_base<'p>(
     )
 }
 
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn resolve_source_checked_previous_with_owner<'p>(
     program: &'p dyn ProgramSource,
     previous_program: Option<&dyn ProgramSource>,
@@ -339,6 +351,10 @@ pub(crate) fn resolve_source_checked_previous_with_owner<'p>(
 }
 
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn resolve_source_checked_previous_with_base_cells<'p>(
     program: &'p dyn ProgramSource,
     previous_program: Option<&dyn ProgramSource>,

@@ -85,6 +85,10 @@ pub(crate) fn wrapper_by_id(id: &str) -> Option<VecOp> {
 }
 
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn is_source_candidate(program: &dyn ProgramSource, function: &Function) -> bool {
     program.module() == MODULE
         && (wrapper_by_id(&function.stable_id).is_some()
@@ -282,6 +286,10 @@ pub(crate) fn source_parameter_is_admitted(
 }
 
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(crate) fn source_arguments_are_admitted(
     program: &dyn ProgramSource,
     function: &Function,

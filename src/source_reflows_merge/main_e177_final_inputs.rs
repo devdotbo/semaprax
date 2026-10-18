@@ -302,6 +302,12 @@ fn same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
     true
 }
 fn held(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
+    if let Some(result) = clippy_stage::read(path, length, expected) {
+        return result;
+    }
+    held_4a6eb(path, length, expected)
+}
+fn held_4a6eb(path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
     use std::io::Read;
     if length > SOURCE_CAP {
         return Err("bound");
@@ -527,7 +533,9 @@ fn actual(row: &serde_json::Value) -> String {
     if row["compiled"].as_bool().unwrap() {
         assert_eq!(
             Some(value.as_str()),
-            compiled(source),
+            compiled(source)
+                .map(|raw| clippy_stage::normalize(source, raw))
+                .as_deref(),
             "complete actual compiled source"
         );
     }
@@ -568,6 +576,18 @@ pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String>
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
+    let normalized = clippy_stage::normalize(source, supplied);
+    let result = value_4a6eb(source, expected, normalized.as_ref());
+    if normalized.as_ref() != supplied
+        && result == normalized.as_ref()
+        && digest(result.as_bytes()) != expected
+    {
+        supplied.to_owned()
+    } else {
+        result
+    }
+}
+fn value_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
     let packet = packet();
     let Some(row) = packet["rows"]
         .as_array()
@@ -681,7 +701,9 @@ fn combined_side_actual(row: &serde_json::Value) -> String {
     .unwrap();
     assert_eq!(
         Some(actual.as_str()),
-        combined_side_compiled(source),
+        combined_side_compiled(source)
+            .map(|raw| clippy_stage::normalize(source, raw))
+            .as_deref(),
         "complete combined current compiled source"
     );
     assert_eq!(
@@ -705,7 +727,7 @@ pub(crate) fn combined_side_value(source: &str, view: &str, supplied: &str) -> S
     assert_eq!(views.iter().filter(|old| old["name"] == view).count(), 1);
     let previous = read_view(views.iter().find(|old| old["name"] == view).unwrap());
     let actual = combined_side_actual(row);
-    if supplied == actual || supplied == previous {
+    if clippy_stage::normalize(source, supplied).as_ref() == actual || supplied == previous {
         previous
     } else {
         supplied.to_owned()
@@ -731,7 +753,7 @@ pub(crate) fn combined_side_expected_value(source: &str, expected: &str, supplie
     };
     let old = read_view(previous);
     let actual = combined_side_actual(row);
-    if supplied == actual || supplied == old {
+    if clippy_stage::normalize(source, supplied).as_ref() == actual || supplied == old {
         old
     } else {
         supplied.to_owned()
@@ -801,6 +823,18 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
 // Nondelegating entry for the older owner's compiled-channel normalization.
 // Membership is tested before calling the public delegating route.
 pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    let normalized = clippy_stage::normalize(source, supplied);
+    let result = value_direct_4a6eb(source, expected, normalized.as_ref());
+    if normalized.as_ref() != supplied
+        && result == normalized.as_ref()
+        && digest(result.as_bytes()) != expected
+    {
+        supplied.to_owned()
+    } else {
+        result
+    }
+}
+fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
     let current = packet();
     if current["rows"]
         .as_array()
@@ -811,5 +845,240 @@ pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> Stri
         value(source, expected, supplied)
     } else {
         supplied.to_owned()
+    }
+}
+
+// Exact finite successor of the unchanged433-row published packet.
+mod clippy_stage {
+    use super::*;
+    use std::borrow::Cow;
+    fn rows() -> serde_json::Value {
+        let data = include_str!("../../docs/evidence/clippy-4a6eb/inputs.json");
+        assert_eq!(data.len(), 47876);
+        assert_eq!(
+            digest(data.as_bytes()),
+            "5d8f589d5cfb817ebda43548e89b6d3cfacecee20659896ffd57f49e7499baeb"
+        );
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        assert_eq!(
+            held_4a6eb(
+                &root.join("docs/evidence/clippy-4a6eb/inputs.json"),
+                data.len(),
+                "5d8f589d5cfb817ebda43548e89b6d3cfacecee20659896ffd57f49e7499baeb"
+            )
+            .unwrap(),
+            data
+        );
+        let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+        assert_eq!(
+            packet["schema"],
+            "semaprax.clippy-complete-source-successor.v1"
+        );
+        assert_eq!(packet["source_cap"], SOURCE_CAP);
+        assert_eq!(packet["rows"].as_array().unwrap().len(), 105);
+        let base = &packet["base_packet"];
+        let original = held_4a6eb(
+            &root.join(base["path"].as_str().unwrap()),
+            base["length"].as_u64().unwrap() as usize,
+            base["sha256"].as_str().unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            original,
+            include_str!(
+                "../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"
+            )
+        );
+        let mut names = std::collections::BTreeSet::new();
+        for row in packet["rows"].as_array().unwrap() {
+            assert!(names.insert(row["source"].as_str().unwrap()));
+        }
+        packet
+    }
+    fn pin(pin: &serde_json::Value) -> String {
+        held_4a6eb(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(pin["archive"].as_str().unwrap()),
+            pin["length"].as_u64().unwrap() as usize,
+            pin["sha256"].as_str().unwrap(),
+        )
+        .unwrap()
+    }
+    fn current(row: &serde_json::Value) -> String {
+        let source = row["source"].as_str().unwrap();
+        let expected = &row["current"];
+        let raw = held_4a6eb(
+            &Path::new(env!("CARGO_MANIFEST_DIR")).join(source),
+            expected["length"].as_u64().unwrap() as usize,
+            expected["sha256"].as_str().unwrap(),
+        )
+        .unwrap();
+        assert_eq!(
+            Some(raw.as_str()),
+            compiled(source),
+            "complete successor compiled source"
+        );
+        assert_eq!(raw, pin(expected), "complete successor archive");
+        raw
+    }
+    fn compiled(source: &str) -> Option<&'static str> {
+        match source {
+            "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs")),
+            "src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_array/sequence_minimum/optimized_tests.rs")),
+            "src/workspace_graph/source_schema/nominal_context/main8a.rs" => Some(include_str!("../../src/workspace_graph/source_schema/nominal_context/main8a.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight.rs")),
+            "src/source_reflows/incoming090_semantic_receivers.rs" => Some(include_str!("../../src/source_reflows/incoming090_semantic_receivers.rs")),
+            "src/source_reflows/semantic_receivers_mainb80.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_mainb80.rs")),
+            "src/source_reflows/semantic_receivers_main7c6.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_main7c6.rs")),
+            "src/source_reflows/semantic_receivers_main_afba.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_main_afba.rs")),
+            "src/source_reflows/semantic_receivers_main_f1.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_main_f1.rs")),
+            "src/source_reflows/semantic_receivers_main8a.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_main8a.rs")),
+            "src/source_reflows/semantic_receivers_maina3.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_maina3.rs")),
+            "src/source_reflows/semantic_receivers_main44.rs" => Some(include_str!("../../src/source_reflows/semantic_receivers_main44.rs")),
+            "src/source_reflows_merge.rs" => Some(include_str!("../../src/source_reflows_merge.rs")),
+            "src/source_reflows_merge/runtime_json.rs" => Some(include_str!("../../src/source_reflows_merge/runtime_json.rs")),
+            "src/source_reflows_merge/main67107_inputs_tail.rs" => Some(include_str!("../../src/source_reflows_merge/main67107_inputs_tail.rs")),
+            "src/ast/program_source/decl_slices/before_alias.rs" => Some(include_str!("../../src/ast/program_source/decl_slices/before_alias.rs")),
+            "src/ast/program_source/function_alias/presentation.rs" => Some(include_str!("../../src/ast/program_source/function_alias/presentation.rs")),
+            "src/box_ops/wrappers.rs" => Some(include_str!("../../src/box_ops/wrappers.rs")),
+            "src/hir/resolve_program_methods.rs" => Some(include_str!("../../src/hir/resolve_program_methods.rs")),
+            "src/hir/resolve_yield.rs" => Some(include_str!("../../src/hir/resolve_yield.rs")),
+            "src/hir/identity_resolution/nominal.rs" => Some(include_str!("../../src/hir/identity_resolution/nominal.rs")),
+            "src/loop_calls/byte_writer/source_index.rs" => Some(include_str!("../../src/loop_calls/byte_writer/source_index.rs")),
+            "src/vec_ops/wrappers.rs" => Some(include_str!("../../src/vec_ops/wrappers.rs")),
+            "src/source_verify/funding.rs" => Some(include_str!("../../src/source_verify/funding.rs")),
+            "src/source_verify/generic_inference.rs" => Some(include_str!("../../src/source_verify/generic_inference.rs")),
+            "src/source_verify/hints.rs" => Some(include_str!("../../src/source_verify/hints.rs")),
+            "src/source_verify/iterative.rs" => Some(include_str!("../../src/source_verify/iterative.rs")),
+            "src/source_verify/vec_field.rs" => Some(include_str!("../../src/source_verify/vec_field.rs")),
+            "src/source_reflows/incoming67107_semantic_receivers.rs" => Some(include_str!("../../src/source_reflows/incoming67107_semantic_receivers.rs")),
+            "src/source_reflows_merge/runtime_json/tests.rs" => Some(include_str!("../../src/source_reflows_merge/runtime_json/tests.rs")),
+            "src/cleanup_plan/renewal_profile/ordinary/direct_presence_tests.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile/ordinary/direct_presence_tests.rs")),
+            "src/cleanup_plan/replay/branch_clone/funded_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/funded_tests.rs")),
+            "src/cleanup_plan/replay/branch_clone/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/tests.rs")),
+            "src/cleanup_plan/replay/path_array/sequence_minimum/before.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_array/sequence_minimum/before.rs")),
+            "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs")),
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_before.rs")),
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs")),
+            "src/cleanup_plan/replay/flat_records/tests/receiving_status_scalar.rs" => Some(include_str!("../../src/cleanup_plan/replay/flat_records/tests/receiving_status_scalar.rs")),
+            "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs")),
+            "src/cleanup_plan/replay/physical_budget/authentication/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/physical_budget/authentication/tests.rs")),
+            "src/cleanup_plan/replay/selected_context/child/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/selected_context/child/tests.rs")),
+            "src/cleanup_plan/replay/sequence_vector/before_funded.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector/before_funded.rs")),
+            "src/cleanup_plan/replay/sequence_vector/funded_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector/funded_tests.rs")),
+            "src/cleanup_plan/replay/structural_control/calls/custody_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/structural_control/calls/custody_tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_closure_receiver.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_empty.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_held.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_held.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_targets.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_inline_weighted.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs")),
+            "src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/compact_nodes/before/canonical.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/incoming_flat_targets.rs")),
+            "src/cleanup_plan/replay/factored/compact_nodes/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/compact_nodes/tests.rs")),
+            "src/cleanup_plan/replay/factored/oracle_order/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/oracle_order/tests.rs")),
+            "src/cleanup_plan/replay/factored/moderate_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/moderate_tests.rs")),
+            "src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/merge_keys_tests.rs")),
+            "src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_prefix/main24/wrapper_context.rs")),
+            "src/cleanup_plan/replay/sequence_prefix/main24/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_prefix/main24/tests.rs")),
+            "src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_prefix/main_c11/wrapper_context.rs")),
+            "src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_prefix/main8a/wrapper_context.rs")),
+            "src/source_verify/declaration/functions/old.rs" => Some(include_str!("../../src/source_verify/declaration/functions/old.rs")),
+            "src/source_verify/declaration/functions/public_signature_before.rs" => Some(include_str!("../../src/source_verify/declaration/functions/public_signature_before.rs")),
+            "src/source_verify/iterative/enter/enter_before_components.rs" => Some(include_str!("../../src/source_verify/iterative/enter/enter_before_components.rs")),
+            "src/source_verify/iterative/enter/enter_before_extended.rs" => Some(include_str!("../../src/source_verify/iterative/enter/enter_before_extended.rs")),
+            "src/source_verify/recovery_legacy/enter.rs" => Some(include_str!("../../src/source_verify/recovery_legacy/enter.rs")),
+            "src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed_cost.rs")),
+            "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/tests.rs")),
+            "src/ast/program_source/decl_slices/alias_tests.rs" => Some(include_str!("../../src/ast/program_source/decl_slices/alias_tests.rs")),
+            "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/rename_tests.rs")),
+            "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/memo/retained/held_tests.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/amortized_source.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/amortized_source.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/source.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/source.rs")),
+            "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs")),
+            "src/cleanup_plan/replay/factored/instrumentation.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/instrumentation.rs")),
+            "src/cleanup_plan/replay/path_join/boxed_states/before.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/boxed_states/before.rs")),
+            "src/cleanup_plan/replay/path_join/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/tests.rs")),
+            "src/cleanup_plan/replay/sequence_prefix/main24/before.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_prefix/main24/before.rs")),
+            "src/cleanup_plan/replay/sequence_vector/observation_parity.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector/observation_parity.rs")),
+            "src/workspace_graph/constructor_failure/report/stages.rs" => Some(include_str!("../../src/workspace_graph/constructor_failure/report/stages.rs")),
+            "src/workspace_graph/constructor_failure/report/tests.rs" => Some(include_str!("../../src/workspace_graph/constructor_failure/report/tests.rs")),
+            "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth.rs")),
+            "src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs" => Some(include_str!("../../src/workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs")),
+            "src/workspace_graph/validation/before_roots.rs" => Some(include_str!("../../src/workspace_graph/validation/before_roots.rs")),
+            _ => None,
+        }
+    }
+    pub(super) fn normalize<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
+        if compiled(source).is_none() {
+            return Cow::Borrowed(supplied);
+        }
+        let packet = rows();
+        let Some(row) = packet["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)
+        else {
+            return Cow::Borrowed(supplied);
+        };
+        let actual = current(row);
+        if supplied == actual {
+            Cow::Owned(pin(&row["before"]))
+        } else {
+            Cow::Borrowed(supplied)
+        }
+    }
+    pub(super) fn read(
+        path: &Path,
+        length: usize,
+        expected: &str,
+    ) -> Option<Result<String, &'static str>> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let relative = path.strip_prefix(root).ok()?;
+        if !relative
+            .components()
+            .all(|part| matches!(part, std::path::Component::Normal(_)))
+        {
+            return None;
+        }
+        let source = relative.to_str()?;
+        compiled(source)?;
+        let packet = rows();
+        let row = packet["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)?;
+        let actual = current(row);
+        for (name, value) in [("before", None), ("current", Some(actual))] {
+            let selected = &row[name];
+            if selected["length"].as_u64() == Some(length as u64) && selected["sha256"] == expected
+            {
+                return Some(Ok(value.unwrap_or_else(|| pin(selected))));
+            }
+        }
+        Some(Err("foreign successor tuple"))
     }
 }

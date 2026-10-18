@@ -284,6 +284,10 @@ fn branch_closed_full_current_sources_restore_every_immediate_e93f_byte() {
 }
 
 // This reports the full immediate b742 method, not an inflated historical fee.
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn borrowed_single_observe(
     function: &ResolvedFunction,
     graph: &Automaton,
@@ -584,6 +588,10 @@ fn arity_dispatch_corpus(
     (graph, sink, roots)
 }
 
+#[allow(
+    clippy::type_complexity,
+    reason = "The independently compiled control retains its exact tuple layout and receiving types."
+)]
 fn arity_dispatch_observe(
     function: &ResolvedFunction,
     graph: &Automaton,

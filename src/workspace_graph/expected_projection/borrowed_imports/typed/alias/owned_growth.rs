@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 //! One lexical acquisition, deferred until an actual owned payload is needed.
 //! The entry directory already owns the unchanged exact checked upper bound.
 use crate::ast::program_source::function_alias::FunctionEntry;

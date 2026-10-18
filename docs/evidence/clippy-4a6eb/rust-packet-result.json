@@ -1,0 +1,11 @@
+{
+  "status": "PASS_EXACT_SOURCE_ONLY_SCOPE",
+  "compiler_peak_KiB": 168784,
+  "runtime_peak_KiB": 16608,
+  "actual_new_compiled_physical_archive_channels": 105,
+  "original_parent_fragment_pairs": 10,
+  "old_finite_compiled_selector": 20,
+  "additional13_old_compiled_API_channels_RAM_deferred_to_CI": true,
+  "all_actual_packet_and_predecessor_assertions": true,
+  "no_full_Cargo_or_hosted_qualification_claimed": true
+}

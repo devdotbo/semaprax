@@ -137,6 +137,10 @@ impl<'a> Canonicalizer<'a> {
         self.id_with_receiving(function, root, budget, &mut receiving)
     }
     #[cfg(test)]
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     fn successors(
         &mut self,
         function: &ResolvedFunction,
@@ -1122,6 +1126,10 @@ impl<'a> Canonicalizer<'a> {
 }
 
 impl Canonicalizer<'_> {
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     pub(super) fn signatures(&self) -> &BTreeMap<(u64, Vec<(Label, usize)>), usize> {
         &self.ids
     }

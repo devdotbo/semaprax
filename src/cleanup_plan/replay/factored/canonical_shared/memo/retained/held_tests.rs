@@ -1,3 +1,7 @@
+#![allow(
+    clippy::duplicate_mod,
+    reason = "The complete fixture intentionally compiles independently against current and predecessor owner types."
+)]
 use super::*;
 use crate::test_allocation_observer::{current_metrics, measure};
 #[test]

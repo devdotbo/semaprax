@@ -146,6 +146,10 @@ fn status_actual_receiving_exact_short_work_and_whole_drop() {
         }
     }
 }
+#[allow(
+    clippy::while_let_on_iterator,
+    reason = "The complete saved control retains its original expressions for independent parity checks."
+)]
 fn nodes(e: &ResolvedExpr) -> Vec<&ResolvedExpr> {
     let mut out = Vec::new();
     let mut stack = vec![crate::hir::lexical_exit::ChildCursor::new(e)];

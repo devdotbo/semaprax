@@ -163,6 +163,10 @@ impl Resolver<'_, '_> {
     /// functions never reach `resolve_function_in_scope`, so a second,
     /// unreachable check here would be dead code.
     #[cfg(test)]
+    #[allow(
+        dead_code,
+        reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+    )]
     pub(super) fn resolve_yields_clause(
         &self,
         function: &ast::Function,

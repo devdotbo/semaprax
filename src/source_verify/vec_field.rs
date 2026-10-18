@@ -60,6 +60,10 @@ pub(super) fn signature(
 }
 
 #[cfg(test)]
+#[allow(
+    dead_code,
+    reason = "Retained compatibility entry for independently compiled historical and semantic controls."
+)]
 pub(super) fn reserved_function(function: &crate::ast::Function) -> bool {
     crate::vec_ops::by_name(&function.name).is_some()
         || function.name == crate::vec_field::NAME

@@ -52,6 +52,10 @@ fn selected_generation_retains_complete_immediate_methods_and_original_arena_gat
 // Whole pre-preflight adapters retained independently; negative control below.
 impl Canonicalizer<'_> {
     #[cfg(test)]
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     fn current_successors_before_owner_preflight(
         &mut self,
         function: &ResolvedFunction,
@@ -68,6 +72,10 @@ impl Canonicalizer<'_> {
         let mut receiving = closure_receiving::ClosureReceiving::from_prepaid(function, budget);
         self.successors_with_receiving(function, state, budget, &mut receiving)
     }
+    #[allow(
+        clippy::type_complexity,
+        reason = "The independently compiled control retains its exact tuple layout and receiving types."
+    )]
     fn previous_successors_before_owner_preflight(
         &mut self,
         function: &ResolvedFunction,
