@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 pub(super) const SCHEMA: &str = "semaprax.finite-source-overlay-page.v3";
 pub(super) const SCHEMA_V4: &str = "semaprax.finite-source-overlay-page.v4";
+pub(super) const SCHEMA_V6: &str = "semaprax.finite-source-overlay-page.v6";
 pub(super) const SCHEMA_V5: &str = "semaprax.finite-source-overlay-page.v5";
 const EXTRA519: &[(&str, &str)] = &[
     (
@@ -252,6 +253,83 @@ pub(super) fn expand_v5(
         return Err("v5 missing literal reference");
     }
     expand_v4(before, policy, &expanded)
+}
+
+// General references index only the same complete authenticated old519 object.
+// No source name, compiled flag, path, or unknown old field can be overridden.
+pub(super) fn expand_v6(
+    before: &Value,
+    policy: &Value,
+    page: &Value,
+) -> Result<Value, &'static str> {
+    if page["schema"] != SCHEMA_V6 {
+        return Err("v6 schema");
+    }
+    let old = before["rows"].as_array().ok_or("v6 old rows")?;
+    if old.len() != 519
+        || policy["predecessor"]["rows"].as_u64() != Some(519)
+        || before["source_cap"].as_u64() != Some(super::SOURCE_CAP as u64)
+        || policy["predecessor"]["logical_sha256"].as_str()
+            != Some(super::digest(&super::canonical(before)).as_str())
+    {
+        return Err("v6 authenticated old519");
+    }
+    let mut expanded = page.clone();
+    expanded["schema"] = SCHEMA.into();
+    let mut seen = BTreeSet::new();
+    for row in expanded["replacements"]
+        .as_array_mut()
+        .ok_or("v6 replacements")?
+    {
+        if row.get("old519").is_some() {
+            return Err("v6 legacy reference");
+        }
+        let Some(reference) = row.get("old519_index") else {
+            continue;
+        };
+        if row.as_object().ok_or("v6 record")?.len() != 1 {
+            return Err("v6 reference fields");
+        }
+        let tuple = reference.as_array().ok_or("v6 tuple")?;
+        if tuple.len() != 4 {
+            return Err("v6 tuple fields");
+        }
+        let index =
+            usize::try_from(tuple[0].as_u64().ok_or("v6 index")?).map_err(|_| "v6 index")?;
+        let prior = old.get(index).ok_or("v6 foreign index")?;
+        if !seen.insert(index) {
+            return Err("v6 duplicate index");
+        }
+        super::pin(&tuple[1])?;
+        let suffix = tuple[2].as_array().ok_or("v6 appended views")?;
+        for view in suffix {
+            super::pin(view)?;
+        }
+        let mut full = prior.clone();
+        full["current"] = tuple[1].clone();
+        full["views"]
+            .as_array_mut()
+            .ok_or("v6 old views")?
+            .extend(suffix.iter().cloned());
+        if !tuple[3].is_null() {
+            if !ROOTS.iter().any(|source| prior["source"] == *source) || !tuple[3].is_array() {
+                return Err("v6 fragment override root or shape");
+            }
+            full["fragments"] = tuple[3].clone();
+        }
+        *row = full;
+    }
+    if expanded["additions"]
+        .as_array()
+        .ok_or("v6 additions")?
+        .iter()
+        .any(|row| row.get("old519_index").is_some() || row.get("old519").is_some())
+    {
+        return Err("v6 reference in additions");
+    }
+    // V3 still restricts reference roots, declared edges and compiled leaf
+    // targets. V2 then checks every literal policy row and the complete inverse.
+    expand(before, policy, &expanded)
 }
 
 #[cfg(test)]
@@ -639,6 +717,168 @@ mod tests {
                 }
             }
             assert!(compose_values(b, &policy, &p).is_err(), "mode={mode}");
+        }
+    }
+    fn v6_fixture() -> (Value, Value, Value, Value) {
+        let before = super::super::super::packet_before_overlay();
+        let predecessor =
+            serde_json::json!({"rows":519,"logical_sha256":digest(&canonical(&before))});
+        let indices = [0usize, 518];
+        let rows: Vec<_> = indices.iter().map(|&i| before["rows"][i].clone()).collect();
+        let names: Vec<_> = rows.iter().map(|r| r["source"].clone()).collect();
+        let full = serde_json::json!({"schema":"semaprax.finite-source-overlay-page.v2","index":1,
+            "total_pages":1,"predecessor":predecessor,"replacements":rows,"additions":[]});
+        let policy = serde_json::json!({"predecessor":predecessor,"replacements":names,
+            "additions":[],"new_fragment_edges":[]});
+        let mut compact = full.clone();
+        compact["schema"] = SCHEMA_V6.into();
+        compact["replacements"] = indices
+            .iter()
+            .map(|&i| serde_json::json!({"old519_index":[i,before["rows"][i]["current"],[],null]}))
+            .collect::<Vec<_>>()
+            .into();
+        (before, policy, full, compact)
+    }
+    #[test]
+    fn v6_general_indices_preserve_complete_boundary_rows_aliases_and_unknown_fields() {
+        let (before, policy, full, compact) = v6_fixture();
+        assert_eq!(expand_v6(&before, &policy, &compact).unwrap(), full);
+        assert_eq!(
+            compose_values(before.clone(), &policy, &compact).unwrap(),
+            before
+        );
+        let mut unknown = before.clone();
+        unknown["v6_opaque_outer"] = serde_json::json!({"keep":[3,1,8]});
+        unknown["rows"][0]["v6_opaque_row"] = serde_json::json!({"nested":[true,null,7]});
+        let mut p = compact;
+        let mut rules = policy;
+        rules["predecessor"]["logical_sha256"] = digest(&canonical(&unknown)).into();
+        p["predecessor"] = rules["predecessor"].clone();
+        assert_eq!(
+            compose_values(unknown.clone(), &rules, &p).unwrap(),
+            unknown
+        );
+        let mut alias = unknown["rows"][0]["current"].clone();
+        alias["archive"] = "e/v6-existing-alias".into();
+        alias["opaque_current"] = serde_json::json!({"kept":[4,2]});
+        let mut historical = unknown["rows"][0]["current"].clone();
+        historical["name"] = "whole-pre-overlay-v2-current".into();
+        historical["opaque_view"] = serde_json::json!({"kept":[2,4]});
+        // Keep the exact required old-current record independently of extra fields.
+        let mut required = unknown["rows"][0]["current"].clone();
+        required["name"] = "whole-pre-overlay-v2-current".into();
+        p["replacements"][0]["old519_index"][1] = alias.clone();
+        p["replacements"][0]["old519_index"][2] = serde_json::json!([required, historical]);
+        let expanded = expand_v6(&unknown, &rules, &p).unwrap();
+        assert_eq!(expanded["replacements"][0]["current"], alias);
+        let result = compose_values(unknown.clone(), &rules, &p).unwrap();
+        let mut restored = result.clone();
+        restored["rows"][0]["current"] = unknown["rows"][0]["current"].clone();
+        restored["rows"][0]["views"] = unknown["rows"][0]["views"].clone();
+        assert_eq!(restored, unknown, "complete whole519 object inverse");
+    }
+    #[test]
+    fn v6_fixed_root_overrides_keep_original_v3_fragment_authority() {
+        let before = super::super::super::packet_before_overlay();
+        let index = before["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .position(|r| r["source"] == ROOTS[2])
+            .unwrap();
+        let prior = &before["rows"][index];
+        let fragments = prior["fragments"].as_array().unwrap();
+        assert!(!fragments.is_empty());
+        let refs: Vec<_> = fragments
+            .iter()
+            .map(|r| serde_json::json!({"canonical_source":r["source"]}))
+            .collect();
+        let predecessor =
+            serde_json::json!({"rows":519,"logical_sha256":digest(&canonical(&before))});
+        let policy = serde_json::json!({"predecessor":predecessor,"replacements":[ROOTS[2]],"additions":[],"new_fragment_edges":[]});
+        let page = serde_json::json!({"schema":SCHEMA_V6,"index":1,"total_pages":1,"predecessor":predecessor,
+            "replacements":[{"old519_index":[index,prior["current"],[],refs]}],"additions":[]});
+        assert_eq!(
+            compose_values(before.clone(), &policy, &page).unwrap(),
+            before
+        );
+        for mode in 0..5 {
+            let mut p = page.clone();
+            match mode {
+                0 => {
+                    p["replacements"][0]["old519_index"][3][0]["canonical_source"] =
+                        "../foreign.rs".into()
+                }
+                1 => {
+                    let item = p["replacements"][0]["old519_index"][3][0].clone();
+                    p["replacements"][0]["old519_index"][3]
+                        .as_array_mut()
+                        .unwrap()
+                        .push(item);
+                }
+                2 => p["replacements"][0]["old519_index"][3][0]["extra"] = true.into(),
+                3 => {
+                    p["replacements"][0]["old519_index"][3][0]["canonical_source"] = ROOTS[2].into()
+                }
+                _ => p["replacements"][0]["old519_index"][3] = serde_json::json!([]),
+            }
+            assert!(
+                compose_values(before.clone(), &policy, &p).is_err(),
+                "fragment mode={mode}"
+            );
+        }
+        let (old, rules, _, mut p) = v6_fixture();
+        p["replacements"][0]["old519_index"][3] = serde_json::json!([]);
+        assert!(
+            compose_values(old, &rules, &p).is_err(),
+            "non-root fragment override"
+        );
+    }
+    #[test]
+    fn v6_refuses_foreign_indices_missing_rows_duplicates_and_changed_predecessors() {
+        let (before, policy, _, compact) = v6_fixture();
+        for mode in 0..25 {
+            let mut b = before.clone();
+            let mut rules = policy.clone();
+            let mut p = compact.clone();
+            match mode {
+                0 => {
+                    p["replacements"].as_array_mut().unwrap().pop();
+                }
+                1 => p["replacements"][1]["old519_index"][0] = 0.into(),
+                2 => p["replacements"][0]["old519_index"][0] = 519.into(),
+                3 => p["replacements"][0]["old519_index"][0] = (-1).into(),
+                4 => p["replacements"][0]["old519_index"][0] = true.into(),
+                5 => p["replacements"][0]["old519_index"][0] = serde_json::json!(0.0),
+                6 => p["replacements"][0]["old519_index"][0] = u64::MAX.into(),
+                7 => p["replacements"][0]["old519_index"] = serde_json::json!([]),
+                8 => p["replacements"][0]["old519_index"]
+                    .as_array_mut()
+                    .unwrap()
+                    .push(true.into()),
+                9 => p["replacements"][0]["source"] = "foreign.rs".into(),
+                10 => p["replacements"][0]["old519_index"][1] = Value::Null,
+                11 => p["replacements"][0]["old519_index"][1]["length"] = 9753095.into(),
+                12 => p["replacements"][0]["old519_index"][1]["sha256"] = "bad".into(),
+                13 => p["replacements"][0]["old519_index"][1]["archive"] = "../foreign".into(),
+                14 => p["replacements"][0]["old519_index"][2] = Value::Null,
+                15 => p["replacements"][0]["old519_index"][3] = true.into(),
+                16 => rules["replacements"][0] = "foreign.rs".into(),
+                17 => b["rows"][0]["foreign"] = true.into(),
+                18 => {
+                    b["rows"].as_array_mut().unwrap().pop();
+                }
+                19 => {
+                    let item = p["replacements"][0].clone();
+                    p["additions"].as_array_mut().unwrap().push(item);
+                }
+                20 => p["replacements"][0] = serde_json::json!({"old519":[0,1,"a".repeat(64),[]]}),
+                21 => p["schema"] = "semaprax.finite-source-overlay-page.v600".into(),
+                22 => p["replacements"][0]["old519_index"][1]["sha256"] = "a".repeat(64).into(),
+                23 => rules["predecessor"]["rows"] = true.into(),
+                _ => b["source_cap"] = 9753095.into(),
+            }
+            assert!(compose_values(b, &rules, &p).is_err(), "mode={mode}");
         }
     }
 }

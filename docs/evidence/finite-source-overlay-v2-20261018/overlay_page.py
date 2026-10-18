@@ -134,8 +134,33 @@ def expand_extra519_refs(before, policy, page):
  assert all('old519' not in row for row in result['additions'])
  return expand_old519_refs(before,policy,result)
 
+V6_SCHEMA = 'semaprax.finite-source-overlay-page.v6'
+def expand_old519_indices(before, policy, page):
+ assert page['schema']==V6_SCHEMA and len(before['rows'])==519
+ assert type(policy['predecessor']['rows']) is int and policy['predecessor']['rows']==519
+ assert type(before['source_cap']) is int and before['source_cap']==SOURCE_CAP
+ assert H(canonical(before))==policy['predecessor']['logical_sha256'], 'v6 authenticated old519'
+ result=copy.deepcopy(page); result['schema']=V3_SCHEMA; seen=set()
+ for i,row in enumerate(result['replacements']):
+  assert 'old519' not in row, 'v6 legacy reference'
+  if 'old519_index' not in row:continue
+  assert keys(row,('old519_index',)) and type(row['old519_index']) is list and len(row['old519_index'])==4
+  index,current,suffix,fragments=row['old519_index']
+  assert type(index) is int and 0<=index<519 and index not in seen
+  seen.add(index); prior=before['rows'][index]; pin(current)
+  assert type(suffix) is list
+  for view in suffix:pin(view)
+  full=copy.deepcopy(prior); full['current']=copy.deepcopy(current); full['views'].extend(copy.deepcopy(suffix))
+  if fragments is not None:
+   assert prior['source'] in V3_ROOTS and type(fragments) is list, 'v6 fragment override root or shape'
+   full['fragments']=copy.deepcopy(fragments)
+  result['replacements'][i]=full
+ assert all('old519_index' not in row and 'old519' not in row for row in result['additions'])
+ return expand_fragment_refs(before,policy,result)
+
 def compose_values(before, policy, page):
- if page['schema']==V5_SCHEMA:page=expand_extra519_refs(before,policy,page)
+ if page['schema']==V6_SCHEMA:page=expand_old519_indices(before,policy,page)
+ elif page['schema']==V5_SCHEMA:page=expand_extra519_refs(before,policy,page)
  elif page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
  elif page['schema']==V3_SCHEMA:page=expand_fragment_refs(before,policy,page)
  return compose_values_v2(before,policy,page)
