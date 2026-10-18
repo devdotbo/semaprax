@@ -32,7 +32,7 @@ def packet_fmt433():
  assert len(v['rows'])==len({x['source']for x in v['rows']})
  return v
 
-def packet():
+def packet_before_overlay():
  base=packet_fmt433()
  extension=CONFIG['extension'];ext=json.loads(bounded(R/extension['path'],extension['length'],extension['sha256']))
  assert ext['schema']=='semaprax.fmt433-local133-extension.v1'
@@ -67,6 +67,21 @@ def packet():
   a=dict(row);a.pop('fragments',None);a['current']=prior['current'];a['views']=prior['views'];assert a==prior
  return logical
 
+_OVERLAY_NS = None
+_OVERLAY_RAW = None
+def _overlay():
+ global _OVERLAY_NS, _OVERLAY_RAW
+ _configuration_current()
+ program=bounded(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py', 7923, '1050430eb7f394ea77e353a005fbe329494397adbede7dcd9996db8ad8f8eb13')
+ assert len(program)<=65536
+ if _OVERLAY_NS is None:
+  _OVERLAY_NS={'__file__':str(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py')}
+  exec(compile(program,_OVERLAY_NS['__file__'],'exec'),_OVERLAY_NS);_OVERLAY_RAW=program
+ assert program==_OVERLAY_RAW
+ return _OVERLAY_NS['Overlay'](R,bounded,read,_configuration_current,packet_before_overlay,_successor_rows)
+def packet():
+ return _overlay().compose(packet_before_overlay())
+
 def _successor_rows_4a6eb():
  _configuration_current()
  p=CONFIG['previous_successor'];v=json.loads(bounded(R/p['path'],p['length'],p['sha256']))
@@ -94,7 +109,7 @@ def _successor_pin(path,length,digest):
  row=next((r for r in _successor_rows()if r['source']==path),None)
  if row is None:return None
  return next((p for p in [row['before'],row['current'],*row.get('views',[])]if(length,digest)==(p['length'],p['sha256'])),None)
-def _stage_source(path,pin):
+def _stage_source_before_overlay(path,pin):
  row=next((r for r in _successor_rows()if r['source']==path),None)
  if row is None:return bounded(R/path,pin['length'],pin['sha256'])
  p=row['current'];actual=bounded(R/path,p['length'],p['sha256']);assert actual==read(p)
@@ -104,6 +119,11 @@ def _stage_source(path,pin):
  views=[v for v in row.get('views',[])if(pin['length'],pin['sha256'])==(v['length'],v['sha256'])]
  assert views,('foreign successor tuple',path)
  result=read(views[0]);assert all(read(v)==result for v in views);return result
+
+def _stage_source(path,pin):
+ actual=_overlay().stage_source(path,pin)
+ if actual is not None:return actual
+ return _stage_source_before_overlay(path,pin)
 
 def latest_source(path,length,digest):
  assert path in CONFIG['closed_prior_sources'],('foreign named source acquisition',path)

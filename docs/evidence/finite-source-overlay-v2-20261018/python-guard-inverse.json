@@ -1,0 +1,18 @@
+[
+  {
+    "before": "def packet():",
+    "after": "def packet_before_overlay():"
+  },
+  {
+    "before": "def _successor_rows_4a6eb():",
+    "after": "_OVERLAY_NS = None\n_OVERLAY_RAW = None\ndef _overlay():\n global _OVERLAY_NS, _OVERLAY_RAW\n _configuration_current()\n program=bounded(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py', 7923, '1050430eb7f394ea77e353a005fbe329494397adbede7dcd9996db8ad8f8eb13')\n assert len(program)<=65536\n if _OVERLAY_NS is None:\n  _OVERLAY_NS={'__file__':str(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py')}\n  exec(compile(program,_OVERLAY_NS['__file__'],'exec'),_OVERLAY_NS);_OVERLAY_RAW=program\n assert program==_OVERLAY_RAW\n return _OVERLAY_NS['Overlay'](R,bounded,read,_configuration_current,packet_before_overlay,_successor_rows)\ndef packet():\n return _overlay().compose(packet_before_overlay())\n\ndef _successor_rows_4a6eb():"
+  },
+  {
+    "before": "def _stage_source(path,pin):",
+    "after": "def _stage_source_before_overlay(path,pin):"
+  },
+  {
+    "before": "def latest_source(path,length,digest):",
+    "after": "def _stage_source(path,pin):\n actual=_overlay().stage_source(path,pin)\n if actual is not None:return actual\n return _stage_source_before_overlay(path,pin)\n\ndef latest_source(path,length,digest):"
+  }
+]

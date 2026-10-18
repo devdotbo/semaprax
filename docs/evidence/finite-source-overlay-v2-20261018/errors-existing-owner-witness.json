@@ -1,0 +1,102 @@
+{
+  "source": "src/cleanup_plan/replay/expression_facts/errors.rs",
+  "baseline": "b5a7f2ba01b2a17a943603e57e9fa8a3b0988a56",
+  "length": 2967,
+  "sha256": "5d28ccd0de56fb900a1d5b31d58363c1bc298d58f82eb986d1f173c6e28b54a0",
+  "before_archive": "docs/evidence/finite-source-overlay-v2-20261018/before/errors.rs.txt",
+  "models": {
+    "hir": {
+      "role": "production",
+      "chains": [
+        {
+          "root": "src/lib.rs",
+          "kind": "lib",
+          "package": "semaprax",
+          "edges": [
+            {
+              "parent": "src/lib.rs",
+              "start": 3508,
+              "text": "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]\npub mod cleanup_plan;",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "child": "src/cleanup_plan.rs"
+            },
+            {
+              "parent": "src/cleanup_plan.rs",
+              "start": 1409,
+              "text": "mod replay;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay.rs",
+              "start": 591,
+              "text": "mod expression_facts;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts.rs",
+              "start": 138,
+              "text": "pub(super) mod errors;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/errors.rs"
+            }
+          ]
+        }
+      ]
+    },
+    "projection": {
+      "role": "production",
+      "chains": [
+        {
+          "root": "src/lib.rs",
+          "kind": "lib",
+          "package": "semaprax",
+          "edges": [
+            {
+              "parent": "src/lib.rs",
+              "start": 3508,
+              "text": "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]\npub mod cleanup_plan;",
+              "attributes": [
+                "#[allow(\n    dead_code,\n    unreachable_patterns,\n    clippy::unnecessary_lazy_evaluations,\n    reason = \"REF-24 (#543) inventoried pre-existing findings in this module; fix forward, never extend\"\n)]"
+              ],
+              "child": "src/cleanup_plan.rs"
+            },
+            {
+              "parent": "src/cleanup_plan.rs",
+              "start": 1409,
+              "text": "mod replay;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay.rs",
+              "start": 591,
+              "text": "mod expression_facts;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts.rs"
+            },
+            {
+              "parent": "src/cleanup_plan/replay/expression_facts.rs",
+              "start": 138,
+              "text": "pub(super) mod errors;",
+              "attributes": [],
+              "child": "src/cleanup_plan/replay/expression_facts/errors.rs"
+            }
+          ]
+        }
+      ]
+    }
+  },
+  "new_physical_module": false,
+  "old519_member": false,
+  "old_raw166_member": false,
+  "literal_source_unions": [
+    1,
+    1,
+    1
+  ],
+  "raw_scope_promoted": false
+}

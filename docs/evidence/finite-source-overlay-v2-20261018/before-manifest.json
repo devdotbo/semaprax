@@ -1,0 +1,35 @@
+{
+  "head": "b5a7f2ba01b2a17a943603e57e9fa8a3b0988a56",
+  "files": [
+    {
+      "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
+      "length": 112756,
+      "sha256": "4c88fbf910220cf35b425e3fb8a2f7d644ba7e88075630d1f112172f8f4650f8",
+      "archive": "docs/evidence/finite-source-overlay-v2-20261018/before/src__source_reflows_merge__main_e177_final_inputs.rs.txt"
+    },
+    {
+      "source": "docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py",
+      "length": 10640,
+      "sha256": "4b37a7356881976afd8168a4bd8029796a083f1463d6c040ce5b986592745332",
+      "archive": "docs/evidence/finite-source-overlay-v2-20261018/before/docs__evidence__main-e177-final-source-binding-20261017__guard_payload.py.txt"
+    },
+    {
+      "source": "tests/hir_module_boundaries.rs",
+      "length": 130347,
+      "sha256": "d550b900ad4629be5bdb9e22b966b1d563d04b31384e49df8e8737696f222aea",
+      "archive": "docs/evidence/finite-source-overlay-v2-20261018/before/tests__hir_module_boundaries.rs.txt"
+    },
+    {
+      "source": "tests/workspace/semantic_graph/source_inventory.rs",
+      "length": 147023,
+      "sha256": "c0bc1507f41c0e498b836f525474a311f504ce84501f173f01676adf38783774",
+      "archive": "docs/evidence/finite-source-overlay-v2-20261018/before/tests__workspace__semantic_graph__source_inventory.rs.txt"
+    },
+    {
+      "source": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+      "length": 187935,
+      "sha256": "7b91a25c74891cde619fb142e13da7ee4408bb4b87f1546941521dd8a7bd8be0",
+      "archive": "docs/evidence/finite-source-overlay-v2-20261018/before/crates__semaprax-native-rust-interop-builder__src__implementation__tests__ledger_capacity__source_inventory.rs.txt"
+    }
+  ]
+}
