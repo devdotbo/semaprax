@@ -1,0 +1,23 @@
+{
+  "base_head": "030345940dfc7cdf3f5c84888dff13b725e02a7e",
+  "changed_sources": [
+    "std/int-decimal/src/decimal.spx",
+    "std/int-decimal/src/tests.spx",
+    "std/packages.json",
+    "docs/STANDARD-LIBRARY-V1.md",
+    "CHANGELOG.md"
+  ],
+  "finite_logical_changed": [
+    "CHANGELOG.md"
+  ],
+  "all_eight_original_supported_API_heads_contracts_and_catalog_ids_retained": true,
+  "all_original_examples_and_test_cases_retained": true,
+  "API_inventory_selection_is_not_a_privacy_or_verification_boundary": true,
+  "all_new_helpers_remain_in_semantic_graph_and_verification": true,
+  "interpreter_and_native_C11_O0_O2_candidate_conformance_passed": true,
+  "source_program_optimization_only": true,
+  "no_compiler_implementation_or_pricing_or_ceiling_change": true,
+  "original_public_native_publication_and_Core_Wasm_scope_unchanged": true,
+  "no_new_registered_Rust_classes": true,
+  "current_bundled_consumer_and_complete_CI_still_required": true
+}

@@ -1,0 +1,523 @@
+# Standard Library v1
+
+- Status: versioned reference; 51 packages are listed in `std/packages.json`:
+  eleven `core`, twenty-nine `portable`, five `alloc`, three `hosted`, one
+  `agent`, and two `test`. Every package remains
+  Partial until its complete required scope and promotion evidence exist; every
+  other module in the required set is Missing.
+- Audience: standard-library authors, compiler contributors, and agents
+  choosing between a compiler-owned function and a library declaration.
+
+This contract defines library composition, required public declaration fields,
+portability tiers, required modules, hosted-effect vocabulary, and the Everyday
+profile. The [completion matrix](COMPLETION-MATRIX.md) owns status. The generated
+[catalog](STANDARD-LIBRARY-CATALOG.md) lists current declarations;
+`semaprax help library` lists bundled modules offline,
+`semaprax help library all` prints the catalog, and
+`semaprax help library <module|name|stable-id>` selects a compact exact entry
+from its JSON companion. `tests/project.rs::standard_library` is the executable
+gate.
+
+
+## Released library evidence
+
+The 34 packages of the v0.4.0 inventory have the accepted **HOSTED GREEN**
+baseline for their admitted profiles. `std.io.lines` and `std.path.normalize`,
+added after that baseline, are not covered by that release baseline; their
+gates are hosted-green on the named `std-library-depth` job and the
+`verify-tests` shards at 1dfe12a6.
+The inventory is nine core, eighteen portable, three alloc, three hosted, one
+agent and two test packages.
+The tables below retain Partial for incomplete module scope and Missing for
+modules that do not exist; these are not pending first executions of the
+implemented release corpus. Historical case counts or named-host observations
+remain scoped to those runs. Additional physical providers, general streams,
+public signatures, complete iterator interfaces and the full Everyday profile
+are independent requirements.
+
+The private scalar/Bytes iterator protocols, loops, callbacks and scalar-snapshot
+closures already exist. They are not a completed `std.iter` package or a general
+Iterator interface. Linked Agent migration and durable recovery likewise exist
+under their own runtime contracts; running ordinary `std.agent` functions on
+native/Wasm does not execute Agent stages on those backends.
+
+## Library architecture
+
+The standard library is composed of ordinary SEMAPRAX packages. A package is a
+directory below `std/` holding a Project manifest and three modules:
+
+| Module | Role |
+| --- | --- |
+| `std.<name>` | The library module. It declares only public functions and types; it never defines `main`. |
+| `std.<name>.examples` | The Project entry. Its `main` demonstrates idiomatic use and returns `0`. |
+| `std.<name>.tests` | The single Project test module. Its `main` is the conformance suite and returns `0`, or a bitmask naming the failed checks. |
+
+Hosted packages with an effect profile follow the same three-module shape, but
+their structural `main` functions are not conformance evidence. Their examples
+and tests must each execute an explicit stable-ID `fn () -> bool` command
+through an invocation-owned provider injected by the host, so the checked
+effect path is exercised. A pure `main` that only returns `0` is present for
+Project structure and does not demonstrate hosted behavior.
+
+Host-specific operations may be implemented in Rust, C, Wasm, or a platform
+language, but their public contract is a SEMAPRAX semantic interface: a
+declaration in a `std.*` module with an `@id`, types, ownership modes,
+effects, and contracts. The compiler-owned functions listed in the
+[agent quick reference](AGENT-QUICK-REFERENCE.md#compiler-owned-functions) are
+the current host surface; moving them behind `std.*` interfaces is an open
+gate of this document, not a completed step. That surface now includes the
+`bytes_zeroed`/`bytes_set` write-once owned buffer of
+[Owned Bounded Byte Buffer v1](OWNED-BOUNDED-BYTE-BUFFER-V1.md), which executes
+on the interpreter, native C11, and internal Core Wasm through the
+`env.spx_bytes_zeroed`/`env.spx_bytes_set` host-arena imports. The public Wasm
+byte-export adapter still rejects it with `SPX-W115`, so it carries no public
+ABI; no `std.*` package wraps it, and no required module below is satisfied by
+it. The exact compiler-owned `Vec<T>` profile is different: the alloc-tier
+`std.collections` package authenticates eight transparent aliases over its eight
+intrinsics for the eight admitted Copy scalars. Those aliases add no public ABI,
+iterator, owned-element, or broader collection support.
+The three additive aliases select compiler prelude v3; collision-free source
+using only the original five retains frozen prelude-v2 binding bytes and digest.
+The separately specified
+[Owned Bounded Vec For Traversal v1](OWNED-BOUNDED-VEC-FOR-TRAVERSAL-V1.md)
+is resolver syntax over the existing length/get/while vocabulary. It adds no
+`std.collections` declaration and does not advance the Missing `std.iter`
+package.
+The separately bounded compiler-owned `Box<T>` allocation is exposed by the
+alloc-tier `std.mem` package through exactly three authenticated aliases:
+`new`, `get`, and `into_inner`, instantiated explicitly for the same eight Copy
+scalars. Its scalar-result example and conformance package export no public
+descriptor. These aliases retain the scalar Box slice. The compiler's separate
+[Box v2](OWNED-BOUNDED-BOX-V2.md) implements owned Bytes payloads; it does not
+widen the aliases. Regions, arenas, shared immutable values, general allocator
+interfaces and public generic ABI remain absent.
+
+Every public standard-library declaration must have:
+
+1. a stable identity: an explicit `@id` below its module name, so
+   `std.num.gcd` names one function across renames and moves;
+2. types and ownership modes spelled in the signature;
+3. effects, declared with `uses` and granted by the module's `permit`; the
+   `core` tier declares none;
+4. contracts: `requires` and `ensures` lines that state the admitted inputs
+   and the guaranteed result; an authenticated transparent intrinsic alias
+   instead inherits the intrinsic's exact preconditions and status identity
+   and must not replace them with a second authored contract;
+5. examples: the package's examples module imports and exercises it;
+6. conformance tests: the package's tests module imports it and checks it,
+   and the suite passes on every target the package lists;
+7. compatibility metadata: the package's tier, targets, and status in
+   `std/packages.json`;
+8. generated human and agent documentation: the
+   [catalog](STANDARD-LIBRARY-CATALOG.md) and `std/catalog.json`, both
+   generated from the sources by the gate and pinned byte for byte.
+
+The gate enforces 1, 3, 5, 6, 7, and 8 today. Contracts (4) are required by
+this document and reviewed; a declaration without one is a review finding, not
+yet a gate failure. The exact `std.collections` transparent aliases are the
+contract-authoring exception described above, not contract-free new behavior.
+Internal owned-data Project calls additionally admit explicit nongeneric
+record trees over Bytes and Copy scalars. The `std.io` library uses this lane
+for its Reader/Writer types, borrowed observations and consuming transitions.
+Public descriptors remain separately restricted. The authenticated
+`std.collections` transparent wrappers forward an explicit Copy-scalar argument
+to their exact compiler intrinsics without changing HIR or status identity;
+this does not admit general public generic signatures. Other library profiles
+retain their existing scalar and borrowed-view boundaries. The Useful Text public export profile remains
+contract-free, so `std.text` cannot yet satisfy the reviewed contract
+requirement even though its bounded conformance package is executable.
+
+`std/packages.json` lists every package directory with its module, tier,
+targets, and status. The gate fails when the list and the directories under
+`std/` disagree.
+
+The additive `std.pattern` package is Partial and alloc-tier. Its ordinary
+source implements a bounded ASCII byte-pattern matcher over one reusable
+3,072-byte `Matcher` carrier. It supports literals, byte escapes, dot,
+character classes, bounded and greedy repetition, and flat captures; it does
+not provide general regular expressions or Unicode character matching. Its
+optional `api` field on its `std/packages.json` registry row lists a nonempty,
+strictly sorted set of stable IDs used to select catalogue entries and the
+package's direct-import conformance surface. That registry field does not hide
+source or weaken identity, effect, ownership, type, or verifier checks:
+internal declarations remain ordinary checked source, and imports still pass
+the usual semantic admission.
+
+### Consuming a package
+
+A canonical `semaprax.manifest.v1` Project may depend on one of the compiler's
+exact bundled standard-library packages through `[dependencies]`, then import
+its functions by stable identity:
+
+```toml
+[dependencies]
+std.num = "^0.1.0"
+```
+
+```text
+use function @id("std.num.gcd") from std.num as gcd;
+```
+
+The compiler admits only the closed `std.*` inventory at bundled version
+`0.1.0`, validates the declared exact/tilde/caret range, adds its immutable
+source and transitive standard dependencies to the authenticated in-memory
+workspace, and performs ordinary stable-ID linking. It reads no cache and
+gains no filesystem or network authority. Unknown packages and ranges that do
+not contain the bundled version retain `SPX-J121`; ordinary resolved packages
+are not yet linked by Project builds. A source file may still vendor a library
+module explicitly. `std.bytes` requires the `useful-data.v1` profile and
+`std.text` requires `useful-text-consumer.v1`.
+
+### Exact unsigned decimal integers
+
+`std.int.decimal` is an additive Partial alloc package for unrestricted digit
+values represented as canonical strings: `0`, or a nonzero ASCII digit followed
+by digits. It adds no primitive type or ambient authority. `digits` accepts
+nonempty ASCII digits including leading zeros; `canonicalize` strips them.
+`valid` recognizes canonical input, `compare` returns -1/0/1, and `add`,
+`subtract`, and `divide` compute exact canonical results digit by digit.
+Subtraction refuses unsigned underflow; division computes the floor quotient
+and refuses zero. Malformed arithmetic inputs fail `semaprax.contract.v1`
+with the requires-false code. `Option<string>` is outside the executable
+generic profile (`SPX-T223`), so these calls use checked preconditions rather
+than an owning Option result. Callers can use `digits`, `valid`, and `compare`
+to admit untrusted input first.
+
+Consume it through `[dependencies] std.int.decimal = "^0.1.0"` with
+`owned-data-api.v1` and stable-ID imports. Strings own their parameters
+implicitly; borrowed divisors/comparison operands use named owners and
+`string_as_str`. There is no public export ABI. The explicit targets are
+interpreter and native C11. Standalone internal String Wasm signatures and
+Text Toolkit `string_slice` still have their existing refusals; this package
+makes no Core Wasm support claim. All operations remain subject to the
+invocation's ordinary memory/fuel limits. Front-prepending addition and
+subtraction copy strings and are quadratic in digits; long division performs
+at most nine subtractions per dividend digit and also copies decimal strings.
+No operand is narrowed to a machine integer.
+Comparison stops at the first unequal digit. Scalar implementation helpers
+keep loop decisions separate; the supported inventory retains the original
+eight operations. The helpers remain ordinary declarations, not a source
+privacy boundary.
+
+Arithmetic postconditions express nonempty results. The source verifier
+refuses borrowing the synthetic `result` place (`SPX-T266`), so the stronger
+canonical-output property is established structurally by decimal digit
+construction/normalization and by the exact conformance cases, rather than
+through an unadmitted `valid(string_as_str(result))` expression. The owning
+`standard_library::decimal` gates cover long carry/borrow chains, values above
+u64, leading zeros, malformed UTF-8 digit lookalikes, zero and underflow
+failures, and ordinary bundled consumers. These new gates are authored until
+the current compiler runs them; earlier release evidence does not cover them.
+
+## Portability tiers
+
+| Tier | Scope |
+| --- | --- |
+| `core` | Allocation-free, effect-free operations available on every supported target |
+| `alloc` | Collections, strings, and owned data using declared allocators or regions |
+| `portable` | Interpreter, native, and Core Wasm behavior with equivalent semantics |
+| `hosted` | Filesystem, environment, process, network, and clock operations |
+| `browser` | Browser APIs through explicit host interfaces |
+| `embedded` | Allocation-restricted and OS-free facilities |
+| `agent` | Model, context, approval, tool, checkpoint, and evidence abstractions |
+| `test` | Deterministic handlers, properties, fuzzing, and simulation |
+
+A module need not exist on every target. Its availability is an explicit
+fact: the package's `targets` list in `std/packages.json`, repeated in both
+catalogs. Recording that availability inside the semantic graph itself, so a
+`use function` of a module absent on the selected target fails at admission,
+is an open gate; today the fact is package metadata that the gate verifies by
+executing the conformance suite on each listed target.
+
+Target names are `interpreter`, `native-c11`, and `core-wasm`, matching the
+lanes in [Architecture](ARCHITECTURE.md#compiler-and-execution-lanes).
+
+## Required standard modules
+
+| Module | Required scope | Status |
+| --- | --- | --- |
+| `std.core` | Option, Result, ordering, equality, ranges, conversion, and core traits/interfaces | Partial: `i64` ordering as `-1`/`0`/`1`, extrema, clamping, range membership, `bool` conversions and connectives; compiler-owned scalar conversion includes checked `u8_from_i64` and exact `char_from_u8`; `Option` and `Result` remain compiler-owned |
+| `std.num` | Checked, wrapping, saturating, and conversion operations | Partial: sign, absolute value, parity, Euclidean division and remainder, greatest common divisor, checked power, integer square root, digit count, power-of-two test, and floor logarithms in base 2 and 10 in `std.num`; overflow predicates and wrapping and saturating addition, subtraction, negation, absolute value, and multiplication in `std.num.overflow`; checked arithmetic is the language default, and additive `wrapping_mul` closes wrapping multiplication with exact two's-complement results at `i64::MIN`, `i64::MAX` and every sign combination |
+| `std.iter` | Iterators, adapters, folds, collection, and ranges | Missing as a standard-library package. Private consuming scalar/Bytes iterators, loops, map/filter/fold and scalar-snapshot closures are implemented separately. A general public iterator interface, associated types, lifetime rules and supported package surface remain required |
+| `std.mem` | Ownership helpers, regions, arenas, boxes, shared immutable values | Partial: authenticated transparent wrappers for compiler-owned `Box<T>` `new`, synchronous `get`, and consuming `into_inner` over exactly eight Copy scalars, with explicit conformance and no public exports; regions, arenas, shared immutable values, allocator interfaces, owned payloads, and broader ownership helpers remain Missing |
+| `std.collections` | Vector, deque, map, set, heap, and fixed-capacity collections | Partial: authenticated transparent wrappers for `with_capacity`, `push`, `reserve_exact`, `set`, `clear`, `len`, `capacity`, and `get` over exactly the eight Owned Bounded Vec v1 Copy scalars have focused local Project/package evidence, explicit conformance instantiations, generated catalogs, and no public exports; `push`, `reserve_exact`, `set`, and `clear` consume and return the one owner, while every broader collection operation remains Missing |
+| `std.bytes` | Buffers, spans, readers, writers, endian operations, and encoding | Partial: byte-to-integer conversion, guarded indexing, first-index search, counting, ASCII classification, slice equality, prefix and suffix tests, and little- and big-endian 16- and 32-bit reads over `borrow Slice<u8>`. Additive span cursors add ASCII whitespace classification and trimming (`is_space`, `trim_start`, `trim_end`, `is_blank`) and delimiter-separated field walking (`field_end`, `field_start`, `field_count`) that preserves empty fields, so `a,,b` is three fields and a trailing delimiter opens one final empty field; these compose directly with the `std.io.lines` line content and are hosted-green at 1dfe12a6. Buffers, writers, encodings, and any Unicode whitespace or quoting policy are Missing |
+| `std.text` | UTF-8 strings, Unicode iteration, search, split, trim, and normalization policy | Partial: borrowed byte length, emptiness, exact equality, prefix, and substring search; iteration, split, trim, and normalization are Missing |
+| `std.format` | Type-safe formatting without runtime format-string ambiguity | Partial: source-authored `append_str`, `append_i64`, `append_usize`, and `append_bool` consume and return a caller-owned `std.io.Writer` after exact capacity preflight. Checked decimal/byte/length helpers provide the rendering policy without hidden allocation or effects; the private `useful-data.v2` profile imports bundled `std.io` and has no public exports. Seven owned-function-import unit tests pass, including borrowed-`str` and ordinary owned-byte-record positives plus non-byte-record refusal. Eight individually runnable named SPX tests pass on the interpreter, native C11 `-O0`/`-O2`, and repeated Core Wasm with a strict two-entry byte arena; the pure helper case uses zero allocation. Five short/forged-output preflight cases pass twice with exact `requires`-false status through the bundled `std.format` consumer and transitive `std.io`; metadata and catalog regeneration pass. Named tests run individually because the per-function static allocation limit is unchanged. Additive field padding renders aligned output: `pad_len` is the written field width (never narrower than the content), `append_fill` writes one repeated byte, `append_str_left` writes left-aligned text and `append_usize_right` right-aligned decimals, each preflighting the whole field rather than only the content and never truncating longer content. Five named padding cases run with the existing corpus as individual bounded projects on the interpreter, native C11 `-O0`/`-O2` and repeated Core Wasm, and four more short/forged-output cases reject padded writes with the exact `requires`-false status; this padding is hosted-green at 1dfe12a6. General format strings, arbitrary alignment modes, grouping separators and floating-point rendering remain Missing. [Format Writer v1](FORMAT-WRITER-V1.md) owns the additive contract |
+| `std.io` | Reader, Writer, buffered I/O, streams, line processing, and standard streams | Partial: source-authored nongeneric Reader and Writer records compose caller-supplied `Bytes` buffers with `usize` cursors through consuming transitions and no public exports, using internal owned-data Project imports; interpreter, native C11, and Core Wasm consume the same checked HIR. Focused local package, dependency, contract, and cross-engine evidence passes. Line processing is supplied separately by `std.io.lines`, because one library module holding both halves pushes an ordinary three-package consumer past the `SPX-G171` pre-bound. Buffered I/O, streams, standard streams, and public generic or nominal widening are Missing |
+| `std.io.lines` | Line meaning over the `std.io` Reader and Writer cursors | Partial: additive sibling package depending on `std.io`. `line_end`, `line_terminated` and `line_content_len` observe a borrowed `Slice<u8>`; `reader_line_len` and `reader_line_complete` observe a borrowed Reader; `reader_line_into(borrow Reader, own Writer) -> Writer` copies one line's content into caller-supplied capacity after an exact preflight, starting at the writer's live cursor; `reader_next_line` consumes and returns the Reader past the line and its terminator, clamped for an unterminated tail. One line feed terminates a line, whose content excludes that byte and one immediately preceding carriage return, so LF and CRLF inputs yield identical content and a bare carriage return stays content. The graph exposes the selected cleanup schema per shape: the copy and the record observers select the existing v5 contract schema, the pure view helpers v2, the borrowed Reader never enters an owned inventory, and exact Reader/Writer renewal in a bounded `while` selects CleanupPlan v12 and Graph v40. Fifteen named cases run as individual bounded projects on the interpreter, native C11 `-O0`/`-O2` and repeated Core Wasm, including zero-, four-, and ten-line runtime walks that renew both owners. Eleven hostile cases reject short capacity, a live cursor with too little capacity, failure after successful renewals, forged cursors, and out-of-range view offsets with the exact `requires`-false status. The earlier eight-case/nine-hostile corpus is hosted-green at 1dfe12a6; the additive renewal cases are focused local evidence. Buffered readers, streams, standard streams, general mutable record replacement, text or Unicode interpretation, and any public export are Missing. [IO Lines v1](IO-LINES-V1.md) owns the additive contract |
+| `std.path` | Platform-neutral path values and explicit platform conversion | Partial: the original public package provides allocation-free inspection of canonical slash-separated path bytes for absoluteness, trailing separators, nonempty segment count, filename start, parent boundary, and extension boundary; typed Path values are supplied separately by `std.path.value` and lexical normalization by `std.path.normalize`, while safe joining beyond its admitted caller-buffer operation, traversal policy, and platform conversion remain Missing |
+| `std.path.value` | Source-authored typed lexical Path values and caller-buffer composition | Partial: ordinary nongeneric `Path` records combine a `Bytes` backing value with a `usize` logical length; NUL-free POSIX lexical bytes, checked bounds, consuming parent/finish transitions, and caller-buffer join are admitted through the internal profile, with focused local interpreter, C11 O0/O2, Core-Wasm, graph replay, contract, and bundled-dependency evidence passing; UTF-8 interpretation, filesystem authority, public generic or nominal widening, and broader path policy remain Missing |
+| `std.path.normalize` | Lexical normalization of typed Path values | Partial: additive sibling package depending on `std.path.value`. `normalized-len` and `normalized-byte` give the exact normalized length and each byte of a borrowed view with no buffer; `path-length` lifts that to a borrowed `Path`; `into(borrow Path, own Bytes) -> Path` writes the normalized form into caller-supplied capacity after an exact preflight and preserves the borrowed input. The policy is lexical: a separator run collapses, `.` vanishes, `..` cancels the nearest retained segment, an uncancelled `..` is kept for a relative path and dropped at an absolute root, a trailing separator is removed, and an empty result is `.` or `/` so a normalized Path is never zero bytes. Retention is decided without a stack, as the clamped maximum prefix sum of a forward walk that scores `..` as `+1` and an ordinary segment as `-1`. Ten named cases run as individual bounded projects on the interpreter, native C11 `-O0`/`-O2` and repeated Core Wasm, with hostile cases rejecting a short buffer, a forged Path, an out-of-range index and an out-of-range offset; these gates are hosted-green at 1dfe12a6. Platform conversion, symbolic-link or filesystem resolution, Unicode interpretation, traversal containment and any public export are Missing. [Path Normalization v1](PATH-NORMALIZATION-V1.md) owns the additive contract |
+| `std.fs` | Scoped file and directory access, metadata, and atomic file operations | Partial: private `filesystem-io.v3` adds `write_atomic_checked` and the exhaustive fieldless `WriteOutcome` variant with local interpreter/native/Wasm conformance; the inherited `filesystem-io.v2` surface composes owned Path, Reader/Writer, and Copy FileInfo values through read, create-new write, metadata, canonical immediate-name listing, directory creation/removal, and atomic replacement. Explicit providers execute typed commands in the interpreter, C11 O0/O2 and repeated Core Wasm; fixture and Unix directory-descriptor providers retain bounded authority. Additive effect-free cursors make the canonical immediate-name listing `list` returns usable without granting any further authority: entry counting, per-entry span offsets, and an entry-name validity predicate that rejects an empty name, an embedded separator or NUL, and the two traversal names. Recursive traversal, streaming, richer metadata, platform path conversion and cross-platform physical-provider promotion remain open. [Filesystem I/O v1](FILESYSTEM-IO-V1.md) stays frozen and [v2](FILESYSTEM-IO-V2.md) owns the additive private contract |
+| `std.env` | Explicit environment access with capability and deterministic test replacement | Partial: registered private `environment-io.v1` source package with bounded snapshot-backed count, UTF-8 name/value observations, key lookup, and caller-owned Writer copying. Focused local Project commands pass on the interpreter, native C11, and Core Wasm; broader Everyday environment support remains Missing |
+| `std.env.policy` | Effect-free environment name and assignment policy | Partial: additive sibling package holding the policy a caller would otherwise reimplement - a portable name predicate (non-empty, no `=` or NUL, not digit-initial, POSIX portable character set), a value predicate (no NUL, otherwise arbitrary bytes, no UTF-8 claim), and a `NAME=VALUE` assignment cursor splitting at the first `=`. It is a sibling package rather than more of `std.env` because the completion gate requires every `std.env` function to declare `process.environment.read`, and these functions read no environment; declaring that effect would over-claim a capability they never exercise. Broader Everyday environment support remains Missing |
+| `std.process` | Bounded process launch, pipes, exit, and settlement | Partial: private `process-io.v1` composition now executes the example, conformance, and bundled consumer commands on the interpreter, native C11 `-O0`/`-O2`, and Core Wasm. Additive effect-free policy classifies an existing settlement value as a normal exit or a signal termination - the only two kinds the termination encoding defines - and extracts an exit code only where the classification says the process exited normally. A deadline expiry is deliberately not a settlement class: it is a call-level failure that prevents an output from being constructed at all, so no settlement value ever carries it. Argument admissibility and argv counting complete the policy; only `std.process.run` still carries `process.execute`. The historical five-case physical Darwin witness passed, covering registered launch, pipe/deadline and settlement behavior; the admitted release regression corpus is HOSTED GREEN, while broader physical-provider, public and general process support remain open |
+| `std.time` | Durations, monotonic time, wall time, and deadlines | Partial: nonnegative millisecond conversion/decomposition with floor and ceiling rounding, elapsed and remaining-duration calculation, deadline comparison, and saturating duration addition; duration types, clock reads, instants, sleeps, and timers are Missing |
+| `std.random` | Deterministic seeded generators and separately capability-gated secure randomness | Partial: pure Park–Miller seed normalization, next-step generation, bounded advancement, and sampling below an upper bound; stateful generators, unbiased range sampling, byte filling, and capability-gated secure randomness are Missing |
+| `std.net` | Addresses, DNS, TCP, UDP, and explicit target support | Partial: pure helpers and the v1 TCP client operations now have a hosted-only bind/accept extension; native/Wasm service ABI, structured addresses, DNS policy, and UDP are Missing |
+| `std.tls` | Vetted provider-backed TLS interface and certificate policy | Partial: the explicit Rust host supports authenticated outbound TLS 1.2/1.3 and server-side TLS with caller-installed certificate/key policy; source-level server TLS and native-C11/Wasm lanes are Missing |
+| `std.http` | HTTP request/response types, client and server interfaces, streaming, and limits | Partial: allocation-free HTTP/1.x parsing helpers remain portable; hosted source, Core Wasm, and the Project v13 npm/Web lane can call bounded `https_get`, and `examples/https-project` reads a typed status code and body length out of a borrowed view of its canonical bytes; the explicit Rust host exposes the typed HTTP/1.1/2 response, redirects, pooling, and body limits. The Project v13 `https-command-io.v1` profile emits a libcurl-backed native C11 executable with embedded roots. A `[dependencies]` import of this package under the frozen Project v13 manifest, an owned typed response record, a server parser, HTTP/3, and the browser-Fetch adapter are Missing |
+| `std.data.json` | Typed and value-based JSON parsing and encoding | Partial, and split across nine sibling packages because one library module large enough to hold the whole slice exceeds the `SPX-G171` pre-bound. `std.data.json` is the allocation-free JSON string-token scanner over `borrow Slice<u8>`: whitespace skipping, escape classification, `\uXXXX` decoding, strict surrogate-pair and control-byte rules, and the byte offset of the first rejection carried in the same `usize` result. Escape expansion and Reader/Writer cursor adapters remain in `std.data.json.dec`; `std.data.json.query` is the additive borrowed-slice projection for useful-data projects; `std.data.json.scan` composes a strict whole-document facade. An owned document tree is Missing. [Bounded JSON Scanner v1](BOUNDED-JSON-SCANNER-V1.md) owns the result encoding and policy shared by all nine |
+| `std.data.json.dec` | Decoded JSON strings | Partial: escape expansion. `decoded_len` is the exact decoded UTF-8 byte length of one JSON string, `decoded_size` the whole-input form, and `emit_len`/`emit_at` with `token_end` are the pull-based per-token surface a caller streams without any buffer. `decoded_eq` remains the bounded buffer-backed comparison helper with its fixed 256-byte allocation. The additive cursor adapter `decode_into(borrow Reader, own Writer) -> Writer` decodes into caller-supplied writer capacity with exact preflight, no hidden allocation, and unchanged borrowed-reader state; standalone interpreter, native C11 O0/O2, and repeated Core Wasm cases include decoded strings over 256 bytes. All eight simple escapes, `\uXXXX`, and surrogate pairs expand. Scanner helpers retain source-offset failure encoding; the cursor adapter rejects malformed input through checked preconditions. The additive `decoded_token_eq` compares two JSON string tokens in one input by their decoded bytes through the same pull surface and with no buffer, so `"a\u0062"` and `"ab"` are equal keys. The additive `decoded_fingerprint`, `fingerprint_entry` and `fingerprint_match` index decoded keys as bounded Copy entries; equal fingerprints always defer to `decoded_token_eq`. Per-output-index decoding, duplicate-key *detection over a document* (the object walk lives in `std.data.json.doc`), and an owned document tree remain Missing. [JSON Cursors v1](JSON-CURSORS-V1.md) owns the additive adapter contract |
+| `std.data.json.doc` | Structural JSON documents | Partial: the object and array grammar over a base-2 container stack in one `i64`, an explicit `depth_limit` clamped to 32 open containers, the RFC 8259 number grammar, exact `true`/`false`/`null`, string framing that rejects raw `0x00`-`0x1F` and an unterminated string, a mismatched closer rejected at its own offset, and trailing-byte rejection with the offset of the first trailing non-whitespace byte. a duplicate-key rule over byte-identical member names as `is_unique`/`unique_end`, leaving `is_document` accepting a repeated name. Escape-character and surrogate validity stay with `std.data.json`, raw UTF-8 with `std.data.json.utf8`, and duplicate detection over decoded names is Missing |
+| `std.data.json.query` | Useful-data JSON string query projection | Partial: a borrowed-slice copy of the pure escape/query pull surface accepted by `useful-data.v1`: `decoded_len`, `scalar_at`, `emit_len`, `emit_at`, and `decoded_token_eq` use only borrowed slices and primitive results, with no Reader/Writer or owned-buffer interface. Escape classification and Unicode scalar decoding follow the base scanner, including all simple escapes and valid surrogate pairs; malformed escapes, raw controls, truncated tokens, and invalid surrogate pairing use the same failure-offset encoding. The `stream-text` v25 route can depend on this package alongside `std.data.json.doc`; its authored source journey checks escaped/literal member-name equivalence. This does not build an owned JSON value tree or validate raw UTF-8 independently. [JSON String Query v1](JSON-STRING-QUERY-V1.md) owns the projection contract |
+| `std.data.json.scan` | Strict JSON document cursor | Partial, pending focused execution: allocation-free composition of bounded structural, UTF-8, and decoded-string validation; explicit decoded-equivalent duplicate-key policy; token/member/array offsets, decoded key comparison, and exact decimal spans. The older document and query APIs retain their behavior. [Strict JSON Scan v1](STRICT-JSON-SCAN-V1.md) owns the facade contract |
+| `std.data.json.token` | JSON number and literal tokens | Partial: the complete RFC 8259 number grammar as separate integer, fraction, and exponent scanners, `true`/`false`/`null` recognition, and exact `i64` decoding that rejects overflow and any token carrying a fraction or exponent rather than rounding it. Shares the scanner's `usize` end-offset/rejection encoding. Floating-point decoding and arbitrary-precision numbers are Missing, and float decoding is blocked at the project boundary rather than in the language: `f64` literals, arithmetic, and comparison are admitted inside a function and implemented on all three backends, but no workspace project profile admits `f64` as a parameter or a return type (`useful_data_workspace_parameter_admitted` and `useful_data_workspace_return_admitted` in `src/hir/workspace_link.rs`), so any std function carrying one is rejected with `SPX-G174` |
+| `std.data.json.utf8` | UTF-8 validation of raw JSON bytes | Partial: sequence-width classification, scalar decoding, and whole-input validation that rejects invalid lead bytes, missing or malformed continuations, overlong encodings, raw surrogates, and scalars above `U+10FFFF`, reporting the first offending byte through the scanner's rejection encoding |
+| `std.data.json.write` | Deterministic JSON string encoding | Partial: a pull-based, allocation-free encoder. `quoted_len` gives the exact byte length of the quoted JSON encoding of a byte view and `quoted_byte` gives its byte at an index, applying the two-byte named escapes, `\u00XX` for the remaining control bytes, and byte-identical pass-through for everything else including raw UTF-8. The additive cursor adapters `quoted_into(borrow Reader, own Writer) -> Writer` and `count_into(value: usize, own Writer) -> Writer` use caller-supplied writer capacity, exact preflight, and no hidden allocation; standalone interpreter, native C11 O0/O2, and repeated Core Wasm cases pass. Pretty-printing and document assembly remain Missing |
+| `std.data.json.digits` | Deterministic JSON number and literal encoding | Partial: exact decimal rendering of any `i64` including `-9223372036854775808`, by length and by byte index, with no value passing through an `f64`, plus the `true`/`false`/`null` literal bytes. Floating-point rendering is Missing, blocked by the same project-boundary `f64` admission as float decoding in `std.data.json.token` |
+| `std.data.toml` | TOML parsing and encoding | Partial: allocation-free bare-key validation, blank/comment line recognition, and simple-quote/comment-aware assignment-delimiter location over borrowed bytes; Additive quoted-key and value cursors close the key half: `basic_quoted_key_end` admits the TOML basic-string escapes `\b \t \n \f \r \" \\ \uXXXX \UXXXXXXXX` and rejects an unterminated string, a raw control byte and any other escape; `literal_quoted_key_end` admits `'...'` with no escapes at all; `key_end` dispatches bare, basic-quoted and literal-quoted forms; and `value_start`, `value_content_end` and `value_end` bound a value quote-aware, so a `#` inside quotes does not open a comment and trailing spaces and tabs are excluded. Failure is the package's `byte_len + 1 + offset` sentinel, the same encoding the `std.data.json` family uses for arbitrary-start scanners. Bare-key admission (`bare_key_end`) scans bytes one at a time through `is_bare_byte` rather than testing a growing `byte_range` sub-slice inside its `while` loop, because `byte_range` is not one of the shapes `hir::validation::owned_buffer::require_admitted_while_operation` admits inside a `while` body (`SPX-H006`, independent of the Core Wasm decoder fixed by issue #100); it then takes one `byte_range` of the scanned span after the loop and reuses `is_bare_key` on it, so the descriptor carrier is genuinely exercised end to end on all three backends rather than avoided (issue #218). Values remain uninterpreted bytes: tables, decoding, typed values, and encoding are Missing |
+| `std.data.csv` | Streaming CSV reading and writing | Partial: allocation-free single-record field counting with quoted-comma and escaped-quote handling, balanced-quote checks, and strict complete-record quote-placement validation; Additive quote-aware field cursors walk one record: `field_end` stops at the first comma outside quotes, `field_start` opens the next field, `field_is_quoted` reports the quoted form, and `content_start`/`content_end` bound the field's content excluding the surrounding quotes, with `""` inside a quoted field treated as one escaped quote that never ends the field and left in the content bytes. Empty records, empty quoted fields and consecutive commas all yield exact offsets, and a walk terminates because the last field's `field_start` is the record length. The cursors compose with the `std.io.lines` record content and the `std.bytes` trimming offsets; these cursors are hosted-green at 1dfe12a6 through the `verify-tests` corpus shard rather than the targeted depth job. Additive bounded reader operations now frame logical records across embedded CRLF/LF, expose stable malformed-quote kinds and exact source offsets, walk a variable record count with scalar offsets, preserve trailing empty fields through an explicit `field_has_next` observer, and copy decoded field bytes into a caller-owned `std.io.Writer` after whole-record validation and exact capacity preflight; doubled `""` collapses to one quote while embedded CRLF remains data. The original single-record raw-span identities and bytes remain compatible. [CSV Record Decoding v1](CSV-RECORD-DECODING-V1.md) owns this additive profile. Typed fields, configurable dialects, asynchronous streaming, and writing are Missing |
+| `std.encoding` | Base encodings, hex, UTF, and safe binary conversion | Partial: ASCII-byte classification, hexadecimal nibble conversion, byte-pair decoding, lowercase/uppercase hex digit encoding, and standard Base64 digit conversion plus unpadded quad decoding; buffer codecs, padded/streaming base encodings, and UTF conversion are Missing |
+| `std.encoding.base64` | Padded standard Base64 encoding over a borrowed view | Partial: additive sibling package depending on `std.encoding`. `len` is the padded output length and `byte` is its byte at one index, computed from the input alone with no buffer, so a caller writes the digits into any capacity it owns. A short final group pads with `=`, and the encoding matches the standard alphabet byte for byte on the empty input and every residue class. It is a sibling package because `std.encoding` is on the default Project v1 route, which rejects a borrowed-view parameter. Its gates are hosted-green at 78ee5107. Strict padded decoding now validates the complete input with stable error kinds and exact offsets, rejects nonzero unused pad bits, reports exact decoded length, provides random-access decoded bytes, and copies into a caller-owned `std.io.Writer` only after full capacity preflight. Empty, full, one-pad, and two-pad inputs round-trip, including all 256 byte values; invalid input and short capacity write nothing. Streaming and URL-safe or unpadded alphabets are Missing. [Base64 v1](BASE64-V1.md) owns the additive contract |
+| `std.url` | URL parsing, normalization, and query handling | Partial: RFC-style ASCII scheme and unreserved-byte classification plus percent-triplet validation and decoding through `std.encoding`; structured URLs, parsing, normalization, resolution, query handling, and encoding are Missing |
+| `std.regex` | Bounded regular-expression API or a first-party bundled package | Missing |
+| `std.sync` | Mutexes, read/write locks, atomics, and synchronization contracts | Missing |
+| `std.task` | Structured tasks, cancellation, scheduling, and channels | Missing; [Scoped Task Model v1](SCOPED-TASKS-V1.md) is the design. `std.async` holds the pure bounded-readiness-loop helpers (timeout clamping, exponential backoff, retry policy, round-robin handle selection, stream-end detection) for `net_wait`-driven loops |
+| `std.log` | Structured logging with field identities and redaction | Partial: source-authored `Event` values carry level, sequence, name, and message fields into one caller-owned Writer as a complete JSON-lines object. Level and fixed-byte helpers, decimal sequence formatting via `std.data.json.write.count_into`/`usize_len`, JSON quoting, UTF-8 validation, and exact whole-event capacity preflight are composed through the private `useful-data.v2` profile with exactly bundled `std.data.json.utf8`, `std.data.json.write`, and `std.io` dependencies. The canonical package has a 59-byte escaped-line golden and five unwritten zero suffix bytes; fifteen expanded cases are in `tests/project/standard_library/log_cases.spx`, with exact local call closures and required type imports. The original focused gates `logging::log_writer_executes_on_all_three_backends` and `logging::log_writer_preflight_rejects_invalid_events` pass: all fifteen cases plus the canonical package execute on interpreter, C11 `-O0`/`-O2`, and repeated Core Wasm with exact zero-to-three live Bytes bounds; nine rejection cases pass twice with exact contract status. The existing UTF-8 package conformance also passes after the direct ASCII scan optimization. Additive level filtering makes the policy explicit: `level_enabled` compares a level against a threshold on the existing 0-5 scale, `event_admitted` is the borrowed observer that is true only when the event both passes the threshold and fits the live capacity, `discard_event` is the named drop path that consumes the event and returns the Writer untouched, and `append_event_if` writes a passing event exactly as `append_event` does while requiring capacity only for an event actually written. A filtered event is dropped rather than buffered and releases its bytes through ordinary lexical cleanup. Three named filtering cases run with the existing corpus as individual bounded projects on the interpreter, native C11 `-O0`/`-O2` and repeated Core Wasm; this filtering is hosted-green at 1dfe12a6. General logging sinks, timestamps, queues and concurrency remain Missing; the per-field redaction policy now lives in the separate `std.log.redact` package below. [Log Writer v1](LOG-WRITER-V1.md) owns the additive contract |
+| `std.log.redact` | Field/event redaction policy for structured logs, metrics, traces, webhooks, and email (issue #193) | Partial: a pure, effect-free decision layer with no I/O and no `permit`/`uses`, mirroring `std.auth.audit.event_is_safe`'s shape. `event_is_safe` closes exhaustively over six secret-bearing flags (raw password, API key, bearer token, session token, webhook signing secret, SMTP credential) and is refused false for each individually, paired with an all-clean positive and a combined-flags case. `marker_len`/`marker_byte` name a fixed ten-byte `[REDACTED]` marker by scalar accessor (never as an owned/returned `Bytes` value, so this package cannot itself retain or forward a secret's bytes), and `bytes_match_marker` is the byte-exact check a real writer's output can be verified against; negative controls prove a secret's own bytes (wrong length, same length, or a single flipped trailing byte) never satisfy it. `field_count_within_budget` is one deployment-independent cardinality bound (32), tested at 0, the exact bound, and one past it. Cross-package import stays inside the `useful-data.v2` scalar/`borrow Slice<u8>` boundary throughout, so every function is admitted with no dependency and no aggregate crossing a module boundary. `log_redact_backend_audit::log_redact_executes_on_all_three_backends` passes on the interpreter, native C11 `-O0`/`-O2`, and Core Wasm. The actual JSON/metrics/trace/webhook/email writers that would call this policy, and the other five adapter families (metrics, tracing, outbound HTTP, webhook delivery, email) issue #193 names, remain Missing |
+| `std.email` | Outbound-email address, header-injection, and envelope policy (issue #193) | Partial: a pure, effect-free decision layer with no I/O and no `permit`/`uses`, following `std.log.redact`'s shape. `value_is_header_safe` refuses CR, LF and NUL in any caller-controlled header value — the SMTP header-injection boundary — as a refusal rather than a sanitizer, so a caller can never ship a message whose bytes quietly differ from what it assembled; each of the three separator bytes is asserted individually, and a separator in the final position is asserted separately because a scan that stops one byte early passes every other case. `address_admitted` composes named predicates rather than one opaque judgement: exactly one `@` (counted, not split-on-first, so `a@b@c` is refused), header safety over the address itself, and the three RFC 5321 sizes (local part 1-64, domain 1-255, whole path 3-254) each asserted inclusively and at +1. `domain_shape_admitted` requires at least one dot and refuses a leading or trailing dot, so `user@localhost` is refused on purpose. `recipient_count_admitted` is one deployment-independent fan-out ceiling (64) and `envelope_is_complete` reports each missing part separately. Every function is scalar-in/scalar-out or `borrow Slice<u8>`-in/scalar-out, so neither a message nor a credential is copied into or out of the package. `email_backend_audit::email_executes_on_all_three_backends` passes on the interpreter, native C11 `-O0`/`-O2`, and Core Wasm. **Sending email, MX resolution, SMTP, provider authentication and MIME rendering are Missing**: they need network and secret capability, and nothing here is evidence that outbound delivery exists |
+| `std.webhook` | Inbound/outbound webhook replay-window, signature-envelope, and retry policy (issue #193) | Partial: a pure, effect-free decision layer with no I/O and no `permit`/`uses`. `timestamp_within_window` bounds a delivery in **both** directions against a 300-second window — a receiver that verifies a signature but ignores the timestamp accepts a valid signed request forever, and one that clamps only the past accepts a clock-skewed forgery indefinitely — with both edges and both +1 cases asserted. `signature_shape_admitted` admits exactly 64 lowercase hex digits, refusing a short, uppercase or non-hex header before it can reach any comparison routine; the hex alphabet's four boundary bytes and their four neighbours are asserted at the predicate itself. `payload_len_admitted` (65536) bounds an unauthenticated inbound body, `attempt_admitted` counts from 1 and refuses 0, and `backoff_seconds` doubles then saturates at 60 under a declared `ensures` range, defined only for admitted attempt numbers. `webhook_backend_audit::webhook_executes_on_all_three_backends` passes on the interpreter, native C11 `-O0`/`-O2`, and Core Wasm. **Signature verification itself is deliberately absent, not merely unfinished**: a constant-time MAC comparison needs a primitive this language does not yet admit, and shipping a non-constant-time one would be worse than shipping none. Delivery, retry execution and queueing are likewise Missing |
+| `std.tracing` | W3C Trace Context `traceparent`/`tracestate` admission, span-identity, and propagation policy (issue #193) | Partial: a pure, effect-free decision layer with no I/O and no `permit`/`uses`. Inbound: `traceparent_shape_admitted` requires the fixed 55-byte `version-trace_id-parent_id-trace_flags` shape, lowercase-hex-only fields, the three dash positions, `version` `ff` forbidden outright, and an all-zero trace-id or parent-id refused even though it is otherwise well-formed hex (§3.2.2-§3.2.2.4); `traceparent_sampled` reads the sampled bit from the trace-flags field's final hex digit. Outbound: `trace_context_fields_admitted` and `outbound_traceparent_fields_admitted` mirror the same shape and all-zero rules for a header a caller is assembling from separate fields rather than one already joined with dashes, with the all-zero trace-id/parent-id cases asserted on this outbound path too so admitting what inbound refuses cannot pass silently. `trace_context_fields_admitted_guarded` composes that structural check left-to-right with `std.log.redact.event_is_safe`, refusing each of the six caller-declared secret-bearing flags without accepting a malformed context merely because classification metadata is clean. It does not inspect bytes or `tracestate`, and the unguarded structural predicates remain available; an adapter must classify its payload and choose the guarded boundary. `child_context_admitted` decides whether a caller-supplied child span-id (never generated — this package has no randomness) yields a context admitted and consistent with its parent: same trace-id, a distinct parent-id, trace-flags carried unchanged. `trace_flags_sampled`/`sampling_decision_consistent` judge a standalone flags field's sampled bit and refuse only a sampled-to-unsampled downgrade, never inventing a sampling decision. `tracestate_key_shape_admitted`/`tracestate_value_shape_admitted` parse one already-isolated list-member's `simple-key` and value shape (§3.3.1.1-§3.3.1.2, `multi-tenant-key` out of scope), `tracestate_member_admitted` composes them over one `key=value` slice, and `tracestate_mutation_admitted` checks the front-of-list and no-duplicate rules pairwise against one sibling at a time (§3.3.1.3). `tracestate_member_count_admitted` (32) and `tracestate_combined_length_admitted` (512) remain the two aggregate `tracestate` budgets a caller can enforce without parsing. Baseline `tracing_backend_audit::tracing_executes_on_all_three_backends` covers the package on interpreter, native C11 `-O0`/`-O2`, and Core Wasm; the additive guarded predicate is separately exercised by the package conformance program and reference-application admission gate in this tranche. **This package does not generate a trace-id, parent-id, or span-id, create/start/export a span, implement a sampler, split a raw `tracestate` header into its list-members, or admit the `multi-tenant-key` form**: those need a randomness capability, an exporter, and a general delimiter scanner this package does not have, and nothing here is evidence that trace generation, propagation, sampling, or export exists |
+| `std.metrics` | Counters, gauges, histograms, labels, and cardinality limits (issue #193) | Partial: scalar counter increment, bounded gauge clamping, histogram count and sum accumulation, and a label-safety and cardinality decision layer with no I/O and no `permit`/`uses`, in the same refuse-rather-than-sanitize shape as `std.email` and `std.http`. `label_name_is_valid` admits a closed allowlist — `[a-zA-Z_][a-zA-Z0-9_]*`, the Prometheus text-format label-name grammar — rather than a denylist, refusing a leading digit and any byte outside the set at length 1-64. `value_is_label_safe` refuses line feed, double quote and backslash (the exact bytes the Prometheus text format's own value escape covers) plus CR and NUL (the same defensive pair `std.http` and `std.email` refuse alongside their own format's separator), each asserted individually and in the final byte position as well as the middle; `label_value_len_admitted` bounds a value to 128 bytes, empty admitted. `label_count_admitted` is one deployment-independent per-series label-count ceiling (32), tested at zero, the bound and one past it. `label_admitted` composes the name and value judgements, and `try_admit_labeled_series` is the cardinality admission that actually sees the label — a bad label is refused with the fixed `-1` sentinel even when the existing count is far under `cardinality_limit()`, replacing the prior `try_admit_series`-only admission that counted abstract series without inspecting a single label byte. `byte_is_label_value_unsafe` is written as a `match` rather than a chained `||`, avoiding the `SPX-H006` cleanup-replay budget `std.http.byte_is_tchar` hit at a comparable size. Its examples and conformance assert the exact results on the interpreter, native C11 `-O0`/`-O2`, and Core Wasm; registered exporters, persistence, tracing, and general instrumentation remain Missing |
+| `std.test` | Assertions, fixtures, property tests, fuzz targets, and snapshots | Partial: scalar equality predicates and deterministic unit or caller-selected failure status helpers remain in `std.test`; the sibling `std.test.bytes` package adds exact `Slice<u8>` equality, Reader-suffix equality with cursor validation and position preservation, and failure-bit wrappers. Reusable named byte snapshots additionally return a checked Copy comparison with equality, lengths, and relative first difference while preserving both borrowed inputs; source-package and bundled-consumer checks have HOSTED GREEN release evidence across the interpreter, C11 O0/O2, and repeated Core Wasm. Additive failure-mask discipline makes a nonzero test result diagnosable rather than merely nonzero: `bit_for` is the bit an indexed case owns, `bit_is_set` reports membership, `record_failure` accumulates one case's verdict and refuses a bit another case already claimed, and `first_failure` and `failure_count` report the lowest failing index and the number of failures. Indexes run 0 to 62 and the accumulated mask is monotonic, so two cases cannot silently share a bit and hide one another; the package's own conformance and examples now use it. These masks are hosted-green at 1dfe12a6 through the `verify-tests` corpus shard rather than the targeted depth job. Snapshot file discovery/updates, richer property tests, fuzz targets, and broader diagnostics remain open |
+| `std.agent` | Agent types, model roles, context, Proposal grammar, approval, effects, checkpoints, and evidence | Partial: the private package supplies source-authored Task, Context, Observation, Outcome and lifecycle/outcome helpers. Package execution and injected-runtime linked-role regressions are HOSTED GREEN for v0.4.0. [Direct Runtime v2](AGENT-RUNTIME-V2.md), [linked lifecycle](PROJECT-LINKED-AGENT-LIFECYCLE-V1.md) and [linked migration](PROJECT-LINKED-AGENT-MIGRATION-V1.md) implement their own typed, durable and revision-bound additions. Native/Wasm execution of ordinary library functions does not execute Agent stages there. Additive checked lifecycle policy makes the stage vocabulary verifiable rather than merely representable: a total stage-transition predicate derived from the iterative lifecycle (initialize once to observe, observe to authorize to reduce, and reduce either back to observe or to one of the three terminal stages), a terminality predicate consistent with it, and a deterministic bounded retry policy whose backoff doubles to an explicit ceiling. These read no clock and schedule nothing: the delay is a number a caller may choose to use, not an action, and the package gains no capability, effect or permit. The statement lives here rather than in the source because that package's gate compares canonicalized source to raw text, so it admits no comments. Native/Wasm Agent stages, live providers, public support and full module scope remain open |
+
+A module is Partial when its package passes the gate on every listed target
+and Implemented only when its required scope is complete and the
+[completion matrix](COMPLETION-MATRIX.md) row says so.
+
+### Naming
+
+Functions are `snake_case`. A module whose required scope does not fit the
+per-package admission limits described below is split into dotted
+sub-modules, each its own package: `std.num.overflow` is the wrapping and
+saturating half of `std.num`. Stable identities follow the module:
+`std.num.overflow.wrapping_add`. Ordering is the `i64` triple `-1`, `0`, `1`
+until variants cross the Project boundary; `std.core.ordering.less` and its
+siblings name the values.
+
+### Admission limits that shape packages today
+
+These compiler bounds decide how large one package can be:
+
+- Project v1 links only functions whose parameters and result are by-value
+  `i64` or `bool`, admits exactly one test module and one entry module, and
+  requires between one and thirty-two `web_exports`. Records, variants,
+  generics, strings, and bytes therefore stay inside one file until a wider
+  Project profile admits them across files.
+- The internal owned-data library profile used by `std.io` admits ordinary
+  nongeneric records over Bytes and Copy scalars through authenticated Project
+  imports. An empty export list selects checked entry/test execution without a
+  public descriptor. Nonempty public selections retain their original rules;
+  public generic and nominal ABI admission remains unchanged.
+- The Workspace Semantic Graph pre-bound charges an upper estimate of resolver
+  memory against a 16 MiB budget before linking. The split pre-bound
+  described in [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md#limits-and-budget)
+  admits the current packages and a consumer that links both `std.core` and
+  `std.num`; before it, a 4.9 KiB module of twenty scalar functions was rejected with
+  `SPX-G171`. An imported function is now charged as the stub the projection
+  actually retains, so a conformance module no longer costs a second complete
+  copy of the library it exercises. The budget is charged against the whole
+  package - library, examples, and conformance modules together with any
+  vendored `[dependencies]` source - not against the library module alone.
+  Measured on the eight JSON sibling packages by padding each library with
+  trivial `i64` helpers until `SPX-G171` fires, the admitted total package
+  source is between 19.7 KB and 22.1 KB, varying with declaration and
+  expression structure rather than with byte count alone. The same measurement
+  before the identity term was re-derived gave 12.3 KB to 14.2 KB, which is
+  why `std.data.json.doc` shipped at 12,216 bytes with no headroom; the
+  re-derivation is recorded in
+  [Workspace Semantic Graph v1](WORKSPACE-SEMANTIC-GRAPH-V1.md#limits-and-budget).
+  A slice larger than that is
+  authored as sibling packages that a consumer links, which
+  `standard_library::package_manifest_links_json_scanner_and_token_siblings`
+  and `..._json_writer_siblings` exercise; taking a dependency on a sibling
+  spends that package's whole source against the budget, so a package that can
+  restate a three-line helper locally stays cheaper standing alone.
+- The owned bounded byte buffer of
+  [Owned Bounded Byte Buffer v1](OWNED-BOUNDED-BYTE-BUFFER-V1.md) and the
+  nongeneric Reader/Writer records compose internally under `owned-data-api.v1`
+  or the additive `useful-data.v2` profile. These internal calls do not expose
+  an owning cursor through the frozen public byte facade. Project v16 retains
+  the actual entry closure alongside selected public exports, so an entry
+  beyond that public emitter's profile requires an empty export list and
+  private execution. The scalar profile still refuses `borrow Slice<u8>`
+  parameters (`SPX-G174`). [Project v16](PROJECT-MANIFEST-V16.md) specifies the
+  separate internal and public admission rules.
+- `byte_range` over an owned buffer's view lowers to the Core Wasm byte-range
+  *descriptor* carrier, which the standard-library conformance closure does not
+  implement; a library function that must compare a prefix takes an explicit
+  length instead.
+- Independent decision points no longer bound a function. Lazy `&&` and `||`
+  operands, `if` branches, and `match` tables multiply a function's terminal
+  paths, and cleanup replay once refused more than 65,536 of them
+  (`SPX-H006`), which is why existing conformance modules keep each check in
+  its own function. Above 4,096 paths replay now compares the function
+  factored by cleanup state
+  ([RFC 0003](RFC-0003-CLEANUP-AND-RESOURCE-ABI.md#factored-skeleton-comparison)),
+  so a dense predicate or several tables may share one function.
+- `match` is not admitted in a `while` body (`SPX-T252`, `match expressions
+  are not yet admitted in while bodies`). The single exception is a two-arm
+  `Option::Some`/`Option::None` match, without guards, directly on a
+  `byte_get(...)` call. Every other table lookup inside a loop is authored as
+  a helper function the loop calls. `while` bodies also reject string literals, fixed-array
+  literals, and `?` with the same code.
+- The byte-data profile (`useful-data.v1`) admits contracts throughout its
+  inventory since the data emitter and npm recipe learned to lower and record
+  them; `std.bytes` is a Project v3 package on that profile. Its web exports
+  may take only `borrow Slice<u8>` parameters, so a function with a scalar
+  parameter such as `count(view, needle)` is exported to the interpreter and
+  native lanes but not selected as a web export.
+- The text profile (`useful-text-consumer.v1`) links imported functions with
+  exact non-escaping `borrow str` parameters across files. Other borrowed,
+  shared, owning, stored, or returned text shapes remain outside the profile.
+
+Both size bounds are per function and per module, so the practical shape of a
+large package is many small functions rather than a few long ones. `SPX-G171`
+names the budget that overflowed in its message: `builder_bytes` is the
+pre-bound estimate above, and it limits neither source size nor declaration,
+call, or use counts directly, which have their own budgets and their own names.
+
+These bounds are compiler facts, not library design. Lifting them is tracked
+in the [roadmap](ROADMAP.md#standard-library-outcomes).
+
+## Effect vocabulary
+
+Hosted modules declare their authority in the signature. The vocabulary is the
+dotted effect grammar the verifier already checks: a function that performs an
+effect lists it under `uses`, the module grants it under `permit`, and a
+caller must declare every callee effect (`SPX-E101`, `SPX-E102`). The
+canonical hosted signatures are:
+
+```semaprax
+module std.effects.examples;
+
+permit { clock.read, filesystem.read, network.connect, random.secure }
+
+@id("std.effects.examples.read_text_length")
+fn read_text_length(path_bytes: i64) -> i64
+    uses { filesystem.read }
+{
+    path_bytes
+}
+
+@id("std.effects.examples.now")
+fn now() -> i64
+    uses { clock.read }
+{
+    0
+}
+
+@id("std.effects.examples.connect")
+fn connect(endpoint: i64) -> i64
+    uses { network.connect }
+{
+    endpoint
+}
+
+@id("std.effects.examples.secure_bytes")
+fn secure_bytes(length: i64) -> i64
+    uses { random.secure }
+{
+    length
+}
+
+@id("app.main")
+fn main() -> i64
+    uses { clock.read, filesystem.read, network.connect, random.secure }
+{
+    read_text_length(0) + now() + connect(0) + secure_bytes(0)
+}
+```
+
+The mature signatures are
+`fn read_text(path: borrow Path) -> Result<String, FsError> uses { filesystem.read }`,
+`fn now() -> Instant uses { clock.read }`,
+`fn connect(endpoint: borrow Endpoint) -> Result<Connection, NetworkError> uses { network.connect }`,
+and `fn secure_bytes(length: usize) -> Result<Bytes, RandomError> uses { random.secure }`;
+the block above spells only the effect discipline in the admitted scalar
+subset, and `tests/documentation.rs` checks that it verifies. Tests must be
+able to replace each effect with a deterministic handler without changing
+application logic; the network fixture provider of
+[Bounded Language Network I/O v1](BOUNDED-LANGUAGE-NETWORK-IO-V1.md) is the
+first such handler (local evidence, injected by the host, not selectable from
+source); a general handler mechanism is Missing and belongs to the `test` tier.
+
+## The Everyday profile
+
+The default hosted distribution should include an Everyday profile with CLI
+argument parsing; filesystem and path APIs; strings, bytes, and collections;
+JSON, TOML, and CSV; logging; an HTTP client and server; structured tasks;
+testing; package management; and Agent runtime APIs. Every item is Missing
+except the compiler-owned command I/O described in
+[Bounded Language Command I/O v1](BOUNDED-LANGUAGE-COMMAND-IO-V1.md).
+
+Of the default project templates, `library` exists offline through the
+public capsule: `semaprax project-scaffold --name <name> --template library`
+prints a package in the shape described under
+[library architecture](#library-architecture), verified and tested at
+derivation. Both standalone `semaprax new --template library` and the full
+toolchain's hardened held-parent route publish that exact six-file inventory.
+The `cli`, `service`, `web`, and `agent` templates are Missing. `new` stays in
+the full toolchain by release policy.
+
+## Evidence and nonclaims
+
+`tests/project.rs::standard_library` proves, for every package under `std/`:
+
+- the library, examples, and conformance sources are canonical;
+- every library function has an explicit `@id` below the module name, no
+  effects, and an import in the conformance module, and the examples module
+  imports at least one;
+- examples and conformance both return `0` on the interpreter, on native C11
+  at `-O0` and `-O2`, and on Core Wasm under Node. Before issue #102, the
+  Core Wasm step built and ran only the conformance closure; a `byte_range`
+  use that existed solely in `std/bytes`'s examples module was never
+  executed on that backend despite the package's Wasm claim. Both closures
+  now run on all three backends;
+- the committed catalogs equal the generated ones.
+
+`tests/project/standard_library/execution_matrix.rs` additionally holds an
+explicit package -> owning-test table (one row per module in
+`std/packages.json`) so a missing or duplicate row fails before the standard
+library can be read as having complete per-backend coverage, and carries a
+negative control for each of: a wrong example result, a duplicate or a
+missing inventory row, a missing required toolchain, and a hosted example
+that never calls its injected provider the documented number of times. Row
+exclusions with a recorded reason are legitimate (see below); a silent gap
+is not.
+
+Every package in `std/packages.json` currently claims the same three
+targets (`interpreter`, `native-c11`, `core-wasm`) on every host platform;
+there is no per-package target exclusion today. The one recorded exclusion
+is platform-wide: every native-C11/Core-Wasm-executing test in
+`tests/project/standard_library/` opens with `if cfg!(windows) { return; }`
+and returns before invoking `clang`/`node`, because this harness does not
+invoke those toolchains on Windows CI runners. This is a compile-time
+platform gate, not a runtime toolchain-availability probe: nowhere in this
+harness does a *reachable* `Command::new("clang"|"node")` call silently
+treat a missing binary as a skip - every such call uses
+`Command::output().unwrap()`, which panics (fails the test) if the binary
+cannot be found, exactly as issue #102 requires for a toolchain that is
+supposed to be present.
+
+Every direct `standard_library` module that declares tests now has a
+`std-library-depth` selector in `.github/workflows/ci.yml`; the execution-matrix
+selector guard refuses an unselected owning module. The workflow selection is
+local configuration until a hosted CI run reports its exact-head verdict. Hosted
+release and branch-governance evidence remain separate from this package gate.
+
+`tests/examples.rs` additionally holds every `.spx` file below `std/` to the
+canonical form. Nothing here claims a package registry, ordinary-package
+build integration, hosted effects, deterministic handlers, or any module
+outside the packages listed in `std/packages.json`.
+
+Ordinary native CLI consumers can import the bundled source packages through
+[Project v26 `source-command.v1`](PROJECT-MANIFEST-V26.md), retaining explicit
+argv/read-only file capabilities and checked library contracts. The
+[decimal CLI](../examples/source-command-project/semaprax.toml) uses
+`std.int.decimal` without copying its source. Provider package profiles in the
+catalog remain their own admission contracts; this consumer route does not
+grant Wasm or interpreter invocation support.

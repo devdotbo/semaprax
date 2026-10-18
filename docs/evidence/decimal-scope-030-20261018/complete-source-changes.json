@@ -1,0 +1,67 @@
+[
+  {
+    "source": "std/int-decimal/src/decimal.spx",
+    "before": {
+      "length": 4498,
+      "sha256": "bfba8c05515303754c82590d34bc680e05e5544bfbe09afd11407e2455cf6c6d",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/bfba8c05515303754c82590d34bc680e05e5544bfbe09afd11407e2455cf6c6d.txt"
+    },
+    "current": {
+      "length": 5606,
+      "sha256": "7d7e4aa9acc8e9f225221fa15076d5248a01b9b24b78f1c8ed8b74cccc5175d3",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/7d7e4aa9acc8e9f225221fa15076d5248a01b9b24b78f1c8ed8b74cccc5175d3.txt"
+    }
+  },
+  {
+    "source": "std/int-decimal/src/tests.spx",
+    "before": {
+      "length": 4026,
+      "sha256": "7389d714e98444eb78ca5ef6c534fdcecc2be44785b5d19b97d6a97482c14cb6",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/7389d714e98444eb78ca5ef6c534fdcecc2be44785b5d19b97d6a97482c14cb6.txt"
+    },
+    "current": {
+      "length": 4923,
+      "sha256": "e82e2f5c80dd164e61b78261f5f1643ed9bdc5e1f62ee13f4e7376d11762f25b",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/e82e2f5c80dd164e61b78261f5f1643ed9bdc5e1f62ee13f4e7376d11762f25b.txt"
+    }
+  },
+  {
+    "source": "std/packages.json",
+    "before": {
+      "length": 8259,
+      "sha256": "c9c49cff68c0095ea8377773e88f3bd79e2af2675404e8d251a65cea9d0a389f",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/c9c49cff68c0095ea8377773e88f3bd79e2af2675404e8d251a65cea9d0a389f.txt"
+    },
+    "current": {
+      "length": 8480,
+      "sha256": "6d731ffc56b931d9539d66f05abbe7750de0e25c1f49e664bf5fce957ae49e16",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/6d731ffc56b931d9539d66f05abbe7750de0e25c1f49e664bf5fce957ae49e16.txt"
+    }
+  },
+  {
+    "source": "docs/STANDARD-LIBRARY-V1.md",
+    "before": {
+      "length": 69329,
+      "sha256": "dfb33bc54cb0f1e7cd1347515c1d75fa851431df5754e06e0c2e43dae393360a",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/dfb33bc54cb0f1e7cd1347515c1d75fa851431df5754e06e0c2e43dae393360a.txt"
+    },
+    "current": {
+      "length": 69570,
+      "sha256": "8fd2d9a106cd6524a13ebf2d6340a0954912282e63036ec87babc0cab8811f5d",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/8fd2d9a106cd6524a13ebf2d6340a0954912282e63036ec87babc0cab8811f5d.txt"
+    }
+  },
+  {
+    "source": "CHANGELOG.md",
+    "before": {
+      "length": 581050,
+      "sha256": "5ad55881838face8bd094390e09d38f7a81e587164a81454578056e80e3c52ea",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/5ad55881838face8bd094390e09d38f7a81e587164a81454578056e80e3c52ea.txt"
+    },
+    "current": {
+      "length": 581367,
+      "sha256": "6677ae13cfc6111fc5b19d96a8c113bdaee58ee7a051335a4e35e7d452dc39b5",
+      "archive": "docs/evidence/decimal-scope-030-20261018/whole/6677ae13cfc6111fc5b19d96a8c113bdaee58ee7a051335a4e35e7d452dc39b5.txt"
+    }
+  }
+]

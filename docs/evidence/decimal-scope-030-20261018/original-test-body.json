@@ -1,0 +1,7 @@
+{
+  "body_sha256": "66ce3096a399b578636f178ff3c0df6fcbaf7516087290a5d642aba610564ef2",
+  "body_bytes": 3387,
+  "original": "std/int-decimal/src/tests.spx",
+  "entire_test_body_verbatim": true,
+  "only_module_and_import_headers_merged_with_exact_local_declarations": true
+}

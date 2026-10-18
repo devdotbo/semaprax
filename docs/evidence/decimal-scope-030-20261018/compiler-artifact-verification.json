@@ -1,0 +1,13 @@
+{
+  "status": "CURRENT_HEAD_CLI_ARCHIVE_AND_BINARY_VERIFIED_NOT_RUNTIME_QUALIFIED",
+  "head": "487253096928c72bf2ac9180b6b65a0e3838d5af",
+  "run": 39163119133,
+  "job": 117780410041,
+  "artifact_id": 12149592179,
+  "archive_digest": "sha256:a930bef1eca1246a8df23ea4c92f633aabfd1f7bdfbfcaa2abc7c959f0ead1b2",
+  "binary_sha256": "07a1ba1a55b0ed5a569ff1e6ad743fd4839ee9392efab7dda617ee67c080cfc4",
+  "bytes": 190535712,
+  "target": "aarch64-apple-darwin",
+  "binary": "/Volumes/Semaprax/tmp/ci-38383508340/fused-readers-eb819/verified-cli/semaprax",
+  "runtime": "UNEXECUTED"
+}

@@ -1,0 +1,32 @@
+{
+  "status": "EXACT_ORIGINAL_SUPPORTED_API_AND_COMPLETE_CASES_PRESERVED",
+  "public_ids": [
+    "std.int.decimal.add",
+    "std.int.decimal.canonicalize",
+    "std.int.decimal.compare",
+    "std.int.decimal.digit",
+    "std.int.decimal.digits",
+    "std.int.decimal.divide",
+    "std.int.decimal.subtract",
+    "std.int.decimal.valid"
+  ],
+  "all_eight_original_function_heads_and_contracts_byte_identical": true,
+  "supported_catalog_before_ids": [
+    "std.int.decimal.add",
+    "std.int.decimal.canonicalize",
+    "std.int.decimal.compare",
+    "std.int.decimal.digit",
+    "std.int.decimal.digits",
+    "std.int.decimal.divide",
+    "std.int.decimal.subtract",
+    "std.int.decimal.valid"
+  ],
+  "only_supported_inventory_selection_added": true,
+  "inventory_is_not_a_source_privacy_or_verification_boundary": true,
+  "all_original_examples_bytes_unchanged": true,
+  "all_original_test_main_bytes_retained_except_final_additional_regression_contribution": true,
+  "new_regression_called_unconditionally_after_all_original_cases": true,
+  "all_original_failure_bits_retained": true,
+  "all_original_negative_contract_cases_in_Rust_harness_unchanged": true,
+  "targets_and_profile_and_status_and_limits_unchanged": true
+}

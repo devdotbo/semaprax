@@ -58,5 +58,33 @@ fn main() -> i64
     let max_u64 = "18446744073709551615";
     if divide("18446744073709551615", string_as_str(max_u64)) != "1" { failures = failures + 512; }
     if add("99999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999999", "1") != "100000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000000" { failures = failures + 1024; }
-    failures
+    failures + regression()
+}
+
+@id("std.int.decimal.tests.regression")
+fn regression() -> i64
+{
+    validation_regression() + ordering_regression() + cursor_regression()
+}
+
+@id("std.int.decimal.tests.validation-regression")
+fn validation_regression() -> i64
+{
+    let empty = "";
+    let malformed = "١";
+    if !valid(string_as_str(empty)) && !valid(string_as_str(malformed)) { 0 } else { 2048 }
+}
+
+@id("std.int.decimal.tests.ordering-regression")
+fn ordering_regression() -> i64
+{
+    let low = "1000000000000000000000000000001";
+    let high = "9000000000000000000000000000000";
+    if compare(string_as_str(low), string_as_str(high)) == -1 && compare(string_as_str(high), string_as_str(low)) == 1 { 0 } else { 4096 }
+}
+
+@id("std.int.decimal.tests.cursor-regression")
+fn cursor_regression() -> i64
+{
+    if add("0", "999999999999999999999999999999") == "999999999999999999999999999999" { 0 } else { 8192 }
 }
