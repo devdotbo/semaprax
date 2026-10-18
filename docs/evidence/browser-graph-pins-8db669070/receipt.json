@@ -1,0 +1,51 @@
+{
+  "source_head": "8db669070b657a1b8f3b3b68d80836c09eabcc2c",
+  "run": 39086633619,
+  "job": 117554944634,
+  "fixtures": [
+    {
+      "role": "baseline",
+      "previous_shipping_pin": "sha256:9920319d3a73bfa5a8bfad03a218ad5e9f0eb729dc0cd114f0cd2abafafc6b94",
+      "reference_capture_digest": "sha256:4bdc2f735a3de7b58292bd2df551631534fa0847b63f4d84d1c3ee54bd5a1955",
+      "current_digest": "sha256:ba7a3cd5df129a235261c8ecf82d029a335a724f27c9bef3fb888f18f3337329",
+      "reference_capture_bill": 2691397,
+      "current_bill": 12284169,
+      "all_other_graph_bytes_identical_to_reference_capture": true,
+      "shipping_pin_disagrees_with_cited_reference_capture": true,
+      "current_wire_sha256": "593b1a1699cabae2a8c721d8053faacda3eada74b510800b545f148b45d2aa3e"
+    },
+    {
+      "role": "renamed",
+      "previous_shipping_pin": "sha256:4617e70c11726eb59b048ede7e7c2a8b1fa3b42cbbdcd9e98f95f0af20025731",
+      "reference_capture_digest": "sha256:5c5ae56e91c8028c41e2fd2f42218ef03781d3b24a100d86fdb26d83cfc93712",
+      "current_digest": "sha256:19f3aa8e53f70af525b0e7d88572cd82864d17fcf7a695739c443dddb390fd5d",
+      "reference_capture_bill": 2691397,
+      "current_bill": 12284169,
+      "all_other_graph_bytes_identical_to_reference_capture": true,
+      "shipping_pin_disagrees_with_cited_reference_capture": true,
+      "current_wire_sha256": "9006798646ce11b00970907bcf49e257b5f39a9a24714ae1d63ee81d4fffde50"
+    }
+  ],
+  "extension_old_length": 157497,
+  "extension_old_sha256": "1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe",
+  "extension_length": 157964,
+  "extension_sha256": "1c0285e9a59c2600d87798e63572e6669611e0f834648f6c1caae23ef14ee431",
+  "guard_length": 10641,
+  "guard_sha256": "35f3b1c9fb3935e5229846b0021be889c08f9452438d7a2d16d2a9d95dcdaa0a",
+  "config_length": 116352,
+  "config_sha256": "5eb9674830836a62fc8328cf41642d24d93a210cdb51c9a5a53fae7d3672903d",
+  "all_prior_extension_fields_and_order_restore": true,
+  "existing_121_successor_packet_unchanged": true,
+  "all_limits_and_existing_Rust_bridge_controls_unchanged": true,
+  "qualification": "captured hosted graph subjects, not a browser/current-main pass or a performance gain",
+  "original_compact_metadata_serialization_retained": true,
+  "complete_original_fmt433_current_named_view_retained": true,
+  "unchanged_original_source_hostile_controls": 10,
+  "unchanged_original_strict_bootstrap_refusals": 67,
+  "additive_browser_source_refusals": 5,
+  "node_syntax_check": "PASS",
+  "whole_dispatcher_config_guard_and_three_bootstrap_inverses": "PASS",
+  "browser_historical_Rust_sources": "unchanged",
+  "Rust_browser_helper_qualification": "whole test harness and non-test current-entry scopes both hit unchanged200MiB guard; deferred; do not retry unchanged",
+  "current_main_requires_merge": "e32be37755524c57e7205044935807aab71f2b0b"
+}

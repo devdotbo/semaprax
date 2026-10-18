@@ -12,8 +12,8 @@ fn packet() -> serde_json::Value {
     assert_eq!(
         (data.len(), digest(data.as_bytes())),
         (
-            157497,
-            "1ffb36ed54a4b1127bf2dec39b8ecd41f99852f7899737b82a166c0376f540fe".to_owned()
+            157964,
+            "1c0285e9a59c2600d87798e63572e6669611e0f834648f6c1caae23ef14ee431".to_owned()
         )
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));

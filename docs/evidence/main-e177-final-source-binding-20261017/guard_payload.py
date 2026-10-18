@@ -14,9 +14,9 @@ def bounded(path,length,digest):
   assert identity(st)==identity(os.fstat(fd))==identity(os.lstat(path))
   assert hashlib.sha256(b).hexdigest()==digest;return b
  finally:os.close(fd)
-_CONFIG_PATH=R/'docs/evidence/fmt-ec77-20261018/guard-config.json'
+_CONFIG_PATH=R/'docs/evidence/browser-graph-pins-8db669070/guard-config.json'
 _CONFIG_LENGTH=116352
-_CONFIG_SHA256='641a6517e3dcadcfa3a6bc42e8c714a54801bdd922cfe62e5f7c424b9434c87c'
+_CONFIG_SHA256='5eb9674830836a62fc8328cf41642d24d93a210cdb51c9a5a53fae7d3672903d'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
