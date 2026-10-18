@@ -19,6 +19,11 @@ pub(super) struct Row {
     pub mask_checks: usize,
     pub tail_marks: usize,
     pub fused_turns: usize,
+    pub pair_left_steps: usize,
+    pub pair_right_steps: usize,
+    pub pair_left_tails: usize,
+    pub pair_right_tails: usize,
+    pub pair_receivers: usize,
     pub shared_patterns: usize,
     pub shared_metadata: usize,
     pub shared_steps: usize,
@@ -52,6 +57,11 @@ const EMPTY: Row = Row {
     mask_checks: 0,
     tail_marks: 0,
     fused_turns: 0,
+    pair_left_steps: 0,
+    pair_right_steps: 0,
+    pair_left_tails: 0,
+    pair_right_tails: 0,
+    pair_receivers: 0,
     shared_patterns: 0,
     shared_metadata: 0,
     shared_steps: 0,
@@ -215,6 +225,36 @@ impl Guard {
     pub(super) fn fused_turns(&self) {
         self.update(|r| match r.fused_turns.checked_add(1) {
             Some(n) => r.fused_turns = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_left_steps(&self) {
+        self.update(|r| match r.pair_left_steps.checked_add(1) {
+            Some(n) => r.pair_left_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_right_steps(&self) {
+        self.update(|r| match r.pair_right_steps.checked_add(1) {
+            Some(n) => r.pair_right_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_left_tails(&self) {
+        self.update(|r| match r.pair_left_tails.checked_add(1) {
+            Some(n) => r.pair_left_tails = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_right_tails(&self) {
+        self.update(|r| match r.pair_right_tails.checked_add(1) {
+            Some(n) => r.pair_right_tails = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn pair_receivers(&self) {
+        self.update(|r| match r.pair_receivers.checked_add(1) {
+            Some(n) => r.pair_receivers = n,
             None => r.overflow = true,
         });
     }
@@ -561,6 +601,39 @@ mod controls {
                 0 => guard.mask_checks(),
                 1 => guard.tail_marks(),
                 _ => guard.fused_turns(),
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(budget.remaining, remaining);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+        }
+    }
+    #[test]
+    fn fused_reader_counter_overflow_is_incomplete_and_does_not_spend_work() {
+        for counter in 0..5 {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut trace = trace.borrow_mut();
+                match counter {
+                    0 => trace.rows[0].pair_left_steps = usize::MAX,
+                    1 => trace.rows[0].pair_right_steps = usize::MAX,
+                    2 => trace.rows[0].pair_left_tails = usize::MAX,
+                    3 => trace.rows[0].pair_right_tails = usize::MAX,
+                    _ => trace.rows[0].pair_receivers = usize::MAX,
+                }
+            });
+            match counter {
+                0 => guard.pair_left_steps(),
+                1 => guard.pair_right_steps(),
+                2 => guard.pair_left_tails(),
+                3 => guard.pair_right_tails(),
+                _ => guard.pair_receivers(),
             }
             guard.success();
             drop(guard);

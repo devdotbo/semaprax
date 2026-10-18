@@ -3,12 +3,15 @@ use super::*;
 
 // Exactly the accepted880 narrow primitive criterion: same function/budget,
 // sequential nonescaping nonrecursive ZST-success/one-terminal-Diagnostic slots.
-// Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.
+// Two final-HIR readers and three paired branches each retain every work site.
+// The paired branches transport plain immutable Rc loans without Option outputs.
 // The shared immutable-step branch adds five payment and five work sites.
 // Every payload below is separately paid on actual execution, never once.
 // Paired-tail selection adds one payment site; its bulk loop adds one
 // payload payment and three work sites, each with a complete primitive frame.
-pub(super) const PRIMITIVE_FRAMES: usize = 46 * PAYMENT_HEADER;
+// The fused fallback replaces two readers with left/right-some/right-none readers:
+// five extra primitive sites, separately funded even for mutually exclusive arms.
+pub(super) const PRIMITIVE_FRAMES: usize = 51 * PAYMENT_HEADER;
 pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;
 // Before inspecting the already-funded owner length, fund the new payment
 // site's complete primitive frame, match/local usize receivers and both
@@ -94,13 +97,59 @@ pub(super) const PAIR_LOAD: usize = 2 * size_of::<&[usize]>() + 2 * size_of::<us
     + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<bool>(); // loaded=true
 
+pub(super) const PAIR_LEFT_STEP: usize = 2 * size_of::<usize>()
+    + 3 * size_of::<bool>()
+    + size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 2 * size_of::<&Rc<SkeletonObservation>>()
+    + size_of::<usize>()
+    + EMPTY;
+pub(super) const PAIR_RIGHT_STEP: usize = 2 * size_of::<usize>()
+    + 3 * size_of::<bool>()
+    + size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<usize>()
+    + EMPTY;
+pub(super) const PAIR_LEFT_TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 2 * size_of::<&Rc<SkeletonObservation>>()
+    + size_of::<usize>()
+    + 3 * size_of::<u8>();
+pub(super) const PAIR_RIGHT_TAIL: usize = size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<usize>()
+    + 3 * size_of::<u8>();
+pub(super) const PAIR_CONTENT: usize = 4 * size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonTerminal>()
+    + 2 * size_of::<Ordering>();
+const _: () =
+    assert!(PAIR_LEFT_STEP + PAIR_RIGHT_STEP + PAIR_CONTENT < 2 * (STEP + EMPTY) + PAIR_MATCH);
+
 macro_rules! lexical_plan_next {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
-     $tail:ident, $links:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
-        lexical_pair_plan_next!(
-            $owner, $cursor, $items, $loaded, $limit, $tail, $links, $census, $function, $budget,
+    ($budget:ident, $function:ident, $census:ident, $phase:literal) => {
+        paid!($budget, $function, lexical_cursor::PAIR_CONTENT, $phase)?;
+        #[cfg(test)]
+        $census.pair_receivers();
+    };
+    ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident,
+     $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident,
+     $pair_loop:lifetime, $phase:literal) => {
+        paired_plan_observations!(
+            $owner,
+            $left_path,
+            $right_path,
+            $left_tail,
+            $right_tail,
+            $left_links,
+            $right_links,
+            $census,
+            $function,
+            $budget,
+            $pair_loop,
             $phase
-        )
+        );
     };
     ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
      $tail:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {{
@@ -148,76 +197,6 @@ macro_rules! lexical_plan_next {
                 }
             }
             paid!($budget, $function, lexical_cursor::TAIL, $phase)?;
-            #[cfg(test)]
-            $census.tail();
-            match $tail {
-                [head, rest @ ..] => {
-                    $tail = rest;
-                    $owner.$cursor.item += 1;
-                    Some::<&SkeletonObservation>(head.as_ref())
-                }
-                [] => None,
-            }
-        }
-    }};
-}
-
-macro_rules! lexical_pair_plan_next {
-    ($owner:ident, $cursor:ident, $items:ident, $loaded:ident, $limit:ident,
-     $tail:ident, $links:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {{
-        $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
-        'plan_yield: {
-            loop {
-                paid!(
-                    $budget,
-                    $function,
-                    lexical_cursor::STEP + lexical_cursor::EMPTY,
-                    $phase
-                )?;
-                #[cfg(test)]
-                $census.step();
-                if $owner.$cursor.segment >= $owner.$limit {
-                    break;
-                }
-                $budget.charge(
-                    $function,
-                    1,
-                    "ordinary plan history forward segment traversal",
-                )?;
-                if !$owner.$loaded {
-                    paid!($budget, $function, lexical_cursor::PAIR_LOAD, $phase)?;
-                    #[cfg(test)]
-                    $census.load();
-                    let &[ref links_rest @ .., link] = $links else {
-                        unreachable!("prepared ordinary pair-local links");
-                    };
-                    $links = links_rest;
-                    remember_plan_segment!($owner, $cursor, link);
-                    $owner.$items = $owner.arena[link].items.as_slice();
-                    $owner.$loaded = true;
-                }
-                match $owner.$items {
-                    [head, rest @ ..] => {
-                        $owner.$items = rest;
-                        $owner.$cursor.item += 1;
-                        break 'plan_yield Some::<&SkeletonObservation>(head.as_ref());
-                    }
-                    [] => {
-                        $owner.$cursor.segment += 1;
-                        $owner.$cursor.item = 0;
-                        $owner.$loaded = false;
-                    }
-                }
-            }
-            paid!(
-                $budget,
-                $function,
-                lexical_cursor::TAIL + 3 * size_of::<u8>(),
-                $phase
-            )?;
-            #[cfg(test)]
-            $census.tail_marks();
-            remember_plan_tail!($owner, $cursor);
             #[cfg(test)]
             $census.tail();
             match $tail {
@@ -561,4 +540,148 @@ macro_rules! remember_plan_tail {
     ($owner:ident, right_cursor) => {
         $owner.tail_mask |= 2;
     };
+}
+
+macro_rules! paired_plan_observations {
+ ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident,
+  $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident,
+  $pair_loop:lifetime, $phase:literal) => {
+  $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+  let left_head = 'left_loan: {
+   loop {
+    paid!($budget, $function, lexical_cursor::PAIR_LEFT_STEP, $phase)?;
+  #[cfg(test)]
+  $census.pair_left_steps();
+    #[cfg(test)]
+    $census.step();
+    if $owner.left_cursor.segment >= $owner.left_segments { break; }
+    $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+    if !$owner.left_loaded {
+     paid!($budget, $function, lexical_cursor::PAIR_LOAD, $phase)?;
+     #[cfg(test)]
+     $census.load();
+     let &[ref links_rest @ .., link] = $left_links else { unreachable!("prepared ordinary pair-local links"); };
+     $left_links = links_rest;
+     remember_plan_segment!($owner, left_cursor, link);
+     $owner.left_items = $owner.arena[link].items.as_slice();
+     $owner.left_loaded = true;
+    }
+    match $owner.left_items {
+     [head, rest @ ..] => { $owner.left_items = rest; $owner.left_cursor.item += 1; break 'left_loan head; }
+     [] => { $owner.left_cursor.segment += 1; $owner.left_cursor.item = 0; $owner.left_loaded = false; }
+    }
+   }
+   paid!($budget, $function, lexical_cursor::PAIR_LEFT_TAIL, $phase)?;
+  #[cfg(test)]
+  $census.pair_left_tails();
+   #[cfg(test)]
+   { $census.tail_marks(); $census.tail(); }
+   remember_plan_tail!($owner, left_cursor);
+   match $left_tail {
+    [head, rest @ ..] => { $left_tail = rest; $owner.left_cursor.item += 1; break 'left_loan head; }
+    [] =>
+{
+ $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+ loop {
+  paid!($budget, $function, lexical_cursor::PAIR_RIGHT_STEP, $phase)?;
+  #[cfg(test)]
+  $census.pair_right_steps();
+  #[cfg(test)]
+  $census.step();
+  if $owner.right_cursor.segment >= $owner.right_segments { break; }
+  $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+  if !$owner.right_loaded {
+   paid!($budget, $function, lexical_cursor::PAIR_LOAD, $phase)?;
+   #[cfg(test)]
+   $census.load();
+   let &[ref links_rest @ .., link] = $right_links else { unreachable!("prepared ordinary pair-local links"); };
+   $right_links = links_rest;
+   remember_plan_segment!($owner, right_cursor, link);
+   $owner.right_items = $owner.arena[link].items.as_slice();
+   $owner.right_loaded = true;
+  }
+  match $owner.right_items {
+   [_, rest @ ..] => {
+    $owner.right_items = rest;
+    $owner.right_cursor.item += 1;
+    $owner.ordering = Ordering::Less;
+break $pair_loop;
+   }
+   [] => { $owner.right_cursor.segment += 1; $owner.right_cursor.item = 0; $owner.right_loaded = false; }
+  }
+ }
+ paid!($budget, $function, lexical_cursor::PAIR_RIGHT_TAIL, $phase)?;
+  #[cfg(test)]
+  $census.pair_right_tails();
+ #[cfg(test)]
+ { $census.tail_marks(); $census.tail(); }
+ remember_plan_tail!($owner, right_cursor);
+ match $right_tail {
+  [_, rest @ ..] => { $right_tail = rest; $owner.right_cursor.item += 1; $owner.ordering = Ordering::Less;
+break $pair_loop; }
+  [] => { $owner.ordering = $left_path.terminal.cmp(&$right_path.terminal);
+break $pair_loop; }
+ }
+}
+
+   }
+  };
+
+{
+ $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+ loop {
+  paid!($budget, $function, lexical_cursor::PAIR_RIGHT_STEP, $phase)?;
+  #[cfg(test)]
+  $census.pair_right_steps();
+  #[cfg(test)]
+  $census.step();
+  if $owner.right_cursor.segment >= $owner.right_segments { break; }
+  $budget.charge($function, 1, "ordinary plan history forward segment traversal")?;
+  if !$owner.right_loaded {
+   paid!($budget, $function, lexical_cursor::PAIR_LOAD, $phase)?;
+   #[cfg(test)]
+   $census.load();
+   let &[ref links_rest @ .., link] = $right_links else { unreachable!("prepared ordinary pair-local links"); };
+   $right_links = links_rest;
+   remember_plan_segment!($owner, right_cursor, link);
+   $owner.right_items = $owner.arena[link].items.as_slice();
+   $owner.right_loaded = true;
+  }
+  match $owner.right_items {
+   [right_head, rest @ ..] => {
+    $owner.right_items = rest;
+    $owner.right_cursor.item += 1;
+    $owner.ordering = left_head.as_ref().cmp(right_head.as_ref());
+if $owner.ordering == Ordering::Equal {
+    $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+    #[cfg(test)]
+    $census.round();
+    continue $pair_loop;
+}
+break $pair_loop;
+   }
+   [] => { $owner.right_cursor.segment += 1; $owner.right_cursor.item = 0; $owner.right_loaded = false; }
+  }
+ }
+ paid!($budget, $function, lexical_cursor::PAIR_RIGHT_TAIL, $phase)?;
+  #[cfg(test)]
+  $census.pair_right_tails();
+ #[cfg(test)]
+ { $census.tail_marks(); $census.tail(); }
+ remember_plan_tail!($owner, right_cursor);
+ match $right_tail {
+  [right_head, rest @ ..] => { $right_tail = rest; $owner.right_cursor.item += 1; $owner.ordering = left_head.as_ref().cmp(right_head.as_ref());
+if $owner.ordering == Ordering::Equal {
+    $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+    #[cfg(test)]
+    $census.round();
+    continue $pair_loop;
+}
+break $pair_loop; }
+  [] => { $owner.ordering = Ordering::Greater;
+break $pair_loop; }
+ }
+}
+
+ };
 }

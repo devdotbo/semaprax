@@ -870,27 +870,29 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
     ));
     let direct = phases(owner, "paid!(", &[4]);
-    let forwarded = phases(owner, "lexical_plan_next!(", &[10, 11]);
+    let forwarded = phases(owner, "lexical_plan_next!(", &[4, 10, 12]);
     let shared = phases(owner, "shared_plan_pair_step!(", &[11]);
     assert_eq!(
         (direct.len(), forwarded.len(), shared.len()),
-        (13, 4, 1),
+        (12, 4, 1),
         "audit new lexical payment sites explicitly"
     );
     assert_eq!(forwarded.iter().filter(|(_, n)| *n == 10).count(), 2);
-    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 11).count(), 2);
+    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 4).count(), 1);
+    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 12).count(), 1);
     let lexical = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
     let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 17, "audit every generic payment site");
+    assert_eq!(sites.len(), 24, "audit every generic payment site");
     assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
     assert_eq!(lexical.matches("shared_plan_segment_run!(").count(), 1);
     assert_eq!(lexical.matches("paired_plan_tails!(").count(), 1);
-    assert_eq!(lexical.matches("remember_plan_tail!(").count(), 1);
+    assert_eq!(lexical.matches("remember_plan_tail!(").count(), 3);
     let compact: String = lexical.split_whitespace().collect();
-    assert_eq!(compact.matches("lexical_pair_plan_next!($owner,$cursor,$items,$loaded,$limit,$tail,$links,$census,$function,$budget,$phase)").count(), 1);
+    assert!(!compact.contains("lexical_pair_plan_next!"));
+    assert_eq!(compact.matches("paired_plan_observations!($owner,$left_path,$right_path,$left_tail,$right_tail,$left_links,$right_links,$census,$function,$budget,$pair_loop,$phase);").count(), 1);
     assert_eq!(
         compact
             .matches("shared_plan_boundary!($owner,$left_links,$right_links,$census,$function,$budget,$phase);")

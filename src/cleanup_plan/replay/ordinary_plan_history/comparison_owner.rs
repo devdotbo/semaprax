@@ -340,7 +340,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     let mut right_tail = right_path.history.tail.as_slice();
                     let mut left_links = owner.left_cursor.links.as_slice();
                     let mut right_links = owner.right_cursor.links.as_slice();
-                    loop {
+                    'paired_observations: loop {
                         shared_plan_pair_step!(
                             owner,
                             left_path,
@@ -354,59 +354,15 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             budget,
                             "ordinary plan history paired cursor next"
                         );
-                        paid!(
+                        lexical_plan_next!(
                             budget,
                             function,
-                            PAIR_MATCH,
-                            "ordinary plan history paired cursor next"
-                        )?;
-                        let left = lexical_plan_next!(
-                            owner,
-                            left_cursor,
-                            left_items,
-                            left_loaded,
-                            left_segments,
-                            left_tail,
-                            left_links,
                             census,
-                            function,
-                            budget,
                             "ordinary plan history paired cursor next"
                         );
-                        let right = lexical_plan_next!(
-                            owner,
-                            right_cursor,
-                            right_items,
-                            right_loaded,
-                            right_segments,
-                            right_tail,
-                            right_links,
-                            census,
-                            function,
-                            budget,
-                            "ordinary plan history paired cursor next"
-                        );
-                        match (left, right) {
-                            (Some(left), Some(right)) => {
-                                owner.ordering = left.cmp(right);
-                                if owner.ordering == Ordering::Equal {
-                                    budget.charge(
-                                        function,
-                                        1,
-                                        "ordinary plan history observation comparison",
-                                    )?;
-                                    #[cfg(test)]
-                                    census.round();
-                                    continue;
-                                }
-                            }
-                            (None, None) => {
-                                owner.ordering = left_path.terminal.cmp(&right_path.terminal)
-                            }
-                            (None, Some(_)) => owner.ordering = Ordering::Less,
-                            (Some(_), None) => owner.ordering = Ordering::Greater,
-                        }
-                        break;
+                        lexical_plan_next!(owner, left_path, right_path, left_tail, right_tail,
+                            left_links, right_links, census, function, budget, 'paired_observations,
+                            "ordinary plan history paired cursor next");
                     }
                 } // Both PlanPath loans end BEFORE any scheduling or swap.
                 owner.step = owner.after_pair;

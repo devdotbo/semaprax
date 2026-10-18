@@ -1,4 +1,6 @@
 //! Whole paired-tail successor inverses; every prior assertion remains.
+#[path = "fused_readers.rs"]
+mod fused_readers;
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown shared-step subject extent");
     let mut result = current.to_owned();
@@ -15,6 +17,9 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    previous_owner_before_fused(&fused_readers::previous_owner(current))
+}
+fn previous_owner_before_fused(current: &str) -> String {
     restore(current, 24302, OWNER)
 }
 #[rustfmt::skip]
@@ -27,6 +32,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (589, "    tail_mask: u8,\n", ""),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_before_fused(&fused_readers::previous_macro(current))
+}
+fn previous_macro_before_fused(current: &str) -> String {
     restore(current, 25469, MACRO)
 }
 #[rustfmt::skip]
@@ -37,6 +45,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (489, "// Paired-tail selection adds one payment site; its bulk loop adds one\n// payload payment and three work sites, each with a complete primitive frame.\npub(super) const PRIMITIVE_FRAMES: usize = 46 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 41 * PAYMENT_HEADER;\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    previous_census_before_fused(&fused_readers::previous_census(current))
+}
+fn previous_census_before_fused(current: &str) -> String {
     restore(current, 18711, CENSUS)
 }
 #[rustfmt::skip]
@@ -47,6 +58,9 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (509, "    pub mask_checks: usize,\n    pub tail_marks: usize,\n    pub fused_turns: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_before_fused(&fused_readers::previous_pair_tests(current))
+}
+fn previous_pair_tests_before_fused(current: &str) -> String {
     restore(current, 50721, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -57,6 +71,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (86, "#[path = \"pair_scope_tests/paired_tails.rs\"]\nmod paired_tails;\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    previous_route_before_fused(&fused_readers::previous_route(current))
+}
+fn previous_route_before_fused(current: &str) -> String {
     restore(current, 35859, ROUTE)
 }
 #[rustfmt::skip]
@@ -218,8 +235,8 @@ mod tests {
     #[test]
     fn paired_tail_sources_refuse_span_extent_and_outside_drift() {
         hostile(
-            include_str!("../../../../../../comparison_owner.rs"),
-            previous_owner,
+            &fused_readers::previous_owner(include_str!("../../../../../../comparison_owner.rs")),
+            previous_owner_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-owner.rs.txt"
@@ -227,8 +244,8 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../../../../../lexical_cursor.rs"),
-            previous_macro,
+            &fused_readers::previous_macro(include_str!("../../../../../lexical_cursor.rs")),
+            previous_macro_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-macro.rs.txt"
@@ -236,8 +253,8 @@ mod tests {
             MACRO,
         );
         hostile(
-            include_str!("../../../../../pair_scope_census.rs"),
-            previous_census,
+            &fused_readers::previous_census(include_str!("../../../../../pair_scope_census.rs")),
+            previous_census_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-census.rs.txt"
@@ -245,8 +262,8 @@ mod tests {
             CENSUS,
         );
         hostile(
-            include_str!("../../../../../pair_scope_tests.rs"),
-            previous_pair_tests,
+            &fused_readers::previous_pair_tests(include_str!("../../../../../pair_scope_tests.rs")),
+            previous_pair_tests_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-pair_tests.rs.txt"
@@ -254,8 +271,10 @@ mod tests {
             PAIR_TESTS,
         );
         hostile(
-            include_str!("../../../../../../../../../bounded_output/stage_debits/route_debits.rs"),
-            previous_route,
+            &fused_readers::previous_route(include_str!(
+                "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
+            )),
+            previous_route_before_fused,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/paired-tails-001-20261018/before-route.rs.txt"

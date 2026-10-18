@@ -155,11 +155,41 @@ fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usi
             * row.shared_runs;
     let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
     let (tail_removed, tail_retained) = paired_tails::prices(paths, row);
+    let (reader_removed, reader_retained) = fused_reader_prices(paths, row);
     (
-        (pair + 2 * step) * row.shared_steps + boundary_removed + tail_removed,
-        retained + boundary_retained + tail_retained,
+        (pair + 2 * step) * row.shared_steps + boundary_removed + tail_removed + reader_removed,
+        retained + boundary_retained + tail_retained + reader_retained,
     )
 }
+
+// Independent of the producer constants and reservation delta. All old
+// physical/work/diagnostic fixtures use this invoice, including full HIR.
+fn fused_reader_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    let header = 2 * size_of::<&ResolvedFunction>()
+        + 2 * size_of::<&mut ReplayBudget>()
+        + 2 * size_of::<&str>()
+        + 2 * size_of::<usize>()
+        + 2 * size_of::<Result<(), Diagnostic>>();
+    let options = 2 * size_of::<Option<&SkeletonObservation>>();
+    let as_ref = 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>();
+    let left_loan = 2 * size_of::<&Rc<SkeletonObservation>>();
+    let old_match = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
+        + 2 * size_of::<&SkeletonObservation>();
+    let comparison_loans =
+        4 * size_of::<&Rc<SkeletonObservation>>() + 2 * size_of::<&SkeletonObservation>();
+    (
+        (options + as_ref)
+            * (row.pair_left_steps
+                + row.pair_right_steps
+                + row.pair_left_tails
+                + row.pair_right_tails)
+            + old_match * row.pair_receivers,
+        if paths >= 2 { 5 * header } else { 0 }
+            + left_loan * (row.pair_left_steps + row.pair_left_tails)
+            + comparison_loans * row.pair_receivers,
+    )
+}
+
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -1213,5 +1243,88 @@ fn sealed_unit_driver_is_exactly_unit_only_and_never_allocates_or_owns_cleanup()
             assert_eq!(driver.next(), None); // this sole terminal call ends the primitive
         });
         assert_eq!(heap, Metrics::default());
+    }
+}
+
+#[test]
+fn fused_fallback_real_values_keep_success_and_every_work_refusal() {
+    let program = super::super::super::tests::program();
+    let function = program
+        .functions
+        .iter()
+        .find(|f| f.id.as_str() == "f")
+        .unwrap();
+    let item = Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(),
+        value: true,
+    });
+    let other = Rc::new(SkeletonObservation::Boolean {
+        expression: function.body.id.clone(),
+        value: false,
+    });
+    let expected = vec![
+        SkeletonPath {
+            observations: vec![item.clone(); 64].into(),
+            terminal: SkeletonTerminal::Success,
+        };
+        2
+    ];
+    for mutation in 0..2 {
+        let actual = || {
+            let mut left = vec![item.clone(); 64];
+            if mutation == 1 {
+                left[63] = other.clone();
+            }
+            HistorySet {
+                arena: vec![
+                    Segment {
+                        previous: None,
+                        items: left,
+                        depth: 1,
+                    },
+                    Segment {
+                        previous: None,
+                        items: vec![item.clone(); 64],
+                        depth: 1,
+                    },
+                ],
+                max_depth: 1,
+                paths: (0..2)
+                    .map(|side| PlanPath {
+                        history: History {
+                            previous: Some(side),
+                            tail: Vec::new(),
+                        },
+                        terminal: SkeletonTerminal::Success,
+                    })
+                    .collect(),
+            }
+        };
+        pair_scope_census::reset();
+        let (old, old_heap, _) =
+            observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+        pair_scope_census::reset();
+        let (new, heap, _) =
+            observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        let (rows, lost) = pair_scope_census::finish();
+        assert_eq!(lost, 0);
+        assert_eq!(rows.len(), 1);
+        let row = rows[0];
+        assert!(!row.old && row.ended && !row.unwound && !row.truncated && !row.overflow);
+        assert_eq!(row.complete, mutation == 0);
+        assert_eq!(new.result.is_ok(), mutation == 0);
+        assert!(row.pair_receivers > 0 && row.pair_left_steps > 0 && row.pair_right_steps > 0);
+        assert_eq!(new, old);
+        assert_eq!(heap, old_heap);
+        for cut in 0..=MAX_REPLAY_WORK_UNITS - old.remaining {
+            pair_scope_census::reset();
+            let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
+            pair_scope_census::reset();
+            let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
+            assert_eq!(
+                new, old,
+                "all diagnostic fields/work, mutation{mutation} cut{cut}"
+            );
+        }
     }
 }

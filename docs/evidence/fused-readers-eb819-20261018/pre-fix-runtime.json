@@ -1,0 +1,44 @@
+{
+  "status": "ACTUAL_PRE_FIX_REFUSALS_ONLY",
+  "binary_verification": {
+    "status": "CURRENT_HEAD_CLI_ARCHIVE_AND_BINARY_VERIFIED_NOT_RUNTIME_QUALIFIED",
+    "head": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
+    "run": 39161333171,
+    "job": 117775102190,
+    "artifact_id": 12149431403,
+    "archive_digest": "sha256:6ff94b129b328c08e0b8bcdead59a5ed260b6ef092394c795c90c3f602655756",
+    "binary_sha256": "150857c097bf103befeae76c43896bbaf620c42c29e140993a255045c9379c00",
+    "bytes": 190549392,
+    "target": "aarch64-apple-darwin",
+    "binary": "/Volumes/Semaprax/tmp/ci-38383508340/browser-cli-31e/verified-cli/semaprax",
+    "runtime": "UNEXECUTED"
+  },
+  "decimal_result": {
+    "status": "failed_or_guard_stopped",
+    "exit": "1"
+  },
+  "decimal_diagnostic": "{\"code\":\"SPX-G171\",\"severity\":\"error\",\"message\":\"Workspace Semantic Graph `builder_bytes` exceeds 67108864\",\"path\":null,\"location\":null,\"help\":\"live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast 4476702 bytes for 3 module(s) and fit within 67108864, with `src/decimal.spx` the largest at 2158990 bytes. Reducing reachable source is the only lever; the forecast itself was not the refusing bound. resolved-core phase first sticky ledger refusal: requested 136 bytes with 41 remaining and 0 reserved floor. Authenticated internal stage: HIR final validation. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.\"}\n",
+  "native": {
+    "fmt-app.spx": 50944,
+    "fmt-tests.spx": 45056,
+    "default": {
+      "status": "failed_or_guard_stopped",
+      "exit": "1"
+    },
+    "native": {
+      "status": "failed_or_guard_stopped",
+      "exit": "1"
+    },
+    "head": "eb819262ba34bfd0e0ee9046aa99ce4ba19f01aa",
+    "fixture": {
+      "semaprax.toml": "7cf4718effd76f5ace336adea8a0fba9ad4c86847901e6df073eda6461f0f616",
+      "app.spx": "d19ad048dc68bffc04ccb0c24e4fc0eee1566c4d1b26f849e2d3d688db2270fb",
+      "tests.spx": "9040d55d9e75fcc5fbe8378c6fbd938d2a8a34eebd36250da1fcbf864a52e59b"
+    }
+  },
+  "native_diagnostics": {
+    "baseline-native-default.log": "{\"code\":\"SPX-G171\",\"severity\":\"error\",\"message\":\"Workspace Semantic Graph `builder_bytes` exceeds 67108864\",\"path\":null,\"location\":null,\"help\":\"live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast 2648338 bytes for 3 module(s) and fit within 67108864, with `dependencies/std.int.decimal/0.1.0/decimal.spx` the largest at 2160974 bytes. Reducing reachable source is the only lever; the forecast itself was not the refusing bound. resolved-core phase first sticky ledger refusal: requested 154 bytes with 105 remaining and 0 reserved floor. Authenticated internal stage: HIR final validation. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.\"}\n",
+    "baseline-native-native.log": "{\"code\":\"SPX-G171\",\"severity\":\"error\",\"message\":\"Workspace Semantic Graph `builder_bytes` exceeds 67108864\",\"path\":null,\"location\":null,\"help\":\"live graph construction, not the static admission pre-charge, exceeded the budget: the pre-charge forecast 2648338 bytes for 3 module(s) and fit within 67108864, with `dependencies/std.int.decimal/0.1.0/decimal.spx` the largest at 2160974 bytes. Reducing reachable source is the only lever; the forecast itself was not the refusing bound. resolved-core phase first sticky ledger refusal: requested 154 bytes with 105 remaining and 0 reserved floor. Authenticated internal stage: HIR final validation. These are cumulative reservation bytes, not a retained-memory forecast or process RSS; the exact inner operation is unknown.\"}\n"
+  },
+  "qualification": "No changed-source execution or fixed-project acceptance claimed"
+}
