@@ -14,6 +14,7 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+#[path = "shared_boundaries/shared_runs.rs"]
 mod shared_runs;
 pub(super) fn previous_macro(current: &str) -> String {
     previous_macro_stage(&shared_runs::previous_macro(current))

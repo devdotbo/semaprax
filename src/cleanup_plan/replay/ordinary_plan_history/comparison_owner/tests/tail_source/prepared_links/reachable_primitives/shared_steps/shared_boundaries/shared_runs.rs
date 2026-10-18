@@ -87,6 +87,27 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (732, "    pub shared_runs: usize,\n    pub shared_turns: usize,\n", ""),
 ];
 pub(super) fn previous_boundary_controls(current: &str) -> String {
+    // The explicit child path changes registration only. Bind the complete
+    // compiled parent before the existing authenticated historical acquisition.
+    if current
+        == include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        ))
+    {
+        use sha2::{Digest, Sha256};
+        let registration = "#[path = \"shared_boundaries/shared_runs.rs\"]\n";
+        assert_eq!(current.matches(registration).count(), 1);
+        let before = current.replacen(registration, "", 1);
+        assert_eq!(before.len(), 23671);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))
+            ),
+            "3a1eeb16c1dba344d7835ff7c9bf23078205645aedf8fe2a54364f519f0059b3"
+        );
+    }
     let stage = incoming_stage(
         current,
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
