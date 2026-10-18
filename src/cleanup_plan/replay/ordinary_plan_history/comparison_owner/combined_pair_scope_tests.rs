@@ -46,8 +46,11 @@ fn tail_delta(row: &pair_scope_census::Row, expected: &[SkeletonPath]) -> (usize
     let setup = 4 * size_of::<usize>(); // two actual fields and their initial values
     let limit = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();
     (
-        views + setup + limit * (2 * row.pairs + expected.len()),
-        removed + (old_step - new_step) * row.steps + (old_load - new_load) * row.loads,
+        views + setup + limit * (2 * row.pairs + expected.len()) + shared_prefix_tests::added(row),
+        removed
+            + (old_step - new_step) * (row.steps + 2 * row.identity_observations)
+            + (old_load - new_load) * row.loads
+            + shared_prefix_tests::removed(row),
     )
 }
 use crate::bounded_output::with_limit_usage_refusal;
@@ -820,7 +823,8 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
 // Complete-success equation only. Refusal controls use reached real frontiers.
 fn fused_removed(row: &pair_scope_census::Row) -> usize {
     size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>() * row.rounds
-        + 2 * size_of::<Option<&SkeletonObservation>>() * (row.value_steps + row.value_tails)
+        + 2 * size_of::<Option<&SkeletonObservation>>()
+            * (row.value_steps + 2 * row.identity_observations + row.value_tails)
 }
 fn observe_886_pair(
     function: &ResolvedFunction,
@@ -1171,7 +1175,7 @@ fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_paddi
 #[test]
 fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_exact_invoice() {
     assert_eq!(
-        size_of::<ComparisonOwner<'static>>(),
+        size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
         size_of::<super::super::super::before_paired::ComparisonOwner<'static>>()
             + 2 * size_of::<usize>(),
         "exact two retained segment fields; their initial values are separately invoiced"

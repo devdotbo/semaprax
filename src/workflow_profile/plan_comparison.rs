@@ -84,8 +84,14 @@ pub enum Site {
     RightPrepareAdmitted,
     LeftResetCompleted,
     RightResetCompleted,
+    IdentityDetectorAdmitted,
+    IdentityReplayAdmitted,
+    IdentityHit,
+    IdentityObservation,
+    IdentityWork,
+    IdentityCapture,
 }
-const SITES: usize = 20;
+const SITES: usize = 26;
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub struct Counts {
     pub events: [u64; SITES],

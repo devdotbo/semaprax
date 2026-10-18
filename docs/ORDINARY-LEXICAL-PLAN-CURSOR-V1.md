@@ -85,3 +85,40 @@ malformed and full destruction controls continue to exercise current code.
 All controls are authored and unrun. Whole-project positive cost, native codec,
 ShiftSim/LogLens64MiB and scoped Clippy qualification remain required before
 adoption or performance claims; no cap, fee factor or application profile changes.
+
+## Identity-certified loaded remainder (#899)
+
+The source successor keeps both original preparations and the first ordinary
+observation of every loaded segment. Only the remaining observations of two
+loaded cursors with the same actual index in the invocation's immutable arena,
+the same item offset, and a nonempty retained extent may use scalar replay.
+Different indices with equal contents do not qualify. This certificate is local
+to one prepared pair; path swaps cannot carry it into another comparison.
+
+Each certified observation still executes the original left cursor work, left
+segment work, right cursor work, right segment work, and next observation work
+individually, in that order. The left item update precedes right-side work; the
+right item and Equal ordering are published before the next observation charge.
+No work batching, empty-segment prescan, callback, observation borrow, comparison
+payload or new authority result occurs on the scalar route. At the end of the
+loaded remainder both retained slices become empty while their loaded bits and
+segment counters remain unchanged. The next ordinary yield handles its original
+empty transition, subsequent segments and tails in left-before-right order.
+Both final PLAN/HIR comparison routes remain independent and unchanged.
+
+The entire current owner is paid before construction. Additive initializers,
+seven new primitive sites, every detector, actual loaded link/extent capture,
+scalar updates and terminal slice assignments have explicit typed invoices.
+The two original successful-pattern reference invoices remain conservative
+admission. No surviving prepare/backing/tail fee is removed. Cold and
+identity-ineligible shapes pay the real added cost. Complete-success controls
+bind the source-counted new-cost equation to actual certified observations and
+actual loads; they do not infer eligible observations from pair reservations.
+The complete immediate comparator and both macros remain independently compiled,
+with finite source inverses, alongside every earlier generation control.
+The existing opt-in workflow capture adds fixed closed identity hit, certified
+observation, successful work, capture and admitted-bank events. Its overflow and
+teardown flags remain unchanged; it is an instrumented production algorithm,
+not default-shipping census. Default builds strip these hooks.
+All new controls are unrun. Neither net savings, application admission at 64 MiB,
+shipping census nor a compiler/runtime performance improvement is established.

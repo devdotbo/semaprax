@@ -4,10 +4,14 @@ use super::*;
 mod lexical_cursor;
 #[macro_use]
 mod paired_value;
+#[macro_use]
+mod shared_prefix;
 #[cfg(test)]
 mod before_flat_view;
 #[cfg(test)]
 mod before_fused_flat;
+#[cfg(test)]
+mod before_identity_prefix;
 #[cfg(test)]
 mod before_lexical_cursor;
 #[cfg(test)]
@@ -40,6 +44,10 @@ struct ComparisonOwner<'history> {
     right_cursor: Cursor,
     left_segments: usize,
     right_segments: usize,
+    left_link: usize,
+    right_link: usize,
+    left_extent: usize,
+    prefix_replaying: bool,
     step: Step,
     return_to: Step,
     after_pair: Step,
@@ -148,7 +156,8 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + FINAL_ITERATORS + size_of::<bool>() + 4 * MISMATCH_CALL
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 2 * size_of::<usize>() // initial retained segment extents
-    + 3 * size_of::<Step>(); // copied state transports at return/schedule sites
+    + 3 * size_of::<Step>() // copied state transports at return/schedule sites
+    + shared_prefix::OWNER; // actual initializers and new lexical primitive sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
     + 2 * size_of::<&History>()
@@ -233,6 +242,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
         },
         left_segments: 0,
         right_segments: 0,
+        left_link: 0,
+        right_link: 0,
+        left_extent: 0,
+        prefix_replaying: false,
         step: Step::Build,
         return_to: Step::Build,
         after_pair: Step::Root,
@@ -403,6 +416,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                     let mut left_tail = left_path.history.tail.as_slice();
                     let mut right_tail = right_path.history.tail.as_slice();
                     'paired: loop {
+                        replay_shared_prefix!(owner, function, budget, census, 'paired);
                         paid!(
                             budget,
                             function,
@@ -424,6 +438,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             left_items,
                             left_loaded,
                             left_segments,
+                            left_link,
+                            [left_extent],
                             left_tail,
                             function,
                             budget,
@@ -441,6 +457,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                                     right_items,
                                     right_loaded,
                                     right_segments,
+                                    right_link,
+                                    [],
                                     right_tail,
                                     function,
                                     budget,
@@ -466,6 +484,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             right_items,
                             right_loaded,
                             right_segments,
+                            right_link,
+                            [],
                             right_tail,
                             function,
                             budget,

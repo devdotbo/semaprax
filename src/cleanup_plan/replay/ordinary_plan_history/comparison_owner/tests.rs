@@ -1167,3 +1167,6 @@ mod matched_tail_tests;
 #[path = "prepared_pairing_tests.rs"]
 #[rustfmt::skip]
 mod prepared_pairing_tests;
+
+#[path = "shared_prefix_tests.rs"]
+mod shared_prefix_tests;
