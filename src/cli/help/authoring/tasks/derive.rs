@@ -76,7 +76,7 @@ fn digest(bytes: &[u8]) -> String {
         semaprax::digest_hex::LowerHex(Sha256::digest(bytes))
     )
 }
-fn json_descriptor(catalog: &Value) -> Value {
+pub(super) fn retained_json_descriptor(catalog: &Value) -> Value {
     let root = repository();
     let specimen = "examples/shiftsim-typed-record-successor";
     let directory = root.join(specimen);
@@ -174,54 +174,72 @@ fn json_descriptor(catalog: &Value) -> Value {
         "declarations":declarations,"files":files,"plan":plan,"pipeline":pipeline})
 }
 
-// This is the existing LogLens49 source specimen, not a new scaffold template.
-fn selected_file_descriptor() -> Value {
-    let specimen = "experiments/selected-file-input/loglens";
-    let directory = repository().join(specimen);
-    let manifest_text = std::fs::read_to_string(directory.join("semaprax.toml")).unwrap();
-    let manifest = ProjectManifest::parse(&manifest_text).unwrap();
-    let command = manifest.command().unwrap();
-    let mut declarations = BTreeSet::new();
-    let mut command_head = None;
-    for source in manifest.sources() {
-        let text = std::fs::read_to_string(directory.join(source)).unwrap();
-        let (program, comments) = semaprax::parse_with_comments(&text, source).unwrap();
-        for import in &program.module_uses {
-            if import.target_module.starts_with("std.") {
-                declarations.insert(import.persistent_id.clone());
-            }
-        }
-        let document = semaprax::doc::document(&program, &comments);
-        if let Some(entry) = document.entries.iter().find(|entry| entry.id == command) {
-            assert!(command_head.is_none(), "one actual command identity");
-            command_head = Some(
-                entry
-                    .signature
-                    .lines()
-                    .filter(|line| !line.trim_start().starts_with("@id("))
-                    .map(str::to_owned)
-                    .collect::<Vec<_>>(),
-            );
+fn json_descriptor(catalog: &Value) -> Value {
+    let descriptors: Value = serde_json::from_str(include_str!("catalog.json")).unwrap();
+    let route = descriptors["json_task"].clone();
+    let retained = retained_json_descriptor(catalog);
+    for key in [
+        "project_profile",
+        "target",
+        "input",
+        "capabilities",
+        "dependencies",
+        "dependency_closure",
+        "dependency_versions",
+        "declarations",
+    ] {
+        assert_eq!(
+            route[key], retained[key],
+            "exact generic prerequisite: {key}"
+        );
+    }
+    let manifest = route["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|file| file["path"] == "semaprax.toml")
+        .unwrap();
+    let manifest = ProjectManifest::parse(manifest["content"].as_str().unwrap()).unwrap();
+    assert_eq!(route["sources"], serde_json::json!(manifest.sources()));
+    for file in route["files"].as_array().unwrap() {
+        let path = file["path"].as_str().unwrap();
+        if path.ends_with(".spx") {
+            let program = semaprax::parse(file["content"].as_str().unwrap(), path).unwrap();
+            let hir = semaprax::hir::resolve(&program).unwrap();
+            semaprax::hir::validate(&hir).unwrap();
         }
     }
-    let dependencies: serde_json::Map<String, Value> = manifest
-        .dependencies()
-        .iter()
-        .map(|d| (d.name().to_owned(), Value::String(d.range().to_owned())))
-        .collect();
-    let mut paths: BTreeSet<_> = manifest.sources().iter().cloned().collect();
-    paths.extend(["semaprax.toml", "run.sh", "build.sh", "tests.mjs"].map(str::to_owned));
-    let files: Vec<_> = paths
-        .into_iter()
-        .map(|path| {
-            let bytes = std::fs::read(directory.join(&path)).unwrap();
-            serde_json::json!({"path":path,"sha256":digest(&bytes)})
-        })
-        .collect();
-    serde_json::json!({"task":"selected-file","specimen":specimen,
-        "project_profile":manifest.profile().unwrap(),"target":"native64",
-        "input":manifest.command_input().unwrap(),"command":command,
-        "command_head":command_head.unwrap(),"capabilities":manifest.capabilities(),
-        "sources":manifest.sources(),"dependencies":dependencies,"declarations":declarations,
-        "manifest":manifest_text,"files":files})
+    route
+}
+
+// The production descriptor contains only neutral examples. This test-only
+// owner checks their ordinary grammar/types and the exact existing profile.
+fn selected_file_descriptor() -> Value {
+    let descriptors: Value = serde_json::from_str(include_str!("catalog.json")).unwrap();
+    let route = descriptors["selected_file_task"].clone();
+    let original = std::fs::read_to_string(
+        repository().join("experiments/selected-file-input/loglens/semaprax.toml"),
+    )
+    .unwrap();
+    let original = ProjectManifest::parse(&original).unwrap();
+    let neutral = ProjectManifest::parse(route["manifest"].as_str().unwrap()).unwrap();
+    assert_eq!(neutral.profile(), original.profile());
+    assert_eq!(neutral.command_input(), original.command_input());
+    assert_eq!(neutral.capabilities(), original.capabilities());
+    assert_eq!(route["project_profile"], neutral.profile().unwrap());
+    assert_eq!(route["input"], neutral.command_input().unwrap());
+    assert_eq!(
+        route["capabilities"],
+        serde_json::json!(neutral.capabilities())
+    );
+    assert_eq!(route["sources"], serde_json::json!(neutral.sources()));
+    assert_eq!(route["command"], neutral.command().unwrap());
+    assert!(neutral.dependencies().is_empty());
+    for (key, path) in [("source", "main.spx"), ("test_source", "tests.spx")] {
+        let program = semaprax::parse(route[key].as_str().unwrap(), path).unwrap();
+        assert!(program.module_uses.is_empty());
+        let hir = semaprax::hir::resolve(&program).unwrap();
+        semaprax::hir::validate(&hir).unwrap();
+    }
+    route
 }

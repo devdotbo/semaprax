@@ -12,19 +12,20 @@ semaprax help language author:tasks
 semaprax help language author:task:<task>:<Project-profile>:<target>:<offset>
 ```
 
-The closed pilot has three exact pairs:
+The closed pilot has four exact pairs:
 
 | Task | Project profile | Target | Existing checked starter |
 | --- | --- | --- | --- |
 | `file-text` | `source-command.v1` | `native64` | `source-command-file-text` |
 | `stdin-stream` | `language-command-io.stream-data.v1` | `native64` | `stdin-stream-data` |
-| `stdin-json` | `language-command-io.collection-record.v1` | `native64` | exact paired-plan ShiftSim specimen; ordinary admission/qualification pending |
+| `stdin-json` | `language-command-io.collection-record.v1` | `native64` | neutral schema/codec example; admission/qualification pending |
+| `selected-file` | `source-command.selected-file.resource-output.v1` | `native64` | neutral primitive example; admission/qualification pending |
 
 Every other pair refuses with the exact admitted selector and links to existing
 cards. This means outside this pilot, not unsupported by the language.
 The `stdin-stream` starter still demonstrates transport/counting without JSON
-imports. The distinct `stdin-json` route below binds an actual paired-plan
-specimen; it does not promote the transport starter into a JSON application.
+imports. The distinct `stdin-json` route below supplies a neutral schema/codec example;
+it does not promote the transport starter into a JSON application.
 Generated-web guidance remains outside this pilot and adds no TeamDesk claim.
 
 Each successful response is at most 2,048 UTF-8 bytes, with canonical unsigned
@@ -89,94 +90,52 @@ No lookup bytes, static page length, token, RSS or application-fit saving is
 claimed by this source change.
 
 
-## Exact paired JSON task
+## Generic paired JSON task
 
 `author:task:stdin-json:language-command-io.collection-record.v1:native64:0`
-connects the original ShiftSim request/decision/response specimen, paired plan,
-explicit command activation, native pure-test route, manifest prerequisites and
-exact dependency catalog. Its implementation is authored; executable qualification
-remains pending. The ordinary SPX-G171/compiler admission failure is a real
-prerequisite, not a skipped gate or a help-granted exemption.
+shows neutral request/response schemas, a complete generic manifest and codec
+plan, a no-op command, primitive tests and explicit user-authoring steps. It
+contains no benchmark solution, algorithm, source path or input-hash index.
+The user must implement decoding, application policy, response construction,
+encoding and meaningful tests. These minimal examples are not an application.
 
-The task requires a source checkout containing the exact bound specimen. The
-existing full-host installer is described exactly:
+The full-host starter route preserves held-input/no-replace publication and
+ordinary source-admission checks from [Application starter v1](APPLICATION-STARTER-V1.md).
+Installation performs no native execution. Help never grants installation
+or execution authority. V31 retains its old `test --target native` refusal;
+`native-collection-record-pure.v1` is an explicit separate pure-test route.
 
-```sh
-semaprax-full new fresh-app --from examples/shiftsim-typed-record-successor \
-  --codec-plan examples/shiftsim-typed-record-successor/codec-plan.json \
-  --command-profile language-command-io.collection-record.v1 \
-  --command-path src/app.spx \
-  --command-source examples/shiftsim-typed-record-successor/src/app.command.spx
-semaprax check fresh-app
-semaprax test fresh-app --target native-collection-record-pure.v1
-semaprax build fresh-app --target native -o app-bin
-./app-bin < examples/shiftsim-typed-record-successor/fixtures/request.json
-```
+Every JSON page repeats its profile, target, input, capabilities and pending
+qualification. Whole workflow, prerequisites, plan, generic file contents and
+exact dependency-catalog entries are paginated without truncation. Complete
+identity validation precedes pagination; stale, duplicate and foreign selectors
+refuse. The original generic file-text and stdin-stream scaffolds stay unchanged.
+Exact/one-short/one-extra tests cover every entry, including continuation bytes.
 
-[Application starter v1](APPLICATION-STARTER-V1.md) owns its held-input/no-replace
-publication and source-admission checks. Installation performs no native execution.
-The existing plan-bundle route remains available for external review/ordinary
-installation authority. Help does not execute either route or imply the full host
-is available from the standalone CLI. The old v31 `test --target native` refusal
-is retained; the named pure-test successor is an explicit separate route.
+The test-only descriptor producer compares profile/input/capability/dependency
+fields with the internal retained fixture, derives the actual bundled dependency
+closure and checks neutral sources through ordinary parsing/HIR. The existing
+full historical starter admission owner remains independent. A separate owning
+control checks both neutral Projects, derives the generic plan and independently
+replays the complete ordinary codec candidate. All checks are authored and remain
+pending until executed; no application or backend qualification is implied.
 
-JSON task pages repeat a compact complete profile/target/input/capability and
-qualification capsule. Whole workflow, prerequisite, plan, inventory, pipeline
-signature and library-declaration entries are paginated in fixed order. A full
-source inventory plus hashes cannot fit beside every declaration in 2,048 bytes;
-JSON continuations therefore cover all entries, rather than silently trimming
-prerequisites. The unchanged two original tasks still repeat their original full
-capsules. Every page is <=2,048 UTF-8 bytes, offsets are canonical decimal, and
-an indivisible entry that does not fit refuses. Exact/one-short/one-extra tests
-cover every entry, including nonterminal continuation length.
-
-The new `json_task` member of the existing descriptor is rederived by the existing
-`standard_library::regenerate_catalogs` producer. It binds the original seven
-authored modules, manifest, exact plan, separate command input and request fixture
-by complete SHA-256. Plan output replaces exactly its named schema modules;
-original input hashes are not claimed as generated or installed hashes. Receipts
-from ordinary derivation/publication retain those separate identities.
-
-Direct dependency versions come from the actual manifest. Transitive module
-closure follows the real bundled-library manifests, and complete exact signatures
-come from the same generated standard catalog used by normal help. This is the
-catalog of the selected dependency closure, not an admission claim for every
-function in the consumer profile. Every identity is resolved before any page
-succeeds; stale later or duplicate identities fail closed. Pipeline signatures
-come from the ordinary `semaprax doc` model of actual receive, decision and
-publication declarations, with the original ownership/effects intact.
-
-Authored owning controls rederive the full descriptor and independently authenticate
-the exact paired-plan specimen through the existing ordinary starter API, comparing
-the actual compiler dependency closure. They add no skip or special compiler budget.
-Existing ShiftSim15, paired-plan and starter gates remain unchanged. Standalone and
-full CLI task-page tests cover deterministic complete traversal, exact identities,
-all source hashes/capabilities, foreign profile/target refusal and empty-directory
-inertness. No new top-level test binary or production source module is introduced.
-No build, compiler execution, Rust tests, Clippy or live-agent trial ran while
-writing this addition. Source-derived metadata is not qualification or a measured
-reduction of requests, authored tokens, delivered/net input, wall time or billing.
-
-## Exact selected-file task
+## Generic selected-file task
 
 `author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0`
-uses the existing LogLens specimen under `experiments/selected-file-input/loglens`.
-It is a source-bound v34 recipe, with executable qualification pending, and is
-separate from the `source-command.v1` file-text scaffold and the v33 selected-file
-profile. It introduces no scaffold template. The descriptor producer reparses the
-actual manifest and source declarations, records every source and launcher/test
-input hash, and retains the exact command signature. LogLens has no external
-library imports or JSON generator prerequisite.
+shows a neutral complete manifest, minimal main/test modules and user-authoring
+steps. It introduces no template or application solution. Runtime metadata and
+pages contain no benchmark names, paths, solution identities or input hashes.
+The test-only descriptor owner checks the neutral manifest and both modules
+through ordinary parsing, HIR resolution and validation, and compares exact
+profile/input/capability fields with the retained selected-file fixture. These
+primitive no-op examples do not establish useful behavior or executable admission.
 
 Every page repeats the v34 profile, native64 Unix restriction, input and four
 capabilities, invocation-selection/descriptor lifetime rules, unchanged argv,
 file, attempt, reserved-read and output bounds, and ordinary-admission caveat.
-Whole entries supply the complete manifest, check/test/build/invocation route,
-command signature and input hashes. Strict canonical continuation and all-identity
-validation precede pagination. Exact/one-short/one-extra byte limits and malformed,
-stale, duplicate and foreign-profile selectors use the existing help harnesses;
-help remains inert in an empty directory. Existing full/exact/card/library routes
-are unchanged. The original LogLens CLI49 and native O0/O2 owner remains required:
-`source_command::loglens_selected_file::original_cli49_and_all_retained_assertions_run_on_native_o0_o2`.
-This does not claim current application admission or the five-fresh-trials-per-arm
-acceptance required by #722.
+Whole-entry pagination refuses a budget that cannot advance. Strict canonical
+continuation and all-identity validation precede pagination; help stays inert.
+The v1 file-text scaffold, v33 profile and existing full/card/library routes stay
+unchanged. Actual selected-file application qualification remains a separate
+gate, as do the five fresh trials per arm required by #722.

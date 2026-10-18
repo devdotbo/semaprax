@@ -185,16 +185,23 @@ fn json_task_whole_entries_are_complete_deterministic_and_exactly_bounded() {
         );
     }
     for file in route["files"].as_array().unwrap() {
-        assert!(collected.contains(text(file, "path")) && collected.contains(text(file, "sha256")));
+        assert!(
+            collected.contains(text(file, "path")) && collected.contains(text(file, "content"))
+        );
     }
     for source in route["sources"].as_array().unwrap() {
         assert!(collected.contains(source.as_str().unwrap()));
     }
-    for stage in route["pipeline"].as_array().unwrap() {
-        assert!(collected.contains(text(stage, "id")));
-        for line in stage["head"].as_array().unwrap() {
-            assert!(collected.contains(line.as_str().unwrap()));
-        }
+    for forbidden in [
+        "ShiftSim",
+        "shiftsim",
+        "examples/shiftsim",
+        "schedule decision",
+    ] {
+        assert!(
+            !collected.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
+        );
     }
     assert!(collected.contains("semaprax-full new fresh-app --from"));
     assert!(collected.contains("native-collection-record-pure.v1"));
@@ -236,8 +243,9 @@ fn json_task_exact_specimen_has_ordinary_paired_starter_compiler_admission() {
     use semaprax::project;
     use std::sync::atomic::{AtomicU64, Ordering};
     static SERIAL: AtomicU64 = AtomicU64::new(0);
-    let descriptor: Value = serde_json::from_str(DESCRIPTORS).unwrap();
-    let route = &descriptor["json_task"];
+    let catalog: Value = serde_json::from_str(super::super::super::LIBRARY_INDEX).unwrap();
+    let retained = derive::retained_json_descriptor(&catalog);
+    let route = &retained;
     let repository = std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
         .ancestors()
         .find(|root| root.join(text(route, "specimen")).is_dir())
@@ -379,16 +387,24 @@ fn selected_file_task_pages_keep_full_prerequisites_inputs_and_exact_byte_bounds
         }
     }
     assert!(collected.contains(route["manifest"].as_str().unwrap()));
-    assert!(collected.contains("This is NOT a new template"));
+    assert!(collected.contains("NOT a new template"));
     assert!(collected.contains("semaprax test \"$p\" --target native"));
-    assert!(collected.contains("./app-bin --spx-selected-file-v1 0 -- <file> [--top N] [--json]"));
-    for file in route["files"].as_array().unwrap() {
-        assert_eq!(
-            collected.matches(file["sha256"].as_str().unwrap()).count(),
-            1
+    assert!(collected.contains("./app-bin --spx-selected-file-v1 0 -- <file> <your-options>"));
+    for forbidden in [
+        "LogLens",
+        "loglens",
+        "experiments/selected-file-input",
+        "sha256",
+        "--top",
+    ] {
+        assert!(
+            !collected.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
         );
-        assert!(collected.contains(file["path"].as_str().unwrap()));
+        assert!(!capsule.contains(forbidden));
     }
+    assert!(collected.contains(route["source"].as_str().unwrap()));
+    assert!(collected.contains(route["test_source"].as_str().unwrap()));
     for start in 0..items.len() {
         let exact = capsule.len()
             + items[start].len()
@@ -439,4 +455,74 @@ fn selected_file_task_refuses_foreign_profiles_stale_ids_and_malformed_continuat
             .unwrap()
             .contains("source-command-file-text")
     );
+}
+
+#[test]
+fn neutral_task_examples_pass_ordinary_project_checks_and_independent_codec_plan_replay() {
+    use semaprax::project;
+    use std::sync::atomic::{AtomicU64, Ordering};
+    static SERIAL: AtomicU64 = AtomicU64::new(0);
+    let descriptors: Value = serde_json::from_str(DESCRIPTORS).unwrap();
+    for category in ["selected_file_task", "json_task"] {
+        let route = &descriptors[category];
+        let serialized = serde_json::to_string(route).unwrap();
+        for forbidden in [
+            "LogLens",
+            "loglens",
+            "ShiftSim",
+            "shiftsim",
+            "experiments/",
+            "examples/",
+            "sha256",
+        ] {
+            assert!(
+                !serialized.contains(forbidden),
+                "non-neutral production descriptor: {forbidden}"
+            );
+        }
+
+        let directory = std::env::temp_dir().join(format!(
+            "semaprax-neutral-task-{}-{}",
+            std::process::id(),
+            SERIAL.fetch_add(1, Ordering::Relaxed)
+        ));
+        std::fs::create_dir(&directory).unwrap();
+        struct Remove(std::path::PathBuf);
+        impl Drop for Remove {
+            fn drop(&mut self) {
+                std::fs::remove_dir_all(&self.0).unwrap();
+            }
+        }
+        let cleanup = Remove(directory);
+        if category == "selected_file_task" {
+            for (path, key) in [
+                ("semaprax.toml", "manifest"),
+                ("main.spx", "source"),
+                ("tests.spx", "test_source"),
+            ] {
+                std::fs::write(cleanup.0.join(path), text(route, key)).unwrap();
+            }
+        } else {
+            for file in route["files"].as_array().unwrap() {
+                let path = cleanup.0.join(text(file, "path"));
+                std::fs::create_dir_all(path.parent().unwrap()).unwrap();
+                std::fs::write(path, text(file, "content")).unwrap();
+            }
+        }
+        project::with_authenticated_project(&cleanup.0.join("semaprax.toml"), |snapshot| {
+            // Ordinary project checking owns both entry and declared-test HIR;
+            // these no-op examples claim no execution or useful application.
+            if category == "json_task" {
+                let plan = serde_json::to_vec(&route["plan"]).unwrap();
+                let (expected_revision, entries) =
+                    project::decode_json_codec_plan(&plan).map_err(|error| vec![error])?;
+                assert!(expected_revision.is_none());
+                let revision = snapshot.retain_revision();
+                let bundle = project::derive_json_codec_plan(&revision, &entries)?;
+                project::verify_json_codec_plan(&revision, &entries, &bundle)?;
+            }
+            Ok(())
+        })
+        .unwrap_or_else(|error| panic!("neutral {category} ordinary admission: {error:?}"));
+    }
 }

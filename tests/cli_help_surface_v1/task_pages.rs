@@ -140,7 +140,18 @@ fn json_task_pages_keep_full_host_boundaries_and_complete_source_inventory_inert
     }
     for file in route["files"].as_array().unwrap() {
         assert!(pages.contains(file["path"].as_str().unwrap()));
-        assert!(pages.contains(file["sha256"].as_str().unwrap()));
+        assert!(pages.contains(file["content"].as_str().unwrap()));
+    }
+    for forbidden in [
+        "ShiftSim",
+        "shiftsim",
+        "examples/shiftsim",
+        "schedule decision",
+    ] {
+        assert!(
+            !pages.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
+        );
     }
     for id in route["declarations"].as_array().unwrap() {
         assert_eq!(
@@ -216,12 +227,22 @@ fn selected_file_resource_task_pages_keep_exact_profile_limits_and_zero_side_eff
         }
     }
     assert!(pages.contains(route["manifest"].as_str().unwrap()));
-    assert!(pages.contains("This is NOT a new template"));
-    assert!(pages.contains("./app-bin --spx-selected-file-v1 0 -- <file> [--top N] [--json]"));
-    for file in route["files"].as_array().unwrap() {
-        assert!(pages.contains(file["path"].as_str().unwrap()));
-        assert!(pages.contains(file["sha256"].as_str().unwrap()));
+    assert!(pages.contains("NOT a new template"));
+    assert!(pages.contains("./app-bin --spx-selected-file-v1 0 -- <file> <your-options>"));
+    for forbidden in [
+        "LogLens",
+        "loglens",
+        "experiments/selected-file-input",
+        "sha256",
+        "--top",
+    ] {
+        assert!(
+            !pages.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
+        );
     }
+    assert!(pages.contains(route["source"].as_str().unwrap()));
+    assert!(pages.contains(route["test_source"].as_str().unwrap()));
     for query in [
         "author:task:selected-file:source-command.v1:native64:0",
         "author:task:selected-file:source-command.selected-file.v1:native64:0",
