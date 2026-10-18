@@ -2776,6 +2776,7 @@
         "src/cleanup_plan/replay/ordinary_inventory/storage.rs",
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
@@ -2849,11 +2850,12 @@
         "src/workspace_graph/expected_projection.rs",
         "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
         "src/workspace_graph/expected_projection/call_carriers.rs",
-        "src/workspace_graph/expected_projection/call_carriers_directory.rs"
+        "src/workspace_graph/expected_projection/call_carriers_directory.rs",
+        "src/workspace_graph/expected_projection/cost.rs"
       ],
-      "full_manifest_sha256": "d50594c77f3966e5f8b83b3a2dd11f1269b9d0ae25d1a3cae7af0c35f842c4a9",
-      "full_raw_sha256": "56b8aff9a4a1c8e2389e87d7b733a0353be904e93a72d9bcbb91e392bbb8059b",
-      "full_authenticated_production_sha256": "85ae19e5ce10219582984400bd7a41a4b532832a2b54c115c0b55f9e4a196c15"
+      "full_manifest_sha256": "7214b3a4ecc2cd6fff192abd80cad1bb4ae56f4367f977be032d3c9f90e3998b",
+      "full_raw_sha256": "2582f41a615293a819305c7564f7c255a44a91edaf869bf089747ff93a65edeb",
+      "full_authenticated_production_sha256": "293505b88e331f9470d134ee3629917a1d069a18a209a30adb5648b0f6883d9c"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3440,6 +3442,7 @@
         "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
@@ -3925,9 +3928,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "6d9c41386cb7a208a43d12ed5bb88ed0c2b062ee81a464e18344808ca65a4611",
-      "full_raw_sha256": "c1406bb95db1d601a7160c4060e205d900f0f322f4abacd0a74e06be56595242",
-      "full_authenticated_production_sha256": "042af7f46051cb8ee6ca49e8c6f552952f6c56e68644a77f6d55e0abe99400d4"
+      "full_manifest_sha256": "6ec436e2d8b13d33ce61676f66ff51ec7f3e49041a26c8fb8920c7108deb446d",
+      "full_raw_sha256": "7c089ca64bb7b97f0ce77dd309d529055fe9538e18c2be762f7ef4636bf6f997",
+      "full_authenticated_production_sha256": "4d7eb8daa567fe89b5c389521dbbd13065fe8a5dd28c01b324fe04df7c6016a0"
     }
   }
 }
