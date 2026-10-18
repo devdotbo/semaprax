@@ -223,6 +223,34 @@ pub(crate) fn receiver_fixture(fixture: ReceiverFixture) -> String {
 // The original selected-call assertion audits its own complete source. Restore
 // exactly the two transport edits before applying its unchanged original inverse.
 pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> String {
+    // These ten exact entry images belong to the unchanged SelectedCalls
+    // inverse packet. Acquire them only after current physical/compiled/archive
+    // authentication; the original self-transport inverse below stays intact.
+    let expected = match source {
+        "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs" => Some("d764e8d6fbd373a2dbb40953baabf688fb4459562760fd5e1545cb9b73b9e6b0"),
+        "src/cleanup_plan/replay/lexical_replay.rs" => Some("d0f2b7fcfc3815f0c1207c064d8bcb14d4323dff614d953988b962138ff975d0"),
+        "src/cleanup_plan/replay/live_oracle/source_custody/b.rs" => Some("4d534b5433078d8d65ec9f09c7f763614a177cd743aa02465de64c023e509173"),
+        "src/cleanup_plan/replay/scalar_replay.rs" => Some("6cbb996ba104a91029e7fb323ad2801c483d6f71b4b19ef10fd097a16f0c764a"),
+        "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs" => Some("2b27003287b4e325ed126b4e26f9f933fc039e42f66739242b63759d3d713b05"),
+        "src/cleanup_plan/replay/semantic_refusal.rs" => Some("fc1a6f41a225e0936ede78ff9923eb0eea1e93ce5c8e37fbde9709e6ee78c823"),
+        "src/cleanup_plan/replay/semantic_refusal/tests.rs" => Some("aca69e92356ddfb4d7bbb774ca647a981cf86d402d9b0dff71108adef777b1ad"),
+        "src/cleanup_plan/replay/structural_control/calls.rs" => Some("17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000"),
+        "tests/hir_module_boundaries.rs" => Some("055a8f7ddd8b9f5b2d12122154de053a0a6823b75c298580cd4770628c4e8851"),
+        "tests/workspace/semantic_graph/source_inventory.rs" => Some("4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14"),
+        _ => None,
+    };
+    if let Some(expected) = expected {
+        let entry = super::main_e177_final_inputs::value_direct(source, expected, current);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(digest(entry.as_bytes()))
+            ),
+            expected,
+            "complete SelectedCalls entry: {source}"
+        );
+        return entry;
+    }
     if source != "src/cleanup_plan/replay/structural_control/calls/custody_tests/source.rs" {
         return current.to_owned();
     }

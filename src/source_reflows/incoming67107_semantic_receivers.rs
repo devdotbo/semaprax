@@ -77,7 +77,45 @@ fn digest(source: &str) -> String {
 }
 
 pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> String {
-    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(proof, current);
+    // Only these six exact Main67107 entry tuples changed after this packet.
+    // The full existing MAIN21 acquisition and every inverse below still run.
+    let path = proof["path"].as_str().unwrap();
+    let expected = proof["after_sha256"].as_str().unwrap();
+    let entry = match (path, expected) {
+        (
+            "src/cleanup_plan/replay.rs",
+            "30616d71694d393a730c0c8e49a25bbad7539b07ff96ed901b9d07be29765b9c",
+        )
+        | (
+            "tests/hir_module_boundaries.rs",
+            "f25b784eba1a2ea26a07b260b2ddff67b6dd90c0a6402fd143dc42ca68847d4e",
+        )
+        | (
+            "tests/workspace/semantic_graph/source_inventory.rs",
+            "59e5b98593c2c2d443d1479e7c89564551d515ca921f7abab2cc8f5d579c8c21",
+        )
+        | (
+            "src/source_verify/declaration.rs",
+            "c93ac4c883fe6b10c831a2603c994ea03880986fd0b7a394bfa41ec8a06d88cb",
+        )
+        | (
+            "src/cleanup_plan/replay/branch_clone/tests.rs",
+            "46bf0451ef390225f540d031f326100c7f4288cf7e9d50e30ce7ddb68a448e0f",
+        )
+        | (
+            "src/cleanup_plan/replay/factored.rs",
+            "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6",
+        ) => Some(
+            crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+                path, expected, current,
+            ),
+        ),
+        _ => None,
+    };
+    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(
+        proof,
+        entry.as_deref().unwrap_or(current),
+    );
     let current = acquired.as_str();
     let path = proof["path"].as_str().unwrap();
     assert_eq!(
