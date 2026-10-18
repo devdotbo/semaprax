@@ -26,7 +26,7 @@ pub(super) enum ResolvedDisposeFrame {
 #[allow(dead_code)] // Layout-only types; no historical value is constructed.
 pub(super) mod disposal_layout {
     use super::*;
-    use semaprax::cleanup::LivenessFlagId;
+    struct HistoricalLivenessFlagId(pub u32);
 #[derive(Clone)]
 struct HistoricalDeclarationId(HistoricalDeclarationText);
 #[derive(Clone)]
@@ -89,7 +89,7 @@ enum HistoricalResolvedType {
 enum HistoricalFieldLivenessShape {
     NoDrop,
     Leaf {
-        flag: LivenessFlagId,
+        flag: HistoricalLivenessFlagId,
         lifecycle: HistoricalDeclarationId,
     },
     Record {
@@ -140,6 +140,8 @@ enum $name {
     const _: () = {
         assert!(HISTORICAL_BYTES == 56);
         assert!(std::mem::size_of::<HistoricalDeclarationId>() == 24);
+        assert!(std::mem::size_of::<semaprax::cleanup::LivenessFlagId>() == std::mem::size_of::<HistoricalLivenessFlagId>());
+        assert!(std::mem::align_of::<semaprax::cleanup::LivenessFlagId>() == std::mem::align_of::<HistoricalLivenessFlagId>());
         assert!(std::mem::size_of::<ResolvedDisposeFrame>() == CURRENT_BYTES);
         assert!(std::mem::align_of::<ResolvedDisposeFrame>() == std::mem::align_of::<CurrentFrame>());
         assert!(CURRENT_BYTES <= HISTORICAL_BYTES);
