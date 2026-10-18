@@ -34,6 +34,92 @@ pub(crate) struct Metrics {
     pub(crate) highwater: usize,
     pub(crate) invalid: bool,
 }
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PhaseObservation {
+    stage: crate::bounded_output::ReservationStage,
+    entry: Metrics,
+    exit: Metrics,
+}
+
+/// Fixed instrumentation, acquired outside the measured window. Intervals are
+/// inclusive of nested stages; their highwaters are cumulative, not additive
+/// or exclusive phase costs. Keep the occurrence with the largest highwater
+/// for each stage, including its entry snapshot to expose an earlier peak.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PhaseTrace {
+    pub(crate) intervals: [Option<PhaseObservation>; 64],
+    pub(crate) overflow: bool,
+}
+thread_local! {
+    static PHASE_TRACE: RefCell<Option<PhaseTrace>> = const { RefCell::new(None) };
+}
+
+pub(crate) struct PhaseGuard(Option<(crate::bounded_output::ReservationStage, Metrics)>);
+pub(crate) fn phase_guard(stage: crate::bounded_output::ReservationStage) -> PhaseGuard {
+    let enabled = PHASE_TRACE.with(|trace| trace.borrow().is_some());
+    PhaseGuard(if enabled && active() {
+        Some((stage, current_metrics()))
+    } else {
+        None
+    })
+}
+impl Drop for PhaseGuard {
+    fn drop(&mut self) {
+        let Some((stage, entry)) = self.0 else {
+            return;
+        };
+        let exit = current_metrics();
+        PHASE_TRACE.with(|trace| {
+            let mut trace = trace.borrow_mut();
+            let trace = trace.as_mut().expect("phase trace outlives its guards");
+            let existing = trace
+                .intervals
+                .iter()
+                .position(|item| item.is_some_and(|item| item.stage == stage));
+            let slot = existing.or_else(|| trace.intervals.iter().position(Option::is_none));
+            if let Some(slot) = slot {
+                if trace.intervals[slot].is_none_or(|old| {
+                    exit.highwater > old.exit.highwater
+                        || (exit.highwater == old.exit.highwater
+                            && entry.highwater < old.entry.highwater)
+                }) {
+                    trace.intervals[slot] = Some(PhaseObservation { stage, entry, exit });
+                }
+            } else {
+                trace.overflow = true;
+            }
+        });
+    }
+}
+
+pub(crate) fn with_phase_trace<T>(operation: impl FnOnce() -> T) -> (T, PhaseTrace) {
+    assert!(
+        !active(),
+        "prepare phase instrumentation before observation"
+    );
+    PHASE_TRACE.with(|trace| {
+        let mut trace = trace.borrow_mut();
+        assert!(trace.is_none(), "phase traces cannot nest");
+        *trace = Some(PhaseTrace {
+            intervals: [None; 64],
+            overflow: false,
+        });
+    });
+    struct Restore;
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            PHASE_TRACE.with(|trace| {
+                trace.borrow_mut().take();
+            });
+        }
+    }
+    let restore = Restore;
+    let value = operation();
+    let trace = PHASE_TRACE.with(|trace| trace.borrow_mut().take().unwrap());
+    drop(restore);
+    (value, trace)
+}
 // Preallocated open-addressed instrumentation. Deletion shifts its probe chain,
 // so callbacks never allocate, grow or accumulate tombstones across long runs.
 struct ExtendedRegistry {
@@ -365,6 +451,40 @@ pub(crate) fn measure_with_capacity<T>(
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn phase_trace_keeps_nested_intervals_without_allocating_observed_backing() {
+        use crate::bounded_output::{with_reservation_stage, ReservationStage};
+        let operation = || {
+            with_reservation_stage(ReservationStage::HirLowering, || {
+                let bytes = vec![7_u8; 257];
+                with_reservation_stage(ReservationStage::HirValidation, || {
+                    std::hint::black_box(&bytes);
+                });
+                drop(bytes);
+            });
+        };
+        let (_, plain) = measure(operation);
+        let (((), observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!(plain, observed, "tracing changes no observed layouts");
+        assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+        assert!(!trace.overflow);
+        assert_eq!(trace.intervals.iter().flatten().count(), 2);
+        for phase in trace.intervals.iter().flatten() {
+            assert_eq!(phase.exit.highwater, observed.highwater);
+            match phase.stage {
+                ReservationStage::HirLowering => {
+                    assert_eq!(phase.entry.live, 0);
+                    assert_eq!(phase.exit.live, 0);
+                }
+                ReservationStage::HirValidation => {
+                    assert_eq!(phase.entry.live, 257);
+                    assert_eq!(phase.exit.live, 257);
+                }
+                _ => panic!("unexpected allocation interval"),
+            }
+        }
+    }
     #[test]
     fn fixed_registry_backing_is_lazy_reused_and_outside_the_observed_window() {
         assert_eq!(SLOTS, 16_384);

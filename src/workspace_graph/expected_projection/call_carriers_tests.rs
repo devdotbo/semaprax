@@ -304,16 +304,24 @@ fn exact_one_short_zero_and_whole_allocation_drop_controls() {
     // Freed slots are already reclaimed; this is simultaneous HIR backing,
     // not a tombstone leak. Use the existing explicit whole-HIR registry size;
     // its backing is prepared outside observation, with exhaustion still fatal.
-    let ((after_resolve, after_validate, resolved_functions), allocation) =
-        crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
-            let resolved = crate::hir::resolve(&checked).unwrap();
-            let after_resolve = crate::test_allocation_observer::current_metrics();
-            crate::hir::validate(&resolved).unwrap();
-            let after_validate = crate::test_allocation_observer::current_metrics();
-            let resolved_functions = resolved.functions.len();
-            drop(resolved);
-            (after_resolve, after_validate, resolved_functions)
+    let (((after_resolve, after_validate, resolved_functions), allocation), phases) =
+        crate::test_allocation_observer::with_phase_trace(|| {
+            crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
+                let resolved = crate::hir::resolve(&checked).unwrap();
+                let after_resolve = crate::test_allocation_observer::current_metrics();
+                crate::hir::validate(&resolved).unwrap();
+                let after_validate = crate::test_allocation_observer::current_metrics();
+                let resolved_functions = resolved.functions.len();
+                drop(resolved);
+                (after_resolve, after_validate, resolved_functions)
+            })
         });
+    assert!(
+        !phases.overflow,
+        "fixed allocation-phase instrumentation overflow"
+    );
+    assert!(phases.intervals.iter().any(Option::is_some));
+    eprintln!("ORDINARY_CALL_INCLUSIVE_PHASE_INTERVALS {phases:?}; cumulative highwaters, nested intervals, requested layouts only");
     assert!(
         !allocation.invalid,
         "complete HIR allocation observation: reason={:?}, metrics={allocation:?}",

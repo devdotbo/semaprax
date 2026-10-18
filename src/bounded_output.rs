@@ -243,6 +243,8 @@ pub(crate) fn with_reservation_stage<T>(
     stage: ReservationStage,
     operation: impl FnOnce() -> T,
 ) -> T {
+    #[cfg(test)]
+    let _allocation_phase = crate::test_allocation_observer::phase_guard(stage);
     let restore = reservation_stage_guard(stage);
     let value = operation();
     drop(restore);
