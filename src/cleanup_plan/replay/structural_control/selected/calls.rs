@@ -446,8 +446,8 @@ pub(super) fn validate<'a>(
             &ResolvedFunction,
             &ExpressionId,
             &mut ReplayBudget,
-            Result<Option<&ResolvedExpr>, Error>,
-            Option<&ResolvedExpr>,
+            Result<&mut super::super::calls::CallCursor<'_>, Error>,
+            Result<&ResolvedExpr, Error>,
             &ResolvedExpr,
         )>(function, 1, "selected existing call lookup receiving")?;
         budget.charge(function, 8, "selected existing call lookup receiving")?;
@@ -460,8 +460,8 @@ pub(super) fn validate<'a>(
             &ResolvedFunction,
             &ExpressionId,
             &mut ReplayBudget,
-            Result<Option<&ResolvedExpr>, Error>,
-            Option<&ResolvedExpr>,
+            Result<&mut super::super::calls::CallCursor<'_>, Error>,
+            Result<&ResolvedExpr, Error>,
             &ResolvedExpr,
         )>(function, 1, "selected existing call lookup receiving")?;
         budget.charge(function, 8, "selected existing call lookup receiving")?;
