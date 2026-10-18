@@ -491,6 +491,8 @@ fn qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier() {
     constructor_sites(&root, &root, "DeclarationId::paid_borrowed(", &mut sites);
     // Exact constructor census includes the later nominal/agent/prelude and
     // lifecycle payers, plus their complete independent historical twins.
+    // The cfg(test) declaration-tag controls contain two calls, and their
+    // independent historical decoder contains the third. Keep the raw census.
     // Filesystem enumeration order grants no semantic meaning.
     sites.sort_by(|a, b| a.0.cmp(&b.0));
     assert_eq!(
@@ -518,6 +520,9 @@ fn qualified_identity_domains_have_no_legacy_constructor_or_refusal_carrier() {
             "hir/identity_resolution.rs",
             "hir/identity_resolution/nominal.rs",
             "hir/identity_resolution/nominal.rs",
+            "hir/ids/declaration_tag.rs",
+            "hir/ids/declaration_tag.rs",
+            "hir/ids/declaration_tag/before.rs",
             "hir/ordinary_identity.rs",
             "hir/prelude_bundle/paid.rs",
         ]

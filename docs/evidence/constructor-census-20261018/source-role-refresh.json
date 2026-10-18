@@ -1,0 +1,65 @@
+{
+  "status": "SOURCE_ONLY_ORIGINAL_FULL_VERIFIER_AND_SIX_HOSTILE_CONTROLS_PASS",
+  "files": [
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+      "before": {
+        "length": 2334554,
+        "sha256": "5552a354ee9e2077f3fbc9942649c588d6e00285061640512665c61f45804381",
+        "archive": "docs/evidence/constructor-census-20261018/whole/5552a354ee9e2077f3fbc9942649c588d6e00285061640512665c61f45804381.txt"
+      },
+      "current_length": 2334554,
+      "current_sha256": "5552a354ee9e2077f3fbc9942649c588d6e00285061640512665c61f45804381",
+      "changed_source_identities": [],
+      "all_classes_roles_and_actual_registration_chains_preserved": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+      "before": {
+        "length": 2625543,
+        "sha256": "b392fefb43836a88752068fc86de52a3cadb33823025e1f48df3c25a09b18884",
+        "archive": "docs/evidence/constructor-census-20261018/whole/b392fefb43836a88752068fc86de52a3cadb33823025e1f48df3c25a09b18884.txt"
+      },
+      "current_length": 2625543,
+      "current_sha256": "1dd81aed57803bcc01d371ab2ecb4195eea00242329b893bf5b4c72a672eb996",
+      "changed_source_identities": [
+        "src/hir/ids/declaration_backing_tests.rs"
+      ],
+      "all_classes_roles_and_actual_registration_chains_preserved": true
+    },
+    {
+      "path": "docs/evidence/a3-e47-final-custody-20261016/new-owners.json",
+      "before": {
+        "length": 49971,
+        "sha256": "6d30988a835dabe043468a35dafe4b722c55b802d2a4e13fa17242c66f1a881b",
+        "archive": "docs/evidence/constructor-census-20261018/whole/6d30988a835dabe043468a35dafe4b722c55b802d2a4e13fa17242c66f1a881b.txt"
+      },
+      "current_length": 49971,
+      "current_sha256": "6d30988a835dabe043468a35dafe4b722c55b802d2a4e13fa17242c66f1a881b",
+      "all_268_owner_rows_and_order_preserved": true
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/current-domains.json",
+      "before": {
+        "length": 242132,
+        "sha256": "2d5032201b865b0cf3d804894e6add1ae8b891efec86ccbc115efab666f938ca",
+        "archive": "docs/evidence/constructor-census-20261018/whole/2d5032201b865b0cf3d804894e6add1ae8b891efec86ccbc115efab666f938ca.txt"
+      },
+      "current_length": 242132,
+      "current_sha256": "b907f092c32fc4092532b6fb1d4b1497d79a2a7cde173138e637b3f212bac915"
+    },
+    {
+      "path": "docs/evidence/source-boundary-domains-20261016/boundary-source-proof.json",
+      "before": {
+        "length": 3415,
+        "sha256": "8c06eb16314951e92f657dc35990838d2f001ae7b9ee9c4d49971589a460abb2",
+        "archive": "docs/evidence/constructor-census-20261018/whole/8c06eb16314951e92f657dc35990838d2f001ae7b9ee9c4d49971589a460abb2.txt"
+      },
+      "current_length": 3411,
+      "current_sha256": "d5a5211cdf8f2ba8d236c13fa26afbf1de6de2db79d00e31cddcca7096580559"
+    }
+  ],
+  "all_actual_module_registrations_unchanged": true,
+  "protected_module_and_carrier_bytes_unchanged": true,
+  "original_authority_source_proof_unchanged": true
+}

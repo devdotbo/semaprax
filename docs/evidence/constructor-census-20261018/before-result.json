@@ -1,0 +1,5 @@
+{
+  "compile_before_peak_kib": 167312,
+  "test_before_peak_kib": 3712,
+  "original_before_failure_reproduced": true
+}

@@ -1,0 +1,9 @@
+{
+  "source": "src/hir/ids/declaration_backing_tests.rs",
+  "before_sha256": "b1cc80cc1307bc5d27a1905ed3a9d767d6d5ce0c9e6903f05e17c0ecafa9437c",
+  "current_sha256": "24214f246c6d7eaaeb41d618e59bdd4959f87294b0054508280a07a003e3089f",
+  "entire_source_inverse_exact": true,
+  "only_three_exact_expected_rows_and_explanatory_comment_added": true,
+  "every_original_scanner_predicate_assertion_and_qualified_domain_unchanged": true,
+  "no_compiler_quota_or_production_change": true
+}

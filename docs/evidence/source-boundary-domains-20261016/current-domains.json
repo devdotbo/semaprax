@@ -3765,7 +3765,7 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "b392fefb43836a88752068fc86de52a3cadb33823025e1f48df3c25a09b18884",
+      "full_manifest_sha256": "1dd81aed57803bcc01d371ab2ecb4195eea00242329b893bf5b4c72a672eb996",
       "full_raw_sha256": "cd132b45806b83531747e531b5831a867586389626c73cc56a558c822b890ab4",
       "full_authenticated_production_sha256": "e346797eeb20966cf6d0ad95c7357df5a176159b2e7cb4791db743fbdcf010b7"
     }
