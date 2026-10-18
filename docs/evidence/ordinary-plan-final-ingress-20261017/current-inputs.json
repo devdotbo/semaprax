@@ -214,42 +214,47 @@
   {
     "path": "src/source_reflows_merge.rs",
     "expected_sha256": "10330014cf84803a8d017702b59a626820f777f7fb0cc950cc512897b8b6d220",
-    "current_length": 47082,
-    "current_sha256": "fee6e72b6cec39bcac6e86d8072f2b96ecdf97210e7194b5b2fef630326ef244",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/fee6e72b6cec39bcac6e86d8072f2b96ecdf97210e7194b5b2fef630326ef244.txt",
+    "current_length": 47214,
+    "current_sha256": "2fc7516bf108a35387c3a4e32c7e15d2665a153c9aed9aea67cb72aeda8470e1",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/2fc7516bf108a35387c3a4e32c7e15d2665a153c9aed9aea67cb72aeda8470e1.txt",
     "checkpoint_length": 46161,
     "checkpoint_sha256": "e39790a4feedf4e2ea920e66760e1f17c0d2455a78e3640cd64badaeaf55de53",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/01.txt",
     "inverse": [
       {
-        "start_byte": 46284,
+        "start_byte": 46416,
         "after": "\n// Only the historical PLAN source test receives this exact root checkpoint.\npub(crate) fn ordinary_plan_history_root_checkpoint(\n    current: &str,\n    compiled_before: &str,\n) -> String {\n    ordinary_plan_inputs::original_root_checkpoint(current, compiled_before)\n}\n\n#[path = \"source_reflows_merge/main_c883_inputs.rs\"]\npub(crate) mod main_c883_inputs;\n\n#[path = \"source_reflows_merge/main99f_inputs.rs\"]\npub(crate) mod main99f_inputs;\n\n#[path = \"source_reflows_merge/main_e177_inputs.rs\"]\npub(crate) mod main_e177_inputs;\n\n// Distinct complete final-batch views precede both frozen parent readers.\n#[path = \"source_reflows_merge/next_big_batch_inputs.rs\"]\npub(crate) mod next_big_batch_inputs;\n\n#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]\npub(crate) mod main_e177_final_inputs;\n",
         "before": ""
       },
       {
-        "start_byte": 44913,
+        "start_byte": 45045,
         "after": "\n    runtime_json::main043_metadata(fixture)\n}\npub(crate) fn main043_input(source: &str, current: &str) -> String {\n    main043_custody::input(source, current)\n}\npub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String {\n    main043_custody::historical_ci_extra(source, current)\n",
         "before": " runtime_json::main043_metadata(fixture) }\npub(crate) fn main043_input(source: &str, current: &str) -> String { main043_custody::input(source, current) }\npub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String { main043_custody::historical_ci_extra(source, current) "
       },
       {
-        "start_byte": 44554,
+        "start_byte": 44686,
         "after": "\n    runtime_json::main44_metadata(fixture)\n}\npub(crate) fn main44_input(source: &str, current: &str) -> String {\n    main44_custody::input(source, current)\n",
         "before": " runtime_json::main44_metadata(fixture) }\npub(crate) fn main44_input(source: &str, current: &str) -> String { main44_custody::input(source, current) "
       },
       {
-        "start_byte": 41982,
+        "start_byte": 42114,
         "after": "\n            \"../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json\"\n        ",
         "before": "\"../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json\""
       },
       {
-        "start_byte": 35423,
+        "start_byte": 35555,
         "after": "\n            main65 == current || main65 == next,\n            \"arena854 normalized input drift\"\n        ",
         "before": "main65 == current || main65 == next, \"arena854 normalized input drift\""
       },
       {
-        "start_byte": 35016,
+        "start_byte": 35148,
         "after": "\n        include_str!(\"../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json\"),\n        source,\n        &query_input,\n    ",
         "before": "include_str!(\"../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json\"), source, &query_input"
+      },
+      {
+        "start_byte": 32985,
+        "after": "#[allow(\n    dead_code,\n    reason = \"Retained compatibility entry for independently compiled historical and semantic controls.\"\n)]\n",
+        "before": ""
       },
       {
         "start_byte": 6857,
@@ -1057,146 +1062,146 @@
   {
     "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
     "expected_sha256": "754b81a88c3b698f7098524bd76cf0726d189632c44cf9027e6724e314cd7d53",
-    "current_length": 181883,
-    "current_sha256": "87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/87908845c1c847d3d5ae9632f7e1df6e51203536e7a9f651f6f3176b9bf56de8.txt",
+    "current_length": 181907,
+    "current_sha256": "5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/5c69b8526b8a99eabd82f81011045ee32d68a2042d63dd0da0338044eaaad3ab.txt",
     "checkpoint_length": 154870,
     "checkpoint_sha256": "68f460f783a905ec3b35fbe0152b8353875ea0de23973dea8cf430e2b0a1c88f",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/05.txt",
     "inverse": [
       {
-        "start_byte": 165665,
+        "start_byte": 165689,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena/prefix.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/arena.rs\""
       },
       {
-        "start_byte": 164865,
+        "start_byte": 164889,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/ordinary_before.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts.rs\""
       },
       {
-        "start_byte": 163350,
+        "start_byte": 163374,
         "after": " include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/isolated_paths/tests/before.rs\"),",
         "before": ""
       },
       {
-        "start_byte": 142391,
+        "start_byte": 142415,
         "after": "concat!(include_str!(\"../../../../../src/source_verify.rs\"), include_str!(\"../../../../../src/source_verify/field_update.rs\")",
         "before": "include_str!(\"../../../../../src/source_verify.rs\""
       },
       {
-        "start_byte": 124881,
+        "start_byte": 124905,
         "after": "concat!(concat!(include_str!(\"../../../../../src/hir.rs\"), concat!(include_str!(\"../../../../../src/hir/monomorphize.rs\"), include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\")), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\")), concat!(include_str!(\"../../../../../src/hir/type_reachability.rs\"), include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"), include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"))), include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"), include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"))), include_str!(\"../../../../../src/hir/vec_field_origin.rs\")",
         "before": "include_str!(\"../../../../../src/hir.rs\""
       },
       {
-        "start_byte": 116316,
+        "start_byte": 116340,
         "after": "concat!(include_str!(\"../../../../../src/hir/declaration_index.rs\"), concat!(include_str!(\"../../../../../src/hir/declaration_index/legacy_drop.rs\"), include_str!(\"../../../../../src/hir/declaration_index/legacy_drop/before.rs\"))",
         "before": "include_str!(\"../../../../../src/hir/declaration_index.rs\""
       },
       {
-        "start_byte": 114340,
+        "start_byte": 114364,
         "after": "concat!(include_str!(\"../../../../../src/hir/ids/metered_owner.rs\"), include_str!(\"../../../../../src/hir/ids/metered_owner/oracle.rs\")",
         "before": "include_str!(\"../../../../../src/hir/ids/metered_owner.rs\""
       },
       {
-        "start_byte": 109198,
+        "start_byte": 109222,
         "after": "concat!(include_str!(\"../../../../../src/hir/resolve_program.rs\"), include_str!(\"../../../../../src/hir/resolve_program_methods.rs\")",
         "before": "include_str!(\"../../../../../src/hir/resolve_program.rs\""
       },
       {
-        "start_byte": 104471,
+        "start_byte": 104495,
         "after": "concat!(include_str!(\"../../../../../src/hir/function_value/funded.rs\"), include_str!(\"../../../../../src/hir/function_value/funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/function_value/funded.rs\""
       },
       {
-        "start_byte": 102127,
+        "start_byte": 102151,
         "after": "concat!(include_str!(\"../../../../../src/hir/lexical_exit/owner_funded.rs\"), include_str!(\"../../../../../src/hir/lexical_exit/owner_funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/lexical_exit/owner_funded.rs\""
       },
       {
-        "start_byte": 98715,
+        "start_byte": 98739,
         "after": "concat!(include_str!(\"../../../../../src/hir/funded.rs\"), include_str!(\"../../../../../src/hir/funded/work.rs\")",
         "before": "include_str!(\"../../../../../src/hir/funded.rs\""
       },
       {
-        "start_byte": 90338,
+        "start_byte": 90362,
         "after": "concat!(concat!(include_str!(\"../../../../../src/hir.rs\"), concat!(include_str!(\"../../../../../src/hir/monomorphize.rs\"), include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\")), concat!(include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\")), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"), include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\")), concat!(include_str!(\"../../../../../src/hir/type_reachability.rs\"), include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"), concat!(include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"), include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"))), include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"), include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"))), include_str!(\"../../../../../src/hir/vec_field_origin.rs\")",
         "before": "include_str!(\"../../../../../src/hir.rs\""
       },
       {
-        "start_byte": 89975,
+        "start_byte": 89999,
         "after": "include!(\"source_inventory_leaf_views.rs\");",
         "before": "macro_rules! substitution_leaf_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/monomorphize.rs\"),\n            include_str!(\"../../../../../src/hir/monomorphize/substitution_saved.rs\"),\n            include_str!(\"../../../../../src/hir/monomorphize/substitution_leaf_tests.rs\"),\n        )\n    };\n}\nmacro_rules! reachability_leaf_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/type_reachability.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/inventory.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nested_generic_function.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/leaf_saved.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/leaf_tests.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nominal_saved.rs\"),\n            include_str!(\"../../../../../src/hir/type_reachability/nominal_tests.rs\"),\n        )\n    };\n}\n// Complete borrowed-root oracle owners and their relocated children.\nmacro_rules! hir_borrowed_root_oracle_source_inventory {\n    () => {\n        audit_source_join!(\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/list.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_box_call/map.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/capacity.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/finish.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs\"\n            ),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/super_method.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/variable.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame.rs\"),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs\"\n            ),\n            include_str!(\n                \"../../../../../src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs\"\n            ),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/bytes.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for/record.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_for_own.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_pattern.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_statement.rs\"),\n            include_str!(\"../../../../../src/hir/borrowed_root_oracle/resolve_vec_call.rs\"),\n        )\n    };\n}"
       },
       {
-        "start_byte": 87243,
+        "start_byte": 87267,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_operations.rs\"),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_operations/evidence_artifact.rs\"\n                ),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_operations/evidence_verification.rs\"\n                ),\n                include_str!(\"../../../../../src/semantic_workspace_operations/instrumentation.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_operations/nominal_rename.rs\")\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_operations.rs\""
       },
       {
-        "start_byte": 86538,
+        "start_byte": 86562,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_structural_change.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_structural_change/artifact.rs\"),\n                include_str!(\n                    \"../../../../../src/semantic_workspace_structural_change/verification.rs\"\n                )\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_structural_change.rs\""
       },
       {
-        "start_byte": 85729,
+        "start_byte": 85753,
         "after": "concat!(\n                include_str!(\"../../../../../src/semantic_workspace_change.rs\"),\n                include_str!(\"../../../../../src/semantic_workspace_change/json_depth.rs\"),\n                concat!(\n                    include_str!(\"../../../../../src/semantic_workspace_change/artifact.rs\"),\n                    include_str!(\"../../../../../src/semantic_workspace_change/artifact/json.rs\")\n                ),\n                include_str!(\"../../../../../src/semantic_workspace_change/verification.rs\")\n            ",
         "before": "include_str!(\"../../../../../src/semantic_workspace_change.rs\""
       },
       {
-        "start_byte": 82868,
+        "start_byte": 82892,
         "after": "audit_source_join!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs\""
       },
       {
-        "start_byte": 81945,
+        "start_byte": 81969,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/diagnostic.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/diagnostic/metered.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle/invocation.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/allocation/oracle.rs\""
       },
       {
-        "start_byte": 81527,
+        "start_byte": 81551,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage/representative_measurements.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage/representative_measurements/applications.rs\"))",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/physical_storage.rs\""
       },
       {
-        "start_byte": 80384,
+        "start_byte": 80408,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget/setup.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/physical_budget.rs\""
       },
       {
-        "start_byte": 64569,
+        "start_byte": 64593,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_scratch.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/ordered_alias.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/ordered_weights.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/merge_census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/owned_suffix_878.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/owned_suffix_878_vector.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/merge_keys_878.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/skeleton_work/merge_search.rs\"), include_str!(\"../../../../../src/source_reflows/main_e177_controllers.rs\"), include_str!(\"../../../../../src/source_reflows/main_e177_support.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main_e177_final_inputs.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main_e177_inputs.rs\"), include_str!(\"../../../../../tests/workspace/pin_capture.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/direct/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs\"), include_str!(\"../../../../../src/source_reflows/main99f_controllers.rs\"), include_str!(\"../../../../../src/source_reflows_merge/main99f_inputs.rs\"), include_str!(\"../../../../../src/source_reflows_merge/next_big_batch_inputs.rs\"), include_str!(\"../../../../../src/workspace_graph/tests/core_attempt_trace.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_3e66.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/selected_labels.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/selected_labels/tests.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels/terminal_leaf.rs\"), include_str!(\"../../../../../src/source_reflows/main_f247_controllers.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/historical_main2600.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/browser_custody.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_2600.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/funded_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/before_singleton.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/singleton_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/closure_receiving.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/unit_receiving_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_empty_signature.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_signature_tests.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/historical_main2600.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/browser_custody.rs\"), include_str!(\"../../../../../tests/wasm/scalar_browser_ci_contract/before_2600.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/funded_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/before_singleton.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/path_join/singleton_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/branch_clone/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_terminal_leaf_empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/empty_memo/retained.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_unit/closure_receiving.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/unit_receiving_tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/intern_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/before_arena.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs\""
       },
       {
-        "start_byte": 59424,
+        "start_byte": 59448,
         "after": "concat!(include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/ledger.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/names.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/roots.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/shape.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/sorting.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/owner_index.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/function_runtime.rs\"), include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout/before_registry.rs\")",
         "before": "include_str!(\"../../../../../src/workspace_graph/expected_projection/private_layout.rs\""
       },
       {
-        "start_byte": 58908,
+        "start_byte": 58932,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors/tree_policy/nominal.rs\"))",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/selected_entry/tests/fact_errors.rs\""
       },
       {
-        "start_byte": 56944,
+        "start_byte": 56968,
         "after": "concat!(include_str!(\"../../../../../src/cleanup_plan/replay/structural_control.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/borrowed_branch.rs\"), concat!(include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/cfg.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/cfg/ordinary.rs\")), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/entry.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/structural_control/exits.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/structural_control.rs\""
       },
       {
-        "start_byte": 32986,
+        "start_byte": 33010,
         "after": " include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs\"), include_str!(\"../../../../../src/source_reflows/semantic_receivers/status_inline.rs\"),",
         "before": ""
       },
       {
-        "start_byte": 31612,
+        "start_byte": 31636,
         "after": "audit_source_join!(include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs\"), include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs\")",
         "before": "include_str!(\"../../../../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs\""
       },
       {
-        "start_byte": 25926,
-        "after": " include_str!(\"../../../../../src/hir/ids/declaration_tag.rs\"), include_str!(\"../../../../../src/hir/ids/declaration_tag/before.rs\"),",
+        "start_byte": 25927,
+        "after": "            include_str!(\"../../../../../src/hir/ids/declaration_tag.rs\"),\n            include_str!(\"../../../../../src/hir/ids/declaration_tag/before.rs\"),\n",
         "before": ""
       },
       {
