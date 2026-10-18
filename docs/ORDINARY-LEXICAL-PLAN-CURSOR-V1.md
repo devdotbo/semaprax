@@ -202,3 +202,63 @@ second per-round poll would be redundant. Its fields, load copies, polling
 payments and nine headers are physically absent from shipping, not credited to
 its invoice. Complete generation comparisons retain separate counters and costs;
 no application or whole-caller improvement follows from this source argument.
+
+## Certified first-head funding order v2 (#900, #902)
+
+This source candidate replaces only the paired PLAN sorting producer. The
+complete immediate d458 suffix-only comparator and all three of its actual
+macro files remain independently compiled; earlier generations remain intact.
+The final ordinary HIR comparison, preparation, depth/link validation, paths,
+heapsort swaps, original work limits and each individual work request are
+unchanged. Source-only controls are not compilation, runtime or application
+qualification.
+
+A left fresh nonempty slice pattern keeps its actual Rc head and popped arena
+index lexical. Its right continuation performs the original forward work,
+BASE, original segment work, POP, then a funded index comparison Q. Both popped
+indices belong to the same immutable prepared arena. Equal indices prove the
+right first item and post-head slice equal the left ones. The right post-head
+slice is assigned from the left slice, its loaded flag and item are updated,
+and a funded Equal is published without right arena/index/slice/head/rest views
+or either observation as_ref/content comparison. The original next observation
+work then runs before the existing fully paid suffix loop. No certificate,
+index, borrowed head or observation crosses preparation, sort or swap boundaries.
+
+Different indices (including a foreign empty segment), already-loaded right
+segments, tails and exhaustion retain ordinary comparison. Equal contents at
+different indices grant no identity authority. Each foreign fresh segment pays
+Q even if its subsequently admitted slice is empty. No new owner fields,
+Result, Option observation, tuple, callback, saved extent or per-round poll is
+introduced. Old as_ref admission remains conservative on the certified right
+branch; it is not described as a physical call.
+
+This version deliberately changes physical-versus-work refusal order. The
+following table states the actual frontiers; with sufficient physical bytes,
+all original individual work events and six diagnostic fields retain their
+order. These mixed-limit differences must not be hidden by phantom old fees.
+
+| Reached path | Physical and work order in v2 |
+| --- | --- |
+| Pair entry | Original comparison work, pair scope, left forward work; no unconditional MATCH |
+| Left segment | Original STEP/EMPTY, original segment work, original LOAD before views |
+| Fresh right segment | Right forward work, BASE, original segment work, POP, Q before arena views |
+| Certified right | RHS before slice/loaded/item publication; FIRST before Equal; original comparison work before suffix |
+| Foreign/loaded right | VIEW_HEAD before fresh views or HEAD before loaded pattern; item/slice updates, then MATCH before as_ref/content comparison |
+| Left fallback/tail | MATCH immediately before left observation as_ref or tail match (including exhaustion); ordinary right advance follows |
+| Right tail under fresh left | Original TAIL admission, MATCH, original tail pattern/state updates and comparison |
+| Suffix | Original probe/body admission, left step/segment work and state, right step/segment work and state, Equal, comparison work; empty probe remains paid |
+
+The real expanded producer adds seven complete PAYMENT_HEADER sites: three for
+the split right producer, three additional MATCH positions replacing the old
+one, and one first-head certificate site. All old cold fees remain; no fee,
+limit or cap is reduced. Typed BASE, POP, RHS, VIEW_HEAD, HEAD and FIRST packets
+are acquired before their named formations. Acquired FIRST and completed first
+work are separate counters, as are suffix acquired bodies and completed items.
+
+Complete old/new invoice controls retain every short loss and use actual
+reached packet counts and both old/new Q counts. They do not add hypothetical
+#900 and #902 headline savings or infer an intermediate generation. Foreign
+empty Q, cold headers, whole owner widths, both HIR representations and full
+Drop are included. Refused prefixes use only reached successful admissions;
+no complete-input count or future empty probe is credited. Native and whole
+application gains require later matched execution and are not claimed here.

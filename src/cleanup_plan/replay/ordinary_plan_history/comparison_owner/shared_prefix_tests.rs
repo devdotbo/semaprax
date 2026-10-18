@@ -5,13 +5,21 @@ use super::*;
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
-        + 15 * PAYMENT_HEADER;
+        + (15 + 7) * PAYMENT_HEADER;
     let event = 2 * size_of::<usize>() + size_of::<bool>();
     let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
-    let body = 2 * size_of::<&SkeletonObservation>()
-        + 2 * size_of::<usize>() + size_of::<Ordering>();
-    setup + event * r.identity_detectors + probe * r.identity_probes
+    let body =
+        2 * size_of::<&SkeletonObservation>() + 2 * size_of::<usize>() + size_of::<Ordering>();
+    setup
+        + event * r.identity_detectors
+        + probe * r.identity_probes
         + body * r.identity_bodies
+        + certified_heads::BASE * r.certified_bases
+        + certified_heads::POP * r.certified_pops
+        + certified_heads::RHS * r.certified_rhs_assignments
+        + certified_heads::VIEW_HEAD * r.certified_views
+        + certified_heads::HEAD * r.certified_heads
+        + certified_heads::FIRST * r.certified_firsts
 }
 // Separate incoming reachable-site delta; never an identity-replay credit.
 pub(super) fn reachable_delta(paths: usize) -> (usize, usize) {
@@ -44,6 +52,9 @@ pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
         + size_of::<usize>();
     let empty = 2 * size_of::<usize>() + size_of::<bool>();
     r.identity_observations * (matching + 2 * (step + empty))
+        + r.certified_bases * (step + empty)
+        + r.certified_pops * paired_value::LOAD
+        + r.certified_firsts * matching
 }
 
 fn observation(n: usize, value: bool) -> Rc<SkeletonObservation> {
@@ -245,14 +256,14 @@ fn run_traced(
     // The original call frame can refuse before begin; that is genuinely no row.
     let row = if rows.is_empty() {
         assert!(observed.1);
-        assert!(observed.0 .0.result.is_err());
+        assert!(observed.0.0.result.is_err());
         pair_scope_census::empty_for_test()
     } else {
         assert_eq!(rows.len(), 1);
         assert!(rows[0].ended && !rows[0].overflow && !rows[0].truncated && !rows[0].unwound);
         rows[0]
     };
-    balanced(observed.0 .1);
+    balanced(observed.0.1);
     Run {
         observed,
         events,
@@ -300,9 +311,9 @@ fn shared_identity_replay_preserves_every_work_cut_six_fields_remaining_and_swap
                     0,
                     false,
                 );
-                assert_eq!(old.observed.0 .0, current.observed.0 .0);
+                assert_eq!(old.observed.0.0, current.observed.0.0);
                 assert_eq!(swaps(&old), swaps(&current));
-                let spent = MAX_REPLAY_WORK_UNITS - old.observed.0 .0.remaining;
+                let spent = MAX_REPLAY_WORK_UNITS - old.observed.0.0.remaining;
                 for cut in 0..=spent {
                     let old = run(
                         function,
@@ -329,7 +340,7 @@ fn shared_identity_replay_preserves_every_work_cut_six_fields_remaining_and_swap
                         false,
                     );
                     assert_eq!(
-                        old.observed.0 .0, current.observed.0 .0,
+                        old.observed.0.0, current.observed.0.0,
                         "length{length} depth{depth} shared{shared} fault{fault} work{cut}"
                     );
                     assert_eq!(swaps(&old), swaps(&current));
@@ -376,29 +387,47 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 hir_shared,
                 true,
             );
-            assert!(old.observed.0 .0.result.is_ok());
-            assert_eq!(old.observed.0 .0, current.observed.0 .0);
+            assert!(old.observed.0.0.result.is_ok());
+            assert_eq!(old.observed.0.0, current.observed.0.0);
             assert!(old.row.complete && current.row.complete);
-            assert_eq!(old.observed.0 .1, current.observed.0 .1);
+            assert_eq!(old.observed.0.1, current.observed.0.1);
             assert_eq!(swaps(&old), swaps(&current));
             // fixture() constructs exactly four real paths in both observations.
             assert_eq!(
                 current.observed.2 + removed(&current.row) + reachable_delta(4).0,
                 old.observed.2 + added(&current.row) + reachable_delta(4).1
             );
-            assert_eq!(current.row.identity_work, 5 * current.row.identity_observations);
-            assert_eq!(current.row.identity_bodies, current.row.identity_observations);
+            assert_eq!(
+                current.row.identity_work,
+                5 * current.row.identity_observations
+            );
+            assert_eq!(
+                current.row.identity_bodies,
+                current.row.identity_observations
+            );
             assert_eq!(current.row.identity_empty_probes, current.row.identity_hits);
-            assert_eq!(current.row.identity_probes,
-                current.row.identity_observations + current.row.identity_hits);
-            assert_eq!((current.row.identity_captures, current.row.identity_extent_captures), (0, 0));
+            assert_eq!(
+                current.row.identity_probes,
+                current.row.identity_observations + current.row.identity_hits
+            );
+            assert_eq!(
+                (
+                    current.row.identity_captures,
+                    current.row.identity_extent_captures
+                ),
+                (0, 0)
+            );
             assert_eq!(
                 old.row.value_steps,
-                current.row.value_steps + 2 * current.row.identity_observations
+                current.row.value_steps
+                    + current.row.certified_bases
+                    + 2 * current.row.identity_observations
             );
             assert_eq!(
                 old.row.pair_matches_admitted,
-                current.row.pair_matches_admitted + current.row.identity_observations
+                current.row.pair_matches_admitted
+                    + current.row.certified_firsts
+                    + current.row.identity_observations
             );
             if shared && length > 1 {
                 assert!(current.row.identity_hits > 0 && current.row.identity_observations > 0);
@@ -444,7 +473,7 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
         0,
         false,
     );
-    assert!(success.observed.0 .0.result.is_ok() && success.row.identity_observations > 0);
+    assert!(success.observed.0.0.result.is_ok() && success.row.identity_observations > 0);
     let total = success.observed.2;
     for limit in [0, total - 1, total] {
         let result = run(
@@ -459,10 +488,10 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
             0,
             false,
         );
-        assert_eq!(result.observed.0 .0.result.is_ok(), limit == total);
+        assert_eq!(result.observed.0.0.result.is_ok(), limit == total);
         assert_eq!(result.observed.1, limit != total);
         if limit != total {
-            assert!(result.observed.0 .0.retry.is_some());
+            assert!(result.observed.0.0.retry.is_some());
         }
     }
     let events: Vec<_> = success
@@ -475,12 +504,16 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
         })
         .copied()
         .collect();
-    assert!(events
-        .iter()
-        .any(|e| e.phase == "ordinary plan shared suffix scalar receivers"));
-    assert!(events
-        .iter()
-        .any(|e| e.phase == "ordinary plan fresh segment identity event"));
+    assert!(
+        events
+            .iter()
+            .any(|e| e.phase == "ordinary plan shared suffix scalar receivers")
+    );
+    assert!(
+        events
+            .iter()
+            .any(|e| e.phase == "ordinary plan fresh segment identity event")
+    );
     for event in events {
         let after = event.after.unwrap();
         for (limit, floor) in [(after - 1, 0), (after, 1)] {
@@ -496,8 +529,8 @@ fn shared_identity_replay_every_new_acquisition_exact_short_zero_floor_and_stick
                 floor,
                 false,
             );
-            assert!(result.observed.1 && result.observed.0 .0.result.is_err());
-            assert!(result.observed.0 .0.retry.is_some());
+            assert!(result.observed.1 && result.observed.0.0.result.is_err());
+            assert!(result.observed.0.0.retry.is_some());
             let receipt = result.observed.3.unwrap();
             assert_eq!(receipt.requested, after - event.before);
             assert_eq!(receipt.remaining, limit - event.before);
@@ -578,10 +611,10 @@ fn shared_identity_replay_real_producer_and_both_hir_representations_keep_comple
             };
             let old = observe(true);
             let current = observe(false);
-            assert_eq!(old.0 .0, current.0 .0);
-            assert!(old.0 .0 .0.is_ok());
-            balanced(old.0 .1);
-            balanced(current.0 .1);
+            assert_eq!(old.0.0, current.0.0);
+            assert!(old.0.0.0.is_ok());
+            balanced(old.0.1);
+            balanced(current.0.1);
         }
     }
 }
@@ -660,16 +693,28 @@ fn shared_identity_replay_retains_complete_immediate_sources_and_original_invoic
     assert!(original.contains("fresh_left_link"));
     assert!(!original.contains("prefix_replaying:"));
     assert_eq!(shared_prefix::OWNER, 15 * PAYMENT_HEADER);
-    assert_eq!(shared_prefix::DETECTOR, 2 * size_of::<usize>() + size_of::<bool>());
-    assert_eq!(shared_prefix::PROBE, 3 * size_of::<&[Rc<SkeletonObservation>]>());
-    assert_eq!(shared_prefix::REPLAY,
-        2 * size_of::<&SkeletonObservation>() + 2 * size_of::<usize>() + size_of::<Ordering>());
+    assert_eq!(
+        shared_prefix::DETECTOR,
+        2 * size_of::<usize>() + size_of::<bool>()
+    );
+    assert_eq!(
+        shared_prefix::PROBE,
+        3 * size_of::<&[Rc<SkeletonObservation>]>()
+    );
+    assert_eq!(
+        shared_prefix::REPLAY,
+        2 * size_of::<&SkeletonObservation>() + 2 * size_of::<usize>() + size_of::<Ordering>()
+    );
     let immediate = before_event_prefix::whole_source();
     assert!(!immediate.is_empty());
-    assert_eq!(digest(include_bytes!("paired_value_before_event.rs")),
-        "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730");
-    assert_eq!(digest(include_bytes!("shared_prefix_before_event.rs")),
-        "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2");
+    assert_eq!(
+        digest(include_bytes!("paired_value_before_event.rs")),
+        "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
+    );
+    assert_eq!(
+        digest(include_bytes!("shared_prefix_before_event.rs")),
+        "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+    );
 }
 
 #[test]
@@ -867,11 +912,22 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
         current.row.identity_work as u64
     );
     assert_eq!(report.counts.at(Site::IdentityCapture), 0);
-    assert_eq!(report.counts.at(Site::IdentityProbeAdmitted), current.row.identity_probes as u64);
-    assert_eq!(report.counts.at(Site::IdentityEmptyProbe), current.row.identity_empty_probes as u64);
-    assert_eq!(report.counts.at(Site::IdentityReplayAdmitted), current.row.identity_bodies as u64);
-    assert_eq!(report.counts.admitted_bytes[Site::IdentityProbeAdmitted as usize],
-        (current.row.identity_probes * shared_prefix::PROBE) as u64);
+    assert_eq!(
+        report.counts.at(Site::IdentityProbeAdmitted),
+        current.row.identity_probes as u64
+    );
+    assert_eq!(
+        report.counts.at(Site::IdentityEmptyProbe),
+        current.row.identity_empty_probes as u64
+    );
+    assert_eq!(
+        report.counts.at(Site::IdentityReplayAdmitted),
+        current.row.identity_bodies as u64
+    );
+    assert_eq!(
+        report.counts.admitted_bytes[Site::IdentityProbeAdmitted as usize],
+        (current.row.identity_probes * shared_prefix::PROBE) as u64
+    );
     assert_eq!(
         report.counts.admitted_bytes[Site::IdentityDetectorAdmitted as usize],
         (current.row.identity_detectors * shared_prefix::DETECTOR) as u64
@@ -884,3 +940,6 @@ fn shared_identity_replay_opt_in_capture_reports_actual_k_banks_and_complete_tea
 
 #[path = "shared_prefix_event_tests.rs"]
 mod event_suffix_tests;
+
+#[path = "certified_heads_tests.rs"]
+mod certified_head_tests;
