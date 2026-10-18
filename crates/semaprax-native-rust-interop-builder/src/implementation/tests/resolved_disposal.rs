@@ -70,7 +70,13 @@ fn resolved_owner_disposal_is_preallocated_and_depth_bounded() {
         RESOLVED_DISPOSE_CAPACITIES.with(std::cell::Cell::get),
         [capacity; 2]
     );
-    assert_eq!(std::mem::size_of::<ResolvedDisposeFrame>(), 56);
+    // The original 56-byte generation remains an independent complete witness.
+    assert_eq!(disposal_layout::HISTORICAL_BYTES, 56);
+    assert_eq!(
+        std::mem::size_of::<ResolvedDisposeFrame>(),
+        disposal_layout::CURRENT_BYTES
+    );
+    assert!(disposal_layout::CURRENT_BYTES <= disposal_layout::HISTORICAL_BYTES);
 }
 
 #[test]

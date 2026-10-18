@@ -1,0 +1,19 @@
+{
+  "status": "SOURCE_ONLY_FULL_INVERSES_AND_TYPED_LAYOUT_TRANSPORT_VERIFIED",
+  "base": "c27382c179983118110231cc95a3d0560973ef7a",
+  "historical_generation": "530073a528dcd226bb9260627da189a1fffcf8a8",
+  "production_frame_and_teardown_byteexact": true,
+  "capacity_and_phase_byteexact": true,
+  "old_56_preserved_independently": true,
+  "current_size_not_numeric_repriced": true,
+  "new_physical_rust_modules": 0,
+  "new_selectors": [],
+  "cargo_or_runtime_executed": false,
+  "owning_runtime_selector": "implementation::tests::resolved_disposal::resolved_owner_disposal_is_preallocated_and_depth_bounded",
+  "scan": {
+    "disposal.rs": "only active fixed-size assertion with by-value ResolvedType/FieldLivenessShape",
+    "hir_analysis/closure.rs": "SelectedClosureFrame only String, Vec<String>, usize",
+    "artifacts/c_expression.rs": "legacy Frame assertion cfg(any()); HIR payloads borrowed",
+    "artifacts/c_replay.rs": "legacy Frame assertion cfg(any()); HIR payloads borrowed"
+  }
+}

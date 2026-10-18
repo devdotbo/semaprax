@@ -1,0 +1,9 @@
+#[derive(Clone)]
+pub struct DeclarationId(DeclarationText);
+
+#[derive(Clone)]
+enum DeclarationText {
+    CompilerStatic(&'static str),
+    Shared(Arc<str>),
+}
+
