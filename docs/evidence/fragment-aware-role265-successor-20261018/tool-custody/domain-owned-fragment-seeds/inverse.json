@@ -1,0 +1,20 @@
+{
+  "before_sha256": "720eec6ade09df4ab56dff5aaa4efd3b0372f7c600fefed96d15a84f979ebda5",
+  "after_sha256": "4d7b649a7225dce76409afb0161b01602780e99ff5bb7eba6cde77a33aad7bec",
+  "edits": [
+    {
+      "before": "def klass(path):",
+      "after": "def klass(path,domain):"
+    },
+    {
+      "before": "  if v not in chains:chains.append(v)\n  closed.append(kind.startswith('test:')or any('#[cfg(test)]'in n['attributes']for n in nodes))\n return dict(role='test-only'if all(closed)else'production',chains=chains)",
+      "after": "  # A compiled fragment seed is owned by a DOMAIN only if its complete\n  # actual prefix/root/package is already an authenticated compiled include\n  # chain in that domain's incoming model. Raw data membership is not code\n  # authority. Apply this to the fragment itself AND every parsed descendant.\n  includes=[i for i,e in enumerate(edges)if e['text'].lstrip().startswith('include!')]\n  if includes:\n   prior=REMAPPED_PRIOR[domain]\n   allowed=True\n   for at in includes:\n    edge=edges[at];assert edge['child']in FRAGMENTS\n    prefix=dict(root=v['root'],kind=v['kind'],package=v['package'],edges=edges[:at+1])\n    witnesses=prior['classes'].get(edge['child'],{}).get('chains',[])\n    if prefix not in witnesses:\n     allowed=False;break\n    assert compiled_chain(prefix)\n   if not allowed:continue\n  if v not in chains:chains.append(v)\n  closed.append(kind.startswith('test:')or any('#[cfg(test)]'in n['attributes']for n in nodes))\n if not chains:return None\n return dict(role='test-only'if all(closed)else'production',chains=chains)"
+    },
+    {
+      "before": "  value=klass(path)\n  if path in m['classes']:",
+      "after": "  value=klass(path,name)\n  if value is None:continue # No actual compiled seed owned by this domain; retain incoming data class unchanged.\n  if path in m['classes']:"
+    }
+  ],
+  "whole_before": "720e.whole-before.py.txt",
+  "status": "SOURCE_ONLY_NO_TOOL_OR_PARSER_EXECUTION"
+}

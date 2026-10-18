@@ -1,0 +1,79 @@
+{
+  "whole_before_sha256": "8c23c763523a8ec1b06096b459fb2fc21c2eaa81900c0f9e6256618d35c4d875",
+  "after_sha256": "7c653d0e3480447f2df56fca3cfa579cc8ea33d1b654fbf283f142f0ef68c06e",
+  "edits": [
+    {
+      "before": "BASE='530073a528dcd226bb9260627da189a1fffcf8a8'",
+      "after": "BASE='4a6eb7a20eb117fda38211fbb128e3f742995262'"
+    },
+    {
+      "before": "REL='docs/evidence/fixture530-role260-new5-20261018'",
+      "after": "REL='docs/evidence/fragment-aware-role265-successor-20261018'"
+    },
+    {
+      "before": "# Authenticated old metadata source domain is whole7feba, regardless of newHEAD label.",
+      "after": "# The incoming formatted generation already owns all ten compiled fragments.\n# Authenticate its complete433 packet and every exact leaf before adding any\n# local module. No source normalization or arbitrary include evaluation occurs.\nfmtpacketpath='docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json'\nfmtpacketraw=G(BASE,fmtpacketpath);assert (len(fmtpacketraw),H(fmtpacketraw))==(260977,'de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc')\nfmtpacket=json.loads(fmtpacketraw);assert len(fmtpacket['rows'])==433\nfragmentlistpath='docs/evidence/fmt-a110/new-fragments.json';fragmentraw=held(fragmentlistpath);assert fragmentraw==G(BASE,fragmentlistpath)\nfragmentrows=json.loads(fragmentraw);assert len(fragmentrows)==10\nFRAGMENTS={x['source']for x in fragmentrows};assert len(FRAGMENTS)==10\nFRAGMENT_EDGES={};fragment_receipts=[]\nfor record in fragmentrows:\n parent,child=record['parent'],record['source'];row=next(x for x in fmtpacket['rows']if x['source']==parent)\n assert row['fragments'].count(record)==1 and record['compiled']is True and 'fragments'not in record\n standalone=next(x for x in fmtpacket['rows']if x['source']==child);assert standalone==record\n pin=record['current'];raw=held(child,9753094);assert raw==G(BASE,child)and(len(raw),H(raw))==(pin['length'],pin['sha256'])\n assert held(pin['archive'],9753094)==raw\n parentraw=held(parent,9753094);literal=('include!(\"'+Path(child).name+'\")').encode();assert parentraw.count(literal)==1\n edge=dict(parent=parent,child=child,start=parentraw.index(literal),text=literal.decode(),attributes=[])\n FRAGMENT_EDGES[child]=edge\n assert any(any(e==dict(edge,start=e['start'])for e in chain['edges'])for model in full.values()for value in model['classes'].values()for chain in value['chains']),('incoming compiled fragment chain absent',child)\n fragment_receipts.append(dict(parent=parent,child=child,parent_length=len(parentraw),parent_sha256=H(parentraw),child_length=len(raw),child_sha256=H(raw),edge=edge,whole433_archive=pin['archive']))\n# Baseline source models are the complete published4a6 generation, not530.\n"
+    },
+    {
+      "before": "PARENTS-=BRIDGES",
+      "after": "PARENTS-=BRIDGES\nPARENTS-=FRAGMENTS # Fragments have an explicit same-namespace seed below."
+    },
+    {
+      "before": " if rel not in NEW|PARENTS|BRIDGES|REACH and not undernew:return",
+      "after": " underfragment=any(n.get('compiled_include',{}).get('child')in FRAGMENTS for n in chain)\n if rel not in NEW|PARENTS|BRIDGES|REACH|FRAGMENTS and not undernew and not underfragment:return\n if underfragment:assert rel in set(oldblobs)|NEW,('unexpected new fragment descendant',rel)"
+    },
+    {
+      "before": "for parent in sorted(PARENTS):",
+      "after": "def seed_nodes(chain):\n nodes=[]\n for e in chain['edges']:\n  if e['text'].lstrip().startswith('include!'):\n   assert e['child']in FRAGMENT_EDGES and e==FRAGMENT_EDGES[e['child']],('foreign compiled include seed',e)\n   nodes.append(dict(source_path=e['parent'],line=held(e['parent'],9753094)[:e['start']].count(b'\\n')+1,attributes=e['attributes'],compiled_include=dict(e)))\n  else:\n   assert not e['text'].lstrip().startswith('include_str!'),'data acquisition is not a Rust namespace seed'\n   md=re.search(r'\\bmod\\s+(\\w+)\\s*[;{]',e['text']);assert md\n   nodes.append(dict(source_path=e['parent'],line=held(e['parent'],9753094)[:e['start']].count(b'\\n')+1,module=md[1],attributes=e['attributes']))\n return nodes\n\ndef compiled_chain(chain):\n return all(not e['text'].lstrip().startswith('include_str!')for e in chain['edges'])\n\nfor parent in sorted(PARENTS):"
+    },
+    {
+      "before": "  nodes=[]\n  for e in c['edges']:\n   md=re.search(r'\\bmod\\s+(\\w+)\\s*[;{]',e['text']);assert md\n   nodes.append(dict(source_path=e['parent'],line=held(e['parent'],9753094)[:e['start']].count(b'\\n')+1,module=md[1],attributes=e['attributes']))\n  kind='lib'if c['kind']=='lib'else('bin:semaprax'if c['kind']=='bin'else'test:'+Path(c['root']).stem);custom=bool(nodes and any(re.search(r'path\\s*=',attr)for attr in nodes[-1]['attributes']));capture(R/parent,[x['module']for x in nodes],nodes,kind,c['package'],custom_path=custom)",
+      "after": "  if not compiled_chain(c):continue # Retain all incoming data chains; do not parse them as code.\n  nodes=seed_nodes(c)\n  kind='lib'if c['kind']=='lib'else('bin:semaprax'if c['kind']=='bin'else'test:'+Path(c['root']).stem);custom=bool(nodes and any(re.search(r'path\\s*=',attr)for attr in nodes[-1]['attributes']));capture(R/parent,[x['module']for x in nodes if 'module'in x],nodes,kind,c['package'],custom_path=custom)"
+    },
+    {
+      "before": "# Only the exact registered785 branch can traverse these unchanged ancestors;",
+      "after": "# Reparse actual moved registrations from their authenticated compiled parent\n# chains. include! adds no namespace. All ten children are same-directory leaves.\nfragment_seed_receipts=[]\nfor child in sorted(FRAGMENTS):\n assert not re.search(r'\\binclude!\\s*\\(',ns['mask'](held(child,9753094).decode())),('fragment not leaf',child)\n seeds=[]\n for model in full.values():\n  cls=model['classes'].get(child)\n  if cls is None:continue\n  for c in cls['chains']:\n   if not compiled_chain(c)or not c['edges']or c['edges'][-1]!=FRAGMENT_EDGES[child]:continue\n   if c not in seeds:seeds.append(c)\n assert seeds,('no complete actual compiled parent witness',child)\n for c in seeds:\n  nodes=seed_nodes(c);named=[n for n in nodes if 'module'in n]\n  last=named[-1]if named else None\n  parent=FRAGMENT_EDGES[child]['parent']\n  custom=bool(last and any(re.search(r'path\\s*=',x)for x in last['attributes']))\n  lexical=R/parent;defaultbase=lexical.parent if custom or lexical.name in ['lib.rs','main.rs','mod.rs']else lexical.parent/lexical.stem\n  # Original parser chooses between exactly these actual physical bases.\n  # No guessed path rewrite or text preprocessor may manufacture a child.\n  fragment=R/child\n  if defaultbase==fragment.parent:fragment_custom=True\n  elif defaultbase==fragment.parent/fragment.stem:fragment_custom=False\n  else:\n   # Every actual out-of-line module in this leaf must have a literal #[path]\n   # so only its real same-directory attribute base is consulted.\n   text=held(child,9753094).decode();masked=ns['mask'](text)\n   for md in re.finditer(r'\\bmod\\s+\\w+\\s*;',masked):\n    pre=text[:md.start()].rstrip();assert re.search(r'#\\[path\\s*=\\s*\"[^\"\\n]+\"\\]\\s*(?:pub(?:\\([^)]*\\))?\\s*)?$',pre),('plain fragment module needs its actual lexical base',child)\n   fragment_custom=True\n  kind='lib'if c['kind']=='lib'else('bin:semaprax'if c['kind']=='bin'else'test:'+Path(c['root']).stem)\n  capture(fragment,[n['module']for n in named],nodes,kind,c['package'],custom_path=fragment_custom)\n  fragment_seed_receipts.append(dict(source=child,root=c['root'],namespace=[n['module']for n in named],chain=c,actual_default_base=str(defaultbase.relative_to(R))))\n\n# Only the exact registered785 branch can traverse these unchanged ancestors;"
+    },
+    {
+      "before": "  for i,node in enumerate(nodes):\n   text=held(node['source_path'],9753094).decode();",
+      "after": "  for i,node in enumerate(nodes):\n   if 'compiled_include'in node:\n    edge=dict(node['compiled_include']);raw=held(edge['parent'],9753094);assert raw[edge['start']:edge['start']+len(edge['text'].encode())]==edge['text'].encode();edges.append(edge);continue\n   text=held(node['source_path'],9753094).decode();"
+    },
+    {
+      "before": "registration_update']='FINITE_260_OLD_EDGE_REMAP_AND_FIVE_ACTUAL_CORE_CHILDREN'",
+      "after": "registration_update']='FINITE_260_WITH_TEN_AUTHENTICATED_LEAF_EDGES_AND_FIVE_ACTUAL_CORE_CHILDREN'"
+    },
+    {
+      "before": "parsed_registration_parents=sorted(PARENTS)",
+      "after": "parsed_registration_parents=sorted(PARENTS),authenticated_compiled_leaf_edges=fragment_receipts,actual_fragment_namespace_seeds=fragment_seed_receipts"
+    },
+    {
+      "before": "def seed_nodes(chain):",
+      "after": "REMAPPED_PRIOR=copy.deepcopy(full) # Complete old class/edge prefix with exact actual byte offsets.\nINCOMING_ROOTS={c['root']for model in full.values()for value in model['classes'].values()for c in value['chains']};assert len(INCOMING_ROOTS)==8\n\ndef seed_nodes(chain):"
+    },
+    {
+      "before": " m['closure_only']=sorted(set(m['classes'])-rawpaths);paths=set(m['sources'])|included",
+      "after": " for path,prior in REMAPPED_PRIOR[name]['classes'].items():\n  assert m['classes'][path]['role']==prior['role']\n  assert m['classes'][path]['chains'][:len(prior['chains'])]==prior['chains'],('complete incoming chain prefix lost',name,path)\n assert {c['root']for model in full.values()for value in model['classes'].values()for c in value['chains']}==INCOMING_ROOTS\n m['closure_only']=sorted(set(m['classes'])-rawpaths);paths=set(m['sources'])|included"
+    },
+    {
+      "before": "fmtpacket=json.loads(fmtpacketraw);assert len(fmtpacket['rows'])==433",
+      "after": "assert held(fmtpacketpath,262144)==fmtpacketraw,'complete physical incoming433 remains exact'\nfmtpacket=json.loads(fmtpacketraw);assert len(fmtpacket['rows'])==433"
+    },
+    {
+      "before": "def klass(path):",
+      "after": "def klass(path,domain):"
+    },
+    {
+      "before": "  if v not in chains:chains.append(v)\n  closed.append(kind.startswith('test:')or any('#[cfg(test)]'in n['attributes']for n in nodes))\n return dict(role='test-only'if all(closed)else'production',chains=chains)",
+      "after": "  # A compiled fragment seed is owned by a DOMAIN only if its complete\n  # actual prefix/root/package is already an authenticated compiled include\n  # chain in that domain's incoming model. Raw data membership is not code\n  # authority. Apply this to the fragment itself AND every parsed descendant.\n  includes=[i for i,e in enumerate(edges)if e['text'].lstrip().startswith('include!')]\n  if includes:\n   prior=REMAPPED_PRIOR[domain]\n   allowed=True\n   for at in includes:\n    edge=edges[at];assert edge['child']in FRAGMENTS\n    prefix=dict(root=v['root'],kind=v['kind'],package=v['package'],edges=edges[:at+1])\n    witnesses=prior['classes'].get(edge['child'],{}).get('chains',[])\n    if prefix not in witnesses:\n     allowed=False;break\n    assert compiled_chain(prefix)\n   if not allowed:continue\n  if v not in chains:chains.append(v)\n  closed.append(kind.startswith('test:')or any('#[cfg(test)]'in n['attributes']for n in nodes))\n if not chains:return None\n return dict(role='test-only'if all(closed)else'production',chains=chains)"
+    },
+    {
+      "before": "  value=klass(path)\n  if path in m['classes']:",
+      "after": "  value=klass(path,name)\n  if value is None:continue # No actual compiled seed owned by this domain; retain incoming data class unchanged.\n  if path in m['classes']:"
+    },
+    {
+      "before": " assert row['fragments'].count(record)==1 and record['compiled']is True and 'fragments'not in record\n standalone=next(x for x in fmtpacket['rows']if x['source']==child);assert standalone==record",
+      "after": " assert set(record)=={'parent','source','compiled','current'} and record['compiled']is True\n standalone=next(x for x in fmtpacket['rows']if x['source']==child)\n assert set(standalone)=={'source','compiled','current','views'} and standalone['views']==[]\n assert all(standalone[k]==record[k]for k in ['source','compiled','current'])\n assert row['fragments'].count(standalone)==1 and standalone['compiled']is True and 'fragments'not in standalone"
+    }
+  ],
+  "inverse": "require wholeafter; replace exact after\u2192before once in reverseorder; equal wholebefore"
+}

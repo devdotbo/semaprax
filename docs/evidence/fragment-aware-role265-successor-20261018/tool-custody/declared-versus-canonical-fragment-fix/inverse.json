@@ -1,0 +1,10 @@
+{
+  "before_sha256": "4d7b649a7225dce76409afb0161b01602780e99ff5bb7eba6cde77a33aad7bec",
+  "after_sha256": "7c653d0e3480447f2df56fca3cfa579cc8ea33d1b654fbf283f142f0ef68c06e",
+  "edits": [
+    {
+      "before": " assert row['fragments'].count(record)==1 and record['compiled']is True and 'fragments'not in record\n standalone=next(x for x in fmtpacket['rows']if x['source']==child);assert standalone==record",
+      "after": " assert set(record)=={'parent','source','compiled','current'} and record['compiled']is True\n standalone=next(x for x in fmtpacket['rows']if x['source']==child)\n assert set(standalone)=={'source','compiled','current','views'} and standalone['views']==[]\n assert all(standalone[k]==record[k]for k in ['source','compiled','current'])\n assert row['fragments'].count(standalone)==1 and standalone['compiled']is True and 'fragments'not in standalone"
+    }
+  ]
+}
