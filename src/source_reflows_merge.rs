@@ -145,6 +145,12 @@ fn historical_project_entry(source: &str, expected: &str, current: &str) -> Stri
             "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
             "ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca"
         ) | (
+            "src/cleanup_plan/replay/lexical_replay.rs",
+            "52a1b94530881bd2f59d873a71663fcd1656a9a2401440bc4f8edb69839fbd7f"
+        ) | (
+            "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs",
+            "575f7461fb6624f8dfdf1ed511cbade1227a47358abd0858755396d949e2931b"
+        ) | (
             "src/workspace_graph.rs",
             "b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31"
         ) | (
