@@ -234,6 +234,7 @@ impl Kind {
 #[derive(Debug)]
 pub(in crate::cleanup_plan::replay) enum Reason {
     Finite(Kind),
+    Path(crate::cleanup_plan::replay::path_join::selected::reason::Reason),
     UnknownExpression(ExpressionId),
     UnknownStatus(ExpressionId),
 }
@@ -242,6 +243,7 @@ impl Reason {
     pub(in crate::cleanup_plan::replay) fn legacy(self, function: &ResolvedFunction) -> Diagnostic {
         match self {
             Self::Finite(kind) => replay_error(function, kind.detail()),
+            Self::Path(reason) => reason.legacy(function),
             Self::UnknownExpression(id) => replay_error(
                 function,
                 format_args!("cleanup plan references unknown expression `{id}`"),

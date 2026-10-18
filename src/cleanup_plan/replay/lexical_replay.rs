@@ -224,15 +224,34 @@ pub(super) fn validate_paid(
         structural_control::validate_ordinary_cfg(function, budget)?;
     }
     // Lexical functions always replay every path: no summary shortcut applies.
-    validate_path_states::<expression_facts::errors::EngineError>(
-        program,
-        function,
-        &storage,
-        &leaves,
-        budget,
-        Some(&auth),
-        None,
-    )?;
+    if budget.selected() {
+        crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+            budget,
+            function,
+            path_join::selected::CallReceiving<'_>,
+            8,
+            "selected path driver call receiving",
+            path_join::selected::validate_path_states(
+                program,
+                function,
+                &storage,
+                &leaves,
+                budget,
+                Some(&auth),
+                None
+            )
+        )?;
+    } else {
+        validate_path_states::<expression_facts::errors::EngineError>(
+            program,
+            function,
+            &storage,
+            &leaves,
+            budget,
+            Some(&auth),
+            None,
+        )?;
+    }
     factored::strategy::validate_authenticated(
         program,
         function,
@@ -414,3 +433,6 @@ pub(in crate::cleanup_plan::replay) mod before_boundary;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_selected_control;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_path;

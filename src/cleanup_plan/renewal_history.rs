@@ -81,3 +81,28 @@ impl RenewalHistory {
             + self.epochs.capacity() * std::mem::size_of::<(LivenessFlagId, LivenessFlagId)>()
     }
 }
+
+// Private storage access for the selected paid twin. No proof, source or
+// replay authority is supplied; caller admits this exact borrow ABI first.
+impl RenewalHistory {
+    pub(super) fn selected_parts(
+        &mut self,
+    ) -> (
+        &mut Vec<LivenessFlagId>,
+        &mut Vec<(LivenessFlagId, LivenessFlagId)>,
+        Option<LivenessFlagId>,
+    ) {
+        (&mut self.history, &mut self.epochs, self.protected)
+    }
+    pub(super) fn from_selected_parts(
+        history: Vec<LivenessFlagId>,
+        epochs: Vec<(LivenessFlagId, LivenessFlagId)>,
+        protected: Option<LivenessFlagId>,
+    ) -> Self {
+        Self {
+            history,
+            epochs,
+            protected,
+        }
+    }
+}

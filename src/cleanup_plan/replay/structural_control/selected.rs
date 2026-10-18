@@ -19,6 +19,13 @@ macro_rules! control_refusal {
 // argument, Option result or pattern bindings. This lexical packet is acquired
 // on every call, including the terminal None; no forwarding helper is formed.
 macro_rules! dynamic_next {
+    ($budget:ident,$function:ident,$iter:ident,$roles:ty,$fields:expr) => {{
+        $budget.reserve_array::<$roles>($function, 1,
+            "selected dynamic iterator next receiving")?;
+        $budget.charge($function, $fields, "selected dynamic iterator next receiving")?;
+        $iter.next()
+    }};
+
     ($budget:ident,$function:ident,$iter:ident,$iterator:ty,$item:ty,($($binding:ty),*),$fields:expr) => {{
         $budget.reserve_array::<(&mut $iterator, Option<$item>, $($binding,)*)>(
             $function, 1, "selected dynamic iterator next receiving")?;

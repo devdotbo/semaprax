@@ -147,3 +147,14 @@ new report authority; existing authority controls remain unchanged. Remaining
 lexical-HIR/certificate, path-state/transition and factored semantic descendants
 retain their explicit unpaid production status. No claim of complete #781
 closure, current-head executable support or measured improvement is made.
+
+The isolated #781 selected path-state candidate extends the same preacquired
+report/ledger route through path transitions and renewal provenance. A finite
+nested control reason replaces semantic owned-Diagnostic transport for that
+selected family; genuine budget diagnostics retain their existing prepaid
+provenance. No new report or payer is supplied, and later refusals retain the
+first receipt and original report slot/text pointers. Complete immediate old
+owners and ordinary APIs remain independent. Owning source-only controls cover
+live duplicate Initialize, current paid Session recovery, full six-field legacy
+observation and Drop. This candidate remains unqualified and does not establish
+whole-engine funding, net cost benefit or closure of #781.

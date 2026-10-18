@@ -223,8 +223,15 @@ pub(super) fn validate_paid(
         "selected structural driver call receiving",
         structural_control::selected::validate_reachable_acyclic_cfg(function, budget)
     )?;
-    validate_path_states::<expression_facts::errors::EngineError>(
-        program, function, &storage, &leaves, budget, None, None,
+    crate::cleanup_plan::replay::inventory_coverage::paid::receive!(
+        budget,
+        function,
+        path_join::selected::CallReceiving<'_>,
+        8,
+        "selected path driver call receiving",
+        path_join::selected::validate_path_states(
+            program, function, &storage, &leaves, budget, None, None
+        )
     )?;
     match factored::compare_with_index(program, function, budget, None)? {
         Some(true) => Ok(()),
@@ -452,3 +459,6 @@ mod selected_family_tests;
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay) mod before_selected_control;
+
+#[cfg(test)]
+pub(in crate::cleanup_plan::replay) mod before_selected_path;

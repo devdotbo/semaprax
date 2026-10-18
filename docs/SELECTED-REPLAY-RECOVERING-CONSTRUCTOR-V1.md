@@ -949,3 +949,62 @@ residuals, not newly invented legacy exclusions. A whole scalar duplicate-live
 Initialize witness is authored to isolate the existing path transition boundary
 after this family; it remains unverified until owning runtime qualification.
 External named allocating compatibility APIs retain their original scope.
+
+### Selected path-state, transitions and renewal receiving candidate (#781)
+
+The next isolated source candidate routes only the paid selected scalar and
+lexical drivers through `path_join::selected`. Ordinary replay and the complete
+immediate pre-path scalar/lexical drivers remain independently compiled. The
+selected twin keeps original path scheduling, left-to-right transition order,
+first refusal, exact old join/clone/materialization work and cleanup ordering.
+The genuine duplicate-live Initialize witness now retains finite typed failure
+data through the existing Control12 permit and prepaid Session report.
+
+A nested `ControlReason::Path` carries only a finite reason or the original
+block/exit number. It grants no source, identity, report or replay authority.
+Caller and callee arguments/results are admitted before formation on the same
+ledger. The original dynamic call/status atoms retain their original renderer
+and stage. Complete original Reason/Atom/Receipt/EngineError shapes are compiled
+as a layout witness; no-growth assertions are authored but unrun. Shipping
+`size_of` requests always charge the actual current carriers. No current enum
+is used as the purported original footprint.
+
+Every reached explicit next/get/index/remove result has its literal typed
+receiving packet before evaluation, including reached terminal None. Concrete
+iterator/frame headers retain their separate entry charges. Lexical scan,
+filter, equality and stable Copy-flag compaction macros form no hidden closure
+or forwarding helper. Reverse-stack renewal expression lookup retains original
+reverse root/child search order and admits actual Vec backing before growth.
+The original lookup and renewal APIs remain unchanged. Selected renewal work
+calculation uses the same paid traversal and exact old materialization units;
+its repeated old discovery is not silently cached or credited away.
+
+Selected renewal provenance construction/stage/commit use explicit paid loops.
+Their private storage borrow/construction accessors grant no authority and have
+literal caller/callee receiving banks. Original `RenewalHistory` methods remain
+independent controls. Same-owner String append keeps ordered first-match lookup
+and original publication/history order. Neither path order nor canonical cleanup
+vectors are sorted or repaired. Actual payload backing stays separately funded.
+
+Earlier closed source/profile/structural validation excludes affine closure
+calls, conditional aggregate ownership and ordinary-only staged Copy branches
+before this selected family. Those facts do not admit malformed raw general
+APIs. The original general descendants and whole pre-path drivers remain the
+controls. No arbitrary legacy API is reclassified as funded. Later factored
+comparison descendants and any earlier unmigrated paid-Session family remain
+explicit production residuals; this candidate does not close #781.
+
+The owning `path_join::selected::tests` children author whole ordinary/pre-path/
+current success and hostile comparisons over all six diagnostic fields; genuine
+nominal, byte renewal and String append fixtures; exact/one-short/zero/work/
+sticky/source-pointer controls; complete original carrier layouts; literal
+known/unknown reverse-stack lookup floors; reached terminal None; provenance
+zero/one/many cases; paid current Session report-pointer retention and full Drop.
+Original structural/schema controls continue to target current drivers.
+
+This source-only candidate has not been built or run. New receiving/frame/
+lookup/control costs are additive; no cap, old tariff, allowance or limit is
+lowered or raised. No net application gain, executable gate, #781 closure or
+improvement to the earlier 64MiB HIR-final refusals is claimed. Source custody
+and physical-role inventory coupling are deferred to the owning integration
+lane after sealing and independent review.
