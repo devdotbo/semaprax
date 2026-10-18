@@ -481,8 +481,9 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         function,
                                         failure,
                                         ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
-                                            + std::mem::size_of::<(usize, &str, bool, &str, &str)>(
-                                            ),
+                                            + std::mem::size_of::<usize>()
+                                            + 3 * std::mem::size_of::<&str>()
+                                            + std::mem::size_of::<bool>(),
                                         "retained transition callback identity controls"
                                     ) {
                                         return Err(failure.error.take().expect(
