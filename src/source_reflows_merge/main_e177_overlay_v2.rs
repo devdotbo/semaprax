@@ -906,6 +906,39 @@ pub(super) fn held_source(
         image(prior)
     })())
 }
+pub(super) fn held_source_with_packet(
+    authenticated: &Value,
+    path: &Path,
+    length: usize,
+    expected: &str,
+) -> Option<Result<String, &'static str>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path.strip_prefix(root).ok()?.to_str()?;
+    if !normal(relative) {
+        return None;
+    }
+    // compose() authenticated policy membership against these exact constants.
+    if !REPLACEMENTS.contains(&relative) && !ADDITIONS.contains(&relative) {
+        return None;
+    }
+    let row = authenticated["rows"].as_array().unwrap().iter()
+        .find(|row| row["source"] == relative).unwrap();
+    Some((|| {
+        let actual = current(&row)?;
+        if row["current"]["length"].as_u64() == Some(length as u64)
+            && row["current"]["sha256"] == expected
+        {
+            return Ok(actual);
+        }
+        let prior = row["views"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["length"].as_u64() == Some(length as u64) && p["sha256"] == expected)
+            .ok_or("foreign overlay tuple")?;
+        image(prior)
+    })())
+}
 fn stage(row: &Value) -> Option<Value> {
     let source = row["source"].as_str().unwrap();
     let current_row = affected_row(source)?;

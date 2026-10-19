@@ -135,7 +135,7 @@ mod tests {
             digest(before.as_bytes()),
             "b8b5ca81b4e0001c7dc8ffc354da34cf9966f7dee840b58f7e1265c2806479e6"
         );
-        let current = include_str!("main_e177_final_inputs.rs");
+        let current = super::root_before_nested_context(include_str!("main_e177_final_inputs.rs"));
         let child = include_str!("main_e177_packet_lookup.rs");
         let old_value = before
             .split_once("pub(crate) fn value(source:")
@@ -257,6 +257,41 @@ mod tests {
         assert!(panic_text(std::panic::AssertUnwindSafe(|| {
             next.file_row(source, 4, &expected);
         })).contains("missing"));
+        // Common public endpoint methods use one lazy loader for this call only.
+        let loads = std::cell::Cell::new(0usize);
+        std::fs::write(&old, b"old!").unwrap();
+        let fixture = serde_json::json!({"unknown_root":{"kept":true},"rows":[{
+            "source":source,"compiled":false,"unknown_metadata":[1,2],
+            "current":{"archive":source,"length":4,"sha256":digest(b"new!")},
+            "views":[{"archive":old.to_str().unwrap(),"length":4,"sha256":expected}]}]});
+        let ((), heap) = crate::test_allocation_observer::measure(|| {
+            for invocation in 1..=2 {
+                let mut context = ProjectionInvocation { packet: None, acquire: || {
+                    loads.set(loads.get() + 1);
+                    fixture.clone()
+                }};
+                assert_eq!(context.value(source, &expected, "new!"), "old!");
+                assert_eq!(context.value_direct(source, &expected, "new!"), "old!");
+                assert_eq!(context.file_row_with_context(source, 4, &expected), Some("old!".to_owned()));
+                assert_eq!(super::from_packet_with_context(context.metadata(), source, &expected, "foreign"), "foreign");
+                assert_eq!(loads.get(), invocation);
+                assert_eq!(context.metadata(), &fixture);
+                drop(context);
+            }
+        });
+        assert!(!heap.invalid && heap.live == 0 && heap.allocated == heap.freed);
+        // Metadata reuse never hides fresh-current failure or the missing archive.
+        let mut context = ProjectionInvocation { packet: None, acquire: || fixture.clone() };
+        assert_eq!(context.value(source, &expected, "new!"), "old!");
+        std::fs::write(&current, b"drft").unwrap();
+        std::fs::remove_file(&old).unwrap();
+        assert!(panic_text(std::panic::AssertUnwindSafe(|| {
+            context.value(source, &expected, "new!");
+        })).contains("length-or-digest"));
+        std::fs::write(&current, b"new!").unwrap();
+        assert!(panic_text(std::panic::AssertUnwindSafe(|| {
+            context.file_row_with_context(source, 4, &expected);
+        })).contains("missing"));
         // The borrowed row lookup is the complete original file lookup suffix.
         let root = include_str!("main_e177_final_inputs.rs");
         let old = root.split_once("fn file_4a6eb(").unwrap().1
@@ -270,19 +305,137 @@ mod tests {
     }
 }
 
+fn held_with_packet(authenticated: &serde_json::Value, path: &Path, length: usize, expected: &str) -> Result<String, &'static str> {
+    if let Some(result) = super::overlay_v2::held_source_with_packet(authenticated, path, length, expected) {
+        return result;
+    }
+    super::held_4a6eb(path, length, expected)
+}
+fn read_view_with_packet(authenticated: &serde_json::Value, view: &serde_json::Value) -> String {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    held_with_packet(authenticated,
+        &root.join(view["archive"].as_str().unwrap()),
+        view["length"].as_u64().unwrap() as usize,
+        view["sha256"].as_str().unwrap(),
+    )
+    .unwrap()
+}
+fn actual_with_packet(authenticated: &serde_json::Value, row: &serde_json::Value) -> String {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let source = row["source"].as_str().unwrap();
+    let current = &row["current"];
+    let value = held_with_packet(authenticated,
+        &root.join(source),
+        current["length"].as_u64().unwrap() as usize,
+        current["sha256"].as_str().unwrap(),
+    )
+    .unwrap();
+    if row["compiled"].as_bool().unwrap() {
+        assert_eq!(
+            Some(value.as_str()),
+            super::compiled(source),
+            "complete actual compiled source"
+        );
+    }
+    assert_eq!(value, read_view_with_packet(authenticated, current), "complete actual archive");
+    if let Some(children) = row.get("fragments") {
+        for child in children.as_array().unwrap() {
+            assert!(child.get("fragments").is_none());
+            // Authenticate actual same-scope compiled bytes before returning
+            // the shortened parent's complete historical source view.
+            actual_with_packet(authenticated, child);
+        }
+    }
+
+    value
+}
+#[rustfmt::skip]
+fn from_packet_with_context(packet: &serde_json::Value, source: &str, expected: &str, supplied: &str) -> String {
+    let Some(row) = packet["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|r| r["source"] == source)
+    else {
+        return crate::source_reflows_merge::next_big_batch_inputs::value_local(
+            source, expected, supplied,
+        );
+    };
+    let Some(prior) = row["views"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|v| v["sha256"] == expected)
+    else {
+        return supplied.to_owned();
+    };
+    let current = actual_with_packet(packet, row);
+    let previous = read_view_with_packet(packet, prior);
+    if supplied == current || supplied == previous {
+        previous
+    } else {
+        supplied.to_owned()
+    }
+}
+
+#[rustfmt::skip]
+fn with_packet_context(authenticated: &serde_json::Value, source: &str, expected: &str, supplied: &str) -> String {
+    // Current and prior logical-table views retain their complete scope before
+    // the separately authenticated historical Clippy-stage acquisition.
+    let direct = from_packet_with_context(authenticated, source, expected, supplied);
+    if digest(direct.as_bytes()) == expected {
+        return direct;
+    }
+    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
+        let _ = authenticated;
+        return value;
+    }
+    let normalized = clippy_stage::normalize(source, supplied);
+    let result = value_4a6eb(source, expected, normalized.as_ref());
+    if normalized.as_ref() != supplied
+        && result == normalized.as_ref()
+        && digest(result.as_bytes()) != expected
+    {
+        supplied.to_owned()
+    } else {
+        result
+    }
+}
+
+fn root_before_nested_context(current: &str) -> String {
+    assert_eq!(current.len(), 112797);
+    assert_eq!(digest(current.as_bytes()), "038f6b2515f59c4df7a11a8718b66f0904b2d07cb9544346eef2e3482a205467");
+    let mut restored = current.to_owned();
+    assert_eq!(restored.matches("pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    ProjectionInvocation::new().value_direct(source, expected, supplied)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn value_direct_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {").count(), 1);
+    restored = restored.replacen("pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    ProjectionInvocation::new().value_direct(source, expected, supplied)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn value_direct_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {", "pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {", 1);
+    assert_eq!(restored.matches("pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {\n    ProjectionInvocation::new().value(source, expected, supplied)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn value_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {").count(), 1);
+    restored = restored.replacen("pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {\n    ProjectionInvocation::new().value(source, expected, supplied)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn value_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {", "pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {", 1);
+    assert_eq!(restored.matches("pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {\n    ProjectionInvocation::new().file(path, length, expected)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn file_before_nested_context(path: &Path, length: usize, expected: &str) -> Option<String> {").count(), 1);
+    restored = restored.replacen("pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {\n    ProjectionInvocation::new().file(path, length, expected)\n}\n#[allow(dead_code, reason = \"Invocable complete predecessor acquisition route\")]\nfn file_before_nested_context(path: &Path, length: usize, expected: &str) -> Option<String> {", "pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {", 1);
+    assert_eq!(restored.len(), 112069);
+    assert_eq!(digest(restored.as_bytes()), "c99aa4c8f163fd93f2c5ab7dc050bbd69e0d2a5568f1faf2a02e8c62faf533a5");
+    restored
+}
+
 // BEGIN INVOCATION-LOCAL PROJECTION METADATA
 // Each outer projection acquisition owns one lazy immutable metadata packet.
 // Current sources, compiled bytes and current/prior archives are never cached.
-pub(crate) struct ProjectionInvocation {
+pub(crate) struct ProjectionInvocation<F = fn() -> serde_json::Value> {
     packet: Option<serde_json::Value>,
+    acquire: F,
 }
-#[rustfmt::skip] // Keep the complete old file-lookup suffix available verbatim.
 impl ProjectionInvocation {
     pub(crate) fn new() -> Self {
-        Self { packet: None }
+        Self { packet: None, acquire: packet }
     }
+}
+#[rustfmt::skip] // Keep the complete old file-lookup suffix available verbatim.
+impl<F: FnMut() -> serde_json::Value> ProjectionInvocation<F> {
     fn metadata(&mut self) -> &serde_json::Value {
-        self.packet.get_or_insert_with(packet)
+        self.packet.get_or_insert_with(&mut self.acquire)
+    }
+    pub(crate) fn value(&mut self, source: &str, expected: &str, supplied: &str) -> String {
+        with_packet_context(self.metadata(), source, expected, supplied)
     }
     pub(crate) fn file(&mut self, path: &std::path::Path, length: usize, expected: &str) -> Option<String> {
         // Original Clippy read precedes metadata acquisition on every lookup.
@@ -299,7 +452,7 @@ impl ProjectionInvocation {
             return None;
         }
         let source = relative.to_str()?;
-        self.file_row(source, length, expected)
+        self.file_row_with_context(source, length, expected)
     }
 
     // Reuse only immutable canonical metadata; all lookup readers and fallbacks stay live.
@@ -336,7 +489,7 @@ impl ProjectionInvocation {
             .iter()
             .any(|row| row["source"] == source)
         {
-            with_packet(current, source, expected, supplied)
+            with_packet_context(current, source, expected, supplied)
         } else {
             supplied.to_owned()
         }
@@ -352,7 +505,7 @@ impl ProjectionInvocation {
             current["sha256"].as_str().unwrap(),
         )
         .unwrap_or_else(|| {
-            super::held(
+            held_with_packet(self.metadata(),
                 &root.join(source),
                 current["length"].as_u64().unwrap() as usize,
                 current["sha256"].as_str().unwrap(),
@@ -370,7 +523,7 @@ impl ProjectionInvocation {
         );
         assert_eq!(
             actual,
-            read_view(current),
+            read_view_with_packet(self.metadata(), current),
             "complete combined raw-carrier archive"
         );
         actual
@@ -397,9 +550,18 @@ impl ProjectionInvocation {
                 old["length"].as_u64() == Some(length as u64) && old["sha256"] == expected
             })?;
         self.combined_side_actual(row);
-        Some(read_view(previous))
+        Some(read_view_with_packet(self.metadata(), previous))
     }
 
+    fn file_row_with_context(&mut self, source: &str, length: usize, expected: &str) -> Option<String> {
+        let authenticated = self.metadata();
+        let row = authenticated["rows"].as_array().unwrap().iter().find(|r| r["source"] == source)?;
+        let prior = row["views"].as_array().unwrap().iter()
+            .find(|v| v["length"].as_u64() == Some(length as u64) && v["sha256"] == expected)?;
+        actual_with_packet(authenticated, row);
+        Some(read_view_with_packet(authenticated, prior))
+    }
+    #[allow(dead_code, reason = "Invocable complete predecessor lookup suffix")]
     fn file_row(&mut self, source: &str, length: usize, expected: &str) -> Option<String> {
         let packet = self.metadata();
     let row = packet["rows"]

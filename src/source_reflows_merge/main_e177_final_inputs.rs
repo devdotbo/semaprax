@@ -795,6 +795,10 @@ fn actual(row: &serde_json::Value) -> String {
     value
 }
 pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {
+    ProjectionInvocation::new().file(path, length, expected)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn file_before_nested_context(path: &Path, length: usize, expected: &str) -> Option<String> {
     if let Some(Ok(value)) = clippy_stage::read(path, length, expected) {
         let _ = packet();
         return Some(value);
@@ -826,6 +830,10 @@ fn file_4a6eb(path: &Path, length: usize, expected: &str) -> Option<String> {
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
+    ProjectionInvocation::new().value(source, expected, supplied)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn value_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {
     packet_lookup::with_packet(&packet(), source, expected, supplied)
 }
 fn value_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
@@ -1049,6 +1057,10 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
 // Nondelegating entry for the older owner's compiled-channel normalization.
 // Membership is tested before calling the public delegating route.
 pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    ProjectionInvocation::new().value_direct(source, expected, supplied)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn value_direct_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {
     overlay_v2::value_direct(source, expected, supplied)
 }
 
