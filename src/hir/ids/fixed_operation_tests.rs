@@ -144,6 +144,14 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
     // the declared payload accessor: bind that exact reversible relationship,
     // then run the original constructor/hook inverse on its genuine generation.
     let retained_hook = "program\n        .functions()\n        .iter()\n        .any(|function| uses_function(function.payload()))";
+    // The current retained-source iterator adds a profiling adapter. Normalize
+    // that one declared hook only after the complete compiled acquisition above;
+    // the original whole accessor and constructor inverses below stay unchanged.
+    let profiled_hook = "program\n        .functions()\n        .profile_iter()\n        .any(|function| uses_function(function.payload()))";
+    assert_eq!(actual.matches(profiled_hook).count(), 1);
+    assert_eq!(actual.matches(retained_hook).count(), 0);
+    let retained_current = actual.replacen(profiled_hook, retained_hook, 1);
+    let actual = retained_current.as_str();
     assert_eq!(actual.matches(retained_hook).count(), 1);
     assert_eq!(
         actual.replacen(retained_hook, "program.functions().iter().any(uses_function)", 1),

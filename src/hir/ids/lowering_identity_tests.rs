@@ -142,9 +142,37 @@ fn old_program(program: &crate::Program) -> Result<hir::ResolvedProgram, Vec<cra
 
 #[test]
 fn real_expression_routes_keep_complete_hir_wire_graph_plans_and_diagnostics_against_recursive_oracle() {
+    // Preserve the complete admitted fixture and expose the frozen resolver's
+    // arithmetic limitation instead of changing that independent oracle.
+    let traversal = include_str!("../../../tests/fixtures/byte-slice-traversal.spx");
+    let traversal_ast = crate::check(traversal, "lowering-identity.spx").unwrap();
+    let traversal_current = hir::resolve(&traversal_ast).unwrap();
+    hir::validate(&traversal_current).unwrap();
+    crate::loan_plan::validate_program(&traversal_current).unwrap();
+    let traversal_again = hir::resolve(&traversal_ast).unwrap();
+    assert_eq!(traversal_current, traversal_again);
+    assert_eq!(crate::cache_codec::encode(&traversal_current).unwrap(), crate::cache_codec::encode(&traversal_again).unwrap());
+    let traversal_revision = crate::graph::revision(&traversal_ast);
+    assert_eq!(crate::graph::to_hir_json(&traversal_current, &traversal_revision).unwrap(), crate::graph::to_hir_json(&traversal_again, &traversal_revision).unwrap());
+    assert_eq!(old_program(&traversal_ast).unwrap_err(), vec![crate::diagnostic::Diagnostic {
+        code: "SPX-U102",
+        severity: crate::diagnostic::Severity::Error,
+        message: "assigned value type `i64` does not exactly match binding type `usize`".into(),
+        path: Some("lowering-identity.spx".into()),
+        span: Some(crate::ast::Span { start: 659, end: 673, line: 26, column: 17 }),
+        help: None,
+    }]);
+    let increment = "index = index + 1usize;";
+    let compatible_increment = "index = usize_from_i64(i64_from_usize(index) + 1);";
+    assert_eq!(traversal.matches(increment).count(), 2);
+    assert_eq!(traversal.matches(compatible_increment).count(), 0);
+    let compatible_traversal = traversal.replace(increment, compatible_increment);
+    assert_eq!(compatible_traversal.replace(compatible_increment, increment), traversal);
+    // Only these two exact increment expressions differ. The full fixture,
+    // including every traversal/control-flow body, enters the paired oracle.
     for text in [
         include_str!("../../../tests/fixtures/projected-string-views.spx"),
-        include_str!("../../../tests/fixtures/byte-slice-traversal.spx"),
+        compatible_traversal.as_str(),
         include_str!("../../../tests/fixtures/owned-leaf-collections.spx"),
         r#"module test.lowering_effects;
 permit { process.stdout.write }
