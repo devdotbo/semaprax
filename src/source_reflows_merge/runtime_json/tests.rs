@@ -988,6 +988,17 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
     for foreign in [format!("{attempt} "), old_attempt] {
         assert!(std::panic::catch_unwind(|| super::super::setup_typed_input("src/workspace_graph/constructor_failure/attempt.rs", &foreign)).is_err());
     }
+    for (source, compiled) in [
+        ("src/bounded_output.rs", include_str!("../../bounded_output.rs")),
+        ("src/workspace_graph/initial_report/build.rs", include_str!("../../workspace_graph/initial_report/build.rs")),
+        ("src/workspace_graph/initial_report/tests.rs", include_str!("../../workspace_graph/initial_report/tests.rs")),
+    ] {
+        let prior = super::super::initial845_current_owner_before(source, compiled).unwrap();
+        assert_ne!(prior, compiled);
+        for foreign in [format!("{compiled} "), compiled[..compiled.len() - 1].to_owned(), prior] {
+            assert!(std::panic::catch_unwind(|| super::super::initial845_input(source, &foreign)).is_err());
+        }
+    }
     let controls = include_str!("tests.rs");
     drop(three_fixture_test_source_before(controls));
     assert!(
@@ -1066,7 +1077,8 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
 // This complete compiled root is authenticated before removing only the closed
 // ENTRY fronts. Every original Native/receiver inverse and old assertion follows.
 fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
-    let restored = constructor825_attempt_root_before(source, current);
+    let restored = initial845_current_root_before(source, current);
+    let restored = constructor825_attempt_root_before(source, &restored);
     let restored = constructor825_root_before(source, &restored);
     let restored = complete_diagnostic846_endpoint_before(source, &restored);
     let current = restored.as_str();
@@ -1145,6 +1157,21 @@ fn constructor825_attempt_root_before(source: &str, current: &str) -> String {
     let before = before.replacen(call, "", 1);
     assert_eq!(before.len(), 59943);
     assert_eq!(digest(before.as_bytes()), [102, 95, 191, 60, 147, 167, 126, 126, 79, 145, 84, 226, 101, 193, 177, 177, 130, 152, 191, 85, 28, 220, 68, 36, 26, 212, 148, 163, 113, 77, 24, 223]);
+    before
+}
+
+fn initial845_current_root_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" { return current.to_owned(); }
+    assert_eq!(current.len(), 66330);
+    assert_eq!(digest(current.as_bytes()), [56, 115, 159, 169, 94, 28, 24, 255, 9, 57, 230, 155, 91, 102, 135, 100, 168, 142, 130, 206, 192, 236, 197, 11, 247, 221, 88, 102, 36, 99, 95, 14]);
+    let body = "\n// Exact current owners enter the original #845 source stages before any edits.\nfn initial845_current_owner_before(source: &str, current: &str) -> Option<String> {\n    let (compiled, length, current_sha, old_length, old_sha, edits): (&str, usize, &str, usize, &str, &[(&str, &str)]) = match source {\n        \"src/bounded_output.rs\" => (include_str!(\"bounded_output.rs\"), 52412, \"fa91c8eca4825931211d066d6ebde8c0ff157de1ec78b5950abe867c295e481f\", 51963, \"f9379a489970b6cb369265386226ecaa82e2d657355d50eebedb9e33c8b6589a\", &[\n            (\"#[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\npub(crate) mod exclusive_debits;\\n\", \"\"),\n            (\"                    #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n                    exclusive_debits::exceptional_settlement(&parent, remaining.min(consumed));\\n\", \"\"),\n            (\"        #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n        exclusive_debits::refusal(budget, length);\\n\", \"\"),\n            (\"    #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n    exclusive_debits::debit(budget, length);\\n\", \"\"),\n        ]),\n        \"src/workspace_graph/initial_report/build.rs\" => (include_str!(\"workspace_graph/initial_report/build.rs\"), 17509, \"48b56f916c25d00004bf6d8bc13e56a0972d07f531fceda2c7c94b57d2af20e1\", 17054, \"0fd9df9abe4ceadd45105394a4efcda2edc3a3ab780d0326d924288a60ea5bda\", &[\n            (\"                #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n                let mut exclusive = crate::bounded_output::exclusive_debits::attempt(\\n                    resolve_builder_bytes,\\n                    layouts.receipt(),\\n                    fallback_mode,\\n                );\\n                let result = constructor_failure::attempt::run(active_builder_limit(), || {\\n\", \"                constructor_failure::attempt::run(active_builder_limit(), || {\\n\"),\n            (\"                });\\n                #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n                exclusive.complete(result.observation_succeeded());\\n                result\\n\", \"                })\\n\"),\n        ]),\n        \"src/workspace_graph/initial_report/tests.rs\" => (include_str!(\"workspace_graph/initial_report/tests.rs\"), 15103, \"d4b4261a0de2fe323d9d4a52422c99e7a1d5e8ca0df594ed5364f2776bef2527\", 13095, \"52afb2ca386cf27e4bd8bf2e70c46565539427a51b11a1cdded57b3762570971\", &[\n            (\"\\n#[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n#[test]\\nfn exclusive_core_capture_keeps_complete_real_builder_outputs_and_every_original_limit() {\\n    use crate::workflow_profile::plan_comparison::{Binding, Capture, CoreDebitAlgorithm};\\n    for limit in [0, 1, 127, 1023, 8191, MAX_BUILDER_BYTES] {\\n        let run = || {\\n            build_owned_retaining_sources_with_frontend_limit::<Vec<Diagnostic>>(\\n                sources(),\\n                limit,\\n                None,\\n                false,\\n                None,\\n            )\\n            .map(|(build, _)| build.source_graph_schemas().unwrap())\\n        };\\n        let plain = run();\\n        let capture = Capture::begin(Binding::caller_labelled(\\n            \\\"real initial builder parity\\\",\\n            [0; 32],\\n        ))\\n        .unwrap();\\n        let watched = run();\\n        let report = capture.finish().unwrap();\\n        assert_eq!(\\n            plain, watched,\\n            \\\"actual full compiler product at unchanged limit {limit}\\\"\\n        );\\n        assert_eq!(\\n            report.resolved_core.algorithm,\\n            CoreDebitAlgorithm::InstrumentedLibraryTest\\n        );\\n        assert!(\\n            report.resolved_core.complete\\n                && !report.resolved_core.invalid\\n                && !report.resolved_core.lost\\n                && !report.resolved_core.overflow,\\n            \\\"{report:?}\\\"\\n        );\\n        for attempt in &report.resolved_core.attempts[..report.resolved_core.stored_attempts] {\\n            assert!(attempt.complete && !attempt.invalid);\\n            assert_eq!(attempt.stage_sum(), Some(attempt.consumed));\\n            assert_eq!(attempt.operation_sum(), Some(attempt.consumed));\\n        }\\n        if limit == MAX_BUILDER_BYTES {\\n            assert!(watched.is_ok());\\n            assert!(report.resolved_core.entered_attempts > 0);\\n            assert_eq!(\\n                report.resolved_core.final_attempt_ordinal,\\n                Some(report.resolved_core.entered_attempts - 1)\\n            );\\n        }\\n    }\\n}\\n\", \"\"),\n        ]),\n        _ => return None,\n    };\n    assert_eq!(current, compiled, \"complete actual current #845 source owner\");\n    assert_eq!(current.len(), length);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), current_sha);\n    let mut before = current.to_owned();\n    for &(new, old) in edits {\n        assert_eq!(before.matches(new).count(), 1, \"unique entire #845 owner inverse\");\n        before = before.replacen(new, old, 1);\n    }\n    assert_eq!(before.len(), old_length);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), old_sha);\n    Some(before)\n}\n";
+    assert_eq!(current.matches(body).count(), 1);
+    let before = current.replacen(body, "", 1);
+    let call = "    let acquired = initial845_current_owner_before(source, current);\n    let current = acquired.as_deref().unwrap_or(current);\n";
+    assert_eq!(before.matches(call).count(), 1);
+    let before = before.replacen(call, "", 1);
+    assert_eq!(before.len(), 61106);
+    assert_eq!(digest(before.as_bytes()), [41, 13, 157, 54, 162, 1, 242, 54, 70, 218, 99, 92, 25, 147, 113, 255, 159, 7, 3, 213, 176, 105, 123, 167, 41, 240, 119, 66, 138, 31, 253, 100]);
     before
 }
 // RUNTIME848_THREE_CONTROLS_END

@@ -850,6 +850,8 @@ fn final_batch_input(branch: &str, source: &str, current: &str) -> String {
 
 // Direct845 owners authenticate independently from inherited source guards.
 pub(crate) fn initial845_input(source: &str, current: &str) -> String {
+    let acquired = initial845_current_owner_before(source, current);
+    let current = acquired.as_deref().unwrap_or(current);
     let checkpoint = final_batch_input("845", source, current);
     let _complete_original845_before =
         runtime_json::project(runtime_json::Fixture::F87, source, &checkpoint);
@@ -1316,4 +1318,35 @@ fn constructor825_attempt_before(current: &str) -> String {
     assert_eq!(before.len(), 3973);
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), "6a4ab15e6a334f636565dc83a21411c4ba40c6de8e61445c015309c94bc892f3");
     before
+}
+
+// Exact current owners enter the original #845 source stages before any edits.
+fn initial845_current_owner_before(source: &str, current: &str) -> Option<String> {
+    let (compiled, length, current_sha, old_length, old_sha, edits): (&str, usize, &str, usize, &str, &[(&str, &str)]) = match source {
+        "src/bounded_output.rs" => (include_str!("bounded_output.rs"), 52412, "fa91c8eca4825931211d066d6ebde8c0ff157de1ec78b5950abe867c295e481f", 51963, "f9379a489970b6cb369265386226ecaa82e2d657355d50eebedb9e33c8b6589a", &[
+            ("#[cfg(feature = \"unstable-workflow-profiling\")]\npub(crate) mod exclusive_debits;\n", ""),
+            ("                    #[cfg(feature = \"unstable-workflow-profiling\")]\n                    exclusive_debits::exceptional_settlement(&parent, remaining.min(consumed));\n", ""),
+            ("        #[cfg(feature = \"unstable-workflow-profiling\")]\n        exclusive_debits::refusal(budget, length);\n", ""),
+            ("    #[cfg(feature = \"unstable-workflow-profiling\")]\n    exclusive_debits::debit(budget, length);\n", ""),
+        ]),
+        "src/workspace_graph/initial_report/build.rs" => (include_str!("workspace_graph/initial_report/build.rs"), 17509, "48b56f916c25d00004bf6d8bc13e56a0972d07f531fceda2c7c94b57d2af20e1", 17054, "0fd9df9abe4ceadd45105394a4efcda2edc3a3ab780d0326d924288a60ea5bda", &[
+            ("                #[cfg(feature = \"unstable-workflow-profiling\")]\n                let mut exclusive = crate::bounded_output::exclusive_debits::attempt(\n                    resolve_builder_bytes,\n                    layouts.receipt(),\n                    fallback_mode,\n                );\n                let result = constructor_failure::attempt::run(active_builder_limit(), || {\n", "                constructor_failure::attempt::run(active_builder_limit(), || {\n"),
+            ("                });\n                #[cfg(feature = \"unstable-workflow-profiling\")]\n                exclusive.complete(result.observation_succeeded());\n                result\n", "                })\n"),
+        ]),
+        "src/workspace_graph/initial_report/tests.rs" => (include_str!("workspace_graph/initial_report/tests.rs"), 15103, "d4b4261a0de2fe323d9d4a52422c99e7a1d5e8ca0df594ed5364f2776bef2527", 13095, "52afb2ca386cf27e4bd8bf2e70c46565539427a51b11a1cdded57b3762570971", &[
+            ("\n#[cfg(feature = \"unstable-workflow-profiling\")]\n#[test]\nfn exclusive_core_capture_keeps_complete_real_builder_outputs_and_every_original_limit() {\n    use crate::workflow_profile::plan_comparison::{Binding, Capture, CoreDebitAlgorithm};\n    for limit in [0, 1, 127, 1023, 8191, MAX_BUILDER_BYTES] {\n        let run = || {\n            build_owned_retaining_sources_with_frontend_limit::<Vec<Diagnostic>>(\n                sources(),\n                limit,\n                None,\n                false,\n                None,\n            )\n            .map(|(build, _)| build.source_graph_schemas().unwrap())\n        };\n        let plain = run();\n        let capture = Capture::begin(Binding::caller_labelled(\n            \"real initial builder parity\",\n            [0; 32],\n        ))\n        .unwrap();\n        let watched = run();\n        let report = capture.finish().unwrap();\n        assert_eq!(\n            plain, watched,\n            \"actual full compiler product at unchanged limit {limit}\"\n        );\n        assert_eq!(\n            report.resolved_core.algorithm,\n            CoreDebitAlgorithm::InstrumentedLibraryTest\n        );\n        assert!(\n            report.resolved_core.complete\n                && !report.resolved_core.invalid\n                && !report.resolved_core.lost\n                && !report.resolved_core.overflow,\n            \"{report:?}\"\n        );\n        for attempt in &report.resolved_core.attempts[..report.resolved_core.stored_attempts] {\n            assert!(attempt.complete && !attempt.invalid);\n            assert_eq!(attempt.stage_sum(), Some(attempt.consumed));\n            assert_eq!(attempt.operation_sum(), Some(attempt.consumed));\n        }\n        if limit == MAX_BUILDER_BYTES {\n            assert!(watched.is_ok());\n            assert!(report.resolved_core.entered_attempts > 0);\n            assert_eq!(\n                report.resolved_core.final_attempt_ordinal,\n                Some(report.resolved_core.entered_attempts - 1)\n            );\n        }\n    }\n}\n", ""),
+        ]),
+        _ => return None,
+    };
+    assert_eq!(current, compiled, "complete actual current #845 source owner");
+    assert_eq!(current.len(), length);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), current_sha);
+    let mut before = current.to_owned();
+    for &(new, old) in edits {
+        assert_eq!(before.matches(new).count(), 1, "unique entire #845 owner inverse");
+        before = before.replacen(new, old, 1);
+    }
+    assert_eq!(before.len(), old_length);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), old_sha);
+    Some(before)
 }
