@@ -1,3 +1,4 @@
+- Retain the explicitly selected macOS SDK in cleared native fixture environments so the real Apple Clang can resolve its standard headers.
 - Authenticate the exact inventory and clone-source formatting successors before replaying their unchanged whole-source audit inverses.
 - Compare complete immutable cleanup-history segments in one receiver loop while retaining every original validation, work request and resource ceiling.
 - Fix test source restoration so a rejected input cannot poison the shared cache or cascade into unrelated source-audit failures.
