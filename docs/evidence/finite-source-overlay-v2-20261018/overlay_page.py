@@ -208,6 +208,7 @@ def expand_v8_carriers(before, policy, page):
   assert index not in seen, 'v8 duplicate carrier'; seen.add(index)
   old=before['rows'][index]
   assert old['source']==source and H(canonical(old))==old_sha, 'v8 complete old carrier'
+  assert before['rows'][child_index]['source']==child, 'v8 old child identity'
   fragments=reference[3]
   assert type(fragments) is list and fragments==[{'canonical_source':child}], 'v8 exact single leaf reference'
   assert len(old.get('fragments',[]))==1 and old['fragments'][0]['source']==child
