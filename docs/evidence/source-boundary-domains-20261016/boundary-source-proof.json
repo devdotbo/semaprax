@@ -7,10 +7,10 @@
       "original_roots": 1046,
       "current_boundary_members": 1243,
       "current_boundary_production": 445,
-      "outside_production_still_fully_authenticated": 109,
-      "full_role_production": 554,
-      "full_role_test_only": 1061,
-      "full_raw_sha256": "e7ea3e7e624fd9dd64190a5021151ae59c13b8513afc425dc83711dbbf4da905",
+      "outside_production_still_fully_authenticated": 110,
+      "full_role_production": 555,
+      "full_role_test_only": 1067,
+      "full_raw_sha256": "a0b2a306b991642a1b353525cad09d3c71c9db3b97d40c5e01d740581895df60",
       "boundary_production_sha256": "f560d2d5dbd2dde42d9d29562a7760f4407fa5a3af4d679cda420fffe38ccabe",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -33,10 +33,10 @@
       "original_roots": 179,
       "current_boundary_members": 212,
       "current_boundary_production": 76,
-      "outside_production_still_fully_authenticated": 593,
-      "full_role_production": 669,
-      "full_role_test_only": 1107,
-      "full_raw_sha256": "7a767c6328ff9376c9d13d49b79339934503db669530e1164b2e5047f551f368",
+      "outside_production_still_fully_authenticated": 594,
+      "full_role_production": 670,
+      "full_role_test_only": 1113,
+      "full_raw_sha256": "9e8de654b369d9611babde40a7d95cab012fd1c00545ad4431a852b535609a98",
       "boundary_production_sha256": "aaf2f55cb25236c9abdbb321f30ae5f5d51029f02b68a55bc3a4c4824e90a35d",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -65,6 +65,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "EXACT_SINGLE_LEAF_FORMAT_SOURCE_PIN_SUCCESSOR",
+  "registration_update": "EXACT_7C_SOURCE_PIN_AND_UNCHANGED_LITERAL_OFFSET_SUCCESSOR",
   "global_polluted_purity_result_not_claimed": true
 }

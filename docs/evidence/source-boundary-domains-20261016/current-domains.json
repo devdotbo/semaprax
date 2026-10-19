@@ -2780,6 +2780,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
@@ -2856,9 +2857,9 @@
         "src/workspace_graph/expected_projection/call_carriers_directory.rs",
         "src/workspace_graph/expected_projection/cost.rs"
       ],
-      "full_manifest_sha256": "0785e9663f41451998605b939bbffb8495abb30ec9a1e772581807d43c96d080",
-      "full_raw_sha256": "e7ea3e7e624fd9dd64190a5021151ae59c13b8513afc425dc83711dbbf4da905",
-      "full_authenticated_production_sha256": "49f628871a1023fbf7d56ac4b5117dce1c291db37dc056a7e5fdc8f709beb2d8"
+      "full_manifest_sha256": "84da66e1b77bfb21eaddd87aa33e24cf0bf75f91051ba67942e0b79ef0288e51",
+      "full_raw_sha256": "a0b2a306b991642a1b353525cad09d3c71c9db3b97d40c5e01d740581895df60",
+      "full_authenticated_production_sha256": "ef6fa623bb5e3dcb5bcaea2ec247c507a3766f7d6a792fe2e4529b408122f94c"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3446,6 +3447,7 @@
         "src/cleanup_plan/replay/ordinary_plan_history.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
@@ -3931,9 +3933,9 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "23de973958155504f37393ff648fbdea2f362175c4a77e04c0cb3ca79fdd64db",
-      "full_raw_sha256": "7a767c6328ff9376c9d13d49b79339934503db669530e1164b2e5047f551f368",
-      "full_authenticated_production_sha256": "0397ea37b7e1a73413750e562bfd655472774438488b879f100b73d8ef54db19"
+      "full_manifest_sha256": "e16b5caf47374b0ed2ed8497721a88ef8a899d761dfaa52edb424f7530e6e381",
+      "full_raw_sha256": "9e8de654b369d9611babde40a7d95cab012fd1c00545ad4431a852b535609a98",
+      "full_authenticated_production_sha256": "cf53af026e4d53aa58d903f21c8833336bf2f5a4ac50051cb5a6e1526d64657d"
     }
   }
 }
