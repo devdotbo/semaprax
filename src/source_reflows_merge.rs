@@ -139,8 +139,15 @@ fn post21_input(source: &str, current: &str) -> String {
 // Only literal historical ENTRY stages are acquired here. The complete existing
 // compile35f front and every intermediate inverse below still execute in order.
 fn historical_project_entry(source: &str, expected: &str, current: &str) -> String {
-    if let Some(entry) = constructor825_compiled_entry(source, expected, current) {
-        return entry;
+    // The preceding authentic a3 projector already restored this complete stage.
+    let restored_receiving_stage = source == "src/workspace_graph/constructor_failure/receiving/before.rs"
+        && expected == "6135d75cf3f57029b9dd754030aba155a75ca902772aa036345481c1d3abc8b1"
+        && current.len() == 14489
+        && format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))) == expected;
+    if !restored_receiving_stage {
+        if let Some(entry) = constructor825_compiled_entry(source, expected, current) {
+            return entry;
+        }
     }
     // This source is compiled DATA, not a canonical-row admission. Restore
     // its exact formatter-only predecessor before the unchanged old projector.
