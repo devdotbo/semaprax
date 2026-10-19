@@ -775,27 +775,39 @@ mod tests {
     #[test]
     fn paid_phase_scopes_keep_nested_prefixes_unknown_ledgers_and_overflow_separate() {
         let capture = Capture::begin(binding()).unwrap();
-        let (_, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
+        let (child_paid, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
             let _outer = active_paid_phase(PaidPhase::CleanupValidation);
             assert!(crate::bounded_output::reserve_active_required(3));
             {
                 let _inner = active_paid_phase(PaidPhase::CanonicalRebuild);
                 assert!(crate::bounded_output::reserve_active_required(5));
             }
-            {
+            assert_eq!(crate::bounded_output::active_remaining(), Some(92));
+            let child_paid = {
                 let _restored = active_paid_phase(PaidPhase::ReplayStructure);
                 let (_, refused, paid) = crate::bounded_output::with_limit_usage(20, || {
                     assert!(crate::bounded_output::reserve_active_required(7));
                 });
                 assert!(!refused && paid == 7);
-            }
+                paid
+            };
+            // Child output is charged back to the restored parent ledger.
+            assert_eq!(
+                crate::bounded_output::active_remaining(),
+                Some(92 - child_paid)
+            );
             {
                 let _prefix = active_paid_phase(PaidPhase::Comparison);
                 assert!(crate::bounded_output::reserve_active_required(2));
                 assert!(!crate::bounded_output::reserve_active_required(101));
             }
+            assert_eq!(
+                crate::bounded_output::active_remaining(),
+                Some(90 - child_paid)
+            );
+            child_paid
         });
-        assert!(refused && paid == 10);
+        assert!(refused && paid == 3 + 5 + child_paid + 2);
         for payer in [
             PhasePayer::Unobserved,
             PhasePayer::Selected,
