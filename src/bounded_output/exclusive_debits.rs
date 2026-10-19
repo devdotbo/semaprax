@@ -365,7 +365,7 @@ pub(crate) fn cancel(generation: u64) {
 }
 #[inline(never)]
 pub(crate) fn finish(generation: u64) -> Report {
-    access(|s| {
+    match access(|s| {
         if !s.enabled || s.generation != generation {
             s.invalid();
         }
@@ -376,13 +376,15 @@ pub(crate) fn finish(generation: u64) -> Report {
         s.report.lost = LOST.try_with(Cell::get).unwrap_or(true);
         s.report.complete &= !s.report.overflow && !s.report.lost && !s.report.invalid;
         s.report
-    })
-    .unwrap_or_else(|| Report {
-        complete: false,
-        lost: true,
-        invalid: true,
-        ..Report::EMPTY
-    })
+    }) {
+        Some(report) => report,
+        None => Report {
+            complete: false,
+            lost: true,
+            invalid: true,
+            ..Report::EMPTY
+        },
+    }
 }
 // Called after the existing ACTIVE install/restore, before parent settlement.
 // The complete old budget algorithm decides the topology; addresses only bind
