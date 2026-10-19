@@ -60,6 +60,15 @@ fn report(old: &Run, current: &Run, label: &str) {
         + 2 * size_of::<Result<(), Diagnostic>>();
     let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
     let selector = size_of::<bool>();
+    let right_rest = size_of::<&[Rc<SkeletonObservation>]>();
+    let old_body = 2 * size_of::<&[usize]>()
+        + 8 * size_of::<usize>()
+        + 4 * size_of::<bool>()
+        + 2 * right_rest
+        + size_of::<Ordering>();
+    assert_eq!(certified_heads::BOUNDARY_BODY + right_rest, old_body);
+    // Equal actual admitted bodies, not inferred future completed work.
+    assert_eq!(old.row.shared_boundaries, current.row.shared_boundaries);
     assert_eq!(
         (header, probe, selector),
         (
@@ -102,12 +111,14 @@ fn report(old: &Run, current: &Run, label: &str) {
         current.row.empty_selector_skips + current.row.shared_publishes
     );
     assert_eq!(
-        current.observed.2 + probe * old.row.identity_empty_probes,
+        current.observed.2
+            + probe * old.row.identity_empty_probes
+            + right_rest * current.row.shared_boundaries,
         old.observed.2 + header + selector * current.row.empty_selectors,
-        "complete real old/new bills, including the extra actual primitive header"
+        "complete real old/new bills: independent selector/header plus removed actual right-rest transport"
     );
     eprintln!(
-        "OPT905 {label}: old={} current={} selector={} skipped={} old_empty_probes={} retained_probes={} runs={} work={} old_alloc={:?} current_alloc={:?}; whole comparator and Drop, cold losses retained; not whole32/application admission",
+        "OPT905_906 {label}: old={} current={} selector={} skipped={} old_empty_probes={} retained_probes={} runs={} work={} old_alloc={:?} current_alloc={:?}; selector_added={} selector_header={} old_empty_removed={} right_rest_removed={}; whole comparator and Drop, cold losses retained; not whole32/application admission",
         old.observed.2,
         current.observed.2,
         current.row.empty_selectors,
@@ -117,7 +128,11 @@ fn report(old: &Run, current: &Run, label: &str) {
         current.row.shared_publishes,
         current.row.identity_work,
         old.observed.0.1,
-        current.observed.0.1
+        current.observed.0.1,
+        selector * current.row.empty_selectors,
+        header,
+        probe * old.row.identity_empty_probes,
+        right_rest * current.row.shared_boundaries
     );
 }
 #[test]
@@ -341,6 +356,60 @@ fn lexical_empty_selector_exact_short_zero_floor_and_mixed_frontiers_are_actual_
                     && e.before == event.before
                     && e.after == Some(after))
             );
+        }
+        let body_events: Vec<_> = success
+            .events
+            .iter()
+            .copied()
+            .filter(|e| e.phase == "ordinary plan certified boundary transition")
+            .collect();
+        assert!(!body_events.is_empty());
+        assert_eq!(body_events.len(), success.row.shared_boundaries);
+        for event in body_events {
+            let after = event.after.unwrap();
+            assert_eq!(after - event.before, certified_heads::BOUNDARY_BODY);
+            for (limit, floor) in [(event.before, 0), (after - 1, 0), (after, 1)] {
+                let r = observe(
+                    f,
+                    false,
+                    4,
+                    0,
+                    true,
+                    hir,
+                    0,
+                    MAX_REPLAY_WORK_UNITS,
+                    limit,
+                    floor,
+                    true,
+                );
+                assert!(
+                    r.observed.1
+                        && r.observed.0.0.result.is_err()
+                        && r.observed.0.0.retry.is_some()
+                );
+                let refusal = r.observed.3.unwrap();
+                assert_eq!(
+                    (refusal.requested, refusal.remaining, refusal.floor),
+                    (certified_heads::BOUNDARY_BODY, limit - event.before, floor)
+                );
+                assert!(!r.row.complete);
+            }
+            let exact = observe(
+                f,
+                false,
+                4,
+                0,
+                true,
+                hir,
+                0,
+                MAX_REPLAY_WORK_UNITS,
+                after,
+                0,
+                true,
+            );
+            assert!(exact.events.iter().any(|e| e.phase == event.phase
+                && e.before == event.before
+                && e.after == Some(after)));
         }
         let used = MAX_REPLAY_WORK_UNITS - success.observed.0.0.remaining;
         for old in [false, true] {
@@ -568,11 +637,26 @@ fn lexical_empty_selector_whole_immediate_caller_four_macros_and_actual_site_exp
     let old = include_str!("certified_heads_before_empty.rs");
     let current = include_str!("certified_heads.rs");
     let marker = "macro_rules! certified_boundary {";
+    let current_boundary = current.split_once(marker).unwrap().1;
+    let anchor = "                                    $right_links = right_links_rest;\n                                    $owner.right_loaded = true;";
+    let before = "                                    $right_links = right_links_rest;\n                                    $owner.right_items = rest;\n                                    $owner.right_loaded = true;";
+    assert_eq!(current_boundary.matches(anchor).count(), 1);
+    let restored_boundary = current_boundary.replacen(anchor, before, 1);
     assert_eq!(
         old.split_once(marker).unwrap().1,
-        current.split_once(marker).unwrap().1,
-        "all seven original work calls and state effects remain byteexact"
+        restored_boundary,
+        "entire boundary inverse differs by exactly the deleted real right-rest assignment; all seven work calls/state effects otherwise exact"
     );
+    assert!(!current_boundary.contains("$owner.right_items = rest;"));
+    let right_rest = size_of::<&[Rc<SkeletonObservation>]>();
+    let body_before = 2 * size_of::<&[usize]>()
+        + 8 * size_of::<usize>()
+        + 4 * size_of::<bool>()
+        + 2 * right_rest
+        + size_of::<Ordering>();
+    assert_eq!(certified_heads::BOUNDARY_BODY + right_rest, body_before);
+    // Both conservative remembered slots still occur in the eight scalar slots.
+    assert!(include_str!("certified_heads.rs").contains("+ size_of::<[usize; 8]>()"));
     let root = include_str!("../comparison_owner.rs");
     assert_eq!(
         root.matches("certified_suffix!(").count(),

@@ -1046,6 +1046,17 @@ impl Drop for Scope {
                 row.overflow
             );
             eprintln!(
+                "OPT906 row={} boundary_body_admitted={} current_shipping_body_tariff={} right_rest_type_width={} complete={} ended={} unwound={} overflow={}; current tariff is not an old-generation invoice; component comparison requires matched complete caller, not prefix extrapolation",
+                row.invocation,
+                row.shared_boundaries,
+                super::certified_heads::BOUNDARY_BODY,
+                size_of::<&[Rc<SkeletonObservation>]>(),
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow
+            );
+            eprintln!(
                 "OPT900902 row={} BASE={} POP={} VIEW_HEAD={} HEAD={} RHS={} FIRST={} Q={} G={} H={} P={} B={} complete={} ended={} unwound={} overflow={} truncated={}; reached-prefix packet admissions only",
                 row.invocation,
                 row.certified_bases,

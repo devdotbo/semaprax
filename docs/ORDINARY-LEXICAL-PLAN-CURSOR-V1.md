@@ -480,7 +480,8 @@ lexical continuation advances directly to the paired loop. It does not form or
 pay another empty pattern probe. A refused capture, work request or publication
 returns immediately with the original sticky failure and ordinary owned Drop.
 The loaded-empty next-segment branch retains all seven original individual work
-calls and state effects verbatim.
+calls; its only subsequent state-effect removal is the unused right borrowed
+rest assignment specified under #906.
 
 The actual caller has one suffix expansion after its common certificate block.
 The added selector reserve is one actual primitive/header site, independently
@@ -497,8 +498,9 @@ Actual admitted selectors and actual empty-selector skips have separate checked
 census fields and append-only optional feature sites; neither is labelled an old
 48-byte empty probe. On complete matched calls, let E be admitted selectors,
 Z old empty probes, and M admitted invocation owners. The independently typed
-whole-comparator equation is `current + Z*PROBE = old + M*PAYMENT_HEADER +
-E*size_of::<bool>()`. Complete old/current invoices retain tiny/cold losses and
+selector-only whole-comparator equation is `current + Z*PROBE = old +
+M*PAYMENT_HEADER + E*size_of::<bool>()`; #906 below adds its independently typed
+right-rest component to the complete combined equation. Complete old/current invoices retain tiny/cold losses and
 allocation metrics through full Drop. Partial work/body/admission prefixes must
 not be substituted into that complete equation. The entire immediate7760 caller
 and its four local macro modules remain independently compiled, with namespace
@@ -510,3 +512,45 @@ A reached-prefix component reduction, source proof or favorable complete unit
 comparison does not close #892, establish application admission at 64MiB, or
 claim allocator/RSS, compile-time or token savings. Runtime qualification of this
 source candidate is pending the focused batch.
+
+## Certified boundary right-rest transport (#906)
+
+BOUNDARY_VIEW still prepays its entire arena/index/Segment/Vec receiver and
+three observation-slice roles: the `as_slice` return, `next_items` receiver and
+pattern `rest`. BOUNDARY_BODY's former two observation-slice slots were separate
+left and right field assignments, not another payment for that pattern. Only
+the actual `right_items = rest` assignment and its one slice slot are removed.
+The body retains two prepared-link assignments, all eight scalar slots including
+the two conservative remembered-link slots, all four loaded-boolean writes,
+the left rest assignment and Equal publication. No previously absent role is
+credited. On a 64-bit target the complete body is 117 rather than 133 bytes;
+the removed type is `&[Rc<SkeletonObservation>]`, not a universal numeric tariff.
+There is no new payment site or header beyond #905.
+
+The branch's existing paid loaded/empty guards establish both old retained
+slices are empty, and its same immutable arena/equal-next-ID proof remains
+unchanged. After the successful sixth work call, the right cursor/link/loaded/
+item effects remain in original order, but its empty slice is retained. The
+seventh observation-comparison work call remains individually fallible. The
+suffix reads only the left post-head slice before successful RUN_PUBLISH writes
+both slices to `&[]`; the empty-selector branch already has an empty right
+slice. Thus no subsequent ordinary iteration sees a missing right rest. No
+cached result, new owner field or authority substitutes for the identity checks.
+All seven boundary and five numeric work calls, sticky selected fields,
+preparations, malformed/foreign fallback, swaps and full owned Drop remain.
+The removed right borrowed view is deliberately different during private
+refused/unwound prefixes; no identical private snapshot or identical-budget
+physical-refusal claim is made.
+
+The combined complete matched equation is `current + Z*PROBE +
+B*size_of::<&[Rc<SkeletonObservation>]>() = old + M*PAYMENT_HEADER +
+E*size_of::<bool>()`, where B counts actual admitted boundary bodies. Selector
+payload, selector cold header, old empty probes and removed right-rest transport
+are reported separately from whole old/current paid totals. The unchanged
+complete7760 caller and four macro controls remain exact, including its original
+right assignment. The current entire boundary restores by exactly that one
+literal insertion before the full original comparison; the numeric driver and
+publication remain byteexact. Complete invoices, work cuts, actual boundary
+packet exact/short/zero/floor/mixed limits and unwind/Drop controls retain every
+cold loss. Reached-prefix arithmetic alone establishes neither whole-call net
+nor unchanged64MiB application or #892 admission.

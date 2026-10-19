@@ -99,7 +99,7 @@ pub(super) fn boundary_run_added(r: &pair_scope_census::Row) -> usize {
         + (2 * size_of::<&[usize]>()
             + 8 * size_of::<usize>()
             + 4 * size_of::<bool>()
-            + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+            + size_of::<&[Rc<SkeletonObservation>]>()
             + size_of::<Ordering>())
             * r.shared_boundaries
         + (2 * size_of::<&[Rc<SkeletonObservation>]>()

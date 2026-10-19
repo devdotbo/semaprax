@@ -18,12 +18,13 @@ pub(super) const BOUNDARY_VIEW: usize = 2 * size_of::<&[Segment]>()
     + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
     + 3 * size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<bool>();
-// Retain the complete incoming pair-link body invoice, including its two
-// remembered-link assignments; this branch has no such retained fields.
+// Keep both conservative remembered-link slots and every other incoming role.
+// VIEW already paid next_items/rest; BODY now forms only the left rest assignment.
+// The old right rest was unused until RUN_PUBLISH overwrote both slices with [].
 pub(super) const BOUNDARY_BODY: usize = 2 * size_of::<&[usize]>()
     + size_of::<[usize; 8]>()
     + 4 * size_of::<bool>()
-    + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+    + size_of::<&[Rc<SkeletonObservation>]>()
     + size_of::<Ordering>();
 pub(super) type SharedUnitDriver = std::iter::Take<std::iter::Repeat<()>>;
 // Exact closed unit-only run transport, including constructor/IntoIterator and
@@ -595,7 +596,6 @@ macro_rules! certified_boundary {
                                         "ordinary plan history forward segment traversal",
                                     )?;
                                     $right_links = right_links_rest;
-                                    $owner.right_items = rest;
                                     $owner.right_loaded = true;
                                     $owner.right_cursor.item = 1;
                                     $owner.ordering = Ordering::Equal;
