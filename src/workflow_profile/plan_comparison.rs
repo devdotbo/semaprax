@@ -778,6 +778,15 @@ mod tests {
     }
     #[test]
     fn paid_phase_scopes_keep_nested_prefixes_unknown_ledgers_and_overflow_separate() {
+        paid_phase_nested_ledger_prefix_cases();
+        paid_phase_counter_overflow_case();
+        paid_phase_live_scope_refusal_case();
+        paid_phase_reentrant_access_case();
+    }
+
+    // Each independent fixed-size report stays in its own ordinary-stack frame.
+    #[inline(never)]
+    fn paid_phase_nested_ledger_prefix_cases() {
         let capture = Capture::begin(binding()).unwrap();
         let (child_paid, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
             let _outer = active_paid_phase(PaidPhase::CleanupValidation);
@@ -883,6 +892,10 @@ mod tests {
             PhaseOrigin::Shipping,
         );
         assert_eq!((unwind.ended, unwind.unwound), (1, 1));
+    }
+
+    #[inline(never)]
+    fn paid_phase_counter_overflow_case() {
         let capture = Capture::begin(binding()).unwrap();
         access(|s| s.paid_phases.rows[0].entered = u64::MAX).unwrap();
         {
@@ -892,6 +905,10 @@ mod tests {
         assert!(report.paid_phases.overflow);
         assert_eq!(report.counts.started, 0);
         assert!(report.counts_complete);
+    }
+
+    #[inline(never)]
+    fn paid_phase_live_scope_refusal_case() {
         let capture = Capture::begin(binding()).unwrap();
         let live = active_paid_phase(PaidPhase::CleanupValidation);
         assert!(matches!(
@@ -899,6 +916,10 @@ mod tests {
             Err(CaptureError::LiveInvocation)
         ));
         drop(live);
+    }
+
+    #[inline(never)]
+    fn paid_phase_reentrant_access_case() {
         let capture = Capture::begin(binding()).unwrap();
         STATE.with(|state| {
             let _held = state.borrow_mut();
@@ -908,6 +929,7 @@ mod tests {
         assert!(!report.paid_phases.balanced);
         assert!(report.counts_complete);
     }
+
     #[test]
     fn ordinary_ledger_paid_is_observed_not_inferred_and_scope_changes_stay_unknown() {
         let capture = Capture::begin(binding()).unwrap();
