@@ -200,6 +200,20 @@ impl ReceiverFixture {
                 46, 227, 254, 221, 174, 133, 214, 58, 237, 35, 120, 109, 199, 24
             ]
         );
+        // The whole transport predecessor above is unchanged. Re-enter its
+        // exact pre-formatter consumer stage before every original projector.
+        let formatted = "            let projected = crate::source_reflows_merge::consumer_input(\n                \"signature825\",\n                row[\"source\"].as_str().unwrap(),\n                current,\n            );";
+        let original = "            let projected = crate::source_reflows_merge::consumer_input(\"signature825\", row[\"source\"].as_str().unwrap(), current);";
+        assert_eq!(before.matches(formatted).count(), 1);
+        before = before.replacen(formatted, original, 1);
+        assert_eq!(before.len(), 28182);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(digest(before.as_bytes()))
+            ),
+            "b5eb131534d7bbd10d95aa2e8eeeafd3efa7d55fde34b5ab8fa0a24fbf396062"
+        );
         before
     }
     // RUNTIME848_THREE_SOURCE_END
