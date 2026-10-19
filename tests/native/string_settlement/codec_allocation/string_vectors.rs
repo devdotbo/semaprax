@@ -455,3 +455,178 @@ REQUIRE(!memcmp(fault_borrowed_input,fault_input,sizeof fault_input));REQUIRE(mu
         );
     }
 }
+
+// Exact public-workspace host for production-library paid attribution. This
+// does not assert admission when the unchanged 64MiB builder refuses.
+#[cfg(feature = "unstable-workflow-profiling")]
+#[test]
+fn catalog_normalizer_public_workspace_reports_actual_paid_validation_phases() {
+    use semaprax::workflow_profile::plan_comparison::{
+        Binding, Build, Capture, PaidPhase, PhaseOrigin, PhasePayer,
+    };
+    use sha2::{Digest, Sha256};
+    const MANIFEST: &str =
+        include_str!("../../../../examples/catalog-normalizer-project/semaprax.toml");
+    const SOURCES: &[(&str, &str)] = &[
+        (
+            "src/app.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/app.spx"),
+        ),
+        (
+            "src/batch.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/batch.spx"),
+        ),
+        (
+            "src/enrichment.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/enrichment.spx"),
+        ),
+        (
+            "src/limits.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/limits.spx"),
+        ),
+        (
+            "src/record.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/record.spx"),
+        ),
+        (
+            "src/tests.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/tests.spx"),
+        ),
+        (
+            "dependencies/std.data.json.dec/0.1.0/dec.spx",
+            include_str!("../../../../std/data-json-dec/src/dec.spx"),
+        ),
+        (
+            "dependencies/std.data.json.doc/0.1.0/doc.spx",
+            include_str!("../../../../std/data-json-doc/src/doc.spx"),
+        ),
+        (
+            "dependencies/std.io/0.1.0/io.spx",
+            include_str!("../../../../std/io/src/io.spx"),
+        ),
+        (
+            "dependencies/std.data.ndjson/0.1.0/ndjson.spx",
+            include_str!("../../../../std/data-ndjson/src/ndjson.spx"),
+        ),
+        (
+            "dependencies/std.io.lines/0.1.0/lines.spx",
+            include_str!("../../../../std/io-lines/src/lines.spx"),
+        ),
+        (
+            "dependencies/std.data.json.utf8/0.1.0/utf8.spx",
+            include_str!("../../../../std/data-json-utf8/src/utf8.spx"),
+        ),
+    ];
+    let manifest = project::ProjectManifest::parse(MANIFEST).unwrap();
+    assert_eq!(manifest.sources().len(), 6);
+    for (path, _) in &SOURCES[..6] {
+        assert!(manifest.sources().iter().any(|p| p.as_str() == *path));
+    }
+    assert_eq!(SOURCES.len(), 12);
+    let root = std::env::temp_dir().join(format!(
+        "native-normalizer-paid-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::create_dir(&root).unwrap();
+    let root = fs::canonicalize(root).unwrap();
+    struct Remove(std::path::PathBuf);
+    impl Drop for Remove {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _remove = Remove(root.clone());
+    fs::write(root.join("semaprax.toml"), MANIFEST).unwrap();
+    let mut ordered = SOURCES.iter().copied().collect::<Vec<_>>();
+    ordered.sort_by(|left, right| left.0.cmp(right.0));
+    let mut digest = Sha256::new();
+    digest.update((MANIFEST.len() as u64).to_le_bytes());
+    digest.update(MANIFEST.as_bytes());
+    let mut files = Vec::new();
+    for (path, source) in ordered {
+        let destination = root.join(path);
+        fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        fs::write(&destination, source).unwrap();
+        let actual = fs::read(&destination).unwrap();
+        assert_eq!(actual, source.as_bytes());
+        digest.update((path.len() as u64).to_le_bytes());
+        digest.update(path.as_bytes());
+        digest.update((actual.len() as u64).to_le_bytes());
+        digest.update(&actual);
+        eprintln!(
+            "NORMALIZER_PAID_INPUT path={path} bytes={} sha256={:x}",
+            actual.len(),
+            semaprax::digest_hex::LowerHex(Sha256::digest(&actual))
+        );
+        files.push(serde_json::json!({"path":path}));
+    }
+    let paths = root.join("paths.json");
+    fs::write(
+        &paths,
+        format!(
+            "{{\"schema\":\"semaprax.workspace-semantic-path-set.v1\",\"files\":{}}}\n",
+            serde_json::to_string(&files).unwrap()
+        ),
+    )
+    .unwrap();
+    let capture = Capture::begin(Binding::caller_labelled("catalog-normalizer exact12/public-semantic-workspace/default64MiB; revision externally bound", digest.finalize().into())).unwrap();
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        semaprax::semantic_workspace::initialize(&root, &paths)
+    }));
+    // The public route has returned or unwound and all compiler owners dropped.
+    let report = capture.finish().unwrap();
+    eprintln!(
+        "NORMALIZER_PAID_PHASES default_builder_cap=67108864 inclusive_not_additive=true report={report:?}"
+    );
+    let result = match outcome {
+        Ok(result) => result,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
+    assert_eq!(report.build, Build::InstrumentedProductionAlgorithm);
+    assert!(report.paid_phases.balanced && !report.paid_phases.overflow);
+    for phase in [
+        PaidPhase::CrosscheckEnumerated,
+        PaidPhase::CrosscheckFactored,
+    ] {
+        for payer in [
+            PhasePayer::ActiveBuilder,
+            PhasePayer::Unobserved,
+            PhasePayer::Oracle,
+            PhasePayer::Selected,
+            PhasePayer::Unknown,
+        ] {
+            assert_eq!(
+                report
+                    .paid_phases
+                    .row(phase, payer, PhaseOrigin::TestCrosscheck)
+                    .entered,
+                0,
+                "production library has no cfgtest crosscheck"
+            );
+        }
+    }
+    let validation = report.paid_phases.row(
+        PaidPhase::CleanupValidation,
+        PhasePayer::ActiveBuilder,
+        PhaseOrigin::Shipping,
+    );
+    assert!(
+        validation.entered > 0 && validation.ended == validation.entered,
+        "{report:?}"
+    );
+    assert!(
+        validation.known_paid > 0 && validation.unknown == 0,
+        "{report:?}"
+    );
+    match result {
+        Ok(revision) => assert!(!revision.is_empty()),
+        Err(errors) => {
+            eprintln!("NORMALIZER_PAID_REAL_REFUSAL {errors:?}");
+            assert!(
+                !errors.is_empty() && errors.iter().all(|e| e.code == "SPX-G171"),
+                "{errors:?}"
+            );
+        }
+    }
+}

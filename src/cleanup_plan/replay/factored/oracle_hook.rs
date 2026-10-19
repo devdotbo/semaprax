@@ -162,6 +162,9 @@ pub(super) fn cross_check_oracle(
     let enumerated = receiver(program, function, lease, "enumerating", || {
         let mut enumerating =
             ReplayBudget::with_skeleton_limit_oracle(MAX_REPLAY_WORK_UNITS, lease);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_crosscheck = enumerating
+            .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckEnumerated);
         hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
             let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
             let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -175,6 +178,9 @@ pub(super) fn cross_check_oracle(
     let factored = receiver(program, function, lease, "factored", || {
         let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
         let mut factored = ReplayBudget::with_skeleton_limit_oracle(0, lease);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_crosscheck = factored
+            .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckFactored);
         compare(program, function, &mut factored)
     });
     if let Ok(true) = enumerated {

@@ -202,6 +202,221 @@ impl LedgerSnapshot {
         self.remaining.checked_sub(after.remaining)
     }
 }
+
+/// Inclusive ordinary-ledger scopes, distinct from comparator rows and event counts.
+/// A completed scope is not an algorithm-success or application-admission claim.
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(usize)]
+pub enum PaidPhase {
+    CleanupValidation,
+    CanonicalRebuild,
+    ReplayStructure,
+    CrosscheckEnumerated,
+    CrosscheckFactored,
+    FactoredComparison,
+    FactoredConstruction,
+    HirPaths,
+    PlanPaths,
+    Comparison,
+}
+const PAID_PHASES: usize = 10;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(usize)]
+pub enum PhasePayer {
+    ActiveBuilder,
+    Unobserved,
+    Oracle,
+    Selected,
+    Unknown,
+}
+const PHASE_PAYERS: usize = 5;
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+#[repr(usize)]
+pub enum PhaseOrigin {
+    Shipping,
+    TestCrosscheck,
+}
+const PHASE_ORIGINS: usize = 2;
+#[derive(Clone, Copy, Debug)]
+pub struct PaidPhaseRow {
+    pub entered: u64,
+    pub ended: u64,
+    pub normal_exits: u64,
+    pub refused_prefixes: u64,
+    pub unwound: u64,
+    pub unknown: u64,
+    /// Sum of known inclusive same-ledger debits only; never sum nested rows.
+    pub known_paid: u64,
+}
+impl PaidPhaseRow {
+    const EMPTY: Self = Self {
+        entered: 0,
+        ended: 0,
+        normal_exits: 0,
+        refused_prefixes: 0,
+        unwound: 0,
+        unknown: 0,
+        known_paid: 0,
+    };
+}
+#[derive(Clone, Copy, Debug)]
+pub struct PaidPhases {
+    /// Index with `row(phase, payer, origin)`; includes all zero rows explicitly.
+    pub rows: [PaidPhaseRow; PAID_PHASES * PHASE_PAYERS * PHASE_ORIGINS],
+    pub balanced: bool,
+    pub overflow: bool,
+}
+impl PaidPhases {
+    const EMPTY: Self = Self {
+        rows: [PaidPhaseRow::EMPTY; PAID_PHASES * PHASE_PAYERS * PHASE_ORIGINS],
+        balanced: true,
+        overflow: false,
+    };
+    pub fn row(&self, phase: PaidPhase, payer: PhasePayer, origin: PhaseOrigin) -> &PaidPhaseRow {
+        &self.rows
+            [(phase as usize * PHASE_PAYERS + payer as usize) * PHASE_ORIGINS + origin as usize]
+    }
+}
+/// Feature-only lexical guard. Its opaque snapshot grants no payer authority.
+pub(crate) struct PaidPhaseGuard {
+    generation: Option<u64>,
+    depth: usize,
+    index: usize,
+    serial: u64,
+    payer: PhasePayer,
+    crosscheck: bool,
+    before: Option<LedgerSnapshot>,
+}
+fn phase_access<T>(f: impl FnOnce(&mut State) -> T) -> Option<T> {
+    STATE.with(|state| match state.try_borrow_mut() {
+        Ok(mut state) => Some(f(&mut state)),
+        Err(_) => {
+            PHASE_LOST.with(|lost| lost.set(true));
+            None
+        }
+    })
+}
+pub(crate) fn paid_phase(phase: PaidPhase, payer: PhasePayer) -> PaidPhaseGuard {
+    let crosscheck = matches!(
+        phase,
+        PaidPhase::CrosscheckEnumerated | PaidPhase::CrosscheckFactored
+    );
+    let before = if payer == PhasePayer::ActiveBuilder {
+        crate::bounded_output::active_ledger_snapshot()
+    } else {
+        None
+    };
+    let registered = phase_access(|s| {
+        if !s.enabled {
+            return None;
+        }
+        let origin = if crosscheck || s.phase_crosschecks != 0 {
+            PhaseOrigin::TestCrosscheck
+        } else {
+            PhaseOrigin::Shipping
+        };
+        let index =
+            (phase as usize * PHASE_PAYERS + payer as usize) * PHASE_ORIGINS + origin as usize;
+        let bank = &mut s.paid_phases;
+        State::add(&mut bank.rows[index].entered, 1, &mut bank.overflow);
+        let Some(serial) = s.phase_serial.checked_add(1) else {
+            bank.overflow = true;
+            bank.balanced = false;
+            return None;
+        };
+        s.phase_serial = serial;
+        let depth = s.phase_depth;
+        if depth < DEPTH {
+            s.phase_stack[depth] = serial;
+        } else {
+            bank.balanced = false;
+        }
+        let Some(next) = depth.checked_add(1) else {
+            bank.overflow = true;
+            bank.balanced = false;
+            return None;
+        };
+        s.phase_depth = next;
+        if crosscheck {
+            s.phase_crosschecks += 1;
+        }
+        Some((s.generation, next, serial, index))
+    })
+    .flatten();
+    let (generation, depth, serial, index) = registered
+        .map(|(g, d, s, i)| (Some(g), d, s, i))
+        .unwrap_or((None, 0, 0, 0));
+    PaidPhaseGuard {
+        generation,
+        depth,
+        index,
+        serial,
+        payer,
+        crosscheck,
+        before,
+    }
+}
+pub(crate) fn active_paid_phase(phase: PaidPhase) -> PaidPhaseGuard {
+    paid_phase(
+        phase,
+        if crate::bounded_output::active_limit().is_some() {
+            PhasePayer::ActiveBuilder
+        } else {
+            PhasePayer::Unobserved
+        },
+    )
+}
+impl Drop for PaidPhaseGuard {
+    fn drop(&mut self) {
+        let after = crate::bounded_output::active_ledger_snapshot();
+        let refused = self.payer == PhasePayer::ActiveBuilder
+            && self
+                .before
+                .zip(after)
+                .and_then(|(a, b)| a.paid_until(b))
+                .is_some()
+            && crate::bounded_output::active_refused();
+        let unwound = std::thread::panicking();
+        phase_access(|s| {
+            if !s.enabled || self.generation != Some(s.generation) {
+                return;
+            }
+            let ordered = s.phase_depth == self.depth
+                && self.depth <= DEPTH
+                && s.phase_stack[self.depth - 1] == self.serial;
+            let bank = &mut s.paid_phases;
+            if !ordered {
+                bank.balanced = false;
+            }
+            let row = &mut bank.rows[self.index];
+            State::add(&mut row.ended, 1, &mut bank.overflow);
+            if unwound {
+                State::add(&mut row.unwound, 1, &mut bank.overflow);
+            } else {
+                State::add(&mut row.normal_exits, 1, &mut bank.overflow);
+            }
+            if refused {
+                State::add(&mut row.refused_prefixes, 1, &mut bank.overflow);
+            }
+            let paid = if ordered {
+                self.before.zip(after).and_then(|(a, b)| a.paid_until(b))
+            } else {
+                None
+            };
+            match paid.and_then(|v| u64::try_from(v).ok()) {
+                Some(bytes) => State::add(&mut row.known_paid, bytes, &mut bank.overflow),
+                None => State::add(&mut row.unknown, 1, &mut bank.overflow),
+            }
+            if s.phase_depth == self.depth {
+                s.phase_depth -= 1;
+                if self.crosscheck {
+                    s.phase_crosschecks -= 1;
+                }
+            }
+        });
+    }
+}
+
 #[derive(Clone, Copy, Debug)]
 pub struct Row {
     pub serial: u64,
@@ -241,6 +456,7 @@ impl Row {
 }
 #[derive(Debug)]
 pub struct Report {
+    pub paid_phases: PaidPhases,
     pub build: Build,
     pub route: &'static str,
     pub generation: u64,
@@ -260,6 +476,11 @@ pub enum CaptureError {
     LostCapture,
 }
 struct State {
+    paid_phases: PaidPhases,
+    phase_stack: [u64; DEPTH],
+    phase_depth: usize,
+    phase_serial: u64,
+    phase_crosschecks: usize,
     enabled: bool,
     generation: u64,
     binding: Binding,
@@ -275,6 +496,11 @@ struct State {
 impl State {
     const fn new() -> Self {
         Self {
+            paid_phases: PaidPhases::EMPTY,
+            phase_stack: [0; DEPTH],
+            phase_depth: 0,
+            phase_serial: 0,
+            phase_crosschecks: 0,
             enabled: false,
             generation: 0,
             binding: Binding {
@@ -311,6 +537,7 @@ impl State {
 thread_local! {
     static STATE: RefCell<State> = const { RefCell::new(State::new()) };
     static LOST: Cell<bool> = const { Cell::new(false) };
+    static PHASE_LOST: Cell<bool> = const { Cell::new(false) };
 }
 fn access<T>(f: impl FnOnce(&mut State) -> T) -> Option<T> {
     STATE.with(|state| match state.try_borrow_mut() {
@@ -341,6 +568,7 @@ impl Capture {
             s.binding = binding;
             s.enabled = true;
             LOST.with(|lost| lost.set(false));
+            PHASE_LOST.with(|lost| lost.set(false));
             Ok(Self {
                 generation,
                 _thread: PhantomData,
@@ -354,11 +582,13 @@ impl Capture {
             if !s.enabled || s.generation != self.generation {
                 return Err(CaptureError::LostCapture);
             }
-            if s.depth != 0 {
+            if s.depth != 0 || s.phase_depth != 0 || s.phase_crosschecks != 0 {
                 return Err(CaptureError::LiveInvocation);
             }
             s.enabled = false;
+            s.paid_phases.balanced &= !PHASE_LOST.with(Cell::get);
             Ok(Report {
+                paid_phases: s.paid_phases,
                 build: if cfg!(test) {
                     Build::InstrumentedLibraryTest
                 } else {
@@ -539,6 +769,126 @@ mod tests {
             true,
             Invoice::EMPTY,
         )
+    }
+    #[test]
+    fn paid_phase_scopes_keep_nested_prefixes_unknown_ledgers_and_overflow_separate() {
+        let capture = Capture::begin(binding()).unwrap();
+        let (_, refused, paid) = crate::bounded_output::with_limit_usage(100, || {
+            let _outer = active_paid_phase(PaidPhase::CleanupValidation);
+            assert!(crate::bounded_output::reserve_active_required(3));
+            {
+                let _inner = active_paid_phase(PaidPhase::CanonicalRebuild);
+                assert!(crate::bounded_output::reserve_active_required(5));
+            }
+            {
+                let _restored = active_paid_phase(PaidPhase::ReplayStructure);
+                let (_, refused, paid) = crate::bounded_output::with_limit_usage(20, || {
+                    assert!(crate::bounded_output::reserve_active_required(7));
+                });
+                assert!(!refused && paid == 7);
+            }
+            {
+                let _prefix = active_paid_phase(PaidPhase::Comparison);
+                assert!(crate::bounded_output::reserve_active_required(2));
+                assert!(!crate::bounded_output::reserve_active_required(101));
+            }
+        });
+        assert!(refused && paid == 10);
+        for payer in [
+            PhasePayer::Unobserved,
+            PhasePayer::Selected,
+            PhasePayer::Oracle,
+            PhasePayer::Unknown,
+        ] {
+            let _other = paid_phase(PaidPhase::HirPaths, payer);
+        }
+        crate::bounded_output::with_limit_usage(10, || {
+            let _crosscheck = active_paid_phase(PaidPhase::CrosscheckEnumerated);
+            let _child = active_paid_phase(PaidPhase::HirPaths);
+            assert!(crate::bounded_output::reserve_active_required(4));
+        });
+        let unwind = std::panic::catch_unwind(|| {
+            let _unwind = active_paid_phase(PaidPhase::PlanPaths);
+            std::panic::resume_unwind(Box::new("phase-control"));
+        });
+        assert!(unwind.is_err());
+        let report = capture.finish().unwrap();
+        assert!(report.paid_phases.balanced && !report.paid_phases.overflow);
+        assert_eq!(report.row_count, 0);
+        assert_eq!(report.counts.started, 0);
+        let row = |phase| {
+            report
+                .paid_phases
+                .row(phase, PhasePayer::ActiveBuilder, PhaseOrigin::Shipping)
+        };
+        assert_eq!(row(PaidPhase::CanonicalRebuild).known_paid, 5);
+        assert_eq!(row(PaidPhase::CanonicalRebuild).unknown, 0);
+        assert_eq!(row(PaidPhase::Comparison).known_paid, 2);
+        assert_eq!(row(PaidPhase::Comparison).refused_prefixes, 1);
+        assert_eq!(row(PaidPhase::ReplayStructure).unknown, 1);
+        // Child-ledger installation invalidates the entire enclosing interval.
+        assert_eq!(row(PaidPhase::CleanupValidation).unknown, 1);
+        for payer in [
+            PhasePayer::Unobserved,
+            PhasePayer::Selected,
+            PhasePayer::Oracle,
+            PhasePayer::Unknown,
+        ] {
+            let row = report
+                .paid_phases
+                .row(PaidPhase::HirPaths, payer, PhaseOrigin::Shipping);
+            assert_eq!(
+                (row.entered, row.ended, row.unknown, row.known_paid),
+                (1, 1, 1, 0)
+            );
+        }
+        let child = report.paid_phases.row(
+            PaidPhase::HirPaths,
+            PhasePayer::ActiveBuilder,
+            PhaseOrigin::TestCrosscheck,
+        );
+        assert_eq!((child.known_paid, child.unknown), (4, 0));
+        assert_eq!(
+            report
+                .paid_phases
+                .row(
+                    PaidPhase::HirPaths,
+                    PhasePayer::ActiveBuilder,
+                    PhaseOrigin::Shipping
+                )
+                .entered,
+            0
+        );
+        let unwind = report.paid_phases.row(
+            PaidPhase::PlanPaths,
+            PhasePayer::Unobserved,
+            PhaseOrigin::Shipping,
+        );
+        assert_eq!((unwind.ended, unwind.unwound), (1, 1));
+        let capture = Capture::begin(binding()).unwrap();
+        access(|s| s.paid_phases.rows[0].entered = u64::MAX).unwrap();
+        {
+            let _overflow = paid_phase(PaidPhase::CleanupValidation, PhasePayer::ActiveBuilder);
+        }
+        let report = capture.finish().unwrap();
+        assert!(report.paid_phases.overflow);
+        assert_eq!(report.counts.started, 0);
+        assert!(report.counts_complete);
+        let capture = Capture::begin(binding()).unwrap();
+        let live = active_paid_phase(PaidPhase::CleanupValidation);
+        assert!(matches!(
+            capture.finish(),
+            Err(CaptureError::LiveInvocation)
+        ));
+        drop(live);
+        let capture = Capture::begin(binding()).unwrap();
+        STATE.with(|state| {
+            let _held = state.borrow_mut();
+            let _lost = active_paid_phase(PaidPhase::CleanupValidation);
+        });
+        let report = capture.finish().unwrap();
+        assert!(!report.paid_phases.balanced);
+        assert!(report.counts_complete);
     }
     #[test]
     fn ordinary_ledger_paid_is_observed_not_inferred_and_scope_changes_stay_unknown() {

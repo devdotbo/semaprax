@@ -223,6 +223,10 @@ fn compare_with_index_storage<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<Option<bool>, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase =
+        budget.paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::FactoredComparison);
+
     let BuiltComparison {
         automaton,
         sink,
@@ -361,6 +365,10 @@ fn build_comparison<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<BuiltComparison, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase = budget
+        .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::FactoredConstruction);
+
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayFactoredConstruction,
@@ -1004,6 +1012,9 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
     let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let paid_enumeration = enumerating
+        .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckEnumerated);
     let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
         let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
         let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -1013,8 +1024,13 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
         Ok(hir == plan)
     });
     let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    drop(paid_enumeration);
     if let Ok(true) = enumerated {
         let mut factored = ReplayBudget::with_skeleton_limit(0);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_crosscheck = factored
+            .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckFactored);
         let verdict = compare(program, function, &mut factored);
         assert!(
             matches!(verdict, Ok(Some(true))),

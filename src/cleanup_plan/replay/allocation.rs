@@ -82,6 +82,24 @@ impl ReplayBudget {
         }
     }
 
+    #[cfg(feature = "unstable-workflow-profiling")]
+    pub(in crate::cleanup_plan::replay) fn paid_phase(
+        &self,
+        phase: crate::workflow_profile::plan_comparison::PaidPhase,
+    ) -> crate::workflow_profile::plan_comparison::PaidPhaseGuard {
+        use crate::workflow_profile::plan_comparison::{PhasePayer, paid_phase};
+        paid_phase(
+            phase,
+            match self.payer {
+                AllocationPayer::LegacyUnobserved => PhasePayer::Unobserved,
+                AllocationPayer::ActiveBuilder => PhasePayer::ActiveBuilder,
+                AllocationPayer::SelectedReservation => PhasePayer::Selected,
+                #[cfg(test)]
+                AllocationPayer::Oracle(_) => PhasePayer::Oracle,
+            },
+        )
+    }
+
     pub(super) fn new() -> Self {
         Self {
             admission: AdmissionMode::Ordinary,

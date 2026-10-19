@@ -8,8 +8,17 @@ use super::{CleanupPlan, CleanupSlot};
 #[cfg(test)]
 pub(in crate::cleanup_plan) mod owned;
 pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase = crate::workflow_profile::plan_comparison::active_paid_phase(
+        crate::workflow_profile::plan_comparison::PaidPhase::CleanupValidation,
+    );
+
     let mut frontier = crate::loop_calls::byte_writer::validation_frontier::Frontier::new(program);
     for function in &program.functions {
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_canonical = crate::workflow_profile::plan_comparison::active_paid_phase(
+            crate::workflow_profile::plan_comparison::PaidPhase::CanonicalRebuild,
+        );
         let current = frontier.current()?;
         let expected = super::build::helper_index::validation::build_current(program, &current)?;
         validate_canonical_plan(&function.id, &function.cleanup_plan, &expected)?;
@@ -18,6 +27,10 @@ pub(crate) fn validate_program(program: &ResolvedProgram) -> Result<(), Diagnost
         frontier.advance()?;
     }
     for instance in &program.function_instances {
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_canonical = crate::workflow_profile::plan_comparison::active_paid_phase(
+            crate::workflow_profile::plan_comparison::PaidPhase::CanonicalRebuild,
+        );
         let current = frontier.current()?;
         let expected = super::build::helper_index::validation::build_current(program, &current)?;
         validate_canonical_plan(

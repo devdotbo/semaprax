@@ -3,6 +3,10 @@
 mod branch_clone;
 #[cfg(test)]
 use crate::bounded_output::stage_debits::route_debits as debit_routes;
+#[cfg(feature = "unstable-workflow-profiling")]
+use crate::workflow_profile::plan_comparison::PaidPhase;
+#[cfg(test)]
+use crate::bounded_output::stage_debits::route_debits as debit_routes;
 mod compact_stage;
 mod constructed_variant;
 #[cfg(test)]
@@ -552,6 +556,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
             diagnostic_ordinal = diagnostic_ordinal.saturating_add(1);
             scope
         };
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_structure = budget.paid_phase(PaidPhase::ReplayStructure);
         validate_structure_with_budget_storage(
             program,
             function,
@@ -570,6 +576,8 @@ pub(in crate::cleanup_plan) fn validate_program_context(
             diagnostic_instance = diagnostic_instance.saturating_add(1);
             scope
         };
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_structure = budget.paid_phase(PaidPhase::ReplayStructure);
         validate_structure_with_budget_storage(
             program,
             &instance.function,
@@ -2778,6 +2786,8 @@ fn validate_typed_control_skeleton_with_index<'hir>(
     let mut actual = plan_skeleton_paths(function, budget)?;
     #[cfg(test)]
     let _debit_phase = debit_routes::phase(debit_routes::Phase::PathComparison);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_comparison = budget.paid_phase(PaidPhase::Comparison);
     if match budget {
         ReplayBudget {
             payer: AllocationPayer::ActiveBuilder,
@@ -2839,6 +2849,9 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase = budget.paid_phase(PaidPhase::HirPaths);
+
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayHirSkeleton,
@@ -6751,6 +6764,9 @@ fn plan_skeleton_paths(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<Vec<SkeletonPath>, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase = budget.paid_phase(PaidPhase::PlanPaths);
+
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayPlanSkeleton,

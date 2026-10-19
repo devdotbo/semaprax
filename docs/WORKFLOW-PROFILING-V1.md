@@ -156,3 +156,30 @@ inputs, options, C fault/allocation assertions and panic payloads. Their label
 marks revision unknown: the external round manifest must bind the actual source
 HEAD and instrumented binary. No old shipping baseline, application admission,
 or complete old/current net is established by a census alone.
+
+The same `Capture` also returns an independent fixed `paid_phases` bank for
+cleanup canonical rebuilding/frontier validation, structural replay, factored construction and
+comparison, HIR/PLAN path construction, and final comparison. This bank never
+uses comparator rows, serials, event counters, or their nesting stack. Each
+phase has an explicit payer (`ActiveBuilder`, `Unobserved`, `Oracle`, `Selected`,
+or `Unknown`) and lexical origin (`Shipping` or `TestCrosscheck`). Ordinary
+test-only crosschecks can debit the active builder; their true payer is retained
+while their children inherit `TestCrosscheck`. That label never exempts a check
+or changes its account. Production-library captures contain no such test hook.
+
+`CanonicalRebuild` deliberately encloses frontier current/finish/advance, full
+plan rebuilding, and canonical comparison; it is not a narrower constructor-only
+measurement. Phase scope exit is not semantic success. The bank records balanced entries and
+ends, normal exits, unwind, ordinary sticky-refusal prefixes, unknown intervals,
+and checked sums of known same-ledger debits. Values are inclusive: nested
+phase totals must not be added. Restoring even the same outer ledger invalidates
+an enclosing snapshot through the existing epoch; missing or foreign accounts
+remain unknown rather than zero. Phase overflow or inconsistent closure is
+reported separately from comparator counters; a live phase refuses `finish`.
+No pointers survive teardown. Instrumentation and its fixed TLS bookkeeping
+remain absent in a default build, and supply no allocator/RSS measurement,
+forecast discount, application admission, fee credit, or validation authority.
+The feature-only native Normalizer owner uses the exact six application and six
+standard-library sources through public semantic-workspace initialization at
+its unchanged default 64MiB cap. It reports an actual refusal without relabelling
+that refusal as successful application qualification.

@@ -200,6 +200,10 @@ pub(in crate::cleanup_plan::replay) fn compare(
     mut actual: HistorySet,
     expected: &[SkeletonPath],
 ) -> Result<(), Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase =
+        budget.paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::Comparison);
+
     #[cfg(test)]
     if skeleton_work::enumerated_prefix::original_selected() {
         return before_hir_compare::compare(function, budget, actual, expected);

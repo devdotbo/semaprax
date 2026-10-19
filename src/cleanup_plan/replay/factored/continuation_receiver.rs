@@ -9,6 +9,9 @@ pub(super) fn cross_check<'hir>(
     let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let paid_enumeration = enumerating
+        .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckEnumerated);
     let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
         let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
         let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -18,8 +21,13 @@ pub(super) fn cross_check<'hir>(
         Ok(hir == plan)
     });
     let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    drop(paid_enumeration);
     if let Ok(true) = enumerated {
         let mut factored = ReplayBudget::with_skeleton_limit(0);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_crosscheck = factored
+            .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckFactored);
         let verdict =
             match compare_with_index_storage(program, function, &mut factored, None, Some(storage))
             {

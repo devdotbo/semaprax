@@ -5,6 +5,10 @@ pub(in crate::cleanup_plan::replay) fn produce(
     function: &ResolvedFunction,
     budget: &mut ReplayBudget,
 ) -> Result<HistorySet, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase =
+        budget.paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::PlanPaths);
+
     paid!(
         budget,
         function,
