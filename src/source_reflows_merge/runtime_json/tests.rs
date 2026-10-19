@@ -950,7 +950,18 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
         diagnostic,
     );
     assert_eq!(prior.len(), 11582);
+    assert_eq!(
+        super::super::diagnostic846_input("src/diagnostic.rs", diagnostic),
+        prior,
+        "the actual writer endpoint must enter the complete unchanged old pipeline",
+    );
     for foreign in [format!("{diagnostic} "), prior] {
+        assert!(
+            std::panic::catch_unwind(|| super::super::diagnostic846_input(
+                "src/diagnostic.rs", &foreign,
+            ))
+            .is_err()
+        );
         assert!(
             std::panic::catch_unwind(|| super::super::historical_project_entry(
                 "src/diagnostic.rs",
@@ -1038,6 +1049,8 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
 // This complete compiled root is authenticated before removing only the closed
 // ENTRY fronts. Every original Native/receiver inverse and old assertion follows.
 fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
+    let restored = complete_diagnostic846_endpoint_before(source, current);
+    let current = restored.as_str();
     if source != "src/source_reflows_merge.rs" {
         return current.to_owned();
     }
@@ -1064,6 +1077,22 @@ fn complete_current_writer_signature_entry_before(source: &str, current: &str) -
             244, 166, 26, 14, 164, 50, 98, 245, 250, 210, 209, 190, 29
         ]
     );
+    before
+}
+
+// Normalize only the complete immediate endpoint glue before the unchanged
+// whole-root ENTRY, Native transport, and original source assertions.
+fn complete_diagnostic846_endpoint_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" {
+        return current.to_owned();
+    }
+    assert_eq!(current.len(), 56251);
+    assert_eq!(digest(current.as_bytes()), [102, 223, 76, 21, 86, 144, 119, 157, 130, 198, 55, 153, 24, 82, 173, 228, 207, 123, 226, 142, 10, 243, 130, 93, 102, 56, 226, 79, 214, 102, 206, 84]);
+    let added = "    let entry;\n    let current = if source == \"src/diagnostic.rs\" {\n        entry = historical_project_entry(\n            source,\n            \"922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e\",\n            current,\n        );\n        entry.as_str()\n    } else {\n        current\n    };\n";
+    assert_eq!(current.matches(added).count(), 1);
+    let before = current.replacen(added, "", 1);
+    assert_eq!(before.len(), 55950);
+    assert_eq!(digest(before.as_bytes()), [222, 90, 238, 131, 52, 174, 228, 198, 19, 249, 149, 39, 59, 78, 187, 134, 241, 66, 88, 95, 209, 111, 97, 121, 18, 202, 27, 212, 76, 103, 241, 198]);
     before
 }
 // RUNTIME848_THREE_CONTROLS_END

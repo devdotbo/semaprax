@@ -741,6 +741,17 @@ pub(crate) fn compact844_input(source: &str, current: &str) -> String {
     runtime_json::project(runtime_json::Fixture::F67, source, &current)
 }
 pub(crate) fn diagnostic846_input(source: &str, current: &str) -> String {
+    let entry;
+    let current = if source == "src/diagnostic.rs" {
+        entry = historical_project_entry(
+            source,
+            "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e",
+            current,
+        );
+        entry.as_str()
+    } else {
+        current
+    };
     final_ready_input("846", source, current)
 }
 
