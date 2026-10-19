@@ -214,7 +214,7 @@ fn root_unsafe_exceptions_are_confined_to_audited_authority_modules() {
     assert!(solver.starts_with("//! Explicit solver provisioning"));
     assert_eq!(solver.matches("#[allow(unsafe_code)]").count(), 2);
 
-    // This same allocator observes physical backing only in the library and workspace test binaries.
+    // This same allocator observes physical backing only in the library, workspace and Wasm test binaries.
     // Its one relaxation belongs to the audited System-forwarding impl; it is
     // never compiled into the production compiler or granted blanket authority.
     let observer_root = fs::read_to_string(root.join("src/test_allocation_observer.rs")).unwrap();
@@ -248,8 +248,14 @@ fn root_unsafe_exceptions_are_confined_to_audited_authority_modules() {
         "the allocation observer must remain test-only"
     );
 
-    let workspace = fs::read_to_string(root.join("tests/workspace.rs")).unwrap();
-    assert_eq!(workspace.matches("#[path = \"../src/test_allocation_observer/backing.rs\"]\nmod test_allocation_observer;").count(), 1);
+    for harness in ["tests/workspace.rs", "tests/wasm.rs"] {
+        let source = fs::read_to_string(root.join(harness)).unwrap();
+        assert_eq!(
+            source.matches("#[path = \"../src/test_allocation_observer/backing.rs\"]\nmod test_allocation_observer;").count(),
+            1,
+            "one real shared allocator per independent test image: {harness}"
+        );
+    }
 
     let mut sources = Vec::new();
     rust_sources(&root.join("src"), &mut sources);
