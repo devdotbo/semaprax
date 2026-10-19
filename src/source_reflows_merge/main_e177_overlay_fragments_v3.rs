@@ -403,6 +403,7 @@ fn v8_carriers(before: &Value, page: &Value) -> Result<Value, &'static str> {
             found = true;
             target = full;
         }
+        if !found { return Err("v8 missing canonical child"); }
         if target["source"] != child || target["compiled"] != true || target.get("fragments").is_some() {
             return Err("v8 noncompiled or nested child");
         }
@@ -1266,7 +1267,10 @@ mod tests {
     }
     fn v8_finite_carrier_hostiles() {
         let (before, policy, _, compact) = v8_fixture();
-        for mode in 0..19 {
+        let mut missing = compact.clone();
+        missing["replacements"].as_array_mut().unwrap().pop();
+        assert!(expand_v8(&before, &policy, &missing).is_err());
+        for mode in 0..21 {
             let mut b = before.clone();
             let mut rules = policy.clone();
             let mut page = compact.clone();
@@ -1289,7 +1293,9 @@ mod tests {
                 15 => page["replacements"][0]["old519_index"][1]["archive"] = "../foreign".into(),
                 16 => page["replacements"][0]["old519_index"][2] = true.into(),
                 17 => { let row = page["replacements"][0].clone(); page["additions"].as_array_mut().unwrap().push(row); }
-                _ => page["schema"] = "semaprax.finite-source-overlay-page.v800".into(),
+                18 => page["schema"] = "semaprax.finite-source-overlay-page.v800".into(),
+                19 => { page["replacements"].as_array_mut().unwrap().pop(); }
+                _ => page["replacements"].as_array_mut().unwrap().swap(0, 1),
             }
             assert!(compose_values(b, &rules, &page).is_err(), "v8 mode={mode}");
         }
