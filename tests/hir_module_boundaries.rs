@@ -887,7 +887,7 @@ include_str!("../src/source_reflows_merge/current344.rs"), include_str!("../src/
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs"),
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs"),
         include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs"),
-        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs"),
+        include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs"), include_str!("../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs"),
     );
     let validation = production_source_inventory::production(
         &validation_raw,
