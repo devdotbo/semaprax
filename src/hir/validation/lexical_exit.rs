@@ -603,6 +603,7 @@ mod witness_tests {
 
     fn run_public(
         checked: &crate::ast::Program,
+        source: &str,
         limit: usize,
         floor: usize,
     ) -> (
@@ -614,11 +615,13 @@ mod witness_tests {
         FrameRequests,
     ) {
         let capture = Capture::begin();
+        let phase = std::cell::Cell::new("before-resolve");
         let ((success, metrics), refused, paid, receipt) =
             crate::bounded_output::with_limit_usage_refusal(limit, || {
                 assert!(crate::bounded_output::set_active_floor(floor));
                 let measured =
                     crate::test_allocation_observer::measure_with_capacity(1 << 16, || {
+                        phase.set("hir::resolve");
                         let resolved = match crate::hir::resolve(checked) {
                             Ok(resolved) => resolved,
                             Err(errors) => {
@@ -627,11 +630,15 @@ mod witness_tests {
                                 return false;
                             }
                         };
+                        phase.set("second hir::validate");
                         let outcome = crate::hir::validate(&resolved);
                         if let Err(error) = &outcome {
                             assert_eq!(error.code, "SPX-H006");
                         }
                         let success = outcome.is_ok();
+                        if success {
+                            phase.set("both full passes completed");
+                        }
                         drop(outcome);
                         drop(resolved);
                         success
@@ -647,7 +654,26 @@ mod witness_tests {
                 crate::bounded_output::clear_active_floor();
                 measured
             });
-        (success, metrics, refused, paid, receipt, capture.finish())
+        let frame = capture.finish();
+        // Observation follows the complete allocation window, both ledger
+        // passes, original sticky-refusal checks and all owned compiler Drop.
+        if !success || refused || receipt.is_some() || metrics.invalid || metrics.live != 0 {
+            use sha2::{Digest, Sha256};
+            eprintln!(
+                "OPT904_REFUSAL source_sha={} source_bytes={} module={} phase={} success={} refused={} paid={} first={:?} frame={:?} allocations={:?}",
+                crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes())),
+                source.len(),
+                checked.module,
+                phase.get(),
+                success,
+                refused,
+                paid,
+                receipt,
+                frame,
+                metrics,
+            );
+        }
+        (success, metrics, refused, paid, receipt, frame)
     }
 
     #[test]
@@ -655,9 +681,12 @@ mod witness_tests {
         let mut seen = [false; 4];
         for source in sources() {
             let checked = crate::check(&source, "witness-frontiers.spx").unwrap();
-            let (success, metrics, refused, _, receipt, full) = run_public(&checked, 64 << 20, 0);
+            let (success, metrics, refused, paid, receipt, full) =
+                run_public(&checked, &source, 64 << 20, 0);
             assert!(
-                success && !refused && receipt.is_none() && !metrics.invalid && metrics.live == 0
+                success && !refused && receipt.is_none() && !metrics.invalid && metrics.live == 0,
+                "source_bytes={} success={success} refused={refused} paid={paid} first={receipt:?} frame={full:?} allocations={metrics:?}",
+                source.len(),
             );
             for (i, frontier) in [
                 full.first_join,
@@ -678,7 +707,7 @@ mod witness_tests {
                     [(exact, 0, true), (exact - 1, 0, false), (exact, 1, false)]
                 {
                     let (success, metrics, refused, _, receipt, prefix) =
-                        run_public(&checked, limit, floor);
+                        run_public(&checked, &source, limit, floor);
                     assert!(
                         !metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed
                     );
@@ -705,7 +734,7 @@ mod witness_tests {
             "every actual new role must be reached"
         );
         let checked = crate::check(SCALAR, "witness-zero.spx").unwrap();
-        let (success, metrics, refused, _, receipt, _) = run_public(&checked, 0, 0);
+        let (success, metrics, refused, _, receipt, _) = run_public(&checked, SCALAR, 0, 0);
         assert!(!success && refused && receipt.is_some() && !metrics.invalid && metrics.live == 0);
     }
 
@@ -714,8 +743,12 @@ mod witness_tests {
         for source in sources() {
             let checked = crate::check(&source, "matched-frame.spx").unwrap();
             let (outcome, metrics, refused, paid, receipt, report) =
-                run_public(&checked, 64 << 20, 0);
-            assert!(outcome && !refused && receipt.is_none());
+                run_public(&checked, &source, 64 << 20, 0);
+            assert!(
+                outcome && !refused && receipt.is_none(),
+                "source_bytes={} success={outcome} refused={refused} paid={paid} first={receipt:?} frame={report:?} allocations={metrics:?}",
+                source.len(),
+            );
             assert!(!metrics.invalid && metrics.live == 0 && metrics.allocated == metrics.freed);
             assert!(!report.overflow && report.size > 0 && report.requests > 0);
             assert_eq!(report.requested_capacity, report.acquired_capacity);
