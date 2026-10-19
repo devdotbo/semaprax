@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "afdadfc9f0fd5ea33dce987252e89201a1d9fd135f7bb356a03c84d37bb1862b",
+    "sha256": "186049fc08215c927954bfd821426bb7794ee878dfaef6f2a7e8187d4e6269c5",
     "lines": 1235
   },
   {
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "6a0f7c716e98cd084af5189b577d22c06bf25e4edbee6182b7a3142b34036733",
+    "sha256": "364fcf9063d770193a8309fe4b896421b830f6f013d020ffa951d07fce893758",
     "lines": 1469
   },
   {
@@ -2326,7 +2326,7 @@
   },
   {
     "source": "src/hir/resolve_expr/sort_keys/identity_tests.rs",
-    "sha256": "e470ec8345dfd19e9ffd77e4b0474aef08b2afc64fa6d4a856a7e3173527e100",
+    "sha256": "8a34ae0c02a01252ea53fb730a10bd58d8d1229b24f556fd3917805b288518db",
     "lines": 240
   },
   {
