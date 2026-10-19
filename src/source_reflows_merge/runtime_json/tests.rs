@@ -985,7 +985,15 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
         let prior = super::super::historical_project_entry(source, expected, compiled);
         assert_ne!(prior, compiled);
         for foreign in [format!("{compiled} "), compiled[..compiled.len() - 1].to_owned(), prior] {
-            assert!(std::panic::catch_unwind(|| super::super::historical_project_entry(source, expected, &foreign)).is_err());
+            if source == "src/workspace_graph/constructor_failure/receiving/before.rs"
+                && expected == "6135d75cf3f57029b9dd754030aba155a75ca902772aa036345481c1d3abc8b1"
+                && foreign.len() == 14489 && format!("{:x}", crate::digest_hex::LowerHex(digest(foreign.as_bytes()))) == expected
+            {
+                assert_eq!(super::super::historical_project_entry(source, expected, &foreign), foreign, "exact authenticated intermediate remains a valid projector input");
+                assert!(std::panic::catch_unwind(|| super::super::constructor825_compiled_entry(source, expected, &foreign)).is_err());
+            } else {
+                assert!(std::panic::catch_unwind(|| super::super::historical_project_entry(source, expected, &foreign)).is_err());
+            }
         }
     }
     let attempt = include_str!("../../workspace_graph/constructor_failure/attempt.rs");
@@ -1230,9 +1238,31 @@ fn initial845_current_root_before(source: &str, current: &str) -> String {
 }
 
 // Authenticate this complete source batch before every unchanged older root inverse.
-fn current64_complete_root_before(source: &str, current: &str) -> String {
+fn current13_typed_root_before(source: &str, current: &str) -> String {
     if source != "src/source_reflows_merge.rs" { return current.to_owned(); }
     assert_eq!(current, include_str!("../../source_reflows_merge.rs"));
+    assert_eq!(current.len(), 100875);
+    assert_eq!(digest(current.as_bytes()), [89, 173, 205, 123, 159, 100, 45, 2, 109, 236, 140, 18, 101, 141, 184, 128, 162, 117, 185, 220, 219, 30, 40, 216, 61, 217, 36, 132, 39, 80, 103, 100]);
+    let mut before = current.to_owned();
+    for &(after, prior) in &[
+        ("    let _complete_original845_before =\n        runtime_json::project(runtime_json::Fixture::F87, source, &checkpoint);\n    if source == \"src/workspace_graph/diagnostics.rs\" {\n        return constructor825_compiled_entry(source, \"1c1552d56400ec781eb96ff6fd825bbbeec854f5042fab960e4d3d2941e60127\", &checkpoint).expect(\"complete diagnostics845 entry\");\n    }\n    checkpoint\n", "    let _complete_original845_before =\n        runtime_json::project(runtime_json::Fixture::F87, source, &checkpoint);\n    checkpoint\n"),
+        ("(\"src/workspace_graph/constructor_failure/receiving/typed/tests.rs\", \"2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4\") => (typed_before.as_deref().expect(\"authenticated complete prior typed owner\"), 25856", "(\"src/workspace_graph/constructor_failure/receiving/typed/tests.rs\", \"2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4\") => (include_str!(\"workspace_graph/constructor_failure/receiving/typed/tests.rs\"), 25856"),
+        ("fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {\n    let typed_before = if source == \"src/workspace_graph/constructor_failure/receiving/typed/tests.rs\" && expected == \"2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4\" {\n        assert_eq!(current, include_str!(\"workspace_graph/constructor_failure/receiving/typed/tests.rs\"));\n        assert_eq!(current.len(), 27662);\n        assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), \"ddaa2f3c3d54bab731acb976de3a9482d71fa65a4d409a83c2036ed8f9ad1251\");\n        let mut before = current.to_owned();\n        for &(after, prior) in &[\n            (\"    // Retain the exact complete typed825 caller already authenticated above.\\n    let caller = historical_caller.expect(\\\"complete historical workspace caller\\\");\\n    assert_eq!(caller.len(), 231867);\\n    assert_eq!(format!(\\\"{:x}\\\", crate::digest_hex::LowerHex(Sha256::digest(caller.as_bytes()))), \\\"f517b9c93b4de7db618db0abc0139d4d88121f298ae9f3b16246dc20e833c0a9\\\");\\n    let live_caller = include_str!(concat!(env!(\\\"CARGO_MANIFEST_DIR\\\"), \\\"/src/workspace_graph.rs\\\"));\\n    let validate_live = |actual: &str| {\\n        assert_eq!(actual, live_caller, \\\"complete current workspace caller\\\");\\n        assert_eq!(actual.len(), 217358);\\n        assert_eq!(format!(\\\"{:x}\\\", crate::digest_hex::LowerHex(Sha256::digest(actual.as_bytes()))), \\\"763fd745d6b8afb41a7738ad14b8c0a0cffc782c70f698f4a272d398f1651699\\\");\\n        assert!(actual.contains(\\\"constructor_failure::typed::construct_selected_core(\\\"));\\n        assert!(actual.contains(\\\".receive_typed(failure)\\\"));\\n    };\\n    validate_live(live_caller);\\n    let dispatcher = include_str!(concat!(env!(\\\"CARGO_MANIFEST_DIR\\\"), \\\"/src/workspace_graph/constructor_failure/typed.rs\\\"));\\n    assert_eq!(dispatcher.len(), 11670);\\n    assert_eq!(format!(\\\"{:x}\\\", crate::digest_hex::LowerHex(Sha256::digest(dispatcher.as_bytes()))), \\\"b07ecf1da889cf25e1b9296bf320070d49c58af316efe6036dce534fccd73fb7\\\");\\n    assert!(dispatcher.contains(\\\"    if allow_transient && possible {\\\\n        construct_transient_alias_core(program, authored, programs, registry, core, owner)\\\\n    } else {\\\\n        construct_transient_core(program, authored, programs, registry, core, owner)\\\\n    }\\\"));\\n    for hostile in [format!(\\\"{live_caller}\\\\n\\\"), live_caller[..live_caller.len()-1].to_owned(), caller.clone()] {\\n        assert!(std::panic::catch_unwind(|| validate_live(&hostile)).is_err());\\n    }\\n\", \"    let caller = include_str!(concat!(\\n        env!(\\\"CARGO_MANIFEST_DIR\\\"),\\n        \\\"/src/workspace_graph.rs\\\"\\n    ));\\n\"),\n            (\"        assert_eq!(restored, original, \\\"{path}\\\");\\n        if path == \\\"src/workspace_graph.rs\\\" { historical_caller = Some(current.to_owned()); }\\n\", \"        assert_eq!(restored, original, \\\"{path}\\\");\\n\"),\n            (\"    let mut historical_caller = None;\\n    let records = packet.as_array().unwrap();\\n\", \"    let records = packet.as_array().unwrap();\\n\"),\n        ] {\n            assert_eq!(before.matches(after).count(), 1, \"unique current typed owner inverse\");\n            before = before.replacen(after, prior, 1);\n        }\n        assert_eq!(before.len(), 25856);\n        assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), \"6199f2912e6064de90f1ecccfcbc516ba0e275faabbaac96126abb470d3755b7\");\n        Some(before)\n    } else { None };\n    let current = typed_before.as_deref().unwrap_or(current);\n", "fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {\n"),
+    ] {
+        assert_eq!(before.matches(after).count(), 1, "unique current13 typed root inverse");
+        before = before.replacen(after, prior, 1);
+    }
+    assert_eq!(before.len(), 97193);
+    assert_eq!(digest(before.as_bytes()), [47, 249, 67, 84, 210, 59, 125, 235, 176, 221, 137, 90, 245, 141, 251, 220, 20, 112, 142, 52, 108, 156, 2, 40, 76, 83, 9, 42, 178, 253, 82, 211]);
+    before
+}
+
+fn current64_complete_root_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" { return current.to_owned(); }
+    let acquired = current13_typed_root_before(source, current);
+    let compiled_before = current13_typed_root_before(source, include_str!("../../source_reflows_merge.rs"));
+    let current = acquired.as_str();
+    assert_eq!(current, compiled_before.as_str());
     assert_eq!(current.len(), 97193);
     assert_eq!(digest(current.as_bytes()), [47, 249, 67, 84, 210, 59, 125, 235, 176, 221, 137, 90, 245, 141, 251, 220, 20, 112, 142, 52, 108, 156, 2, 40, 76, 83, 9, 42, 178, 253, 82, 211]);
     let mut before = current.to_owned();

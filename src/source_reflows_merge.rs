@@ -872,6 +872,9 @@ pub(crate) fn initial845_input(source: &str, current: &str) -> String {
     let checkpoint = final_batch_input("845", source, current);
     let _complete_original845_before =
         runtime_json::project(runtime_json::Fixture::F87, source, &checkpoint);
+    if source == "src/workspace_graph/diagnostics.rs" {
+        return constructor825_compiled_entry(source, "1c1552d56400ec781eb96ff6fd825bbbeec854f5042fab960e4d3d2941e60127", &checkpoint).expect("complete diagnostics845 entry");
+    }
     checkpoint
 }
 
@@ -1300,6 +1303,24 @@ pub(crate) mod main_e177_final_inputs;
 
 // Closed complete compiled ENTRY acquisition precedes every original #825 inverse.
 fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {
+    let typed_before = if source == "src/workspace_graph/constructor_failure/receiving/typed/tests.rs" && expected == "2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4" {
+        assert_eq!(current, include_str!("workspace_graph/constructor_failure/receiving/typed/tests.rs"));
+        assert_eq!(current.len(), 27662);
+        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), "ddaa2f3c3d54bab731acb976de3a9482d71fa65a4d409a83c2036ed8f9ad1251");
+        let mut before = current.to_owned();
+        for &(after, prior) in &[
+            ("    // Retain the exact complete typed825 caller already authenticated above.\n    let caller = historical_caller.expect(\"complete historical workspace caller\");\n    assert_eq!(caller.len(), 231867);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(caller.as_bytes()))), \"f517b9c93b4de7db618db0abc0139d4d88121f298ae9f3b16246dc20e833c0a9\");\n    let live_caller = include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/src/workspace_graph.rs\"));\n    let validate_live = |actual: &str| {\n        assert_eq!(actual, live_caller, \"complete current workspace caller\");\n        assert_eq!(actual.len(), 217358);\n        assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(actual.as_bytes()))), \"763fd745d6b8afb41a7738ad14b8c0a0cffc782c70f698f4a272d398f1651699\");\n        assert!(actual.contains(\"constructor_failure::typed::construct_selected_core(\"));\n        assert!(actual.contains(\".receive_typed(failure)\"));\n    };\n    validate_live(live_caller);\n    let dispatcher = include_str!(concat!(env!(\"CARGO_MANIFEST_DIR\"), \"/src/workspace_graph/constructor_failure/typed.rs\"));\n    assert_eq!(dispatcher.len(), 11670);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(dispatcher.as_bytes()))), \"b07ecf1da889cf25e1b9296bf320070d49c58af316efe6036dce534fccd73fb7\");\n    assert!(dispatcher.contains(\"    if allow_transient && possible {\\n        construct_transient_alias_core(program, authored, programs, registry, core, owner)\\n    } else {\\n        construct_transient_core(program, authored, programs, registry, core, owner)\\n    }\"));\n    for hostile in [format!(\"{live_caller}\\n\"), live_caller[..live_caller.len()-1].to_owned(), caller.clone()] {\n        assert!(std::panic::catch_unwind(|| validate_live(&hostile)).is_err());\n    }\n", "    let caller = include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/src/workspace_graph.rs\"\n    ));\n"),
+            ("        assert_eq!(restored, original, \"{path}\");\n        if path == \"src/workspace_graph.rs\" { historical_caller = Some(current.to_owned()); }\n", "        assert_eq!(restored, original, \"{path}\");\n"),
+            ("    let mut historical_caller = None;\n    let records = packet.as_array().unwrap();\n", "    let records = packet.as_array().unwrap();\n"),
+        ] {
+            assert_eq!(before.matches(after).count(), 1, "unique current typed owner inverse");
+            before = before.replacen(after, prior, 1);
+        }
+        assert_eq!(before.len(), 25856);
+        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), "6199f2912e6064de90f1ecccfcbc516ba0e275faabbaac96126abb470d3755b7");
+        Some(before)
+    } else { None };
+    let current = typed_before.as_deref().unwrap_or(current);
     let (compiled, length, current_sha, edits): (&str, usize, &str, &[(&str, &str)]) = match (source, expected) {
         ("src/workspace_graph/constructor_failure/report.rs", "fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84") => (include_str!("workspace_graph/constructor_failure/report.rs"), 10609, "a389503a2f7e6b241bbbaf906f71e980e564fa689d2389543d581dbc12fe5662", &[
             ("        // Reserve the full width of the captured usize maximum. Otherwise the\n        // same successful construction acquires different report backing at\n        // each decimal limit boundary, so its exact minimum changes its bill.\n        // Rendering below still uses the actual maximum and original help.\n        let message_len = counted(|out| message(out, usize::MAX))?;\n        let base_len = counted(|out| write!(out, \"{}\", BorrowedBuilderHelp(usize::MAX)))?;\n", "        let message_len = counted(|out| message(out, maximum))?;\n        let base_len = counted(|out| write!(out, \"{}\", BorrowedBuilderHelp(maximum)))?;\n"),
@@ -1310,7 +1331,7 @@ fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) ->
             ("                    &mut core_proofs,\n                    frontend.as_deref(),\n", "                    &mut core_proofs,frontend.as_deref(),\n"),
             ("\nuse crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;\nuse crate::workspace_graph::validation::before_roots::{\n    validate_stub_signatures_authored, WorkspaceValidationIndex,\n};\n", ""),
         ]),
-        ("src/workspace_graph/constructor_failure/receiving/typed/tests.rs", "2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4") => (include_str!("workspace_graph/constructor_failure/receiving/typed/tests.rs"), 25856, "6199f2912e6064de90f1ecccfcbc516ba0e275faabbaac96126abb470d3755b7", &[
+        ("src/workspace_graph/constructor_failure/receiving/typed/tests.rs", "2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4") => (typed_before.as_deref().expect("authenticated complete prior typed owner"), 25856, "6199f2912e6064de90f1ecccfcbc516ba0e275faabbaac96126abb470d3755b7", &[
             ("        let old =\n            constructor_test_inline_defaults::default_expr(&ty, &declarations, false).unwrap();\n", "        let old = constructor_test_inline_defaults::default_expr(&ty, &declarations, false).unwrap();\n"),
             ("                let actual = constructor_test_typed_defaults::default_expr(\n                    &ty,\n                    &declarations,\n                    false,\n                    &mut owner,\n                )\n                .unwrap();\n", "                let actual =\n                    constructor_test_typed_defaults::default_expr(&ty, &declarations, false, &mut owner).unwrap();\n"),
             ("                        let actual = constructor_test_typed_defaults::default_expr(\n                            &ty,\n                            &declarations,\n                            false,\n                            &mut owner,\n                        );\n", "                        let actual =\n                            constructor_test_typed_defaults::default_expr(&ty, &declarations, false, &mut owner);\n"),
