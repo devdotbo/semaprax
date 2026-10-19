@@ -357,14 +357,32 @@ fn lexical_empty_selector_exact_short_zero_floor_and_mixed_frontiers_are_actual_
                     && e.after == Some(after))
             );
         }
-        let body_events: Vec<_> = success
+        // Shape0 keeps all four observations in one segment: it reaches the
+        // selector but never forms a boundary body. Exercise the independent
+        // body frontier with four genuine singleton segments instead.
+        let boundary_shape = 4;
+        let body_success = observe(
+            f,
+            false,
+            4,
+            boundary_shape,
+            true,
+            hir,
+            0,
+            MAX_REPLAY_WORK_UNITS,
+            usize::MAX,
+            0,
+            true,
+        );
+        assert!(body_success.observed.0.0.result.is_ok() && body_success.row.complete);
+        let body_events: Vec<_> = body_success
             .events
             .iter()
             .copied()
             .filter(|e| e.phase == "ordinary plan certified boundary transition")
             .collect();
         assert!(!body_events.is_empty());
-        assert_eq!(body_events.len(), success.row.shared_boundaries);
+        assert_eq!(body_events.len(), body_success.row.shared_boundaries);
         for event in body_events {
             let after = event.after.unwrap();
             assert_eq!(after - event.before, certified_heads::BOUNDARY_BODY);
@@ -373,7 +391,7 @@ fn lexical_empty_selector_exact_short_zero_floor_and_mixed_frontiers_are_actual_
                     f,
                     false,
                     4,
-                    0,
+                    boundary_shape,
                     true,
                     hir,
                     0,
@@ -398,7 +416,7 @@ fn lexical_empty_selector_exact_short_zero_floor_and_mixed_frontiers_are_actual_
                 f,
                 false,
                 4,
-                0,
+                boundary_shape,
                 true,
                 hir,
                 0,

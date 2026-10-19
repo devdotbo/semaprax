@@ -29,6 +29,12 @@ fn link_delta(old: &pair_scope_census::Row, r: &pair_scope_census::Row) -> (usiz
         r.identity_probes + old.identity_empty_probes
     );
     assert_eq!(old.shared_boundaries, r.shared_boundaries);
+    // The old loop paid its loaded guard before each ordinary paired turn;
+    // the fused inner loop bypasses that physical guard, retaining its work.
+    assert_eq!(old.shared_checks, r.shared_checks + r.fused_turns);
+    assert_eq!(certified_heads::BOUNDARY_CHECK, 3 * size_of::<bool>());
+    let removed_boundary_checks =
+        certified_heads::BOUNDARY_CHECK * (old.shared_checks - r.shared_checks);
     let selector_header = PAYMENT_HEADER;
     let selector_payload = size_of::<bool>() * r.empty_selectors;
     let removed_empty_probes =
@@ -98,7 +104,8 @@ fn link_delta(old: &pair_scope_census::Row, r: &pair_scope_census::Row) -> (usiz
                 * (super::super::legacy_matching()
                     + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
             + super::super::reader_removed(r)
-            + removed_empty_probes,
+            + removed_empty_probes
+            + removed_boundary_checks,
     )
 }
 
@@ -182,6 +189,7 @@ fn borrowed_pair_links_and_unit_driver_keep_complete_invoices_six_fields_work_sw
             (8, 3),
             (8, 4),
             (8, 5),
+            (1, 6), // Genuine ordinary tails enter the fused inner loop.
         ] {
             let old = observe(
                 function,

@@ -27,6 +27,13 @@ fn delta(old: &pair_scope_census::Row, row: &pair_scope_census::Row) -> (usize, 
         row.identity_probes + old.identity_empty_probes
     );
     assert_eq!(old.shared_boundaries, row.shared_boundaries);
+    // The authentic old paired loop enters the loaded-guard payment on every
+    // turn, even for ordinary tails. The fused inner loop retains all logical
+    // work but never re-enters that three-boolean boundary guard.
+    assert_eq!(old.shared_checks, row.shared_checks + row.fused_turns);
+    assert_eq!(certified_heads::BOUNDARY_CHECK, 3 * size_of::<bool>());
+    let removed_boundary_checks =
+        certified_heads::BOUNDARY_CHECK * (old.shared_checks - row.shared_checks);
     let selector_header = PAYMENT_HEADER;
     let selector_payload = size_of::<bool>() * row.empty_selectors;
     let removed_empty_probes =
@@ -43,7 +50,8 @@ fn delta(old: &pair_scope_census::Row, row: &pair_scope_census::Row) -> (usize, 
             + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
         + super::super::reader_removed(row)
         + removed_empty_probes
-        + removed_right_rest;
+        + removed_right_rest
+        + removed_boundary_checks;
     (current, removed)
 }
 #[test]
