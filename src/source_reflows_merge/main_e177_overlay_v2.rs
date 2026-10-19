@@ -281,11 +281,12 @@ const ADDITIONS: &[&str] = &[
     "src/hir/resolve_expr/sort_keys/identity_tests.rs",
     "src/hir/resolve_for/identity_before.rs",
     "src/hir/resolve_for_own/identity_before.rs",
+    "src/source_reflows_merge/main_e177_overlay_pins_v9.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 102315; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "654893fb38f3ac2f78bc8ad07c497a9e2f4f23537b22b794e1e8189fd6c3e4f7";
+const POLICY_LENGTH: usize = 102816; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "a50278ec66edeeb74f780a05a9bfd8b84a94410cb00c54ac71a6b6b8a3c72b5a";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

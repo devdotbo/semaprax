@@ -1130,6 +1130,7 @@ src/hir/resolve_expr/sort_keys/identity_before.rs
 src/hir/resolve_expr/sort_keys/identity_tests.rs
 src/hir/resolve_for/identity_before.rs
 src/hir/resolve_for_own/identity_before.rs
+src/source_reflows_merge/main_e177_overlay_pins_v9.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs
 src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs
