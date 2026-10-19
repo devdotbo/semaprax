@@ -1,3 +1,5 @@
+- Reuse closed compiler declaration identities and fund dynamic sort-key identity backing through its existing payer, preserving wire identities and diagnostic precedence.
+- Add optional fixed-storage captures of exclusive resolved-core debits alongside the existing inclusive phase observations, retaining compiler budgets and complete historical source checks.
 - Fix test source restoration so a rejected input cannot poison the shared cache or cascade into unrelated source-audit failures.
 - Avoid the recursive type-copy census cursor for one- and two-leaf nominal metadata. Pay the exact argument-vector backing before cloning; retain sticky refusal and the complete recursive, callable, wide-type and depth-bound fallback.
 - Source-only OPT #897 adds four explicit decode-only owned request codec profiles; unchanged full generators feed a closed source projection before whole ordinary candidate validation. Full profiles, decoder semantics, caps and existing application cohorts remain unchanged; executable qualification and net-cost measurements are pending.
