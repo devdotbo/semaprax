@@ -865,6 +865,23 @@ mod tests {
     #[test]
     fn exclusive_core_attempts_keep_final_not_largest_retries_foreign_restored_unwind_drop_and_loss()
      {
+        exclusive_case_0();
+        exclusive_case_1();
+        exclusive_case_2();
+        exclusive_case_3();
+        exclusive_case_4();
+        exclusive_case_5();
+        exclusive_case_6();
+        exclusive_case_7();
+        // Preserve the entire independent old observer and all its original tests.
+        use sha2::Digest;
+        let old: [u8; 32] = sha2::Sha256::digest(include_bytes!("stage_debits.rs")).into();
+        let tests: [u8; 32] = sha2::Sha256::digest(include_bytes!("stage_debits/tests.rs")).into();
+        assert_eq!(old, OLD_OBSERVER_SHA);
+        assert_eq!(tests, OLD_TESTS_SHA);
+    }
+    #[inline(never)]
+    fn exclusive_case_0() {
         let c = capture();
         for (mode, bytes) in [(0, 7), (1, 3)] {
             with_limit_usage_refusal(10, || {
@@ -877,6 +894,9 @@ mod tests {
         assert!(r.complete);
         assert_eq!(r.final_attempt_ordinal, Some(1));
         assert_eq!((r.attempts[0].consumed, r.attempts[1].consumed), (7, 3));
+    }
+    #[inline(never)]
+    fn exclusive_case_1() {
         let c = capture();
         with_limit_usage_refusal(20, || {
             let foreign = super::super::active().unwrap();
@@ -903,6 +923,9 @@ mod tests {
         assert_eq!(r.attempts[0].parent_settlement_debits, 2);
         assert_eq!(r.attempts[1].parent_ordinal, Some(0));
         assert_eq!(r.attempts[1].consumed, 2);
+    }
+    #[inline(never)]
+    fn exclusive_case_2() {
         let c = capture();
         with_limit_usage_refusal(20, || {
             let mut a = attempt(0, 0, 0);
@@ -918,6 +941,9 @@ mod tests {
         assert_eq!(r.attempts[0].consumed, 4);
         assert_eq!(r.attempts[0].nested_ledger_debits, 3);
         assert_eq!(r.attempts[0].parent_settlement_debits, 3);
+    }
+    #[inline(never)]
+    fn exclusive_case_3() {
         struct Owner;
         impl Drop for Owner {
             fn drop(&mut self) {
@@ -939,6 +965,9 @@ mod tests {
         assert_eq!(r.attempts[0].outcome, Outcome::Unwound);
         assert!(r.attempts[0].unwound);
         assert_eq!(r.attempts[0].consumed, 3);
+    }
+    #[inline(never)]
+    fn exclusive_case_4() {
         let c = capture();
         for _ in 0..=ATTEMPT_CAPACITY {
             with_limit_usage_refusal(0, || {
@@ -950,6 +979,9 @@ mod tests {
         assert!(r.overflow && !r.complete);
         assert_eq!(r.final_attempt_ordinal, Some(ATTEMPT_CAPACITY));
         assert_eq!(r.entered_attempts, ATTEMPT_CAPACITY + 1);
+    }
+    #[inline(never)]
+    fn exclusive_case_5() {
         let c = capture();
         with_limit_usage_refusal(2, || {
             let mut a = attempt(0, 0, 0);
@@ -962,6 +994,9 @@ mod tests {
         });
         let r = c.finish().unwrap().resolved_core;
         assert!(r.lost && !r.complete);
+    }
+    #[inline(never)]
+    fn exclusive_case_6() {
         let c = capture();
         let (_, refused, used, _) = with_limit_usage_refusal(2, || {
             let mut a = attempt(0, 0, 0);
@@ -972,6 +1007,9 @@ mod tests {
         assert!(!refused && used == 1);
         let r = c.finish().unwrap().resolved_core;
         assert!(r.overflow && r.invalid && !r.complete);
+    }
+    #[inline(never)]
+    fn exclusive_case_7() {
         let c = capture();
         assert!(super::super::active_remaining().is_none());
         let mut unknown = attempt(0, 0, 0);
@@ -979,12 +1017,6 @@ mod tests {
         drop(unknown);
         let r = c.finish().unwrap().resolved_core;
         assert!(r.invalid && !r.complete);
-        // Preserve the entire independent old observer and all its original tests.
-        use sha2::Digest;
-        let old: [u8; 32] = sha2::Sha256::digest(include_bytes!("stage_debits.rs")).into();
-        let tests: [u8; 32] = sha2::Sha256::digest(include_bytes!("stage_debits/tests.rs")).into();
-        assert_eq!(old, OLD_OBSERVER_SHA);
-        assert_eq!(tests, OLD_TESTS_SHA);
     }
     const OLD_OBSERVER_SHA: [u8; 32] = [
         16, 213, 138, 22, 236, 137, 67, 246, 93, 84, 181, 111, 54, 92, 147, 201, 237, 218, 64, 41,
