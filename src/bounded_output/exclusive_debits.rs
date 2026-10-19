@@ -223,7 +223,7 @@ impl Report {
         overflow: false,
         lost: false,
         invalid: false,
-        observer_storage_bytes: std::mem::size_of::<State>() + std::mem::size_of::<Cell<bool>>(),
+        observer_storage_bytes: std::mem::size_of::<RefCell<State>>() + std::mem::size_of::<Cell<bool>>(),
         report_layout_bytes: std::mem::size_of::<Report>(),
         capture_report_layout_bytes: std::mem::size_of::<
             crate::workflow_profile::plan_comparison::Report,
@@ -854,7 +854,7 @@ mod tests {
         );
         assert_eq!(
             r.observer_storage_bytes,
-            std::mem::size_of::<State>() + std::mem::size_of::<Cell<bool>>()
+            std::mem::size_of::<RefCell<State>>() + std::mem::size_of::<Cell<bool>>()
         );
         assert_eq!(r.report_layout_bytes, std::mem::size_of::<Report>());
         assert_eq!(
