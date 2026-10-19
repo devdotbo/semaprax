@@ -393,16 +393,16 @@
       "sha256": "46f5e7917928ff472768e6c14073ee83d3f641dc6ae86f14f40b1e96b7b4be89"
     },
     "src/hir/ids/declaration_tag.rs": {
-      "length": 29663,
-      "sha256": "7e7304eee12d16c73bec21d55f94cc25048c6667be4c57555f3bbc7273dda2d1"
+      "length": 29752,
+      "sha256": "e7d0d11094c32d69467f3b5bc638370f90d661681dc9994c802b37c5e882a3f4"
     },
     "src/hir/ids/declaration_tag/before.rs": {
       "length": 8897,
       "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs": {
-      "length": 86477,
-      "sha256": "d29a70e85a11ecb4a8c8d6acc05419e127ac5ae378fde641b356db69728b9afd"
+      "length": 86698,
+      "sha256": "fa232cdadb3ff7ea321caa04554d8dc2c237928b976af5890f6ed555c276b1ec"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs": {
       "length": 4051,
@@ -557,8 +557,8 @@
       "sha256": "8db0e39a5ed2b200c8a3f0b18607e1bae9c485253137c20e5728679c84ddae70"
     },
     "src/cleanup_plan/replay/path_join/selected/walk.rs": {
-      "length": 61599,
-      "sha256": "10072cbc5b0a3fd2f8975babb45c4281cb04f715677d22f21da2963e8ad830a8"
+      "length": 61824,
+      "sha256": "a83992368a59d48c1d7cca887f9e184b5ec1457e985db6219efca294675302f4"
     },
     "src/cleanup_plan/replay/record_destructure/update.rs": {
       "length": 8042,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 65534,
-      "sha256": "52aa46be8d28d132b63fdff196799ecf3e2970384e9e47aaace9d861d4b02460"
+      "length": 66159,
+      "sha256": "6284dd0127146a91b22f48bed31730f85abcc294d4d4d0d95a8a94caad328841"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -761,8 +761,8 @@
       "sha256": "8810bad4566b3c46b2b3d0b4a7c55679137fd4b82ccf6c975cd59d5271652b1d"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs": {
-      "length": 55565,
-      "sha256": "a908f0582d3ffd6366eb63b64a678009a1759c96531095304eb0d7ab736dff05"
+      "length": 55814,
+      "sha256": "b6471558eaf00c76a99472843a9d96a58a11fe9e5779f50fdccbfc6f0011aa51"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs": {
       "length": 3388,
@@ -873,8 +873,8 @@
       "sha256": "ecc693e67e0a193efec4ddc0e22037fcd99b8626b7fd87e5f11c1123fd65d4f3"
     },
     "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
-      "length": 50097,
-      "sha256": "fb3405cc8917807174963a471c6880b537a3078043d260c14e1be2690790bbca"
+      "length": 61722,
+      "sha256": "92a5f3491ecdedbf94068506c3f083ae79f174023cd49a14e8cdf9cf6c4c268f"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
       "length": 19877,
@@ -961,8 +961,8 @@
       "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
-      "length": 42422,
-      "sha256": "e3574eaa0d43daf302599ab518b7968d43f4633b1a921bd7a1f588feffa63c61"
+      "length": 43627,
+      "sha256": "b67dd4267223136222edf4508cd19f0a7e8c4fc43338a1aa616d55430a3792a5"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs": {
       "length": 23096,
@@ -1037,8 +1037,8 @@
       "sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
-      "length": 54503,
-      "sha256": "2769726c4de44c06b59cbfcd900f4027f783e5c9bf65bc1483ad14c92f923293"
+      "length": 55816,
+      "sha256": "f673e261eb43d472d8f7dc4fe9ae134f7a0fb54c29711bfc30b76120d5d72d65"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
       "length": 6956,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 36405,
-      "sha256": "f70d45dfcf1278d55221beed61128b437e4a86183e6b73b2b4878887f8ebc199"
+      "length": 40885,
+      "sha256": "3123f78501fb79516b718cc6a30df3504d5c021fd323437909859f7a6d3b6a3d"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 27650,
@@ -1255,25 +1255,53 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs": {
       "length": 7420,
       "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/bounded_output/exclusive_debits.rs": {
+      "length": 35130,
+      "sha256": "90d523cb0e159a6aca110594df75490287167b294aab5fff47092c0c20297cb2"
+    },
+    "src/hir/ids/lowering_identity_tests.rs": {
+      "length": 16495,
+      "sha256": "9a12f8665527f7d4a9c1f2d3ffe4254e3af648d17ec13f0069c80eb1dcd492ee"
+    },
+    "src/hir/owned_collection_record/identity_before.rs": {
+      "length": 3616,
+      "sha256": "69f16e619754676b5a87c9f3097d58430f6c2190337ab30bdc34c28c1669b66d"
+    },
+    "src/hir/resolve_expr/sort_keys/identity_before.rs": {
+      "length": 2603,
+      "sha256": "8b0ba9454b0cf8592977cfbafd468493d403affb2a05430eee86135a5019f3fb"
+    },
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs": {
+      "length": 11859,
+      "sha256": "7106d0a157cebd83471303c89fab66ec5c157235ba067adff52152dd2230c2de"
+    },
+    "src/hir/resolve_for/identity_before.rs": {
+      "length": 9363,
+      "sha256": "9886243816b32ab0e64764367c110ae1ffcc4276e5b290955b560ec2fea100e0"
+    },
+    "src/hir/resolve_for_own/identity_before.rs": {
+      "length": 7868,
+      "sha256": "ea060f003061866b6bf8df5bbcba4d267b1a694b700168a8962351065e792842"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 145947,
-      "sha256": "1e9f86cfa1a873a6f547b85ef94d5b2cad80294cba05bcb5e354cf398bd2b2f5",
+      "length": 146397,
+      "sha256": "0114900a87ec3d74301d08b9a31dfa1fd3ab300b1e249967f4dbe1a2d3ae4c88",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 162406,
-      "sha256": "a4ae9ff9e2c05aa3d3ffeb55cb29bb1a8ac12c33b3368ec6109810c052be18b6",
+      "length": 162877,
+      "sha256": "e867aa6beb36e610c7c9d726c3fcb6627b71a86393fc769c9c3bb2a95266377b",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 205131,
-      "sha256": "0ff301b9df3eb6a75ff45998fcccd18760e6fa3c5d7c16ccfc97f537a669e166",
+      "length": 205665,
+      "sha256": "6fb4a20ae7c6a40d3979c9a9d08a4549a6a646da137432822bef97b227fe1274",
       "base": "../../../../../"
     }
   },
@@ -1301,8 +1329,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 64972,
-    "sha256": "533587b5be939fc458029780d64515d85e98d6981c7e9eebf07df151e3379821",
+    "length": 65282,
+    "sha256": "4df985758b2ebb44f60e87dbba9213d558e470206952589fb81e08686552491c",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -4107,34 +4135,62 @@
       },
       {
         "at": 1125,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs"
+        "path": "src/bounded_output/exclusive_debits.rs"
       },
       {
         "at": 1126,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs"
+        "path": "src/hir/ids/lowering_identity_tests.rs"
       },
       {
         "at": 1127,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs"
+        "path": "src/hir/owned_collection_record/identity_before.rs"
       },
       {
         "at": 1128,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs"
+        "path": "src/hir/resolve_expr/sort_keys/identity_before.rs"
       },
       {
         "at": 1129,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs"
+        "path": "src/hir/resolve_expr/sort_keys/identity_tests.rs"
       },
       {
         "at": 1130,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs"
+        "path": "src/hir/resolve_for/identity_before.rs"
       },
       {
         "at": 1131,
+        "path": "src/hir/resolve_for_own/identity_before.rs"
+      },
+      {
+        "at": 1132,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs"
+      },
+      {
+        "at": 1133,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs"
+      },
+      {
+        "at": 1134,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs"
+      },
+      {
+        "at": 1135,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs"
+      },
+      {
+        "at": 1136,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs"
+      },
+      {
+        "at": 1137,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs"
+      },
+      {
+        "at": 1138,
         "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs"
       }
     ],
-    "rows": 1132
+    "rows": 1139
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -4839,7 +4895,14 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs",
-    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs"
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs",
+    "src/bounded_output/exclusive_debits.rs",
+    "src/hir/ids/lowering_identity_tests.rs",
+    "src/hir/owned_collection_record/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs",
+    "src/hir/resolve_for/identity_before.rs",
+    "src/hir/resolve_for_own/identity_before.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",

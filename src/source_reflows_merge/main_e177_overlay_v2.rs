@@ -51,6 +51,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
     "src/cleanup_plan/replay/factored/strategy.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "src/cleanup_plan/replay/path_join.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
     "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
     "src/cleanup_plan/replay/semantic_refusal.rs",
@@ -88,6 +89,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/bounded_output/stage_debits/route_debits.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
+    "src/hir/ids/declaration_tag.rs",
     "src/hir/ids/declaration_tag/before.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
@@ -272,11 +274,18 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs",
+    "src/bounded_output/exclusive_debits.rs",
+    "src/hir/ids/lowering_identity_tests.rs",
+    "src/hir/owned_collection_record/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs",
+    "src/hir/resolve_for/identity_before.rs",
+    "src/hir/resolve_for_own/identity_before.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 99008; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "a0934de49d6f5a905046717cc516d06c0798fb837d0586e2380184a380031da8";
+const POLICY_LENGTH: usize = 102315; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "e39767f15ae1fed4ac0c6e705e6c687ec85b48df40fad16cedbf3a648caa8e02";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

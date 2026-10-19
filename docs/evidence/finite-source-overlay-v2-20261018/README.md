@@ -1,6 +1,6 @@
 # Finite source overlay v2
 
-The page is source-bound: 543 logical rows and 342 parser-derived owners. The complete original 519-row predecessor, prior generations, archive channels and original controls remain retained.
+The page is source-bound: 679 logical rows and 468 parser-derived owners. The complete original 519-row predecessor, prior generations, archive channels and original controls remain retained.
 
 The source checks recorded under `qualification/` cover the dc369 generation: strict 67 refusals, FINAL6 source 75 controls, six role controls and 36 Python protocol fixtures. The original source producers bound 174 subjects and six FINAL6 sources at the exact heads in their receipts; these are source-only producer results, not executed Rust tests.
 
