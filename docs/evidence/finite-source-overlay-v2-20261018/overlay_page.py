@@ -185,8 +185,59 @@ def expand_canonical_indices(before, policy, page):
     fragment['canonical_source']=sources[value]
  return expand_old519_indices(before,policy,result)
 
+V8_SCHEMA = 'semaprax.finite-source-overlay-page.v8'
+V8_CARRIERS = (
+ (38, 'src/source_reflows_merge/main67107_inputs.rs',
+  'ae571c1bf1f461c0485d0e5f4c5b231af8d7f5889e99e81d04e55ef86bd561d8',
+  366, 'src/source_reflows_merge/main67107_inputs_tail.rs'),
+ (314, 'src/hir/resolve_program.rs',
+  '4bc3d8948fadbac1745748fa65dec109e2e2f2aad21147bdc41b9b4fb0b76913',
+  316, 'src/hir/resolve_program_methods.rs'))
+def expand_v8_carriers(before, policy, page):
+ assert page['schema']==V8_SCHEMA and len(before['rows'])==519
+ assert H(canonical(before))==policy['predecessor']['logical_sha256'], 'v8 authenticated old519'
+ result=copy.deepcopy(page); result['schema']=V7_SCHEMA; seen=set()
+ for position,row in enumerate(result['replacements']):
+  if 'old519_index' not in row:continue
+  reference=row['old519_index']
+  assert keys(row,('old519_index',)) and type(reference) is list and len(reference)==4
+  index=reference[0]; assert type(index) is int and 0<=index<519
+  binding=next((b for b in V8_CARRIERS if b[0]==index),None)
+  if binding is None or reference[3] is None:continue
+  _,source,old_sha,child_index,child=binding
+  assert index not in seen, 'v8 duplicate carrier'; seen.add(index)
+  old=before['rows'][index]
+  assert old['source']==source and H(canonical(old))==old_sha, 'v8 complete old carrier'
+  fragments=reference[3]
+  assert type(fragments) is list and fragments==[{'canonical_source':child}], 'v8 exact single leaf reference'
+  assert len(old.get('fragments',[]))==1 and old['fragments'][0]['source']==child
+  targets=[]
+  for candidate in page['replacements']:
+   if 'old519_index' in candidate:
+    target=candidate['old519_index']
+    assert keys(candidate,('old519_index',)) and type(target) is list and len(target)==4
+    target_index=target[0]; assert type(target_index) is int and 0<=target_index<519
+    if target_index!=child_index:continue
+    assert target[3] is None, 'v8 leaf override'
+    target_row=copy.deepcopy(before['rows'][child_index]); target_row['current']=copy.deepcopy(target[1])
+    assert type(target[2]) is list
+    target_row['views'].extend(copy.deepcopy(target[2])); targets.append(target_row)
+   elif candidate['source']==child:targets.append(copy.deepcopy(candidate))
+  assert len(targets)==1, 'v8 unique present canonical leaf'
+  target=targets[0]
+  assert target['source']==child and target['compiled'] is True and 'fragments' not in target, 'v8 compiled canonical leaf'
+  pin(target['current'])
+  for view in target['views']:pin(view)
+  pin(reference[1]); assert type(reference[2]) is list
+  for view in reference[2]:pin(view)
+  full=copy.deepcopy(old); full['current']=copy.deepcopy(reference[1])
+  full['views'].extend(copy.deepcopy(reference[2])); full['fragments']=[target]
+  result['replacements'][position]=full
+ return expand_canonical_indices(before,policy,result)
+
 def compose_values(before, policy, page):
- if page['schema']==V7_SCHEMA:page=expand_canonical_indices(before,policy,page)
+ if page['schema']==V8_SCHEMA:page=expand_v8_carriers(before,policy,page)
+ elif page['schema']==V7_SCHEMA:page=expand_canonical_indices(before,policy,page)
  elif page['schema']==V6_SCHEMA:page=expand_old519_indices(before,policy,page)
  elif page['schema']==V5_SCHEMA:page=expand_extra519_refs(before,policy,page)
  elif page['schema']==V4_SCHEMA:page=expand_old519_refs(before,policy,page)
