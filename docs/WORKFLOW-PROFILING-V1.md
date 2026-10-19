@@ -194,3 +194,11 @@ it is not reused for the cheaper selector. Nonempty shipping runs still report
 their full retained `IdentityProbeAdmitted` bank. These additive counts retain
 the same fixed capture, overflow, partial-prefix and source-binding rules and
 supply no admission or whole-net conclusion by themselves.
+
+The #907 diagnostic successor appends final independent-comparison admissions at
+site indices52–55: `FinalFlatAdmitted`, `FinalSharedAdmitted`,
+`FinalStepAdmitted`, and `FinalTailAdmitted`. All previous52 indices and meanings
+remain unchanged. Counts and admitted bytes record successful actual banks,
+including exhaustion visits; they do not relabel these as PLAN-sort packets.
+The separate100-row paid-phase bank and its10×5×2 ordering remain unchanged.
+Matched old/current arms must retain this same additive observer API and hooks.

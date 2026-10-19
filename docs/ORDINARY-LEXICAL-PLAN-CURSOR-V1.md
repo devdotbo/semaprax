@@ -554,3 +554,40 @@ publication remain byteexact. Complete invoices, work cuts, actual boundary
 packet exact/short/zero/floor/mixed limits and unwind/Drop controls retain every
 cold loss. Reached-prefix arithmetic alone establishes neither whole-call net
 nor unchanged64MiB application or #892 admission.
+
+## Independent final PLAN/HIR affine comparison (#907)
+
+The source candidate owns the complete final equality loop. Both flat and shared
+HIR routes still compare independently produced observation content, followed by
+terminal content. PLAN arena identities grant no HIR equality authority. Each
+PLAN segment/tail head is consumed inside its lexical branch, with its actual
+`as_ref` and distinct left receiver formed before the right HIR advance. Flat
+HIR consumes a head/rest slice; shared HIR retains its original Cursor, complete
+Result/Option receivers and every prepare/next debit. No compiler owner field,
+closure, allocation, replacement backing, reset or Drop role is added.
+
+The original comparison, forward and segment work calls, loaded/empty updates,
+load envelopes and exhaustion sentinel remain ordered. All original EMPTY17
+packets remain, including unused envelopes. Two removed PLAN Option slots lower
+STEP and TAIL by16 bytes on the64-bit host. The independent flat match changes
+145 to105 bytes and shared match65 to57. Four additional lexical mismatch sites
+are prepaid as four whole MISMATCH_CALL packets in the invocation owner; the
+two original five-site final primitive banks retain their complete headers.
+For complete matching runs, actual admitted new counts F(flat rounds), S(shared
+rounds), X(segment tests) and Y(tail tests) give the whole equation
+`current + 16*(X+Y) + 72*F + 8*S = old + 4*MISMATCH_CALL + 32*F`.
+No refused/unwound prefix uses a complete cancellation or inferred future count.
+A zero-path invocation pays the cold regression. Physical versus work refusal
+priority may change with these real packets; adequate-physical work cuts retain
+all six original diagnostic fields. No phantom old packet recreates a frontier.
+
+The whole immediate comparator and all four macro/tariff modules remain compiled
+independent controls. Complete-current authentication and finite literal inverses
+restore the entire immediate source, not a selected loop or archive-only copy.
+Older controls retain their assertions, with the additive final component in
+current complete receiving equations. Actual old/current allocation through Drop,
+malformed/unequal histories, both HIR routes, exact/short/zero/floor/sticky/mixed
+cuts, typed foreign/restored authority and live unwind are owning controls.
+Source arithmetic establishes no application fit, whole32 gain or runtime result.
+Unchanged-cap whole caller/application owners and scoped Clippy remain required
+in the next combined qualification; no Cargo or Rust tests ran in this lane.

@@ -1,0 +1,457 @@
+{
+  "base": "a7626c1b3e377daeae60b24ce324483c9000cc12",
+  "cases": [
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "current_length": 28060,
+      "current_sha256": "e98bf0ffd40155974eeb159ffc5cb0a194c5c0b72f5735ad95381c3644d7dedd",
+      "before_length": 30425,
+      "before_sha256": "6757445904c15f73b3d8b19db0d67c6496a0be805a2b402494de64c27fcb6d86",
+      "edits": [
+        {
+          "start": 100,
+          "end": 202,
+          "new": "allow(unused_macros, reason = \"complete immediate final Option producer remains a frozen control\")]\n#[",
+          "old": ""
+        },
+        {
+          "start": 231,
+          "end": 317,
+          "new": ";\n#[macro_use]\nmod final_affine;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_final_affine",
+          "old": ""
+        },
+        {
+          "start": 4401,
+          "end": 4414,
+          "new": "#[cfg(test)]\n",
+          "old": ""
+        },
+        {
+          "start": 5226,
+          "end": 5239,
+          "new": "\n#[cfg(test)]",
+          "old": ""
+        },
+        {
+          "start": 8399,
+          "end": 8425,
+          "new": "OWNER\n    + final_affine::",
+          "old": ""
+        },
+        {
+          "start": 26811,
+          "end": 26819,
+          "new": "mut hir_",
+          "old": ""
+        },
+        {
+          "start": 26875,
+          "end": 26875,
+          "new": "",
+          "old": "let mut index = 0;\n            loop {\n                budget.charge("
+        },
+        {
+          "start": 26876,
+          "end": 26876,
+          "new": "",
+          "old": "unction, 1, \"ord"
+        },
+        {
+          "start": 26879,
+          "end": 26879,
+          "new": "",
+          "old": "ry plan history HIR comparison\")?;\n                paid!(\n                    budget,\n                    function,\n                    FLAT_MATCH,\n                    \"ordinary plan history HIR cursor next\"\n                )?;\n                match (\n                    lexica"
+        },
+        {
+          "start": 26881,
+          "end": 26881,
+          "new": "",
+          "old": "pl"
+        },
+        {
+          "start": 26882,
+          "end": 26885,
+          "new": "ffi",
+          "old": "n_"
+        },
+        {
+          "start": 26887,
+          "end": 26894,
+          "new": "_driver",
+          "old": "xt"
+        },
+        {
+          "start": 26896,
+          "end": 26896,
+          "new": "",
+          "old": "\n                        "
+        },
+        {
+          "start": 26902,
+          "end": 26902,
+          "new": "",
+          "old": "\n                        left_cursor,\n                        left_items,\n                        left_loaded,\n                        left_segments,\n                       "
+        },
+        {
+          "start": 26913,
+          "end": 26913,
+          "new": "",
+          "old": "\n                       "
+        },
+        {
+          "start": 26921,
+          "end": 26921,
+          "new": "",
+          "old": "\n                       "
+        },
+        {
+          "start": 26931,
+          "end": 26931,
+          "new": "",
+          "old": "\n                       "
+        },
+        {
+          "start": 26939,
+          "end": 26939,
+          "new": "",
+          "old": "\n"
+        },
+        {
+          "start": 26940,
+          "end": 26941,
+          "new": "f",
+          "old": "                       \"ordinary p"
+        },
+        {
+          "start": 26943,
+          "end": 26945,
+          "new": "t,",
+          "old": "n"
+        },
+        {
+          "start": 26948,
+          "end": 26948,
+          "new": "",
+          "old": "sto"
+        },
+        {
+          "start": 26949,
+          "end": 26950,
+          "new": "_",
+          "old": "y HIR cursor next\"\n                    ),\n                    "
+        },
+        {
+          "start": 26955,
+          "end": 26955,
+          "new": "",
+          "old": ".get(index),\n                ) {\n                    (Some(left), Some(right)) if left == right.as_ref() => {\n                        index += 1;\n                    }\n                    (None, None) => break,\n                    _ => {\n                        return Err(replay_error(\n                            function,\n                            \"cleanup CFG decision or ownership-event sequence disagrees with typed HIR\",\n                        )"
+        },
+        {
+          "start": 26957,
+          "end": 26957,
+          "new": "",
+          "old": "\n                    }\n                }\n            }"
+        },
+        {
+          "start": 27409,
+          "end": 27409,
+          "new": "",
+          "old": "loop {\n                budget.charge("
+        },
+        {
+          "start": 27410,
+          "end": 27410,
+          "new": "",
+          "old": "unction, 1, \"ord"
+        },
+        {
+          "start": 27413,
+          "end": 27413,
+          "new": "",
+          "old": "ry p"
+        },
+        {
+          "start": 27414,
+          "end": 27414,
+          "new": "",
+          "old": "an history HIR comparison\")?;\n                paid!(\n                    budget,\n                    function,\n                    SHARED"
+        },
+        {
+          "start": 27415,
+          "end": 27415,
+          "new": "",
+          "old": "MATCH,\n                    \"ordin"
+        },
+        {
+          "start": 27416,
+          "end": 27416,
+          "new": "",
+          "old": "ry plan history HIR cursor next\"\n                )?;\n                budget.reserve_bytes(\n                    "
+        },
+        {
+          "start": 27417,
+          "end": 27417,
+          "new": "",
+          "old": "unction,\n                    skeleton_work::enumerated_pre"
+        },
+        {
+          "start": 27419,
+          "end": 27419,
+          "new": "",
+          "old": "x::CURSOR_CALL,\n                    \"ordinary PLAN shared HIR cursor "
+        },
+        {
+          "start": 27421,
+          "end": 27423,
+          "new": "_d",
+          "old": "xt "
+        },
+        {
+          "start": 27424,
+          "end": 27424,
+          "new": "",
+          "old": "ece"
+        },
+        {
+          "start": 27428,
+          "end": 27428,
+          "new": "",
+          "old": "s\",\n                )?;\n                match (\n                    lexical_plan_next"
+        },
+        {
+          "start": 27430,
+          "end": 27430,
+          "new": "",
+          "old": "\n                        "
+        },
+        {
+          "start": 27436,
+          "end": 27436,
+          "new": "",
+          "old": "\n                        left_cursor,\n                        left_items,\n                        left_loaded,\n                        left_segments,\n                       "
+        },
+        {
+          "start": 27447,
+          "end": 27447,
+          "new": "",
+          "old": "\n                       "
+        },
+        {
+          "start": 27455,
+          "end": 27455,
+          "new": "",
+          "old": "\n"
+        },
+        {
+          "start": 27456,
+          "end": 27456,
+          "new": "",
+          "old": "                       function,\n                        budget,\n                        \"ordinary plan history HIR cursor next\"\n                    ),\n                    hir.next("
+        },
+        {
+          "start": 27472,
+          "end": 27472,
+          "new": "",
+          "old": ")?,\n                ) {\n                    (Some(left)"
+        },
+        {
+          "start": 27474,
+          "end": 27474,
+          "new": "",
+          "old": "Some(right)) if left == right => {}\n                    (None, None) => break,\n                    _ => {\n                        return Err(replay_error(\n                            function,\n                            \"cleanup CFG decision or owner"
+        },
+        {
+          "start": 27476,
+          "end": 27476,
+          "new": "",
+          "old": "ip-event sequence dis"
+        },
+        {
+          "start": 27477,
+          "end": 27477,
+          "new": "",
+          "old": "g"
+        },
+        {
+          "start": 27479,
+          "end": 27479,
+          "new": "",
+          "old": "es with type"
+        },
+        {
+          "start": 27480,
+          "end": 27480,
+          "new": "",
+          "old": " HIR\""
+        },
+        {
+          "start": 27481,
+          "end": 27481,
+          "new": "",
+          "old": "\n"
+        },
+        {
+          "start": 27482,
+          "end": 27485,
+          "new": "hir",
+          "old": "                       )"
+        },
+        {
+          "start": 27487,
+          "end": 27487,
+          "new": "",
+          "old": "\n                    }\n                }\n            }"
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+      "current_length": 29552,
+      "current_sha256": "5db66026b82c264849c9bddc1ebb6f25b9433bd8fd4734fc606aead076dc2679",
+      "before_length": 30425,
+      "before_sha256": "6757445904c15f73b3d8b19db0d67c6496a0be805a2b402494de64c27fcb6d86",
+      "edits": [
+        {
+          "start": 111,
+          "end": 161,
+          "new": "#[path = \"lexical_cursor_before_final_affine.rs\"]\n",
+          "old": ""
+        },
+        {
+          "start": 194,
+          "end": 242,
+          "new": "#[path = \"paired_value_before_final_affine.rs\"]\n",
+          "old": ""
+        },
+        {
+          "start": 268,
+          "end": 268,
+          "new": "",
+          "old": "\n    "
+        },
+        {
+          "start": 282,
+          "end": 282,
+          "new": "",
+          "old": "\n   "
+        },
+        {
+          "start": 327,
+          "end": 328,
+          "new": "t",
+          "old": "m"
+        },
+        {
+          "start": 331,
+          "end": 331,
+          "new": "",
+          "old": "s availabl"
+        },
+        {
+          "start": 332,
+          "end": 333,
+          "new": "d",
+          "old": " to frozen generations"
+        },
+        {
+          "start": 334,
+          "end": 334,
+          "new": "",
+          "old": "\n"
+        },
+        {
+          "start": 348,
+          "end": 397,
+          "new": "]\n#[path = \"shared_prefix_before_final_affine.rs\"",
+          "old": ""
+        },
+        {
+          "start": 431,
+          "end": 482,
+          "new": "#[path = \"certified_heads_before_final_affine.rs\"]\n",
+          "old": ""
+        },
+        {
+          "start": 503,
+          "end": 503,
+          "new": "",
+          "old": "#[cfg(test)]\n#[rustfmt::skip]\nmod before_empty_selector;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_paired_tail;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_main_b692;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_main487;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_pair_links;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_main001;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_certified_heads;\n#[cfg(test)]\nmod before_event_prefix;\n#[cfg(test)]\nmod before_shared_steps;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_shared_runs;\n#[cfg(test)]\n#[allow(un"
+        },
+        {
+          "start": 506,
+          "end": 506,
+          "new": "",
+          "old": "d_imports,"
+        },
+        {
+          "start": 507,
+          "end": 507,
+          "new": "",
+          "old": "reason = \"complete frozen generation retains its exact original namespace imports\")]\n#[rustfmt::skip]\nmod before_reachable_primitives;\n#[cfg(test)]\nmod before_flat_view;\n#[cfg(test)]\nmod before_fused_flat;\n#[cfg(test)]\nmod before_identity_prefix;\n#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\n#[rustfmt::skip]\nmod before_prepared_pairing;\n#[cfg(test)]\nmod before_retained_tail;\n#[cfg(test)]\npub("
+        },
+        {
+          "start": 512,
+          "end": 514,
+          "new": "::",
+          "old": ") mod "
+        },
+        {
+          "start": 26137,
+          "end": 26210,
+          "new": "#[cfg(test)]\n                census.legacy_final_flat();\n                ",
+          "old": ""
+        },
+        {
+          "start": 27949,
+          "end": 28024,
+          "new": "#[cfg(test)]\n                census.legacy_final_shared();\n                ",
+          "old": ""
+        },
+        {
+          "start": 29552,
+          "end": 29552,
+          "new": "",
+          "old": "#[cfg(test)]\nmod tests;\n\n#[cfg(test)]\nfn reachable_stage(path: &str, sha: &str, current: &str) -> String {\n    crate::source_reflows_merge::main_e177_final_inputs::value_direct(path, sha, current)\n}\n"
+        }
+      ]
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+      "current_length": 6956,
+      "current_sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c",
+      "before_length": 6956,
+      "before_sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c",
+      "edits": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+      "current_length": 15748,
+      "current_sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3",
+      "before_length": 15748,
+      "before_sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3",
+      "edits": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
+      "current_length": 7420,
+      "current_sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0",
+      "before_length": 7420,
+      "before_sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0",
+      "edits": []
+    },
+    {
+      "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs",
+      "old_source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
+      "current_length": 34172,
+      "current_sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6",
+      "before_length": 34172,
+      "before_sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6",
+      "edits": []
+    }
+  ]
+}

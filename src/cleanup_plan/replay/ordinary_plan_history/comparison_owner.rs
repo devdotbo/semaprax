@@ -1,7 +1,13 @@
 //! One comparison invocation owns sort and pair state. No nested order/sift calls.
 use super::*;
+#[allow(unused_macros, reason = "complete immediate final Option producer remains a frozen control")]
 #[macro_use]
 mod lexical_cursor;
+#[macro_use]
+mod final_affine;
+#[cfg(test)]
+#[rustfmt::skip]
+mod before_final_affine;
 #[macro_use]
 mod paired_value;
 #[allow(
@@ -131,6 +137,7 @@ const FINAL_NEXT: usize = 2 * size_of::<&mut FinalZip>()
     + 2 * size_of::<(&PlanPath, &SkeletonPath)>()
     + size_of::<usize>() // flat index local, per path (also prepaid for sentinel)
     + 4 * size_of::<&SkeletonTerminal>() + size_of::<bool>();
+#[cfg(test)]
 const FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<SkeletonObservation>>)>()
     + size_of::<&SkeletonObservation>() + size_of::<&Rc<SkeletonObservation>>()
     + 4 * size_of::<&SkeletonObservation>() // equality actual/formal pair
@@ -142,6 +149,7 @@ const FLAT_MATCH: usize = size_of::<(Option<&SkeletonObservation>, Option<&Rc<Sk
 // its distinct retained receiver. Dynamic get/Option/match payloads stay above.
 const FLAT_VIEW: usize =
     2 * size_of::<&Vec<Rc<SkeletonObservation>>>() + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+#[cfg(test)]
 const SHARED_MATCH: usize =
     size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
         + 2 * size_of::<&SkeletonObservation>()
@@ -188,7 +196,8 @@ const OWNER_CONTROLS: usize = size_of::<ComparisonOwner<'static>>()
     + LEN_QUERIES + SCALAR_TRANSPORT + STATE_TESTS
     + 2 * size_of::<usize>() // initial retained segment extents
     + 3 * size_of::<Step>() // copied state transports at return/schedule sites
-    + shared_prefix::OWNER + certified_heads::OWNER + paired_value::TAIL_OWNER; // actual initializers and new lexical primitive sites
+    + shared_prefix::OWNER + certified_heads::OWNER + paired_value::TAIL_OWNER
+    + final_affine::OWNER; // actual initializers and new lexical primitive sites
 
 const PREPARE_CALL: usize = 2 * size_of::<&mut Cursor>()
     + 2 * size_of::<&History>()
@@ -614,43 +623,8 @@ pub(in crate::cleanup_plan::replay) fn compare(
                 FLAT_VIEW,
                 "ordinary plan history flat HIR retained slice"
             )?;
-            let items = flat.observations.items.as_slice();
-            let mut index = 0;
-            loop {
-                budget.charge(function, 1, "ordinary plan history HIR comparison")?;
-                paid!(
-                    budget,
-                    function,
-                    FLAT_MATCH,
-                    "ordinary plan history HIR cursor next"
-                )?;
-                match (
-                    lexical_plan_next!(
-                        owner,
-                        left_cursor,
-                        left_items,
-                        left_loaded,
-                        left_segments,
-                        plan_tail,
-                        census,
-                        function,
-                        budget,
-                        "ordinary plan history HIR cursor next"
-                    ),
-                    items.get(index),
-                ) {
-                    (Some(left), Some(right)) if left == right.as_ref() => {
-                        index += 1;
-                    }
-                    (None, None) => break,
-                    _ => {
-                        return Err(replay_error(
-                            function,
-                            "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
-                        ));
-                    }
-                }
-            }
+            let mut hir_items = flat.observations.items.as_slice();
+            final_affine_driver!(owner, plan_tail, census, function, budget, flat, hir_items);
         } else {
             budget.reserve_bytes(
                 function,
@@ -660,44 +634,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
             )?;
             let mut hir = skeleton_work::enumerated_prefix::Cursor::new();
             hir.prepare(&flat.observations, function, budget)?;
-            loop {
-                budget.charge(function, 1, "ordinary plan history HIR comparison")?;
-                paid!(
-                    budget,
-                    function,
-                    SHARED_MATCH,
-                    "ordinary plan history HIR cursor next"
-                )?;
-                budget.reserve_bytes(
-                    function,
-                    skeleton_work::enumerated_prefix::CURSOR_CALL,
-                    "ordinary PLAN shared HIR cursor next receivers",
-                )?;
-                match (
-                    lexical_plan_next!(
-                        owner,
-                        left_cursor,
-                        left_items,
-                        left_loaded,
-                        left_segments,
-                        plan_tail,
-                        census,
-                        function,
-                        budget,
-                        "ordinary plan history HIR cursor next"
-                    ),
-                    hir.next(function, budget)?,
-                ) {
-                    (Some(left), Some(right)) if left == right => {}
-                    (None, None) => break,
-                    _ => {
-                        return Err(replay_error(
-                            function,
-                            "cleanup CFG decision or ownership-event sequence disagrees with typed HIR",
-                        ));
-                    }
-                }
-            }
+            final_affine_driver!(owner, plan_tail, census, function, budget, shared, hir);
         }
         if path.terminal != flat.terminal {
             return Err(replay_error(

@@ -94,7 +94,8 @@ fn link_delta(old: &pair_scope_census::Row, r: &pair_scope_census::Row) -> (usiz
             + super::super::paired_tail_added(r)
             + PAYMENT_HEADER // actual reader's additional success-work site
             + super::super::reader_payload_added(r)
-            + selector_header + selector_payload,
+            + selector_header + selector_payload
+            + final_affine::delta(r).0,
         PAYMENT_HEADER
             + old_links * r.shared_links
             + old_boundary * r.shared_boundaries
@@ -105,7 +106,8 @@ fn link_delta(old: &pair_scope_census::Row, r: &pair_scope_census::Row) -> (usiz
                     + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
             + super::super::reader_removed(r)
             + removed_empty_probes
-            + removed_boundary_checks,
+            + removed_boundary_checks
+            + final_affine::delta(r).1,
     )
 }
 

@@ -44,14 +44,16 @@ fn delta(old: &pair_scope_census::Row, row: &pair_scope_census::Row) -> (usize, 
         + PAYMENT_HEADER
         + super::super::reader_payload_added(row)
         + selector_header
-        + selector_payload;
+        + selector_payload
+        + final_affine::delta(row).0;
     let removed = row.fused_turns
         * (super::super::legacy_matching()
             + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
         + super::super::reader_removed(row)
         + removed_empty_probes
         + removed_right_rest
-        + removed_boundary_checks;
+        + removed_boundary_checks
+        + final_affine::delta(row).1;
     (current, removed)
 }
 #[test]

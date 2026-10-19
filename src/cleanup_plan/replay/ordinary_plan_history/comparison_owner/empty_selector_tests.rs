@@ -113,8 +113,10 @@ fn report(old: &Run, current: &Run, label: &str) {
     assert_eq!(
         current.observed.2
             + probe * old.row.identity_empty_probes
-            + right_rest * current.row.shared_boundaries,
-        old.observed.2 + header + selector * current.row.empty_selectors,
+            + right_rest * current.row.shared_boundaries
+            + final_affine::delta(&current.row).1,
+        old.observed.2 + header + selector * current.row.empty_selectors
+            + final_affine::delta(&current.row).0,
         "complete real old/new bills: independent selector/header plus removed actual right-rest transport"
     );
     eprintln!(

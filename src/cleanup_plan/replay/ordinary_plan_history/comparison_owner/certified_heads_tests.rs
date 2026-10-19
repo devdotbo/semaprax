@@ -186,6 +186,7 @@ pub(super) fn heads_run_generation(
                     6 => before_main_b692::compare(function, &mut budget, actual, &expected),
                     7 => before_main487::compare(function, &mut budget, actual, &expected),
                     8 => before_empty_selector::compare(function, &mut budget, actual, &expected),
+                    9 => before_final_affine::compare(function, &mut budget, actual, &expected),
                     _ => unreachable!("closed test generations"),
                 }
             })();
@@ -339,13 +340,15 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
             + super::boundary_run_added(r)
             + super::paired_tail_added(r)
             + header
-            + super::reader_payload_added(r),
+            + super::reader_payload_added(r)
+            + final_affine::delta(r).0,
         old_step * r.certified_bases
             + old_load * r.certified_pops
             + matching * r.certified_firsts
             + r.shared_boundary_complete * (matching + 4 * old_step + 2 * old_load)
             + r.fused_turns * (matching + 2 * (old_step + paired_value::TAIL))
-            + super::reader_removed(r),
+            + super::reader_removed(r)
+            + final_affine::delta(r).1,
     )
 }
 fn observe_heads(
@@ -1428,3 +1431,6 @@ fn composed_main7e_and_certified_heads_keep_full_actual_invoices_both_hir_and_al
         }
     }
 }
+
+#[path = "final_affine_tests.rs"]
+mod final_affine_tests;

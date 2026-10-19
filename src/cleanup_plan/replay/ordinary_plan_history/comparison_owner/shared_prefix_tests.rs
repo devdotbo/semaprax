@@ -61,6 +61,7 @@ pub(super) fn added(r: &pair_scope_census::Row) -> usize {
         + paired_tail_added(r)
         + PAYMENT_HEADER
         + reader_payload_added(r)
+        + final_affine::delta(r).0
 }
 // Complete tail-fusion receiving roles. All counts are actual successful bank
 // admissions; complete-only removed packets are kept separately below.
@@ -160,6 +161,7 @@ pub(super) fn removed(r: &pair_scope_census::Row) -> usize {
         + r.shared_boundary_complete * (matching + 4 * (step + empty) + 2 * paired_value::LOAD)
         + r.fused_turns * (matching + 2 * (step + empty + paired_value::TAIL))
         + reader_removed(r)
+        + final_affine::delta(r).1
 }
 
 fn observation(n: usize, value: bool) -> Rc<SkeletonObservation> {

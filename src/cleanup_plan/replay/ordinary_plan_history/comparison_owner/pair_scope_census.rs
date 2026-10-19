@@ -33,6 +33,11 @@ pub(super) struct Row {
     pub pair_left_tails: usize,
     pub pair_right_tails: usize,
     pub pair_receivers: usize,
+    legacy_final: bool,
+    pub final_flat: usize,
+    pub final_shared: usize,
+    pub final_steps: usize,
+    pub final_tails: usize,
     pub steps: usize,
     pub shared_checks: usize,
     pub shared_patterns: usize,
@@ -95,6 +100,11 @@ const EMPTY: Row = Row {
     pair_left_tails: 0,
     pair_right_tails: 0,
     pair_receivers: 0,
+    legacy_final: false,
+    final_flat: 0,
+    final_shared: 0,
+    final_steps: 0,
+    final_tails: 0,
     steps: 0,
     shared_checks: 0,
     shared_patterns: 0,
@@ -140,6 +150,7 @@ thread_local! {
     static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, generation: 0, serial: 0, rows: [EMPTY; 128] }) };
     static LOST: Cell<usize> = const { Cell::new(0) };
     static UNWIND_TAIL: Cell<bool> = const { Cell::new(false) };
+    static UNWIND_FINAL: Cell<bool> = const { Cell::new(false) };
     static UNWIND_IDENTITY: Cell<bool> = const { Cell::new(false) };
 }
 fn lost() {
@@ -158,7 +169,11 @@ pub(super) fn maybe_unwind_tail_work() {
         ));
     }
 }
+pub(super) fn unwind_next_final_round() {
+    UNWIND_FINAL.with(|flag| flag.set(true));
+}
 pub(super) fn reset() {
+    UNWIND_FINAL.with(|flag| flag.set(false));
     UNWIND_TAIL.with(|flag| flag.set(false));
     UNWIND_IDENTITY.with(|flag| flag.set(false));
     LOST.with(|n| n.set(0));
@@ -363,7 +378,53 @@ impl Guard {
             None => r.overflow = true,
         });
     }
+    pub(super) fn legacy_final_flat(&self) {
+        self.final_flat();
+        self.update(|r| r.legacy_final = true);
+    }
+    pub(super) fn legacy_final_shared(&self) {
+        self.final_shared();
+        self.update(|r| r.legacy_final = true);
+    }
+    pub(super) fn final_flat(&self) {
+        self.update(|r| match r.final_flat.checked_add(1) {
+            Some(n) => r.final_flat = n,
+            None => r.overflow = true,
+        });
+        if UNWIND_FINAL.with(|flag| flag.replace(false)) {
+            std::panic::resume_unwind(Box::new("test-only unwind inside independent PLAN/HIR comparison"));
+        }
+    }
+    pub(super) fn final_shared(&self) {
+        self.update(|r| match r.final_shared.checked_add(1) {
+            Some(n) => r.final_shared = n,
+            None => r.overflow = true,
+        });
+        if UNWIND_FINAL.with(|flag| flag.replace(false)) {
+            std::panic::resume_unwind(Box::new("test-only unwind inside independent PLAN/HIR comparison"));
+        }
+    }
+    pub(super) fn final_step(&self) {
+        self.update(|r| match r.final_steps.checked_add(1) {
+            Some(n) => r.final_steps = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn final_tail(&self) {
+        self.update(|r| match r.final_tails.checked_add(1) {
+            Some(n) => r.final_tails = n,
+            None => r.overflow = true,
+        });
+    }
     pub(super) fn step(&self) {
+        self.update(|r| {
+            if r.legacy_final {
+                match r.final_steps.checked_add(1) {
+                    Some(n) => r.final_steps = n,
+                    None => r.overflow = true,
+                }
+            }
+        });
         self.update(|r| match r.steps.checked_add(1) {
             Some(n) => r.steps = n,
             None => r.overflow = true,
@@ -546,6 +607,14 @@ impl Guard {
         });
     }
     pub(super) fn tail(&self) {
+        self.update(|r| {
+            if r.legacy_final {
+                match r.final_tails.checked_add(1) {
+                    Some(n) => r.final_tails = n,
+                    None => r.overflow = true,
+                }
+            }
+        });
         self.update(|r| match r.tails.checked_add(1) {
             Some(n) => r.tails = n,
             None => r.overflow = true,
