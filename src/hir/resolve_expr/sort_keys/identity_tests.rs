@@ -204,9 +204,9 @@ fn complete_old_preparation_and_all_three_serializer_sources_remain_authenticate
     let body = old[start..end].replacen("fn prepare_sort_by(", "fn prepare_sort_by_original(", 1);
     assert_eq!(include_str!("identity_before.rs"), format!("//! Complete immediate preparation receiver; only its test-private name differs.\nuse super::*;\n\nimpl Resolver<'_, '_> {{\n{body}}}\n"));
     for (path, current) in [
-        ("src/vec_ops/sort_keys.rs", include_str!("../../../../vec_ops/sort_keys.rs")),
-        ("src/vec_ops/field_unique.rs", include_str!("../../../../vec_ops/field_unique.rs")),
-        ("src/vec_ops/field_update.rs", include_str!("../../../../vec_ops/field_update.rs")),
+        ("src/vec_ops/sort_keys.rs", include_str!("../../../vec_ops/sort_keys.rs")),
+        ("src/vec_ops/field_unique.rs", include_str!("../../../vec_ops/field_unique.rs")),
+        ("src/vec_ops/field_update.rs", include_str!("../../../vec_ops/field_update.rs")),
     ] {
         let row = proof["unchanged_serializers"].as_array().unwrap().iter().find(|row| row["source"] == path).unwrap();
         assert_eq!(sha(current.as_bytes()), row["sha256"].as_str().unwrap());
