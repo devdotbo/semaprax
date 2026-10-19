@@ -106,6 +106,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/source_reflows_merge/main_e177_historical_data.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_historical_data.rs")),
         "src/source_reflows_merge/main_e177_historical_data_tests.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_historical_data_tests.rs")),
         "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_fragments_v3.rs")),
+        "src/source_reflows_merge/main_e177_overlay_pins_v9.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_pins_v9.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs")),
         "src/workspace_graph/expected_projection/call_carriers.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_carriers.rs")),
