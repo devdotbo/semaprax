@@ -210,6 +210,19 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         "0abc67a67c5c22b175b81e2ef82e46206421f6a974fa772ea40de40181467dd2"
     );
     let current = ci_str!("../../../src/list_ops.rs");
+    // Authenticate the complete compiled generation before reversing only the
+    // retained-source profiling accessor; the original whole-file inverse below
+    // still reconstructs every pre-profile constructor byte.
+    assert_eq!(current, include_str!("../../../src/list_ops.rs"));
+    assert_eq!(
+        format!("{:x}", crate::digest_hex::LowerHex(<sha2::Sha256 as sha2::Digest>::digest(current.as_bytes()))),
+        "eaf364364d29ea595520b8390a195ddd947a9caab5969b5c86cf1cf6c1923ab2"
+    );
+    let profiled = "program.functions().profile_iter().any(function_uses)";
+    let ordinary = "program.functions().iter().any(function_uses)";
+    assert_eq!(current.matches(profiled).count(), 1);
+    let unprofiled = current.replacen(profiled, ordinary, 1);
+    let current = unprofiled.as_str();
     let start = current.find("pub(crate) fn is_list(").unwrap();
     let end = current
         .find("pub(crate) fn validate_declarations(")
