@@ -27,8 +27,10 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
@@ -114,8 +116,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 16328; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "4a2afe363442ed139c6c2ed42e561d265f5116ba0f9b9f5a92b80f98a41f78b6";
+const POLICY_LENGTH: usize = 16446; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "0d67b32fb31b7f7c5da3268a8b31ee11ff81e00965c497de4fff3393cc492fdf";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

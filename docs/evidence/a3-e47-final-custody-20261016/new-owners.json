@@ -261,8 +261,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",
-    "sha256": "0fb0e0b5e6fa8ae948bdcd68f441253e4314cd82ec77c48326b3d151e1c3889c",
-    "lines": 503
+    "sha256": "b6b728c5226cd8c7b6cac5e470a385095bb4f852e8f8879c5942145ace41466d",
+    "lines": 536
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/before.rs",
@@ -301,8 +301,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/tests.rs",
-    "sha256": "c60b4814141b9467b3dfcd22f496f918c24d871d2343c2388b3fccafcaee40c4",
-    "lines": 241
+    "sha256": "432c69e344c5748c134fd8a8ee80b4de7e1f39d5108c44a7ba88878eda9348d9",
+    "lines": 267
   },
   {
     "source": "src/cleanup_plan/replay/owned_suffix.rs",
@@ -516,8 +516,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
-    "sha256": "620ec9cd5b9519d9d0514ba6536f924d5a8e6f6ba7274ea8b6b887c1cddf490a",
-    "lines": 1154
+    "sha256": "98f113a569b64477ab45ee92c098718a210be1ff5df65b96fa38afa3f5fafe57",
+    "lines": 1155
   },
   {
     "source": "src/cleanup_plan/replay/skeleton_work/merge_keys.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "486efb588416b579c0dae16e62c6f6b03d625c0d02ea85ada8c4e00a4351fa2a",
-    "lines": 982
+    "sha256": "0a0a1363db7c6bf5459fac4aea1438f8d0dcb9f9d70d98b17c4ab9c0c043cc35",
+    "lines": 984
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",

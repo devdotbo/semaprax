@@ -1,5 +1,12 @@
 ## CI repair: preserve requested source views before older projections
 
+
+- Restore the complete flat cleanup-plan verifier as the ordinary default.
+  Keep the unqualified immutable-history optimization behind explicit scoped
+  unit-test selection; preserve its full producer, comparison and refusal
+  controls. This removes excessive history-comparison debit on ordinary I/O
+  and library projects without changing graph limits or semantic validation.
+
 - Keep historical compiled-source acquisition on its exact authenticated view before applying a Clippy predecessor, preserving the nondelegating membership boundary and all physical/compiled/archive equality checks.
 - Register the already existing frontier-test source as an additive compiled overlay subject with its complete original 54-row-table view; retain all prior 543 subjects, order, views, classifications, caps and hostile controls.
 - Refresh the same nine FINAL6 owner identities for the observation-storage repair without rerunning a completed source publisher.
