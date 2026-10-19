@@ -48,6 +48,8 @@ pub(super) struct Row {
     pub shared_turns: usize,
     pub loads: usize,
     pub identity_empty_probes: usize,
+    pub empty_selectors: usize,
+    pub empty_selector_skips: usize,
     pub identity_bodies: usize,
     pub identity_probes: usize,
     pub identity_detectors: usize,
@@ -108,6 +110,8 @@ const EMPTY: Row = Row {
     shared_turns: 0,
     loads: 0,
     identity_empty_probes: 0,
+    empty_selectors: 0,
+    empty_selector_skips: 0,
     identity_bodies: 0,
     identity_probes: 0,
     identity_detectors: 0,
@@ -467,6 +471,18 @@ impl Guard {
             None => r.overflow = true,
         });
     }
+    pub(super) fn empty_selector(&self) {
+        self.update(|r| match r.empty_selectors.checked_add(1) {
+            Some(n) => r.empty_selectors = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn empty_selector_skip(&self) {
+        self.update(|r| match r.empty_selector_skips.checked_add(1) {
+            Some(n) => r.empty_selector_skips = n,
+            None => r.overflow = true,
+        });
+    }
     pub(super) fn identity_empty_probe(&self) {
         self.update(|r| match r.identity_empty_probes.checked_add(1) {
             Some(n) => r.identity_empty_probes = n,
@@ -664,6 +680,36 @@ mod controls {
         assert!(lost_count > 0);
         assert!(rows.is_empty());
         TRACE.with(|t| t.borrow_mut().generation = 0);
+    }
+    #[test]
+    fn empty_selector_counter_overflow_is_incomplete_without_work_or_observation_authority() {
+        for skipped in [false, true] {
+            let function = fixture();
+            let budget = ReplayBudget::unobserved();
+            let remaining = budget.remaining;
+            reset();
+            let guard = begin(&function, &budget, false);
+            TRACE.with(|trace| {
+                let mut t = trace.borrow_mut();
+                if skipped {
+                    t.rows[0].empty_selector_skips = usize::MAX;
+                } else {
+                    t.rows[0].empty_selectors = usize::MAX;
+                }
+            });
+            if skipped {
+                guard.empty_selector_skip();
+            } else {
+                guard.empty_selector();
+            }
+            guard.success();
+            drop(guard);
+            let (rows, lost) = finish();
+            assert_eq!(lost, 0);
+            assert_eq!(rows.len(), 1);
+            assert!(rows[0].overflow && rows[0].ended && !rows[0].complete);
+            assert_eq!(budget.remaining, remaining);
+        }
     }
     #[test]
     fn prepared_link_counter_overflow_is_incomplete_and_does_not_spend_work() {
@@ -874,6 +920,8 @@ impl Drop for Scope {
             sum(|r| r.pair_left_tails),
             sum(|r| r.pair_right_tails),
             sum(|r| r.pair_receivers),
+            sum(|r| r.empty_selectors),
+            sum(|r| r.empty_selector_skips),
         ];
         eprintln!(
             "OPT487 reached borrowed-right step={:?} tail={:?} content={:?}; partial counts only, no shipping net claim",
@@ -937,7 +985,7 @@ impl Drop for Scope {
             lost
         );
         eprintln!(
-            "OPT899 suffix-component-only typed-invoice (excludes900902 cold/packet additions, first-head removals, pair-link/unit-driver and paired-tail changes) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
+            "OPT899 suffix-component-only typed-invoice (excludes905 selector and900902 cold/packet additions, first-head removals, pair-link/unit-driver and paired-tail changes) owner_current={} owner_before_identity={} cold_headers={} removed_per_G={} body_per_G={} event_per_Q={} probe={}; complete-only suffix-component delta=G*(removed_per_G-body_per_G)-M*(owner_current-owner_before_identity+cold_headers)-Q*event_per_Q-probes*probe; reachable primitive-site delta separate",
             size_of::<ComparisonOwner<'static>>(),
             size_of::<before_identity_prefix::ComparisonOwner<'static>>(),
             shared_prefix::OWNER,
@@ -979,6 +1027,19 @@ impl Drop for Scope {
                 row.tail_marks,
                 row.fused_turns,
                 row.tail_work,
+                row.complete,
+                row.ended,
+                row.unwound,
+                row.overflow
+            );
+            eprintln!(
+                "OPT905 row={} selector_admitted={} selector_skipped={} old_empty48_probes={} retained_nonempty_probes={} published_runs={} complete={} ended={} unwound={} overflow={}; actual admissions, prefix not net; selector1 is not old PROBE48",
+                row.invocation,
+                row.empty_selectors,
+                row.empty_selector_skips,
+                row.identity_empty_probes,
+                row.identity_probes,
+                row.shared_publishes,
                 row.complete,
                 row.ended,
                 row.unwound,

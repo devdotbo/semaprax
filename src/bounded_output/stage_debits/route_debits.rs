@@ -92,6 +92,7 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         | "ordinary plan certified boundary next links"
         | "ordinary plan certified boundary next view"
         | "ordinary plan certified boundary transition"
+        | "ordinary plan certified suffix empty selector"
         | "ordinary plan certified numeric run capture"
         | "ordinary plan certified numeric run turn"
         | "ordinary plan certified numeric run publication"
@@ -1166,7 +1167,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             suffix.matches("paid!(").count(),
             suffix.matches(".charge(").count()
         ),
-        (9, 12)
+        (10, 12)
     );
     assert_eq!(current.matches("fused_plan_tails!(").count(), 1);
     let right_calls = macro_arguments(current, "borrowed_right_value!(");
@@ -1189,16 +1190,16 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
 
     // Old loop: MATCH + four five-site producers + two first-work sites +
     // eight event/suffix sites. New loop: seven-site left + two old producers
-    // + fifteen-site right + eight numeric suffix sites + thirteen boundary sites.
+    // + fifteen-site right + nine numeric/selector sites + thirteen boundary sites.
     // These are real expansions, including every fallback and zero sentinel.
-    assert_eq!((7 + 2 * 5 + 15 + 8 + 13) - (1 + 4 * 5 + 2 + 8), 22);
+    assert_eq!((7 + 2 * 5 + 15 + 9 + 13) - (1 + 4 * 5 + 2 + 8), 23);
     // Tail selection/turn and three individual work sites are additive; no
     // existing reachable primitive bank is reduced or charged twice.
     assert_eq!(
-        22 + paired_tail.matches("paid!(").count()
+        23 + paired_tail.matches("paid!(").count()
             + paired_tail.matches(".charge(").count()
             + (2 - 1), // real right-success work expansions minus old common work site
-        28
+        29
     );
     for phase in phases(heads, "paid!(", 4)
         .into_iter()

@@ -29,7 +29,7 @@ fn heads_run(
         shape,
     )
 }
-fn heads_run_generation(
+pub(super) fn heads_run_generation(
     function: &ResolvedFunction,
     length: usize,
     depth: usize,
@@ -185,6 +185,7 @@ fn heads_run_generation(
                     5 => before_paired_tail::compare(function, &mut budget, actual, &expected),
                     6 => before_main_b692::compare(function, &mut budget, actual, &expected),
                     7 => before_main487::compare(function, &mut budget, actual, &expected),
+                    8 => before_empty_selector::compare(function, &mut budget, actual, &expected),
                     _ => unreachable!("closed test generations"),
                 }
             })();
@@ -326,7 +327,7 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
         "foreign right views retain the complete old STEP and LOAD, including empty segments"
     );
     (
-        22 * header
+        23 * header
             + 2 * paired_value::LINK_VIEW * r.pairs
             + base * r.certified_bases
             + pop * r.certified_pops
@@ -334,6 +335,7 @@ fn invoice(r: &pair_scope_census::Row) -> (usize, usize) {
             + view * r.certified_views
             + rhs * r.certified_rhs_assignments
             + first * r.certified_firsts
+            + size_of::<bool>() * r.empty_selectors
             + super::boundary_run_added(r)
             + super::paired_tail_added(r)
             + header
@@ -482,7 +484,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     assert_eq!(
                         current.observed.2,
                         old.observed.2
-                            + 22 * PAYMENT_HEADER
+                            + 23 * PAYMENT_HEADER
                             + 2 * paired_value::LINK_VIEW * current.row.pairs
                             + super::boundary_run_added(&current.row)
                             + super::paired_tail_added(&current.row)
@@ -513,7 +515,7 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                     "OPT900902 length={length} depth={depth} shared={shared} shape={shape} hir_shared={hir_shared} old_d458={} current={} cold={} base={} pop={} view={} head={} rhs={} first={} old_Q={} current_Q={} G={} H={}; full individual work and Drop; source candidate only, no shipping gain claim",
                     old.observed.2,
                     current.observed.2,
-                    22 * PAYMENT_HEADER + 2 * paired_value::LINK_VIEW * current.row.pairs,
+                    23 * PAYMENT_HEADER + 2 * paired_value::LINK_VIEW * current.row.pairs,
                     current.row.certified_bases,
                     current.row.certified_pops,
                     current.row.certified_views,
@@ -1050,7 +1052,9 @@ fn certified_heads_versioned_mixed_limits_expose_work_before_removed_physical_ma
         .iter()
         .find(|e| {
             e.phase == "ordinary plan history paired cursor next"
-                && e.after == e.before.checked_add(paired_value::STEP + paired_value::EMPTY)
+                && e.after
+                    == e.before
+                        .checked_add(paired_value::STEP + paired_value::EMPTY)
         })
         .expect("the actual current left STEP follows its unchanged forward-work frontier");
     let mut changed_priority = false;

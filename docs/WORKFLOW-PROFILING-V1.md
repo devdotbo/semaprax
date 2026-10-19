@@ -183,3 +183,14 @@ The feature-only native Normalizer owner uses the exact six application and six
 standard-library sources through public semantic-workspace initialization at
 its unchanged default 64MiB cap. It reports an actual refusal without relabelling
 that refusal as successful application qualification.
+
+The #905 suffix selector appends `EmptySelectorAdmitted` and
+`EmptySelectorSkipped` to the existing closed comparator-site sequence; earlier
+site indices and meanings remain unchanged. The former records only an actually
+admitted `size_of::<bool>()` bank, the latter the ensuing structural empty
+branch with zero admitted bytes. The old `IdentityEmptyProbe` remains the
+original full-PROBE empty-branch event for independently compiled old callers;
+it is not reused for the cheaper selector. Nonempty shipping runs still report
+their full retained `IdentityProbeAdmitted` bank. These additive counts retain
+the same fixed capture, overflow, partial-prefix and source-binding rules and
+supply no admission or whole-net conclusion by themselves.

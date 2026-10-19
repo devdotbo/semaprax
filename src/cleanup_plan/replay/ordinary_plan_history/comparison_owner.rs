@@ -14,6 +14,9 @@ mod shared_prefix;
 mod certified_heads;
 #[cfg(test)]
 #[rustfmt::skip]
+mod before_empty_selector;
+#[cfg(test)]
+#[rustfmt::skip]
 mod before_paired_tail;
 #[cfg(test)]
 #[rustfmt::skip]

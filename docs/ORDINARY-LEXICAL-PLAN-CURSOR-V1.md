@@ -459,3 +459,54 @@ physical exact/short/zero/floor/sticky and full Drop controls cover both HIR
 representations. Feature capture counts actual reader events and partial
 admissions. No net, RSS, or application-admission claim follows before the
 combined final-source qualification and matched whole-caller measurements.
+
+## Certified suffix empty selector (#905)
+
+The two lexical certificate exits still establish the same immutable post-head
+slice on both sides. The shipping suffix first acquires `size_of::<bool>()`
+for one direct place-pattern `if let [] = owner.left_items`. There is no copied
+slice, method receiver, result transport, cached verdict or new owner field.
+An empty certificate advances to the enclosing paired loop; it never publishes
+terminal equality. That loop still performs tail selection, next-boundary
+validation, ordinary fallback and the original two-producer terminal comparison.
+One-sided, foreign-ID, foreign-empty, already-loaded-right and malformed cases
+retain their original routes and all original tariffs.
+
+A nonempty suffix retains the complete old 48-byte-on-64-bit PROBE envelope
+conservatively before the unchanged numeric capture and driver. Its five
+individual fallible work calls, observations and delayed publication retain
+exact order. After RUN_PUBLISH successfully writes both slices to `&[]`, the
+lexical continuation advances directly to the paired loop. It does not form or
+pay another empty pattern probe. A refused capture, work request or publication
+returns immediately with the original sticky failure and ordinary owned Drop.
+The loaded-empty next-segment branch retains all seven original individual work
+calls and state effects verbatim.
+
+The actual caller has one suffix expansion after its common certificate block.
+The added selector reserve is one actual primitive/header site, independently
+counted by the expanded source census: certified OWNER 22 to 23 headers and the
+combined later-site total 28 to 29. Every pre-existing bank remains unchanged.
+The selector is prepaid before the new boolean. With sufficient physical bytes,
+all original work-cut diagnostics, remaining work, swaps and complete behavior
+are preserved. Mixed physical/work limits intentionally have different first
+refusal frontiers: the selector can refuse before the old PROBE, while an absent
+terminal PROBE cannot refuse after successful publication. No parity claim is
+made for intermediate private numeric cursor publication on refusal.
+
+Actual admitted selectors and actual empty-selector skips have separate checked
+census fields and append-only optional feature sites; neither is labelled an old
+48-byte empty probe. On complete matched calls, let E be admitted selectors,
+Z old empty probes, and M admitted invocation owners. The independently typed
+whole-comparator equation is `current + Z*PROBE = old + M*PAYMENT_HEADER +
+E*size_of::<bool>()`. Complete old/current invoices retain tiny/cold losses and
+allocation metrics through full Drop. Partial work/body/admission prefixes must
+not be substituted into that complete equation. The entire immediate7760 caller
+and its four local macro modules remain independently compiled, with namespace
+only whole-source reconstruction to their immutable original bytes; all older
+oracles and hostile controls remain intact.
+
+The unchanged32-row whole-caller and real application gates remain separate.
+A reached-prefix component reduction, source proof or favorable complete unit
+comparison does not close #892, establish application admission at 64MiB, or
+claim allocator/RSS, compile-time or token savings. Runtime qualification of this
+source candidate is pending the focused batch.

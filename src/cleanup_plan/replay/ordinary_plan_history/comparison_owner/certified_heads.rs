@@ -2,9 +2,12 @@
 use super::{Ordering, PAYMENT_HEADER, Rc, Segment, SkeletonObservation, size_of};
 // Additional actual reserve/work sites relative to the complete d458 owner:
 // split right producer +4, relocated MATCH +3, first-head certificate +1.
-pub(super) const OWNER: usize = 22 * PAYMENT_HEADER;
+pub(super) const OWNER: usize = 23 * PAYMENT_HEADER;
+// One place-pattern boolean. No copied slice, receiver call or saved verdict.
+pub(super) const EMPTY_SELECT: usize = size_of::<bool>();
 // Additional actual sites beyond the first-head split: thirteen boundary
-// sites (six payments and seven work calls), and one numeric-driver payment.
+// sites (six payments and seven work calls), one numeric-driver payment,
+// and one empty-selector payment at the sole common suffix expansion.
 pub(super) const BOUNDARY_CHECK: usize = 3 * size_of::<bool>();
 pub(super) const BOUNDARY_EMPTY: usize = size_of::<bool>();
 pub(super) const BOUNDARY_LINKS: usize =
@@ -362,7 +365,23 @@ macro_rules! certified_left_value {
 // or the direct loaded-empty boundary. No link, flag or certificate is stored.
 macro_rules! certified_suffix {
     ($owner:ident, $function:ident, $budget:ident, $census:ident, $paired:lifetime) => {{
-        loop {
+        paid!($budget, $function, certified_heads::EMPTY_SELECT,
+            "ordinary plan certified suffix empty selector")?;
+        #[cfg(test)] $census.empty_selector();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        $crate::workflow_profile::plan_comparison::event(
+            $crate::workflow_profile::plan_comparison::Site::EmptySelectorAdmitted,
+            certified_heads::EMPTY_SELECT);
+        if let [] = $owner.left_items {
+            #[cfg(test)] $census.empty_selector_skip();
+            #[cfg(feature = "unstable-workflow-profiling")]
+            $crate::workflow_profile::plan_comparison::event(
+                $crate::workflow_profile::plan_comparison::Site::EmptySelectorSkipped, 0);
+            // The entry certificate proves the right suffix is the same slice.
+            // Advance both ordinary producers; this is NOT terminal equality.
+            continue $paired;
+        }
+        {
             paid!($budget, $function, shared_prefix::PROBE,
                 "ordinary plan shared suffix pattern probe")?;
             #[cfg(test)] $census.identity_probe();
@@ -370,8 +389,6 @@ macro_rules! certified_suffix {
             $crate::workflow_profile::plan_comparison::event(
                 $crate::workflow_profile::plan_comparison::Site::IdentityProbeAdmitted,
                 shared_prefix::PROBE);
-            match $owner.left_items {
-                [_, ..] => {
                     paid!($budget, $function, certified_heads::RUN_CAPTURE,
                         "ordinary plan certified numeric run capture")?;
                     #[cfg(test)] $census.shared_runs();
@@ -441,16 +458,9 @@ macro_rules! certified_suffix {
                     $owner.left_cursor.item += shared_length;
                     $owner.right_cursor.item += shared_length;
                     $owner.ordering = Ordering::Equal;
-                }
-                [] => {
-                    #[cfg(test)] $census.identity_empty_probe();
-                    #[cfg(feature = "unstable-workflow-profiling")]
-                    $crate::workflow_profile::plan_comparison::event(
-                        $crate::workflow_profile::plan_comparison::Site::IdentityEmptyProbe, 0);
-                    break;
-                }
-            }
         }
+        // Publication has set BOTH retained slices to &[]; no second pattern,
+        // probe, work, or result is needed to advance the ordinary producers.
         continue $paired;
     }};
 }

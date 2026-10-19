@@ -40,7 +40,7 @@ pub(super) fn reader_removed(r: &pair_scope_census::Row) -> usize {
 pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     let setup = size_of::<ComparisonOwner<'static>>()
         - size_of::<before_identity_prefix::ComparisonOwner<'static>>()
-        + (15 + 22) * PAYMENT_HEADER
+        + (15 + 23) * PAYMENT_HEADER
         + 2 * paired_value::LINK_VIEW * r.pairs;
     let event = 2 * size_of::<usize>() + size_of::<bool>();
     let probe = 3 * size_of::<&[Rc<SkeletonObservation>]>();
@@ -49,6 +49,7 @@ pub(super) fn added(r: &pair_scope_census::Row) -> usize {
     setup
         + event * r.identity_detectors
         + probe * r.identity_probes
+        + size_of::<bool>() * r.empty_selectors
         + body * r.identity_bodies
         + certified_heads::BASE * r.certified_bases
         + certified_heads::POP * r.certified_pops
@@ -510,17 +511,17 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 current.row.identity_observations + current.row.shared_runs
             );
             assert_eq!(current.row.identity_bodies, 0);
+            assert_eq!(current.row.identity_empty_probes, 0);
+            assert_eq!(
+                current.row.empty_selector_skips + current.row.shared_runs,
+                current.row.empty_selectors
+            );
             assert_eq!(current.row.shared_publishes, current.row.shared_runs);
             assert_eq!(
-                current.row.identity_empty_probes,
+                current.row.empty_selectors,
                 current.row.identity_hits + current.row.shared_boundary_complete
             );
-            assert_eq!(
-                current.row.identity_probes,
-                current.row.shared_runs
-                    + current.row.identity_hits
-                    + current.row.shared_boundary_complete
-            );
+            assert_eq!(current.row.identity_probes, current.row.shared_runs);
             assert_eq!(
                 (
                     current.row.identity_captures,
@@ -1107,3 +1108,6 @@ mod event_suffix_tests;
 
 #[path = "certified_heads_tests.rs"]
 mod certified_head_tests;
+
+#[path = "empty_selector_tests.rs"]
+mod empty_selector_tests;
