@@ -16,6 +16,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
     "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
@@ -56,6 +57,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/semantic_refusal/tests.rs",
     "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs",
     "src/cleanup_plan/replay/structural_control/calls.rs",
+    "src/diagnostic/before_writer.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
@@ -266,8 +268,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 94291; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "38f4a0d12b03ca6f8eedc876c6267fa7f983c360ac18b5fbc11f54544471e90b";
+const POLICY_LENGTH: usize = 94405; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "1cf872dab37ad2e24c062262b1627d795f0ffbee0f58400f765235f4713dfe0c";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
