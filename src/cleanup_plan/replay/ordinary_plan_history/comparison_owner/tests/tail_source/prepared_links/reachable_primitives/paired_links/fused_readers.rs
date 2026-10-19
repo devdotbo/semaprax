@@ -1,4 +1,5 @@
 //! Complete immediate fused-reader source inverses; no prior checks removed.
+mod independent_segments;
 fn restore(current: &str, before: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(current.len(), length, "unknown fused-reader subject extent");
     let mut result = current.to_owned();
@@ -19,6 +20,9 @@ fn restore(current: &str, before: &str, length: usize, edits: &[(usize, &str, &s
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    previous_owner_before_independent(&independent_segments::previous_owner(current))
+}
+fn previous_owner_before_independent(current: &str) -> String {
     restore(
         current,
         include_str!(concat!(
@@ -38,6 +42,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (15182, "                    'paired_observations: loop {\n", "                    loop {\n"),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_before_independent(&independent_segments::previous_macro(current))
+}
+fn previous_macro_before_independent(current: &str) -> String {
     restore(
         current,
         include_str!(concat!(
@@ -59,6 +66,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (261, "// Two final-HIR readers and three paired branches each retain every work site.\n// The paired branches transport plain immutable Rc loans without Option outputs.\n", "// Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    previous_census_before_independent(&independent_segments::previous_census(current))
+}
+fn previous_census_before_independent(current: &str) -> String {
     restore(
         current,
         include_str!(concat!(
@@ -77,6 +87,9 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (592, "    pub pair_left_steps: usize,\n    pub pair_right_steps: usize,\n    pub pair_left_tails: usize,\n    pub pair_right_tails: usize,\n    pub pair_receivers: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    previous_pair_tests_before_independent(&independent_segments::previous_pair_tests(current))
+}
+fn previous_pair_tests_before_independent(current: &str) -> String {
     restore(
         current,
         include_str!(concat!(
@@ -95,6 +108,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (7288, "    let (reader_removed, reader_retained) = fused_reader_prices(paths, row);\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    previous_route_before_independent(&independent_segments::previous_route(current))
+}
+fn previous_route_before_independent(current: &str) -> String {
     restore(
         current,
         include_str!(concat!(

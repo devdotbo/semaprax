@@ -11,7 +11,7 @@ use super::*;
 // payload payment and three work sites, each with a complete primitive frame.
 // The fused fallback replaces two readers with left/right-some/right-none readers:
 // five extra primitive sites, separately funded even for mutually exclusive arms.
-pub(super) const PRIMITIVE_FRAMES: usize = 51 * PAYMENT_HEADER;
+pub(super) const PRIMITIVE_FRAMES: usize = 59 * PAYMENT_HEADER;
 pub(super) const SINGLE_PRIMITIVE_FRAMES: usize = 5 * PAYMENT_HEADER;
 // Before inspecting the already-funded owner length, fund the new payment
 // site's complete primitive frame, match/local usize receivers and both
@@ -228,7 +228,7 @@ macro_rules! remember_plan_segment {
 // remains separately paid before formation. No observation Option/tuple/cmp
 // payload is formed on this branch. Original left-before-right work is exact.
 macro_rules! shared_plan_pair_step {
-    ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident, $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident, $phase:literal) => {
+    ($owner:ident, $left_path:ident, $right_path:ident, $left_tail:ident, $right_tail:ident, $left_links:ident, $right_links:ident, $census:ident, $function:ident, $budget:ident, $pair_loop:lifetime, $phase:literal) => {
         paid!($budget, $function, 3 * size_of::<bool>(), $phase)?;
         #[cfg(test)]
         $census.mask_checks();
@@ -266,6 +266,9 @@ macro_rules! shared_plan_pair_step {
                 {
                     shared_plan_segment_run!($owner, $census, $function, $budget, $phase);
                 }
+                independent_plan_segment_run!(
+                    $owner, $census, $function, $budget, $pair_loop, $phase
+                );
             } else {
                 shared_plan_boundary!(
                     $owner,
@@ -277,6 +280,86 @@ macro_rules! shared_plan_pair_step {
                     $phase
                 );
             }
+        }
+    };
+}
+
+// Compare already-loaded immutable segments without rebuilding the normal
+// cursor transport or sharing decisions for each interior observation. Every
+// original semantic work request remains in its original order.
+pub(super) const INDEPENDENT_RUN_SETUP: usize =
+    RUN_SETUP + 2 * size_of::<&[Rc<SkeletonObservation>]>() + size_of::<[usize; 8]>();
+pub(super) const INDEPENDENT_RUN_PAYLOAD: usize = 2 * size_of::<&Rc<SkeletonObservation>>()
+    + 4 * size_of::<&[Rc<SkeletonObservation>]>()
+    + 4 * size_of::<&Rc<SkeletonObservation>>()
+    + 2 * size_of::<&SkeletonObservation>()
+    + 4 * size_of::<&SkeletonObservation>()
+    + 2 * size_of::<usize>()
+    + 4 * size_of::<Ordering>()
+    + 3 * size_of::<bool>();
+macro_rules! independent_plan_segment_run {
+    ($owner:ident, $census:ident, $function:ident, $budget:ident, $pair_loop:lifetime, $phase:literal) => {
+        paid!($budget, $function, 3 * size_of::<bool>(), $phase)?;
+        #[cfg(test)]
+        $census.independent_checks();
+        if matches!($owner.left_items, [_, _, _, _, ..])
+            && matches!($owner.right_items, [_, _, _, _, ..])
+        {
+            paid!(
+                $budget,
+                $function,
+                lexical_cursor::INDEPENDENT_RUN_SETUP,
+                $phase
+            )?;
+            #[cfg(test)]
+            $census.independent_runs();
+            let paired_length = $owner.left_items.len().min($owner.right_items.len());
+            let paired_work_driver: lexical_cursor::SharedUnitDriver =
+                std::iter::repeat(()).take(paired_length);
+            for () in paired_work_driver {
+                paid!(
+                    $budget,
+                    $function,
+                    lexical_cursor::INDEPENDENT_RUN_PAYLOAD,
+                    $phase
+                )?;
+                #[cfg(test)]
+                $census.independent_turns();
+                $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                #[cfg(test)]
+                $census.step();
+                $budget.charge(
+                    $function,
+                    1,
+                    "ordinary plan history forward segment traversal",
+                )?;
+                let [left, left_rest @ ..] = $owner.left_items else {
+                    unreachable!("immutable prepared left segment length")
+                };
+                $owner.left_items = left_rest;
+                $owner.left_cursor.item += 1;
+                $budget.charge($function, 1, "ordinary plan history forward cursor step")?;
+                #[cfg(test)]
+                $census.step();
+                $budget.charge(
+                    $function,
+                    1,
+                    "ordinary plan history forward segment traversal",
+                )?;
+                let [right, right_rest @ ..] = $owner.right_items else {
+                    unreachable!("immutable prepared right segment length")
+                };
+                $owner.right_items = right_rest;
+                $owner.right_cursor.item += 1;
+                $owner.ordering = left.as_ref().cmp(right.as_ref());
+                if $owner.ordering != Ordering::Equal {
+                    break $pair_loop;
+                }
+                $budget.charge($function, 1, "ordinary plan history observation comparison")?;
+                #[cfg(test)]
+                $census.round();
+            }
+            continue;
         }
     };
 }

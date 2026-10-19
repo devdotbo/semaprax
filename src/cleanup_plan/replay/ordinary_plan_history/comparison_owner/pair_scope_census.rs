@@ -31,6 +31,9 @@ pub(super) struct Row {
     pub shared_links: usize,
     pub shared_queries: usize,
     pub shared_boundaries: usize,
+    pub independent_checks: usize,
+    pub independent_runs: usize,
+    pub independent_turns: usize,
     pub shared_runs: usize,
     pub shared_turns: usize,
     pub loads: usize,
@@ -69,6 +72,9 @@ const EMPTY: Row = Row {
     shared_links: 0,
     shared_queries: 0,
     shared_boundaries: 0,
+    independent_checks: 0,
+    independent_runs: 0,
+    independent_turns: 0,
     shared_runs: 0,
     shared_turns: 0,
     loads: 0,
@@ -303,6 +309,24 @@ impl Guard {
     pub(super) fn shared_boundaries(&self) {
         self.update(|r| match r.shared_boundaries.checked_add(1) {
             Some(n) => r.shared_boundaries = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn independent_checks(&self) {
+        self.update(|r| match r.independent_checks.checked_add(1) {
+            Some(n) => r.independent_checks = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn independent_runs(&self) {
+        self.update(|r| match r.independent_runs.checked_add(1) {
+            Some(n) => r.independent_runs = n,
+            None => r.overflow = true,
+        });
+    }
+    pub(super) fn independent_turns(&self) {
+        self.update(|r| match r.independent_turns.checked_add(1) {
+            Some(n) => r.independent_turns = n,
             None => r.overflow = true,
         });
     }

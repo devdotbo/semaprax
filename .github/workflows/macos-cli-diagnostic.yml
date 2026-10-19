@@ -181,7 +181,8 @@ jobs:
           selector="hir::validation::iterative_while_admission_tests::exact_512_nested_indexed_matches_validate_on_a_low_stack"
           out=root/"diagnostic-linux-stack"
           out.mkdir()
-          commands=["gdb","--batch","--nx","--nh","-ex","set pagination off","-ex","set confirm off","-ex","set debuginfod enabled off","-ex","set auto-load off","-ex","set style enabled off","-ex","set print frame-arguments none","-ex","handle SIGSEGV stop print nopass","-ex","handle SIGABRT stop print nopass","-ex","run","-ex","thread apply all bt 48","-ex","info registers rsp rbp rax rip","-ex","x/12i $pc-16","-ex","quit","--args",str(binary),selector,"--exact","--nocapture","--test-threads=1"]
+          frame_sizes="python f=gdb.newest_frame(); exec('for i in range(48):\\n if f is None: break\\n print(\"unwind-sp\",i,f.name(),hex(int(f.read_register(\"sp\"))))\\n f=f.older()')"
+          commands=["gdb","--batch","--nx","--nh","-ex","set pagination off","-ex","set confirm off","-ex","set debuginfod enabled off","-ex","set auto-load off","-ex","set style enabled off","-ex","set print frame-arguments none","-ex","handle SIGSEGV stop print nopass","-ex","handle SIGABRT stop print nopass","-ex","run","-ex","thread apply all bt 48","-ex",frame_sizes,"-ex","info registers rsp rbp rax rip","-ex","x/12i $pc-16","-ex","quit","--args",str(binary),selector,"--exact","--nocapture","--test-threads=1"]
           with (out/"stack.log").open("wb") as stream:
               result=subprocess.run(commands,stdout=stream,stderr=subprocess.STDOUT,timeout=120,check=False)
           log=(out/"stack.log").read_text(errors="replace")

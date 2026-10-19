@@ -871,7 +871,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
     ));
     let direct = phases(owner, "paid!(", &[4]);
     let forwarded = phases(owner, "lexical_plan_next!(", &[4, 10, 12]);
-    let shared = phases(owner, "shared_plan_pair_step!(", &[11]);
+    let shared = phases(owner, "shared_plan_pair_step!(", &[12]);
     assert_eq!(
         (direct.len(), forwarded.len(), shared.len()),
         (12, 4, 1),
@@ -885,9 +885,10 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
     let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 24, "audit every generic payment site");
+    assert_eq!(sites.len(), 27, "audit every generic payment site");
     assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
     assert_eq!(lexical.matches("shared_plan_segment_run!(").count(), 1);
+    assert_eq!(lexical.matches("independent_plan_segment_run!(").count(), 1);
     assert_eq!(lexical.matches("paired_plan_tails!(").count(), 1);
     assert_eq!(lexical.matches("remember_plan_tail!(").count(), 3);
     let compact: String = lexical.split_whitespace().collect();
@@ -905,6 +906,7 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             .count(),
         1
     );
+    assert_eq!(compact.matches("independent_plan_segment_run!($owner,$census,$function,$budget,$pair_loop,$phase);").count(), 1);
     for (at, _) in sites {
         let body = &lexical[at + "paid!(".len()..];
         let end = body.find(")?;").expect("unknown generic payment shape");

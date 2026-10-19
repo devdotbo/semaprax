@@ -1,5 +1,7 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
 use super::*;
+#[path = "pair_scope_tests/paired_segments.rs"]
+mod paired_segments;
 #[path = "pair_scope_tests/paired_tails.rs"]
 mod paired_tails;
 use crate::bounded_output::with_limit_usage_refusal;
@@ -118,6 +120,15 @@ fn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize)
     )
 }
 fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
+    // The original equation quotes the preceding physical receiver counts.
+    // Actual diagnostic rows stay untouched; this copy is only an invoice
+    // operand, checked against the complete compiled immediate predecessor.
+    let previous = paired_segments::predecessor_price_counts(row);
+    let (removed, retained) = shared_step_prices_before(paths, &previous);
+    let (next_removed, next_retained) = paired_segments::prices(paths, row);
+    (removed + next_removed, retained + next_retained)
+}
+fn shared_step_prices_before(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
     let header = 2 * size_of::<&ResolvedFunction>()
         + 2 * size_of::<&mut ReplayBudget>()
         + 2 * size_of::<&str>()

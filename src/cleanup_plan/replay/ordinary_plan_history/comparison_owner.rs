@@ -8,6 +8,8 @@ mod before_lexical_cursor;
 mod before_pair_scope;
 #[cfg(test)]
 mod pair_scope_census;
+#[cfg(test)]
+pub(super) mod paired_segments_before;
 
 #[derive(Clone, Copy)]
 enum Step {
@@ -352,6 +354,7 @@ pub(in crate::cleanup_plan::replay) fn compare(
                             census,
                             function,
                             budget,
+                            'paired_observations,
                             "ordinary plan history paired cursor next"
                         );
                         lexical_plan_next!(
