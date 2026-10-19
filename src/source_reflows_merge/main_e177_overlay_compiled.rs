@@ -1,5 +1,12 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/bounded_output/exclusive_debits.rs" => Some(include_str!("../../src/bounded_output/exclusive_debits.rs")),
+        "src/hir/ids/lowering_identity_tests.rs" => Some(include_str!("../../src/hir/ids/lowering_identity_tests.rs")),
+        "src/hir/owned_collection_record/identity_before.rs" => Some(include_str!("../../src/hir/owned_collection_record/identity_before.rs")),
+        "src/hir/resolve_expr/sort_keys/identity_before.rs" => Some(include_str!("../../src/hir/resolve_expr/sort_keys/identity_before.rs")),
+        "src/hir/resolve_expr/sort_keys/identity_tests.rs" => Some(include_str!("../../src/hir/resolve_expr/sort_keys/identity_tests.rs")),
+        "src/hir/resolve_for/identity_before.rs" => Some(include_str!("../../src/hir/resolve_for/identity_before.rs")),
+        "src/hir/resolve_for_own/identity_before.rs" => Some(include_str!("../../src/hir/resolve_for_own/identity_before.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs")),
