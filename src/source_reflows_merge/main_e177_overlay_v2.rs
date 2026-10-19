@@ -45,9 +45,12 @@ const REPLACEMENTS: &[&str] = &[
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows_merge/final_ready_inputs.rs",
     "src/source_reflows_merge/main_eb2_inputs.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
+    "tests/doctor_production_provisioner_v1.rs",
+    "tests/quality_routing.rs",
     "tests/support/production_source_inventory.rs",
     "tests/wasm/scalar_browser_ci_contract.rs",
     "tests/wasm/scalar_browser_ci_contract/historical_builder.rs",
@@ -110,8 +113,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 16167; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "fb3ee7941b86c68f2b02ef0404576c17e7af1f0395d9736fe3d0e458f6eacf9a";
+const POLICY_LENGTH: usize = 16287; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "d8fedb1baee7df37623e397bf95ca1d802f829ec32074240a7d1f5c9eedcc05c";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

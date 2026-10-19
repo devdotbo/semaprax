@@ -174,7 +174,11 @@ fn projection344_stage(supplied: &str) -> String {
         "ab922dd2f58ea4dc32b7e5ddfbae934a8353b7fe9eefbb2927414cbbdf7e4b3b"
     );
     let read = |path: &str, length: usize, sha: &str| {
-        reader::read(&root.join(path), length, sha, 2_097_152).unwrap()
+        reader::read(&root.join(path), length, sha, 2_097_152)
+            .or_else(|error| {
+                super::main_e177_final_inputs::file(&root.join(path), length, sha).ok_or(error)
+            })
+            .unwrap()
     };
     assert_eq!(
         read(
@@ -188,6 +192,20 @@ fn projection344_stage(supplied: &str) -> String {
     assert_eq!(
         row["schema"],
         "semaprax.current339.projection344-whole-stage.v1"
+    );
+    let image = |name: &str| {
+        let view = &row[name];
+        read(
+            view["archive"].as_str().unwrap(),
+            view["length"].as_u64().unwrap() as usize,
+            view["sha256"].as_str().unwrap(),
+        )
+    };
+    let current = image("current");
+    let previous = image("prior");
+    assert!(
+        supplied == current || supplied == previous,
+        "foreign historical projection input"
     );
     let carrier = &row["carrier"];
     let carrier_path = root.join(carrier["source"].as_str().unwrap());
@@ -219,23 +237,9 @@ fn projection344_stage(supplied: &str) -> String {
             ));
         }
     }
-    let image = |name: &str| {
-        let view = &row[name];
-        read(
-            view["archive"].as_str().unwrap(),
-            view["length"].as_u64().unwrap() as usize,
-            view["sha256"].as_str().unwrap(),
-        )
-    };
-    let current = image("current");
-    let previous = image("prior");
     assert_eq!(
         actual, current,
         "every current projection source and literal in owning macro order"
-    );
-    assert!(
-        supplied == current || supplied == previous,
-        "foreign historical projection input"
     );
     previous
 }

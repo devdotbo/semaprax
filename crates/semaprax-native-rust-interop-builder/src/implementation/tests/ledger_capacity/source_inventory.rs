@@ -9,7 +9,20 @@ macro_rules! held_call_profile_source_inventory {
             include_str!("../../../../../src/hir/validation/executable_profiles/before_812.rs"),
             include_str!("../../../../../src/hir/validation/call_parameters/before_812.rs"),
             include_str!("../../../../../src/hir/validation/call_parameters/held_tests.rs"),
-        )
+        include_str!("../../../../../src/bounded_output/stage_debits/route_debits/json_codec_probe.rs"),include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_segments_before.rs"),include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests/paired_segments.rs"),include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests/paired_tails.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/independent_segments.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"),
+include_str!("../../../../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs"))
     };
 }
 // Complete additive source union; original receivers included without slicing.

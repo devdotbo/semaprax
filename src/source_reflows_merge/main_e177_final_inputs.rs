@@ -954,7 +954,7 @@ fn combined_side_actual(row: &serde_json::Value) -> String {
     let compiled = value_direct(
         source,
         current["sha256"].as_str().unwrap(),
-        &clippy_stage::normalize(source, combined_side_compiled(source).unwrap()),
+        combined_side_compiled(source).unwrap(),
     );
     assert_eq!(
         actual, compiled,
