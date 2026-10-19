@@ -301,6 +301,9 @@ mod tests {
 "####;
         assert_eq!(restored.matches(context_reader).count(), 1);
         restored = restored.replacen(context_reader, "", 1);
+        let v9_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V9 {\n        let expanded = fragments_v3::expand_v9(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V8 {";
+        assert_eq!(restored.matches(v9_dispatch).count(), 1);
+        restored = restored.replacen(v9_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {", 1);
         let v8_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {\n        let expanded = fragments_v3::expand_v8(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V7 {";
         assert_eq!(restored.matches(v8_dispatch).count(), 1);
         restored = restored.replacen(v8_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {", 1);
