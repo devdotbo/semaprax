@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "45fc039282edf7daf49f5fa9ed321173e7375fa389f2a8c61f0b920c286d3a1c",
+    "sha256": "c2547c14f52e1a82c400d4093936e886f491d891ed987150a34eea4669f9ebdd",
     "lines": 1235
   },
   {
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "6a7b33d321c1b3679b57a350c29a2bdf8f5dcc0b87dd63ce811bca768620a9fe",
-    "lines": 1411
+    "sha256": "1bb968f42c69e8f9799f4766f69bb6d483601a8ee9ade8fa8f3173680c919954",
+    "lines": 1413
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -2171,13 +2171,13 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs",
-    "sha256": "7c06e6fceba929cd5bf81ea1e5b96cbd0a2678fb5ef1cf559c177bec8af9b316",
-    "lines": 349
+    "sha256": "fd429e2203e81a3b33a04b0a27b38c6028825a58a9c469f0bf7fcbe9128cb5b6",
+    "lines": 357
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs",
-    "sha256": "9a0a1048f8dd49cc5497a5e9dfdcd0e3b547a5b059752a045570d253e419413b",
-    "lines": 543
+    "sha256": "e1d6cbba5580b0b3bd03cf90e3884ecf5e23fc8c12a22f03bf6554d6c2558ee9",
+    "lines": 551
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs",
@@ -2246,8 +2246,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs",
-    "sha256": "fdfd266191ee167c544a6f3bf9e857bee801f11c0fbfbf0e9e27a3dfecdb173e",
-    "lines": 695
+    "sha256": "d9830db518424b10f9f6f2cbbeb1ff0879874584042f1f83b1548fa8ef537410",
+    "lines": 713
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs",
