@@ -1,0 +1,5 @@
+{
+  "before_root_sha256": "2ee7d81a26b2da2e3d43baf06d2185eff6b01d727ae1552238d516bf33c3ef60",
+  "entire_root_restored_by_one_exact_complete_entry_replacement": true,
+  "all_existing_tests_and_every_existing_source_authentication_assertion_unchanged": true
+}
