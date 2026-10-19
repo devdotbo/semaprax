@@ -1,5 +1,6 @@
 //! Same-call borrowing only; no stored packet or acquisition cache.
 use super::{actual, clippy_stage, digest, packet, read_view, value_4a6eb};
+use std::path::Path;
 
 #[rustfmt::skip] // Exact extracted historical lookup body.
 pub(super) fn from_packet(packet: &serde_json::Value, source: &str, expected: &str, supplied: &str) -> String {
@@ -224,6 +225,8 @@ mod tests {
             for _ in 0..2 {
                 assert_eq!(context.file_row(source, 4, &expected), Some("old!".to_owned()));
                 assert_eq!(from_packet(&fixture, source, &expected, "new!"), "old!");
+                assert_eq!(context.value_direct_row(source, &expected, "new!"), "old!");
+                assert_eq!(context.value_direct(source, &expected, "old!"), "old!");
                 assert_eq!(from_packet(&fixture, source, &expected, "foreign"), "foreign");
                 assert_eq!(context.metadata() as *const serde_json::Value, identity);
                 assert_eq!(context.metadata(), &fixture, "every unknown field remains whole");
@@ -242,6 +245,9 @@ mod tests {
         std::fs::remove_file(&old).unwrap();
         assert!(panic_text(std::panic::AssertUnwindSafe(|| {
             context.file_row(source, 4, &expected);
+        })).contains("length-or-digest"));
+        assert!(panic_text(std::panic::AssertUnwindSafe(|| {
+            context.value_direct(source, &expected, "new!");
         })).contains("length-or-digest"));
         drop(context);
         let mut next = ProjectionInvocation::new();
@@ -295,6 +301,105 @@ impl ProjectionInvocation {
         let source = relative.to_str()?;
         self.file_row(source, length, expected)
     }
+
+    // Reuse only immutable canonical metadata; all lookup readers and fallbacks stay live.
+    pub(crate) fn value_direct(&mut self, source: &str, expected: &str, supplied: &str) -> String {
+        // A whole logical-table view is selected only after its actual current
+        // physical, compiled and archive channels have authenticated. Preserve the
+        // complete historical stage fallback below for every other input.
+        let direct = self.value_direct_row(source, expected, supplied);
+        if digest(direct.as_bytes()) == expected {
+            return direct;
+        }
+
+        if let Some(value) = clippy_stage::requested(source, expected, supplied) {
+            let _ = self.metadata();
+            return value;
+        }
+        let normalized = clippy_stage::normalize(source, supplied);
+        let result = self.value_direct_row(source, expected, normalized.as_ref());
+        if normalized.as_ref() != supplied
+            && result == normalized.as_ref()
+            && digest(result.as_bytes()) != expected
+        {
+            supplied.to_owned()
+        } else {
+            result
+        }
+    }
+
+    fn value_direct_row(&mut self, source: &str, expected: &str, supplied: &str) -> String {
+        let current = self.metadata();
+        if current["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .any(|row| row["source"] == source)
+        {
+            with_packet(current, source, expected, supplied)
+        } else {
+            supplied.to_owned()
+        }
+    }
+
+    fn combined_side_actual(&mut self, row: &serde_json::Value) -> String {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let source = row["source"].as_str().unwrap();
+        let current = &row["current"];
+        let actual = self.file(
+            &root.join(source),
+            current["length"].as_u64().unwrap() as usize,
+            current["sha256"].as_str().unwrap(),
+        )
+        .unwrap_or_else(|| {
+            super::held(
+                &root.join(source),
+                current["length"].as_u64().unwrap() as usize,
+                current["sha256"].as_str().unwrap(),
+            )
+            .unwrap()
+        });
+        let compiled = self.value_direct(
+            source,
+            current["sha256"].as_str().unwrap(),
+            super::combined_side_compiled(source).unwrap(),
+        );
+        assert_eq!(
+            actual, compiled,
+            "complete combined current compiled source"
+        );
+        assert_eq!(
+            actual,
+            read_view(current),
+            "complete combined raw-carrier archive"
+        );
+        actual
+    }
+
+    pub(crate) fn combined_side_file(&mut self, path: &Path, length: usize, expected: &str) -> Option<String> {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let relative = path.strip_prefix(root).ok()?;
+        if !relative
+            .components()
+            .all(|part| matches!(part, std::path::Component::Normal(_)))
+        {
+            return None;
+        }
+        let source = relative.to_str()?;
+        let packet = super::combined_side_packet();
+        let row = packet["rows"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|row| row["source"] == source)?;
+        let previous =
+            row["views"].as_array().unwrap().iter().find(|old| {
+                old["length"].as_u64() == Some(length as u64) && old["sha256"] == expected
+            })?;
+        self.combined_side_actual(row);
+        Some(read_view(previous))
+    }
+
     fn file_row(&mut self, source: &str, length: usize, expected: &str) -> Option<String> {
         let packet = self.metadata();
     let row = packet["rows"]
