@@ -924,7 +924,7 @@ pub(super) fn held_source_with_packet(
     let row = authenticated["rows"].as_array().unwrap().iter()
         .find(|row| row["source"] == relative).unwrap();
     Some((|| {
-        let actual = current(&row)?;
+        let actual = current(row)?;
         if row["current"]["length"].as_u64() == Some(length as u64)
             && row["current"]["sha256"] == expected
         {
