@@ -4,7 +4,7 @@ use crate::bounded_output::{
     active_remaining, clear_active_floor, reserve_active_required, set_active_floor,
     with_limit_usage, with_limit_usage_refusal,
 };
-use crate::test_allocation_observer::measure;
+use crate::{hir::DeclarationIndex, test_allocation_observer::measure};
 use sha2::{Digest, Sha256};
 
 const SOURCE: &str = r#"module descriptor.identity;
