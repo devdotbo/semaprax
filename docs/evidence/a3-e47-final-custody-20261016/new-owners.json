@@ -291,8 +291,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/producer.rs",
-    "sha256": "39b563ae65f3cfbb62f944e84ac133435106412a0f6dddd3090a82fcdc00cdc2",
-    "lines": 427
+    "sha256": "1626a4bd28426cc1e798e59346ccd6f6ce1b919f71b4685d5b477ec737f0ec2e",
+    "lines": 431
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/source_custody.rs",
@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "816aa37de809cdd0d041cec3afc6506d82add092ce21b27fc3716625020cf68c",
+    "sha256": "389daf1e119a49cd7ad893221b9709ffeaca1ec75cba0dfad5fcb95e9b921cde",
     "lines": 1235
   },
   {
@@ -706,8 +706,8 @@
   },
   {
     "source": "src/source_reflows_merge/final_ready_inputs.rs",
-    "sha256": "b2603f42e6a7f2c7fe9e47877ffb9d5aeafb92dd68e43eb15bca16928fe8bc44",
-    "lines": 631
+    "sha256": "4549405c9a28e46fd3aa5fbb0325075b7df14a82ee817be03bb3294b48d7b2e4",
+    "lines": 628
   },
   {
     "source": "src/source_reflows_merge/main043_custody.rs",
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "85b81d4d0015e984b82ec8991669e630369670a01628c775a3548dece28f75e0",
+    "sha256": "4f8c123c807fda1854a5f2edd6ac8038ba1e995707f6c58e9f8058c6b6746eb6",
     "lines": 520
   },
   {
@@ -996,8 +996,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
-    "sha256": "4dcba32572b090ac5692be1ca676555222f4990c2989680aeb02fb47b0b67865",
-    "lines": 715
+    "sha256": "edcc5677574fb9255af2fd3fc1d9e48a5b017baa0ce0bae124bae6e0839bdfa1",
+    "lines": 719
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "6b3645d2baeaa9d27a017ef224d8c87cc8d638deafce6b46aca363e25bb2deff",
-    "lines": 1458
+    "sha256": "c99aa4c8f163fd93f2c5ab7dc050bbd69e0d2a5568f1faf2a02e8c62faf533a5",
+    "lines": 1459
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "078cc808b03f53f1c9f06d4b3adef194628f4a7cbabfa5d334089af1eacd5ff1",
-    "lines": 1399
+    "sha256": "a65d93c19a60d627933040fcf692780344b672ef3e12f2a826c1554d3273faa7",
+    "lines": 1404
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -2041,8 +2041,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs",
-    "sha256": "14a0e6ea0e450c4eab3fafc4491af240ee455ebc46072384641abff27ef3e259",
-    "lines": 1417
+    "sha256": "d4d68454a0eaf55c6fa7e43066c11f2404c19fc826030bcab408226e38114172",
+    "lines": 1426
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs",
@@ -2076,8 +2076,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
-    "sha256": "0175400d4d9ea5a091aa31dd41ab7bd80a4ea3c6465da0cd1efa329cd2908df7",
-    "lines": 425
+    "sha256": "e108fda04b20450b6014c943da5984818ceb6fbc837e7f86b086ad22b6cea1f8",
+    "lines": 427
   },
   {
     "source": "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs",
@@ -2111,8 +2111,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs",
-    "sha256": "a506a12c22e96ab0e1ae7c48cf0e36276c24aa50de6d6f4a6b40b37e3a34761d",
-    "lines": 366
+    "sha256": "e4006e0c55c0ba9b9b6d214b8d142cbc9c279c63b9c392dc1b636fc600cc30ce",
+    "lines": 373
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs",
@@ -2176,8 +2176,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs",
-    "sha256": "533b9a47e962744ae29002a06f5a0d96009ac0fdf61500e61187dfea434b44e1",
-    "lines": 518
+    "sha256": "db22b1f8ad73018d110db01be3bac7b8b0723f2bb8c9a005ef528c2daf1ce762",
+    "lines": 521
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs",
@@ -2226,12 +2226,12 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_compiled.rs",
-    "sha256": "65eaa14b24d689b6d37b5f64ab58343be46d80e1c162794caba4ff1fd119a43c",
-    "lines": 301
+    "sha256": "89174b6eac9b239f5c08f25c016aa13f82e3c53d07447b9e2b6e12d0b73b8b19",
+    "lines": 311
   },
   {
     "source": "src/source_reflows_merge/main_e177_packet_lookup.rs",
-    "sha256": "9434d55044eb95c722edf089d93b31ccd230bc9c6dbd127c00c848adee142ccb",
-    "lines": 197
+    "sha256": "1d8b4b54b7b07df4b6f5803427d4f63f169027d374370e500fe4bbcbfaa66af6",
+    "lines": 314
   }
 ]
