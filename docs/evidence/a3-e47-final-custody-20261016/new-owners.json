@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "bcd11b63b1e0e3739550b13b2fdb52f3537b991109ee4c3e138ce8fba2d657ec",
+    "sha256": "0960b4160649f52800ede67602ce3ddefb46adb6c8dc81fabb8cdc6e3631ed7d",
     "lines": 1235
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "e43c8acf9a9d0492e374733f7fd2f19c163179addecbcdff73b5d20dc19a6b7d",
+    "sha256": "6899a83ca67517bd24894fb53eeb328ce0586c96fb9cf6d0b01ce3dae59ed6bc",
     "lines": 520
   },
   {
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "ac2767e54dc6297712e1ca235dd6b70252f3c6112b127d3e2f4fb8c94b513751",
-    "lines": 1469
+    "sha256": "bf5c7a17cdfd37217057fc06cd51c0c3e687b2b4d8800acb4f9cca1a9120bba3",
+    "lines": 1470
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -2311,8 +2311,8 @@
   },
   {
     "source": "src/hir/ids/lowering_identity_tests.rs",
-    "sha256": "954158fd78743b400fecb178b5e89bbba30c9e6e4eef6618865d74dbf33b26f5",
-    "lines": 295
+    "sha256": "030374fddb446ebeed72e8c9fa862e72dc7e14c255262a6c40ade044ed714af6",
+    "lines": 331
   },
   {
     "source": "src/hir/owned_collection_record/identity_before.rs",
