@@ -89,10 +89,10 @@ struct Trace {
     count: usize,
     generation: usize,
     serial: usize,
-    rows: [Row; 128],
+    rows: Vec<Row>,
 }
 thread_local! {
-    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, generation: 0, serial: 0, rows: [EMPTY; 128] }) };
+    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, generation: 0, serial: 0, rows: Vec::new() }) };
     static LOST: Cell<usize> = const { Cell::new(0) };
 }
 fn lost() {
@@ -112,6 +112,7 @@ pub(super) fn reset() {
                 }
             }
         }
+        t.rows.resize(128, EMPTY);
         t.count = 0;
         if let Some(generation) = t.generation.checked_add(1) {
             t.generation = generation;

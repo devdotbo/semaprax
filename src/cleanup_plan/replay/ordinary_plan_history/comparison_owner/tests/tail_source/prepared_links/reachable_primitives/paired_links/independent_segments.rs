@@ -61,8 +61,28 @@ const MACRO: &[(usize, &str, &str)] = &[
     (890, "pub(super) const PRIMITIVE_FRAMES: usize = 59 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 51 * PAYMENT_HEADER;\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
-    restore(
+    let mut current = current.to_owned();
+    assert_eq!(current.matches("rows: Vec<Row>").count(), 1);
+    current = current.replacen("rows: Vec<Row>", "rows: [Row; 128]", 1);
+    assert_eq!(current.matches("rows: Vec::new()").count(), 1);
+    current = current.replacen("rows: Vec::new()", "rows: [EMPTY; 128]", 1);
+    assert_eq!(
+        current
+            .matches("        t.rows.resize(128, EMPTY);\n")
+            .count(),
+        1
+    );
+    current = current.replacen("        t.rows.resize(128, EMPTY);\n", "", 1);
+    assert_eq!(
         current,
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/tls-traces-cf72-20261019/before-census.rs.txt"
+        )),
+        "whole pre-TLS census, including all observation counters"
+    );
+    restore(
+        &current,
         include_str!(concat!(
             env!("CARGO_MANIFEST_DIR"),
             "/docs/evidence/paired-segments-5d46-20261019/before-census.rs.txt"

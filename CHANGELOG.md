@@ -1,3 +1,7 @@
+## CI repair: keep dormant diagnostic buffers out of Linux thread storage
+
+- Move the unchanged 4096-event frontier trace and 128-row pair census to lazily prepared backing. Linux includes static TLS in a thread's allocation; these dormant test arrays consumed more than the 128 KiB low-stack regression requested. Prepare observation backing before allocation measurement, retain every capacity and counter, and keep the original constructor and exact 512-depth validation on the small thread.
+
 - Rebind the Native Rust JSON allocation audit to the already locked serde_json 1.0.154 after verifying the unchanged string scratch and owned-value allocation paths.
 - Retain the explicitly selected macOS SDK in cleared native fixture environments so the real Apple Clang can resolve its standard headers.
 - Authenticate the exact inventory and clone-source formatting successors before replaying their unchanged whole-source audit inverses.

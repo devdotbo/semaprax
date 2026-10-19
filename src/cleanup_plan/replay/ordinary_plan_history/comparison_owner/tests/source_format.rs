@@ -11,6 +11,22 @@ pub(super) enum Kind {
     Tests883,
 }
 pub(super) fn restore(kind: Kind, current: &str) -> String {
+    let prepared;
+    let current = if matches!(kind, Kind::Tests880 | Kind::Tests883) {
+        assert_eq!(current.matches("    frontiers::prepare();\n").count(), 2);
+        prepared = current.replace("    frontiers::prepare();\n", "");
+        assert_eq!(
+            prepared,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/docs/evidence/tls-traces-cf72-20261019/before-owner-tests.rs.txt"
+            )),
+            "whole test predecessor, including every assertion"
+        );
+        prepared.as_str()
+    } else {
+        current
+    };
     let (length, prefix, edits) = match kind {
         Kind::Root => (18812, false, ROOT),
         Kind::OldCompare => (10345, false, OLDCOMPARE),
