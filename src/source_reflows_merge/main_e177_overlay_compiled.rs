@@ -1,5 +1,12 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs")),
@@ -248,6 +255,45 @@ mod tests {
         assert_eq!(actual_lookup, lookup(before), "ENTIRE old lookup body");
         assert_eq!(root.matches(GLUE).count(), 1);
         let mut restored = root.replacen(GLUE, &actual_lookup, 1);
+        // The later same-invocation reader is a complete additive function.
+        // Bind the whole current root/child above, then restore its exact
+        // predecessor before every unchanged historical split assertion.
+        let context_reader = r####"pub(super) fn held_source_with_packet(
+    authenticated: &Value,
+    path: &Path,
+    length: usize,
+    expected: &str,
+) -> Option<Result<String, &'static str>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path.strip_prefix(root).ok()?.to_str()?;
+    if !normal(relative) {
+        return None;
+    }
+    // compose() authenticated policy membership against these exact constants.
+    if !REPLACEMENTS.contains(&relative) && !ADDITIONS.contains(&relative) {
+        return None;
+    }
+    let row = authenticated["rows"].as_array().unwrap().iter()
+        .find(|row| row["source"] == relative).unwrap();
+    Some((|| {
+        let actual = current(row)?;
+        if row["current"]["length"].as_u64() == Some(length as u64)
+            && row["current"]["sha256"] == expected
+        {
+            return Ok(actual);
+        }
+        let prior = row["views"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["length"].as_u64() == Some(length as u64) && p["sha256"] == expected)
+            .ok_or("foreign overlay tuple")?;
+        image(prior)
+    })())
+}
+"####;
+        assert_eq!(restored.matches(context_reader).count(), 1);
+        restored = restored.replacen(context_reader, "", 1);
         let v7_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {\n        let expanded = fragments_v3::expand_v7(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V6 {";
         assert_eq!(restored.matches(v7_dispatch).count(), 1);
         restored = restored.replacen(v7_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V6 {", 1);
