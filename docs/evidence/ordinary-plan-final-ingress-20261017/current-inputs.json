@@ -219,81 +219,81 @@
   {
     "path": "src/source_reflows_merge.rs",
     "expected_sha256": "10330014cf84803a8d017702b59a626820f777f7fb0cc950cc512897b8b6d220",
-    "current_length": 54430,
-    "current_sha256": "00b59134c1630eef13c1e1dfc8337f9a68496ef4a61a0ea43262f5fad2d1be1d",
-    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/00b59134c1630eef13c1e1dfc8337f9a68496ef4a61a0ea43262f5fad2d1be1d.txt",
+    "current_length": 55950,
+    "current_sha256": "de5aee8334aee4c613f995273b4ebb86f142585fd16f617912ca1bd44c67f1c6",
+    "current_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/current/de5aee8334aee4c613f995273b4ebb86f142585fd16f617912ca1bd44c67f1c6.txt",
     "checkpoint_length": 46161,
     "checkpoint_sha256": "e39790a4feedf4e2ea920e66760e1f17c0d2455a78e3640cd64badaeaf55de53",
     "checkpoint_archive": "docs/evidence/ordinary-plan-final-ingress-20261017/before787/01.txt",
     "inverse": [
       {
-        "start_byte": 53632,
+        "start_byte": 55152,
         "after": "\n// Only the historical PLAN source test receives this exact root checkpoint.\npub(crate) fn ordinary_plan_history_root_checkpoint(\n    current: &str,\n    compiled_before: &str,\n) -> String {\n    ordinary_plan_inputs::original_root_checkpoint(current, compiled_before)\n}\n\n#[path = \"source_reflows_merge/main_c883_inputs.rs\"]\npub(crate) mod main_c883_inputs;\n\n#[path = \"source_reflows_merge/main99f_inputs.rs\"]\npub(crate) mod main99f_inputs;\n\n#[path = \"source_reflows_merge/main_e177_inputs.rs\"]\npub(crate) mod main_e177_inputs;\n\n// Distinct complete final-batch views precede both frozen parent readers.\n#[path = \"source_reflows_merge/next_big_batch_inputs.rs\"]\npub(crate) mod next_big_batch_inputs;\n\n#[path = \"source_reflows_merge/main_e177_final_inputs.rs\"]\npub(crate) mod main_e177_final_inputs;\n",
         "before": ""
       },
       {
-        "start_byte": 52261,
+        "start_byte": 53781,
         "after": "\n    runtime_json::main043_metadata(fixture)\n}\npub(crate) fn main043_input(source: &str, current: &str) -> String {\n    main043_custody::input(source, current)\n}\npub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String {\n    main043_custody::historical_ci_extra(source, current)\n",
         "before": " runtime_json::main043_metadata(fixture) }\npub(crate) fn main043_input(source: &str, current: &str) -> String { main043_custody::input(source, current) }\npub(crate) fn main043_historical_ci_extra(source: &str, current: &str) -> String { main043_custody::historical_ci_extra(source, current) "
       },
       {
-        "start_byte": 51902,
+        "start_byte": 53422,
         "after": "\n    runtime_json::main44_metadata(fixture)\n}\npub(crate) fn main44_input(source: &str, current: &str) -> String {\n    main44_custody::input(source, current)\n",
         "before": " runtime_json::main44_metadata(fixture) }\npub(crate) fn main44_input(source: &str, current: &str) -> String { main44_custody::input(source, current) "
       },
       {
-        "start_byte": 49330,
+        "start_byte": 50850,
         "after": "\n            \"../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json\"\n        ",
         "before": "\"../docs/evidence/test-compile-corrections-9ce9-20261016/current-to-9ce9.json\""
       },
       {
-        "start_byte": 42771,
+        "start_byte": 44291,
         "after": "\n            main65 == current || main65 == next,\n            \"arena854 normalized input drift\"\n        ",
         "before": "main65 == current || main65 == next, \"arena854 normalized input drift\""
       },
       {
-        "start_byte": 42364,
+        "start_byte": 43884,
         "after": "\n        include_str!(\"../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json\"),\n        source,\n        &query_input,\n    ",
         "before": "include_str!(\"../docs/evidence/arena854-borrowed-query-zip-20261016/current-to-2d87.json\"), source, &query_input"
       },
       {
-        "start_byte": 40201,
+        "start_byte": 41721,
         "after": "#[allow(\n    dead_code,\n    reason = \"Retained compatibility entry for independently compiled historical and semantic controls.\"\n)]\n",
         "before": ""
       },
       {
-        "start_byte": 21480,
+        "start_byte": 23000,
         "after": "    let entry = receiver_child_entry(source, current);\n    let current = entry.as_str();\n",
         "before": ""
       },
       {
-        "start_byte": 18595,
+        "start_byte": 20115,
         "after": "// These three formatter inverses bind the ENTIRE actual compiled child body,\n// not merely an archived before image. No token or string-content normalization.\npub(crate) fn receiver_child_entry(source: &str, current: &str) -> String {\n    let (expected, length, compiled_sha, after, before) = match source {\n        \"src/workspace_graph/expected_projection/private_layout/before_registry.rs\" => (\n            \"0d6e2e30c78d040eafcd7c11e66a4696d17e949aa09eac7d79d6d1b6634721cd\", 8142,\n            \"986c2f1eb41715186ee5a1856e58abbcde03d53e86e53b1e903e1b0845c002b8\",\n            \"}\\n\\n#[cfg(test)]\\nthread_local! {static DERIVATIONS:\",\n            \"}\\n\\n\\n#[cfg(test)]\\nthread_local! {static DERIVATIONS:\",\n        ),\n        \"src/workspace_graph/cold_canonical/before.rs\" => (\n            \"78fbcd95f4430f0750b4ae1e8b2cfdc5277c3bf9ef02fe4776cea96bc5a494e2\", 19289,\n            \"cd153b0db9d19b6b8983fc66f3970494d1247c2180b595d839db96eeaf4f8487\",\n            \"                    staged!(\\n                        CorePrebound,\\n                        constructor_failure::attempt::reserve(resolve_builder_bytes)\\n                    )?;\",\n            \"                    staged!(CorePrebound, constructor_failure::attempt::reserve(resolve_builder_bytes))?;\",\n        ),\n        \"src/format/comments/compare/tests.rs\" => (\n            \"7adedbc8fc515199d21e71a93fbe7a1624c5500e46278f4ddf834050ef0a7b38\", 3421,\n            \"4b422dd4781d2123eddd2eabb1459c5e3bedb222fc6957729d4c444e3ca2cf2c\",\n            \"    assert_eq!(\\n        refusal.message,\\n        \\\"a module must declare at least one function\\\"\\n    );\",\n            \"    assert_eq!(refusal.message, \\\"a module must declare at least one function\\\");\",\n        ),\n        _ => return current.to_owned(),\n    };\n    // Fresh physical/compiled/archive authentication precedes historical lookup.\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        current.len(),\n        length,\n        \"complete compiled child extent: {source}\"\n    );\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))\n        ),\n        compiled_sha,\n        \"complete compiled child bytes: {source}\"\n    );\n    assert_eq!(\n        current.matches(after).count(),\n        1,\n        \"one literal child formatter inverse: {source}\"\n    );\n    let inverse = current.replacen(after, before, 1);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(inverse.as_bytes()))\n        ),\n        expected,\n        \"complete original compiled child: {source}\"\n    );\n    assert_eq!(\n        inverse, entry,\n        \"whole compiled child equals independently acquired history: {source}\"\n    );\n    inverse\n}\n\n",
         "before": ""
       },
       {
-        "start_byte": 17197,
+        "start_byte": 18717,
         "after": "    let entry = if domain == \"lexical832\" {\n        receiver_fixture_entry(ReceiverFixture::LexicalOperands, source, current)\n    } else {\n        current.to_owned()\n    };\n    let current = entry.as_str();\n",
         "before": ""
       },
       {
-        "start_byte": 15086,
+        "start_byte": 16606,
         "after": "// Closed packet/source pairs only. This acquires the original consumer INPUT,\n// never its final inverse output; all caller hooks and full-byte checks remain.\npub(crate) fn receiver_fixture_entry(\n    fixture: ReceiverFixture,\n    source: &str,\n    current: &str,\n) -> String {\n    let expected = match (fixture, source) {\n        (ReceiverFixture::PaidLiveReuse, \"src/loan_plan/paid_live.rs\") => \"bcb520a64f14a76f2bac1e6053ce40f424d15e11e8b1e70f8c67d4406c450374\",\n        (ReceiverFixture::PaidLiveReuse, \"src/loan_plan/paid_plan.rs\") => \"0eb3df7863a61410f5a4547831aa399ffd03d460dad86f1f40caf626de0f2be7\",\n        (ReceiverFixture::PaidLiveReuse, \"crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs\") => \"d764e8d6fbd373a2dbb40953baabf688fb4459562760fd5e1545cb9b73b9e6b0\",\n        (ReceiverFixture::BorrowedGeneric, \"src/workspace_graph/generic_type_import.rs\") => \"e4aaa275d0b6d79539a30b496844388ba9fc3b4b793499b907b803f759ee8dc9\",\n        (ReceiverFixture::BorrowedGeneric, \"src/workspace_graph/expected_projection/cost.rs\") => \"ddf8dc2e74e4c0cc193e4e592671ffcfd9118b8bfe91cef2d0cf19eca3a635ce\",\n        (ReceiverFixture::BorrowedGeneric, \"tests/workspace/semantic_graph/source_inventory.rs\") => \"4a1920f6abdff90036fe9afabe687c091b08a38d4f26a28e2e7c7feb678cbd14\",\n        (ReceiverFixture::LexicalOperands, \"src/cleanup_plan/replay/expression_facts/receiving.rs\") => \"db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7\",\n        (ReceiverFixture::LexicalOperands, \"src/cleanup_plan/replay/expression_facts/receiving/directory.rs\") => \"d161622003e500b3b9197c0f463b88eee388d9447c5a87ba75f464d3aa2a59cc\",\n        _ => return current.to_owned(),\n    };\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n        ),\n        expected,\n        \"complete fixed receiver input: {source}\"\n    );\n    entry\n}\n\n",
         "before": ""
       },
       {
-        "start_byte": 8950,
+        "start_byte": 10470,
         "after": "\n        row[\"current_sha256\"].as_str().unwrap(),\n        &entry",
         "before": " row[\"current_sha256\"].as_str().unwrap(), current"
       },
       {
-        "start_byte": 8771,
+        "start_byte": 10291,
         "after": "    let entry = historical_project_entry(source, row[\"current_sha256\"].as_str().unwrap(), current);\n",
         "before": ""
       },
       {
         "start_byte": 6503,
-        "after": "// Only literal historical ENTRY stages are acquired here. The complete existing\n// compile35f front and every intermediate inverse below still execute in order.\nfn historical_project_entry(source: &str, expected: &str, current: &str) -> String {\n    let admitted = matches!(\n        (source, expected),\n        (\n            \"src/cleanup_plan/replay/live_oracle/source_custody/b.rs\",\n            \"ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca\"\n        ) | (\n            \"src/cleanup_plan/replay/lexical_replay.rs\",\n            \"52a1b94530881bd2f59d873a71663fcd1656a9a2401440bc4f8edb69839fbd7f\"\n        ) | (\n            \"src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs\",\n            \"575f7461fb6624f8dfdf1ed511cbade1227a47358abd0858755396d949e2931b\"\n        ) | (\n            \"src/workspace_graph.rs\",\n            \"b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31\"\n        ) | (\n            \"tests/workspace/semantic_graph/source_inventory.rs\",\n            \"aa4e1844d2e867c519bd24fdb560535c9f07b7daa790e343c1b4b04e978d0989\"\n        ) | (\n            \"src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs\",\n            \"0bf3a868125c5d381ead3b67127f622085d8fba09b23862db68bdad13c271ec6\"\n        ) | (\n            \"src/workspace_graph/cold_canonical/tests.rs\",\n            \"ecc2a07ac366adeaddc986c5bf1c676000e95ec98f5dd526c37c78f65406d62c\"\n        )\n    );\n    if !admitted {\n        return current.to_owned();\n    }\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n        ),\n        expected,\n        \"complete fixed historical projector entry: {source}\"\n    );\n    entry\n}\n",
+        "after": "// Only literal historical ENTRY stages are acquired here. The complete existing\n// compile35f front and every intermediate inverse below still execute in order.\nfn historical_project_entry(source: &str, expected: &str, current: &str) -> String {\n    // This source is compiled DATA, not a canonical-row admission. Restore\n    // its exact formatter-only predecessor before the unchanged old projector.\n    if source == \"src/diagnostic.rs\"\n        && expected == \"922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e\"\n    {\n        assert_eq!(current, include_str!(\"diagnostic.rs\"));\n        assert_eq!(current.len(), 11599);\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))\n            ),\n            \"028ee6f9753c7c70c88cf146f35f7b7c61c692d6b4035d3abc03260456eefaa1\"\n        );\n        let formatted = \"#[rustfmt::skip]\\nmod before_writer;\";\n        assert_eq!(current.matches(formatted).count(), 1);\n        let entry = current.replacen(formatted, \"mod before_writer;\", 1);\n        assert_eq!(entry.len(), 11582);\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n            ),\n            expected\n        );\n        return entry;\n    }\n    let admitted = matches!(\n        (source, expected),\n        (\n            \"CHANGELOG.md\",\n            \"dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148\"\n        ) | (\n            \"docs/ARCHITECTURE.md\",\n            \"ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4\"\n        ) | (\n            \"src/workspace_graph/expected_projection/borrowed_imports/typed.rs\",\n            \"2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36\"\n        ) | (\n            \"src/cleanup_plan/replay/live_oracle/source_custody/b.rs\",\n            \"ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca\"\n        ) | (\n            \"src/cleanup_plan/replay/lexical_replay.rs\",\n            \"52a1b94530881bd2f59d873a71663fcd1656a9a2401440bc4f8edb69839fbd7f\"\n        ) | (\n            \"src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs\",\n            \"575f7461fb6624f8dfdf1ed511cbade1227a47358abd0858755396d949e2931b\"\n        ) | (\n            \"src/workspace_graph.rs\",\n            \"b8d71709bbe9961b338552bba4f6098e59c8d78c5da7ca5f8ff4157b36ea3f31\"\n        ) | (\n            \"tests/workspace/semantic_graph/source_inventory.rs\",\n            \"aa4e1844d2e867c519bd24fdb560535c9f07b7daa790e343c1b4b04e978d0989\"\n        ) | (\n            \"src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs\",\n            \"0bf3a868125c5d381ead3b67127f622085d8fba09b23862db68bdad13c271ec6\"\n        ) | (\n            \"src/workspace_graph/cold_canonical/tests.rs\",\n            \"ecc2a07ac366adeaddc986c5bf1c676000e95ec98f5dd526c37c78f65406d62c\"\n        )\n    );\n    if !admitted {\n        return current.to_owned();\n    }\n    let entry = main_e177_final_inputs::value_direct(source, expected, current);\n    assert_eq!(\n        format!(\n            \"{:x}\",\n            crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n        ),\n        expected,\n        \"complete fixed historical projector entry: {source}\"\n    );\n    entry\n}\n",
         "before": ""
       },
       {

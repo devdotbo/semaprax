@@ -291,9 +291,9 @@ const FINAL_INGRESS: &str = include_str!(concat!(
     env!("CARGO_MANIFEST_DIR"),
     "/docs/evidence/ordinary-plan-final-ingress-20261017/current-inputs.json"
 ));
-const FINAL_INGRESS_LENGTH: usize = 401689;
+const FINAL_INGRESS_LENGTH: usize = 403276;
 const FINAL_INGRESS_SHA256: &str =
-    "b3b1f849f9ab2850a6cc96ed645202b85bdae49a9c0a92b3524ea2564d2217de";
+    "ca140abb78daa061c245bbbf37f6e18fdee3b8b6ae982610a68c2bf1b6557fec";
 const FINAL_INGRESS_CAP: usize = 2 * 1024 * 1024;
 fn final_ingress_same_file(a: &std::fs::Metadata, b: &std::fs::Metadata) -> bool {
     if !a.is_file() || !b.is_file() || a.len() != b.len() || a.modified().ok() != b.modified().ok()
