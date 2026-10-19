@@ -664,6 +664,8 @@ fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
 // below receives its complete original input; nothing is read under a compiler
 // allocation or budget probe and no parsed/verdict cache is introduced.
 fn complete_three_fixture_runtime_glue(source: &str, current: &str) -> String {
+    let restored = complete_current_writer_signature_entry_before(source, current);
+    let current = restored.as_str();
     let restored = complete_embedded_fixture_parent_before(source, current);
     let current = restored.as_str();
     let restored = complete_projection_entry_followup_glue(source, current);
@@ -920,6 +922,27 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
         ))
         .is_err()
     );
+    let root = include_str!("../../source_reflows_merge.rs");
+    let prior = complete_current_writer_signature_entry_before("src/source_reflows_merge.rs", root);
+    assert_ne!(root, prior);
+    for foreign in [
+        format!("{root} "),
+        root[..root.len() - 1].to_owned(),
+        root.replacen(
+            "fn historical_project_entry",
+            "fn historical_project_Entry",
+            1,
+        ),
+        prior,
+    ] {
+        assert!(
+            std::panic::catch_unwind(|| complete_current_writer_signature_entry_before(
+                "src/source_reflows_merge.rs",
+                &foreign
+            ))
+            .is_err()
+        );
+    }
     let controls = include_str!("tests.rs");
     drop(three_fixture_test_source_before(controls));
     assert!(
@@ -991,6 +1014,34 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
         [
             36, 131, 234, 253, 199, 214, 78, 255, 237, 1, 163, 123, 248, 147, 178, 119, 246, 197,
             124, 195, 237, 204, 53, 62, 231, 78, 238, 229, 124, 131, 42, 24
+        ]
+    );
+    before
+}
+// This complete compiled root is authenticated before removing only four ENTRY
+// tuples. Every old Native/receiver source inverse and whole-body assertion runs
+// on the resulting authentic prior root without any expected-hash changes.
+fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" {
+        return current.to_owned();
+    }
+    assert_eq!(current.len(), 54980);
+    assert_eq!(
+        digest(current.as_bytes()),
+        [
+            191, 161, 21, 239, 65, 156, 75, 56, 11, 26, 178, 155, 212, 121, 201, 131, 112, 19, 92,
+            145, 185, 232, 97, 136, 128, 232, 194, 130, 193, 37, 23, 205
+        ]
+    );
+    let added = "        (\n            \"CHANGELOG.md\",\n            \"dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148\"\n        ) | (\n            \"docs/ARCHITECTURE.md\",\n            \"ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4\"\n        ) | (\n            \"src/diagnostic.rs\",\n            \"922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e\"\n        ) | (\n            \"src/workspace_graph/expected_projection/borrowed_imports/typed.rs\",\n            \"2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36\"\n        ) | (\n";
+    assert_eq!(current.matches(added).count(), 1);
+    let before = current.replacen(added, "        (\n", 1);
+    assert_eq!(before.len(), 54430);
+    assert_eq!(
+        digest(before.as_bytes()),
+        [
+            0, 181, 145, 52, 193, 99, 14, 239, 19, 193, 225, 223, 200, 51, 127, 154, 104, 73, 110,
+            244, 166, 26, 14, 164, 50, 98, 245, 250, 210, 209, 190, 29
         ]
     );
     before

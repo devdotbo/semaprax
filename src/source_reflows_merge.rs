@@ -142,6 +142,18 @@ fn historical_project_entry(source: &str, expected: &str, current: &str) -> Stri
     let admitted = matches!(
         (source, expected),
         (
+            "CHANGELOG.md",
+            "dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148"
+        ) | (
+            "docs/ARCHITECTURE.md",
+            "ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4"
+        ) | (
+            "src/diagnostic.rs",
+            "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e"
+        ) | (
+            "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
+            "2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36"
+        ) | (
             "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
             "ca0e42fbd3f14f29ff59b7dc4c6bff26a364a1e305967bcf548970a53774a9ca"
         ) | (
