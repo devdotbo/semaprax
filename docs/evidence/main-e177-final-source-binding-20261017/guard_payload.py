@@ -16,7 +16,7 @@ def bounded(path,length,digest):
  finally:os.close(fd)
 _CONFIG_PATH=R/'docs/evidence/merge-2e92-browser-20261018/guard-config.json'
 _CONFIG_LENGTH=187464
-_CONFIG_SHA256='97acfb09e2f4eb6b52637ec20d46e29dd42247b77566a1a91d267d3cba782323'
+_CONFIG_SHA256='a42d9a74bbbb649b3b70e0d37248f93cc4b2ecb449e81724b67c23ef6925b1ec'
 _CONFIG_RAW=bounded(_CONFIG_PATH,_CONFIG_LENGTH,_CONFIG_SHA256)
 CONFIG=json.loads(_CONFIG_RAW)
 def _configuration_current():
@@ -72,7 +72,7 @@ _OVERLAY_RAW = None
 def _overlay():
  global _OVERLAY_NS, _OVERLAY_RAW
  _configuration_current()
- program=bounded(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py', 34371, '4c0f9e9e802fba13d87d5c59b8342d3401d4257039fb7deb49583d8edce79785')
+ program=bounded(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py', 34371, '56a2289fb50fb85d2033e54dbb27e9188d8bdd60de0cb31e3cba2ce03afb48e5')
  assert len(program)<=65536
  if _OVERLAY_NS is None:
   _OVERLAY_NS={'__file__':str(R/'docs/evidence/finite-source-overlay-v2-20261018/overlay_page.py')}
