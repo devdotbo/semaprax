@@ -19,7 +19,24 @@ fn observe(
 
 // Current + removed = complete fd4c + added. Every coefficient below is a
 // literal actual typed bank, never an observed debit or a fabricated stage.
-fn link_delta(r: &pair_scope_census::Row) -> (usize, usize) {
+fn link_delta(old: &pair_scope_census::Row, r: &pair_scope_census::Row) -> (usize, usize) {
+    assert!(
+        old.complete && r.complete,
+        "whole matched caller, no prefix price inference"
+    );
+    assert_eq!(
+        old.identity_probes,
+        r.identity_probes + old.identity_empty_probes
+    );
+    assert_eq!(old.shared_boundaries, r.shared_boundaries);
+    let selector_header = PAYMENT_HEADER;
+    let selector_payload = size_of::<bool>() * r.empty_selectors;
+    let removed_empty_probes =
+        3 * size_of::<&[Rc<SkeletonObservation>]>() * old.identity_empty_probes;
+    assert_eq!(
+        super::super::legacy_matching(),
+        before_pair_links::PAIR_MATCH
+    );
     let old_links = 4 * size_of::<&Vec<usize>>()
         + 4 * size_of::<&[usize]>()
         + 4 * size_of::<usize>()
@@ -33,10 +50,12 @@ fn link_delta(r: &pair_scope_census::Row) -> (usize, usize) {
     let old_capture = 2 * size_of::<&[Rc<SkeletonObservation>]>() + 3 * size_of::<usize>();
     let old_turn = 4 * size_of::<usize>() + size_of::<bool>();
     let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();
+    // Full current boundary already excludes the one removed right-rest
+    // assignment. Do not also credit it on the removed side of this equation.
     let boundary = 2 * size_of::<&[usize]>()
         + 8 * size_of::<usize>()
         + 4 * size_of::<bool>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
+        + size_of::<&[Rc<SkeletonObservation>]>()
         + size_of::<Ordering>();
     let capture = 2 * size_of::<&[Rc<SkeletonObservation>]>()
         + 4 * size_of::<usize>()
@@ -66,15 +85,20 @@ fn link_delta(r: &pair_scope_census::Row) -> (usize, usize) {
             + links * r.shared_links
             + boundary * r.shared_boundaries
             + capture * r.shared_runs
-            + super::super::paired_tail_added(r),
+            + super::super::paired_tail_added(r)
+            + PAYMENT_HEADER // actual reader's additional success-work site
+            + super::super::reader_payload_added(r)
+            + selector_header + selector_payload,
         PAYMENT_HEADER
             + old_links * r.shared_links
             + old_boundary * r.shared_boundaries
             + old_capture * r.shared_runs
             + old_turn * r.shared_turns
             + r.fused_turns
-                * (PAIR_MATCH
-                    + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL)),
+                * (super::super::legacy_matching()
+                    + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
+            + super::super::reader_removed(r)
+            + removed_empty_probes,
     )
 }
 
@@ -212,7 +236,7 @@ fn borrowed_pair_links_and_unit_driver_keep_complete_invoices_six_fields_work_sw
                     current.row.shared_boundaries
                 )
             );
-            let (added, removed) = link_delta(&current.row);
+            let (added, removed) = link_delta(&old.row, &current.row);
             assert_eq!(
                 current.observed.2 + removed,
                 old.observed.2 + added,

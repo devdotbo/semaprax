@@ -17,15 +17,33 @@ fn tail_run(
         shape,
     )
 }
-fn delta(row: &pair_scope_census::Row) -> (usize, usize) {
+fn delta(old: &pair_scope_census::Row, row: &pair_scope_census::Row) -> (usize, usize) {
+    assert!(
+        old.complete && row.complete,
+        "complete invoice only, never a refused prefix"
+    );
+    assert_eq!(
+        old.identity_probes,
+        row.identity_probes + old.identity_empty_probes
+    );
+    assert_eq!(old.shared_boundaries, row.shared_boundaries);
+    let selector_header = PAYMENT_HEADER;
+    let selector_payload = size_of::<bool>() * row.empty_selectors;
+    let removed_empty_probes =
+        (3 * size_of::<&[Rc<SkeletonObservation>]>()) * old.identity_empty_probes;
+    let removed_right_rest = size_of::<&[Rc<SkeletonObservation>]>() * row.shared_boundaries;
     let current = super::super::paired_tail_added(row) + size_of::<ComparisonOwner<'static>>()
         - size_of::<before_paired_tail::ComparisonOwner<'static>>()
         + PAYMENT_HEADER
-        + super::super::reader_payload_added(row);
+        + super::super::reader_payload_added(row)
+        + selector_header
+        + selector_payload;
     let removed = row.fused_turns
         * (super::super::legacy_matching()
             + 2 * (paired_value::STEP + paired_value::EMPTY + paired_value::TAIL))
-        + super::super::reader_removed(row);
+        + super::super::reader_removed(row)
+        + removed_empty_probes
+        + removed_right_rest;
     (current, removed)
 }
 #[test]
@@ -77,8 +95,12 @@ fn paired_tail_composition_keeps_complete_real_generations_and_typed_invoices() 
                         && current.observed.0.0.result.is_ok()
                         && main.observed.0.0.result.is_ok(),
                     "length={length} shape={shape} shared_hir={shared_hir}; old={:?} current={:?} pure_main={:?}; rows old={:?} current={:?} pure_main={:?}",
-                    old.observed.0.0, current.observed.0.0, main.observed.0.0,
-                    old.row, current.row, main.row
+                    old.observed.0.0,
+                    current.observed.0.0,
+                    main.observed.0.0,
+                    old.row,
+                    current.row,
+                    main.row
                 );
                 assert_eq!(old.observed.0.0, current.observed.0.0);
                 assert_eq!(main.observed.0.0, current.observed.0.0);
@@ -98,7 +120,7 @@ fn paired_tail_composition_keeps_complete_real_generations_and_typed_invoices() 
                     old.row.pair_matches_admitted,
                     current.row.pair_matches_admitted + current.row.fused_turns
                 );
-                let (added, removed) = delta(&current.row);
+                let (added, removed) = delta(&old.row, &current.row);
                 assert_eq!(current.observed.2 + removed, old.observed.2 + added);
                 if shape == 6 && length == 64 {
                     assert!(current.row.fused_turns > 0);
