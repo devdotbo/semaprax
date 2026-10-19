@@ -465,7 +465,7 @@ fn paired_tail_composition_feature_counts_actual_admitted_banks_and_each_work_fr
         );
     }
     let mut partial_work = false;
-    for units in 0..=r.observed.0.0.skeleton_spent {
+    for units in 0..=(MAX_REPLAY_WORK_UNITS - r.observed.0.0.remaining) {
         let capture =
             Capture::begin(Binding::caller_labelled("paired tail work-cut", [0; 32])).unwrap();
         let prefix = tail_run(function, 0, 4, 6, 0, units, usize::MAX, 0, false, true);
