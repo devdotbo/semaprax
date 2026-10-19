@@ -25,6 +25,31 @@ fn assert_digest(source: &str, expected: &serde_json::Value) {
 pub(crate) fn project(source: &str, current: &str) -> String {
     let outer = super::final_ready_inputs::current344_input(source, current);
     let current = outer.as_str();
+    // Bind every complete raw input before the original historical bridge.
+    let stage = match source {
+        "src/cleanup_plan.rs" => Some(("144f255bb216245a2ef49c197b60659e2b725c45c0ca05209ebe16feb3e34920", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/0e19e80ed9cc80eafe015ff4e11688d6aa24b80755e6afbe1ed727f5d2a63621.txt"))),
+        "src/hir/ids.rs" => Some(("5e56cda454fa3f14f61e2db5f410eea13ac7795d0887e680348eefdc64e80e64", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/186e98de002cd77f1e546a34423a6ca4792d8fbedc8ff7decc8d8a6a3e03b306.txt"))),
+        "tests/native/string_settlement/codec_allocation/string_vectors.rs" => Some(("8fc18b5920eb5f4a5c5d43c886f327b32e6f0ead6570d1640e43db0e5f0cfddb", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/8fc18b5920eb5f4a5c5d43c886f327b32e6f0ead6570d1640e43db0e5f0cfddb.txt"))),
+        "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary/keys.rs" => Some(("01b3e408874930f2aad015d20cf8317fc1507183f92aae740d11985b99d223e1", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/01b3e408874930f2aad015d20cf8317fc1507183f92aae740d11985b99d223e1.txt"))),
+        "src/hir/function_value/funded.rs" => Some(("633299f2369b23030fddc8feaae09a97da2622bc831f9f766d52b618baea2019", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/633299f2369b23030fddc8feaae09a97da2622bc831f9f766d52b618baea2019.txt"))),
+        "tests/native/string_settlement/codec_allocation.rs" => Some(("82b7368428178f592d1de52dd17b175b75b5dfd7ca1543dca9bacbdcb5dc7200", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/82b7368428178f592d1de52dd17b175b75b5dfd7ca1543dca9bacbdcb5dc7200.txt"))),
+        "src/cleanup_plan/replay/sequence_prefix/main24/before_wrapper_tests.rs" => Some(("dbe4a9b878c0fa842f803b4ed8d2bc6e3849c72def30608fa1dd6c76a111b4f8", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/dbe4a9b878c0fa842f803b4ed8d2bc6e3849c72def30608fa1dd6c76a111b4f8.txt"))),
+        "src/cleanup_plan/replay/sequence_prefix/main_c11/before_wrapper_tests.rs" => Some(("dbe4a9b878c0fa842f803b4ed8d2bc6e3849c72def30608fa1dd6c76a111b4f8", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/dbe4a9b878c0fa842f803b4ed8d2bc6e3849c72def30608fa1dd6c76a111b4f8.txt"))),
+        _ => None,
+    };
+    let current = if let Some((sha256, before)) = stage {
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+            ),
+            sha256,
+            "complete current344 raw input: {source}"
+        );
+        before
+    } else {
+        current
+    };
     assert_eq!(DATA.len(), DATA_LENGTH, "fixed bridge metadata length");
     assert_eq!(
         <[u8; 32]>::from(Sha256::digest(DATA.as_bytes())),

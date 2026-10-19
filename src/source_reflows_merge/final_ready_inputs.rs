@@ -176,7 +176,12 @@ fn projection344_stage(supplied: &str) -> String {
     let read = |path: &str, length: usize, sha: &str| {
         reader::read(&root.join(path), length, sha, 2_097_152)
             .or_else(|error| {
-                super::main_e177_final_inputs::file(&root.join(path), length, sha).ok_or(error)
+                crate::source_reflows_merge::main_e177_final_inputs::file(
+                    &root.join(path),
+                    length,
+                    sha,
+                )
+                .ok_or(error)
             })
             .unwrap()
     };

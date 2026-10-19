@@ -45,6 +45,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows_merge/current344.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
     "src/source_reflows_merge/main_eb2_inputs.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
@@ -113,8 +114,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 16287; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "d8fedb1baee7df37623e397bf95ca1d802f829ec32074240a7d1f5c9eedcc05c";
+const POLICY_LENGTH: usize = 16328; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "8d1acf5792c85e66009ec84ece3f97cffba220262c69cecfcbf8276c3b765354";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
