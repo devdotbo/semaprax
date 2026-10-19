@@ -75,6 +75,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/runtime_json.rs",
     "src/source_verify/declaration.rs",
     "src/workspace_graph.rs",
+    "src/workspace_graph/constructor_failure/receiving/typed/tests.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs",
     "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
     "src/workspace_graph/function_alias/before_core.rs",
@@ -285,8 +286,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 102816; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "ef0b983de61f9c14b4671c9bbf5d65510f45ccc79738a39117c837a7786add79";
+const POLICY_LENGTH: usize = 102883; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "5092edd9fd0d47d345ab68a7826892ae526ae80d50ea051530422e10c824f0a0";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

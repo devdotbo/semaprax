@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 66403,
-      "sha256": "ac2767e54dc6297712e1ca235dd6b70252f3c6112b127d3e2f4fb8c94b513751"
+      "length": 66475,
+      "sha256": "eb3fd568ab48762a35ff512a424a4bdd3efbde9fee69d6af8d3fa61b3725f73d"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1261,8 +1261,8 @@
       "sha256": "9a4a2a5c7f297f12231521a279e0ef17cd70085ae6918ae30b1bd63ceaca2932"
     },
     "src/hir/ids/lowering_identity_tests.rs": {
-      "length": 22172,
-      "sha256": "954158fd78743b400fecb178b5e89bbba30c9e6e4eef6618865d74dbf33b26f5"
+      "length": 24400,
+      "sha256": "030374fddb446ebeed72e8c9fa862e72dc7e14c255262a6c40ade044ed714af6"
     },
     "src/hir/owned_collection_record/identity_before.rs": {
       "length": 3616,
