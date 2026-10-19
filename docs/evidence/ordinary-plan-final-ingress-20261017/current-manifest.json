@@ -9,13 +9,13 @@
     },
     {
       "path": "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs",
-      "sha256": "7b593a07f36c1f3cd6d80ff40584a68523902617574755feb34cfe175f38124e",
-      "lines": 214
+      "sha256": "0c097682f7dc4a7c0a23a9c2b16555bd212df31e0013a7581d3b58127b7d7119",
+      "lines": 215
     },
     {
       "path": "src/cleanup_plan/replay/ordinary_plan_history/frontiers.rs",
-      "sha256": "9d426284e668624a8173a4bbe19e63d34aadee30500529ac8e13c05f0a7530ec",
-      "lines": 83
+      "sha256": "694b2f1af1a6b9847e121b265ddfa9d11ea0e8f262dc6928075c49d872e870fc",
+      "lines": 92
     },
     {
       "path": "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",

@@ -106,11 +106,12 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/errors.rs",
     "docs/ORDINARY-REPLAY-RECEIVING-V1.md",
     "src/hir/ids/declaration_backing_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 16074; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "8a0dc137c0ecbe53125289cd1a1a41d4c960febf6ed1dcb8978aedd9d9561ec7";
+const POLICY_LENGTH: usize = 16167; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "fb3ee7941b86c68f2b02ef0404576c17e7af1f0395d9736fe3d0e458f6eacf9a";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -701,6 +702,9 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/string_ops/conditions.rs" => Some(include_str!("../../src/string_ops/conditions.rs")),
         "src/string_ops/conditions/funded.rs" => Some(include_str!("../../src/string_ops/conditions/funded.rs")),
         "src/string_ops/conditions/funded_receiving.rs" => Some(include_str!("../../src/string_ops/conditions/funded_receiving.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs" => Some(include_str!(
+            "../../src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs"
+        )),
         _ => None,
     }
 }
