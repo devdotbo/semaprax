@@ -350,6 +350,12 @@ semantic_graph_private_layout_owned_source_inventory!(core),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"),
         include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"),
         include_str!("../../src/source_reflows_merge/main_e177_packet_lookup.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs"),
+        include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs"),
     ) };
 }
 

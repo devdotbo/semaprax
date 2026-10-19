@@ -1,5 +1,12 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs")),
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs")),
+        "src/test_allocation_observer/backing.rs" => Some(include_str!("../../src/test_allocation_observer/backing.rs")),
         "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs" => Some(include_str!("../../src/bounded_output/stage_debits/route_debits/json_codec_probe.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs")),
