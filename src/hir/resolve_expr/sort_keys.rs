@@ -106,7 +106,16 @@ impl Resolver<'_, '_> {
                 .and_then(|d| d.identity())
         }
         .ok_or_else(fail)?;
-        Ok((element, DeclarationId::new(descriptor)))
+        // Each of the three Descriptor::identity serializers above already
+        // reserves its exact String capacity on this invocation's existing
+        // ActiveBuilder before formation. Preserve that entire paid overlap;
+        // acquire the Arc control/data backing before copying or dropping it.
+        // The same required payer deliberately remains an unpriced legacy
+        // compatibility operation when there is no invocation owner.
+        match DeclarationId::paid_owned(descriptor, reserve_descriptor_backing) {
+            Ok(identity) => Ok((element, identity)),
+            Err(()) => Err(fail()),
+        }
     }
     pub(in crate::hir) fn finish_sort_by<'p>(
         &self,
@@ -184,3 +193,25 @@ impl Resolver<'_, '_> {
         ])
     }
 }
+
+// No captured callback or larger result carrier is introduced. These are
+// actual type-layout obligations against the old owned identity result, not
+// a forecast reduction, new allowance, or a declaration of whole-HIR funding.
+const _: () = {
+    assert!(std::mem::size_of::<Result<DeclarationId, ()>>() <= std::mem::size_of::<DeclarationId>());
+    assert!(std::mem::align_of::<Result<DeclarationId, ()>>() <= std::mem::align_of::<DeclarationId>());
+    assert!(std::mem::size_of_val(&reserve_descriptor_backing) == 0);
+};
+
+fn reserve_descriptor_backing(bytes: usize) -> Result<(), ()> {
+    if crate::bounded_output::reserve_active_required(bytes) {
+        Ok(())
+    } else {
+        Err(())
+    }
+}
+
+#[cfg(test)]
+mod identity_before;
+#[cfg(test)]
+mod identity_tests;
