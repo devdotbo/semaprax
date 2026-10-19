@@ -140,7 +140,9 @@ pub(super) fn lower(
         Profile {
             wrapper: WRAPPER,
             length: LENGTH,
-            length_callee: crate::byte_ops::LEN_ID,
+            length_callee: crate::hir::ids::CompilerDeclaration::ByteOperation(
+                crate::byte_ops::ByteOp::Len,
+            ),
             length_arguments: Vec::new(),
             item: ResolvedType::U8,
             kind: SourceForKind::BorrowBytes,

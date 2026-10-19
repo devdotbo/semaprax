@@ -280,7 +280,10 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         ),
         "9a34241c9eb97cc65b4c9330b372bc6e507599ab6ddf683d9c32567ddaf2ebe1"
     );
-    let current = ci_str!("../../../src/hir/ids/compiler.rs");
+    let current = super::lowering_identity_tests::prior_source(
+        "src/hir/ids/compiler.rs",
+        ci_str!("../../../src/hir/ids/compiler.rs"),
+    );
     assert_eq!(current.matches("    MapOperation(crate::map_ops::MapOp),\n    ListOperation(crate::list_ops::ListOp),\n    IteratorOperation(crate::iterator_ops::IteratorOp),\n").count(), 1);
     assert_eq!(current.matches("            Self::MapOperation(op) => op.id(),\n            Self::ListOperation(op) => op.id(),\n            Self::IteratorOperation(op) => op.id(),\n").count(), 1);
     let mut inverse = current.replace("    MapOperation(crate::map_ops::MapOp),\n    ListOperation(crate::list_ops::ListOp),\n    IteratorOperation(crate::iterator_ops::IteratorOp),\n", "").replace("            Self::MapOperation(op) => op.id(),\n            Self::ListOperation(op) => op.id(),\n            Self::IteratorOperation(op) => op.id(),\n", "");

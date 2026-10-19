@@ -100,6 +100,7 @@ fn all_closed() -> Vec<CompilerDeclaration> {
         .into_iter()
         .map(Command),
     );
+    ids.extend(super::lowering_identity_tests::cases().into_iter().map(|(tag, _)| tag));
     ids
 }
 fn hash<T: Hash + ?Sized>(value: &T) -> u64 {
