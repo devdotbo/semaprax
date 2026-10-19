@@ -611,7 +611,7 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "90420909e8ddd9e73bdeb10f82bb7e6a7186b32847687dc85bd5954761d39deb",
+    "sha256": "afdadfc9f0fd5ea33dce987252e89201a1d9fd135f7bb356a03c84d37bb1862b",
     "lines": 1235
   },
   {
@@ -761,7 +761,7 @@
   },
   {
     "source": "src/source_reflows_merge/ordinary_plan_inputs.rs",
-    "sha256": "73ac9ebbb1fa988ab5239e5fab4fd6fc4fbc4e6b0c8bc37472a4ea813c919a31",
+    "sha256": "ef0da78aa95f2522a50f3954579f302944d65fa5834565afb857789bfa6c7b6e",
     "lines": 520
   },
   {
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "9916e9a75e143ec9729a786155493f468da555a57c8133b2787a1573e4c083c4",
-    "lines": 1465
+    "sha256": "6a0f7c716e98cd084af5189b577d22c06bf25e4edbee6182b7a3142b34036733",
+    "lines": 1469
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
@@ -1861,8 +1861,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
-    "sha256": "92a5f3491ecdedbf94068506c3f083ae79f174023cd49a14e8cdf9cf6c4c268f",
-    "lines": 1304
+    "sha256": "f2d7a66a474f9b09204c3c03da4dc6aa617527298c7423ce6ce2ba63c795b135",
+    "lines": 1308
   },
   {
     "source": "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
@@ -2226,8 +2226,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_compiled.rs",
-    "sha256": "3123f78501fb79516b718cc6a30df3504d5c021fd323437909859f7a6d3b6a3d",
-    "lines": 374
+    "sha256": "33d993dad98df1dbd2f8a9e9dcdcfa7b3ed832a8aea82672cd9fbf57ca4228d3",
+    "lines": 378
   },
   {
     "source": "src/source_reflows_merge/main_e177_packet_lookup.rs",
@@ -2326,8 +2326,8 @@
   },
   {
     "source": "src/hir/resolve_expr/sort_keys/identity_tests.rs",
-    "sha256": "7106d0a157cebd83471303c89fab66ec5c157235ba067adff52152dd2230c2de",
-    "lines": 214
+    "sha256": "e470ec8345dfd19e9ffd77e4b0474aef08b2afc64fa6d4a856a7e3173527e100",
+    "lines": 240
   },
   {
     "source": "src/hir/resolve_for/identity_before.rs",
@@ -2338,5 +2338,10 @@
     "source": "src/hir/resolve_for_own/identity_before.rs",
     "sha256": "ea060f003061866b6bf8df5bbcba4d267b1a694b700168a8962351065e792842",
     "lines": 239
+  },
+  {
+    "source": "src/source_reflows_merge/main_e177_overlay_pins_v9.rs",
+    "sha256": "9f3a3343b8cb3230fbf78c23c9096b6bd43fb416f6cecf9aa4c0ef99e03b7112",
+    "lines": 248
   }
 ]
