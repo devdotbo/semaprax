@@ -257,11 +257,15 @@ fn full_original_operation_sources_and_receivers_have_only_declared_identity_hoo
         ),
         "4c4f9dd06f00371bb571d1c7122e292fccabd7608b55160469c13350407555fd"
     );
+    // Restore the entire later lowering stage before the unchanged tag inverse.
+    let ids_before_lowering = super::lowering_identity_tests::prior_source(
+        "src/hir/ids.rs", ci_str!("../../../src/hir/ids.rs"),
+    );
     // Reuse the complete closed-tag inverse and its exact current/prior pins.
     let acquired = crate::source_reflows_merge::main_e177_final_inputs::value(
         "src/hir/ids.rs",
         "5e56cda454fa3f14f61e2db5f410eea13ac7795d0887e680348eefdc64e80e64",
-        ci_str!("../../../src/hir/ids.rs"),
+        &ids_before_lowering,
     );
     let current = super::declaration_tag::old_source("src/hir/ids.rs", &acquired).unwrap();
     assert_eq!(
