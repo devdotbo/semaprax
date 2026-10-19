@@ -584,6 +584,25 @@ fn catalog_normalizer_public_workspace_reports_actual_paid_validation_phases() {
         Err(payload) => std::panic::resume_unwind(payload),
     };
     assert_eq!(report.build, Build::InstrumentedProductionAlgorithm);
+    let exclusive = &report.resolved_core;
+    assert_eq!(exclusive.algorithm, semaprax::workflow_profile::plan_comparison::CoreDebitAlgorithm::InstrumentedProductionAlgorithm);
+    assert!(
+        exclusive.complete && !exclusive.overflow && !exclusive.lost && !exclusive.invalid,
+        "{exclusive:?}"
+    );
+    assert!(exclusive.entered_attempts > 0);
+    assert_eq!(
+        exclusive.final_attempt_ordinal,
+        Some(exclusive.entered_attempts - 1)
+    );
+    for attempt in &exclusive.attempts[..exclusive.stored_attempts] {
+        assert!(attempt.complete && !attempt.invalid, "{attempt:?}");
+        assert_eq!(attempt.stage_sum(), Some(attempt.consumed));
+        assert_eq!(attempt.operation_sum(), Some(attempt.consumed));
+    }
+    eprintln!(
+        "NORMALIZER_EXCLUSIVE_CORE_DEBITS reservations_not_allocations=true attempts_nonadditive=true final_attempt_explicit=true report={exclusive:?}"
+    );
     assert!(report.paid_phases.balanced && !report.paid_phases.overflow);
     for phase in [
         PaidPhase::CrosscheckEnumerated,

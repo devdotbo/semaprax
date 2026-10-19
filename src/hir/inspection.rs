@@ -50,6 +50,10 @@ pub(super) fn validate_with_loan_comparison<'a>(
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::FunctionValues,
         );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::FunctionValues,
+        );
         super::function_value::validate_program(program)?;
     }
     {
@@ -61,6 +65,10 @@ pub(super) fn validate_with_loan_comparison<'a>(
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::AttachedIdentities,
         );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::AttachedIdentities,
+        );
         validate_attached_identity_references(program)?;
     }
     {
@@ -71,6 +79,10 @@ pub(super) fn validate_with_loan_comparison<'a>(
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::CleanupInventory,
         );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::CleanupInventory,
+        );
         crate::cleanup::validate_program(program)?;
     }
     {
@@ -80,6 +92,10 @@ pub(super) fn validate_with_loan_comparison<'a>(
         #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::CleanupReplay,
+        );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::CleanupReplay,
         );
         crate::cleanup_plan::validate_program(program)?;
     }

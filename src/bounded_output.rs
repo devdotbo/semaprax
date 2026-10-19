@@ -5,6 +5,8 @@ pub(crate) mod key_directory;
 pub(crate) mod prepaid;
 #[cfg(test)]
 pub(crate) mod stage_debits;
+#[cfg(feature = "unstable-workflow-profiling")]
+pub(crate) mod exclusive_debits;
 use std::cell::{Cell, RefCell};
 use std::fmt::{self, Write as _};
 use std::ops::Deref;
@@ -167,6 +169,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
                     parent.remaining.set(remaining.saturating_sub(consumed));
                     #[cfg(test)]
                     stage_debits::debit(&parent, remaining.min(consumed));
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    exclusive_debits::exceptional_settlement(&parent, remaining.min(consumed));
                     parent.overflowed.set(true);
                 }
             }
@@ -231,6 +235,8 @@ fn record_refusal(budget: &Budget, length: usize) {
     if budget.first_refusal.get().is_none() {
         #[cfg(test)]
         stage_debits::refusal(budget, length);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        exclusive_debits::refusal(budget, length);
         budget.first_site.set(Some(std::panic::Location::caller()));
         budget.first_refusal.set(Some(ReservationRefusal {
             requested: length,
@@ -328,6 +334,8 @@ fn reserve_optional(budget: Option<&Budget>, length: usize) -> bool {
     budget.remaining.set(remaining - length);
     #[cfg(test)]
     stage_debits::debit(budget, length);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    exclusive_debits::debit(budget, length);
     true
 }
 

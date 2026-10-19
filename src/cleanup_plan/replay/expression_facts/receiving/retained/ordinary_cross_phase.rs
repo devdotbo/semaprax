@@ -18,6 +18,10 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayStructure,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayStructure,
+    );
     let plan = &function.cleanup_plan;
     if helpers.is_some_and(|index| {
         !program
@@ -48,7 +52,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
             ),
         ));
     }
-
     if lexical_cert::requires_lexical(function) {
         return lexical_replay::validate_with_index(program, function, budget, helpers);
     }
@@ -64,7 +67,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
         plan_structure_units(plan),
         "structural validation",
     )?;
-
     let expression_facts = expression_facts::with_budget(function, budget)?;
     ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
     let status_cases =
@@ -429,7 +431,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                     }
                                 }
                             }
-
                             // One prepaid terminal producer: every false guard immediately returns.
                             if !reserve_into!(
                                 session.budget,
@@ -1483,7 +1484,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
     }
     Ok(())
 }
-
 #[cfg(test)]
 #[allow(
     clippy::duplicate_mod,

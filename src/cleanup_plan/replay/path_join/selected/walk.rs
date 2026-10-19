@@ -61,6 +61,10 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayPathStates,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayPathStates,
+    );
     // Authenticate the absence once before path traversal. The source/HIR
     // wrapper certificate identifies a conditional Step transfer, which must
     // never acquire the one-leaf renewal authority of another profile.
@@ -135,7 +139,6 @@ pub(in crate::cleanup_plan::replay) fn validate_path_states(
             )
         )?;
     }
-
     let mut initial = PathState {
         renewals: BTreeMap::new(),
         live_order: Vec::new(),

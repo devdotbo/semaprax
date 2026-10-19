@@ -1,6 +1,11 @@
 //! Diagnostic-only, current-thread observation of the ordinary PLAN comparator.
 //! Fixed TLS storage is outside the compiler's allocation ledger. No timings,
 //! allocations, admission decisions, or default-shipping performance are measured.
+pub use crate::bounded_output::exclusive_debits::{
+    Algorithm as CoreDebitAlgorithm, Attempt as CoreDebitAttempt, Operation as CoreDebitOperation,
+    Outcome as CoreDebitOutcome, Refusal as CoreDebitRefusal, Report as ResolvedCoreDebits,
+    ATTEMPT_CAPACITY as CORE_ATTEMPT_CAPACITY,
+};
 use sha2::{Digest, Sha256};
 use std::cell::{Cell, RefCell};
 use std::marker::PhantomData;
@@ -189,6 +194,7 @@ thread_local! {
     static OBSERVED_LEDGER_EPOCH: Cell<Option<u64>> = const { Cell::new(Some(0)) };
 }
 pub(crate) fn observe_ledger_transition() {
+    crate::bounded_output::exclusive_debits::transition();
     OBSERVED_LEDGER_EPOCH.with(|epoch| epoch.set(epoch.get().and_then(|v| v.checked_add(1))));
 }
 impl LedgerSnapshot {
@@ -473,6 +479,7 @@ pub struct Report {
     pub detail_complete: bool,
     pub counts_complete: bool,
     pub overflow: bool,
+    pub resolved_core: ResolvedCoreDebits,
 }
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum CaptureError {
@@ -575,6 +582,7 @@ impl Capture {
             s.enabled = true;
             LOST.with(|lost| lost.set(false));
             PHASE_LOST.with(|lost| lost.set(false));
+            crate::bounded_output::exclusive_debits::begin(generation);
             Ok(Self {
                 generation,
                 _thread: PhantomData,
@@ -595,6 +603,7 @@ impl Capture {
             s.paid_phases.balanced &= !PHASE_LOST.with(Cell::get);
             Ok(Report {
                 paid_phases: s.paid_phases,
+                resolved_core: crate::bounded_output::exclusive_debits::finish(s.generation),
                 build: if cfg!(test) {
                     Build::InstrumentedLibraryTest
                 } else {
@@ -618,6 +627,7 @@ impl Drop for Capture {
     fn drop(&mut self) {
         access(|s| {
             if s.generation == self.generation {
+                crate::bounded_output::exclusive_debits::cancel(self.generation);
                 s.enabled = false;
             }
         });

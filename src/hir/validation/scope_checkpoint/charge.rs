@@ -24,6 +24,10 @@ pub(in crate::hir::validation) fn reserve(bytes: Option<usize>) -> Result<(), Di
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ScopeCheckpoint,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ScopeCheckpoint,
+    );
     let Some(bytes) = bytes else {
         return Err(failure(
             usize::MAX,

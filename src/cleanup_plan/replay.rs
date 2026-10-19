@@ -2854,6 +2854,10 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayHirSkeleton,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayHirSkeleton,
+    );
     #[cfg(test)]
     if ordinary_receiving::saved() {
         return ordinary_receiving::hir_skeleton_paths_with_index_storage_before(
@@ -6768,6 +6772,10 @@ fn plan_skeleton_paths(
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayPlanSkeleton,
+    );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayPlanSkeleton,
     );
     let plan = &function.cleanup_plan;
     let mut queue = VecDeque::new();

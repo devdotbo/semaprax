@@ -75,6 +75,10 @@ pub(super) fn substitute<'t>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::TextSubstitution,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::TextSubstitution,
+    );
     fund(Some(0))?;
     enum Frame<'f> {
         Enter(&'f ResolvedType),

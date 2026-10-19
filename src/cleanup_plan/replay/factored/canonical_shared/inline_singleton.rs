@@ -1210,6 +1210,10 @@ impl<'a> Canonicalizer<'a> {
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::ReplayFactoredCanonical,
         );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::ReplayFactoredCanonical,
+        );
         #[cfg(test)]
         super::tests::note_actual_entry(budget);
         // Authenticate even when states already contains the requested root.
