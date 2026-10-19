@@ -244,11 +244,11 @@ fn full_original_renderer_and_all_current_source_owners_remain_bound() {
             crate::digest_hex::LowerHex(Sha256::digest(text.as_bytes()))
         )
     };
-    let rows: serde_json::Value =
-        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
-            crate::source_reflows_merge::ReceiverFixture::DiagnosticWriter,
-        ))
-        .unwrap();
+    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/diagnostic-writer-846/source-inverses.json"
+    )))
+    .unwrap();
     let sources = [
         ("src/diagnostic.rs", include_str!("../../diagnostic.rs")),
         ("src/workspace_report.rs", include_str!("../../workspace_report.rs")),

@@ -166,6 +166,12 @@ impl ReceiverFixture {
     // canonical-row request. Authenticate it before the three exact transport
     // reversals and every unchanged original signature/source proof pipeline.
     pub(crate) fn signature_rewrite_source_before(current: &str) -> String {
+        let prior = embedded_acquisition_source_before(
+            "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
+            current,
+        )
+        .expect("the signature self-source is a closed embedded consumer");
+        let current = prior.as_str();
         assert_eq!(current.len(), 28277);
         assert_eq!(
             digest(current.as_bytes()),
@@ -376,3 +382,90 @@ pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> Str
     );
     before
 }
+
+// EMBEDDED848_THREE_CURRENT_BEGIN
+// Only the three evaluated acquisitions were restored. Authenticate each whole
+// compiled consumer before reconstructing its complete runtime-source stage;
+// every original transport inverse and historical assertion still follows.
+fn embedded_acquisition_source_before(source: &str, current: &str) -> Option<String> {
+    let (length, sha, old_length, old_sha, embedded, runtime): (
+        usize,
+        [u8; 32],
+        usize,
+        [u8; 32],
+        &str,
+        &str,
+    ) = match source {
+        "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs" => (
+            30436,
+            [
+                237, 115, 207, 242, 72, 24, 228, 75, 198, 221, 208, 179, 60, 28, 61, 102, 143, 8,
+                11, 1, 245, 253, 222, 0, 14, 31, 63, 135, 113, 217, 167, 142,
+            ],
+            30430,
+            [
+                6, 118, 157, 69, 85, 225, 141, 91, 170, 251, 173, 54, 35, 215, 41, 0, 76, 10, 246,
+                17, 113, 52, 40, 221, 41, 47, 112, 23, 206, 255, 53, 244,
+            ],
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json\"\n    )))\n    .unwrap();",
+            "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::RegionEntry,\n        ))\n        .unwrap();",
+        ),
+        "src/diagnostic/writer/tests.rs" => (
+            12183,
+            [
+                155, 180, 211, 126, 240, 24, 153, 35, 56, 69, 157, 144, 92, 117, 88, 31, 126, 66,
+                20, 135, 80, 136, 13, 252, 139, 246, 134, 243, 251, 103, 100, 240,
+            ],
+            12196,
+            [
+                190, 196, 111, 129, 149, 10, 242, 87, 98, 82, 198, 98, 135, 70, 2, 108, 198, 53,
+                196, 200, 24, 87, 21, 100, 62, 176, 202, 77, 21, 123, 146, 235,
+            ],
+            "    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n        env!(\"CARGO_MANIFEST_DIR\"),\n        \"/docs/evidence/diagnostic-writer-846/source-inverses.json\"\n    )))\n    .unwrap();",
+            "    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::DiagnosticWriter,\n        ))\n        .unwrap();",
+        ),
+        "src/workspace_graph/expected_projection/type_rewrite/receiving.rs" => (
+            28276,
+            [
+                22, 221, 107, 83, 203, 128, 52, 44, 220, 161, 220, 11, 112, 61, 14, 175, 0, 10,
+                191, 237, 97, 47, 8, 152, 187, 200, 254, 55, 207, 140, 29, 71,
+            ],
+            28277,
+            [
+                198, 17, 126, 152, 25, 183, 254, 171, 26, 83, 8, 219, 9, 71, 3, 107, 176, 194, 125,
+                45, 139, 98, 251, 184, 50, 47, 197, 221, 238, 199, 127, 102,
+            ],
+            "        let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\n            env!(\"CARGO_MANIFEST_DIR\"),\n            \"/docs/evidence/constructor-signature-rewrite-825/source-inverses.json\"\n        )))\n        .unwrap();",
+            "        let rows: serde_json::Value =\n            serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n                crate::source_reflows_merge::ReceiverFixture::SignatureRewrite,\n            ))\n            .unwrap();",
+        ),
+        _ => return None,
+    };
+    assert_eq!(
+        current.len(),
+        length,
+        "complete embedded consumer extent: {source}"
+    );
+    assert_eq!(
+        digest(current.as_bytes()),
+        sha,
+        "complete embedded consumer body: {source}"
+    );
+    assert_eq!(
+        current.matches(embedded).count(),
+        1,
+        "unique acquisition restoration: {source}"
+    );
+    let before = current.replacen(embedded, runtime, 1);
+    assert_eq!(
+        before.len(),
+        old_length,
+        "complete runtime consumer extent: {source}"
+    );
+    assert_eq!(
+        digest(before.as_bytes()),
+        old_sha,
+        "complete runtime consumer body: {source}"
+    );
+    Some(before)
+}
+// EMBEDDED848_THREE_CURRENT_END

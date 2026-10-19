@@ -664,6 +664,8 @@ fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
 // below receives its complete original input; nothing is read under a compiler
 // allocation or budget probe and no parsed/verdict cache is introduced.
 fn complete_three_fixture_runtime_glue(source: &str, current: &str) -> String {
+    let restored = complete_embedded_fixture_parent_before(source, current);
+    let current = restored.as_str();
     let restored = complete_projection_entry_followup_glue(source, current);
     let current = restored.as_str();
     if source != "src/source_reflows_merge/runtime_json.rs" {
@@ -817,6 +819,16 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
             ReceiverFixture::SignatureRewrite => "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
             _ => unreachable!(),
         };
+        let prior = embedded_acquisition_source_before(source, current)
+            .expect("each whole compiled consumer has one closed restored acquisition");
+        assert!(std::panic::catch_unwind(|| embedded_acquisition_source_before(source, &prior)).is_err(),
+            "already-runtime is not the new embedded current source");
+        assert!(embedded_acquisition_source_before("foreign/source.rs", current).is_none());
+        for foreign in [format!("{current} "), current[..current.len() - 1].to_owned(),
+            current.replacen("use ", "use  ", 1)] {
+            assert_ne!(foreign, current);
+            assert!(std::panic::catch_unwind(|| embedded_acquisition_source_before(source, &foreign)).is_err());
+        }
         let restored = complete_projection_entry_followup_glue(source, current);
         let current = restored.as_str();
         let spec = fixture.spec();
@@ -918,6 +930,9 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
 
 // Each fixed complete compiled source is restored before its unchanged transport inverse.
 fn complete_projection_entry_followup_glue(source: &str, current: &str) -> String {
+    let restored = embedded_acquisition_source_before(source, current)
+        .unwrap_or_else(|| current.to_owned());
+    let current = restored.as_str();
     let (length, sha, old_length, old_sha, edits): (usize, [u8; 32], usize, [u8; 32], &[(usize, usize, &str, &str)]) = match source {
         "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs" => (30430, [6, 118, 157, 69, 85, 225, 141, 91, 170, 251, 173, 54, 35, 215, 41, 0, 76, 10, 246, 17, 113, 52, 40, 221, 41, 47, 112, 23, 206, 255, 53, 244], 22278, [97, 105, 89, 24, 61, 78, 70, 62, 242, 87, 227, 223, 90, 253, 33, 23, 14, 43, 174, 114, 178, 200, 144, 81, 63, 167, 81, 105, 255, 173, 118, 45], &[
             (21158, 22438, "expected_entry = match source {\n        \"src/cleanup_plan/replay.rs\" => {\n            Some(\"cce98dd37682ccb93081bae2eeb53ea103562370461844c12d16a59cb732d31b\")\n        }\n        \"src/cleanup_plan/replay/lexical_replay.rs\" => {\n            Some(\"d0f2b7fcfc3815f0c1207c064d8bcb14d4323dff614d953988b962138ff975d0\")\n        }\n        \"src/cleanup_plan/replay/expression_facts/receiving.rs\" => {\n            Some(\"db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7\")\n        }\n        \"src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs\" => {\n            Some(\"112b1a3f5e47c5d0c99c476c2374e7eb9dbfdc04d9220a94f6bf73b613ee294e\")\n        }\n        _ => None,\n    };\n    let entry = match expected_entry {\n        Some(expected) => {\n            let entry = crate::source_reflows_merge::main_e177_final_inputs::value_direct(\n                source, expected, current,\n            );\n            assert_eq!(\n                format!(\n                    \"{:x}\",\n                    crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n                ),\n                expected,\n                \"complete region-entry historical input: {source}\"\n            );\n            entry\n        }\n        None => current.to_owned(),\n    };\n    let ", ""),
@@ -946,6 +961,38 @@ fn complete_projection_entry_followup_glue(source: &str, current: &str) -> Strin
     }
     assert_eq!(before.len(), old_length);
     assert_eq!(digest(before.as_bytes()), old_sha);
+    before
+}
+
+// The facade itself keeps every original receiver. This full-current front
+// removes only the new closed consumer front before all unchanged predecessors.
+fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge/runtime_json.rs" {
+        return current.to_owned();
+    }
+    assert_eq!(current.len(), 26084);
+    assert_eq!(
+        digest(current.as_bytes()),
+        [
+            86, 236, 159, 193, 237, 230, 90, 86, 16, 172, 70, 242, 216, 45, 74, 38, 172, 131, 168,
+            228, 236, 226, 180, 34, 107, 188, 32, 110, 17, 27, 146, 110
+        ]
+    );
+    let mut before = current.to_owned();
+    let added = "\n// EMBEDDED848_THREE_CURRENT_BEGIN\n// Only the three evaluated acquisitions were restored. Authenticate each whole\n// compiled consumer before reconstructing its complete runtime-source stage;\n// every original transport inverse and historical assertion still follows.\nfn embedded_acquisition_source_before(source: &str, current: &str) -> Option<String> {\n    let (length, sha, old_length, old_sha, embedded, runtime): (\n        usize,\n        [u8; 32],\n        usize,\n        [u8; 32],\n        &str,\n        &str,\n    ) = match source {\n        \"src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs\" => (\n            30436,\n            [\n                237, 115, 207, 242, 72, 24, 228, 75, 198, 221, 208, 179, 60, 28, 61, 102, 143, 8,\n                11, 1, 245, 253, 222, 0, 14, 31, 63, 135, 113, 217, 167, 142,\n            ],\n            30430,\n            [\n                6, 118, 157, 69, 85, 225, 141, 91, 170, 251, 173, 54, 35, 215, 41, 0, 76, 10, 246,\n                17, 113, 52, 40, 221, 41, 47, 112, 23, 206, 255, 53, 244,\n            ],\n            \"    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\\n        env!(\\\"CARGO_MANIFEST_DIR\\\"),\\n        \\\"/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json\\\"\\n    )))\\n    .unwrap();\",\n            \"    let rows: serde_json::Value =\\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\\n            crate::source_reflows_merge::ReceiverFixture::RegionEntry,\\n        ))\\n        .unwrap();\",\n        ),\n        \"src/diagnostic/writer/tests.rs\" => (\n            12183,\n            [\n                155, 180, 211, 126, 240, 24, 153, 35, 56, 69, 157, 144, 92, 117, 88, 31, 126, 66,\n                20, 135, 80, 136, 13, 252, 139, 246, 134, 243, 251, 103, 100, 240,\n            ],\n            12196,\n            [\n                190, 196, 111, 129, 149, 10, 242, 87, 98, 82, 198, 98, 135, 70, 2, 108, 198, 53,\n                196, 200, 24, 87, 21, 100, 62, 176, 202, 77, 21, 123, 146, 235,\n            ],\n            \"    let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\\n        env!(\\\"CARGO_MANIFEST_DIR\\\"),\\n        \\\"/docs/evidence/diagnostic-writer-846/source-inverses.json\\\"\\n    )))\\n    .unwrap();\",\n            \"    let rows: serde_json::Value =\\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\\n            crate::source_reflows_merge::ReceiverFixture::DiagnosticWriter,\\n        ))\\n        .unwrap();\",\n        ),\n        \"src/workspace_graph/expected_projection/type_rewrite/receiving.rs\" => (\n            28276,\n            [\n                22, 221, 107, 83, 203, 128, 52, 44, 220, 161, 220, 11, 112, 61, 14, 175, 0, 10,\n                191, 237, 97, 47, 8, 152, 187, 200, 254, 55, 207, 140, 29, 71,\n            ],\n            28277,\n            [\n                198, 17, 126, 152, 25, 183, 254, 171, 26, 83, 8, 219, 9, 71, 3, 107, 176, 194, 125,\n                45, 139, 98, 251, 184, 50, 47, 197, 221, 238, 199, 127, 102,\n            ],\n            \"        let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(\\n            env!(\\\"CARGO_MANIFEST_DIR\\\"),\\n            \\\"/docs/evidence/constructor-signature-rewrite-825/source-inverses.json\\\"\\n        )))\\n        .unwrap();\",\n            \"        let rows: serde_json::Value =\\n            serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\\n                crate::source_reflows_merge::ReceiverFixture::SignatureRewrite,\\n            ))\\n            .unwrap();\",\n        ),\n        _ => return None,\n    };\n    assert_eq!(\n        current.len(),\n        length,\n        \"complete embedded consumer extent: {source}\"\n    );\n    assert_eq!(\n        digest(current.as_bytes()),\n        sha,\n        \"complete embedded consumer body: {source}\"\n    );\n    assert_eq!(\n        current.matches(embedded).count(),\n        1,\n        \"unique acquisition restoration: {source}\"\n    );\n    let before = current.replacen(embedded, runtime, 1);\n    assert_eq!(\n        before.len(),\n        old_length,\n        \"complete runtime consumer extent: {source}\"\n    );\n    assert_eq!(\n        digest(before.as_bytes()),\n        old_sha,\n        \"complete runtime consumer body: {source}\"\n    );\n    Some(before)\n}\n// EMBEDDED848_THREE_CURRENT_END\n";
+    assert_eq!(before.matches(added).count(), 1);
+    before = before.replacen(added, "", 1);
+    let added = "        let prior = embedded_acquisition_source_before(\n            \"src/workspace_graph/expected_projection/type_rewrite/receiving.rs\",\n            current,\n        )\n        .expect(\"the signature self-source is a closed embedded consumer\");\n        let current = prior.as_str();\n";
+    assert_eq!(before.matches(added).count(), 1);
+    before = before.replacen(added, "", 1);
+    assert_eq!(before.len(), 21463);
+    assert_eq!(
+        digest(before.as_bytes()),
+        [
+            36, 131, 234, 253, 199, 214, 78, 255, 237, 1, 163, 123, 248, 147, 178, 119, 246, 197,
+            124, 195, 237, 204, 53, 62, 231, 78, 238, 229, 124, 131, 42, 24
+        ]
+    );
     before
 }
 // RUNTIME848_THREE_CONTROLS_END
