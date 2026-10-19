@@ -294,6 +294,9 @@ mod tests {
 "####;
         assert_eq!(restored.matches(context_reader).count(), 1);
         restored = restored.replacen(context_reader, "", 1);
+        let v8_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {\n        let expanded = fragments_v3::expand_v8(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V7 {";
+        assert_eq!(restored.matches(v8_dispatch).count(), 1);
+        restored = restored.replacen(v8_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {", 1);
         let v7_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {\n        let expanded = fragments_v3::expand_v7(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V6 {";
         assert_eq!(restored.matches(v7_dispatch).count(), 1);
         restored = restored.replacen(v7_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V6 {", 1);

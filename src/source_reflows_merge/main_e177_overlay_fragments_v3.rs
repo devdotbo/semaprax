@@ -3,6 +3,7 @@ use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 pub(super) const SCHEMA: &str = "semaprax.finite-source-overlay-page.v3";
 pub(super) const SCHEMA_V4: &str = "semaprax.finite-source-overlay-page.v4";
+pub(super) const SCHEMA_V8: &str = "semaprax.finite-source-overlay-page.v8";
 pub(super) const SCHEMA_V7: &str = "semaprax.finite-source-overlay-page.v7";
 pub(super) const SCHEMA_V6: &str = "semaprax.finite-source-overlay-page.v6";
 pub(super) const SCHEMA_V5: &str = "semaprax.finite-source-overlay-page.v5";
@@ -333,6 +334,85 @@ pub(super) fn expand_v6(
     expand(before, policy, &expanded)
 }
 
+// V8 alone factors these two complete pinned old519 carriers. Legacy V6/V3
+// restrictions remain byte-for-byte unchanged; only full ordinary rows reach them.
+const V8_CARRIERS: &[(usize, &str, &str, usize, &str)] = &[
+    (38, "src/source_reflows_merge/main67107_inputs.rs",
+     "ae571c1bf1f461c0485d0e5f4c5b231af8d7f5889e99e81d04e55ef86bd561d8",
+     366, "src/source_reflows_merge/main67107_inputs_tail.rs"),
+    (314, "src/hir/resolve_program.rs",
+     "4bc3d8948fadbac1745748fa65dec109e2e2f2aad21147bdc41b9b4fb0b76913",
+     316, "src/hir/resolve_program_methods.rs"),
+];
+fn v8_inherited_row(old: &[Value], row: &Value) -> Result<Value, &'static str> {
+    let tuple = row["old519_index"].as_array().ok_or("v8 carrier tuple")?;
+    if row.as_object().ok_or("v8 carrier fields")?.len() != 1 || tuple.len() != 4 {
+        return Err("v8 carrier fields");
+    }
+    let index = usize::try_from(tuple[0].as_u64().ok_or("v8 carrier index")?)
+        .map_err(|_| "v8 carrier index")?;
+    let mut full = old.get(index).ok_or("v8 carrier foreign index")?.clone();
+    super::pin(&tuple[1])?;
+    full["current"] = tuple[1].clone();
+    let extra = tuple[2].as_array().ok_or("v8 carrier views")?;
+    for view in extra { super::pin(view)?; }
+    full["views"].as_array_mut().ok_or("v8 carrier old views")?.extend(extra.iter().cloned());
+    if !tuple[3].is_null() { full["fragments"] = tuple[3].clone(); }
+    Ok(full)
+}
+fn v8_carriers(before: &Value, page: &Value) -> Result<Value, &'static str> {
+    let old = before["rows"].as_array().ok_or("v8 carrier old rows")?;
+    let rows = page["replacements"].as_array().ok_or("v8 carrier replacements")?;
+    let mut expanded = page.clone();
+    let mut seen = BTreeSet::new();
+    for (position, row) in rows.iter().enumerate() {
+        let Some(tuple) = row.get("old519_index") else { continue; };
+        let tuple = tuple.as_array().ok_or("v8 carrier tuple")?;
+        if tuple.len() != 4 { return Err("v8 carrier tuple fields"); }
+        let index = usize::try_from(tuple[0].as_u64().ok_or("v8 carrier index")?)
+            .map_err(|_| "v8 carrier index")?;
+        let Some(&(index, source, hash, child_index, child)) =
+            V8_CARRIERS.iter().find(|entry| entry.0 == index) else { continue; };
+        if tuple[3].is_null() { continue; }
+        if !seen.insert(index) { return Err("v8 duplicate carrier"); }
+        let prior = old.get(index).ok_or("v8 carrier missing old row")?;
+        if prior["source"] != source || super::digest(&super::canonical(prior)) != hash
+            || old.get(child_index).ok_or("v8 carrier missing child")?["source"] != child
+        { return Err("v8 carrier old identity"); }
+        let fragments = tuple[3].as_array().ok_or("v8 carrier fragments")?;
+        if fragments.len() != 1 || fragments[0].as_object().ok_or("v8 carrier reference")?.len() != 1
+            || fragments[0][REFERENCE].as_str() != Some(child)
+        { return Err("v8 carrier exact child"); }
+        if !super::edges(before)?.contains(&(source.to_owned(), child.to_owned())) {
+            return Err("v8 carrier old edge");
+        }
+        let mut target = old[child_index].clone();
+        let mut found = false;
+        for candidate in rows {
+            let full = if candidate.get("old519_index").is_some() {
+                let t = candidate["old519_index"].as_array().ok_or("v8 child tuple")?;
+                if t.len() != 4 { return Err("v8 child tuple fields"); }
+                if t[0].as_u64() != Some(child_index as u64) { continue; }
+                if !t[3].is_null() { return Err("v8 nested child override"); }
+                v8_inherited_row(old, candidate)?
+            } else {
+                if candidate["source"] != child { continue; }
+                candidate.clone()
+            };
+            if found { return Err("v8 duplicate child"); }
+            found = true;
+            target = full;
+        }
+        if target["source"] != child || target["compiled"] != true || target.get("fragments").is_some() {
+            return Err("v8 noncompiled or nested child");
+        }
+        let mut full = v8_inherited_row(old, row)?;
+        full["fragments"] = serde_json::json!([target]);
+        expanded["replacements"][position] = full;
+    }
+    Ok(expanded)
+}
+
 // Numeric names are transport within this one fixed page, never new paths.
 // The table is authenticated whole519 followed by this page's ordered additions.
 // All V6, V3 and V2 row, leaf, edge, predecessor and inverse checks replay.
@@ -419,6 +499,20 @@ pub(super) fn expand_v7(
         }
     }
     expand_v6(before, policy, &expanded)
+}
+
+// Only V8 admits the two pinned carrier/leaf pairs. Entire legacy readers follow.
+pub(super) fn expand_v8(before: &Value, policy: &Value, page: &Value) -> Result<Value, &'static str> {
+    if page["schema"] != SCHEMA_V8 { return Err("v8 schema"); }
+    let old = before["rows"].as_array().ok_or("v8 old rows")?;
+    if old.len() != 519 || policy["predecessor"]["rows"].as_u64() != Some(519)
+        || before["source_cap"].as_u64() != Some(super::SOURCE_CAP as u64)
+        || policy["predecessor"]["logical_sha256"].as_str()
+            != Some(super::digest(&super::canonical(before)).as_str())
+    { return Err("v8 authenticated old519"); }
+    let mut expanded = v8_carriers(before, page)?;
+    expanded["schema"] = SCHEMA_V7.into();
+    expand_v7(before, policy, &expanded)
 }
 
 #[cfg(test)]
@@ -1023,6 +1117,7 @@ mod tests {
     }
     #[test]
     fn v7_numeric_addition_refs_keep_full_rows_unknowns_old_strings_and_complete_inverse() {
+        v8_complete_carriers_and_legacy_boundaries();
         let (before, policy, full, compact, index) = v7_fixture();
         assert_eq!(expand_v7(&before, &policy, &compact).unwrap(), full);
         let result = compose_values(before.clone(), &policy, &compact).unwrap();
@@ -1060,6 +1155,7 @@ mod tests {
     }
     #[test]
     fn v7_numeric_refs_refuse_types_old_foreign_duplicate_reordered_and_uncompiled_targets() {
+        v8_finite_carrier_hostiles();
         let (before, policy, _, compact, _) = v7_fixture();
         let n = compact["replacements"][0]["old519_index"][3]
             .as_array()
@@ -1108,4 +1204,95 @@ mod tests {
             assert!(compose_values(old, &rules, &page).is_err(), "mode={mode}");
         }
     }
+    fn v8_fixture() -> (Value, Value, Value, Value) {
+        let before = super::super::super::packet_before_overlay();
+        let predecessor = serde_json::json!({"rows":519,"logical_sha256":digest(&canonical(&before))});
+        let mut rows = Vec::new();
+        let mut compact_rows = Vec::new();
+        for &(index, source, _, child_index, _) in V8_CARRIERS {
+            let prior = &before["rows"][index];
+            let child_prior = &before["rows"][child_index];
+            let pin = |label: &str| { let h = digest(label.as_bytes());
+                serde_json::json!({"length":7,"sha256":h,"archive":format!("e/{h}")}) };
+            let current = pin(source);
+            let child_current = pin(child_prior["source"].as_str().unwrap());
+            let child_view = serde_json::json!({"name":"v8-child-held","length":3,"sha256":"b".repeat(64),"archive":"e/v8-child-held"});
+            let mut retained = child_prior["current"].clone();
+            retained["name"] = "whole-pre-overlay-v2-current".into();
+            let child_views = serde_json::json!([retained, child_view]);
+            let mut child = child_prior.clone();
+            child["current"] = child_current.clone();
+            child["views"].as_array_mut().unwrap().extend(child_views.as_array().unwrap().iter().cloned());
+            let mut carrier = prior.clone();
+            carrier["current"] = current.clone();
+            let mut carrier_retained = prior["current"].clone();
+            carrier_retained["name"] = "whole-pre-overlay-v2-current".into();
+            carrier["views"].as_array_mut().unwrap().push(carrier_retained.clone());
+            carrier["fragments"] = serde_json::json!([child]);
+            rows.extend([carrier, child]);
+            compact_rows.extend([
+                serde_json::json!({"old519_index":[index,current,[carrier_retained],[{"canonical_source":child_prior["source"]}]]}),
+                serde_json::json!({"old519_index":[child_index,child_current,child_views,null]}),
+            ]);
+        }
+        rows.sort_by_key(|row| before["rows"].as_array().unwrap().iter().position(|r| r["source"] == row["source"]).unwrap());
+        compact_rows.sort_by_key(|row| row["old519_index"][0].as_u64().unwrap());
+        let policy = serde_json::json!({"predecessor":predecessor,
+            "replacements":rows.iter().map(|r|r["source"].clone()).collect::<Vec<_>>(),
+            "additions":[],"new_fragment_edges":[]});
+        let full = serde_json::json!({"schema":"semaprax.finite-source-overlay-page.v2",
+            "index":1,"total_pages":1,"predecessor":predecessor,"replacements":rows,"additions":[]});
+        let mut compact = full.clone();
+        compact["schema"] = SCHEMA_V8.into();
+        compact["replacements"] = compact_rows.into();
+        (before, policy, full, compact)
+    }
+    fn v8_complete_carriers_and_legacy_boundaries() {
+        let (before, policy, full, compact) = v8_fixture();
+        assert_eq!(expand_v8(&before, &policy, &compact).unwrap(), full);
+        let result = compose_values(before.clone(), &policy, &compact).unwrap();
+        assert_eq!(result, compose_values_v2(before.clone(), &policy, &full).unwrap());
+        let mut restored = result;
+        for &(i, _, _, child, _) in V8_CARRIERS {
+            restored["rows"][i] = before["rows"][i].clone();
+            restored["rows"][child] = before["rows"][child].clone();
+        }
+        assert_eq!(restored, before, "ENTIRE predecessor and every old field");
+        for schema in [SCHEMA_V7, SCHEMA_V6, SCHEMA] {
+            let mut legacy = compact.clone();
+            legacy["schema"] = schema.into();
+            assert!(compose_values(before.clone(), &policy, &legacy).is_err());
+        }
+    }
+    fn v8_finite_carrier_hostiles() {
+        let (before, policy, _, compact) = v8_fixture();
+        for mode in 0..19 {
+            let mut b = before.clone();
+            let mut rules = policy.clone();
+            let mut page = compact.clone();
+            match mode {
+                0 => page["replacements"][0]["old519_index"][0] = true.into(),
+                1 => page["replacements"][0]["old519_index"][0] = 39.into(),
+                2 => page["replacements"][0]["old519_index"][3][0][REFERENCE] = 366.into(),
+                3 => page["replacements"][0]["old519_index"][3][0][REFERENCE] = "src/hir/resolve_program_methods.rs".into(),
+                4 => page["replacements"][0]["old519_index"][3][0]["unknown"] = true.into(),
+                5 => page["replacements"][0]["old519_index"][3] = serde_json::json!([]),
+                6 => { let x = page["replacements"][0]["old519_index"][3][0].clone(); page["replacements"][0]["old519_index"][3].as_array_mut().unwrap().push(x); }
+                7 => page["replacements"][0]["unknown"] = true.into(),
+                8 => page["replacements"][3]["old519_index"][3] = serde_json::json!([]),
+                9 => { let mut child = b["rows"][366].clone(); child["compiled"] = false.into(); page["replacements"][3] = child; }
+                10 => { let mut child = b["rows"][366].clone(); child["fragments"] = serde_json::json!([]); page["replacements"][3] = child; }
+                11 => { let child = page["replacements"][3].clone(); page["replacements"].as_array_mut().unwrap().push(child); }
+                12 => b["rows"][38]["unknown"] = true.into(),
+                13 => b["rows"][366]["source"] = "src/foreign.rs".into(),
+                14 => rules["predecessor"]["logical_sha256"] = "0".repeat(64).into(),
+                15 => page["replacements"][0]["old519_index"][1]["archive"] = "../foreign".into(),
+                16 => page["replacements"][0]["old519_index"][2] = true.into(),
+                17 => { let row = page["replacements"][0].clone(); page["additions"].as_array_mut().unwrap().push(row); }
+                _ => page["schema"] = "semaprax.finite-source-overlay-page.v800".into(),
+            }
+            assert!(compose_values(b, &rules, &page).is_err(), "v8 mode={mode}");
+        }
+    }
+
 }
