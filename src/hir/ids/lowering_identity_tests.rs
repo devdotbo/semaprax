@@ -198,6 +198,33 @@ fn real_expression_routes_keep_complete_hir_wire_graph_plans_and_diagnostics_aga
     assert_eq!(compatible_traversal.replace(compatible_increment, increment), traversal);
     // Only these two exact increment expressions differ. The full fixture,
     // including every traversal/control-flow body, enters the paired oracle.
+    let owned = include_str!("../../../tests/fixtures/owned-leaf-collections.spx");
+    let owned_ast = crate::check(owned, "lowering-identity.spx").unwrap();
+    let owned_current = hir::resolve(&owned_ast).unwrap();
+    hir::validate(&owned_current).unwrap();
+    crate::loan_plan::validate_program(&owned_current).unwrap();
+    assert_eq!(old_program(&owned_ast).unwrap_err(), vec![crate::diagnostic::Diagnostic {
+        code: "SPX-H006",
+        severity: crate::diagnostic::Severity::Error,
+        message: "expression `declaration:15:owned.leaf.main:expression:34:body.s11.value.s0.value.arg.0.arg0` has a non-canonical identity".into(),
+        path: None,
+        span: None,
+        help: None,
+    }]);
+    use hir::resolve_statement::text_reference as reference;
+    reference::assert_canonical_iterator_reference_source();
+    assert!(!reference::canonical_iterator_path_active());
+    reference::with_canonical_iterator_path(|| {
+        assert!(reference::canonical_iterator_path_active());
+        reference::with_canonical_iterator_path(|| assert!(reference::canonical_iterator_path_active()));
+        assert!(reference::canonical_iterator_path_active());
+    });
+    assert!(!reference::canonical_iterator_path_active());
+    assert!(std::panic::catch_unwind(|| reference::with_canonical_iterator_path(|| panic!("canonical reference unwind"))).is_err());
+    assert!(!reference::canonical_iterator_path_active());
+    // Only the owned fixture uses the separately labelled corrected reference.
+    // Its whole frozen original rejection above remains an independent result;
+    // this corrected-reference parity makes no old allocation/cost claim.
     for text in [
         include_str!("../../../tests/fixtures/projected-string-views.spx"),
         compatible_traversal.as_str(),
@@ -211,7 +238,12 @@ permit { process.stdout.write }
     ] {
         let ast = crate::check(text, "lowering-identity.spx").unwrap();
         let current = hir::resolve(&ast).unwrap();
-        let old = old_program(&ast).unwrap();
+        let old = if text == owned {
+            reference::with_canonical_iterator_path(|| old_program(&ast)).unwrap()
+        } else {
+            old_program(&ast).unwrap()
+        };
+        assert!(!reference::canonical_iterator_path_active());
         hir::validate(&current).unwrap();
         hir::validate(&old).unwrap();
         crate::loan_plan::validate_program(&current).unwrap();
@@ -228,6 +260,9 @@ permit { process.stdout.write }
         let ast = crate::parse(&changed, std::path::Path::new("lowering-invalid.spx")).unwrap();
         let current = hir::resolve(&ast).unwrap_err();
         let old = old_program(&ast).unwrap_err();
+        let corrected = reference::with_canonical_iterator_path(|| old_program(&ast)).unwrap_err();
+        assert!(!reference::canonical_iterator_path_active());
+        assert_eq!(corrected, old, "corrected iterator spelling cannot change foreign call refusal");
         assert_eq!(current, old, "every original diagnostic field and refusal priority");
     }
 }
@@ -262,6 +297,7 @@ fn borrowed_invariant_query_preserves_complete_admission_and_foreign_precedence(
 
 #[test]
 fn complete_source_inverses_and_independent_old_lowering_bodies_remain_exact() {
+    hir::resolve_statement::text_reference::assert_canonical_iterator_reference_source();
     let sources = [
         ("src/hir/ids/compiler.rs", include_str!("compiler.rs")),
         ("src/hir/resolve_expr.rs", include_str!("../resolve_expr.rs")),
