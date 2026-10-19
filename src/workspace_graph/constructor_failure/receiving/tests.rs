@@ -156,7 +156,10 @@ fn constructor_receiving_many_moves_complete_order_and_backing_without_paid_recl
 }
 #[test]
 fn constructor_receiving_complete_old_core_body_and_actual_linked_programs_remain_independent() {
-    let saved = include_str!("before.rs");
+    let saved = crate::source_reflows_merge::setup_typed_input(
+        "src/workspace_graph/constructor_failure/receiving/before.rs",
+        include_str!("before.rs"),
+    );
     let start = saved
         .find("pub(in crate::workspace_graph) fn build_resolved_core_current(")
         .unwrap();

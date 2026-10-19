@@ -139,6 +139,9 @@ fn post21_input(source: &str, current: &str) -> String {
 // Only literal historical ENTRY stages are acquired here. The complete existing
 // compile35f front and every intermediate inverse below still execute in order.
 fn historical_project_entry(source: &str, expected: &str, current: &str) -> String {
+    if let Some(entry) = constructor825_compiled_entry(source, expected, current) {
+        return entry;
+    }
     // This source is compiled DATA, not a canonical-row admission. Restore
     // its exact formatter-only predecessor before the unchanged old projector.
     if source == "src/diagnostic.rs"
@@ -169,6 +172,9 @@ fn historical_project_entry(source: &str, expected: &str, current: &str) -> Stri
     let admitted = matches!(
         (source, expected),
         (
+            "src/workspace_graph/expected_projection/borrowed_imports.rs",
+            "326d155ffc918d43dd00ccbb2f1aa562e45fbfd9d0fe5b4809ac4401408c7d1c"
+        ) | (
             "CHANGELOG.md",
             "dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148"
         ) | (
@@ -1265,3 +1271,29 @@ pub(crate) mod next_big_batch_inputs;
 
 #[path = "source_reflows_merge/main_e177_final_inputs.rs"]
 pub(crate) mod main_e177_final_inputs;
+
+// Closed complete compiled ENTRY acquisition precedes every original #825 inverse.
+fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {
+    let (compiled, length, current_sha, edits): (&str, usize, &str, &[(&str, &str)]) = match (source, expected) {
+        ("src/workspace_graph/constructor_failure/report.rs", "fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84") => (include_str!("workspace_graph/constructor_failure/report.rs"), 10609, "a389503a2f7e6b241bbbaf906f71e980e564fa689d2389543d581dbc12fe5662", &[
+            ("        // Reserve the full width of the captured usize maximum. Otherwise the\n        // same successful construction acquires different report backing at\n        // each decimal limit boundary, so its exact minimum changes its bill.\n        // Rendering below still uses the actual maximum and original help.\n        let message_len = counted(|out| message(out, usize::MAX))?;\n        let base_len = counted(|out| write!(out, \"{}\", BorrowedBuilderHelp(usize::MAX)))?;\n", "        let message_len = counted(|out| message(out, maximum))?;\n        let base_len = counted(|out| write!(out, \"{}\", BorrowedBuilderHelp(maximum)))?;\n"),
+        ]),
+        ("src/workspace_graph/constructor_failure/receiving/before.rs", "6135d75cf3f57029b9dd754030aba155a75ca902772aa036345481c1d3abc8b1") => (include_str!("workspace_graph/constructor_failure/receiving/before.rs"), 14616, "a43797702bc674b8764a7b5533059e49c0eb1272006d38aaf22538bf8334254b", &[
+            ("    charge_builder_prebound, checked_retention, collect_expected_edges, constructor_failure,\n    expected_projection, graph_error, identity_resolution, loan_retention, owned_generics,\n", "    AuthoredDeclaration, ResolvedCore, ResolvedModuleInput, WorkspaceSource,\n    WorkspaceValidationIndex, charge_builder_prebound, checked_retention, collect_expected_edges,\n    constructor_failure, expected_projection, graph_error, identity_resolution, loan_retention,\n    owned_generics, reconstruct_workspace_declaration_facts_with_authority,\n"),
+            ("    validate_retained_declaration_shapes, verify_resolved_call_edges, AuthoredDeclaration,\n    ResolvedCore, ResolvedModuleInput, WorkspaceSource,\n", "    validate_retained_declaration_shapes, validate_stub_signatures_authored,\n    verify_resolved_call_edges,\n"),
+            ("                    &mut core_proofs,\n                    frontend.as_deref(),\n", "                    &mut core_proofs,frontend.as_deref(),\n"),
+            ("\nuse crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;\nuse crate::workspace_graph::validation::before_roots::{\n    validate_stub_signatures_authored, WorkspaceValidationIndex,\n};\n", ""),
+        ]),
+        _ => return None,
+    };
+    assert_eq!(current, compiled, "actual complete compiled constructor ENTRY");
+    assert_eq!(current.len(), length);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), current_sha);
+    let mut entry = current.to_owned();
+    for &(new, old) in edits {
+        assert_eq!(entry.matches(new).count(), 1, "unique complete constructor ENTRY hunk");
+        entry = entry.replacen(new, old, 1);
+    }
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))), expected);
+    Some(entry)
+}

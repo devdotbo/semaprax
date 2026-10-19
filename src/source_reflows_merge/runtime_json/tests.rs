@@ -971,6 +971,16 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
             .is_err()
         );
     }
+    for (source, expected, compiled) in [
+        ("src/workspace_graph/constructor_failure/report.rs", "fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84", include_str!("../../workspace_graph/constructor_failure/report.rs")),
+        ("src/workspace_graph/constructor_failure/receiving/before.rs", "6135d75cf3f57029b9dd754030aba155a75ca902772aa036345481c1d3abc8b1", include_str!("../../workspace_graph/constructor_failure/receiving/before.rs")),
+    ] {
+        let prior = super::super::historical_project_entry(source, expected, compiled);
+        assert_ne!(prior, compiled);
+        for foreign in [format!("{compiled} "), compiled[..compiled.len() - 1].to_owned(), prior] {
+            assert!(std::panic::catch_unwind(|| super::super::historical_project_entry(source, expected, &foreign)).is_err());
+        }
+    }
     let controls = include_str!("tests.rs");
     drop(three_fixture_test_source_before(controls));
     assert!(
@@ -1049,7 +1059,8 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
 // This complete compiled root is authenticated before removing only the closed
 // ENTRY fronts. Every original Native/receiver inverse and old assertion follows.
 fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
-    let restored = complete_diagnostic846_endpoint_before(source, current);
+    let restored = constructor825_root_before(source, current);
+    let restored = complete_diagnostic846_endpoint_before(source, &restored);
     let current = restored.as_str();
     if source != "src/source_reflows_merge.rs" {
         return current.to_owned();
@@ -1093,6 +1104,24 @@ fn complete_diagnostic846_endpoint_before(source: &str, current: &str) -> String
     let before = current.replacen(added, "", 1);
     assert_eq!(before.len(), 55950);
     assert_eq!(digest(before.as_bytes()), [222, 90, 238, 131, 52, 174, 228, 198, 19, 249, 149, 39, 59, 78, 187, 134, 241, 66, 88, 95, 209, 111, 97, 121, 18, 202, 27, 212, 76, 103, 241, 198]);
+    before
+}
+
+fn constructor825_root_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" { return current.to_owned(); }
+    assert_eq!(current.len(), 59943);
+    assert_eq!(digest(current.as_bytes()), [102, 95, 191, 60, 147, 167, 126, 126, 79, 145, 84, 226, 101, 193, 177, 177, 130, 152, 191, 85, 28, 220, 68, 36, 26, 212, 148, 163, 113, 77, 24, 223]);
+    let body = "\n// Closed complete compiled ENTRY acquisition precedes every original #825 inverse.\nfn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {\n    let (compiled, length, current_sha, edits): (&str, usize, &str, &[(&str, &str)]) = match (source, expected) {\n        (\"src/workspace_graph/constructor_failure/report.rs\", \"fc2eb1ecc98cc13b6df906a1e2f59f09d198cf958a4c7ff3472e0aae1a866a84\") => (include_str!(\"workspace_graph/constructor_failure/report.rs\"), 10609, \"a389503a2f7e6b241bbbaf906f71e980e564fa689d2389543d581dbc12fe5662\", &[\n            (\"        // Reserve the full width of the captured usize maximum. Otherwise the\\n        // same successful construction acquires different report backing at\\n        // each decimal limit boundary, so its exact minimum changes its bill.\\n        // Rendering below still uses the actual maximum and original help.\\n        let message_len = counted(|out| message(out, usize::MAX))?;\\n        let base_len = counted(|out| write!(out, \\\"{}\\\", BorrowedBuilderHelp(usize::MAX)))?;\\n\", \"        let message_len = counted(|out| message(out, maximum))?;\\n        let base_len = counted(|out| write!(out, \\\"{}\\\", BorrowedBuilderHelp(maximum)))?;\\n\"),\n        ]),\n        (\"src/workspace_graph/constructor_failure/receiving/before.rs\", \"6135d75cf3f57029b9dd754030aba155a75ca902772aa036345481c1d3abc8b1\") => (include_str!(\"workspace_graph/constructor_failure/receiving/before.rs\"), 14616, \"a43797702bc674b8764a7b5533059e49c0eb1272006d38aaf22538bf8334254b\", &[\n            (\"    charge_builder_prebound, checked_retention, collect_expected_edges, constructor_failure,\\n    expected_projection, graph_error, identity_resolution, loan_retention, owned_generics,\\n\", \"    AuthoredDeclaration, ResolvedCore, ResolvedModuleInput, WorkspaceSource,\\n    WorkspaceValidationIndex, charge_builder_prebound, checked_retention, collect_expected_edges,\\n    constructor_failure, expected_projection, graph_error, identity_resolution, loan_retention,\\n    owned_generics, reconstruct_workspace_declaration_facts_with_authority,\\n\"),\n            (\"    validate_retained_declaration_shapes, verify_resolved_call_edges, AuthoredDeclaration,\\n    ResolvedCore, ResolvedModuleInput, WorkspaceSource,\\n\", \"    validate_retained_declaration_shapes, validate_stub_signatures_authored,\\n    verify_resolved_call_edges,\\n\"),\n            (\"                    &mut core_proofs,\\n                    frontend.as_deref(),\\n\", \"                    &mut core_proofs,frontend.as_deref(),\\n\"),\n            (\"\\nuse crate::workspace_graph::before_private_roots::reconstruct_workspace_declaration_facts_with_authority;\\nuse crate::workspace_graph::validation::before_roots::{\\n    validate_stub_signatures_authored, WorkspaceValidationIndex,\\n};\\n\", \"\"),\n        ]),\n        _ => return None,\n    };\n    assert_eq!(current, compiled, \"actual complete compiled constructor ENTRY\");\n    assert_eq!(current.len(), length);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), current_sha);\n    let mut entry = current.to_owned();\n    for &(new, old) in edits {\n        assert_eq!(entry.matches(new).count(), 1, \"unique complete constructor ENTRY hunk\");\n        entry = entry.replacen(new, old, 1);\n    }\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))), expected);\n    Some(entry)\n}\n";
+    assert_eq!(current.matches(body).count(), 1);
+    let before = current.replacen(body, "", 1);
+    let added = "    if let Some(entry) = constructor825_compiled_entry(source, expected, current) {\n        return entry;\n    }\n";
+    assert_eq!(before.matches(added).count(), 1);
+    let before = before.replacen(added, "", 1);
+    let added = "            \"src/workspace_graph/expected_projection/borrowed_imports.rs\",\n            \"326d155ffc918d43dd00ccbb2f1aa562e45fbfd9d0fe5b4809ac4401408c7d1c\"\n        ) | (\n";
+    assert_eq!(before.matches(added).count(), 1);
+    let before = before.replacen(added, "", 1);
+    assert_eq!(before.len(), 56251);
+    assert_eq!(digest(before.as_bytes()), [102, 223, 76, 21, 86, 144, 119, 157, 130, 198, 55, 153, 24, 82, 173, 228, 207, 123, 226, 142, 10, 243, 130, 93, 102, 56, 226, 79, 214, 102, 206, 84]);
     before
 }
 // RUNTIME848_THREE_CONTROLS_END
