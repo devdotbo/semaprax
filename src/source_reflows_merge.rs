@@ -139,6 +139,33 @@ fn post21_input(source: &str, current: &str) -> String {
 // Only literal historical ENTRY stages are acquired here. The complete existing
 // compile35f front and every intermediate inverse below still execute in order.
 fn historical_project_entry(source: &str, expected: &str, current: &str) -> String {
+    // This source is compiled DATA, not a canonical-row admission. Restore
+    // its exact formatter-only predecessor before the unchanged old projector.
+    if source == "src/diagnostic.rs"
+        && expected == "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e"
+    {
+        assert_eq!(current, include_str!("diagnostic.rs"));
+        assert_eq!(current.len(), 11599);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+            ),
+            "028ee6f9753c7c70c88cf146f35f7b7c61c692d6b4035d3abc03260456eefaa1"
+        );
+        let formatted = "#[rustfmt::skip]\nmod before_writer;";
+        assert_eq!(current.matches(formatted).count(), 1);
+        let entry = current.replacen(formatted, "mod before_writer;", 1);
+        assert_eq!(entry.len(), 11582);
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+            ),
+            expected
+        );
+        return entry;
+    }
     let admitted = matches!(
         (source, expected),
         (
@@ -147,9 +174,6 @@ fn historical_project_entry(source: &str, expected: &str, current: &str) -> Stri
         ) | (
             "docs/ARCHITECTURE.md",
             "ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4"
-        ) | (
-            "src/diagnostic.rs",
-            "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e"
         ) | (
             "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
             "2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36"

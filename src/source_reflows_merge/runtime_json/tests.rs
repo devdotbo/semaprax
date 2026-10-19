@@ -943,6 +943,23 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
             .is_err()
         );
     }
+    let diagnostic = include_str!("../../diagnostic.rs");
+    let prior = super::super::historical_project_entry(
+        "src/diagnostic.rs",
+        "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e",
+        diagnostic,
+    );
+    assert_eq!(prior.len(), 11582);
+    for foreign in [format!("{diagnostic} "), prior] {
+        assert!(
+            std::panic::catch_unwind(|| super::super::historical_project_entry(
+                "src/diagnostic.rs",
+                "922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e",
+                &foreign,
+            ))
+            .is_err()
+        );
+    }
     let controls = include_str!("tests.rs");
     drop(three_fixture_test_source_before(controls));
     assert!(
@@ -1018,24 +1035,27 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
     );
     before
 }
-// This complete compiled root is authenticated before removing only four ENTRY
-// tuples. Every old Native/receiver source inverse and whole-body assertion runs
-// on the resulting authentic prior root without any expected-hash changes.
+// This complete compiled root is authenticated before removing only the closed
+// ENTRY fronts. Every original Native/receiver inverse and old assertion follows.
 fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
     if source != "src/source_reflows_merge.rs" {
         return current.to_owned();
     }
-    assert_eq!(current.len(), 54980);
+    assert_eq!(current.len(), 55950);
     assert_eq!(
         digest(current.as_bytes()),
         [
-            191, 161, 21, 239, 65, 156, 75, 56, 11, 26, 178, 155, 212, 121, 201, 131, 112, 19, 92,
-            145, 185, 232, 97, 136, 128, 232, 194, 130, 193, 37, 23, 205
+            222, 90, 238, 131, 52, 174, 228, 198, 19, 249, 149, 39, 59, 78, 187, 134, 241, 66, 88,
+            95, 209, 111, 97, 121, 18, 202, 27, 212, 76, 103, 241, 198
         ]
     );
-    let added = "        (\n            \"CHANGELOG.md\",\n            \"dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148\"\n        ) | (\n            \"docs/ARCHITECTURE.md\",\n            \"ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4\"\n        ) | (\n            \"src/diagnostic.rs\",\n            \"922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e\"\n        ) | (\n            \"src/workspace_graph/expected_projection/borrowed_imports/typed.rs\",\n            \"2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36\"\n        ) | (\n";
-    assert_eq!(current.matches(added).count(), 1);
-    let before = current.replacen(added, "        (\n", 1);
+    let mut before = current.to_owned();
+    let added = "            \"CHANGELOG.md\",\n            \"dabe64d8fc192968a47f494ebf1ace0de89092c213f615e077d7fe4bc90f2148\"\n        ) | (\n            \"docs/ARCHITECTURE.md\",\n            \"ebc8d9becb91cb72845e18825d3f49bec992e15c63459b6368305a532cb235c4\"\n        ) | (\n            \"src/workspace_graph/expected_projection/borrowed_imports/typed.rs\",\n            \"2532586630034d6c7f2953a1f487c34c25953a5b13dc86a2170bb7561a8fac36\"\n        ) | (\n";
+    assert_eq!(before.matches(added).count(), 1);
+    before = before.replacen(added, "", 1);
+    let added = "    // This source is compiled DATA, not a canonical-row admission. Restore\n    // its exact formatter-only predecessor before the unchanged old projector.\n    if source == \"src/diagnostic.rs\"\n        && expected == \"922f3150549194a6016b86d86fe29dc56a9fb6a23384032b1afc144b248b782e\"\n    {\n        assert_eq!(current, include_str!(\"diagnostic.rs\"));\n        assert_eq!(current.len(), 11599);\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))\n            ),\n            \"028ee6f9753c7c70c88cf146f35f7b7c61c692d6b4035d3abc03260456eefaa1\"\n        );\n        let formatted = \"#[rustfmt::skip]\\nmod before_writer;\";\n        assert_eq!(current.matches(formatted).count(), 1);\n        let entry = current.replacen(formatted, \"mod before_writer;\", 1);\n        assert_eq!(entry.len(), 11582);\n        assert_eq!(\n            format!(\n                \"{:x}\",\n                crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))\n            ),\n            expected\n        );\n        return entry;\n    }\n";
+    assert_eq!(before.matches(added).count(), 1);
+    before = before.replacen(added, "", 1);
     assert_eq!(before.len(), 54430);
     assert_eq!(
         digest(before.as_bytes()),
