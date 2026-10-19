@@ -876,6 +876,10 @@ fn certified_heads_keep_whole_d458_owner_macros_and_independent_final_hir_loops(
         "375d7cfdbb9ea4c2024d2b56a453e9e9cc7a57648057af869f7050a121e072ee"
     );
     let current = include_str!("../comparison_owner.rs");
+    // Authenticate and restore the entire immediate predecessor before the
+    // original final-loop comparison; the affine owner binds its new driver.
+    let current_before_affine = final_affine_tests::whole_before(0, current).unwrap();
+    let current = std::str::from_utf8(&current_before_affine).unwrap();
     let final_marker = "    let mut pairs = actual.paths.iter().zip(expected);";
     let old_final = restored
         .split_once(final_marker)

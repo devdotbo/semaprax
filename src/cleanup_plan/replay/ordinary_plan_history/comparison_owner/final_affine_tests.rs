@@ -417,7 +417,7 @@ fn affine_final_hir_keeps_typed_foreign_restored_authority_and_unwind_full_drop(
     }
 }
 
-fn whole_before(case: usize, source: &str) -> Result<Vec<u8>, &'static str> {
+pub(super) fn whole_before(case: usize, source: &str) -> Result<Vec<u8>, &'static str> {
     use sha2::{Digest, Sha256};
     let table: serde_json::Value =
         serde_json::from_str(include_str!("final_affine_inverse.json")).unwrap();
