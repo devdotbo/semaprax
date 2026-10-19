@@ -36,6 +36,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
     "src/cleanup/schema_summary/tests.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
@@ -108,8 +109,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 15984; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "f64a376c0724fef6b94f352cf50b3a46f90eb87ecb487a9629a09becd8b9a6d7";
+const POLICY_LENGTH: usize = 16074; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "972a3730a8e0cec0dbebe6db4c22c7e36b2d50f01c6c66dd73c84e7eec3915d8";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

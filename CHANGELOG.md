@@ -1,3 +1,4 @@
+- Rebind the Native Rust JSON allocation audit to the already locked serde_json 1.0.154 after verifying the unchanged string scratch and owned-value allocation paths.
 - Retain the explicitly selected macOS SDK in cleared native fixture environments so the real Apple Clang can resolve its standard headers.
 - Authenticate the exact inventory and clone-source formatting successors before replaying their unchanged whole-source audit inverses.
 - Compare complete immutable cleanup-history segments in one receiver loop while retaining every original validation, work request and resource ceiling.
