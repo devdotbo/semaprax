@@ -660,7 +660,7 @@ mod witness_tests {
         if !success || refused || receipt.is_some() || metrics.invalid || metrics.live != 0 {
             use sha2::{Digest, Sha256};
             eprintln!(
-                "OPT904_REFUSAL source_sha={} source_bytes={} module={} phase={} success={} refused={} paid={} first={:?} frame={:?} allocations={:?}",
+                "OPT904_REFUSAL source_sha={:x} source_bytes={} module={} phase={} success={} refused={} paid={} first={:?} frame={:?} allocations={:?}",
                 crate::digest_hex::LowerHex(Sha256::digest(source.as_bytes())),
                 source.len(),
                 checked.module,
