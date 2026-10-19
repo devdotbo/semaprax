@@ -484,21 +484,47 @@ fn certified_heads_keep_complete_immediate_invoices_and_short_losses_for_both_hi
                 }
                 if length == 0 {
                     assert_eq!(current.row.certified_bases, 0);
+                    // Keep the full incoming cold invoice independently on
+                    // its genuine pre-affine comparator, then reconcile the
+                    // later driver from actual admitted final-walk counters.
+                    let before_affine = heads_run_generation(
+                        function,
+                        length,
+                        depth,
+                        shared,
+                        0,
+                        9,
+                        MAX_REPLAY_WORK_UNITS,
+                        usize::MAX,
+                        0,
+                        hir_shared,
+                        true,
+                        shape,
+                    );
+                    assert!(before_affine.row.complete);
+                    assert_eq!(before_affine.observed.0.0, current.observed.0.0);
+                    assert_eq!(before_affine.observed.0.1, current.observed.0.1);
+                    assert_eq!(swaps(&before_affine), swaps(&current));
                     assert_eq!(
-                        current.observed.2,
+                        before_affine.observed.2,
                         old.observed.2
                             + 23 * PAYMENT_HEADER
-                            + 2 * paired_value::LINK_VIEW * current.row.pairs
-                            + super::boundary_run_added(&current.row)
-                            + super::paired_tail_added(&current.row)
+                            + 2 * paired_value::LINK_VIEW * before_affine.row.pairs
+                            + super::boundary_run_added(&before_affine.row)
+                            + super::paired_tail_added(&before_affine.row)
                             + PAYMENT_HEADER
-                            + super::reader_payload_added(&current.row)
-                            - super::reader_removed(&current.row)
-                            - current.row.fused_turns
+                            + super::reader_payload_added(&before_affine.row)
+                            - super::reader_removed(&before_affine.row)
+                            - before_affine.row.fused_turns
                                 * (super::legacy_matching()
                                     + 2 * (paired_value::STEP
                                         + paired_value::EMPTY
                                         + paired_value::TAIL))
+                    );
+                    let (affine_added, affine_removed) = final_affine::delta(&current.row);
+                    assert_eq!(
+                        current.observed.2 + affine_removed,
+                        before_affine.observed.2 + affine_added
                     );
                 }
                 if shape == 4 && length == 128 {

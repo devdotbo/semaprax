@@ -556,8 +556,34 @@ fn shared_identity_replay_has_exact_complete_cold_hot_invoices_and_actual_k() {
                 );
             } else {
                 assert_eq!(current.row.identity_observations, 0);
+                // Preserve the incoming common-cold claim on its complete
+                // actual generation. The later affine final walk can amortize
+                // that loss without changing identity-replay's original bill.
+                let before_affine = certified_head_tests::heads_run_generation(
+                    function,
+                    length,
+                    depth,
+                    shared,
+                    0,
+                    9,
+                    MAX_REPLAY_WORK_UNITS,
+                    usize::MAX,
+                    0,
+                    hir_shared,
+                    true,
+                    0,
+                );
+                assert!(before_affine.row.complete);
+                assert_eq!(before_affine.observed.0.0, current.observed.0.0);
+                assert_eq!(before_affine.observed.0.1, current.observed.0.1);
+                assert_eq!(swaps(&before_affine), swaps(&current));
+                let (affine_added, affine_removed) = final_affine::delta(&current.row);
+                assert_eq!(
+                    current.observed.2 + affine_removed,
+                    before_affine.observed.2 + affine_added
+                );
                 assert!(
-                    current.observed.2 > old.observed.2,
+                    before_affine.observed.2 > old.observed.2,
                     "honest common-cold regression"
                 );
             }
