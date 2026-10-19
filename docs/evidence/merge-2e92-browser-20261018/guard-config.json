@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 30368,
-      "sha256": "edcc5677574fb9255af2fd3fc1d9e48a5b017baa0ce0bae124bae6e0839bdfa1"
+      "length": 30425,
+      "sha256": "6757445904c15f73b3d8b19db0d67c6496a0be805a2b402494de64c27fcb6d86"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 44841,
@@ -313,8 +313,8 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 37409,
-      "sha256": "23733c5c664dbd4e1f055b32bfdfb834574c043b80f60a803fbe5ebf44a8d815"
+      "length": 40440,
+      "sha256": "ce0f8ea59eff06b8126ea060439cd12d14f56657f3987e3c8977b56d0a984a50"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
       "length": 58148,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 62939,
-      "sha256": "a65d93c19a60d627933040fcf692780344b672ef3e12f2a826c1554d3273faa7"
+      "length": 63577,
+      "sha256": "f4de91fcdc2e31af3aa91364f098151a156be0ba47120bfa69e9a3cad015fd71"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -961,8 +961,8 @@
       "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
-      "length": 42183,
-      "sha256": "00ba94dd658191942423b09d7be473af35f45750d68dc58db9ba1525774e0fe3"
+      "length": 42352,
+      "sha256": "d5d337a74ec160cb86b626da1199a857438eab1527a75306d35434fc044f579c"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs": {
       "length": 23096,
@@ -1009,8 +1009,8 @@
       "sha256": "ba5e80400489f1c4546b9e6c724a6ab9dcea707e74e02a50c329895775aa54db"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs": {
-      "length": 18321,
-      "sha256": "00999038dd3fc74d4f7a5e6f8454147522d0a1f8e9ed4f50fe4402adfbb1a91b"
+      "length": 20756,
+      "sha256": "dc422abd0e68fcb7cb563f09c35e5d0a5a1662309e0fe8f35223ac4ab9ae4943"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs": {
       "length": 21023,
@@ -1033,12 +1033,12 @@
       "sha256": "51a2461a7ee906ad6b5a88ebdff6fc1f082a20e105c756bfe30cf83890310550"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs": {
-      "length": 33327,
-      "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
+      "length": 34172,
+      "sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
-      "length": 54062,
-      "sha256": "d4d68454a0eaf55c6fa7e43066c11f2404c19fc826030bcab408226e38114172"
+      "length": 54269,
+      "sha256": "1ca23bdaa0c008455117736b35a4aafd4f17b9ddbe0b1bfd379a8bdadb2fa2f7"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
       "length": 6956,
@@ -1153,12 +1153,12 @@
       "sha256": "485410ab39853c26e2df54bace3891ae4b883029140f66113e481466d5c60954"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs": {
-      "length": 11983,
-      "sha256": "ea6bd33f989b4cc2ebfb0888987af8e9cab7faeeaaeec209ccadbce585cdbe78"
+      "length": 13053,
+      "sha256": "7c06e6fceba929cd5bf81ea1e5b96cbd0a2678fb5ef1cf559c177bec8af9b316"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs": {
-      "length": 17924,
-      "sha256": "db22b1f8ad73018d110db01be3bac7b8b0723f2bb8c9a005ef528c2daf1ce762"
+      "length": 18759,
+      "sha256": "9a0a1048f8dd49cc5497a5e9dfdcd0e3b547a5b059752a045570d253e419413b"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs": {
       "length": 7656,
@@ -1197,31 +1197,55 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 34933,
-      "sha256": "89174b6eac9b239f5c08f25c016aa13f82e3c53d07447b9e2b6e12d0b73b8b19"
+      "length": 36405,
+      "sha256": "f70d45dfcf1278d55221beed61128b437e4a86183e6b73b2b4878887f8ebc199"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 14046,
       "sha256": "1d8b4b54b7b07df4b6f5803427d4f63f169027d374370e500fe4bbcbfaa66af6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs": {
+      "length": 32474,
+      "sha256": "ef34a166d42955f6755f645e89bcd925e7261c93e131fedaa7cb804bd4ab3b88"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs": {
+      "length": 33327,
+      "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs": {
+      "length": 24897,
+      "sha256": "fdfd266191ee167c544a6f3bf9e857bee801f11c0fbfbf0e9e27a3dfecdb173e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs": {
+      "length": 15748,
+      "sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 144366,
-      "sha256": "98b8c902bc3438d71f16bae280a1618f975c328e38fa82cedd242ae26dbd01e8",
+      "length": 145155,
+      "sha256": "c07cf60a721e1b36f7b9e7b8912d0eb7960174d44f09f952b7b0139ee0fe079e",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 160858,
-      "sha256": "e550b36f53ae3763cd8c8b75e3a858e4fa8745174c4bbe35b57b7684f6c9a00f",
+      "length": 161593,
+      "sha256": "212a9e13c4c70d47abd48d51fb446161b8010685bddfa99fba363ab1531db0a2",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 203466,
-      "sha256": "545d0b37952a363656191253f488323c544b34cc4dccbcb25cc7c2c6707402ac",
+      "length": 204255,
+      "sha256": "c66c4194eac4cd9078a8f45d97a797d3d11b65eab8fda0fd396cc934df610e71",
       "base": "../../../../../"
     }
   },
@@ -1249,8 +1273,8 @@
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 63771,
-    "sha256": "2a2db8091431d591c28761f81788aa8195981ee5bf2409dc2297129311433bac",
+    "length": 64320,
+    "sha256": "65db4a64b4425f7ebd4d99f1c700df999f24bc72aa9f86a92b0b817a7bff9576",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -4028,9 +4052,33 @@
       {
         "at": 1118,
         "path": "src/source_reflows_merge/main_e177_packet_lookup.rs"
+      },
+      {
+        "at": 1119,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs"
+      },
+      {
+        "at": 1120,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs"
+      },
+      {
+        "at": 1121,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs"
+      },
+      {
+        "at": 1122,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs"
+      },
+      {
+        "at": 1123,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs"
+      },
+      {
+        "at": 1124,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs"
       }
     ],
-    "rows": 1119
+    "rows": 1125
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -4721,7 +4769,14 @@
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
     "src/source_reflows_merge/main_e177_overlay_compiled.rs",
-    "src/source_reflows_merge/main_e177_packet_lookup.rs"
+    "src/source_reflows_merge/main_e177_packet_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs",
+    "src/test_allocation_observer/backing.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",
