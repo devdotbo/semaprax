@@ -93,4 +93,62 @@ with tempfile.TemporaryDirectory(prefix='semaprax-page-source-',dir='/Volumes/Se
     s=os.stat(path);os.utime(path,ns=(s.st_atime_ns,s.st_mtime_ns+1000000))
    return os.fstat(fd)
  reader['os']=MutateAfterRead();check('midread_identity_mutation_refusal',lambda:refuses(lambda:bounded(path,3,H(b'new'))));reader['os']=os
+# V9 controls are additive: the complete preceding fixtures above stay intact.
+def v9_fixture():
+ old_rows=[record('src/v9-'+str(i)+'.rs',b'old') for i in range(519)]
+ old_rows[0]['unknown_metadata']['pin_like']=[True,'not-a-digest','../not-a-pin']
+ old_packet=dict(schema='fixture',source_cap=ns['SOURCE_CAP'],unknown_root={'pin_like':[0,'x']},rows=old_rows)
+ predecessor=dict(extension=pred['extension'],rows=519,logical_sha256=H(canonical(old_packet)))
+ first=copy.deepcopy(old_rows[0]);first['current']=record(first['source'],b'new')['current']
+ first['views']=[dict(name='whole-pre-overlay-v2-current',**old_rows[0]['current'])]
+ second_current=record(old_rows[1]['source'],b'next')['current']
+ second_views=[dict(name='whole-pre-overlay-v2-current',**old_rows[1]['current'])]
+ addition=record('src/v9-new.rs',b'new')
+ addition['current']['extra']=None # Entire object fallback retains unknown fields.
+ addition['views']=[dict(name='literal',length=0,sha256=H(b''),archive='old/channel'),
+                    dict(name='unknown',length=0,sha256=H(b''),archive='e/'+H(b''),extra={'pin_like':[0,H(b'')]})]
+ v8=dict(schema=ns['V8_SCHEMA'],index=1,total_pages=1,predecessor=predecessor,
+         replacements=[first,{'old519_index':[1,second_current,second_views,None]}],additions=[addition])
+ admitted=dict(schema='semaprax.finite-source-overlay-policy.v2',predecessor=predecessor,
+               replacements=[r['source'] for r in old_rows[:2]],additions=[dict(source=addition['source'],compiled=False)],new_fragment_edges=[])
+ return old_packet,admitted,v8
+v9_before,v9_policy,v8_page=v9_fixture()
+v9_page=ns['encode_v9_pins'](v8_page)
+def v9_complete():
+ assert canonical(ns['expand_v9_pins'](v9_page))==canonical(v8_page)
+ assert compose(v9_before,v9_policy,v9_page)==compose(v9_before,v9_policy,v8_page)
+ assert v9_page['additions'][0]['current']==v8_page['additions'][0]['current']
+ assert v9_page['additions'][0]['views'][1]==v8_page['additions'][0]['views'][1]
+ assert v9_page['additions'][0]['views'][0]==['literal',0,H(b''),'old/channel']
+ assert v9_page['replacements'][0]['unknown_metadata']==v8_page['replacements'][0]['unknown_metadata']
+ assert v9_page['replacements'][1]['old519_index'][3] is None
+check('v9_entire_v8_and_composed_packet_unknowns_and_literal_archives',v9_complete)
+def v9_fragment_slots():
+ page=copy.deepcopy(v8_page);leaf=record('src/leaf.rs',b'leaf');leaf['compiled']=True
+ leaf['views']=[dict(name='old',**leaf['current'])]
+ leaf['unknown_metadata']['current']=[True,'not-a-digest']
+ page['replacements'][0]['fragments']=[leaf,{'canonical_source':519}]
+ page['replacements'][1]['old519_index'][3]=[copy.deepcopy(leaf),{'canonical_source':'src/leaf.rs'}]
+ encoded=ns['encode_v9_pins'](page)
+ assert type(encoded['replacements'][0]['fragments'][0]['current']) is list
+ assert encoded['replacements'][0]['fragments'][1]=={'canonical_source':519}
+ assert encoded['replacements'][1]['old519_index'][3][1]=={'canonical_source':'src/leaf.rs'}
+ assert canonical(ns['expand_v9_pins'](encoded))==canonical(page)
+check('v9_only_documented_one_level_fragment_slots',v9_fragment_slots)
+for bad in [[],[0],[0,H(b''),'e/x','extra'],[True,H(b'')],[-1,H(b'')],
+            [ns['SOURCE_CAP']+1,H(b'')],[2**64,H(b'')],[0.5,H(b'')],['0',H(b'')],
+            [0,None],[0,'A'*64],[0,'g'*64],[0,'0'*63],
+            [0,H(b''),'../archive'],[0,H(b''),'/archive'],[0,H(b''),'e//x'],[0,H(b''),None]]:
+ p=copy.deepcopy(v9_page);p['replacements'][0]['current']=bad
+ check('v9_current_tuple_'+H(canonical(bad)),lambda p=p:refuses(lambda:ns['expand_v9_pins'](p)))
+for bad in [[],['name'],['name',0],['name',0,H(b''),'e/x','extra'],[None,0,H(b'')],['name',True,H(b'')]]:
+ p=copy.deepcopy(v9_page);p['replacements'][0]['views'][0]=bad
+ check('v9_view_tuple_'+H(canonical(bad)),lambda p=p:refuses(lambda:ns['expand_v9_pins'](p)))
+def v9_bounds():
+ page=copy.deepcopy(v9_page);page['replacements'][0]['current']=[ns['SOURCE_CAP'],H(b'')]
+ expanded=ns['expand_v9_pins'](page)
+ assert expanded['replacements'][0]['current']['length']==ns['SOURCE_CAP']
+ page=copy.deepcopy(v8_page);page['unknown_padding']='x'*ns['PAGE_CAP']
+ refuses(lambda:ns['encode_v9_pins'](page))
+check('v9_exact_source_bound_and_unchanged_page_cap',v9_bounds)
 print(json.dumps(dict(status='PASS_PYTHON_PROTOCOL_FIXTURES_ONLY',checks=len(checks),names=checks,Rust_executed=False,full_source_guard_executed=False,binder_executed=False),indent=2))

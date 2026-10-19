@@ -236,7 +236,75 @@ def expand_v8_carriers(before, policy, page):
   result['replacements'][position]=full
  return expand_canonical_indices(before,policy,result)
 
+V9_SCHEMA = 'semaprax.finite-source-overlay-page.v9'
+def v9_pin(value, named, encode=False):
+ # Only documented slots call this function. Extra fields keep object form.
+ if encode:
+  expected=('name','length','sha256','archive') if named else ('length','sha256','archive')
+  if not keys(value,expected):return copy.deepcopy(value)
+  pin(value)
+  if named and type(value['name']) is not str:return copy.deepcopy(value)
+  result=([value['name']] if named else [])+[value['length'],value['sha256']]
+  if value['archive']!='e/'+value['sha256']:result.append(value['archive'])
+  return result
+ if type(value) is not list:return copy.deepcopy(value)
+ count=3 if named else 2
+ assert len(value) in (count,count+1), 'v9 pin arity'
+ offset=1 if named else 0
+ if named:assert type(value[0]) is str, 'v9 view name'
+ length,sha=value[offset:offset+2]
+ assert type(sha) is str, 'v9 digest type'
+ result=dict(length=length,sha256=sha,archive=value[-1] if len(value)==count+1 else 'e/'+sha)
+ if named:result['name']=value[0]
+ pin(result)
+ return result
+
+def transform_v9_pin_slots(page, encode=False):
+ # Deliberately one row/one fragment level, never recursive metadata matching.
+ result=copy.deepcopy(page)
+ def row_pins(row):
+  assert type(row) is dict, 'v9 literal row'
+  if 'current' in row:row['current']=v9_pin(row['current'],False,encode)
+  if 'views' in row:
+   assert type(row['views']) is list, 'v9 views'
+   row['views']=[v9_pin(view,True,encode) for view in row['views']]
+ def fragment_pins(fragments):
+  if fragments is None:return
+  assert type(fragments) is list, 'v9 fragments'
+  for fragment in fragments:
+   assert type(fragment) is dict, 'v9 fragment row'
+   if 'canonical_source' not in fragment:row_pins(fragment)
+ for group in ('replacements','additions'):
+  assert type(result[group]) is list, 'v9 rows'
+  for row in result[group]:
+   assert type(row) is dict, 'v9 row'
+   if 'old519_index' in row:
+    assert group=='replacements' and keys(row,('old519_index',)), 'v9 indexed row'
+    reference=row['old519_index']
+    assert type(reference) is list and len(reference)==4, 'v9 old519 arity'
+    reference[1]=v9_pin(reference[1],False,encode)
+    assert type(reference[2]) is list, 'v9 appended views'
+    reference[2]=[v9_pin(view,True,encode) for view in reference[2]]
+    fragment_pins(reference[3])
+   else:
+    row_pins(row)
+    if 'fragments' in row:fragment_pins(row['fragments'])
+ return result
+
+def expand_v9_pins(page):
+ assert page['schema']==V9_SCHEMA
+ result=transform_v9_pin_slots(page);result['schema']=V8_SCHEMA
+ return result
+
+def encode_v9_pins(page):
+ assert page['schema']==V8_SCHEMA
+ result=transform_v9_pin_slots(page,True);result['schema']=V9_SCHEMA
+ assert canonical(expand_v9_pins(result))==canonical(page), 'v9 ENTIRE V8 page inverse'
+ assert len(canonical(result))<=PAGE_CAP, 'v9 same one-page cap'
+ return result
+
 def compose_values(before, policy, page):
+ if page['schema']==V9_SCHEMA:page=expand_v9_pins(page)
  if page['schema']==V8_SCHEMA:page=expand_v8_carriers(before,policy,page)
  elif page['schema']==V7_SCHEMA:page=expand_canonical_indices(before,policy,page)
  elif page['schema']==V6_SCHEMA:page=expand_old519_indices(before,policy,page)

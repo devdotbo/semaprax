@@ -23,3 +23,21 @@ V5 adds exactly two fixed original519 row references: retained arena tests and r
 V6 inherits any unique original519 row by its integer position in the same authenticated predecessor. A record carries the full current pin, exact appended views, and either no fragment override or an array for the original three V3 roots. All source, compiled, unknown-field and original-view data are cloned; non-root fragment changes remain full literal rows. Expanded rows pass the unchanged V3 reference rules and V2 whole inverse, policy, edge, and current-authentication checks. V2–V5 readers and controls remain independent; no new path or page is read and all caps remain unchanged.
 
 V7 retains V6's three-root override domain and additionally encodes addition-row references by their authenticated canonical positions. V8 adds only two literal old519 carrier/leaf pairs: index 38 `main67107_inputs.rs` with child 366 `main67107_inputs_tail.rs`, and index 314 `hir/resolve_program.rs` with child 316 `hir/resolve_program_methods.rs`. Each complete immutable carrier row is authenticated by its fixed canonical digest. Its existing four-field `old519_index` tuple carries a current pin, appended views and exactly one reference to that literal compiled leaf. The complete updated leaf is acquired from exactly one replacement record; all old fields, unknown metadata and view prefixes are restored before the unchanged V7, V6, V3 and V2 readers. Other carriers, alternate children, duplicate or missing target records and non-leaf targets are refused. The single page, ordering, physical-source authentication and 262144-byte cap are unchanged; this private fixture encoding grants no source admission or runtime qualification.
+
+V9 transports pins only in replacement/addition row `current` and `views` slots,
+the corresponding `old519_index` current/appended-view slots, and the `current`
+and `views` of their one-level literal fragment rows. Canonical references and
+all other metadata are untouched. A current pin is `[length, full_sha256]`; a
+named view is `[name, length, full_sha256]`. Either tuple may append the exact
+literal archive path; omission means precisely `e/<full_sha256>`. Only objects
+with exactly the documented pin fields are encoded. Extra or unknown fields
+keep the entire original object, including absent versus null values.
+
+The decoder validates tuple arity, types, full lowercase digests, individual
+source length bounds and archive paths with the existing pin validator. It
+visits only those fixed slots, without recursive reference expansion. V9
+materializes the complete canonical V8 page before the unchanged V8 through V2
+readers. The generator requires exact whole-V8 equality after its round trip;
+composition, numeric positions, archive authentication, single-page 262144-byte
+cap and source admissions retain their existing meanings. This private
+transport grants no authority or runtime qualification.
