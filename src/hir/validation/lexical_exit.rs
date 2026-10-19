@@ -392,6 +392,8 @@ pub(in crate::hir::validation) fn witness_unwind_point() {
 mod witness_tests {
     use super::*;
     const SCALAR: &str = "module witness; @id(\"w.f\") fn f(x:i64)->i64 {match x {0=>1, n=>n,}} @id(\"w.main\") fn main()->i64 {f(0)}";
+    const MIXED_GUARD_RETURN: &str =
+        "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>2,}}";
     fn sources() -> Vec<String> {
         let mut nested = "0".to_owned();
         for _ in 0..16 {
@@ -410,7 +412,7 @@ mod witness_tests {
             SCALAR.to_owned(),
             "module guarded; @id(\"main\") fn main()->i64 {match 0 {0 if true=>1, n=>n,}}".to_owned(),
             "module never; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>{return 2;},}}".to_owned(),
-            "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{return 1;}, _=>2,}}".to_owned(),
+            "module mixed; @id(\"main\") fn main()->i64 {match 0 {0=>{1}, _=>2,}}".to_owned(),
             "module borrowed; @id(\"consume\") fn consume(value:own Result<Bytes,Bytes>)->i64 {let borrowed=match borrow value {Result::Ok {value:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{1},Result::Err {error:payload}=>if byte_len(bytes_as_slice(payload))==0usize {0}else{2},}; match own value {Result::Ok {value:payload}=>borrowed,Result::Err {error:payload}=>borrowed,}} @id(\"main\") fn main()->i64 {0}".to_owned(),
             format!("module nested; @id(\"main\") fn main()->i64 {{{nested}}}"),
             format!("module calls; @id(\"f\") fn f(x:i64)->i64 {{x}} @id(\"main\") fn main()->i64 {{{calls}}}"),
@@ -424,6 +426,10 @@ mod witness_tests {
         assert_ne!(missing_comma, SCALAR);
         let syntax = crate::check(&missing_comma, "witness-missing-comma.spx").unwrap_err();
         assert_eq!(syntax[0].code, "SPX-P106");
+        // Mixed returning/fallthrough arms are a retained negative, not an
+        // admitted positive fixture. The positive corpus keeps block/scalar arms.
+        let mixed = crate::check(MIXED_GUARD_RETURN, "witness-mixed-return.spx").unwrap_err();
+        assert_eq!(mixed[0].code, "SPX-P210");
         let checked = crate::check(SCALAR, "witness.spx").unwrap();
         let program = crate::hir::resolve(&checked).unwrap();
         let validator = HirValidator::new(&program).unwrap();
@@ -491,12 +497,13 @@ mod witness_tests {
                 _ => None,
             }
         }
-        // The complete saved recursive oracle deliberately exercises depth64.
-        // Give its historical recursion a bounded test-only stack rather than
-        // reducing the fixture or suppressing a failed oracle assertion.
+        // Keep the complete saved depth64 oracle. On the owning unoptimized
+        // toolchain its recursive body has a 154448-byte frame, so the body
+        // frames alone exceed 8 MiB. This bounded test-only stack also retains
+        // the wrapper/caller frames and propagates every failed assertion.
         std::thread::Builder::new()
             .name("904-complete-recursive-oracle".to_owned())
-            .stack_size(8 * 1024 * 1024)
+            .stack_size(32 * 1024 * 1024)
             .spawn(|| {
                 let mut late_attacks = [0; 2];
                 for source in sources() {
