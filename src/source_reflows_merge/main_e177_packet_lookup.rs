@@ -402,6 +402,7 @@ fn with_packet_context(authenticated: &serde_json::Value, source: &str, expected
     }
 }
 
+#[cfg(test)]
 fn root_before_nested_context(current: &str) -> String {
     assert_eq!(current.len(), 112797);
     assert_eq!(digest(current.as_bytes()), "038f6b2515f59c4df7a11a8718b66f0904b2d07cb9544346eef2e3482a205467");
