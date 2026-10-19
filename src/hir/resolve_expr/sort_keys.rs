@@ -112,6 +112,12 @@ impl Resolver<'_, '_> {
         // acquire the Arc control/data backing before copying or dropping it.
         // The same required payer deliberately remains an unpriced legacy
         // compatibility operation when there is no invocation owner.
+        // The fallible identity result is a distinct real receiving carrier.
+        // Admit its complete actual width before the call, keeping the original
+        // String charge and separate Arc backing charge without any credit.
+        if !crate::bounded_output::reserve_active_required(DESCRIPTOR_RESULT_BYTES) {
+            return Err(fail());
+        }
         match DeclarationId::paid_owned(descriptor, reserve_descriptor_backing) {
             Ok(identity) => Ok((element, identity)),
             Err(()) => Err(fail()),
@@ -194,14 +200,10 @@ impl Resolver<'_, '_> {
     }
 }
 
-// No captured callback or larger result carrier is introduced. These are
-// actual type-layout obligations against the old owned identity result, not
-// a forecast reduction, new allowance, or a declaration of whole-HIR funding.
-const _: () = {
-    assert!(std::mem::size_of::<Result<DeclarationId, ()>>() <= std::mem::size_of::<DeclarationId>());
-    assert!(std::mem::align_of::<Result<DeclarationId, ()>>() <= std::mem::align_of::<DeclarationId>());
-    assert!(std::mem::size_of_val(&reserve_descriptor_backing) == 0);
-};
+// Pay the actual complete result carrier, including enum storage and padding.
+// No niche optimization or width relative to DeclarationId is assumed.
+const DESCRIPTOR_RESULT_BYTES: usize = std::mem::size_of::<Result<DeclarationId, ()>>();
+const _: () = assert!(std::mem::size_of_val(&reserve_descriptor_backing) == 0);
 
 fn reserve_descriptor_backing(bytes: usize) -> Result<(), ()> {
     if crate::bounded_output::reserve_active_required(bytes) {

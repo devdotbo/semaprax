@@ -112,19 +112,42 @@ fn descriptor_string_and_arc_overlap_use_same_original_payer_exact_short_floor_a
         let expression = call(&function.body, operation);
         let old = prepare(&resolver, &owner, expression, true).unwrap();
         let bytes = backing(old.1.as_str().len());
+        let result_bytes = std::mem::size_of::<Result<DeclarationId, ()>>();
+        assert_eq!(DESCRIPTOR_RESULT_BYTES, result_bytes);
         assert_eq!(Some(bytes), DeclarationId::shared_backing_bytes(old.1.as_str().len()));
         let (old_result, refused, old_paid) = with_limit_usage(usize::MAX, || prepare(&resolver, &owner, expression, true));
         assert!(!refused);
         assert_eq!(old_result.unwrap(), old);
-        let (current, refused, paid) = with_limit_usage(old_paid + bytes, || prepare(&resolver, &owner, expression, false));
+        let (current, refused, paid) = with_limit_usage(old_paid + result_bytes + bytes, || prepare(&resolver, &owner, expression, false));
         assert!(!refused);
         assert_eq!(current.unwrap(), old);
-        assert_eq!(paid, old_paid + bytes, "all original formation charges retained, one real backing added");
-        let (result, refused, paid, receipt) = with_limit_usage_refusal(old_paid + bytes - 1, || prepare(&resolver, &owner, expression, false));
+        assert_eq!(paid, old_paid + result_bytes + bytes, "all original charges retained, actual result carrier and real backing added");
+        let (result, refused, paid, receipt) = with_limit_usage_refusal(old_paid + result_bytes + bytes - 1, || prepare(&resolver, &owner, expression, false));
         assert!(result.is_err() && refused);
-        assert_eq!(paid, old_paid);
+        assert_eq!(paid, old_paid + result_bytes);
         assert_eq!(receipt.unwrap().requested, bytes, "new backing is refused before formation");
-        let ((result, retry), refused, paid, receipt) = with_limit_usage_refusal(old_paid + bytes, || {
+        let ((result, retry), refused, paid, receipt) = with_limit_usage_refusal(old_paid + result_bytes + bytes, || {
+            assert!(set_active_floor(1));
+            let result = prepare(&resolver, &owner, expression, false);
+            clear_active_floor();
+            (result, reserve_active_required(0))
+        });
+        assert!(result.is_err() && !retry && refused);
+        assert_eq!(paid, old_paid + result_bytes);
+        assert_eq!(receipt.unwrap().requested, bytes);
+        // New-carrier short refusal precedes paid_owned; exact admission then
+        // reaches the independent Arc refusal with no remaining byte budget.
+        for available in [0, result_bytes - 1] {
+            let (result, refused, paid, receipt) = with_limit_usage_refusal(old_paid + available, || prepare(&resolver, &owner, expression, false));
+            assert!(result.is_err() && refused);
+            assert_eq!(paid, old_paid);
+            assert_eq!(receipt.unwrap().requested, result_bytes);
+        }
+        let (result, refused, paid, receipt) = with_limit_usage_refusal(old_paid + result_bytes, || prepare(&resolver, &owner, expression, false));
+        assert!(result.is_err() && refused);
+        assert_eq!(paid, old_paid + result_bytes);
+        assert_eq!(receipt.unwrap().requested, bytes);
+        let ((result, retry), refused, paid, receipt) = with_limit_usage_refusal(old_paid + result_bytes, || {
             assert!(set_active_floor(1));
             let result = prepare(&resolver, &owner, expression, false);
             clear_active_floor();
@@ -132,7 +155,7 @@ fn descriptor_string_and_arc_overlap_use_same_original_payer_exact_short_floor_a
         });
         assert!(result.is_err() && !retry && refused);
         assert_eq!(paid, old_paid);
-        assert_eq!(receipt.unwrap().requested, bytes);
+        assert_eq!(receipt.unwrap().requested, result_bytes);
         // Same owning String/Arc physical overlap and complete releases; only payment changes.
         let ((), old_metrics) = measure(|| drop(prepare(&resolver, &owner, expression, true).unwrap()));
         let ((), current_metrics) = measure(|| drop(prepare(&resolver, &owner, expression, false).unwrap()));
@@ -153,25 +176,28 @@ fn actual_serializer_capacity_precharge_and_owned_backing_have_no_unfunded_forma
         let len = expected.len();
         assert_eq!(expected.capacity(), len, "exact original requested String capacity");
         let arc = backing(len);
-        let (((), observed), refused, paid) = with_limit_usage(len + arc, || measure(|| {
+        let result_bytes = std::mem::size_of::<Result<DeclarationId, ()>>();
+        let (((), observed), refused, paid) = with_limit_usage(len + result_bytes + arc, || measure(|| {
             let text = serialize().unwrap();
             assert_eq!(text, expected);
             assert_eq!(text.capacity(), len);
+            assert!(reserve_active_required(result_bytes));
             let id = DeclarationId::paid_owned(text, reserve_descriptor_backing).unwrap();
             assert_eq!(id.as_str(), expected);
             drop(id);
         }));
         assert!(!refused && !observed.invalid);
-        assert_eq!(paid, len + arc);
+        assert_eq!(paid, len + result_bytes + arc);
         assert_eq!(observed.allocated, len + arc);
         assert_eq!(observed.allocated, observed.freed);
         assert_eq!(observed.live, 0);
-        let (((), observed), refused, paid, receipt) = with_limit_usage_refusal(len + arc - 1, || measure(|| {
+        let (((), observed), refused, paid, receipt) = with_limit_usage_refusal(len + result_bytes + arc - 1, || measure(|| {
             let text = serialize().unwrap();
+            assert!(reserve_active_required(result_bytes));
             assert!(DeclarationId::paid_owned(text, reserve_descriptor_backing).is_err());
         }));
         assert!(refused && !observed.invalid);
-        assert_eq!(paid, len);
+        assert_eq!(paid, len + result_bytes);
         assert_eq!(receipt.unwrap().requested, arc);
         assert_eq!((observed.allocated, observed.freed, observed.live), (len, len, 0));
     }
