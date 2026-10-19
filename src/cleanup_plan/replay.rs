@@ -5,8 +5,6 @@ mod branch_clone;
 use crate::bounded_output::stage_debits::route_debits as debit_routes;
 #[cfg(feature = "unstable-workflow-profiling")]
 use crate::workflow_profile::plan_comparison::PaidPhase;
-#[cfg(test)]
-use crate::bounded_output::stage_debits::route_debits as debit_routes;
 mod compact_stage;
 mod constructed_variant;
 #[cfg(test)]
