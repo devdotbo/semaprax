@@ -711,6 +711,8 @@ pub(super) mod shared_prefix_prices {
     pub(in super::super) const CAPTURE_EXTENT: usize = super::shared_prefix::CAPTURE_EXTENT;
     pub(in super::super) const OWNER: usize = super::shared_prefix::OWNER;
     pub(in super::super) const DETECTOR: usize = super::shared_prefix::DETECTOR;
+    #[cfg(feature = "unstable-workflow-profiling")]
+    pub(in super::super) const REPLAY: usize = super::shared_prefix::REPLAY;
 }
 pub(super) fn whole_source() -> String {
     use sha2::{Digest, Sha256};
