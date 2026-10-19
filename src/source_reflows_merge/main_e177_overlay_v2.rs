@@ -19,6 +19,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
+    "src/source_reflows.rs",
     "src/source_reflows_merge.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
@@ -30,6 +31,8 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
     "src/cleanup_plan/replay/factored/canonical_shared.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+    "src/cleanup_plan/replay/factored/oracle_hook.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
@@ -43,6 +46,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
     "src/bounded_output.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
     "src/cleanup_plan/replay/factored/strategy.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
@@ -69,6 +73,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_verify/declaration.rs",
     "src/workspace_graph.rs",
     "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs",
+    "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
     "src/workspace_graph/function_alias/before_core.rs",
     "src/workspace_graph/function_alias/before_core/tests.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
@@ -254,8 +259,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 89944; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "6b25f52a93bfac640c45342a58c7c2577080d79cf4cf76000c58d566b58eddd1";
+const POLICY_LENGTH: usize = 90222; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "07919b4119456834b47f3ba8deb86ea05603816ee07a4bbe9ad336bf4f00427f";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

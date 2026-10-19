@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 30201,
-      "sha256": "4dcba32572b090ac5692be1ca676555222f4990c2989680aeb02fb47b0b67865"
+      "length": 30368,
+      "sha256": "edcc5677574fb9255af2fd3fc1d9e48a5b017baa0ce0bae124bae6e0839bdfa1"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 44841,
@@ -153,8 +153,8 @@
       "sha256": "dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991"
     },
     "src/source_reflows_merge/main_e177_final_inputs.rs": {
-      "length": 112017,
-      "sha256": "6b3645d2baeaa9d27a017ef224d8c87cc8d638deafce6b46aca363e25bb2deff"
+      "length": 112069,
+      "sha256": "c99aa4c8f163fd93f2c5ab7dc050bbd69e0d2a5568f1faf2a02e8c62faf533a5"
     },
     "src/source_reflows_merge/main_e177_inputs.rs": {
       "length": 38749,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 62636,
-      "sha256": "078cc808b03f53f1c9f06d4b3adef194628f4a7cbabfa5d334089af1eacd5ff1"
+      "length": 62939,
+      "sha256": "4735f468fbb8ef1f44d9894862f2a2ed79d35e4ff0dbbdef6716cd802dbe8c09"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1037,8 +1037,8 @@
       "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
-      "length": 53204,
-      "sha256": "14a0e6ea0e450c4eab3fafc4491af240ee455ebc46072384641abff27ef3e259"
+      "length": 54062,
+      "sha256": "d4d68454a0eaf55c6fa7e43066c11f2404c19fc826030bcab408226e38114172"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
       "length": 6956,
@@ -1065,8 +1065,8 @@
       "sha256": "921932de646b2be17d4f64a8a2f8e499d6ba0098a4e145d326ed0e88f66f90ca"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs": {
-      "length": 32865,
-      "sha256": "0175400d4d9ea5a091aa31dd41ab7bd80a4ea3c6465da0cd1efa329cd2908df7"
+      "length": 33043,
+      "sha256": "e108fda04b20450b6014c943da5984818ceb6fbc837e7f86b086ad22b6cea1f8"
     },
     "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs": {
       "length": 17919,
@@ -1105,8 +1105,8 @@
       "sha256": "3bfddfb8c69711d9e5c5b423a3a400e74a1b16572ead764acb340ad8a8bbe417"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs": {
-      "length": 13420,
-      "sha256": "a506a12c22e96ab0e1ae7c48cf0e36276c24aa50de6d6f4a6b40b37e3a34761d"
+      "length": 13860,
+      "sha256": "e4006e0c55c0ba9b9b6d214b8d142cbc9c279c63b9c392dc1b636fc600cc30ce"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs": {
       "length": 32019,
@@ -1157,8 +1157,8 @@
       "sha256": "ea6bd33f989b4cc2ebfb0888987af8e9cab7faeeaaeec209ccadbce585cdbe78"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs": {
-      "length": 17635,
-      "sha256": "533b9a47e962744ae29002a06f5a0d96009ac0fdf61500e61187dfea434b44e1"
+      "length": 17924,
+      "sha256": "db22b1f8ad73018d110db01be3bac7b8b0723f2bb8c9a005ef528c2daf1ce762"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs": {
       "length": 7656,
@@ -1197,12 +1197,12 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 34453,
-      "sha256": "65eaa14b24d689b6d37b5f64ab58343be46d80e1c162794caba4ff1fd119a43c"
+      "length": 34933,
+      "sha256": "89174b6eac9b239f5c08f25c016aa13f82e3c53d07447b9e2b6e12d0b73b8b19"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
-      "length": 8048,
-      "sha256": "9434d55044eb95c722edf089d93b31ccd230bc9c6dbd127c00c848adee142ccb"
+      "length": 14046,
+      "sha256": "1d8b4b54b7b07df4b6f5803427d4f63f169027d374370e500fe4bbcbfaa66af6"
     }
   },
   "carriers": {
