@@ -981,6 +981,13 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
             assert!(std::panic::catch_unwind(|| super::super::historical_project_entry(source, expected, &foreign)).is_err());
         }
     }
+    let attempt = include_str!("../../workspace_graph/constructor_failure/attempt.rs");
+    let old_attempt = super::super::constructor825_attempt_before(attempt);
+    let prior = super::super::setup_typed_input("src/workspace_graph/constructor_failure/attempt.rs", attempt);
+    assert_eq!(digest(prior.as_bytes()), [215, 7, 0, 209, 12, 234, 183, 166, 116, 14, 42, 144, 212, 108, 245, 209, 8, 136, 185, 139, 6, 245, 145, 168, 12, 218, 150, 15, 115, 162, 109, 112]);
+    for foreign in [format!("{attempt} "), old_attempt] {
+        assert!(std::panic::catch_unwind(|| super::super::setup_typed_input("src/workspace_graph/constructor_failure/attempt.rs", &foreign)).is_err());
+    }
     let controls = include_str!("tests.rs");
     drop(three_fixture_test_source_before(controls));
     assert!(
@@ -1059,7 +1066,8 @@ fn complete_embedded_fixture_parent_before(source: &str, current: &str) -> Strin
 // This complete compiled root is authenticated before removing only the closed
 // ENTRY fronts. Every original Native/receiver inverse and old assertion follows.
 fn complete_current_writer_signature_entry_before(source: &str, current: &str) -> String {
-    let restored = constructor825_root_before(source, current);
+    let restored = constructor825_attempt_root_before(source, current);
+    let restored = constructor825_root_before(source, &restored);
     let restored = complete_diagnostic846_endpoint_before(source, &restored);
     let current = restored.as_str();
     if source != "src/source_reflows_merge.rs" {
@@ -1122,6 +1130,21 @@ fn constructor825_root_before(source: &str, current: &str) -> String {
     let before = before.replacen(added, "", 1);
     assert_eq!(before.len(), 56251);
     assert_eq!(digest(before.as_bytes()), [102, 223, 76, 21, 86, 144, 119, 157, 130, 198, 55, 153, 24, 82, 173, 228, 207, 123, 226, 142, 10, 243, 130, 93, 102, 56, 226, 79, 214, 102, 206, 84]);
+    before
+}
+
+fn constructor825_attempt_root_before(source: &str, current: &str) -> String {
+    if source != "src/source_reflows_merge.rs" { return current.to_owned(); }
+    assert_eq!(current.len(), 61106);
+    assert_eq!(digest(current.as_bytes()), [41, 13, 157, 54, 162, 1, 242, 54, 70, 218, 99, 92, 25, 147, 113, 255, 159, 7, 3, 213, 176, 105, 123, 167, 41, 240, 119, 66, 138, 31, 253, 100]);
+    let body = "\n// Authenticate the complete current owner before its unchanged historical chain.\nfn constructor825_attempt_before(current: &str) -> String {\n    assert_eq!(current, include_str!(\"workspace_graph/constructor_failure/attempt.rs\"));\n    assert_eq!(current.len(), 4136);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), \"a6ee9ade44a91d067b516603e52453d965b0e4bd8060add721ebe057f5fcb082\");\n    let added = \"    #[cfg(feature = \\\"unstable-workflow-profiling\\\")]\\n    pub(in crate::workspace_graph) fn observation_succeeded(&self) -> bool {\\n        self.result.is_ok()\\n    }\\n\";\n    assert_eq!(current.matches(added).count(), 1);\n    let before = current.replacen(added, \"\", 1);\n    assert_eq!(before.len(), 3973);\n    assert_eq!(format!(\"{:x}\", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), \"6a4ab15e6a334f636565dc83a21411c4ba40c6de8e61445c015309c94bc892f3\");\n    before\n}\n";
+    assert_eq!(current.matches(body).count(), 1);
+    let before = current.replacen(body, "", 1);
+    let call = "    let acquired;\n    let current = if source == \"src/workspace_graph/constructor_failure/attempt.rs\" {\n        acquired = constructor825_attempt_before(current);\n        acquired.as_str()\n    } else {\n        current\n    };\n";
+    assert_eq!(before.matches(call).count(), 1);
+    let before = before.replacen(call, "", 1);
+    assert_eq!(before.len(), 59943);
+    assert_eq!(digest(before.as_bytes()), [102, 95, 191, 60, 147, 167, 126, 126, 79, 145, 84, 226, 101, 193, 177, 177, 130, 152, 191, 85, 28, 220, 68, 36, 26, 212, 148, 163, 113, 77, 24, 223]);
     before
 }
 // RUNTIME848_THREE_CONTROLS_END

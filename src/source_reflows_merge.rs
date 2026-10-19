@@ -597,6 +597,13 @@ fn before_setup825(source: &str, current: &str) -> String {
 }
 // Preserve the complete immutable typed825 runtime manifest's own exact domain.
 pub(crate) fn setup_typed_input(source: &str, current: &str) -> String {
+    let acquired;
+    let current = if source == "src/workspace_graph/constructor_failure/attempt.rs" {
+        acquired = constructor825_attempt_before(current);
+        acquired.as_str()
+    } else {
+        current
+    };
     let previous = before_setup_reference_controls(source, current);
     let current = previous.as_str();
     runtime_json::project(runtime_json::Fixture::F42, source, current)
@@ -1296,4 +1303,17 @@ fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) ->
     }
     assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))), expected);
     Some(entry)
+}
+
+// Authenticate the complete current owner before its unchanged historical chain.
+fn constructor825_attempt_before(current: &str) -> String {
+    assert_eq!(current, include_str!("workspace_graph/constructor_failure/attempt.rs"));
+    assert_eq!(current.len(), 4136);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))), "a6ee9ade44a91d067b516603e52453d965b0e4bd8060add721ebe057f5fcb082");
+    let added = "    #[cfg(feature = \"unstable-workflow-profiling\")]\n    pub(in crate::workspace_graph) fn observation_succeeded(&self) -> bool {\n        self.result.is_ok()\n    }\n";
+    assert_eq!(current.matches(added).count(), 1);
+    let before = current.replacen(added, "", 1);
+    assert_eq!(before.len(), 3973);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(before.as_bytes()))), "6a4ab15e6a334f636565dc83a21411c4ba40c6de8e61445c015309c94bc892f3");
+    before
 }
