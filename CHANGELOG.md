@@ -1,3 +1,9 @@
+## CI repair: retain the complete relocated source prefix
+
+- Move the already audited JSON codec probe next to its original route-debits
+  parent in both physical raw inventories. Preserve every fragment and count,
+  all original prefix assertions, and the source-role/hostile controls.
+
 ## CI repair: preserve requested source views before older projections
 
 
