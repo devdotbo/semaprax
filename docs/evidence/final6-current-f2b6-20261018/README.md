@@ -1,5 +1,9 @@
 # Genuine current FINAL6 producer and actual hosted browser pins
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The complete original FINAL6 producer ran against exact f2b6bfd9131490a6b656f9a1385b306fec6b0433 inputs, first to its stale endpoint assertion, then through its real write branch, then successfully in no-write mode. Its immutable recipe, checkpoint 787d9810480209532fa645b8cb97f2585ce5f426, all six Git/current acquisitions and inverse replays, nine PLAN owner identities, race rechecks, immutable archival writes and final output predicates remain executable. The original 9387-byte producer body is unchanged. This is actual source-producer execution; its own runtime status remains UNEXECUTED.
 
 The original parser accepts a one-line digest constant while the current helper has its already checked multiline formatting. The existing whole grammar adapter is retained verbatim. Its new inverse is limited to explicit --repo root selection and two exact legitimate helper states: the complete committed starting helper and the exact output independently captured from the full producer. Both helper bodies retain the same checked formatted masked digest, and all original prior-template checks remain. There is no Path, Git, read or predicate override. The full original CLI still controls every acquisition and publication.

@@ -1,5 +1,9 @@
 # Complete owner-bank census and STD-08 failure-prefix observation
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The reachable cursor primitive-bank payment introduced at28f96 was absent from the existing detailed comparison attribution map. Generic HIR/route debits still included it; the thirteen-cell comparison breakdown omitted that payment. It now maps to the existing owner category0 alongside the original comparator/retained-owner labels. No category, index, field, capacity, backing, production payment, work event, payer or allowance changes. All thirteen original categories and the complete39 route/counter/refusal cases remain; the same full test appends three actual route cases for the new alias, retaining8769 successful calls, one refusal, all checked overflows and zero callback-allocation assertions.
 
 A bounded Clippy1.97.1-Dwarnings probe compiles the complete actual before/current classification functions and all thirteen literal labels from the original test. Every old category, the existing alias and foreign-label refusal remain exact. The new real payment label reproduces None before and existing owner cell0 after. Peak147856KiB. This is classification only, not execution of the complete Budget/allocator/callback controller. An exact whole-line inverse recovers the complete prior module and rejects span/extent drift while leaving unknown outside drift visible. Full callback/runtime cases remain a real CI gate.

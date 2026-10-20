@@ -1,5 +1,9 @@
 # Preserve extensionless source evidence on Windows checkout
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The 179 content-addressed archives in `e/` and one in `docs/evidence/w/`
 lack an extension-specific line-ending rule. With `core.autocrlf=true`, Git
 smudged their LF bytes to CRLF. An actual checkout-filter reproduction changed

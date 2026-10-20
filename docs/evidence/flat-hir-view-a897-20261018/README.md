@@ -1,5 +1,9 @@
 # Retain one immutable flat HIR slice per compared path
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The complete df942 native-preparation trace identifies production PathComparison as a substantial debit: the final full request preparation records 11,504,026 bytes in that phase, including 6,491,770 bytes for std.data.json.doc.skip_space. These are the recorded incomplete application-prefix totals, not a prediction of this change's savings or proof of fit.
 
 The ordinary plan comparator previously formed an Observations dereference receiver and its returned slice for every flat HIR lookup, including the final None sentinel. It now admits and retains one immutable items slice for each flat path. Vec::as_slice's actual/formal and return/retained receivers are prepaid per path. A distinct seventeenth sequential primitive payment frame is added to the comparison owner. Every dynamic get/Option/tuple/match payload, all members, sentinels, ordering, six-field diagnostics, original work events, heap backing and complete Drop remain. The full original independently compiled comparator is unchanged.

@@ -1,5 +1,9 @@
 # Required complete raw audit prefix
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The actual full HIR integration harness reproduced its hosted failure before
 this change: the current raw prefix omitted the JSON probe immediately after
 its route-debits parent, although the existing complete-prefix assertion

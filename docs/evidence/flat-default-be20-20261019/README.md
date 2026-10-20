@@ -1,5 +1,9 @@
 # Ordinary verification default repair
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The immutable PLAN history optimization is still unqualified in its owning
 `ordinary-plan-history-c8740045-v1` evidence. Restore the retained complete
 flat PLAN producer and full typed-HIR multiset comparison as the ordinary

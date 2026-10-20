@@ -9,6 +9,7 @@ const PAGE_CAP: usize = 262144;
 const REPLACEMENTS: &[&str] = &[
     "CHANGELOG.md",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "docs/SUMMARY.md",
     "src/cleanup_plan/replay.rs",
     "src/cleanup_plan/replay/branch_clone/direct.rs",
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
@@ -135,8 +136,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 17317; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "6b8e2eb357e709654aca8e9185fbde784053db63df46d983fb39878fb9765ba2";
+const POLICY_LENGTH: usize = 17335; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "4da7451b6a639e16915ec1dc2eb76bbd66ee2cb74ead0b6da69f16a40f02b161";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

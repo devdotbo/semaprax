@@ -1,5 +1,9 @@
 # Stable report backing and historical browser Clippy controls
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The exact df942b53e9947be1f4f388f3d744310a4ad52060 heavy job 117603050299 exposed a two-byte difference between the ordinary production-limit and exact-minimum builder bills. The final-refusal owner previously sized its real message/help backing using the decimal width of the private effective limit. It now counts the full usize width for those same two owned allocations before acquiring them. Actual diagnostic rendering still uses the effective maximum and original context. No invoice is removed, no ledger/work allowance is raised, and every existing exact/one-short and hostile case remains. A new regression in the existing publication harness compares every diagnostic field, stable backing invoices, and complete actual deallocation across nine decimal boundaries.
 
 A bounded standalone Rust probe uses the actual formatter bodies, every complete borrowed-help branch, actual stage labels and actual allocation observer. It reproduces the old backing drift and passes all 63 branch/boundary combinations with stable current capacities, exact rendered text and full Drop. Its scope and visibility adapter are explicit; it does not execute the compiler, full Owner chain, or hosted fixture. Full compiler regressions remain CI gates.

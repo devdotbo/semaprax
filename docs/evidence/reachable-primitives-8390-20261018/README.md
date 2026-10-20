@@ -1,5 +1,9 @@
 # Reachable ordinary PLAN primitive-site banks
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 This continuation preserves four independent lexical cursor expansions and all dynamic payload payments. For an empty actual path set, no expansion is reachable. A singleton skips every heapsort comparison and, after the original expected-length check, reaches at most one of the mutually exclusive flat/shared final expansions. It therefore acquires one group of five distinct primitive headers. Larger sets retain all twenty potential headers. Each site retains the accepted880 criterion: same function/budget, nonrecursive sequential nonescaping ZST success and one terminal Diagnostic. No per-call exemption, payload credit, refund, forecast discount, selected-payer change, crosscheck bypass or quota increase is introduced.
 
 Before forming the length match, its result/local receivers or new payment call, the complete initial owner bank funds the new payment header, three usize receivers and two conservative numeric pattern decisions. The singleton bank size is an explicit compile-time constant; the selector forms no runtime multiplication. The selected complete primitive bank is then acquired before backing, work or any cursor expansion. Macro body, prepared-link traversal, original Cursor preparation/validation, sorting/swaps, outputs, ownership and work events remain unchanged. The static wide-pair opportunity includes all twenty headers and the full selector. On the probed 64-bit layout the primitive header is352 and new selector378; the zero/singleton modeled differences save6662/4902 while larger sets add378. These are source-type/recording-payer results, not physical RSS or application fit.

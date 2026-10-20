@@ -1,5 +1,9 @@
 # Finite source custody overlay V2
 
+Status: private source contract; executable qualification is pending.
+
+Audience: compiler contributors and reviewers.
+
 This specification owns OPT#893's proof-only successor of the complete 519-row
 source-custody loader. It changes no compiler, target, ledger or application
 admission. The authored empty page is **unbound** to the pending compiler repair

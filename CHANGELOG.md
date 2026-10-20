@@ -1,5 +1,7 @@
 ## CI source-view boundary repair (2026-10-20)
 
+- Complete document metadata and navigation; bind named historical snapshots to their original link locations with exact-byte registration.
+
 - Restore the qualified full-host new grammar in standalone help and exact Project profile guidance; command authority is unchanged.
 
 - CI source frames: retain the original closed proof domains and size bounds, acquire exact registered views from fresh current channels, and complete the original eleven-step receiver recipe before its unchanged inverse checks.

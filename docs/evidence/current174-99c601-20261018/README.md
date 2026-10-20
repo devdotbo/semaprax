@@ -1,5 +1,9 @@
 # Actual174 source producer and browser receiver lint scope
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The complete original 13491-byte producer executed through its real rooted-FD/Git acquisition, historical seals, raw guard checks, all 2300 strict dependencies, all 174 physical inputs, final race rechecks, O_EXCL prior archive, staging, fsync and publication. It completed at the Git-authenticated preparation commit dd121c154f08b6eb6d6aba8d3de577b84c4097eb. Actual source bytes matched that exact input head; the produced namespace/manifest match the complete candidate captured before staging. Its own status remains BOUND_SOURCE_ONLY_NOT_RUST_QUALIFIED. No Rust/kernel/runtime pass is inferred from source publication.
 
 The retained preparation record describes the invocation's before state. All 2300 dependencies and their order remain, all seven legacy channels remain, and 39 changed dependency tuples are backed by complete bytes from actual prior producer head 8ff442ae01deafae1587b7824ab804eb73353169 and the committed current source batch. Only one of the original 174 physical subjects differs from the preceding bound generation: the complete replay root. Every original executable definition and predicate remains, except the existing exact formatted namespace-current tuple advances to its known complete before image. The original 9,464,242-byte read/Git limit is unchanged.

@@ -1,5 +1,9 @@
 # Retain each immutable PLAN tail slice for its comparison scope
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The complete shipping comparison body now retains the two PLAN tails inside the existing pair-local loan scope, ending both loans before the next scheduling/swap. The final PLAN/HIR comparison retains one tail for that path. Vec::as_slice's actual/formal and returned/local slice receivers are paid once for each scope, folded into the existing pair/preparation envelopes. No new primitive payment site is introduced. The lexical tail step uses a head/rest slice pattern, retains the original cursor item increment and Option/as_ref receivers, and pays them on every query, including its None sentinel. Segment traversal, empty-segment transitions, all original work calls, sorting, final matching, diagnostics, ownership and Drop stay in place. No compiler/runtime quota or fixture is changed.
 
 On the observed 64-bit host the independent source-type coefficients are 185 bytes for the old tail query, 88 for the new query and 48 for each retained view. Empty tails still execute/pay their sentinel. A comparison which fails before querying its tail can pay a view without realizing the later savings; no universal application saving or 64 MiB fit is claimed. The separate static opportunity assertion also includes the added tail-view envelopes.

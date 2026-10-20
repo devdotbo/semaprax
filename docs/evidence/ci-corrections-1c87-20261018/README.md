@@ -1,5 +1,9 @@
 # CI corrections from actual compiler head 1c87c0f125
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The actual completed Chromium job 117666506981 in run 39124274980 captured both complete compiler graphs successfully before its exact fixture pins failed. The capture includes the exact head, binary SHA-256 and Rust 1.88 Linux provenance. The retained reader validates envelope lengths, canonical base64, SHA-256, the complete recursive graph, key and vector order, and exact whole-wire equality after replacing only graph_digest and budget.used_builder_bytes. The graph digests are independently recomputed using the compiler domain and little-endian payload length. Every other field and byte is identical. The observed calculator bill falls from 12316396 to 10622764 bytes. This is a measured graph-record bill; it does not establish native application fit or a browser runtime pass.
 
 The production help correction restores every qualified usage in the exhaustive catalog while keeping the existing standalone new scoped-help assertion satisfied. The complete catalog matches the unchanged frozen current snapshot exactly. Three tests using the actual full command metadata, real catalog/scoped renderers and actual usage module pass under Clippy 1.97.1 -Dwarnings, peaking at 181472 KiB. The unexecuted JSON-codec supplemental-help dependency is opaque; this is not a full CLI executable qualification.

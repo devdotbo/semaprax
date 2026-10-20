@@ -1,5 +1,9 @@
 # Current validator facts, complete KAT chains and Linux browser pins
 
+Status: historical source evidence; qualification is limited to the recorded revisions and results.
+
+Audience: compiler contributors and reviewers.
+
 The locked wasmparser dependency is 0.261.0. Correct the two stale validator
 facts in target evidence and Project candidate reports. All target bytes,
 schemas, limits and authority are unchanged. Current report/capsule/receipt
