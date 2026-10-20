@@ -120,10 +120,20 @@ fn digest(source: &str) -> String {
 }
 
 fn invert(proof: &serde_json::Value, current: &str) -> String {
+    let current_view = crate::source_reflows_merge::main_e177_final_inputs::value(
+        proof["path"].as_str().unwrap(),
+        proof["after_sha256"].as_str().unwrap(),
+        current,
+    );
+    let current = current_view.as_str();
     let acquired = incoming_main21::ours_expected_input(proof, current);
     let current = acquired.as_str();
     let path = proof["path"].as_str().unwrap();
-    let joined = crate::source_reflows_merge::main8fb_input(path, current);
+    let joined = if digest(current) == proof["after_sha256"] {
+        current.to_owned()
+    } else {
+        crate::source_reflows_merge::main8fb_input(path, current)
+    };
     let current = joined.as_str();
     assert_eq!(
         digest(current),

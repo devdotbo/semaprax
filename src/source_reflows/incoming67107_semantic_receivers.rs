@@ -75,6 +75,12 @@ fn digest(source: &str) -> String {
 }
 
 pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> String {
+    let current_view = crate::source_reflows_merge::main_e177_final_inputs::value(
+        proof["path"].as_str().unwrap(),
+        proof["after_sha256"].as_str().unwrap(),
+        current,
+    );
+    let current = current_view.as_str();
     let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(proof, current);
     let current = acquired.as_str();
     let path = proof["path"].as_str().unwrap();
@@ -519,6 +525,12 @@ fn main34d_entry<'a>(
     entries[0]
 }
 fn main34d_project_entry(entry: &serde_json::Value, current: &str) -> String {
+    let current_view = crate::source_reflows_merge::main_e177_final_inputs::value(
+        entry["path"].as_str().unwrap(),
+        entry["current_sha256"].as_str().unwrap(),
+        current,
+    );
+    let current = current_view.as_str();
     assert_eq!(current.len() as u64, entry["current_len"].as_u64().unwrap());
     assert_eq!(digest(current), entry["current_sha256"]);
     let inverse = entry["whole_source_inverse"].as_array().unwrap();
@@ -550,12 +562,13 @@ pub(super) fn main34d_read(domain: &str, path: &Path) -> std::io::Result<String>
     let relative = relative.to_str().unwrap();
     let manifest = main34d_manifest();
     let entry = main34d_entry(&manifest, domain, relative);
-    let current = main34d_file(
-        path,
-        usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(),
-        entry["current_sha256"].as_str().unwrap(),
-    )
-    .expect("complete current raw MAIN input");
+    let length = usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap();
+    let expected = entry["current_sha256"].as_str().unwrap();
+    assert!(length <= MAIN34D_CAP);
+    let current = crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected)
+        .map(Ok)
+        .unwrap_or_else(|| main34d_file(path, length, expected))
+        .expect("complete current raw MAIN input");
     Ok(main34d_project_entry(entry, &current))
 }
 pub(super) fn main34d_proofs() -> Vec<serde_json::Value> {

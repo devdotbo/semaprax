@@ -1,3 +1,7 @@
+## CI source-view boundary repair (2026-10-20)
+
+- Select each historical receiver’s exact authenticated input namespace before its unchanged whole-source inverse; retain current-byte and foreign-stage refusals.
+
 ## CI repair: portable evidence and current report contracts
 
 - Preserve all 180 extensionless content-addressed evidence images byte for

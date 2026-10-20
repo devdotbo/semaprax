@@ -146,6 +146,11 @@ fn project(rows: &str, source: &str, current: &str) -> String {
     let Some(row) = matching.first() else {
         return current.to_owned();
     };
+    // Acquire only the exact requested view from authenticated current bytes.
+    // Historical inputs from another stage remain subject to the old assertion.
+    let current_view =
+        main_e177_final_inputs::value(source, row["current_sha256"].as_str().unwrap(), current);
+    let current = current_view.as_str();
     let acquired = main67107_inputs::compile35f_expected_input(
         source,
         row["current_sha256"].as_str().unwrap(),
@@ -1075,3 +1080,37 @@ pub(crate) mod next_big_batch_inputs;
 
 #[path = "source_reflows_merge/main_e177_final_inputs.rs"]
 pub(crate) mod main_e177_final_inputs;
+
+#[test]
+fn merge_projection_selects_only_the_requested_complete_current_view() {
+    let source = "src/cleanup_plan/replay/allocation/oracle.rs";
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let current = std::fs::read_to_string(root.join(source)).unwrap();
+    let expected = std::fs::read_to_string(
+        root.join("docs/evidence/fmt-a110/-sNiaR-dl5pY-SdFlvBwJ-5c5dFFUGlebbR8SBoVMu4.txt"),
+    )
+    .unwrap();
+    let sha = format!(
+        "{:x}",
+        crate::digest_hex::LowerHex(Sha256::digest(expected.as_bytes()))
+    );
+    let rows = serde_json::json!([{
+        "source": source, "current_sha256": sha, "original_sha256": sha, "edits": []
+    }])
+    .to_string();
+    assert_eq!(project(&rows, source, &current), expected);
+    assert_eq!(project(&rows, source, &expected), expected);
+    for bad in [
+        String::new(),
+        "foreign".to_owned(),
+        format!("{current} "),
+        current[..current.len() - 1].to_owned(),
+        format!("{expected} "),
+    ] {
+        assert!(std::panic::catch_unwind(|| project(&rows, source, &bad)).is_err());
+    }
+    assert_eq!(project(&rows, "unlisted", "foreign"), "foreign");
+    let mut foreign = serde_json::from_str::<serde_json::Value>(&rows).unwrap();
+    foreign[0]["current_sha256"] = "0".repeat(64).into();
+    assert!(std::panic::catch_unwind(|| project(&foreign.to_string(), source, &current)).is_err());
+}
