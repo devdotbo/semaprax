@@ -606,27 +606,27 @@
   },
   {
     "source": "src/source_reflows/factored_sources.rs",
-    "sha256": "af9e933e5038fe7e213d3c958297640f3aba13462cb43afad7695b38a8f51cf9",
-    "lines": 862
+    "sha256": "2968c7557f6acdfedf38b41193b61cafa8fdb011740382fd2a9ae40edbdcf106",
+    "lines": 860
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "3c3ac6c9bf889cf4eb7bf390992629b700c6c0ca81b0e463e01102ac78c8cf08",
-    "lines": 1235
+    "sha256": "439b59a19472686c04ab06046aa10605022cfa3b3ee178c8095834fbaa3ba104",
+    "lines": 1315
   },
   {
     "source": "src/source_reflows/incoming21_semantic_receivers.rs",
-    "sha256": "b2825ca5f79786578dd7853e8275386fcfd5a34478671c4547707ae50bae165b",
-    "lines": 1072
+    "sha256": "d1d939330c05b8c353fe5ade2022502344fd1cc5f596c0121a4f1b57329c8c79",
+    "lines": 1156
   },
   {
     "source": "src/source_reflows/incoming67107_semantic_receivers.rs",
-    "sha256": "cb351c306a7548e61424ab76e1c218d3fd9b211a4033ebae934f9208b7fe4283",
-    "lines": 906
+    "sha256": "a5407599d8fac75c3c0141b342e0f0fb683a3933306c0b34be006debdd9b4aa1",
+    "lines": 907
   },
   {
     "source": "src/source_reflows/main043.rs",
-    "sha256": "297cd1d0a9934d22d688abe6a0176c4e4cd44ae683ad9121eca8908e1da4ca35",
+    "sha256": "6ca61a93a350d88e41d56820bd7069dfba6f179411a4ae790fdd49da9b53e81d",
     "lines": 147
   },
   {
@@ -696,8 +696,8 @@
   },
   {
     "source": "src/source_reflows/semantic_receivers_maina3.rs",
-    "sha256": "16b7d14b28a0c0700cdf1974751e18b8f4f26b10f17be110724128a71bd0cc4e",
-    "lines": 105
+    "sha256": "c0f63296ee66ae9fd95ef25e2d3e78d1caa3e58d38c629cce3e1bc203ac88ad4",
+    "lines": 115
   },
   {
     "source": "src/source_reflows_merge/current344.rs",
@@ -721,8 +721,8 @@
   },
   {
     "source": "src/source_reflows_merge/main67107_inputs.rs",
-    "sha256": "b70bae63e6dbccdfe619efdc6a65193a05912f04fad6a378e9309dda1490ff04",
-    "lines": 1194
+    "sha256": "3883baaba8e157c00ea7b3a964d95336c809ec689b171b5e6c76eb4f29a6c10d",
+    "lines": 1197
   },
   {
     "source": "src/source_reflows_merge/main7f8_presence.rs",
@@ -731,8 +731,8 @@
   },
   {
     "source": "src/source_reflows_merge/main7f8_source_inputs.rs",
-    "sha256": "19bf6fb3e1bfcc131b197893434d3dc26c924319cafded7b704b3c5380c26d4a",
-    "lines": 425
+    "sha256": "429852baad43a4c5b9da1b2614e927ad80096492bf1e3fbedb1c101785c242ee",
+    "lines": 431
   },
   {
     "source": "src/source_reflows_merge/main8a_historical.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "2f03815dd4b17a3b00478564fcfdb34ca8beac567da419d794e64af0f43cf831",
-    "lines": 989
+    "sha256": "0a710e92b071730b678a868088b7c0fc4fa94fabac919c3b33244c0881a02740",
+    "lines": 997
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",

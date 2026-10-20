@@ -836,12 +836,13 @@ pub(super) fn mainbcc_read(path: &Path) -> std::io::Result<String> {
     let relative = path.strip_prefix(root).unwrap().to_str().unwrap();
     let manifest = mainbcc_manifest();
     let entry = mainbcc_entry(&manifest, relative);
-    let raw = main34d_file(
-        path,
-        usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap(),
-        entry["current_sha256"].as_str().unwrap(),
-    )
-    .unwrap();
+    let length = usize::try_from(entry["current_len"].as_u64().unwrap()).unwrap();
+    let expected = entry["current_sha256"].as_str().unwrap();
+    assert!(length <= MAINBCC_CAP);
+    let raw = crate::source_reflows_merge::main_e177_final_inputs::file(path, length, expected)
+        .map(Ok)
+        .unwrap_or_else(|| main34d_file(path, length, expected))
+        .unwrap();
     Ok(main34d_project_entry(entry, &raw))
 }
 pub(super) fn mainbcc_invert(proof: &serde_json::Value, current: &str) -> String {

@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 100,
       "full_role_production": 538,
       "full_role_test_only": 977,
-      "full_raw_sha256": "9749a43e6920beb8e1d0b1b9a8943b4bb34111dab8fab9128551b9bb47549802",
+      "full_raw_sha256": "45c2974efb7547b75188b3a83e6eda3b903fc6ea71a5fef978c1ee63fabdb889",
       "boundary_production_sha256": "1a4543ffb1e7441df97aa65323d2277111db3927748b85003af3e22b9927f3c5",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 584,
       "full_role_production": 657,
       "full_role_test_only": 1034,
-      "full_raw_sha256": "d68821fe03ad2991d6a5a03a655c237305097c335ac45b7f0662c449608cb116",
+      "full_raw_sha256": "1d5ec2a3d88148710eee17e2739fb08512e642f956b2df86ec5ff46fb3fde71f",
       "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -56,7 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "actual_acquisition_completion_sha256": "8ecc488c6442954f34210d6e3ddd38fdd156488ee3815a3301135584ea6df519",
+  "actual_acquisition_completion_sha256": "31121f575cd313891aef973d38420326f05a2114ed92eb65be1ae8c65941f1a6",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -67,8 +67,8 @@
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
   "registration_update": "EXACT_SOURCE_RECEIVER_NAMESPACE_ACQUISITION",
-  "before_head": "ca5ffe48d442e59679eee2160f1903ceeae023c6",
-  "incoming_main": "ca5ffe48d442e59679eee2160f1903ceeae023c6",
+  "before_head": "aaa2d21dd413ed2ab461965f4de3597f469e1c33",
+  "incoming_main": "aaa2d21dd413ed2ab461965f4de3597f469e1c33",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",

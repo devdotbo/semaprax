@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 42127,
-      "sha256": "2f03815dd4b17a3b00478564fcfdb34ca8beac567da419d794e64af0f43cf831"
+      "length": 42527,
+      "sha256": "0a710e92b071730b678a868088b7c0fc4fa94fabac919c3b33244c0881a02740"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -3776,9 +3776,9 @@
   },
   "logical_rows": 519,
   "source_successor": {
-    "path": "docs/evidence/clippy-11a0-integration/inputs.json",
-    "length": 74925,
-    "sha256": "fd11fdc6330063376d95f97a77b3e4c83f75147bff01dd34118c48d34ff96211"
+    "path": "docs/evidence/source-fronts-aaa2-20261020/stage-inputs.json",
+    "length": 94100,
+    "sha256": "9dc9790e8607be4d232ea956ec2a0d058f28e62de67edc3d0cc9f9a717db7ee5"
   },
   "previous_successor": {
     "path": "docs/evidence/clippy-4a6eb/inputs.json",

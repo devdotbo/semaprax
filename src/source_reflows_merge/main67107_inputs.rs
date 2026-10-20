@@ -896,11 +896,14 @@ fn supplemental_receiver_expected_input(source: &str, expected: &str, current: &
     )
     .unwrap();
     assert_eq!(raw, held, "complete independently sealed actual receiver");
-    assert_eq!(
-        raw,
+    let compiled = crate::source_reflows_merge::main_e177_final_inputs::value(
+        source,
+        sha,
         include_str!("../source_reflows/semantic_receivers.rs"),
-        "complete actual compiled receiver"
     );
+    assert_eq!(raw, compiled, "complete actual compiled receiver");
+    let supplied = crate::source_reflows_merge::main_e177_final_inputs::value(source, sha, current);
+    let current = supplied.as_str();
     let stage_len = usize::try_from(row["stage_length"].as_u64().unwrap()).unwrap();
     assert!(stage_len <= 65_536);
     let stage = factored_core_file(

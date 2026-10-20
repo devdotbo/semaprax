@@ -47,15 +47,23 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
+    "src/hir/declaration_index/identity_payer.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
+    "src/loop_calls/byte_writer/resolved.rs",
+    "src/source_reflows/factored_sources.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
+    "src/source_reflows/incoming21_semantic_receivers.rs",
     "src/source_reflows/incoming67107_semantic_receivers.rs",
+    "src/source_reflows/main043.rs",
+    "src/source_reflows/semantic_receivers_mainb80.rs",
     "src/source_reflows_merge/current344.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
+    "src/source_reflows_merge/main7f8_source_inputs.rs",
     "src/source_reflows_merge/main_eb2_inputs.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
+    "src/source_reflows_merge/runtime_json.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "tests/doctor_production_provisioner_v1.rs",
     "tests/quality_routing.rs",
@@ -121,8 +129,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 16742; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "3a68469210563a75caaae6209c02141fb6a0d9fab6aac27a19f82c4c64277971";
+const POLICY_LENGTH: usize = 17102; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "49d61c0144744ab7f07a9a394fd233dfae5e0deaffbe6f436f5bf5f1f87eea70";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";

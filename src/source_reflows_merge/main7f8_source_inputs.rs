@@ -38,6 +38,12 @@ fn project(rows: &serde_json::Value, domain: &str, path: &str, current: &str) ->
         .iter()
         .find(|r| r["domain"] == domain && r["path"] == path)
         .unwrap();
+    let requested = super::main_e177_final_inputs::value(
+        path,
+        row["current_sha256"].as_str().unwrap(),
+        current,
+    );
+    let current = requested.as_str();
     assert_eq!(
         digest(current),
         row["current_sha256"],

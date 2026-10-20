@@ -1,5 +1,7 @@
 ## CI source-view boundary repair (2026-10-20)
 
+- CI source custody: authenticate complete current source channels before composing historical inverses; restore the active legacy nominal constructor independently of the funded cell path. Retain all original inverse rows, digests and resource bounds.
+
 - Select each historical receiver’s exact authenticated input namespace before its unchanged whole-source inverse; retain current-byte and foreign-stage refusals.
 
 ## CI repair: portable evidence and current report contracts
