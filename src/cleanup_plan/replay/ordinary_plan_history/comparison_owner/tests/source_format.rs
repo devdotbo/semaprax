@@ -813,37 +813,6 @@ const TESTS883: &[(usize, &str, &str)] = &[
     (795, "\n       ", ""), (90, ";\nmod source_format;\nmod tail_source", ""),
 ];
 
-#[cfg(test)]
-mod tests {
-    use super::*;
-    const CURRENT: &str = include_str!("../../../ordinary_plan_history.rs");
-    const ORIGINAL: &str = include_str!(concat!(
-        env!("CARGO_MANIFEST_DIR"),
-        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
-    ));
-
-    #[test]
-    fn inverse_preserves_unrecognized_body_drift_for_the_original_full_check() {
-        assert_eq!(restore(Kind::Root, CURRENT), ORIGINAL);
-        let changed = CURRENT.replacen("struct Cursor {", "struct Curxor {", 1);
-        assert_ne!(changed, CURRENT);
-        let restored = std::panic::catch_unwind(|| restore(Kind::Root, &changed));
-        assert!(restored.is_err() || restored.unwrap() != ORIGINAL);
-    }
-
-    #[test]
-    fn inverse_refuses_changed_known_hunks_and_unknown_source_extents() {
-        let &(at, after, _) = ROOT.iter().find(|(_, after, _)| !after.is_empty()).unwrap();
-        let mut changed = CURRENT.to_owned();
-        let end = at + after.chars().next().unwrap().len_utf8();
-        let replacement = if &changed[at..end] == "x" { "y" } else { "x" };
-        changed.replace_range(at..end, replacement);
-        assert!(std::panic::catch_unwind(|| restore(Kind::Root, &changed)).is_err());
-        let longer = format!("{CURRENT}\n");
-        assert!(std::panic::catch_unwind(|| restore(Kind::Root, &longer)).is_err());
-    }
-}
-
 // Exact semantic selection inverse precedes every unchanged old root check.
 fn before_default_selection(current: &str) -> String {
     use sha2::{Digest, Sha256};
@@ -883,3 +852,34 @@ const DEFAULT_SELECTION: &[(usize, &str, &str)] = &[
     (10237, "Keep the complete flat verifier as the ordinary default until the\n    // history candidate passes its owning application and physical gates.\n    // Candidate controls opt in explicitly; ordinary unit applications use\n    // the same default as normal builds. Observation never selects a route.\n    #[cfg(not(test))]\n    {\n        Ok(false)\n    }\n    #[cfg(test)]\n    {\n        if !TEST_CANDIDATE.with(std::cell::Cell::get) {\n            return Ok(false);\n        }\n        // ", ""),
     (9064, "// Explicit test configuration, separate from reservation/trace observers. The\n// guard is created outside measured compiler windows and restores nesting.\n#[cfg(test)]\nthread_local! {\n    static TEST_CANDIDATE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };\n}\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) struct TestCandidate(bool);\n#[cfg(test)]\nimpl Drop for TestCandidate {\n    fn drop(&mut self) {\n        TEST_CANDIDATE.with(|selected| selected.set(self.0));\n    }\n}\n#[cfg(test)]\npub(in crate::cleanup_plan::replay) fn enable_for_test() -> TestCandidate {\n    TestCandidate(TEST_CANDIDATE.with(|selected| selected.replace(true)))\n}\n\n", ""),
 ];
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    const CURRENT: &str = include_str!("../../../ordinary_plan_history.rs");
+    const ORIGINAL: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
+    ));
+
+    #[test]
+    fn inverse_preserves_unrecognized_body_drift_for_the_original_full_check() {
+        assert_eq!(restore(Kind::Root, CURRENT), ORIGINAL);
+        let changed = CURRENT.replacen("struct Cursor {", "struct Curxor {", 1);
+        assert_ne!(changed, CURRENT);
+        let restored = std::panic::catch_unwind(|| restore(Kind::Root, &changed));
+        assert!(restored.is_err() || restored.unwrap() != ORIGINAL);
+    }
+
+    #[test]
+    fn inverse_refuses_changed_known_hunks_and_unknown_source_extents() {
+        let &(at, after, _) = ROOT.iter().find(|(_, after, _)| !after.is_empty()).unwrap();
+        let mut changed = CURRENT.to_owned();
+        let end = at + after.chars().next().unwrap().len_utf8();
+        let replacement = if &changed[at..end] == "x" { "y" } else { "x" };
+        changed.replace_range(at..end, replacement);
+        assert!(std::panic::catch_unwind(|| restore(Kind::Root, &changed)).is_err());
+        let longer = format!("{CURRENT}\n");
+        assert!(std::panic::catch_unwind(|| restore(Kind::Root, &longer)).is_err());
+    }
+}

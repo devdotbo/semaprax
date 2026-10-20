@@ -1,3 +1,15 @@
+## CI repair: portable evidence and current report contracts
+
+- Preserve all 180 extensionless content-addressed evidence images byte for
+  byte under Windows Git checkout instead of applying CRLF conversion.
+- Place the complete source-format inverse before its test module so the
+  existing warnings-as-errors Clippy gate accepts it without a lint exception.
+- Refresh both browser graph known answers from authenticated full Linux 1.88
+  graphs at 23b2f293789; retain the original rename and artifact assertions.
+- Report the actual pinned wasmparser 0.261.0 validator in both target-evidence
+  and Project candidate metadata. Retain the exact historical 0.256.0 report,
+  capsule and receipt reconstruction and hashes.
+
 ## CI repair: retain the complete relocated source prefix
 
 - Move the already audited JSON codec probe next to its original route-debits
