@@ -1117,3 +1117,7 @@ fn merge_projection_selects_only_the_requested_complete_current_view() {
     foreign[0]["current_sha256"] = "0".repeat(64).into();
     assert!(std::panic::catch_unwind(|| project(&foreign.to_string(), source, &current)).is_err());
 }
+
+pub(crate) fn complete_receiver_followup(source: &str) -> String {
+    runtime_json::complete_receiver_followup(source)
+}

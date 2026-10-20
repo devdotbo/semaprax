@@ -19,12 +19,14 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
     "src/cleanup_plan/replay/skeleton_work.rs",
     "src/source_reflows.rs",
+    "src/source_reflows/main_f247_controllers.rs",
     "src/source_reflows_merge.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
     "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
+    "src/cleanup_plan/replay/branch_clone/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
@@ -32,6 +34,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows/semantic_receivers.rs",
     "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
+    "src/cleanup_plan/replay/factored.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
     "src/cleanup_plan/replay/ordinary_plan_history.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
@@ -48,9 +51,11 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
     "src/hir/declaration_index/identity_payer.rs",
+    "src/hir/expr_nodes.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
+    "src/hir/validation.rs",
     "src/loop_calls/byte_writer/resolved.rs",
     "src/source_reflows/factored_sources.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
@@ -64,6 +69,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/main_eb2_inputs.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "src/source_reflows_merge/runtime_json.rs",
+    "src/source_verify/declaration.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
     "tests/doctor_production_provisioner_v1.rs",
     "tests/quality_routing.rs",
@@ -129,8 +135,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 17102; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "49d61c0144744ab7f07a9a394fd233dfae5e0deaffbe6f436f5bf5f1f87eea70";
+const POLICY_LENGTH: usize = 17317; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "355cde3ca04eb8a3f07996a8faec5011ac376ef9346729e8e9aa7515d88428e8";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -994,4 +1000,106 @@ mod tests {
         }
         std::fs::remove_dir_all(path).unwrap();
     }
+}
+
+/// Acquire one registered whole-file digest under the caller's per-file bound.
+/// Current physical, compiled, archive and fragment channels precede history.
+pub(super) fn registered_file(source: &str, expected: &str, cap: usize) -> Option<String> {
+    if cap == 0
+        || !Path::new(source)
+            .components()
+            .all(|part| matches!(part, std::path::Component::Normal(_)))
+        || expected.len() != 64
+        || !expected
+            .bytes()
+            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
+    {
+        return None;
+    }
+    let cap = cap.min(SOURCE_CAP);
+    let packet = super::packet();
+    let row = packet["rows"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["source"] == source)?;
+    let selected = std::iter::once(&row["current"])
+        .chain(row["views"].as_array().unwrap().iter())
+        .find(|pin| pin["sha256"] == expected)?;
+    let fits = |pin: &Value| pin["length"].as_u64().unwrap() <= cap as u64;
+    if !fits(selected) || !fits(&row["current"]) {
+        return None;
+    }
+    if let Some(children) = row.get("fragments") {
+        for child in children.as_array().unwrap() {
+            assert!(child.get("fragments").is_none());
+            if !fits(&child["current"]) {
+                return None;
+            }
+        }
+    }
+    let current = super::actual(row);
+    if selected == &row["current"] {
+        Some(current)
+    } else {
+        Some(super::read_view(selected))
+    }
+}
+
+#[test]
+fn registered_digest_reads_keep_current_history_and_each_original_file_bound() {
+    let packet = super::packet();
+    let rows = packet["rows"].as_array().unwrap();
+    let source = "src/source_reflows_merge/runtime_json.rs";
+    let row = rows.iter().find(|row| row["source"] == source).unwrap();
+    let current = super::actual(row);
+    let current_sha = row["current"]["sha256"].as_str().unwrap();
+    assert_eq!(
+        registered_file(source, current_sha, SOURCE_CAP),
+        Some(current.clone())
+    );
+    assert!(registered_file(source, current_sha, current.len() - 1).is_none());
+    assert!(registered_file(source, current_sha, 0).is_none());
+    assert!(registered_file(source, &"0".repeat(64), SOURCE_CAP).is_none());
+    assert!(registered_file("foreign-unregistered.rs", current_sha, SOURCE_CAP).is_none());
+    assert!(registered_file(
+        "../src/source_reflows_merge/runtime_json.rs",
+        current_sha,
+        SOURCE_CAP
+    )
+    .is_none());
+    assert!(registered_file(source, "not-a-digest", SOURCE_CAP).is_none());
+    let prior = row["views"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|pin| pin["length"].as_u64().unwrap() < current.len() as u64)
+        .unwrap();
+    let prior_sha = prior["sha256"].as_str().unwrap();
+    let before = super::read_view(prior);
+    assert_eq!(
+        registered_file(source, prior_sha, SOURCE_CAP),
+        Some(before.clone())
+    );
+    // A short historical output cannot hide a larger current source read.
+    assert!(registered_file(source, prior_sha, before.len()).is_none());
+    let parent = rows
+        .iter()
+        .find(|row| {
+            row.get("fragments").is_some_and(|children| {
+                children.as_array().unwrap().iter().any(|child| {
+                    child["current"]["length"].as_u64().unwrap()
+                        > row["current"]["length"].as_u64().unwrap()
+                })
+            })
+        })
+        .unwrap();
+    let source = parent["source"].as_str().unwrap();
+    let sha = parent["current"]["sha256"].as_str().unwrap();
+    let length = parent["current"]["length"].as_u64().unwrap() as usize;
+    assert!(registered_file(source, sha, length).is_none());
+    assert_eq!(
+        registered_file(source, sha, SOURCE_CAP),
+        Some(super::actual(parent))
+    );
 }

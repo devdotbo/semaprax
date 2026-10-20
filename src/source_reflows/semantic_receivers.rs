@@ -383,8 +383,7 @@ fn complete_followup_receivers_keep_all_original_source_bytes() {
             std::fs::read_to_string(evidence.join(record["archive"].as_str().unwrap())).unwrap();
         assert_eq!(digest(&original), record["sha256"]);
         let current = std::fs::read_to_string(root.join(record["path"].as_str().unwrap())).unwrap();
-        let current = crate::source_reflows_merge::main7f8_source_inputs::source(
-            "source-followups",
+        let current = crate::source_reflows_merge::main7f8_source_inputs::complete_source_followup(
             record["path"].as_str().unwrap(),
             &current,
         );

@@ -429,3 +429,12 @@ fn closure92_walk_inputs_preserve_both_original_domains_and_refuse_wrong_stages(
         "foreign"
     );
 }
+
+pub(crate) fn complete_source_followup(path: &str, current: &str) -> String {
+    let incoming = source("source-followups", path, current);
+    if path == "src/source_reflows/semantic_receivers.rs" {
+        super::complete_receiver_followup(&incoming)
+    } else {
+        incoming
+    }
+}

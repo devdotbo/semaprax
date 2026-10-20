@@ -319,6 +319,65 @@ fn ordinary_setup_bridges_preserve_every_complete_original_format_input() {
     }
 }
 
+fn main090_proof_current(proof: &serde_json::Value) -> String {
+    assert!(
+        proofs().iter().any(|registered| registered == proof),
+        "closed original receiver proof"
+    );
+    let path = proof["path"].as_str().unwrap();
+    let expected = proof["after_sha256"].as_str().unwrap();
+    let live = match path {
+        "src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs" => Some((
+            "liveSessionMAIN",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay/selected_entry/tests/session_errors/source.rs"
+            )),
+        )),
+        "src/hir/nominal_payload/legacy/source_tests.rs" => Some((
+            "liveNominalMAIN",
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/hir/nominal_payload/legacy/source_tests.rs"
+            )),
+        )),
+        _ => None,
+    };
+    if let Some((domain, compiled)) = live {
+        assert!(compiled.len() <= MAIN090_CAP);
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        let actual = main090_file(&root.join(path), compiled.len(), &digest(compiled))
+            .expect("complete current live-audit source");
+        assert_eq!(actual, compiled, "complete compiled live-audit source");
+        let stages = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/docs/evidence/main67107-fronts-6e45-20261017/stages.json"
+        ));
+        assert!(stages.len() <= 1_048_576);
+        assert_eq!(
+            digest(stages),
+            "bfbacf2777c310ee34ad6acd34352a9c58777ec11d39f2649be584711d72f120"
+        );
+        let held_stages = main090_file(
+            &root.join("docs/evidence/main67107-fronts-6e45-20261017/stages.json"),
+            stages.len(),
+            "bfbacf2777c310ee34ad6acd34352a9c58777ec11d39f2649be584711d72f120",
+        )
+        .expect("complete original live-audit archive table");
+        assert_eq!(held_stages, stages);
+        let live = crate::source_reflows_merge::main67107_inputs::project(domain, &actual);
+        assert!(live.len() <= MAIN090_CAP);
+        assert_eq!(digest(&live), expected);
+        return live;
+    }
+    crate::source_reflows_merge::main_e177_final_inputs::registered_file(
+        path,
+        expected,
+        MAIN090_CAP,
+    )
+    .unwrap_or_else(|| main090_read(Path::new(env!("CARGO_MANIFEST_DIR")).join(path)).unwrap())
+}
+
 #[test]
 fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -331,7 +390,7 @@ fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
         if let Some(repair) = repair {
             assert_eq!(proof["before_sha256"], repair["after_sha256"]);
         }
-        let current = main090_read(root.join(path)).unwrap();
+        let current = main090_proof_current(proof);
         let restored = invert(proof, &current);
         let source_audits: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
         let archive_root = if source_audits.iter().any(|audit| audit["path"] == path) {
@@ -357,9 +416,8 @@ fn every_receiver_inverse_preserves_the_entire_reflow_input_and_archive() {
 
 #[test]
 fn receiver_mutation_and_forged_predecessor_fail_closed() {
-    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     for proof in proofs() {
-        let current = main090_read(root.join(proof["path"].as_str().unwrap())).unwrap();
+        let current = main090_proof_current(proof);
         let changed = format!("{current} ");
         assert!(std::panic::catch_unwind(|| invert(proof, &changed)).is_err());
         let mut forged = proof.clone();
@@ -1312,4 +1370,15 @@ fn main090_archive(path: impl AsRef<Path>, expected: &str) -> std::io::Result<St
     }
     main090_file(path, length, expected)
         .map_err(|message| std::io::Error::new(std::io::ErrorKind::InvalidData, message))
+}
+
+#[test]
+fn proof_current_read_retains_the_complete_original_proof_domain() {
+    let mut foreign = proofs()[0].clone();
+    foreign["before_sha256"] = serde_json::Value::String("0".repeat(64));
+    assert!(std::panic::catch_unwind(|| main090_proof_current(&foreign)).is_err());
+    let mut foreign = proofs()[0].clone();
+    foreign["path"] =
+        serde_json::Value::String("src/source_reflows_merge/runtime_json.rs".to_owned());
+    assert!(std::panic::catch_unwind(|| main090_proof_current(&foreign)).is_err());
 }

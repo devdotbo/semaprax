@@ -779,6 +779,10 @@ fn actual(row: &serde_json::Value) -> String {
 
     value
 }
+pub(crate) fn registered_file(source: &str, expected: &str, cap: usize) -> Option<String> {
+    overlay_v2::registered_file(source, expected, cap)
+}
+
 pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {
     if let Some(Ok(value)) = clippy_stage::read(path, length, expected) {
         let _ = packet();

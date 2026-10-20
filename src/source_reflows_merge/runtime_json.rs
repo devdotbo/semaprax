@@ -533,3 +533,102 @@ mod main043_raw_tests {
         }
     }
 }
+
+// The two historical callers stop after different prefixes of the same
+// original recipe. Complete that sealed recipe before its unchanged inverse.
+pub(super) fn complete_receiver_followup(supplied: &str) -> String {
+    const SOURCE: &str = "src/source_reflows/semantic_receivers.rs";
+    const AFTER: &str = "17989402984251c9956537bc3d2d8c6a1a6c6252cb1bd188ffd265dc6cdd0a51";
+    let supplied_sha = digest(supplied.as_bytes());
+    assert!(
+        supplied_sha
+            == main043_raw_pin("b5bc349c44ec11c094484d7b5d40a534b2f3c66a10ba7b16af9dd08eb8012607")
+            || supplied_sha
+                == main043_raw_pin(
+                    "68c95445cf0a8e9202822098149f74890cfc8807ab352ec071824e8705f4d28f"
+                ),
+        "closed original followup prefix"
+    );
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let original = main043_raw_file(
+        &root.join("docs/evidence/source-reader-followups-20261016/sources.json"),
+        152502,
+        "08d9a996cbf1c0d2582d3ae1175398c46666e28ba47f65f8fd69fdebc3c05115",
+    )
+    .unwrap();
+    let rows: serde_json::Value = serde_json::from_str(&original).unwrap();
+    let rows = rows.as_array().unwrap();
+    assert_eq!(rows.len(), 3);
+    let matched = rows
+        .iter()
+        .filter(|row| row["path"] == SOURCE)
+        .collect::<Vec<_>>();
+    assert_eq!(matched.len(), 1);
+    let row = matched[0];
+    assert_eq!(row["archive"], "0.before.txt");
+    let before_sha = row["sha256"].as_str().unwrap();
+    assert_eq!(
+        before_sha,
+        "ac6850b7a3e872343f7ce3f8ad96d6f286b8d68ba0fcf998bf766982a4500abc"
+    );
+    let mut restored = main043_raw_file(
+        &root.join("docs/evidence/source-reader-followups-20261016/0.before.txt"),
+        4205,
+        before_sha,
+    )
+    .unwrap();
+    let edits = row["edits"].as_array().unwrap();
+    assert_eq!(edits.len(), 11);
+    let mut admitted = false;
+    for (index, edit) in edits.iter().enumerate() {
+        let old = edit["old"].as_str().unwrap();
+        assert!(!old.is_empty());
+        assert_eq!(restored.matches(old).count(), 1);
+        restored = restored.replacen(old, edit["new"].as_str().unwrap(), 1);
+        if index < 2 && restored == supplied {
+            admitted = true;
+        }
+    }
+    assert!(admitted, "complete original prefix bytes");
+    assert_eq!(digest(restored.as_bytes()), main043_raw_pin(AFTER));
+    let acquired = super::main_e177_final_inputs::registered_file(SOURCE, AFTER, OUTPUT_CAP)
+        .expect("complete original followup frame from authenticated current source");
+    assert_eq!(acquired, restored);
+    acquired
+}
+
+#[test]
+fn complete_receiver_followup_keeps_both_original_prefixes_and_refuses_changed_inputs() {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let rows: serde_json::Value = serde_json::from_str(
+        &main043_raw_file(
+            &root.join("docs/evidence/source-reader-followups-20261016/sources.json"),
+            152502,
+            "08d9a996cbf1c0d2582d3ae1175398c46666e28ba47f65f8fd69fdebc3c05115",
+        )
+        .unwrap(),
+    )
+    .unwrap();
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["path"] == "src/source_reflows/semantic_receivers.rs")
+        .unwrap();
+    let after = main043_raw_file(
+        &root.join("docs/evidence/ordinary-replay-routes-v1/src__source_reflows__semantic_receivers.rs.before.txt"),
+        26937,
+        "17989402984251c9956537bc3d2d8c6a1a6c6252cb1bd188ffd265dc6cdd0a51",
+    ).unwrap();
+    for index in [0, 1] {
+        let prefix = row["edits"][index]["new"].as_str().unwrap();
+        assert_eq!(complete_receiver_followup(prefix), after);
+        assert!(std::panic::catch_unwind(|| complete_receiver_followup(
+            &(prefix.to_owned() + "\n")
+        ))
+        .is_err());
+        let changed = prefix.replacen(&prefix[..1], "!", 1);
+        assert!(std::panic::catch_unwind(|| complete_receiver_followup(&changed)).is_err());
+    }
+    assert!(std::panic::catch_unwind(|| complete_receiver_followup("foreign source")).is_err());
+}

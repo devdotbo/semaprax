@@ -318,7 +318,22 @@ fn followup_input(path: &str, current: &str) -> String {
         }
         _ => panic!("foreign MAIN followup source"),
     };
-    crate::source_reflows_merge::main67107_inputs::project(domain, current)
+    let registered =
+        if path == "src/workspace_graph/expected_projection/import_stub/core_proofs/tests.rs" {
+            crate::source_reflows_merge::main_e177_final_inputs::value(
+                path,
+                "bf59d79e6bcd513cf071c52112ded222e4561c785389f2723684d072c15d0fc2",
+                current,
+            )
+        } else {
+            current.to_owned()
+        };
+    let incoming = crate::source_reflows_merge::main67107_inputs::project(domain, &registered);
+    if path == "src/source_reflows/semantic_receivers.rs" {
+        crate::source_reflows_merge::complete_receiver_followup(&incoming)
+    } else {
+        incoming
+    }
 }
 
 #[test]

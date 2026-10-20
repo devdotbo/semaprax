@@ -611,18 +611,18 @@
   },
   {
     "source": "src/source_reflows/incoming090_semantic_receivers.rs",
-    "sha256": "439b59a19472686c04ab06046aa10605022cfa3b3ee178c8095834fbaa3ba104",
-    "lines": 1315
+    "sha256": "749fbd8029afec1601d788706df0ee62a4a38a0532e5291b9551b0f0bb8a4c31",
+    "lines": 1384
   },
   {
     "source": "src/source_reflows/incoming21_semantic_receivers.rs",
-    "sha256": "d1d939330c05b8c353fe5ade2022502344fd1cc5f596c0121a4f1b57329c8c79",
-    "lines": 1156
+    "sha256": "d7cc1fd48a923160252346de33696a02724659f14ab951b3702e2e92cc94f15a",
+    "lines": 1221
   },
   {
     "source": "src/source_reflows/incoming67107_semantic_receivers.rs",
-    "sha256": "a5407599d8fac75c3c0141b342e0f0fb683a3933306c0b34be006debdd9b4aa1",
-    "lines": 907
+    "sha256": "accfc43c2516fa2438d427df69ba7ec3fefce31d588d8bb7d6a78f9425db75cf",
+    "lines": 922
   },
   {
     "source": "src/source_reflows/main043.rs",
@@ -731,8 +731,8 @@
   },
   {
     "source": "src/source_reflows_merge/main7f8_source_inputs.rs",
-    "sha256": "429852baad43a4c5b9da1b2614e927ad80096492bf1e3fbedb1c101785c242ee",
-    "lines": 431
+    "sha256": "e41e405ea507f00a0929dab5b27eee062d7642641578ea24e0f50a155b46df93",
+    "lines": 440
   },
   {
     "source": "src/source_reflows_merge/main8a_historical.rs",
@@ -1056,8 +1056,8 @@
   },
   {
     "source": "src/source_reflows/main_f247_controllers.rs",
-    "sha256": "a47faf2838dab81995d9abcaa5c51a15364415e45ee5a702605f0db5e8e154cc",
-    "lines": 1407
+    "sha256": "44528b902fc57aa30c0871711e8faae39921a9df98a228517b395d1e74a0f6d5",
+    "lines": 1413
   },
   {
     "source": "src/source_reflows_merge/main99f_inputs.rs",
@@ -1066,8 +1066,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
-    "sha256": "ad5f1489a638e22140626c0305f7ff223f3ba17d8b47d2a18f4f46fe099ff5fb",
-    "lines": 1489
+    "sha256": "1dd0752fcd444371fc3c37a1915af44a94656e69f0e04a9df0f0e6f0540595b4",
+    "lines": 1493
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
@@ -1701,8 +1701,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "0a710e92b071730b678a868088b7c0fc4fa94fabac919c3b33244c0881a02740",
-    "lines": 997
+    "sha256": "1c29b4b26b93d6f44d77669f1534ec94b704459d3ce169eff3b7fa8af686480c",
+    "lines": 1105
   },
   {
     "source": "src/string_ops/conditions/funded_receiving.rs",
