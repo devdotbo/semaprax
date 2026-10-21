@@ -103,3 +103,202 @@ pub(super) fn owner(source: &str, current: &str) -> Option<String> {
     );
     Some(before)
 }
+
+// Exact already-registered whole inputs required by the existing metadata inverses.
+pub(super) fn entry(source: &str, expected: &str) -> bool {
+    const STAGES: &[(&str, &str)] = &[
+        (
+            "src/cleanup_plan/replay/branch_clone/before_inline.rs",
+            "56b26aa261b2523329fb1d2a84e62c8fb8ac7697e93a8efdd7849408c9a1c413",
+        ),
+        (
+            "src/cleanup_plan/replay/expression_facts/receiving.rs",
+            "db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
+            "a8422b646b93710ae1803f0c32ae81c5c45b7de3fa50a0344d37afee6f96bbb3",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs",
+            "a25ce9f229ff208bcd02915e3495f15b0139087dfc9ce584a348b9092678b5dc",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/tests.rs",
+            "4f2e45b389447291464f818cf8834880f7935e6578087e9bef7f96c89a16c8af",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+            "969a66f6a53585c67165c9b7eba481cc8528bf93e7e8e9a797b47c99352199a7",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/canonical_shared/scratch_tests.rs",
+            "531399a55c2d96fa86f44fc2170918dbc84e826c2b47a2db8d26c7e26a03ba03",
+        ),
+        (
+            "src/cleanup_plan/replay/factored/oracle_hook.rs",
+            "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
+        ),
+        (
+            "src/cleanup_plan/replay/final_output/before.rs",
+            "7e5c2e493e1058dee41eb42922aedcc7c657acb75e4acfe745c2d4229e5c5a17",
+        ),
+        (
+            "src/cleanup_plan/replay/path_array/tests.rs",
+            "b641a21d3e5ba8f517f79b3184f4bc3496fa32c74e3b36951877fd145b528619",
+        ),
+        (
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "ff4af4658d4f51db9a3652316bcbdd5c13c79fc5bcde2fbb4b7f1a011472aaec",
+        ),
+    ];
+    STAGES.contains(&(source, expected))
+}
+
+#[test]
+fn complete_metadata_inverses_keep_original_outputs_and_refuse_changed_inputs() {
+    use super::{metadata_json, runtime_json};
+    let cases = [
+        (
+            runtime_json::metadata(metadata_json::Fixture::M20),
+            "src/cleanup_plan/replay/path_array/tests.rs",
+            "9b31375f7ee10af00217bd4caa212cbe21a95ac6391fb0849083e01ac7d3f0e5",
+        ),
+        (
+            runtime_json::metadata(metadata_json::Fixture::M23),
+            "src/cleanup_plan/replay/path_array/tests.rs",
+            "9b31375f7ee10af00217bd4caa212cbe21a95ac6391fb0849083e01ac7d3f0e5",
+        ),
+        (
+            runtime_json::metadata(metadata_json::Fixture::M26),
+            "src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs",
+            "22358b445b982ce13d5a55dfff11df4eb0d1ec0133ad9fae9008c66c26efe029",
+        ),
+        (
+            runtime_json::metadata(metadata_json::Fixture::M28),
+            "src/cleanup_plan/replay/factored/oracle_hook.rs",
+            "aefe0d06e3f7a6b4ae36bc11160a9c7aed2bd9b30b6041308f619ada3266f707",
+        ),
+        (
+            runtime_json::metadata(metadata_json::Fixture::M31),
+            "src/cleanup_plan/replay/branch_clone/before_inline.rs",
+            "c273939c59b7d0d36012b2d2dd4347a7e4dcc85bd087a7c110e4a10a4b34496d",
+        ),
+        (
+            runtime_json::metadata(metadata_json::Fixture::M31),
+            "src/cleanup_plan/replay/final_output/before.rs",
+            "f7be016b8050ba2c7113915daece93cc671fa3065afd04e7b8b9821ba498ec33",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F03),
+            "src/cleanup_plan/replay/expression_facts/receiving.rs",
+            "a179fa71398494ef6f96fdf14713d17a563c0649c883197dbc9c1840eb2cadde",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F08),
+            "src/cleanup_plan/replay/factored/canonical_shared/scratch_tests.rs",
+            "2797ecdf2618961555d76d228fbd03b2c5cf345d538ef0d8a8bcb7e87456eb3c",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F09),
+            "src/cleanup_plan/replay/factored/canonical_shared/scratch_tests.rs",
+            "c4c006a456f6d1a9a370e52d720aa4d679e499b6e25a8253b614bb44875b78e7",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F10),
+            "src/cleanup_plan/replay/factored/canonical_shared/scratch_tests.rs",
+            "c14eed7c27913cdfec7ff0ccd94b82ecf851f9e5ab64fc6356bcbcd346094a97",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F12),
+            "src/cleanup_plan/replay/expression_facts/receiving.rs",
+            "a179fa71398494ef6f96fdf14713d17a563c0649c883197dbc9c1840eb2cadde",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F13),
+            "src/cleanup_plan/replay/expression_facts/receiving.rs",
+            "a179fa71398494ef6f96fdf14713d17a563c0649c883197dbc9c1840eb2cadde",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F16),
+            "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/tests.rs",
+            "75cb7782397334be2bd59b1b9cc5615f995c20271aec086911c2c92e5ef10ad1",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F29),
+            "src/cleanup_plan/replay/factored/canonical_shared/ordered_weights/tests.rs",
+            "75cb7782397334be2bd59b1b9cc5615f995c20271aec086911c2c92e5ef10ad1",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F38),
+            "src/cleanup_plan/replay/expression_facts/receiving.rs",
+            "a179fa71398494ef6f96fdf14713d17a563c0649c883197dbc9c1840eb2cadde",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F64),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
+            "f231ca22435f360e55efda50a6381350130968967932a349fc790cff1664659e",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F64),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs",
+            "486badc82f654435111acc2b40be6ed7d8a86019e7ee67ea16f92ae6382e75eb",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F68),
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F69),
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F70),
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "43384a448492f20e042f02fe4de5a23241331bae3aa7501a3844dd5a5f72a587",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F72),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_ordered.rs",
+            "f231ca22435f360e55efda50a6381350130968967932a349fc790cff1664659e",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F72),
+            "src/cleanup_plan/replay/factored/canonical_shared/before_receiving_layers.rs",
+            "486badc82f654435111acc2b40be6ed7d8a86019e7ee67ea16f92ae6382e75eb",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F79),
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000",
+        ),
+        (
+            runtime_json::load(runtime_json::Fixture::F86),
+            "src/cleanup_plan/replay/structural_control/calls.rs",
+            "17f757fd22a55b7aaaca952c0ab84b7c8d45bf9285fa15a0a4032ecfbdaa5000",
+        ),
+    ];
+    for (payload, source, original) in cases {
+        let raw =
+            std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source))
+                .unwrap();
+        let before = super::project(&payload, source, &raw);
+        assert_eq!(
+            super::source_sha(&before),
+            original,
+            "complete original inverse: {source}"
+        );
+        for hostile in [
+            format!("{raw}\n"),
+            raw[..raw.len() - 1].to_owned(),
+            format!(" {raw}"),
+        ] {
+            assert!(
+                std::panic::catch_unwind(|| super::project(&payload, source, &hostile)).is_err(),
+                "changed complete input: {source}"
+            );
+        }
+    }
+}

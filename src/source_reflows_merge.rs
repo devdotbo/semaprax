@@ -207,6 +207,7 @@ fn historical_project_entry(source: &str, expected: &str, current: &str) -> Stri
             "ecc2a07ac366adeaddc986c5bf1c676000e95ec98f5dd526c37c78f65406d62c"
         )
     );
+    let admitted = admitted || constructor_stage::entry(source, expected);
     if !admitted {
         return current.to_owned();
     }
