@@ -6,6 +6,7 @@ import os
 from pathlib import Path
 import subprocess
 import sys
+import tomllib
 
 root = Path.cwd().resolve()
 out = root / "diagnostic-resolved-core"
@@ -26,7 +27,9 @@ def library(name, version=None):
     assert len(matches) == 1, (name, len(matches))
     artifact = matches[0]
     if name == "semaprax":
-        assert set(artifact["features"]) == {"unstable-workflow-profiling"}
+        assert tomllib.loads((root / "Cargo.toml").read_text())["features"]["default"] == []
+        assert set(artifact["features"]) in (
+            {"unstable-workflow-profiling"}, {"default", "unstable-workflow-profiling"})
         assert Path(artifact["manifest_path"]).resolve() == root / "Cargo.toml"
         assert artifact["target"]["kind"] == ["lib"]
     paths = [Path(p).resolve() for p in artifact["filenames"] if p.endswith(".rlib")]
