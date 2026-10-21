@@ -18,6 +18,9 @@ fn held(path: &Path, length: usize, expected: &str) -> std::io::Result<String> {
     {
         return Ok(value);
     }
+    if let Some(value) = legacy_ci_inputs::file_expected(path, length, expected) {
+        return Ok(value);
+    }
     if let Some(value) = super::main67107_inputs::accepted_expected_file(path, length, expected) {
         return Ok(value);
     }
@@ -207,6 +210,11 @@ fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Re
             relative,
             row["current_sha256"].as_str().unwrap(),
             compiled,
+        );
+        let compiled = legacy_ci_inputs::for_expected(
+            relative,
+            row["current_sha256"].as_str().unwrap(),
+            &compiled,
         );
         let compiled = super::main67107_inputs::accepted_expected_value(
             relative,
