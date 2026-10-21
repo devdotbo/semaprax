@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 144,
       "full_role_production": 589,
       "full_role_test_only": 1117,
-      "full_raw_sha256": "06c3465e740664aec38fe111eb554d5e9bb4c3555c2b1a116811bc1bf2e07200",
+      "full_raw_sha256": "e9d7ecc6fffc89bdf98857d480f6f1317de3a5a92c803e074f05c3e879b922a4",
       "boundary_production_sha256": "eb6ac2e35854886b2da9f4c0fee342b0c0b6d9f53546035c9a0c71ab082a81fd",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 594,
       "full_role_production": 670,
       "full_role_test_only": 1130,
-      "full_raw_sha256": "632904d3a4a9084110cc2adfa6dd63d16f730c38eb05750e6c642e3b47e6f80f",
+      "full_raw_sha256": "a4bd3e472a828f0e6e0e86c52f8fdea18ed50bdc7ace012eddd0fbe0367c908d",
       "boundary_production_sha256": "aaf2f55cb25236c9abdbb321f30ae5f5d51029f02b68a55bc3a4c4824e90a35d",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -56,7 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "actual_acquisition_completion_sha256": "daea6fbf0b16a85ba267efec8f7fa4d056c2db3324c2dc2af0838612e97cd94c",
+  "actual_acquisition_completion_sha256": "1c8db7788417b33983ac2990425ff249c25779d5186350a880f2057210e014aa",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -66,8 +66,8 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "CURRENT_LOOP_FREE_CONSUMING_SPINE",
-  "before_head": "f9cc03af8a567b8163d6c9d90a21727ae35207a5",
+  "registration_update": "CURRENT_NATIVE_RESOLVER_REQUIRED_SOURCE_PREFIX",
+  "before_head": "f2cefb21901973eb12b4588d231387fa5f4ddf92",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",

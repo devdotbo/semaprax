@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 68651,
-      "sha256": "94ef52cd964244a028adb07d0a5fb8bc1d8a0a3edfe76a0de88bcb60c5873f0a"
+      "sha256": "489cae02899fa230fb0da418904c9abf09984568d6074550c49524a150539cfe"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1328,8 +1328,8 @@
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 209093,
-      "sha256": "70232170ffb1b0ba99518a871ca1d5e07d6197a1d7138db9cd99a5bc4811ff65",
+      "length": 209409,
+      "sha256": "540e2ae190c5fd004c8a3cb90b20e2892fe8776e1bb4f688cec2b51c71280729",
       "base": "../../../../../"
     }
   },
