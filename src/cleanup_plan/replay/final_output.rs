@@ -109,6 +109,9 @@ macro_rules! observation {
 }
 pub(super) use observation;
 
+#[path = "final_output/compact.rs"]
+pub(super) mod compact;
+
 #[cfg(test)]
 pub(super) mod before;
 #[cfg(test)]
@@ -215,6 +218,3 @@ pub(super) fn record_final_frontier(at: usize, work: &SkeletonWork<'_, '_>) {
 #[cfg(test)]
 #[path = "final_output/fanout_tests.rs"]
 mod fanout_tests;
-
-#[path = "final_output/compact.rs"]
-pub(super) mod compact;

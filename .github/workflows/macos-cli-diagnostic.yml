@@ -223,8 +223,13 @@ jobs:
       - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
         with:
           toolchain: 1.97.1
+          components: clippy
       - name: Fetch locked dependencies
         run: cargo fetch --locked
+      - name: Check the actual production library with warnings denied
+        run: >-
+          cargo clippy --locked --offline -p semaprax --lib
+          --features unstable-workflow-profiling --jobs 1 -- -D warnings
       - name: Build the actual instrumented production library
         shell: bash
         run: |
