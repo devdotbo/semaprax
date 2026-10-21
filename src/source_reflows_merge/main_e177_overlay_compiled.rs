@@ -182,6 +182,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "tests/wasm/scalar_browser_ci_contract/before_21abc.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs")),
         "src/bounded_output/classifier_string.rs" => Some(include_str!("../../src/bounded_output/classifier_string.rs")),
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs")),
+        "src/cleanup_plan/replay/sequence_vector/funded_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector/funded_tests.rs")),
         _ => None,
     }
 }
@@ -256,12 +257,31 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Undo this exact later funded-test acquisition before the complete old inverses.
+        let declaration = "    \"src/cleanup_plan/replay/sequence_vector/funded_tests.rs\",\n";
+        assert_eq!(root.matches(declaration).count(), 1);
+        let prior_root = root.replacen(declaration, "", 1);
+        let replacement = "    \"src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs\",\n";
+        assert_eq!(prior_root.matches(replacement).count(), 1);
+        let prior_root = prior_root.replacen(replacement, "", 1);
+        let current_spacing = "        return direct;\n    }\n    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {\n";
+        let previous_spacing = "        return direct;\n    }\n\n    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {\n";
+        assert_eq!(prior_root.matches(current_spacing).count(), 1);
+        let prior_root = prior_root.replacen(current_spacing, previous_spacing, 1);
+        let current_tail = "}\n// Nondelegating current/prior view front, followed by the entire old stage path.\n";
+        let previous_tail = "}\n\n// Nondelegating current/prior view front, followed by the entire old stage path.\n";
+        assert_eq!(prior_root.matches(current_tail).count(), 1);
+        let prior_root = prior_root.replacen(current_tail, previous_tail, 1);
+        let arm = "        \"src/cleanup_plan/replay/sequence_vector/funded_tests.rs\" => Some(include_str!(\"../../src/cleanup_plan/replay/sequence_vector/funded_tests.rs\")),\n";
+        assert_eq!(child.matches(arm).count(), 1);
+        let prior_child = child.replacen(arm, "", 1);
+        let root = prior_root.as_str();
+        let child = prior_child.as_str();
         // Remove only these two later exact source admissions before the old inverses.
         let mut admitted_root = root.to_owned();
         for source in [
             "src/bounded_output/classifier_string.rs",
             "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
-
         ] {
             let declaration = format!("    {source:?},\n");
             assert_eq!(admitted_root.matches(&declaration).count(), 1);
