@@ -231,6 +231,7 @@ jobs:
           cargo clippy --locked --offline -p semaprax --lib
           --features unstable-workflow-profiling --jobs 1 -- -D warnings
       - name: Build the actual instrumented production library
+        id: production_build
         shell: bash
         run: |
           set -euo pipefail
@@ -246,12 +247,15 @@ jobs:
         shell: bash
         run: |
           set -euo pipefail
+          result=0
           for selector in inline_singleton:: final_output:: owned_suffix:: sequence_vector::funded_tests; do
             cargo test --locked --offline -p semaprax --lib \
               --features unstable-workflow-profiling --jobs 1 \
-              "$selector" -- --nocapture --test-threads=1
+              "$selector" -- --nocapture --test-threads=1 || result=1
           done
+          exit "$result"
       - name: Run the complete default-profile bundled-library project suite
+        if: ${{ !cancelled() && steps.production_build.outcome == 'success' }}
         env:
           CARGO_PROFILE_TEST_DEBUG: "0"
           CARGO_PROFILE_TEST_OPT_LEVEL: "0"
@@ -260,7 +264,7 @@ jobs:
           cargo test --locked --offline -p semaprax --test project
           standard_library:: -- --nocapture --test-threads=1
       - name: Run the original installed-toolchain journey
-        if: ${{ !cancelled() && steps.focused_controls.outcome == 'success' }}
+        if: ${{ !cancelled() && steps.production_build.outcome == 'success' }}
         env:
           CARGO_PROFILE_TEST_DEBUG: "0"
           CARGO_PROFILE_TEST_OPT_LEVEL: "0"
