@@ -2164,6 +2164,7 @@
         "src/source_reflows_merge/current344.rs",
         "src/source_reflows_merge/final_custody.rs",
         "src/source_reflows_merge/final_ready_inputs.rs",
+        "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         "src/source_reflows_merge/joined_custody.rs",
         "src/source_reflows_merge/main043_custody.rs",
         "src/source_reflows_merge/main44_custody.rs",
@@ -2893,8 +2894,8 @@
         "src/workspace_graph/expected_projection/uncached_peak.rs",
         "src/workspace_graph/expected_projection/vec_constructor.rs"
       ],
-      "full_manifest_sha256": "20ba30f1d96dc4e8b47ebd7852a31355cd4b4d81163038635eb8e43bab1d5896",
-      "full_raw_sha256": "ad13de36d7a8492e7961e0bb6b42dc3a443a8b9fd73104890619ea7d3ae3035b",
+      "full_manifest_sha256": "afac1ac1ca8cc8b7ef1402b2637e8434ac8ff92031366d0487490e28e6150224",
+      "full_raw_sha256": "30142a8d08e60d12966b1d3df1b22919c23dedff1bf0236c639df952520c6fab",
       "full_authenticated_production_sha256": "41b78ccb9fc65fc65577c7b3303edc7199323876a6b59418acacf6a2e110420e"
     },
     "projection": {
@@ -3969,8 +3970,8 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "5b47f1588f2a3b95f9e85bfe0f05ecebca21fe2561ccb059586b68d0fa4f67b5",
-      "full_raw_sha256": "8967360b91412a1295cef6ccaf68726d471d90f97864231880d121af594cc18d",
+      "full_manifest_sha256": "59ca0fe08d271e92e212a97f7b17f99c52ba0a29d061d66f13e8e549d31afa54",
+      "full_raw_sha256": "9f24b3ac07391988c811d4ab748d2bd0c6e12825082564ff6edbdf68e8a24b45",
       "full_authenticated_production_sha256": "51cc902a6865b08504b956c950cb451cf1b142f958d0d6bf11b7d87a7ad20eb5"
     }
   }

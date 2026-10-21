@@ -25,6 +25,39 @@ fn assert_digest(source: &str, expected: &serde_json::Value) {
 pub(crate) fn project(source: &str, current: &str) -> String {
     let outer = super::final_ready_inputs::current344_input(source, current);
     let current = outer.as_str();
+    // Authenticate the full live profiling fixture before its unchanged old reader.
+    let restored;
+    let current = if source == "tests/native/string_settlement/codec_allocation/string_vectors.rs" {
+        assert_eq!(
+            current,
+            include_str!("../../tests/native/string_settlement/codec_allocation/string_vectors.rs")
+        );
+        assert_eq!(
+            current,
+            std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source))
+                .unwrap()
+        );
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+            ),
+            "660fffb5b73ff401f8d4b96ae735653c05a8623a5d6df1a28452bf09b673ac01"
+        );
+        let edits: Vec<(usize, String, String)> = serde_json::from_str(include_str!(
+            "../../docs/evidence/current344-ci-20261021/string-vectors-inverse.json"
+        ))
+        .unwrap();
+        let mut original = current.to_owned();
+        for (at, after, before) in edits.into_iter().rev() {
+            assert_eq!(&original[at..at + after.len()], after);
+            original.replace_range(at..at + after.len(), &before);
+        }
+        restored = original;
+        restored.as_str()
+    } else {
+        current
+    };
     // Bind every complete raw input before the original historical bridge.
     let stage = match source {
         "src/cleanup_plan.rs" => Some(("144f255bb216245a2ef49c197b60659e2b725c45c0ca05209ebe16feb3e34920", include_str!("../../docs/evidence/ci-d6f-followups-20261019/whole/0e19e80ed9cc80eafe015ff4e11688d6aa24b80755e6afbe1ed727f5d2a63621.txt"))),
@@ -38,6 +71,32 @@ pub(crate) fn project(source: &str, current: &str) -> String {
         _ => None,
     };
     let current = if let Some((sha256, before)) = stage {
+        let ids_before;
+        let current = if source == "src/hir/ids.rs" {
+            assert_eq!(current, include_str!("../hir/ids.rs"));
+            assert_eq!(
+                current,
+                std::fs::read_to_string(
+                    std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source)
+                )
+                .unwrap()
+            );
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+                ),
+                "1eceacba63ce7ce7cbeb99ebe1ecfa05b3bdc25b679c6f74fadaa0b5b3a0284e"
+            );
+            ids_before = current
+                .strip_suffix("\n#[cfg(test)]\nmod lowering_identity_tests;\n")
+                .unwrap()
+                .to_owned();
+            ids_before.as_str()
+        } else {
+            current
+        };
+        let current = super::main_e177_final_inputs::value_direct(source, sha256, current);
         assert_eq!(
             format!(
                 "{:x}",

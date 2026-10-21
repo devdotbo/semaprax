@@ -1,5 +1,7 @@
 //! New unqualified outer endpoints; the99 and DB2 projected contracts are fixed.
 use sha2::{Digest, Sha256};
+#[path = "final_ready_inputs/projection_publication.rs"]
+mod projection_publication;
 #[path = "../workspace_graph/identity_resolution/base/cache_billing/main7f8_reader.rs"]
 mod reader;
 // Only these NEW endpoint spec constants are generated after the final Rust fixes.
@@ -183,6 +185,7 @@ fn projection344_stage(supplied: &str) -> String {
                     length,
                     sha,
                 )
+                .or_else(|| projection_publication::previous(path, length, sha))
                 .ok_or(error)
             })
             .unwrap_or_else(|error| panic!("exact projection344 part {path}: {error:?}"))
