@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 144,
       "full_role_production": 589,
       "full_role_test_only": 1117,
-      "full_raw_sha256": "fe9d83c7f2b28062b05bc1ace13d0d7b33019c38d6b2018cef2fb73353fddb98",
+      "full_raw_sha256": "7c4c6072ac74f1850a78c8acaa93cf34eb68936a618467536022b1448f591178",
       "boundary_production_sha256": "7f3e41d006e4d3a2fd4d183540f04549b0873b7b3c9e40a823cd3a27e73ab376",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,8 +36,8 @@
       "outside_production_still_fully_authenticated": 594,
       "full_role_production": 670,
       "full_role_test_only": 1130,
-      "full_raw_sha256": "2b9265b842543b36786f53cce437d8cbe2c02edf00253c1d40bd0d747650a2cc",
-      "boundary_production_sha256": "e41aa6bb10f7c0773c7ae27e00490f5228a1039ef91c96e94e450da524092f21",
+      "full_raw_sha256": "01e49d4f03a4ded65b84ab3d131b4098d6417a222cc956c689728b9c6a6fe753",
+      "boundary_production_sha256": "3559e1932f9e80d1277f10f5327df7afc0ce30ad4e6487030e39a2d7c6c0862e",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -66,8 +66,8 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "ROOT_TEST_COMPILATION_AND_SCOPED_INDEPENDENT_MODULE_LINT_FIXES",
-  "before_head": "4f728b6a208ff5573e6ac8b3d886c54ab3b572b0",
+  "registration_update": "RESIDUAL_PAYLOAD_AND_WHOLE_HIR_CONTAINER_LAYOUT_ACCOUNTING",
+  "before_head": "874b03052c6813cce9d6c0727b059cc6dbb6669f",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
