@@ -213,6 +213,24 @@ fn projection344_stage(supplied: &str) -> String {
     };
     let current = image("current");
     let previous = image("prior");
+    // Authenticate the live49 join before entering the immutable old44 facade. Only
+    // this exact, separately pinned live49 join may enter that old facade.
+    let live = projection344_live_descriptor();
+    let phase_prior = projection344_phase_join_with(supplied, &mut invocation);
+    let supplied = phase_prior.as_deref().unwrap_or(supplied);
+    let supplied = if supplied != current
+        && supplied != previous
+        && supplied.len() == live["length"].as_u64().unwrap() as usize
+        && digest(supplied) == live["sha256"].as_str().unwrap()
+    {
+        assert_eq!(
+            projection344_live_sources_with(&live, &mut invocation),
+            supplied
+        );
+        current.as_str()
+    } else {
+        supplied
+    };
     assert!(
         supplied == current || supplied == previous,
         "foreign historical projection input"
@@ -291,24 +309,6 @@ fn projection344_stage(supplied: &str) -> String {
         actual, current,
         "every current projection source and literal in owning macro order"
     );
-    // The immutable old44 stage above remains independently checked. Only
-    // this exact, separately pinned live49 join may enter that old facade.
-    let live = projection344_live_descriptor();
-    let phase_prior = projection344_phase_join_with(supplied, &mut invocation);
-    let supplied = phase_prior.as_deref().unwrap_or(supplied);
-    let supplied = if supplied != current
-        && supplied != previous
-        && supplied.len() == live["length"].as_u64().unwrap() as usize
-        && digest(supplied) == live["sha256"].as_str().unwrap()
-    {
-        assert_eq!(
-            projection344_live_sources_with(&live, &mut invocation),
-            supplied
-        );
-        current.as_str()
-    } else {
-        supplied
-    };
     assert!(
         supplied == current || supplied == previous,
         "foreign historical projection input"
@@ -388,8 +388,14 @@ fn projection344_phase_join_with(
                     part["sha256"].as_str().unwrap(),
                 )
             };
-            let text = reader::read(&root.join(path), length, sha, 2_097_152)
-                .expect("complete actual projection part before historical normalization");
+            let text = if let Some(retained) =
+                projection344_retained_part_with(path, length, sha, invocation)
+            {
+                retained
+            } else {
+                reader::read(&root.join(path), length, sha, 2_097_152)
+                    .expect("complete actual projection part before historical normalization")
+            };
             if path == source {
                 assert_eq!(text, compiled);
             } else if let Some(archive) = part["archive"].as_str() {
@@ -418,6 +424,85 @@ fn projection344_phase_join_with(
         "f92a4a4b2866ed66099de40d03521efa9654955e9ff8b8bcdbf8f862628e5ea4"
     );
     Some(previous)
+}
+
+// These three complete source versions precede formatting and acquisition
+// repairs. Authenticate every actual channel before supplying that old view.
+fn projection344_retained_part_with(
+    source: &str,
+    length: usize,
+    sha: &str,
+    invocation: &mut crate::source_reflows_merge::main_e177_final_inputs::ProjectionInvocation,
+) -> Option<String> {
+    match (source, length, sha) {
+        (
+            "src/workspace_graph/expected_projection/call_carriers.rs",
+            12395,
+            "84802a57f88f708bbc10da608f169ebedba8307677b2e6858cd8e0850c505aaa",
+        )
+        | (
+            "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
+            19919,
+            "78e0166bad3ffd1a7a4594f52a9f4be0287dae4bf3d6d56f2964820df0a797f1",
+        ) => invocation.file(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source),
+            length,
+            sha,
+        ),
+        (
+            "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs",
+            7068,
+            "569dca7d1273c3c4cfbd1eda7b6ed9e3909db7cd607556eddb7c515838078a5f",
+        ) => Some(projection344_publication_part(include_str!(
+            "../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs"
+        ))),
+        _ => None,
+    }
+}
+fn projection344_publication_part(compiled: &str) -> String {
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let current_sha = "f30d8ceea4d53421be07e2eec5610b9c5f0ac05ff06005f67c74028128157149";
+    let current = reader::read(
+        &root.join(
+            "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs",
+        ),
+        9293,
+        current_sha,
+        2_097_152,
+    )
+    .expect("complete actual projection publication source");
+    assert_eq!(
+        current, compiled,
+        "complete actual compiled publication source"
+    );
+    let archive = reader::read(
+        &root.join("docs/evidence/projection344-reader-20261021/current/f30d8ceea4d53421be07e2eec5610b9c5f0ac05ff06005f67c74028128157149.txt"),
+        9293,
+        current_sha,
+        2_097_152,
+    ).expect("complete actual publication source archive");
+    assert_eq!(
+        current, archive,
+        "complete publication source archive equality"
+    );
+    let reconstructed = projection_publication::previous(
+        "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs",
+        7068,
+        "569dca7d1273c3c4cfbd1eda7b6ed9e3909db7cd607556eddb7c515838078a5f",
+    )
+    .expect("original complete publication inverse");
+    let previous = reader::read(
+        &root.join("e/569dca7d1273c3c4cfbd1eda7b6ed9e3909db7cd607556eddb7c515838078a5f"),
+        7068,
+        "569dca7d1273c3c4cfbd1eda7b6ed9e3909db7cd607556eddb7c515838078a5f",
+        2_097_152,
+    )
+    .expect("complete preserved publication source");
+    assert_eq!(
+        previous, reconstructed,
+        "original whole publication inverse"
+    );
+    previous
 }
 
 fn projection344_live_descriptor() -> serde_json::Value {
@@ -465,6 +550,10 @@ fn projection344_live_sources_with(
                 invocation
                     .file(&root.join(source), length, sha)
                     .expect("authenticated complete pre-phase projection part")
+            } else if let Some(retained) =
+                projection344_retained_part_with(source, length, sha, invocation)
+            {
+                retained
             } else {
                 reader::read(&root.join(source), length, sha, 2_097_152)
                     .expect("exact live projection part")
@@ -477,6 +566,17 @@ fn projection344_live_sources_with(
                     "src/workspace_graph/expected_projection/call_carriers_original.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_original.rs"),
                     "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs" => include_str!("../../src/workspace_graph/expected_projection/call_carriers_historical_tests.rs"),
                     _ => panic!("foreign additional projection part"),
+                };
+                let retained;
+                let compiled = if source
+                    == "src/workspace_graph/expected_projection/call_carriers.rs"
+                    && length == 12395
+                    && sha == "84802a57f88f708bbc10da608f169ebedba8307677b2e6858cd8e0850c505aaa"
+                {
+                    retained = invocation.value_direct(source, sha, compiled);
+                    retained.as_str()
+                } else {
+                    compiled
                 };
                 let phase_prior;
                 let compiled = if source
@@ -709,5 +809,55 @@ fn observer_projection_stage_keeps_whole_current_and_prior_and_refuses_foreign_j
         "foreign".to_owned(),
     ] {
         assert!(std::panic::catch_unwind(|| projection344_stage(&foreign)).is_err());
+    }
+}
+
+#[test]
+fn projection344_retained_parts_reject_foreign_compiled_and_requested_tuples() {
+    let compiled = include_str!(
+        "../../src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs"
+    );
+    let previous = projection344_publication_part(compiled);
+    assert_eq!(previous.len(), 7068);
+    assert_eq!(
+        digest(&previous),
+        "569dca7d1273c3c4cfbd1eda7b6ed9e3909db7cd607556eddb7c515838078a5f"
+    );
+    for foreign in [
+        String::new(),
+        format!("{compiled} "),
+        compiled[..compiled.len() - 1].to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| projection344_publication_part(&foreign)).is_err());
+    }
+    let row = projection344_live_descriptor();
+    for part in row["parts"].as_array().unwrap() {
+        let Some(source) = part["source"].as_str() else {
+            continue;
+        };
+        if !matches!(source,
+            "src/workspace_graph/expected_projection/call_carriers.rs"
+            | "src/workspace_graph/expected_projection/borrowed_imports/typed.rs"
+            | "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs")
+        {
+            continue;
+        }
+        let length = part["length"].as_u64().unwrap() as usize;
+        let sha = part["sha256"].as_str().unwrap();
+        let mut invocation =
+            crate::source_reflows_merge::main_e177_final_inputs::ProjectionInvocation::new();
+        let text = projection344_retained_part_with(source, length, sha, &mut invocation).unwrap();
+        assert_eq!(text.len(), length);
+        assert_eq!(digest(&text), sha);
+        assert!(
+            projection344_retained_part_with(source, length + 1, sha, &mut invocation).is_none()
+        );
+        assert!(
+            projection344_retained_part_with(source, length, &"0".repeat(64), &mut invocation)
+                .is_none()
+        );
+        assert!(
+            projection344_retained_part_with("unlisted", length, sha, &mut invocation).is_none()
+        );
     }
 }
