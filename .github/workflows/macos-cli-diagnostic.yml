@@ -238,6 +238,7 @@ jobs:
       - name: Capture unchanged failure and exclusive reservation totals
         run: python3 scripts/diagnose-resolved-core.py resolved-core-build.jsonl
       - name: Check complete canonical predecessor and compact Result controls
+        id: focused_controls
         env:
           CARGO_PROFILE_TEST_DEBUG: "0"
           CARGO_PROFILE_TEST_OPT_LEVEL: "0"
@@ -250,6 +251,21 @@ jobs:
               --features unstable-workflow-profiling --jobs 1 \
               "$selector" -- --nocapture --test-threads=1
           done
+      - name: Run the complete default-profile bundled-library project suite
+        env:
+          CARGO_PROFILE_TEST_DEBUG: "0"
+          CARGO_PROFILE_TEST_OPT_LEVEL: "0"
+          CARGO_PROFILE_TEST_CODEGEN_UNITS: "256"
+        run: >-
+          cargo test --locked --offline -p semaprax --test project
+          standard_library:: -- --nocapture --test-threads=1
+      - name: Run the original installed-toolchain journey
+        if: ${{ !cancelled() && steps.focused_controls.outcome == 'success' }}
+        env:
+          CARGO_PROFILE_TEST_DEBUG: "0"
+          CARGO_PROFILE_TEST_OPT_LEVEL: "0"
+          CARGO_PROFILE_TEST_CODEGEN_UNITS: "256"
+        run: scripts/run-installed-journey-test.sh
       - name: Retain the bound diagnostic report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9
