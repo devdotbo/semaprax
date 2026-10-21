@@ -394,7 +394,9 @@ impl Guard {
             None => r.overflow = true,
         });
         if UNWIND_FINAL.with(|flag| flag.replace(false)) {
-            std::panic::resume_unwind(Box::new("test-only unwind inside independent PLAN/HIR comparison"));
+            std::panic::resume_unwind(Box::new(
+                "test-only unwind inside independent PLAN/HIR comparison",
+            ));
         }
     }
     pub(super) fn final_shared(&self) {
@@ -403,7 +405,9 @@ impl Guard {
             None => r.overflow = true,
         });
         if UNWIND_FINAL.with(|flag| flag.replace(false)) {
-            std::panic::resume_unwind(Box::new("test-only unwind inside independent PLAN/HIR comparison"));
+            std::panic::resume_unwind(Box::new(
+                "test-only unwind inside independent PLAN/HIR comparison",
+            ));
         }
     }
     pub(super) fn final_step(&self) {

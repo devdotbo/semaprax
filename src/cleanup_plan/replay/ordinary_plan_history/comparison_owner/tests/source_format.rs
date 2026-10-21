@@ -19,21 +19,22 @@ pub(super) fn restore(kind: Kind, current: &str) -> String {
         current
     };
     let prepared;
-    let current = if matches!(kind, Kind::Tests880 | Kind::Tests883) && exact_main_input(kind, current) {
-        assert_eq!(current.matches("    frontiers::prepare();\n").count(), 2);
-        prepared = current.replace("    frontiers::prepare();\n", "");
-        assert_eq!(
-            prepared,
-            include_str!(concat!(
-                env!("CARGO_MANIFEST_DIR"),
-                "/docs/evidence/tls-traces-cf72-20261019/before-owner-tests.rs.txt"
-            )),
-            "whole test predecessor, including every assertion"
-        );
-        prepared.as_str()
-    } else {
-        current
-    };
+    let current =
+        if matches!(kind, Kind::Tests880 | Kind::Tests883) && exact_main_input(kind, current) {
+            assert_eq!(current.matches("    frontiers::prepare();\n").count(), 2);
+            prepared = current.replace("    frontiers::prepare();\n", "");
+            assert_eq!(
+                prepared,
+                include_str!(concat!(
+                    env!("CARGO_MANIFEST_DIR"),
+                    "/docs/evidence/tls-traces-cf72-20261019/before-owner-tests.rs.txt"
+                )),
+                "whole test predecessor, including every assertion"
+            );
+            prepared.as_str()
+        } else {
+            current
+        };
     // Exact incoming stages are selected only through the live current-source
     // physical/compiled/archive front, before this unchanged formatter inverse.
     let (source, expected) = match kind {
@@ -924,12 +925,21 @@ mod tests {
 fn exact_main_input(kind: Kind, current: &str) -> bool {
     use sha2::{Digest, Sha256};
     let (length, expected) = match kind {
-        Kind::Root => (19991, "b6b728c5226cd8c7b6cac5e470a385095bb4f852e8f8879c5942145ace41466d"),
-        Kind::Tests880 | Kind::Tests883 => (43059, "b55944ab8d0bf07f12819355431dcc7ff83732a1efa2be6a63e0cf6f4bf7d521"),
+        Kind::Root => (
+            19991,
+            "b6b728c5226cd8c7b6cac5e470a385095bb4f852e8f8879c5942145ace41466d",
+        ),
+        Kind::Tests880 | Kind::Tests883 => (
+            43059,
+            "b55944ab8d0bf07f12819355431dcc7ff83732a1efa2be6a63e0cf6f4bf7d521",
+        ),
         _ => return false,
     };
     current.len() == length
-        && format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))) == expected
+        && format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+        ) == expected
 }
 
 #[test]

@@ -526,7 +526,7 @@ pub(crate) fn print_settled() {
 fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled() {
     use super::Operation;
     use crate::bounded_output::{
-        ReservationStage, reserve_active_required, with_limit_usage_refusal, with_reservation_stage,
+        reserve_active_required, with_limit_usage_refusal, with_reservation_stage, ReservationStage,
     };
     let _observation = observe();
     let (((), metrics), refused, used, first) = with_limit_usage_refusal(64, || {

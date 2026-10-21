@@ -797,11 +797,23 @@ pub(crate) fn receiver_fixture_source_before(source: &str, current: &str) -> Str
         return current.to_owned();
     }
     assert_eq!(current.len(), 7873);
-    assert_eq!(digest(current.as_bytes()), [22, 25, 246, 163, 6, 93, 58, 87, 222, 52, 59, 43, 203, 215, 114, 78, 99, 244, 200, 168, 70, 222, 252, 141, 0, 68, 117, 28, 248, 37, 90, 5]);
+    assert_eq!(
+        digest(current.as_bytes()),
+        [
+            22, 25, 246, 163, 6, 93, 58, 87, 222, 52, 59, 43, 203, 215, 114, 78, 99, 244, 200, 168,
+            70, 222, 252, 141, 0, 68, 117, 28, 248, 37, 90, 5
+        ]
+    );
     assert_eq!(current.matches("        crate::source_reflows_merge::receiver_fixture_source_before(\n            \"src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs\",\n            include_str!(\"../../blocks_before_receipt.rs\"),\n        ).replacen(").count(), 1);
     let prior = current.replacen("        crate::source_reflows_merge::receiver_fixture_source_before(\n            \"src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs\",\n            include_str!(\"../../blocks_before_receipt.rs\"),\n        ).replacen(", "        include_str!(\"../../blocks_before_receipt.rs\").replacen(", 1);
     assert_eq!(prior.len(), 7706);
-    assert_eq!(digest(prior.as_bytes()), [131, 224, 221, 224, 214, 14, 199, 238, 82, 83, 218, 38, 95, 37, 112, 115, 28, 115, 130, 137, 146, 83, 41, 253, 48, 76, 196, 9, 53, 64, 39, 52]);
+    assert_eq!(
+        digest(prior.as_bytes()),
+        [
+            131, 224, 221, 224, 214, 14, 199, 238, 82, 83, 218, 38, 95, 37, 112, 115, 28, 115, 130,
+            137, 146, 83, 41, 253, 48, 76, 196, 9, 53, 64, 39, 52
+        ]
+    );
     let current = prior.as_str();
     let mut before = current.to_owned();
     assert_eq!(before.matches("    let rows: serde_json::Value =\n        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(\n            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,\n        ))\n        .unwrap();").count(), 1, "exact runtime fixture transport edit");

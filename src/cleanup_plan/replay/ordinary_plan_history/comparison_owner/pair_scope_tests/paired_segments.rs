@@ -106,7 +106,12 @@ fn observe_immediate_shaped_pair(
                     "883 shaped comparison receiving"
                 )?;
                 if old {
-                    super::super::paired_segments_before::compare(function, &mut budget, actual, expected)
+                    super::super::paired_segments_before::compare(
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
                 } else {
                     compare(function, &mut budget, actual, expected)
                 }
@@ -283,7 +288,11 @@ fn observe_funded(
                 )?;
                 if old {
                     super::super::paired_segments_before::compare(
-                        function, &mut budget, actual, expected)
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
                 } else {
                     compare(function, &mut budget, actual, expected)
                 }

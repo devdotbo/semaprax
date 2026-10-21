@@ -97,8 +97,8 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 28060,
-      "sha256": "e98bf0ffd40155974eeb159ffc5cb0a194c5c0b72f5735ad95381c3644d7dedd"
+      "length": 28720,
+      "sha256": "03599ff4193b1444f6f4ccea9418c0353ec03ed2211ecce519bc5f17d7501e6a"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
       "length": 45040,
@@ -233,8 +233,8 @@
       "sha256": "db06143a7a46c5030fc813b49a7ca7be73a1f9d619a13bb14a198799a5c7c1d8"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs": {
-      "length": 30030,
-      "sha256": "b139d4bd10fa8244c90a0f8aea56f159771fc2959b0589e1c076682daa69e00a"
+      "length": 30041,
+      "sha256": "f9647d41afe7a984652bced0006bf6ef4e61a8da4e91e4cc36cdb4927b8c478e"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs": {
       "length": 18307,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 42863,
-      "sha256": "1c0df0fbaa00c10ee174b435013c217b1a2f40b21f070cc4427e862da7898ea0"
+      "length": 42925,
+      "sha256": "80706a2e623bae9438a78243ec1ad1d9beca2b6aaa166142f00bbcb814185d7e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 58148,
-      "sha256": "ff93aa1d5126986ac294ced32a7f054b36f0f96f1ab5a4545f30baf47ab38602"
+      "length": 58159,
+      "sha256": "d56482364db99247541856b7ce9a90f4c735dc85b7de081ded3daf3dbec35596"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -393,8 +393,8 @@
       "sha256": "46f5e7917928ff472768e6c14073ee83d3f641dc6ae86f14f40b1e96b7b4be89"
     },
     "src/hir/ids/declaration_tag.rs": {
-      "length": 29891,
-      "sha256": "58a3bbec53e96e2f429cebfe3bfe66105293a15ffc8862afe3503e293fd26ba9"
+      "length": 29925,
+      "sha256": "2cee894230ef7b0533f57da0523a6e9c31cdfe9470e3ded9462d3eb9eb09ef6d"
     },
     "src/hir/ids/declaration_tag/before.rs": {
       "length": 8897,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 68651,
-      "sha256": "489cae02899fa230fb0da418904c9abf09984568d6074550c49524a150539cfe"
+      "sha256": "07c51797a813f0d9f16fd57265ce1f1848ca638f392cb9539a880331a03b04c8"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -797,20 +797,20 @@
       "sha256": "cbabeca225942f20ffe4d4cd675199eb0200934c8be06940ddbfff1b05f74bb3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
-      "length": 15748,
-      "sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3"
+      "length": 15824,
+      "sha256": "729bbe21e5818c126fafe507444b1be4a1155e47eed0f140cabff5df31a64dd1"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
       "length": 28105,
       "sha256": "efe37def7206f52eb92424c36d79bf3befbdbc1ba8e456d027fa8f30b62d93fa"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs": {
-      "length": 21382,
-      "sha256": "de6628881d539bd95eb53d7ba260be5d7865babf59432890a4d6e91a2f6964f3"
+      "length": 21381,
+      "sha256": "1c36876f650c21ae54fbeb03d917d53ea7a78d3654d98370b998eb3d6bc777bf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
-      "length": 60089,
-      "sha256": "6fd9a05db6f849b7bba7f82c815493f2a6c031c84475eae8451e8680403d5351"
+      "length": 60100,
+      "sha256": "79f1eb1cccdea7621ca93b376a66413ecfd56cb378592fc3f9254ab04211d8da"
     },
     "src/ast/program_source/function_alias/scalar_signature.rs": {
       "length": 3398,
@@ -821,8 +821,8 @@
       "sha256": "4f0edf4d0ce83f6519240778eb45417329d6f30954c9e0d7d1177bd8197628ab"
     },
     "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs": {
-      "length": 7855,
-      "sha256": "5714624d03743341b609d3e1fb85bf575a1648d84c1c88d6f8324dd2f02fbfbc"
+      "length": 7965,
+      "sha256": "71bfa8d6c8c45012394483ad53cacca1ebfb93331d27dfb29845c830dfabf96d"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs": {
       "length": 15446,
@@ -837,24 +837,24 @@
       "sha256": "3de6f80391541e690f04879f7f1b15ed0917870b1c54f2321f7d43d8bea639ea"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs": {
-      "length": 21776,
-      "sha256": "adea1ccc8383fdceab390253fcde53adcfc4223f395fc89efa76521c183b689d"
+      "length": 21775,
+      "sha256": "973fea59d96e7a27f22fe689c3bed663e56d64bfbc0bbd823dcc08b0b2e8804c"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs": {
       "length": 6323,
       "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs": {
-      "length": 48440,
-      "sha256": "3bcc9a83700d77eb24eacd0192f13f3254681459ff8841e0c4c38a95b785b79d"
+      "length": 48451,
+      "sha256": "9855b280856039473b16e8d03dc7d3bce66a194fb42e4a79621d26673847f386"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs": {
       "length": 6683,
       "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs": {
-      "length": 57313,
-      "sha256": "1382e002527db196ea28ac57f30ee964d1dfc3d233d3741f513e1e98ff5f018e"
+      "length": 57481,
+      "sha256": "590873f289e2a34e5d28a08eafb10267b35aa527bde7ad1734682d554b347c56"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs": {
       "length": 6294,
@@ -873,8 +873,8 @@
       "sha256": "ecc693e67e0a193efec4ddc0e22037fcd99b8626b7fd87e5f11c1123fd65d4f3"
     },
     "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
-      "length": 61825,
-      "sha256": "f2d7a66a474f9b09204c3c03da4dc6aa617527298c7423ce6ce2ba63c795b135"
+      "length": 63514,
+      "sha256": "37de568d18cef01e211c9fd627cc2bd848d7ba6d75529f856f3ed7bb87f867e1"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
       "length": 19877,
@@ -886,7 +886,7 @@
     },
     "src/workspace_graph/expected_projection/call_carriers.rs": {
       "length": 12395,
-      "sha256": "84802a57f88f708bbc10da608f169ebedba8307677b2e6858cd8e0850c505aaa"
+      "sha256": "d0f832f517a6037e1c3f8c7f5b1cca79af990ed2837b8c29b38903cb4baa6033"
     },
     "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs": {
       "length": 30577,
@@ -926,11 +926,11 @@
     },
     "src/workspace_graph/expected_projection/call_carriers_before_directory.rs": {
       "length": 12075,
-      "sha256": "87142dc1b3f98f9d381459f0f4f8925c807d28645aa0646ea453eea3c63cc512"
+      "sha256": "529dc30d6e2db8c21099fe47e4a2da55a67284f9fca7c114e2e8408c6994a277"
     },
     "src/workspace_graph/expected_projection/call_carriers_directory.rs": {
       "length": 21794,
-      "sha256": "1a61d40677748f217a193754f9be21184a8dfbf7e9ca82550f28f3146c99d999"
+      "sha256": "c49b0a20bbb6681d67dfbf177fe3fd41a64c57079afa7d7713aaa78a42d6ab95"
     },
     "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs": {
       "length": 20676,
@@ -945,24 +945,24 @@
       "sha256": "1118299b35a0009ce7476507741ea9f1495b0d12191af673a852a6da7cb771af"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs": {
-      "length": 28714,
-      "sha256": "f1458b012d31d958e5fb5cbb06cfc7b914ed5f10664f3ab654f99a9c3d6f16e9"
+      "length": 29364,
+      "sha256": "90c38069b2c42ec1ab4edfcf137cc65ac0c787703a39c3f8dab6e6d6e37dc766"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs": {
       "length": 6457,
       "sha256": "8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs": {
-      "length": 6267,
-      "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
+      "length": 6318,
+      "sha256": "95e186e91eef6db83131445bfebb80c58f3cf86e69bb1745abb6e8c15fae025e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs": {
-      "length": 7420,
-      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+      "length": 7450,
+      "sha256": "e93196aad600874daf3d1fea0bf65bb82dc806a37b23d0980a64f3f755e29dc0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
-      "length": 43627,
-      "sha256": "b67dd4267223136222edf4508cd19f0a7e8c4fc43338a1aa616d55430a3792a5"
+      "length": 43632,
+      "sha256": "b613aae744fc8be69a263c49d07bb3ffe3c6544fccb1d3703fa2aa07840e9f89"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs": {
       "length": 23096,
@@ -981,40 +981,40 @@
       "sha256": "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs": {
-      "length": 34204,
-      "sha256": "562c506a3064893f4799b778ae8fd6fc0f8ab28f918d32fc6c5cff88b4d12871"
+      "length": 34697,
+      "sha256": "be8b6d50dd5edfe1e0f9064a296724ef253519bf0fc49efbcc0e53e7da362e74"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs": {
-      "length": 25860,
-      "sha256": "1801e6dfb9e77d78c0547b710bda186cb382a022af36d6609901eb5f9020be26"
+      "length": 26164,
+      "sha256": "8e23d21afb19a1c21d0a211f0a802bcb285c09ac5311a525375eb8bf2b8698f0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs": {
       "length": 10841,
       "sha256": "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs": {
-      "length": 43884,
-      "sha256": "cd73e40396090ee5fd3cb7a1c7f76e0dc3958e083e32611e4eef3e05432965e3"
+      "length": 43990,
+      "sha256": "b36cf70f3567c5570377b3448d2730bbd46d5fbdc9dd61ab7b11fec1bf79deb3"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs": {
-      "length": 7075,
-      "sha256": "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
+      "length": 7126,
+      "sha256": "27520c74908e5cc0314159f8de94b7c893aa11b57284c7f15288dc3f06b3f185"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs": {
       "length": 6770,
-      "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+      "sha256": "c5d8aa8feed50f31c914f72ed5d90cdcc76c410360a46bb2a34e829e3bd25780"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs": {
       "length": 33186,
       "sha256": "ba5e80400489f1c4546b9e6c724a6ab9dcea707e74e02a50c329895775aa54db"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs": {
-      "length": 20756,
-      "sha256": "dc422abd0e68fcb7cb563f09c35e5d0a5a1662309e0fe8f35223ac4ab9ae4943"
+      "length": 20778,
+      "sha256": "a34382bf8eead8850427dadaa50273937b765a2dd285565f5f8aa0610d3e9fa8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs": {
-      "length": 21023,
-      "sha256": "651542d472bf505cc7f9c5eacebaf31718b83f8043ab40ead8e90a706e0be3f4"
+      "length": 21236,
+      "sha256": "4fd2dcf2ead3369e2da6ac3cf1ff2ae08420429c50ce96825751cb940d5b4b7a"
     },
     "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs": {
       "length": 4531,
@@ -1034,11 +1034,11 @@
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs": {
       "length": 34172,
-      "sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6"
+      "sha256": "3b5977ebc384a55d39f8e3389cd3dc3cd7766fd429c0d2a2130d07c4002ef3a7"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
-      "length": 56129,
-      "sha256": "bc46f1c86a89bfdef97abfd3381e27177c837e3dfce5d9ec50d718dc1234a2e2"
+      "length": 56168,
+      "sha256": "f0ae0d03e8ecf11024f6eb8e47a30d78f5b6012d5a8b1877ed62c9d4a92ae253"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
       "length": 6956,
@@ -1105,8 +1105,8 @@
       "sha256": "3bfddfb8c69711d9e5c5b423a3a400e74a1b16572ead764acb340ad8a8bbe417"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs": {
-      "length": 13860,
-      "sha256": "e4006e0c55c0ba9b9b6d214b8d142cbc9c279c63b9c392dc1b636fc600cc30ce"
+      "length": 13890,
+      "sha256": "9ab45ba5a6d1e5ac93e0aca9b3252e3166cb0a117344a517850eaae99c6e803b"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs": {
       "length": 32019,
@@ -1153,12 +1153,12 @@
       "sha256": "485410ab39853c26e2df54bace3891ae4b883029140f66113e481466d5c60954"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs": {
-      "length": 13652,
-      "sha256": "37dafd575afbf5444088af8142df92912133b56c8a3abc40170cbb46626a1a4f"
+      "length": 13669,
+      "sha256": "96590edda424c3321cd1ba58120bfa65e47c9e0fe58a81723e0706a82a25965f"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs": {
-      "length": 19373,
-      "sha256": "b0080c5a674ba46cdbf266647436c54e6395e2f48babdfdd71a092f39b5c22de"
+      "length": 19369,
+      "sha256": "1f2e134a5139c1c657d94cf9806f790989c94476d934d2fb1d37973bb8a3b1ca"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs": {
       "length": 7656,
@@ -1185,8 +1185,8 @@
       "sha256": "753fcdc6ea3302c8f33a0355746d7d75b5fdc2c971d95aea6403467a8d8ef810"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs": {
-      "length": 44615,
-      "sha256": "6a803f908b40950adbc68c47589aa4170d6c54a8e3bb142b55de37e8058c3fe6"
+      "length": 44804,
+      "sha256": "59fe28fbbdae91a53d5d8494759a0b472c67f7fa1c35c8b4a0462a910935be98"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs": {
       "length": 7872,
@@ -1201,8 +1201,8 @@
       "sha256": "613ad4fc56c6bef78acb57a358a2c6916f65d7a5a2c99d66960c5088f9b8f117"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
-      "length": 33840,
-      "sha256": "1f39f504cadbe0fbc994a9f7d9a98cecff52861068e7c4d97541c64deb2e1f73"
+      "length": 35103,
+      "sha256": "1e31aba22d551ebabbfb57e2f0b1d36f6bb1517f816a1ed6413ebd732df66981"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs": {
       "length": 32474,
@@ -1213,8 +1213,8 @@
       "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs": {
-      "length": 25645,
-      "sha256": "0934fe938e30310a2812c91b6c105bab6e511a214748613073be5343530064df"
+      "length": 25657,
+      "sha256": "727ba50b5e55824d7dd2ff05d4e389d3aa06e377baa78295ed353fbe500efdae"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs": {
       "length": 6956,
@@ -1241,8 +1241,8 @@
       "sha256": "2f4387d36e1e29ab15c409438dd74071439f2cb058d3fe53aa16c533ef79780e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs": {
-      "length": 18343,
-      "sha256": "263e2baf2761fd0eb175208e42406baccb00f7af1ee6514538110a3be6f8f612"
+      "length": 18424,
+      "sha256": "c31dc10489c76a99d651ee33d20b2c33dc1893a87c2fbf614ef0fd6f8f4e8b34"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs": {
       "length": 6956,
@@ -1257,12 +1257,12 @@
       "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
     },
     "src/bounded_output/exclusive_debits.rs": {
-      "length": 35332,
-      "sha256": "9a4a2a5c7f297f12231521a279e0ef17cd70085ae6918ae30b1bd63ceaca2932"
+      "length": 35344,
+      "sha256": "7d0347a5de731360c0cb2b82df0ba9823e85d65ecfba60bcad9c3c6252caa6ba"
     },
     "src/hir/ids/lowering_identity_tests.rs": {
-      "length": 24400,
-      "sha256": "030374fddb446ebeed72e8c9fa862e72dc7e14c255262a6c40ade044ed714af6"
+      "length": 27672,
+      "sha256": "8c3ac416a6064fcc8a7a10ceec070764334d4992b74fe927c8e7ffd7aa1822ad"
     },
     "src/hir/owned_collection_record/identity_before.rs": {
       "length": 3616,
@@ -1273,8 +1273,8 @@
       "sha256": "8b0ba9454b0cf8592977cfbafd468493d403affb2a05430eee86135a5019f3fb"
     },
     "src/hir/resolve_expr/sort_keys/identity_tests.rs": {
-      "length": 13671,
-      "sha256": "8a34ae0c02a01252ea53fb730a10bd58d8d1229b24f556fd3917805b288518db"
+      "length": 15206,
+      "sha256": "094bc3c3fd18142b71b3be32ac68ad5289d77aca6775ce401007b7e9bb38a133"
     },
     "src/hir/resolve_for/identity_before.rs": {
       "length": 9363,
@@ -1286,7 +1286,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_pins_v9.rs": {
       "length": 10093,
-      "sha256": "9f3a3343b8cb3230fbf78c23c9096b6bd43fb416f6cecf9aa4c0ef99e03b7112"
+      "sha256": "f6152aef5b30ef71af962485fc38198a0ac5f3f4f733b7ae3fc75193620e07c6"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/fixture_helpers.rs": {
       "length": 13740,

@@ -149,20 +149,21 @@ mod tests {
                 std::panic::catch_unwind(|| input(domain, "src/foreign.rs", "foreign")).is_err()
             );
             let data = super::super::runtime_json::additional(domain.spec().fixture);
-            assert!(
-                std::panic::catch_unwind(|| checked(
-                    domain.spec(),
-                    &data[..data.len() - 1],
-                    "src/foreign.rs",
-                    ""
-                ))
-                .is_err()
-            );
+            assert!(std::panic::catch_unwind(|| checked(
+                domain.spec(),
+                &data[..data.len() - 1],
+                "src/foreign.rs",
+                ""
+            ))
+            .is_err());
             let changed = data.replacen('s', "t", 1);
-            assert!(
-                std::panic::catch_unwind(|| checked(domain.spec(), &changed, "src/foreign.rs", ""))
-                    .is_err()
-            );
+            assert!(std::panic::catch_unwind(|| checked(
+                domain.spec(),
+                &changed,
+                "src/foreign.rs",
+                ""
+            ))
+            .is_err());
         }
     }
 }
