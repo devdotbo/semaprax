@@ -12,8 +12,8 @@ pub(super) struct ByteFailure {
     pub(super) code: &'static str,
     pub(super) message: std::borrow::Cow<'static, str>,
 }
-impl From<Diagnostic> for ByteFailure {
-    fn from(diagnostic: Diagnostic) -> Self {
+impl ByteFailure {
+    pub(super) fn from_budget(diagnostic: Diagnostic) -> Self {
         let Diagnostic {
             code: "SPX-H006",
             severity: crate::diagnostic::Severity::Error,
@@ -31,12 +31,12 @@ impl From<Diagnostic> for ByteFailure {
         }
     }
 }
-impl From<ByteFailure> for Diagnostic {
-    fn from(failure: ByteFailure) -> Self {
-        Self {
-            code: failure.code,
+impl ByteFailure {
+    pub(super) fn into_diagnostic(self) -> Diagnostic {
+        Diagnostic {
+            code: self.code,
             severity: crate::diagnostic::Severity::Error,
-            message: failure.message,
+            message: self.message,
             path: None,
             span: None,
             help: None,
@@ -563,7 +563,10 @@ impl ReplayBudget {
                 ))
             };
         }
-        self.prepare_builder(function)?;
+        match self.prepare_builder(function) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
         let accepted = match self.payer {
             AllocationPayer::LegacyUnobserved => true,
             AllocationPayer::ActiveBuilder => {
@@ -661,7 +664,10 @@ impl ReplayBudget {
                 ))
             };
         }
-        self.prepare_builder(function)?;
+        match self.prepare_builder(function) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
         let accepted = match self.payer {
             AllocationPayer::LegacyUnobserved => true,
             AllocationPayer::ActiveBuilder => {
@@ -708,9 +714,15 @@ impl ReplayBudget {
             // These preflights construct no recursive type cursor. Authenticate
             // and fund refusal text first, but leave the cursor unpaid so a
             // later recursive clone must still acquire its complete backing.
-            self.prepare_builder(function)?;
+            match self.prepare_builder(function) {
+                Ok(()) => (),
+                Err(error) => return Err(ByteFailure::from_budget(error)),
+            };
         } else {
-            self.prepare_clone_cursor(function)?;
+            match self.prepare_clone_cursor(function) {
+                Ok(()) => (),
+                Err(error) => return Err(ByteFailure::from_budget(error)),
+            };
         }
         #[cfg(test)]
         let payload = if without_type_cursor {
@@ -767,7 +779,10 @@ impl ReplayBudget {
         units: usize,
         phase: &str,
     ) -> Result<(), ByteFailure> {
-        self.prepare_builder(function)?;
+        match self.prepare_builder(function) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
         if self.refusal_spent {
             return Err(self.compact_refusal(
                 function,
@@ -775,7 +790,10 @@ impl ReplayBudget {
                 "",
             ));
         }
-        self.charge_oracle_work(function, units, phase)?;
+        match self.charge_oracle_work(function, units, phase) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
         let spent = self.skeleton_spent.checked_add(units).ok_or_else(|| {
             self.compact_refusal(
                 function,
@@ -818,7 +836,10 @@ impl ReplayBudget {
         {
             // Detached test ledgers retain their previous unadmitted route;
             // only from_reservation establishes a prepaid selected budget.
-            return replay_error(function, format_args!("{reason}{phase}")).into();
+            return ByteFailure::from_budget(replay_error(
+                function,
+                format_args!("{reason}{phase}"),
+            ));
         }
         self.refusal_spent = true;
         self.remaining = 0;
@@ -888,7 +909,8 @@ mod byte_failure_tests {
             let pointer = diagnostic.message.as_ptr();
             let capacity = diagnostic.message_owned_capacity();
             let borrowed = matches!(&diagnostic.message, Cow::Borrowed(_));
-            let (restored, metrics) = measure(|| Diagnostic::from(ByteFailure::from(diagnostic)));
+            let (restored, metrics) =
+                measure(|| ByteFailure::from_budget(diagnostic).into_diagnostic());
             assert_eq!(restored.json(), json);
             assert_eq!(restored.message.as_ptr(), pointer);
             assert_eq!(restored.message_owned_capacity(), capacity);
@@ -916,7 +938,7 @@ mod byte_failure_tests {
                 4 => diagnostic.help = Some("extra field".into()),
                 _ => unreachable!(),
             }
-            assert!(std::panic::catch_unwind(|| ByteFailure::from(diagnostic)).is_err());
+            assert!(std::panic::catch_unwind(|| ByteFailure::from_budget(diagnostic)).is_err());
         }
     }
 
@@ -929,3 +951,15 @@ mod byte_failure_tests {
         assert!(size_of::<Result<usize, ByteFailure>>() < size_of::<Result<usize, Diagnostic>>());
     }
 }
+
+// Only the selected local callers use this conversion. No global From impl
+// participates in unrelated Result inference; successful calls retain ByteFailure.
+macro_rules! compact_try {
+    ($result:expr) => {
+        match $result {
+            Ok(value) => value,
+            Err(error) => return Err(error.into_diagnostic()),
+        }
+    };
+}
+pub(super) use compact_try;

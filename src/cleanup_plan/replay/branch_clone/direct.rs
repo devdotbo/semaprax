@@ -275,12 +275,16 @@ pub(in crate::cleanup_plan::replay) fn copy_prepaid<
     } else {
         None
     };
-    budget.charge_compact_skeleton(function, 1, phase)?;
-    budget.reserve_compact_clone(function, values, phase)?;
+    physical_budget::compact_try!(budget.charge_compact_skeleton(function, 1, phase));
+    physical_budget::compact_try!(budget.reserve_compact_clone(function, values, phase));
     note_skeleton_materialization();
     // The immediate push work must refuse before every extra capacity debit,
     // exactly as in the complete predecessor producer.
-    budget.charge_compact_skeleton(function, 1, "plan branch observation push")?;
+    physical_budget::compact_try!(budget.charge_compact_skeleton(
+        function,
+        1,
+        "plan branch observation push"
+    ));
     note_skeleton_materialization();
     let original = match original {
         Some(original) => original,
@@ -296,16 +300,16 @@ pub(in crate::cleanup_plan::replay) fn copy_prepaid<
         Some(capacity) if capacity <= original => capacity,
         _ => original,
     };
-    budget.reserve_compact_array::<T>(
+    physical_budget::compact_try!(budget.reserve_compact_array::<T>(
         function,
         capacity - values.len(),
         "plan branch observation push",
-    )?;
-    budget.reserve_compact_bytes(
+    ));
+    physical_budget::compact_try!(budget.reserve_compact_bytes(
         function,
         physical_clone::conversion_bytes::<T, _>(&observation),
         "plan branch observation push",
-    )?;
+    ));
     let mut result = Vec::with_capacity(capacity);
     result.extend(values.iter().cloned());
     result.push(observation.into());
@@ -369,11 +373,23 @@ pub(in crate::cleanup_plan::replay) const SMALL_COPY_LIMIT: usize =
 // complete unchanged inline census is acquired by the caller before expansion.
 macro_rules! copy_small_plan {
     ($branch:ident, $values:ident, $observation:ident, $budget:ident, $function:ident) => {{
-        $budget.charge_compact_skeleton($function, 1, "cleanup-plan skeleton branch clone")?;
-        $budget.reserve_compact_clone($function, &$values, "cleanup-plan skeleton branch clone")?;
+        physical_budget::compact_try!($budget.charge_compact_skeleton(
+            $function,
+            1,
+            "cleanup-plan skeleton branch clone"
+        ));
+        physical_budget::compact_try!($budget.reserve_compact_clone(
+            $function,
+            &$values,
+            "cleanup-plan skeleton branch clone"
+        ));
         note_skeleton_materialization();
         // Keep the original push-work refusal ahead of additional backing.
-        $budget.charge_compact_skeleton($function, 1, "plan branch observation push")?;
+        physical_budget::compact_try!($budget.charge_compact_skeleton(
+            $function,
+            1,
+            "plan branch observation push"
+        ));
         note_skeleton_materialization();
         let capacity = if $values.is_empty() {
             1
@@ -387,16 +403,17 @@ macro_rules! copy_small_plan {
             }
             $values.len() * 2
         };
-        $budget.reserve_compact_array::<std::rc::Rc<SkeletonObservation>>(
-            $function,
-            capacity - $values.len(),
-            "plan branch observation push",
-        )?;
-        $budget.reserve_compact_bytes(
+        physical_budget::compact_try!($budget
+            .reserve_compact_array::<std::rc::Rc<SkeletonObservation>>(
+                $function,
+                capacity - $values.len(),
+                "plan branch observation push",
+            ));
+        physical_budget::compact_try!($budget.reserve_compact_bytes(
             $function,
             physical_clone::conversion_bytes::<std::rc::Rc<SkeletonObservation>, _>(&$observation),
             "plan branch observation push",
-        )?;
+        ));
         $branch = Vec::with_capacity(capacity);
         $branch.extend($values.iter().cloned());
         $branch.push($observation.into());

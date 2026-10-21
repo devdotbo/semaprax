@@ -690,7 +690,7 @@ fn compact_branch_payments_keep_complete_first_refusals_floors_work_and_backing(
                                             request,
                                             "paired byte payment",
                                         )
-                                        .map_err(Diagnostic::from),
+                                        .map_err(physical_budget::ByteFailure::into_diagnostic),
                                     (false, 1) => budget.reserve_array::<usize>(
                                         function,
                                         request,
@@ -702,7 +702,7 @@ fn compact_branch_payments_keep_complete_first_refusals_floors_work_and_backing(
                                             request,
                                             "paired array payment",
                                         )
-                                        .map_err(Diagnostic::from),
+                                        .map_err(physical_budget::ByteFailure::into_diagnostic),
                                     (false, 2) => budget.reserve_clone(
                                         function,
                                         &values,
@@ -714,7 +714,7 @@ fn compact_branch_payments_keep_complete_first_refusals_floors_work_and_backing(
                                             &values,
                                             "paired clone payment",
                                         )
-                                        .map_err(Diagnostic::from),
+                                        .map_err(physical_budget::ByteFailure::into_diagnostic),
                                     (false, _) => budget.charge_skeleton(
                                         function,
                                         request,
@@ -726,7 +726,7 @@ fn compact_branch_payments_keep_complete_first_refusals_floors_work_and_backing(
                                             request,
                                             "paired skeleton work",
                                         )
-                                        .map_err(Diagnostic::from),
+                                        .map_err(physical_budget::ByteFailure::into_diagnostic),
                                 }
                                 .map_err(failure);
                                 let repeated = if result.is_err() {
@@ -738,7 +738,9 @@ fn compact_branch_payments_keep_complete_first_refusals_floors_work_and_backing(
                                                     0,
                                                     "paired sticky authentication",
                                                 )
-                                                .map_err(Diagnostic::from)
+                                                .map_err(
+                                                    physical_budget::ByteFailure::into_diagnostic,
+                                                )
                                         } else {
                                             budget.reserve_bytes(
                                                 function,

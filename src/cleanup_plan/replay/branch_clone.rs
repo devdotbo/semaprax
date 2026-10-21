@@ -69,11 +69,23 @@ pub(super) fn with_observation<T: Clone + ClonePayload, V: physical_clone::IntoR
         )?;
         return Ok(branch);
     }
-    budget.charge_compact_skeleton(function, 1, "cleanup-plan skeleton branch clone")?;
-    budget.reserve_compact_clone(function, values, "cleanup-plan skeleton branch clone")?;
+    physical_budget::compact_try!(budget.charge_compact_skeleton(
+        function,
+        1,
+        "cleanup-plan skeleton branch clone"
+    ));
+    physical_budget::compact_try!(budget.reserve_compact_clone(
+        function,
+        values,
+        "cleanup-plan skeleton branch clone"
+    ));
     note_skeleton_materialization();
     // The original push work refusal must win before any extra capacity debit.
-    budget.charge_compact_skeleton(function, 1, "plan branch observation push")?;
+    physical_budget::compact_try!(budget.charge_compact_skeleton(
+        function,
+        1,
+        "plan branch observation push"
+    ));
     note_skeleton_materialization();
     let capacity = if values.is_empty() {
         1
@@ -87,16 +99,16 @@ pub(super) fn with_observation<T: Clone + ClonePayload, V: physical_clone::IntoR
         }
         values.len() * 2
     };
-    budget.reserve_compact_array::<T>(
+    physical_budget::compact_try!(budget.reserve_compact_array::<T>(
         function,
         capacity - values.len(),
         "plan branch observation push",
-    )?;
-    budget.reserve_compact_bytes(
+    ));
+    physical_budget::compact_try!(budget.reserve_compact_bytes(
         function,
         physical_clone::conversion_bytes::<T, _>(&observation),
         "plan branch observation push",
-    )?;
+    ));
     let mut result = Vec::with_capacity(capacity);
     result.extend(values.iter().cloned());
     result.push(observation.into());
@@ -281,10 +293,18 @@ pub(super) fn for_plan_push<T: Clone + ClonePayload>(
     }
     // Retain the complete clone census and its independently funded work.
     // The extra probe state is paid in addition to every real backing byte.
-    budget.charge_compact_skeleton(function, 1, phase)?;
-    budget.reserve_compact_array::<u8>(function, PLAN_PROBE_BYTES, phase)?;
-    budget.reserve_compact_clone(function, values, phase)?;
-    budget.reserve_compact_array::<T>(function, capacity - values.len(), phase)?;
+    physical_budget::compact_try!(budget.charge_compact_skeleton(function, 1, phase));
+    physical_budget::compact_try!(budget.reserve_compact_array::<u8>(
+        function,
+        PLAN_PROBE_BYTES,
+        phase
+    ));
+    physical_budget::compact_try!(budget.reserve_compact_clone(function, values, phase));
+    physical_budget::compact_try!(budget.reserve_compact_array::<T>(
+        function,
+        capacity - values.len(),
+        phase
+    ));
     note_skeleton_materialization();
     let mut result = Vec::with_capacity(capacity);
     result.extend(values.iter().cloned());
