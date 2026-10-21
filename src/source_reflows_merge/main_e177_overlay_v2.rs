@@ -73,6 +73,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/semantic_refusal.rs",
     "src/cleanup_plan/replay/semantic_refusal/tests.rs",
     "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs",
+    "src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs",
     "src/cleanup_plan/replay/structural_control/calls.rs",
     "src/diagnostic/before_writer.rs",
     "src/hir/declaration_index/identity_payer.rs",
@@ -329,11 +330,14 @@ const ADDITIONS: &[&str] = &[
     "tests/wasm/scalar_browser_ci_contract/before_671.rs",
     "tests/wasm/scalar_browser_ci_contract/before_7d34.rs",
     "tests/wasm/scalar_browser_ci_contract/before_21abc.rs",
+    "src/bounded_output/classifier_string.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+    "src/cleanup_plan/replay/sequence_vector/funded_tests.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 106250; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "8ce65468fce1c516ae8e4a6af5ea3c87b830b8ddb6304aa0d30e3b438be4ee54";
+const POLICY_LENGTH: usize = 106549; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "5e925e7922e8edeb36aa1657b723d01932308dca74aab0a4112632b185f0e945";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -1055,14 +1059,11 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
     compiled_sources::compiled(source)
 }
 pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
-    // A whole logical-table view is selected only after its actual current
-    // physical, compiled and archive channels have authenticated. Preserve the
-    // complete historical stage fallback below for every other input.
+    // A whole logical-table view is selected only after its actual current physical, compiled and archive channels have authenticated. Preserve the complete historical stage fallback below for every other input.
     let direct = super::value_direct_4a6eb(source, expected, supplied);
     if digest(direct.as_bytes()) == expected {
         return direct;
     }
-
     if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {
         let _ = super::packet();
         return value;
@@ -1495,5 +1496,4 @@ mod tests {
         }
     }
 }
-
 // Nondelegating current/prior view front, followed by the entire old stage path.

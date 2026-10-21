@@ -180,6 +180,9 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "tests/wasm/scalar_browser_ci_contract/before_671.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_671.rs")),
         "tests/wasm/scalar_browser_ci_contract/before_7d34.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_7d34.rs")),
         "tests/wasm/scalar_browser_ci_contract/before_21abc.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs")),
+        "src/bounded_output/classifier_string.rs" => Some(include_str!("../../src/bounded_output/classifier_string.rs")),
+        "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs")),
+        "src/cleanup_plan/replay/sequence_vector/funded_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector/funded_tests.rs")),
         _ => None,
     }
 }
@@ -254,6 +257,51 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Undo this exact later funded-test acquisition before the complete old inverses.
+        let declaration = "    \"src/cleanup_plan/replay/sequence_vector/funded_tests.rs\",\n";
+        assert_eq!(root.matches(declaration).count(), 1);
+        let prior_root = root.replacen(declaration, "", 1);
+        let replacement = "    \"src/cleanup_plan/replay/skeleton_work/prefix_fusion.rs\",\n";
+        assert_eq!(prior_root.matches(replacement).count(), 1);
+        let prior_root = prior_root.replacen(replacement, "", 1);
+        let current_spacing = "        return direct;\n    }\n    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {\n";
+        let previous_spacing = "        return direct;\n    }\n\n    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {\n";
+        assert_eq!(prior_root.matches(current_spacing).count(), 1);
+        let prior_root = prior_root.replacen(current_spacing, previous_spacing, 1);
+        let current_tail = "}\n// Nondelegating current/prior view front, followed by the entire old stage path.\n";
+        let previous_tail = "}\n\n// Nondelegating current/prior view front, followed by the entire old stage path.\n";
+        assert_eq!(prior_root.matches(current_tail).count(), 1);
+        let prior_root = prior_root.replacen(current_tail, previous_tail, 1);
+        let arm = "        \"src/cleanup_plan/replay/sequence_vector/funded_tests.rs\" => Some(include_str!(\"../../src/cleanup_plan/replay/sequence_vector/funded_tests.rs\")),\n";
+        assert_eq!(child.matches(arm).count(), 1);
+        let prior_child = child.replacen(arm, "", 1);
+        let root = prior_root.as_str();
+        let child = prior_child.as_str();
+        // Remove only these two later exact source admissions before the old inverses.
+        let mut admitted_root = root.to_owned();
+        for source in [
+            "src/bounded_output/classifier_string.rs",
+            "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+        ] {
+            let declaration = format!("    {source:?},\n");
+            assert_eq!(admitted_root.matches(&declaration).count(), 1);
+            admitted_root = admitted_root.replacen(&declaration, "", 1);
+        }
+        let mut admitted_child = child.to_owned();
+        for source in [
+            "src/bounded_output/classifier_string.rs",
+            "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+        ] {
+            let arm = format!("        {source:?} => Some(include_str!(\"../../{source}\")),\n");
+            assert_eq!(admitted_child.matches(&arm).count(), 1);
+            admitted_child = admitted_child.replacen(&arm, "", 1);
+        }
+        let merged = "pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    // A whole logical-table view is selected only after its actual current physical, compiled and archive channels have authenticated. Preserve the complete historical stage fallback below for every other input.\n";
+        let original = "pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    // A whole logical-table view is selected only after its actual current\n    // physical, compiled and archive channels have authenticated. Preserve the\n    // complete historical stage fallback below for every other input.\n";
+        assert_eq!(admitted_root.matches(merged).count(), 1);
+        let admitted_root = admitted_root.replacen(merged, original, 1);
+        let root = admitted_root.as_str();
+        let child = admitted_child.as_str();
         // Undo only this later browser source scope before all original inverses.
         let mut browser_root = root.to_owned();
         let mut browser_child = child.to_owned();
