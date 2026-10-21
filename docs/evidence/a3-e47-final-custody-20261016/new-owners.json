@@ -646,8 +646,8 @@
   },
   {
     "source": "src/source_reflows/main043/audit_3.rs",
-    "sha256": "08fdb51bed162a79fe141d32d65b3677c0a481ed5c9a486d0ef9cfe352e9416c",
-    "lines": 90
+    "sha256": "3968c0c08cf4e185347a10617f15d0628d64ea24d077326bd029410b0608b9ae",
+    "lines": 96
   },
   {
     "source": "src/source_reflows/main043/audit_4.rs",
@@ -741,8 +741,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_c883_inputs.rs",
-    "sha256": "0c653d8c2d3de5fecfc2fd056247dde39a4fc958e9723e3c934db166f7eae464",
-    "lines": 343
+    "sha256": "c1a7c53b27e72ee9723f1f9c5dbcc8cbcffff53d6d497daa1aa1107d297056ff",
+    "lines": 358
   },
   {
     "source": "src/source_reflows_merge/main_eb2_inputs.rs",
@@ -1061,8 +1061,8 @@
   },
   {
     "source": "src/source_reflows_merge/main99f_inputs.rs",
-    "sha256": "dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991",
-    "lines": 413
+    "sha256": "b54ac366da333fd6460c36436bfc680b82b6eb92de3b05ebd353c45771d63d8c",
+    "lines": 437
   },
   {
     "source": "src/source_reflows_merge/main_e177_final_inputs.rs",
@@ -1071,8 +1071,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_inputs.rs",
-    "sha256": "156b25619d771da6e55dbde9936222e399c518c2f454426cff8d484077a1ec6c",
-    "lines": 422
+    "sha256": "891cc282a015751919bc790fc5ab47bb25709b5e367383dbc0ffca9354f1a799",
+    "lines": 446
   },
   {
     "source": "src/source_reflows_merge/next_big_batch_inputs.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "eccbd3fbe389a39b3eb92af7ac8ab2fd727f9b110ddcad061d2691b6ad8662c8",
+    "sha256": "edddd9bd18c93db1cae3dc4190b3e3d6ada43fb52875b0a83b89dc66994b6823",
     "lines": 1499
   },
   {
@@ -2226,8 +2226,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_compiled.rs",
-    "sha256": "91420eb136670c42684c6ebf50f97bdca1960d810b2a0d414f5c7ed7bb37ad4f",
-    "lines": 426
+    "sha256": "3df28a9560d039452c9d955219962799c700477e2e2c6bffc0a6e83039cc5094",
+    "lines": 446
   },
   {
     "source": "src/source_reflows_merge/main_e177_packet_lookup.rs",

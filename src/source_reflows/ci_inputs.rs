@@ -107,6 +107,24 @@ fn compiled(source: &str) -> Option<(usize, &'static str)> {
                 "/src/source_verify/iterative/enter/enter_before_components.rs"
             )),
         ),
+        "src/cleanup_plan/replay/expression_facts.rs" => (
+            14,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/cleanup_plan/replay/expression_facts.rs"
+            )),
+        ),
+        "src/prelude.rs" => (
+            15,
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/prelude.rs")),
+        ),
+        "src/hir/validation/function_scope/lifecycle.rs" => (
+            16,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/src/hir/validation/function_scope/lifecycle.rs"
+            )),
+        ),
         _ => return None,
     })
 }
@@ -125,6 +143,29 @@ fn rows() -> serde_json::Value {
     );
     let rows: serde_json::Value = serde_json::from_str(DATA).unwrap();
     assert_eq!(rows.as_array().unwrap().len(), 14);
+    const EXTRA: &str = include_str!("../../docs/evidence/legacy-live-inputs-20261021/inputs.json");
+    assert_eq!(EXTRA.len(), 1370);
+    assert_eq!(
+        digest(EXTRA),
+        "c4afab464d3d50afa676c506750cb3a5977fd362e55c6228a57d333a9d30c771"
+    );
+    assert_eq!(
+        reader::read(
+            &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+                .join("docs/evidence/legacy-live-inputs-20261021/inputs.json"),
+            EXTRA.len(),
+            &digest(EXTRA),
+            2_097_152
+        )
+        .unwrap(),
+        EXTRA
+    );
+    let extra: serde_json::Value = serde_json::from_str(EXTRA).unwrap();
+    assert_eq!(extra.as_array().unwrap().len(), 3);
+    let mut rows = rows;
+    rows.as_array_mut()
+        .unwrap()
+        .extend(extra.as_array().unwrap().iter().cloned());
     rows
 }
 pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
@@ -159,6 +200,27 @@ pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
     assert_eq!(before.len() as u64, row["before_length"]);
     assert_eq!(digest(&before), row["before_sha256"]);
     Cow::Owned(before)
+}
+pub(super) fn file_expected(
+    path: &std::path::Path,
+    length: usize,
+    expected: &str,
+) -> Option<String> {
+    let source = path.strip_prefix(env!("CARGO_MANIFEST_DIR")).ok()?;
+    if !source
+        .components()
+        .all(|part| matches!(part, std::path::Component::Normal(_)))
+    {
+        return None;
+    }
+    let source = source.to_str()?;
+    let (index, current) = compiled(source)?;
+    let rows = rows();
+    let row = &rows[index];
+    if row["before_length"].as_u64() != Some(length as u64) || row["before_sha256"] != expected {
+        return None;
+    }
+    Some(prior(source, current).into_owned())
 }
 // Adapt an exact raw current input only when its consumer names this epoch.
 // Already-projected inputs keep the original consumer's unchanged guards.
@@ -207,10 +269,20 @@ fn fourteen_complete_ci_input_inverses_keep_independent_git_bodies_and_refuse_st
         ("src/source_verify/declaration/functions/public_signature_before.rs", include_str!("../../docs/evidence/ci-inputs-20261021/before/05cb069082838883c82b5b638e7acdbedd1a3ffc089894528c3b5105839217f8.txt")),
         ("src/source_verify/iterative/enter.rs", include_str!("../../docs/evidence/ci-inputs-20261021/before/4d6e8b68b9de792aa588a9a6cc4815308dcb318cc1735a527b9b9da5506f7661.txt")),
         ("src/source_verify/iterative/enter/enter_before_components.rs", include_str!("../../docs/evidence/ci-inputs-20261021/before/b2ba677d2dce0ce94b974200ff62e8eb590cf39e65e1a1b1bdca99ff05394f47.txt")),
+        ("src/cleanup_plan/replay/expression_facts.rs", include_str!("../../docs/evidence/legacy-live-inputs-20261021/before/053698df5f2f88f5e6fde6c2d3a0c47f7eb683cc34dca0365f4be56682da4ae5.txt")),
+        ("src/prelude.rs", include_str!("../../docs/evidence/legacy-live-inputs-20261021/before/32a5461db85f2832bb788ed32efd1df82eb8f48ffe44c51c533ceb20a596b478.txt")),
+        ("src/hir/validation/function_scope/lifecycle.rs", include_str!("../../docs/evidence/legacy-live-inputs-20261021/before/4359a3991e559f31cbb1ad650886ed3433270cbf17ce535169b3ff04fe64027a.txt")),
     ];
     for (source, before) in cases {
         let (_, current) = compiled(source).unwrap();
         assert_eq!(prior(source, current), before);
+        let path = std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source);
+        assert_eq!(
+            file_expected(&path, before.len(), &digest(before)).as_deref(),
+            Some(before)
+        );
+        assert!(file_expected(&path, before.len() + 1, &digest(before)).is_none());
+        assert!(file_expected(&path, before.len(), &"0".repeat(64)).is_none());
         assert_eq!(for_expected(source, &digest(before), current), before);
         assert_eq!(for_expected(source, &"0".repeat(64), current), current);
         assert_eq!(for_expected(source, &digest(before), before), before);

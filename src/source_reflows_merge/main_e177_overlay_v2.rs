@@ -26,6 +26,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows_merge/main_e177_inputs.rs",
     "src/source_reflows_merge/next_big_batch_inputs.rs",
     "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph.rs",
@@ -54,6 +55,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+    "src/source_reflows_merge/main_c883_inputs.rs",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
     "src/bounded_output.rs",
     "src/cleanup/schema_summary/tests.rs",
@@ -86,6 +88,7 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows/incoming21_semantic_receivers.rs",
     "src/source_reflows/incoming67107_semantic_receivers.rs",
     "src/source_reflows/main043.rs",
+    "src/source_reflows/main043/audit_3.rs",
     "src/source_reflows/semantic_receivers_mainb80.rs",
     "src/source_reflows_merge/current344.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
@@ -318,8 +321,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 105298; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "a5335989e3974dd66edeee60db3b234460b78b752fb831e818df6f449e4f952d";
+const POLICY_LENGTH: usize = 105432; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "28269ef2d153edcf8a66b77b158f0355e2cb4b3a46df776e80296fb5dc3bd0ac";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -391,8 +394,7 @@ fn canonical(value: &Value) -> Vec<u8> {
 }
 fn json(raw: &str) -> Result<Value, &'static str> {
     let value: Value = serde_json::from_str(raw).map_err(|_| "JSON syntax")?;
-    // This also rejects duplicate keys, alternate escaping, trailing bytes and
-    // alternate whitespace: none can reserialize to these exact complete bytes.
+    // This also rejects duplicate keys, alternate escaping, trailing bytes and alternate whitespace: none can reserialize to these exact complete bytes.
     require!(
         canonical(&value) == raw.as_bytes(),
         "noncanonical or duplicate JSON"
@@ -441,9 +443,7 @@ fn page_bytes(
     );
     Ok(())
 }
-// One bounded immutable JSON DATA object, never a cached admission verdict.
-// Callers still acquire fresh regular handles and authenticate every live byte
-// before arriving here. Even hits repeat canonical equality on those new bytes.
+// One bounded immutable JSON DATA object, never a cached admission verdict. Callers still acquire fresh regular handles and authenticate every live byte before arriving here. Even hits repeat canonical equality on those new bytes.
 struct PageData {
     page: Option<(String, Arc<Value>)>,
 }

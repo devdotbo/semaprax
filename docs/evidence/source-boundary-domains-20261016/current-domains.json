@@ -2147,6 +2147,7 @@
         "src/loop_calls/byte_writer/validation_frontier/storage.rs",
         "src/loop_calls/byte_writer/validation_frontier/tests.rs",
         "src/project/incremental/cold_source_tests/oracle_owner_before.rs",
+        "src/source_reflows/ci_inputs.rs",
         "src/source_reflows/incoming090_semantic_receivers.rs",
         "src/source_reflows/incoming21_semantic_receivers.rs",
         "src/source_reflows/main_c883_receivers.rs",
@@ -2894,8 +2895,8 @@
         "src/workspace_graph/expected_projection/uncached_peak.rs",
         "src/workspace_graph/expected_projection/vec_constructor.rs"
       ],
-      "full_manifest_sha256": "45da2011baedcef3b9b02ed6222b8d6dd26401cfdd6e8ea99eecc9296e54b9ba",
-      "full_raw_sha256": "761294dd2a235464b8654e7a5356b1874aaf66c0d29c30b69560c5d1a05b8c57",
+      "full_manifest_sha256": "1fa7b81420d925229894ac4f4ac09b330c49eecffce1f1f534831b5b64373976",
+      "full_raw_sha256": "06da59185be580fe28219236ba7f9630a21b6a5351686e2511ad94675f9200cb",
       "full_authenticated_production_sha256": "41b78ccb9fc65fc65577c7b3303edc7199323876a6b59418acacf6a2e110420e"
     },
     "projection": {
@@ -3970,8 +3971,8 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "dcf9c1240bb81fe1151fcde30ff2518d4567ad0ea2d3e8698b7dfdd755e717cd",
-      "full_raw_sha256": "91aaebec4015f402bdad61293bc910b056793b24d06e97cc48e8b6683e324d22",
+      "full_manifest_sha256": "3d97b72ae3711a10087e3a8f008d6d25ceee5a3e3f90fb25d276da81073ec91f",
+      "full_raw_sha256": "28b8d90c67ff649a3f7c8bed0856e6adc682223ffc36b0cff06dab4e44e6138e",
       "full_authenticated_production_sha256": "51cc902a6865b08504b956c950cb451cf1b142f958d0d6bf11b7d87a7ad20eb5"
     }
   }

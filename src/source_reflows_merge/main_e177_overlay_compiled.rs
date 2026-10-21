@@ -247,6 +247,26 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Undo only this exact later literal scope and line-budget projection.
+        // Every original fixed span and complete predecessor assertion follows.
+        let mut checkpoint_root = root.to_owned();
+        for source in [
+            "src/source_reflows_merge/main_e177_inputs.rs",
+            "src/source_reflows_merge/main_c883_inputs.rs",
+            "src/source_reflows/main043/audit_3.rs",
+        ] {
+            let literal = format!("    {source:?},\n");
+            assert_eq!(checkpoint_root.matches(&literal).count(), 1);
+            checkpoint_root = checkpoint_root.replacen(&literal, "", 1);
+        }
+        for (current, previous) in [
+            ("    // This also rejects duplicate keys, alternate escaping, trailing bytes and alternate whitespace: none can reserialize to these exact complete bytes.\n", "    // This also rejects duplicate keys, alternate escaping, trailing bytes and\n    // alternate whitespace: none can reserialize to these exact complete bytes.\n"),
+            ("// One bounded immutable JSON DATA object, never a cached admission verdict. Callers still acquire fresh regular handles and authenticate every live byte before arriving here. Even hits repeat canonical equality on those new bytes.\n", "// One bounded immutable JSON DATA object, never a cached admission verdict.\n// Callers still acquire fresh regular handles and authenticate every live byte\n// before arriving here. Even hits repeat canonical equality on those new bytes.\n"),
+        ] {
+            assert_eq!(checkpoint_root.matches(current).count(), 1);
+            checkpoint_root = checkpoint_root.replacen(current, previous, 1);
+        }
+        let root = checkpoint_root.as_str();
         // Authenticate the complete actual root above, then undo only the
         // formatter-compatible lookup spelling before the fixed-span inverse.
         let formatted = "    let rows = authenticated[\"rows\"].as_array().unwrap();\n    let row = rows.iter().find(|row| row[\"source\"] == relative).unwrap();";
