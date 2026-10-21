@@ -247,6 +247,14 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Authenticate the complete actual root above, then undo only the
+        // formatter-compatible lookup spelling before the fixed-span inverse.
+        let formatted = "    let rows = authenticated[\"rows\"].as_array().unwrap();\n    let row = rows.iter().find(|row| row[\"source\"] == relative).unwrap();";
+        let previous = "    let row = authenticated[\"rows\"].as_array().unwrap().iter()\n        .find(|row| row[\"source\"] == relative).unwrap();";
+        assert_eq!(root.matches(formatted).count(), 1);
+        assert_eq!(root.matches(previous).count(), 0);
+        let preformat_root = root.replacen(formatted, previous, 1);
+        let root = preformat_root.as_str();
         // Keep the complete moved reader verbatim and restore its original
         // position before every unchanged full predecessor assertion.
         let reader = "pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    // A whole logical-table view is selected only after its actual current\n    // physical, compiled and archive channels have authenticated. Preserve the\n    // complete historical stage fallback below for every other input.\n    let direct = super::value_direct_4a6eb(source, expected, supplied);\n    if digest(direct.as_bytes()) == expected {\n        return direct;\n    }\n\n    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {\n        let _ = super::packet();\n        return value;\n    }\n    let normalized = super::clippy_stage::normalize(source, supplied);\n    let result = super::value_direct_4a6eb(source, expected, normalized.as_ref());\n    if normalized.as_ref() != supplied\n        && result == normalized.as_ref()\n        && digest(result.as_bytes()) != expected\n    {\n        supplied.to_owned()\n    } else {\n        result\n    }\n}\n";
@@ -330,13 +338,25 @@ mod tests {
         restored = restored.replacen(context_reader, "", 1);
         let v9_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V9 {\n        let expanded = fragments_v3::expand_v9(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V8 {";
         assert_eq!(restored.matches(v9_dispatch).count(), 1);
-        restored = restored.replacen(v9_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {", 1);
+        restored = restored.replacen(
+            v9_dispatch,
+            "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {",
+            1,
+        );
         let v8_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V8 {\n        let expanded = fragments_v3::expand_v8(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V7 {";
         assert_eq!(restored.matches(v8_dispatch).count(), 1);
-        restored = restored.replacen(v8_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {", 1);
+        restored = restored.replacen(
+            v8_dispatch,
+            "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {",
+            1,
+        );
         let v7_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V7 {\n        let expanded = fragments_v3::expand_v7(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V6 {";
         assert_eq!(restored.matches(v7_dispatch).count(), 1);
-        restored = restored.replacen(v7_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V6 {", 1);
+        restored = restored.replacen(
+            v7_dispatch,
+            "    if page[\"schema\"] == fragments_v3::SCHEMA_V6 {",
+            1,
+        );
         // Only the existing generated literal source lists and policy pins
         // are normalized; every other predecessor byte remains compared.
         for name in [

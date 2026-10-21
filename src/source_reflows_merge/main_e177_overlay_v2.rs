@@ -319,7 +319,7 @@ const ADDITIONS: &[&str] = &[
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
 const POLICY_LENGTH: usize = 105298; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "da3d0d5f69a286c0121aad6071693538afcda6feb5caf4c73281f6aa164ee09e";
+const POLICY_SHA256: &str = "2266b6956c41ba5c94cab6bc28fcfd555102b29bef4978ae227924215a03db5e";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -976,8 +976,8 @@ pub(super) fn held_source_with_packet(
     if !REPLACEMENTS.contains(&relative) && !ADDITIONS.contains(&relative) {
         return None;
     }
-    let row = authenticated["rows"].as_array().unwrap().iter()
-        .find(|row| row["source"] == relative).unwrap();
+    let rows = authenticated["rows"].as_array().unwrap();
+    let row = rows.iter().find(|row| row["source"] == relative).unwrap();
     Some((|| {
         let actual = current(row)?;
         if row["current"]["length"].as_u64() == Some(length as u64)
