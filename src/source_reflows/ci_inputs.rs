@@ -166,6 +166,45 @@ fn rows() -> serde_json::Value {
     rows.as_array_mut()
         .unwrap()
         .extend(extra.as_array().unwrap().iter().cloned());
+    let successor = reader::read(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/compact-byte-errors-20261021/replay-successor.json"),
+        5646,
+        "2788ad869b721f06ff00d2b7cb36b8e23dd9d86bd4f500ef7ee9dd4c33f1314c",
+        2_097_152,
+    )
+    .unwrap();
+    let successor: serde_json::Value = serde_json::from_str(&successor).unwrap();
+    let row = &mut rows[0];
+    assert_eq!(row["source"], successor["source"]);
+    assert_eq!(row["current_length"], successor["checkpoint_length"]);
+    assert_eq!(row["current_sha256"], successor["checkpoint_sha256"]);
+    let current = compiled(row["source"].as_str().unwrap()).unwrap().1;
+    assert_eq!(current.len() as u64, successor["length"]);
+    assert_eq!(digest(current), successor["sha256"]);
+    let mut checkpoint = current.to_owned();
+    for edit in successor["indexed_inverse"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .rev()
+    {
+        let at = usize::try_from(edit[0].as_u64().unwrap()).unwrap();
+        let after = edit[1].as_str().unwrap();
+        assert_eq!(&checkpoint[at..at + after.len()], after);
+        checkpoint.replace_range(at..at + after.len(), edit[2].as_str().unwrap());
+    }
+    assert_eq!(checkpoint.len() as u64, row["current_length"]);
+    assert_eq!(digest(&checkpoint), row["current_sha256"]);
+    row["inverse"].as_array_mut().unwrap().extend(
+        successor["indexed_inverse"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .cloned(),
+    );
+    row["current_length"] = successor["length"].clone();
+    row["current_sha256"] = successor["sha256"].clone();
     rows
 }
 pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {

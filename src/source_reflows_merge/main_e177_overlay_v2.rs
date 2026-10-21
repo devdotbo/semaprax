@@ -59,6 +59,7 @@ const REPLACEMENTS: &[&str] = &[
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
     "src/bounded_output.rs",
     "src/cleanup/schema_summary/tests.rs",
+    "src/cleanup_plan/replay/branch_clone.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
@@ -321,8 +322,8 @@ const ADDITIONS: &[&str] = &[
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 105432; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "8fd08e9c94b1b465546c913ffa22384c2f06876479d82767cc4bab2751fa7974";
+const POLICY_LENGTH: usize = 105474; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "2a6059dd325ffbff7a7e13a07085222a5b268a30260a576e5a5f16179a02cd9a";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -459,8 +460,7 @@ impl PageData {
                 return Ok(Arc::clone(parsed));
             }
         }
-        // Preserve the original complete parser and duplicate/canonical check.
-        // Failed or changed input can never receive the prior parsed object.
+        // Preserve the original complete parser and duplicate/canonical check. Failed or changed input can never receive the prior parsed object.
         let parsed = Arc::new(json(raw)?);
         self.page = Some((raw.to_owned(), Arc::clone(&parsed)));
         Ok(parsed)

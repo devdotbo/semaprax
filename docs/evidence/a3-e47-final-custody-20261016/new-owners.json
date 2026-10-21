@@ -921,8 +921,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/branch_clone/direct.rs",
-    "sha256": "a3cae733d7df5c7c912598ae99e996dfceebeea2f6d70d95adf1afd711262488",
-    "lines": 421
+    "sha256": "d61a72f7c0b2837fc9d44e4e8339858b5308405ef5575f398b28dd4ce7defb09",
+    "lines": 484
   },
   {
     "source": "src/cleanup_plan/replay/branch_clone/direct/before.rs",
@@ -931,8 +931,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
-    "sha256": "26a5bd2226dc2c7e701500c77a699436b78216c72c370d350a86ce305e73d57f",
-    "lines": 662
+    "sha256": "a60bc5a146807050bc9f3b822b70c8a933f78a401a068ca0dc28bb340070100a",
+    "lines": 781
   },
   {
     "source": "src/cleanup_plan/replay/compact_stage/main_f247_source_custody.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "660d0ff79b9d8866fb6a8a324e80a1b6747ffa7682d402110990dba3835522de",
+    "sha256": "44b63a2944a009cc564c7bf3a5953a976518ac2a4211cee26180f7340939ca6a",
     "lines": 1499
   },
   {
@@ -2226,8 +2226,8 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_compiled.rs",
-    "sha256": "3df28a9560d039452c9d955219962799c700477e2e2c6bffc0a6e83039cc5094",
-    "lines": 446
+    "sha256": "5486b736d0c4a2775fb5cd4a60f363153614a3b03103b51924176e343458088b",
+    "lines": 448
   },
   {
     "source": "src/source_reflows_merge/main_e177_packet_lookup.rs",

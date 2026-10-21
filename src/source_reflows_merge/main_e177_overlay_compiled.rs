@@ -251,6 +251,7 @@ mod tests {
         // Every original fixed span and complete predecessor assertion follows.
         let mut checkpoint_root = root.to_owned();
         for source in [
+            "src/cleanup_plan/replay/branch_clone.rs",
             "src/source_reflows_merge/main_e177_inputs.rs",
             "src/source_reflows_merge/main_c883_inputs.rs",
             "src/source_reflows/main043/audit_3.rs",
@@ -260,6 +261,7 @@ mod tests {
             checkpoint_root = checkpoint_root.replacen(&literal, "", 1);
         }
         for (current, previous) in [
+            ("        // Preserve the original complete parser and duplicate/canonical check. Failed or changed input can never receive the prior parsed object.\n", "        // Preserve the original complete parser and duplicate/canonical check.\n        // Failed or changed input can never receive the prior parsed object.\n"),
             ("    // This also rejects duplicate keys, alternate escaping, trailing bytes and alternate whitespace: none can reserialize to these exact complete bytes.\n", "    // This also rejects duplicate keys, alternate escaping, trailing bytes and\n    // alternate whitespace: none can reserialize to these exact complete bytes.\n"),
             ("// One bounded immutable JSON DATA object, never a cached admission verdict. Callers still acquire fresh regular handles and authenticate every live byte before arriving here. Even hits repeat canonical equality on those new bytes.\n", "// One bounded immutable JSON DATA object, never a cached admission verdict.\n// Callers still acquire fresh regular handles and authenticate every live byte\n// before arriving here. Even hits repeat canonical equality on those new bytes.\n"),
         ] {

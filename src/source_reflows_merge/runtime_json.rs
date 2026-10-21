@@ -390,6 +390,15 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
     )
     .unwrap();
     let successor: serde_json::Value = serde_json::from_str(&successor).unwrap();
+    let replay_successor = main043_raw_file(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/compact-byte-errors-20261021/replay-successor.json"),
+        5646,
+        "2788ad869b721f06ff00d2b7cb36b8e23dd9d86bd4f500ef7ee9dd4c33f1314c",
+    )
+    .unwrap();
+    let replay_successor: serde_json::Value = serde_json::from_str(&replay_successor).unwrap();
+    let successors = [successor, replay_successor];
     for patch in spec["rows"].as_array().unwrap() {
         let index = usize::try_from(patch["row"].as_u64().unwrap()).unwrap();
         assert!(seen.insert(index));
@@ -433,7 +442,7 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
         let mut outer = Vec::new();
         let (_, live, _) = main043_raw_subject(source);
         let mut live = live.to_owned();
-        if successor["source"] == source {
+        for successor in successors.iter().filter(|row| row["source"] == source) {
             assert_eq!(live.len() as u64, successor["length"]);
             assert_eq!(
                 format!(
