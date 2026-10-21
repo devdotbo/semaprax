@@ -235,6 +235,10 @@ pub(super) fn for_expected<'a>(source: &str, expected: &str, supplied: &'a str) 
 }
 // Registered sources keep their existing complete-view acquisition route.
 // These nine raw inputs have no row in that immutable source membership.
+#[allow(
+    dead_code,
+    reason = "This closed reader also compiles in namespaces that only use exact expected-input adapters."
+)]
 pub(super) fn for_ci<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
     match source {
         "src/cleanup_plan/replay/allocation.rs"

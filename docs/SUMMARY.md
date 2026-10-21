@@ -1856,3 +1856,7 @@ Audience: all documentation readers.
 - [Actual frozen9b facade digest compiler correction](evidence/workspace-facade-hex-fix-9b-20261015/README.md)
 - [Fatal warm/cold graph field diagnostic](evidence/workspace-warm-cold-json-diagnostic-20261015/README.md)
 - [workspace21-legacy-source-repair-20261017 README](evidence/workspace21-legacy-source-repair-20261017/README.md)
+
+- [Linux browser graph pin capture](evidence/browser-pins-20261021/README.md)
+
+- [Residual payload layout evidence](evidence/residual-layout-20261021/README.md)

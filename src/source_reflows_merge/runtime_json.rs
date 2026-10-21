@@ -382,6 +382,14 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
     .unwrap();
     let checkpoints: serde_json::Value = serde_json::from_str(&checkpoints).unwrap();
     assert_eq!(checkpoints.as_array().unwrap().len(), 5);
+    let successor = main043_raw_file(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/ci-small-fixes-20261021/inventory-successor.json"),
+        66998,
+        "d64759367b95039add5633647e94066ae973c057584239b43a7701c09a7aee6a",
+    )
+    .unwrap();
+    let successor: serde_json::Value = serde_json::from_str(&successor).unwrap();
     for patch in spec["rows"].as_array().unwrap() {
         let index = usize::try_from(patch["row"].as_u64().unwrap()).unwrap();
         assert!(seen.insert(index));
@@ -424,6 +432,36 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
         );
         let mut outer = Vec::new();
         let (_, live, _) = main043_raw_subject(source);
+        let mut live = live.to_owned();
+        if successor["source"] == source {
+            assert_eq!(live.len() as u64, successor["length"]);
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(live.as_bytes()))
+                ),
+                successor["sha256"]
+            );
+            for pair in successor["inverse"].as_array().unwrap() {
+                let after = pair[0].as_str().unwrap();
+                let before = pair[1].as_str().unwrap();
+                assert!(!after.is_empty());
+                assert_eq!(live.matches(after).count(), 1);
+                live = live.replacen(after, before, 1);
+                let mut edit = serde_json::Map::new();
+                edit.insert(key.to_owned(), after.into());
+                edit.insert("before".to_owned(), before.into());
+                outer.push(serde_json::Value::Object(edit));
+            }
+            assert_eq!(live.len() as u64, successor["checkpoint_length"]);
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(live.as_bytes()))
+                ),
+                successor["checkpoint_sha256"]
+            );
+        }
         if live != current {
             let matches = checkpoints
                 .as_array()
