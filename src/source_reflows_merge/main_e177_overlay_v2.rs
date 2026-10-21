@@ -329,11 +329,13 @@ const ADDITIONS: &[&str] = &[
     "tests/wasm/scalar_browser_ci_contract/before_671.rs",
     "tests/wasm/scalar_browser_ci_contract/before_7d34.rs",
     "tests/wasm/scalar_browser_ci_contract/before_21abc.rs",
+    "src/bounded_output/classifier_string.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 106250; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "8ce65468fce1c516ae8e4a6af5ea3c87b830b8ddb6304aa0d30e3b438be4ee54";
+const POLICY_LENGTH: usize = 106407; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "5195f2743f94bbf78b951b124bba57973440a32430c102eb3ea4fad54723a4e9";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -1055,9 +1057,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
     compiled_sources::compiled(source)
 }
 pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
-    // A whole logical-table view is selected only after its actual current
-    // physical, compiled and archive channels have authenticated. Preserve the
-    // complete historical stage fallback below for every other input.
+    // A whole logical-table view is selected only after its actual current physical, compiled and archive channels have authenticated. Preserve the complete historical stage fallback below for every other input.
     let direct = super::value_direct_4a6eb(source, expected, supplied);
     if digest(direct.as_bytes()) == expected {
         return direct;

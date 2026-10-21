@@ -180,6 +180,8 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "tests/wasm/scalar_browser_ci_contract/before_671.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_671.rs")),
         "tests/wasm/scalar_browser_ci_contract/before_7d34.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_7d34.rs")),
         "tests/wasm/scalar_browser_ci_contract/before_21abc.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/before_21abc.rs")),
+        "src/bounded_output/classifier_string.rs" => Some(include_str!("../../src/bounded_output/classifier_string.rs")),
+        "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs")),
         _ => None,
     }
 }
@@ -254,6 +256,32 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Remove only these two later exact source admissions before the old inverses.
+        let mut admitted_root = root.to_owned();
+        for source in [
+            "src/bounded_output/classifier_string.rs",
+            "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+
+        ] {
+            let declaration = format!("    {source:?},\n");
+            assert_eq!(admitted_root.matches(&declaration).count(), 1);
+            admitted_root = admitted_root.replacen(&declaration, "", 1);
+        }
+        let mut admitted_child = child.to_owned();
+        for source in [
+            "src/bounded_output/classifier_string.rs",
+            "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
+        ] {
+            let arm = format!("        {source:?} => Some(include_str!(\"../../{source}\")),\n");
+            assert_eq!(admitted_child.matches(&arm).count(), 1);
+            admitted_child = admitted_child.replacen(&arm, "", 1);
+        }
+        let merged = "pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    // A whole logical-table view is selected only after its actual current physical, compiled and archive channels have authenticated. Preserve the complete historical stage fallback below for every other input.\n";
+        let original = "pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {\n    // A whole logical-table view is selected only after its actual current\n    // physical, compiled and archive channels have authenticated. Preserve the\n    // complete historical stage fallback below for every other input.\n";
+        assert_eq!(admitted_root.matches(merged).count(), 1);
+        let admitted_root = admitted_root.replacen(merged, original, 1);
+        let root = admitted_root.as_str();
+        let child = admitted_child.as_str();
         // Undo only this later browser source scope before all original inverses.
         let mut browser_root = root.to_owned();
         let mut browser_child = child.to_owned();
