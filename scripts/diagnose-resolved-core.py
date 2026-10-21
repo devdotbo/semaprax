@@ -46,7 +46,12 @@ subprocess.run([compiler, "--edition=2021", "-Cdebuginfo=0", "-Copt-level=1",
                 "--extern", "semaprax=" + str(lib), "--extern", "sha2=" + str(sha),
                 "-L", "dependency=" + str(lib.parent),
                 "-L", "dependency=" + str(sha.parent), "-o", str(binary)], check=True)
-subjects = ["examples/task-service-project/semaprax.toml", "std/test-bytes/semaprax.toml"]
+subjects = [
+    "examples/task-service-project/semaprax.toml",
+    "std/test-bytes/semaprax.toml",
+    "std/data-json-dec/semaprax.toml",
+    "std/data-json-scan/semaprax.toml",
+]
 rows = []
 for i, subject in enumerate(subjects):
     manifest = root / subject
