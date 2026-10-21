@@ -1,5 +1,4 @@
-//! Complete physical-input successors for the immutable CI and Source36 views.
-//! This test-only projection owns no compiler authority and grants no admission.
+//! Test-only physical-input successors for immutable CI/Source36 data; no compiler authority.
 #[path = "source_reflows_merge/constructor_stage.rs"]
 mod constructor_stage;
 #[path = "source_reflows_merge/joined_custody.rs"]
@@ -138,9 +137,10 @@ fn post21_input(source: &str, current: &str) -> String {
     let current = joined.as_str();
     metadata_json::project(metadata_json::Fixture::M24, source, current)
 }
-// Only literal historical ENTRY stages are acquired here. The complete existing compile35f
-// front and every intermediate inverse below still execute in order.
+// Exact historical ENTRY stages precede the complete compile35f front and its inverses.
 fn historical_project_entry(source: &str, expected: &str, current: &str) -> String {
+    let legacy = crate::source_reflows::legacy_ci_expected_input(source, expected, current);
+    let current = legacy.as_ref();
     // The preceding authentic a3 projector already restored this complete stage.
     let restored_receiving_stage = source
         == "src/workspace_graph/constructor_failure/receiving/before.rs"

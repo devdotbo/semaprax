@@ -160,6 +160,17 @@ pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
     assert_eq!(digest(&before), row["before_sha256"]);
     Cow::Owned(before)
 }
+// Adapt an exact raw current input only when its consumer names this epoch.
+// Already-projected inputs keep the original consumer's unchanged guards.
+pub(super) fn for_expected<'a>(source: &str, expected: &str, supplied: &'a str) -> Cow<'a, str> {
+    let Some((index, current)) = compiled(source) else {
+        return Cow::Borrowed(supplied);
+    };
+    if supplied != current || rows()[index]["before_sha256"] != expected {
+        return Cow::Borrowed(supplied);
+    }
+    prior(source, supplied)
+}
 // Registered sources keep their existing complete-view acquisition route.
 // These nine raw inputs have no row in that immutable source membership.
 pub(super) fn for_ci<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
@@ -200,6 +211,9 @@ fn fourteen_complete_ci_input_inverses_keep_independent_git_bodies_and_refuse_st
     for (source, before) in cases {
         let (_, current) = compiled(source).unwrap();
         assert_eq!(prior(source, current), before);
+        assert_eq!(for_expected(source, &digest(before), current), before);
+        assert_eq!(for_expected(source, &"0".repeat(64), current), current);
+        assert_eq!(for_expected(source, &digest(before), before), before);
         for hostile in [
             format!("{current}\n"),
             current[..current.len() - 1].to_owned(),

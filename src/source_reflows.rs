@@ -46,6 +46,14 @@ pub(crate) use nested_scope::{
     nested_source_refuses_foreign_truncated_drifted_predicates_and_partial_recipes,
 };
 
+pub(crate) fn legacy_ci_expected_input<'a>(
+    source: &str,
+    expected: &str,
+    current: &'a str,
+) -> std::borrow::Cow<'a, str> {
+    ci_inputs::for_expected(source, expected, current)
+}
+
 fn records() -> &'static [serde_json::Value] {
     RECORDS
         .get_or_init(|| serde_json::from_str(REPAIRS).unwrap())

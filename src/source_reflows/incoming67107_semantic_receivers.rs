@@ -87,6 +87,8 @@ pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> Strin
     // The full existing MAIN21 acquisition and every inverse below still run.
     let path = proof["path"].as_str().unwrap();
     let expected = proof["after_sha256"].as_str().unwrap();
+    let legacy = super::legacy_ci_expected_input(path, expected, current);
+    let current = legacy.as_ref();
     let entry = match (path, expected) {
         (
             "src/cleanup_plan/replay.rs",

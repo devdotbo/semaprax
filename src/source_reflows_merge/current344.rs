@@ -96,7 +96,9 @@ pub(crate) fn project(source: &str, current: &str) -> String {
         } else {
             current
         };
-        let current = super::main_e177_final_inputs::value_direct(source, sha256, current);
+        let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            source, sha256, current,
+        );
         assert_eq!(
             format!(
                 "{:x}",
