@@ -335,7 +335,7 @@ fn compare_with_index_storage<'hir>(
     let _successor_phase = canonical_shared::lexical_successors::census::phase(true);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored HIR weighted root")?;
     let Some(hir) =
-        canonical.id_with_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?
+        canonical.id_with_compact_receiving(function, vec![(hir_root, 1)], budget, &mut receiving)?
     else {
         return Ok(None);
     };
@@ -345,7 +345,7 @@ fn compare_with_index_storage<'hir>(
     let _successor_phase = canonical_shared::lexical_successors::census::phase(false);
     budget.reserve_array::<(usize, u64)>(function, 1, "factored plan weighted root")?;
     let Some(plan) =
-        canonical.id_with_receiving(function, vec![(plan_root, 1)], budget, &mut receiving)?
+        canonical.id_with_compact_receiving(function, vec![(plan_root, 1)], budget, &mut receiving)?
     else {
         return Ok(None);
     };
