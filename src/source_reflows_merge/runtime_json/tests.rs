@@ -1,3 +1,5 @@
+#[path = "historical_inputs.rs"]
+mod historical_inputs;
 use super::*;
 use std::io::{Cursor, Error, ErrorKind};
 type ReceiverTextEdits<'a> = (usize, [u8; 32], usize, [u8; 32], &'a [(&'a str, &'a str)]);
@@ -334,6 +336,12 @@ fn fixed_receiver_json_fixtures_keep_complete_inputs_inverses_and_hostile_io() {
     ))
     .is_err());
     let runtime = include_str!("../runtime_json.rs");
+    let runtime = super::super::main_e177_final_inputs::value_direct(
+        "src/source_reflows_merge/runtime_json.rs",
+        "d53fe461e231d8bfa061cf8b1fe31e709b32c2fe0fa2ea4a79c194bf08625e43",
+        runtime,
+    );
+    assert_eq!(runtime.len(), 9945);
     let (runtime_before, _) = runtime
         .split_once("\n// RUNTIME848_FIXED_RECEIVERS_BEGIN\n")
         .unwrap();
@@ -461,7 +469,8 @@ fn six_large_historical_packets_keep_full_inputs_whole_consumers_and_fresh_hosti
         *b"\xd5\x3f\xe4\x61\xe2\x31\xd8\xbf\xa0\x61\xcf\x8b\x1f\xe3\x1e\x70\x9b\x32\xc2\xfe\x0f\xa2\xea\x4a\x79\xc1\x94\xbf\x08\x62\x5e\x43",
         "whole pre-six runtime reader facade"
     );
-    let mut original_tests = include_str!("tests.rs")
+    let prior_tests = historical_inputs::before(include_str!("tests.rs"));
+    let mut original_tests = prior_tests
         .split_once("\n// RUNTIME848_SIX_PACKET_CONTROLS_BEGIN\n")
         .unwrap()
         .0
@@ -602,6 +611,17 @@ fn complete_receiver_entry_glue(source: &str, current: &str) -> String {
 fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
     let three_before = complete_three_fixture_runtime_glue(source, current);
     let current = three_before.as_str();
+    let receiver;
+    let current = if source == "src/source_reflows/incoming67107_semantic_receivers.rs" {
+        receiver = super::super::main_e177_final_inputs::value_direct(
+            source,
+            "de536dea276a4e1801a8df06f7c45cbed916b1b861e7c7859a2f040ee37759c8",
+            current,
+        );
+        receiver.as_str()
+    } else {
+        current
+    };
     let (length, current_sha, old_length, old_sha, edits): ReceiverTextEdits<'_> = match source {
         "src/source_reflows_merge/runtime_json.rs" => (
             16413, *b"\x73\x1f\x28\x59\x97\x57\xa0\x90\xce\x12\xc1\x1d\xa1\x08\xcc\x0a\xea\x5b\x3e\x3e\x18\x0a\xc0\xbb\x5a\xd5\x6d\x53\x16\x5f\xfd\xec",
@@ -664,6 +684,18 @@ fn complete_receiver_followup_glue(source: &str, current: &str) -> String {
 // below receives its complete original input; nothing is read under a compiler
 // allocation or budget probe and no parsed/verdict cache is introduced.
 fn complete_three_fixture_runtime_glue(source: &str, current: &str) -> String {
+    let transport;
+    let current = if source == "src/source_reflows_merge/runtime_json.rs" {
+        transport = super::super::main_e177_final_inputs::value_direct(
+            source,
+            "56ec9fc1ede65a5610ac46f2d82d4a26ac83a8e4ece2b4226bbc206e111b926e",
+            current,
+        );
+        assert_eq!(transport.len(), 26084);
+        transport.as_str()
+    } else {
+        current
+    };
     let restored = complete_current_writer_signature_entry_before(source, current);
     let current = restored.as_str();
     let restored = complete_embedded_fixture_parent_before(source, current);
@@ -1168,8 +1200,16 @@ fn three_runtime_packets_keep_whole_consumers_and_refuse_each_fresh_hostile_read
             );
         }
     }
-    let controls = include_str!("tests.rs");
-    drop(three_fixture_test_source_before(controls));
+    let live_controls = include_str!("tests.rs");
+    let controls = historical_inputs::before(live_controls);
+    drop(three_fixture_test_source_before(&controls));
+    for foreign in [
+        format!("{live_controls} "),
+        controls.clone(),
+        live_controls[..live_controls.len() - 1].to_owned(),
+    ] {
+        assert!(std::panic::catch_unwind(|| historical_inputs::before(&foreign)).is_err());
+    }
     assert!(
         std::panic::catch_unwind(|| three_fixture_test_source_before(&format!("{controls} ")))
             .is_err()
@@ -1370,6 +1410,12 @@ fn current13_typed_root_before(source: &str, current: &str) -> String {
         return current.to_owned();
     }
     assert_eq!(current, include_str!("../../source_reflows_merge.rs"));
+    let restored = super::super::main_e177_final_inputs::value_direct(
+        source,
+        "59adcd7b9f642d026dec8c12658db880a275b9dcdb1e28d83dd9248427506764",
+        current,
+    );
+    let current = restored.as_str();
     assert_eq!(current.len(), 100875);
     assert_eq!(
         digest(current.as_bytes()),

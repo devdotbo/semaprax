@@ -1,5 +1,7 @@
 //! Complete physical-input successors for the immutable CI and Source36 views.
 //! This test-only projection owns no compiler authority and grants no admission.
+#[path = "source_reflows_merge/constructor_stage.rs"]
+mod constructor_stage;
 #[path = "source_reflows_merge/joined_custody.rs"]
 mod joined_custody;
 #[path = "source_reflows_merge/prefix_custody.rs"]
@@ -1262,13 +1264,20 @@ pub(crate) fn complete_receiver_followup(source: &str) -> String {
 }
 // Closed complete compiled ENTRY acquisition precedes every original #825 inverse.
 fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {
+    let restored_typed = constructor_stage::typed(source, current);
+    let current = restored_typed.as_deref().unwrap_or(current);
     let typed_before = if source
         == "src/workspace_graph/constructor_failure/receiving/typed/tests.rs"
         && expected == "2cd6c2ce3b35abb30253549dc931c6c025653419d2bd16b9fb6c35224a34d6e4"
     {
         assert_eq!(
             current,
-            include_str!("workspace_graph/constructor_failure/receiving/typed/tests.rs")
+            constructor_stage::typed(
+                source,
+                include_str!("workspace_graph/constructor_failure/receiving/typed/tests.rs")
+            )
+            .as_deref()
+            .unwrap()
         );
         assert_eq!(current.len(), 27662);
         assert_eq!(
@@ -1325,7 +1334,7 @@ fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) ->
         ("src/workspace_graph/diagnostics.rs", "1c1552d56400ec781eb96ff6fd825bbbeec854f5042fab960e4d3d2941e60127") => (include_str!("workspace_graph/diagnostics.rs"), 15942, "b0785724bdbde5253b6a1aee53779d668f4fdbd13fe079badb586082b4045612", &[
             ("use crate::diagnostic::Diagnostic;\n\nuse super::{\n    WorkspaceResolvedModule, MAX_BUILDER_BYTES, MAX_CALLABLES, MAX_CALLS, MAX_CROSS_FILE_EDGES,\n    MAX_DECLARATIONS, MAX_DEPENDENCY_DEPTH, MAX_ENTRY_MODULE_BYTES, MAX_FILES, MAX_OUTPUT_BYTES,\n    MAX_TOTAL_SOURCE_BYTES, MAX_USES,\n};\n\npub(super) const PROVIDER_MAIN_HELP: &str = \"`entry` in semaprax.toml must name the module that declares `main`; every other listed source is a provider module and declares no `main`\";\n", "use crate::diagnostic::Diagnostic;\n\nuse super::{\n    MAX_BUILDER_BYTES, MAX_CALLABLES, MAX_CALLS, MAX_CROSS_FILE_EDGES, MAX_DECLARATIONS,\n    MAX_DEPENDENCY_DEPTH, MAX_ENTRY_MODULE_BYTES, MAX_FILES, MAX_OUTPUT_BYTES,\n    MAX_TOTAL_SOURCE_BYTES, MAX_USES, WorkspaceResolvedModule,\n};\n\npub(super) const PROVIDER_MAIN_HELP: &str = \"`entry` in semaprax.toml must name the module that declares `main`; every other listed source is a provider module and declares no `main`\";\n"),
         ]),
-        ("src/workspace_graph/constructor_failure/typed.rs", "1482ad177d1d605a183cccc3ef185aaed36e7214b1bf4db8065a466303fc99f6") => (include_str!("workspace_graph/constructor_failure/typed.rs"), 11670, "b07ecf1da889cf25e1b9296bf320070d49c58af316efe6036dce534fccd73fb7", &[
+        ("src/workspace_graph/constructor_failure/typed.rs", "1482ad177d1d605a183cccc3ef185aaed36e7214b1bf4db8065a466303fc99f6") => (restored_typed.as_deref().unwrap_or(include_str!("workspace_graph/constructor_failure/typed.rs")), 11670, "b07ecf1da889cf25e1b9296bf320070d49c58af316efe6036dce534fccd73fb7", &[
             ("/// Reserved wrappers and ordinary function imports can trigger a full probe;\n", "/// Only these reserved identity families can reach FunctionEntry::Borrowed;\n"),
             ("    if SCALAR_SIGNATURE_BEFORE.with(std::cell::Cell::get) {\n        return before_scalar_dispatch::construct_selected_core(\n            program,\n            authored,\n            programs,\n            registry,\n            core,\n            allow_transient,\n            owner,\n        );\n    }\n    #[cfg(test)]\n", ""),
             ("            before_scalar_dispatch::construct_transient_alias_core(\n                program, authored, programs, registry, core, owner,\n            )\n", "            construct_transient_alias_core(program, authored, programs, registry, core, owner)\n"),
@@ -1359,7 +1368,6 @@ fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) ->
     Some(entry)
 }
 
-// Authenticate the complete current owner before its unchanged historical chain.
 fn constructor825_attempt_before(current: &str) -> String {
     assert_eq!(
         current,
@@ -1381,20 +1389,21 @@ fn constructor825_attempt_before(current: &str) -> String {
     before
 }
 
-// Exact current owners enter the original #845 source stages before any edits.
 fn initial845_current_owner_before(source: &str, current: &str) -> Option<String> {
+    let normalized = constructor_stage::owner(source, current);
+    let current = normalized.as_deref().unwrap_or(current);
     let (compiled, length, current_sha, old_length, old_sha, edits): (&str, usize, &str, usize, &str, &[(&str, &str)]) = match source {
-        "src/bounded_output.rs" => (include_str!("bounded_output.rs"), 52412, "fa91c8eca4825931211d066d6ebde8c0ff157de1ec78b5950abe867c295e481f", 51963, "f9379a489970b6cb369265386226ecaa82e2d657355d50eebedb9e33c8b6589a", &[
+        "src/bounded_output.rs" => (normalized.as_deref().unwrap_or(include_str!("bounded_output.rs")), 52412, "fa91c8eca4825931211d066d6ebde8c0ff157de1ec78b5950abe867c295e481f", 51963, "f9379a489970b6cb369265386226ecaa82e2d657355d50eebedb9e33c8b6589a", &[
             ("#[cfg(feature = \"unstable-workflow-profiling\")]\npub(crate) mod exclusive_debits;\n", ""),
             ("                    #[cfg(feature = \"unstable-workflow-profiling\")]\n                    exclusive_debits::exceptional_settlement(&parent, remaining.min(consumed));\n", ""),
             ("        #[cfg(feature = \"unstable-workflow-profiling\")]\n        exclusive_debits::refusal(budget, length);\n", ""),
             ("    #[cfg(feature = \"unstable-workflow-profiling\")]\n    exclusive_debits::debit(budget, length);\n", ""),
         ]),
-        "src/workspace_graph/initial_report/build.rs" => (include_str!("workspace_graph/initial_report/build.rs"), 17509, "48b56f916c25d00004bf6d8bc13e56a0972d07f531fceda2c7c94b57d2af20e1", 17054, "0fd9df9abe4ceadd45105394a4efcda2edc3a3ab780d0326d924288a60ea5bda", &[
+        "src/workspace_graph/initial_report/build.rs" => (normalized.as_deref().unwrap_or(include_str!("workspace_graph/initial_report/build.rs")), 17509, "48b56f916c25d00004bf6d8bc13e56a0972d07f531fceda2c7c94b57d2af20e1", 17054, "0fd9df9abe4ceadd45105394a4efcda2edc3a3ab780d0326d924288a60ea5bda", &[
             ("                #[cfg(feature = \"unstable-workflow-profiling\")]\n                let mut exclusive = crate::bounded_output::exclusive_debits::attempt(\n                    resolve_builder_bytes,\n                    layouts.receipt(),\n                    fallback_mode,\n                );\n                let result = constructor_failure::attempt::run(active_builder_limit(), || {\n", "                constructor_failure::attempt::run(active_builder_limit(), || {\n"),
             ("                });\n                #[cfg(feature = \"unstable-workflow-profiling\")]\n                exclusive.complete(result.observation_succeeded());\n                result\n", "                })\n"),
         ]),
-        "src/workspace_graph/initial_report/tests.rs" => (include_str!("workspace_graph/initial_report/tests.rs"), 15256, "0f530933b3964478e93a13bd7065cda6a97ab121b7c77508db45e72aff401ad7", 13095, "52afb2ca386cf27e4bd8bf2e70c46565539427a51b11a1cdded57b3762570971", &[
+        "src/workspace_graph/initial_report/tests.rs" => (normalized.as_deref().unwrap_or(include_str!("workspace_graph/initial_report/tests.rs")), 15256, "0f530933b3964478e93a13bd7065cda6a97ab121b7c77508db45e72aff401ad7", 13095, "52afb2ca386cf27e4bd8bf2e70c46565539427a51b11a1cdded57b3762570971", &[
             ("    let complete_before = crate::source_reflows_merge::initial845_input(\n        \"src/workspace_graph/initial_report/before.rs\", include_str!(\"before.rs\"),\n    );\n    assert!(complete_before.contains(&body));\n", "    assert!(include_str!(\"before.rs\").contains(&body));\n"),
             ("\n#[cfg(feature = \"unstable-workflow-profiling\")]\n#[test]\nfn exclusive_core_capture_keeps_complete_real_builder_outputs_and_every_original_limit() {\n    use crate::workflow_profile::plan_comparison::{Binding, Capture, CoreDebitAlgorithm};\n    for limit in [0, 1, 127, 1023, 8191, MAX_BUILDER_BYTES] {\n        let run = || {\n            build_owned_retaining_sources_with_frontend_limit::<Vec<Diagnostic>>(\n                sources(),\n                limit,\n                None,\n                false,\n                None,\n            )\n            .map(|(build, _)| build.source_graph_schemas().unwrap())\n        };\n        let plain = run();\n        let capture = Capture::begin(Binding::caller_labelled(\n            \"real initial builder parity\",\n            [0; 32],\n        ))\n        .unwrap();\n        let watched = run();\n        let report = capture.finish().unwrap();\n        assert_eq!(\n            plain, watched,\n            \"actual full compiler product at unchanged limit {limit}\"\n        );\n        assert_eq!(\n            report.resolved_core.algorithm,\n            CoreDebitAlgorithm::InstrumentedLibraryTest\n        );\n        assert!(\n            report.resolved_core.complete\n                && !report.resolved_core.invalid\n                && !report.resolved_core.lost\n                && !report.resolved_core.overflow,\n            \"{report:?}\"\n        );\n        for attempt in &report.resolved_core.attempts[..report.resolved_core.stored_attempts] {\n            assert!(attempt.complete && !attempt.invalid);\n            assert_eq!(attempt.stage_sum(), Some(attempt.consumed));\n            assert_eq!(attempt.operation_sum(), Some(attempt.consumed));\n        }\n        if limit == MAX_BUILDER_BYTES {\n            assert!(watched.is_ok());\n            assert!(report.resolved_core.entered_attempts > 0);\n            assert_eq!(\n                report.resolved_core.final_attempt_ordinal,\n                Some(report.resolved_core.entered_attempts - 1)\n            );\n        }\n    }\n}\n", ""),
         ]),

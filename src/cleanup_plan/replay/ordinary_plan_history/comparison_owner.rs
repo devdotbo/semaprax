@@ -1,4 +1,14 @@
 //! One comparison invocation owns sort and pair state. No nested order/sift calls.
+#![cfg_attr(
+    test,
+    allow(
+        clippy::too_many_arguments,
+        clippy::manual_bits,
+        clippy::items_after_test_module,
+        clippy::assertions_on_constants,
+        reason = "Historical comparisons retain complete parameter matrices, byte-role invoices (not bit counts), source order, and constant negative-path assertions."
+    )
+)]
 use super::*;
 #[allow(
     unused_macros,

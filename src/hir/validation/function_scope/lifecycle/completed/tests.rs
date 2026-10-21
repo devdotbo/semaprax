@@ -356,16 +356,17 @@ fn complete_frozen_function_receiver_is_exact_named_projection_with_original_dig
         debit_digest(&legacy),
         "d043c680becb6e6385559f4d0d8e86e5eff79f5dbdca72cfbe97b058cc18d8bd"
     );
-    for (start, end, current, previous) in [(
-        396,
-        615,
-        r########"    );
+    {
+        let (start, end, current, previous) = (
+            396,
+            615,
+            r########"    );
     #[cfg(feature = "unstable-workflow-profiling")]
     let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
         crate::bounded_output::exclusive_debits::Operation::Lifecycle,
 "########,
-        r########""########,
-    )] {
+            r########""########,
+        );
         assert_eq!(legacy.get(start..end), Some(current));
         legacy.replace_range(start..end, previous);
     }
