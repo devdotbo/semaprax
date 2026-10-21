@@ -52,3 +52,17 @@ fn compact_hir_work_preserves_every_work_cut_and_full_refusal() {
     });
     assert!(!refused && first.is_none());
 }
+
+#[test]
+fn compact_vector_banks_preserve_all_other_actual_receivers() {
+    let delta = size_of::<Result<(), Diagnostic>>() - size_of::<Result<(), ByteFailure>>();
+    assert!(delta > 0);
+    assert_eq!(
+        crate::cleanup_plan::replay::sequence_vector::QUERY - compact::VECTOR_QUERY,
+        delta
+    );
+    assert_eq!(
+        crate::cleanup_plan::replay::sequence_vector::FRAME - compact::VECTOR_FRAME,
+        delta
+    );
+}

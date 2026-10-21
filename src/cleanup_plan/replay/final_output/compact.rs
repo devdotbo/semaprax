@@ -77,3 +77,40 @@ macro_rules! hir_work {
     };
 }
 pub(in crate::cleanup_plan::replay) use hir_work;
+
+// Complete original vector banks with only their real compact payment Result changed.
+pub(in crate::cleanup_plan::replay) const VECTOR_QUERY: usize = size_of::<Result<(), ByteFailure>>()
+    + 2 * size_of::<&mut ReplayBudget>() + 2 * size_of::<&ResolvedFunction>()
+    + 2 * size_of::<&str>()
+    + 2 * size_of::<&ReplayBudget>() // selected caller/method
+    + 2 * size_of::<&Vec<ExprSkeletonPath>>() // capacity caller/method
+    + 10 * size_of::<Option<usize>>() // five checked results and their matches
+    + 28 * size_of::<usize>() // price, arithmetic self/RHS/results and held outputs
+    + 5 * size_of::<bool>() // selected/negation, bound, equality, saved-backing test
+    // On false selection the original consuming loop is acquired AFTER the
+    // first borrowed item. This additional iterator/next frame is prepaid here;
+    // it is unused when the mutable input frame returns the vector directly.
+    + 2 * size_of::<std::vec::IntoIter<ExprSkeletonPath>>()
+    + 2 * size_of::<Option<ExprSkeletonPath>>();
+
+const _: () = assert!(
+    crate::cleanup_plan::replay::sequence_vector::QUERY - VECTOR_QUERY
+        == size_of::<Result<(), Diagnostic>>() - size_of::<Result<(), ByteFailure>>()
+);
+
+pub(in crate::cleanup_plan::replay) const VECTOR_FRAME: usize = size_of::<Result<(), ByteFailure>>()
+    + 2 * size_of::<&mut ReplayBudget>() + 2 * size_of::<&ResolvedFunction>()
+    + 2 * size_of::<&str>() + size_of::<usize>()
+    + 2 * size_of::<std::slice::IterMut<'static, ExprSkeletonPath>>()
+    + 2 * size_of::<&mut Vec<ExprSkeletonPath>>()
+    + size_of::<&mut [ExprSkeletonPath]>()
+    + 2 * size_of::<Option<&mut ExprSkeletonPath>>()
+    + size_of::<&mut ExprSkeletonPath>()
+    + 2 * size_of::<Observations>() // Default return and scratch receiver
+    + 2 * size_of::<Vec<std::rc::Rc<crate::cleanup_plan::replay::SkeletonObservation>>>() // Vec::default return/field
+    + size_of::<Option<std::rc::Rc<crate::cleanup_plan::replay::skeleton_work::ObservationDag>>>();
+
+const _: () = assert!(
+    crate::cleanup_plan::replay::sequence_vector::FRAME - VECTOR_FRAME
+        == size_of::<Result<(), Diagnostic>>() - size_of::<Result<(), ByteFailure>>()
+);
