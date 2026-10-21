@@ -2891,9 +2891,9 @@
         "src/workspace_graph/expected_projection/uncached_peak.rs",
         "src/workspace_graph/expected_projection/vec_constructor.rs"
       ],
-      "full_manifest_sha256": "c45629e8c526173b195d2cbca71bfa545a7a1696069906126b546361034bb09f",
-      "full_raw_sha256": "0b729e9aaceae8c961ced3df1b7b374dd05caccd64fa575ee7d4a82c6a711d8a",
-      "full_authenticated_production_sha256": "db6780c6fc0fcd33126a8ea51b51f4d11309c6eb368e8fd2040125614ae0f40a"
+      "full_manifest_sha256": "4f0e8f0cc47d7d92fb384de206001b38cca0a6595538bc426debfcca57020595",
+      "full_raw_sha256": "06c3465e740664aec38fe111eb554d5e9bb4c3555c2b1a116811bc1bf2e07200",
+      "full_authenticated_production_sha256": "e1c2b8815d64892d7034f32e0119af13d1d315ed26618201fb0cd7b2890d1e29"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
