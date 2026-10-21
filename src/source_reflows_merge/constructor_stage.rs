@@ -1,4 +1,4 @@
-//! Whole current Agent prefilter input before the unchanged constructor inverse.
+//! Whole current cache-compatible prefilter input before the unchanged constructor inverse.
 use sha2::{Digest, Sha256};
 pub(super) fn typed(source: &str, current: &str) -> Option<String> {
     if source == "src/workspace_graph/constructor_failure/receiving/typed/tests.rs" {
@@ -30,16 +30,16 @@ pub(super) fn typed(source: &str, current: &str) -> Option<String> {
         std::fs::read_to_string(std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(source))
             .unwrap()
     );
-    assert_eq!(current.len(), 12474);
+    assert_eq!(current.len(), 11766);
     assert_eq!(
         format!(
             "{:x}",
             crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
         ),
-        "371ae248a8468c37edaa42a0791fb617a791e38f5fa56c6ad0583ac821fe60b4"
+        "2d51c6b69300d23950a780837f0ba865df703cc50a0b035192de2f86e1ef157b"
     );
     let edits: Vec<(usize, String, String)> = serde_json::from_str(include_str!(
-        "../../docs/evidence/runtime-history-20261021/typed-inverse.json"
+        "../../docs/evidence/cache-dispatch-20261021/typed-inverse.json"
     ))
     .unwrap();
     let mut before = current.to_owned();
