@@ -48,19 +48,19 @@ type OnePassVectorCall<'a> = (&'a mut ReplayBudget, &'a ResolvedFunction, usize,
 pub(super) const ONE_PASS_ZERO_BYTES_CALL: usize =
     2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 pub(super) const ONE_PASS_ZERO_WORK_CALL: usize =
-    2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), Diagnostic>>();
+    2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 // The subset charge is the same original one-pass call/arguments, not a new
 // selector. Its Result is consumed by ? before any next node or recursive call;
 // this nonrecursive producer retains no charge receiver between iterations.
 pub(super) const ONE_PASS_SUBSET_CALL: usize =
-    2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), Diagnostic>>();
+    2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 pub(super) const ONE_PASS_VECTOR_CALL: usize =
     2 * size_of::<OnePassVectorCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 type OnePassNodeCall<'a> = (&'a mut ReplayBudget, &'a ResolvedFunction, &'a str);
 pub(super) const ONE_PASS_UNIT_ABI: usize =
     2 * size_of::<OnePassByteCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 pub(super) const ONE_PASS_NODE_ABI: usize =
-    2 * size_of::<OnePassNodeCall<'static>>() + 2 * size_of::<Result<(), Diagnostic>>();
+    2 * size_of::<OnePassNodeCall<'static>>() + 2 * size_of::<Result<(), ByteFailure>>();
 pub(super) const ONE_PASS_MOVEMENT_PAYMENT: usize = ONE_PASS_UNIT_ABI;
 pub(super) const ONE_PASS_PROMOTION_PAYMENT: usize = ONE_PASS_UNIT_ABI;
 pub(super) const ONE_PASS_FIRST_LABEL_NODE: usize = ONE_PASS_NODE_ABI;
@@ -131,7 +131,7 @@ pub(super) const ONE_PASS_OWNING_ITERATOR: usize =
         + 2 * size_of::<Option<(&Label, paid_many::Targets)>>()
         + 2 * size_of::<(&Label, paid_many::Targets)>();
 
-// 23 compact byte/vector sites, two unchanged wide work sites, and five node sites. BOTH owned weighted
+// 23 compact byte/vector sites, two compact work sites, and five compact node sites. BOTH owned weighted
 // finish ABIs are compound payloads and stay outside this retained bank.
 pub(super) const PRIMITIVE_FRAMES: usize =
     23 * ONE_PASS_UNIT_ABI + ONE_PASS_ZERO_WORK_CALL + ONE_PASS_SUBSET_CALL + 5 * ONE_PASS_NODE_ABI;
@@ -152,7 +152,11 @@ macro_rules! compact_one_pass_successors {
                 0,
                 "factored one-pass successor authentication"
             ));
-            $attempt!($budget.charge($function, 0, "factored one-pass successor authentication"));
+            $compact_attempt!($budget.charge_compact(
+                $function,
+                0,
+                "factored one-pass successor authentication"
+            ));
             let mut labels = lexical_successors::OnePassLabels::Empty;
             macro_rules! add {
                 ($targets:ident, $child:ident, $weight:ident) => {
@@ -199,10 +203,11 @@ macro_rules! compact_one_pass_successors {
                         }
                         paid_many::Targets::Many(targets) => {
                             if !targets.contains_key($child) {
-                                $attempt!($budget.reserve_btree_node::<usize, u64>(
-                                    $function,
-                                    "factored successor target node"
-                                ));
+                                $compact_attempt!($budget
+                                    .reserve_compact_btree_node::<usize, u64>(
+                                        $function,
+                                        "factored successor target node"
+                                    ));
                             }
                             let slot = targets.entry(*$child).or_insert(0);
                             let Some(sum) = slot.checked_add(*$weight) else {
@@ -218,7 +223,7 @@ macro_rules! compact_one_pass_successors {
                 let moves = ($automaton).nodes[*node].moves();
                 // This is the complete before_index subset request, at the same point.
                 // No label census, search-charge prepass or four-op selector is run.
-                $attempt!($budget.charge(
+                $compact_attempt!($budget.charge_compact(
                     $function,
                     moves.len().saturating_add(1),
                     "factored skeleton subset construction"
@@ -260,14 +265,16 @@ macro_rules! compact_one_pass_successors {
                                 compact_successors::ONE_PASS_PROMOTION,
                                 "factored one-pass label promotion receivers"
                             ));
-                            $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
-                                $function,
-                                "factored one-pass first label node"
-                            ));
-                            $attempt!($budget.reserve_btree_node::<&Label, paid_many::Targets>(
-                                $function,
-                                "factored one-pass second label node"
-                            ));
+                            $compact_attempt!($budget
+                                .reserve_compact_btree_node::<&Label, paid_many::Targets>(
+                                    $function,
+                                    "factored one-pass first label node"
+                                ));
+                            $compact_attempt!($budget
+                                .reserve_compact_btree_node::<&Label, paid_many::Targets>(
+                                    $function,
+                                    "factored one-pass second label node"
+                                ));
                             $compact_attempt!($budget.reserve_compact_bytes(
                                 $function,
                                 0,
@@ -297,8 +304,8 @@ macro_rules! compact_one_pass_successors {
                         }
                         lexical_successors::OnePassLabels::Many(many) => {
                             if !many.contains_key(label) {
-                                $attempt!($budget
-                                    .reserve_btree_node::<&Label, paid_many::Targets>(
+                                $compact_attempt!($budget
+                                    .reserve_compact_btree_node::<&Label, paid_many::Targets>(
                                         $function,
                                         "factored one-pass label node"
                                     ));

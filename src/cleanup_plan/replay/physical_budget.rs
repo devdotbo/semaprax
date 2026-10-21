@@ -333,6 +333,85 @@ impl ReplayBudget {
         self.reserve_bytes(function, bytes, phase)
     }
 
+    // Complete original general work producer, including lending and refusal tracing.
+    #[cfg_attr(test, track_caller)]
+    pub(super) fn charge_compact(
+        &mut self,
+        function: &ResolvedFunction,
+        units: usize,
+        phase: &str,
+    ) -> Result<(), ByteFailure> {
+        match self.prepare_builder(function) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
+        if self.refusal_spent {
+            return Err(self.compact_refusal(
+                function,
+                "selected replay budget already failed",
+                "",
+            ));
+        }
+        if self.lent_skeleton {
+            return self.charge_compact_skeleton(function, units, phase);
+        }
+        match self.charge_oracle_work(function, units, phase) {
+            Ok(()) => (),
+            Err(error) => return Err(ByteFailure::from_budget(error)),
+        };
+        #[cfg(test)]
+        let caller = std::panic::Location::caller();
+        self.remaining = self.remaining.checked_sub(units).ok_or_else(|| {
+            #[cfg(test)]
+            REPLAY_WORK_REFUSAL.with(|record| {
+                record.set(Some(ReplayWorkRefusal {
+                    caller,
+                    requested: units,
+                    remaining: self.remaining,
+                    status_sources: function.cleanup_plan.status_sources.len(),
+                    first_status_bytes: function
+                        .cleanup_plan
+                        .status_sources
+                        .first()
+                        .map_or(0, |source| source.id.expression.as_str().len()),
+                    payer: match self.payer {
+                        AllocationPayer::LegacyUnobserved => "unobserved",
+                        AllocationPayer::ActiveBuilder => "builder",
+                        AllocationPayer::SelectedReservation => "selected",
+                        AllocationPayer::Oracle(_) => "oracle",
+                    },
+                }))
+            });
+            self.compact_refusal(
+                function,
+                "cleanup replay work budget exhausted during ",
+                phase,
+            )
+        })?;
+        Ok(())
+    }
+
+    // Same complete tree-layout producer and sticky reservation frontier as
+    // reserve_btree_node; only the actual returned error transport is narrow.
+    #[track_caller]
+    pub(super) fn reserve_compact_btree_node<K, V>(
+        &mut self,
+        function: &ResolvedFunction,
+        phase: &str,
+    ) -> Result<(), ByteFailure> {
+        if !self.pays_allocations() {
+            return Ok(());
+        }
+        let bytes = physical_storage::btree_node_upper::<K, V>().ok_or_else(|| {
+            self.compact_refusal(
+                function,
+                "cleanup replay physical tree layout overflowed",
+                "",
+            )
+        })?;
+        self.reserve_compact_bytes(function, bytes, phase)
+    }
+
     #[track_caller]
     pub(super) fn reserve_deque<T>(
         &mut self,

@@ -664,7 +664,7 @@ impl Canonicalizer<'_> {
 
 #[cfg(test)]
 pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton) fn result_banks(
-) -> [usize; 8] {
+) -> [usize; 9] {
     [
         lexical_successors::ONE_PASS_UNIT_ABI,
         compact_successors::ONE_PASS_UNIT_ABI,
@@ -674,5 +674,6 @@ pub(in crate::cleanup_plan::replay::factored::canonical_shared::inline_singleton
         compact_successors::WARM_RECEIVING,
         compact_successors::ONE_PASS_ZERO_WORK_CALL,
         compact_successors::ONE_PASS_NODE_ABI,
+        lexical_successors::ONE_PASS_NODE_ABI,
     ]
 }

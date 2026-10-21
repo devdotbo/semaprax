@@ -69,18 +69,24 @@ fn run(
 }
 #[test]
 fn real_byte_result_layout_and_mixed_primitive_bank_delta_are_exact() {
-    let [old_unit, new_unit, old_cold, new_cold, old_warm, new_warm, work, node] = result_banks();
+    let [old_unit, new_unit, old_cold, new_cold, old_warm, new_warm, work, node, old_node] =
+        result_banks();
     let args = 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>();
     assert_eq!(old_unit, args + 2 * size_of::<Result<(), Diagnostic>>());
     assert_eq!(new_unit, args + 2 * size_of::<Result<(), ByteFailure>>());
     assert!(new_unit < old_unit);
-    assert_eq!(work, old_unit);
+    assert_eq!(work, new_unit);
+    let node_args = 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, &str)>();
     assert_eq!(
-        node,
-        2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, &str)>()
-            + 2 * size_of::<Result<(), Diagnostic>>()
+        old_node,
+        node_args + 2 * size_of::<Result<(), Diagnostic>>()
     );
-    assert_eq!(old_cold - new_cold, 23 * (old_unit - new_unit));
+    assert_eq!(node, node_args + 2 * size_of::<Result<(), ByteFailure>>());
+    assert_eq!(old_node - node, old_unit - new_unit);
+    assert_eq!(
+        old_cold - new_cold,
+        23 * (old_unit - new_unit) + 2 * (old_unit - work) + 5 * (old_node - node)
+    );
     assert_eq!(old_warm, new_warm);
 }
 #[test]
@@ -127,8 +133,12 @@ fn zero_single_many_and_overflow_keep_complete_results_work_and_backing() {
                     };
                     assert!(old.successors.complete && current.successors.complete);
                     assert_eq!(m(&old), m(&current));
-                    let [wide, compact, ..] = result_banks();
-                    assert_eq!(old.paid - current.paid, m(&current) * 23 * (wide - compact));
+                    let [wide, compact, _, _, _, _, work, node, old_node] = result_banks();
+                    assert_eq!(
+                        old.paid - current.paid,
+                        m(&current)
+                            * (23 * (wide - compact) + 2 * (wide - work) + 5 * (old_node - node))
+                    );
                 }
             }
         }
@@ -214,4 +224,89 @@ fn every_small_work_cut_cycle_exact_short_zero_and_floor_refusal_release_owners(
     );
     same(&old, &current);
     assert!(current.result.is_err());
+}
+
+#[test]
+fn compact_tree_payments_keep_complete_refusals_sticky_state_and_work() {
+    fn compare<K, V>(f: &ResolvedFunction) {
+        let run = |compact, limit| {
+            let ((result, remaining, skeleton_remaining, spent, sticky), refused, paid, first) =
+                with_limit_usage_refusal(limit, || {
+                    let mut budget = ReplayBudget::with_skeleton_limit(64);
+                    let result = if compact {
+                        budget
+                            .reserve_compact_btree_node::<K, V>(f, "matched tree payment")
+                            .map_err(|error| failure(error.into_diagnostic()))
+                    } else {
+                        budget
+                            .reserve_btree_node::<K, V>(f, "matched tree payment")
+                            .map_err(failure)
+                    };
+                    (
+                        result,
+                        budget.remaining,
+                        budget.skeleton_remaining,
+                        budget.skeleton_spent,
+                        budget.refusal_spent,
+                    )
+                });
+            (
+                (result, remaining, skeleton_remaining, spent, sticky),
+                refused,
+                paid,
+                first.is_some(),
+            )
+        };
+        let complete = run(false, usize::MAX);
+        assert!(complete.0 .0.is_ok() && !complete.1 && !complete.3);
+        assert_eq!(complete, run(true, usize::MAX));
+        assert!(complete.2 > 0);
+        for limit in [0, complete.2 - 1, complete.2] {
+            assert_eq!(run(false, limit), run(true, limit), "limit={limit}");
+        }
+    }
+    let f = function();
+    compare::<usize, u64>(&f);
+    compare::<&Label, paid_many::Targets>(&f);
+}
+
+#[test]
+fn compact_general_work_keeps_lending_every_work_cut_and_complete_errors() {
+    let f = function();
+    let ((), refused, _, first) = with_limit_usage_refusal(usize::MAX, || {
+        for lent in [false, true] {
+            for allowance in [0, 1, 2, 64] {
+                for units in [0, 1, 2, usize::MAX] {
+                    let run = |compact| {
+                        let mut budget = ReplayBudget::with_skeleton_limit(allowance);
+                        budget.remaining = allowance;
+                        budget.skeleton_remaining = allowance;
+                        budget.lent_skeleton = lent;
+                        let outcome = if compact {
+                            budget
+                                .charge_compact(&f, units, "matched general work")
+                                .map_err(|error| failure(error.into_diagnostic()))
+                        } else {
+                            budget
+                                .charge(&f, units, "matched general work")
+                                .map_err(failure)
+                        };
+                        (
+                            outcome,
+                            budget.remaining,
+                            budget.skeleton_remaining,
+                            budget.skeleton_spent,
+                            budget.refusal_spent,
+                        )
+                    };
+                    assert_eq!(
+                        run(false),
+                        run(true),
+                        "lent={lent}, allowance={allowance}, units={units}"
+                    );
+                }
+            }
+        }
+    });
+    assert!(!refused && first.is_none());
 }
