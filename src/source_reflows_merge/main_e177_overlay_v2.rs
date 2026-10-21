@@ -320,11 +320,12 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs",
     "src/bounded_output/stage_debits/route_debits/retained_main_289.rs",
     "tests/workspace.rs",
+    "src/cleanup_plan/replay/expression_facts.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 105522; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "2ab3f003965da22ba6cb33fd34caa0f7e904378b2be0435501c8f774f8151044";
+const POLICY_LENGTH: usize = 105595; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "c230f4d36c983ae68eff283c39de6326bbf2a602537506ac8d0c12ba23685d96";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -921,8 +922,7 @@ fn affected_row(source: &str) -> Option<Value> {
     if !affected(&policy, source) {
         return None;
     }
-    // Metadata replay precedes current validation. No old physical source is read
-    // to establish the current source; only the composed row is then admitted.
+    // Metadata replay precedes current validation. No old physical source is read to establish the current source; only the composed row is then admitted.
     let packet = compose_values(super::packet_before_overlay(), &policy, &page).unwrap();
     Some(
         packet["rows"]

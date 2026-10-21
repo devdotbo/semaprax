@@ -174,6 +174,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/bounded_output/stage_debits/route_debits/retained_main_289.rs" => Some(include_str!("../../src/bounded_output/stage_debits/route_debits/retained_main_289.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs")),
         "tests/workspace.rs" => Some(include_str!("../../tests/workspace.rs")),
+        "src/cleanup_plan/replay/expression_facts.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts.rs")),
         _ => None,
     }
 }
@@ -248,6 +249,20 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Undo the single new literal admission before every prior full-source inverse.
+        let source = "src/cleanup_plan/replay/expression_facts.rs";
+        let declaration = format!("    {source:?},\n");
+        assert_eq!(root.matches(&declaration).count(), 1);
+        let expanded_root = root.replacen(&declaration, "", 1);
+        let arm = format!("        {source:?} => Some(include_str!(\"../../{source}\")),\n");
+        assert_eq!(child.matches(&arm).count(), 1);
+        let expanded_child = child.replacen(&arm, "", 1);
+        let merged = "    // Metadata replay precedes current validation. No old physical source is read to establish the current source; only the composed row is then admitted.\n";
+        let original = "    // Metadata replay precedes current validation. No old physical source is read\n    // to establish the current source; only the composed row is then admitted.\n";
+        assert_eq!(expanded_root.matches(merged).count(), 1);
+        let expanded_root = expanded_root.replacen(merged, original, 1);
+        let root = expanded_root.as_str();
+        let child = expanded_child.as_str();
         // Undo only this exact later literal scope and line-budget projection.
         // Every original fixed span and complete predecessor assertion follows.
         let mut checkpoint_root = root.to_owned();
