@@ -147,11 +147,32 @@ pub(crate) fn current_1e_value(source: &str, supplied: &str) -> String {
     let rows = packet["rows"].as_array().unwrap();
     assert_eq!(rows.iter().filter(|row| row["path"] == source).count(), 1);
     let row = rows.iter().find(|row| row["path"] == source).unwrap();
-    crate::source_reflows_merge::next_big_batch_inputs::value(
+    let current = crate::source_reflows_merge::next_big_batch_inputs::value(
         source,
         row["current_sha256"].as_str().unwrap(),
         supplied,
-    )
+    );
+    // This complete owner gained the optional observer after the 1e epoch.
+    // Invert only that exact addition; the old whole-source digest authenticates
+    // every remaining byte before the original guard-span assertions run.
+    if source == "src/cleanup_plan/replay/expression_facts.rs"
+        && digest(current.as_bytes()) != row["current_sha256"].as_str().unwrap()
+    {
+        assert_eq!(
+            digest(current.as_bytes()),
+            "8728d164bd61e2a7a8e8165bc5d0e1a1b6a652aafd56302406cc2db0a386864f"
+        );
+        let observer = "\n    #[cfg(feature = \"unstable-workflow-profiling\")]\n    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(\n        crate::bounded_output::exclusive_debits::Operation::ReplayExpressionFacts,\n    );";
+        assert_eq!(current.matches(observer).count(), 1);
+        let previous = current.replacen(observer, "", 1);
+        assert_eq!(
+            digest(previous.as_bytes()),
+            row["current_sha256"].as_str().unwrap()
+        );
+        previous
+    } else {
+        current
+    }
 }
 fn read_packet(path: impl AsRef<Path>, packet: serde_json::Value) -> std::io::Result<String> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
