@@ -261,8 +261,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history.rs",
-    "sha256": "442bbdc6fb6b96d0d73483c2d53f465f07ac901559cada8ba4fba7131a6e18f9",
-    "lines": 541
+    "sha256": "fc6c640e517975d6155040cdaf42503d6564500cf3db4cebdb2a8dfb24f28e21",
+    "lines": 548
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/before.rs",
@@ -1701,7 +1701,7 @@
   },
   {
     "source": "src/source_reflows_merge/main_e177_overlay_v2.rs",
-    "sha256": "dd543769cef5f03200592855c0e8a7887590bdf789e466505bcf0a05b0ef5329",
+    "sha256": "c7f9ffa44203fbbeeb02101607934f4ee5c618db045bcfca07495f72ba7d01ae",
     "lines": 1499
   },
   {
@@ -2301,8 +2301,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs",
-    "sha256": "c31dc10489c76a99d651ee33d20b2c33dc1893a87c2fbf614ef0fd6f8f4e8b34",
-    "lines": 513
+    "sha256": "bce80574d3d354c7205b84c6c1be0fc2b44efb8f6a7bd9224a14d9b460319e8e",
+    "lines": 573
   },
   {
     "source": "src/bounded_output/exclusive_debits.rs",

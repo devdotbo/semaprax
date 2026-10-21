@@ -1,4 +1,11 @@
 //! Local immutable plan histories. HIR and retained/Oracle replay stay flat.
+#![cfg_attr(
+    test,
+    allow(
+        clippy::duplicate_mod,
+        reason = "Complete historical comparison receivers intentionally compile shared source in independent owner modules."
+    )
+)]
 use super::*;
 use std::cmp::Ordering;
 use std::mem::size_of;

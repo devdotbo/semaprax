@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 68663,
-      "sha256": "dd543769cef5f03200592855c0e8a7887590bdf789e466505bcf0a05b0ef5329"
+      "sha256": "c7f9ffa44203fbbeeb02101607934f4ee5c618db045bcfca07495f72ba7d01ae"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1241,8 +1241,8 @@
       "sha256": "2f4387d36e1e29ab15c409438dd74071439f2cb058d3fe53aa16c533ef79780e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs": {
-      "length": 18424,
-      "sha256": "c31dc10489c76a99d651ee33d20b2c33dc1893a87c2fbf614ef0fd6f8f4e8b34"
+      "length": 21250,
+      "sha256": "bce80574d3d354c7205b84c6c1be0fc2b44efb8f6a7bd9224a14d9b460319e8e"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs": {
       "length": 6956,

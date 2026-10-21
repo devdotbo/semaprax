@@ -454,8 +454,13 @@ pub(super) fn whole_before(case: usize, source: &str) -> Result<Vec<u8>, &'stati
 }
 #[test]
 fn affine_final_hir_preserves_entire_immediate_comparator_four_macros_and_all_old_source_guards() {
+    let comparison_owner = restore_exact_preformat_source(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        include_str!("../comparison_owner.rs").as_bytes(),
+        "e98bf0ffd40155974eeb159ffc5cb0a194c5c0b72f5735ad95381c3644d7dedd",
+    );
     let inputs = [
-        include_str!("../comparison_owner.rs"),
+        comparison_owner.as_str(),
         include_str!("before_final_affine.rs"),
         include_str!("lexical_cursor_before_final_affine.rs"),
         include_str!("paired_value_before_final_affine.rs"),
@@ -498,16 +503,71 @@ fn affine_final_hir_preserves_entire_immediate_comparator_four_macros_and_all_ol
         include_bytes!("lexical_cursor.rs"),
         include_bytes!("lexical_cursor_before_final_affine.rs")
     );
+    let current = include_bytes!("paired_value.rs");
+    let source = "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs";
+    let expected = "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3";
+    let restored = restore_exact_preformat_source(source, current, expected);
     assert_eq!(
-        include_bytes!("paired_value.rs"),
-        include_bytes!("paired_value_before_final_affine.rs")
+        restored.as_bytes(),
+        include_bytes!("paired_value_before_final_affine.rs").as_slice()
     );
+    let mut trailing = current.to_vec();
+    trailing.push(b' ');
+    for foreign in [trailing.as_slice(), restored.as_bytes()] {
+        assert!(std::panic::catch_unwind(|| {
+            restore_exact_preformat_source(source, foreign, expected)
+        })
+        .is_err());
+    }
+    let current = include_bytes!("shared_prefix.rs");
+    let source = "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs";
+    let expected = "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0";
+    let restored = restore_exact_preformat_source(source, current, expected);
     assert_eq!(
-        include_bytes!("shared_prefix.rs"),
-        include_bytes!("shared_prefix_before_final_affine.rs")
+        restored.as_bytes(),
+        include_bytes!("shared_prefix_before_final_affine.rs").as_slice()
     );
+    let mut trailing = current.to_vec();
+    trailing.push(b' ');
+    for foreign in [trailing.as_slice(), restored.as_bytes()] {
+        assert!(std::panic::catch_unwind(|| {
+            restore_exact_preformat_source(source, foreign, expected)
+        })
+        .is_err());
+    }
+    let current = include_bytes!("certified_heads.rs");
+    let source =
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs";
+    let expected = "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6";
+    let restored = restore_exact_preformat_source(source, current, expected);
     assert_eq!(
-        include_bytes!("certified_heads.rs"),
-        include_bytes!("certified_heads_before_final_affine.rs")
+        restored.as_bytes(),
+        include_bytes!("certified_heads_before_final_affine.rs").as_slice()
     );
+    let mut trailing = current.to_vec();
+    trailing.push(b' ');
+    for foreign in [trailing.as_slice(), restored.as_bytes()] {
+        assert!(std::panic::catch_unwind(|| {
+            restore_exact_preformat_source(source, foreign, expected)
+        })
+        .is_err());
+    }
+}
+
+// Whole current input channels authenticate before the declared prior formatting
+// view is selected. The historical byte assertions and inverse below are exact.
+fn restore_exact_preformat_source(source: &str, current: &[u8], expected: &str) -> String {
+    use sha2::{Digest, Sha256};
+    let digest = |bytes: &[u8]| format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(bytes)));
+    assert_ne!(
+        digest(current),
+        expected,
+        "prior bytes are not current authority"
+    );
+    let current = std::str::from_utf8(current).unwrap();
+    let restored = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source, expected, current,
+    );
+    assert_eq!(digest(restored.as_bytes()), expected);
+    restored
 }
