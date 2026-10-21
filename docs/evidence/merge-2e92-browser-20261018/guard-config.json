@@ -169,12 +169,12 @@
       "sha256": "88cb67c66c6719a7a02b6c49779015213a5b4929d16611df1898aaac43faa02f"
     },
     "tests/wasm/scalar_browser_ci_contract/before_3e66.rs": {
-      "length": 5295,
-      "sha256": "b052603b549318e45f3cae0e1f3afd1c385366dac535eb9cd1e9084d4a06cec2"
+      "length": 5587,
+      "sha256": "40740f94459a3cdcc807b43014cd3c0bf02062f69c2fa5f73c7379a996e12e8f"
     },
     "tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs": {
-      "length": 7835,
-      "sha256": "e022a8ffcacaa3694673da21f6d4ed96269a57eac901da1b5e705dc1ab5483b5"
+      "length": 8126,
+      "sha256": "ed46e33e52eb0b7dcd60d44fa175cfc759261d149d749d3e41ced5e2933f2123"
     },
     "tests/workspace/pin_capture.rs": {
       "length": 3432,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 68898,
-      "sha256": "d71f529a7540a7268d1e8e98561c2ce1c9b0386e22cd037f52bc7ca66029b230"
+      "length": 68301,
+      "sha256": "5870a3c8bc962bfa5398d90df5c8c53a0dc21ef8ddaffe092b07a4591a5c0d1f"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 50558,
-      "sha256": "bdfb5a864270afcc6ce464f109e2b6786699f80e8822466d802efb5f59029e60"
+      "length": 75756,
+      "sha256": "6bf3bdeeef2ef9b3e68765144b864b8459c00f397468b429799a8e573454ba22"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,

@@ -5,7 +5,6 @@ use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
 use std::sync::{Arc, Mutex};
 const PAGE_CAP: usize = 262144;
-// Bound from the final original-parser source union; this draft grants no paths.
 const REPLACEMENTS: &[&str] = &[
     "CHANGELOG.md",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -29,6 +28,8 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge/main_e177_inputs.rs",
     "src/source_reflows_merge/next_big_batch_inputs.rs",
     "tests/hir_module_boundaries.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_3e66.rs",
+    "tests/wasm/scalar_browser_ci_contract/incoming_main3e66.rs",
     "tests/workspace/semantic_graph.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
     "src/cleanup_plan/replay/branch_clone/tests.rs",
@@ -114,7 +115,9 @@ const REPLACEMENTS: &[&str] = &[
     "tests/quality_routing.rs",
     "tests/support/production_source_inventory.rs",
     "tests/wasm/scalar_browser_ci_contract.rs",
+    "tests/wasm/scalar_browser_ci_contract/browser_custody.rs",
     "tests/wasm/scalar_browser_ci_contract/historical_builder.rs",
+    "tests/wasm/scalar_browser_ci_contract/historical_main_7f8.rs",
     "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
     "src/bounded_output/stage_debits/route_debits.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
@@ -321,11 +324,16 @@ const ADDITIONS: &[&str] = &[
     "src/bounded_output/stage_debits/route_debits/retained_main_289.rs",
     "tests/workspace.rs",
     "src/cleanup_plan/replay/expression_facts.rs",
+    "tests/wasm/scalar_browser_ci_contract/historical_main_c11.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_524.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_671.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_7d34.rs",
+    "tests/wasm/scalar_browser_ci_contract/before_21abc.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 105595; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "dbdb52af1d35368221cb0ceca38ec8482d89219a8d2567bf56dcc263d5887fcd";
+const POLICY_LENGTH: usize = 106250; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "5b962f7f50613be4268962cc1dbfe4c9012d2f396976b172c7b8b0bf47cdf203";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -361,7 +369,6 @@ fn control(path: &str) -> bool {
     ]
     .contains(&path)
 }
-// Canonical object keys only; arrays (including every inventory) keep their order.
 fn canonical(value: &Value) -> Vec<u8> {
     fn write(v: &Value, out: &mut String) {
         match v {
@@ -397,7 +404,6 @@ fn canonical(value: &Value) -> Vec<u8> {
 }
 fn json(raw: &str) -> Result<Value, &'static str> {
     let value: Value = serde_json::from_str(raw).map_err(|_| "JSON syntax")?;
-    // This also rejects duplicate keys, alternate escaping, trailing bytes and alternate whitespace: none can reserialize to these exact complete bytes.
     require!(
         canonical(&value) == raw.as_bytes(),
         "noncanonical or duplicate JSON"
@@ -446,7 +452,6 @@ fn page_bytes(
     );
     Ok(())
 }
-// One bounded immutable JSON DATA object, never a cached admission verdict. Callers still acquire fresh regular handles and authenticate every live byte before arriving here. Even hits repeat canonical equality on those new bytes.
 struct PageData {
     page: Option<(String, Arc<Value>)>,
 }
@@ -462,7 +467,6 @@ impl PageData {
                 return Ok(Arc::clone(parsed));
             }
         }
-        // Preserve the original complete parser and duplicate/canonical check. Failed or changed input can never receive the prior parsed object.
         let parsed = Arc::new(json(raw)?);
         self.page = Some((raw.to_owned(), Arc::clone(&parsed)));
         Ok(parsed)
@@ -529,7 +533,6 @@ fn load() -> Result<(Value, Arc<Value>), &'static str> {
             == ADDITIONS.iter().map(|p| Some(*p)).collect::<Vec<_>>(),
         "literal addition scope"
     );
-    // Original metadata is read as metadata. It is never substituted for a changed physical Rust source, and it retains its original individual cap.
     let extension = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     require!(
         held_4a6eb(
@@ -606,8 +609,6 @@ fn load_before_page_data() -> Result<(Value, Value), &'static str> {
             == ADDITIONS.iter().map(|p| Some(*p)).collect::<Vec<_>>(),
         "literal addition scope"
     );
-    // Original metadata is read as metadata. It is never substituted for a
-    // changed physical Rust source, and it retains its original individual cap.
     let extension = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     require!(
         held_4a6eb(
@@ -922,7 +923,6 @@ fn affected_row(source: &str) -> Option<Value> {
     if !affected(&policy, source) {
         return None;
     }
-    // Metadata replay precedes current validation. No old physical source is read to establish the current source; only the composed row is then admitted.
     let packet = compose_values(super::packet_before_overlay(), &policy, &page).unwrap();
     Some(
         packet["rows"]
