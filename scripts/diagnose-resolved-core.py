@@ -44,7 +44,8 @@ compiler = subprocess.check_output(["rustup", "which", "rustc"], text=True).stri
 subprocess.run([compiler, "--edition=2021", "-Cdebuginfo=0", "-Copt-level=1",
                 str(root / "scripts/diagnose-resolved-core.rs"),
                 "--extern", "semaprax=" + str(lib), "--extern", "sha2=" + str(sha),
-                "-L", "dependency=" + str(lib.parent), "-o", str(binary)], check=True)
+                "-L", "dependency=" + str(lib.parent),
+                "-L", "dependency=" + str(sha.parent), "-o", str(binary)], check=True)
 subjects = ["examples/task-service-project/semaprax.toml", "std/test-bytes/semaprax.toml"]
 rows = []
 for i, subject in enumerate(subjects):
