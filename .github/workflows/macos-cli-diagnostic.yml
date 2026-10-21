@@ -237,10 +237,14 @@ jobs:
           CARGO_PROFILE_TEST_DEBUG: "0"
           CARGO_PROFILE_TEST_OPT_LEVEL: "0"
           CARGO_PROFILE_TEST_CODEGEN_UNITS: "256"
-        run: >-
-          cargo test --locked --offline -p semaprax --lib
-          --features unstable-workflow-profiling --jobs 1
-          inline_singleton:: -- --nocapture --test-threads=1
+        shell: bash
+        run: |
+          set -euo pipefail
+          for selector in inline_singleton:: final_output:: owned_suffix:: sequence_vector::funded_tests; do
+            cargo test --locked --offline -p semaprax --lib \
+              --features unstable-workflow-profiling --jobs 1 \
+              "$selector" -- --nocapture --test-threads=1
+          done
       - name: Retain the bound diagnostic report
         if: always()
         uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9

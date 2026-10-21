@@ -256,11 +256,7 @@ fn sequence_core(
         "sequenced path capacity"
     );
     path_array::select!(first, minimum, &combined, work);
-    work.budget.reserve_bytes(
-        work.function,
-        final_output::HIR_SELECTION_CONTROLS,
-        "HIR single-suffix selection controls",
-    )?;
+    final_output::compact::hir_selection!(work);
     let single = suffixes.len() == 1;
     let mut precharged = false;
     if single && first {
@@ -290,12 +286,8 @@ fn sequence_core(
             if precharged {
                 precharged = false;
             } else {
-                work.budget.reserve_bytes(
-                    work.function,
-                    final_output::HIR_MOVE_CONTROLS,
-                    "HIR single-suffix move controls",
-                )?;
-                work.charge(1, "skeleton prefix clone")?;
+                final_output::compact::hir_move!(work);
+                final_output::compact::hir_work!(work);
                 note_skeleton_materialization();
             }
             let suffix = &suffixes[0];
