@@ -319,11 +319,12 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs",
     "src/bounded_output/stage_debits/route_debits/retained_main_289.rs",
+    "tests/workspace.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 105474; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "9dd3461480da01fb1e280e6217bf33e256262be4ba5921e012500086c6c4f77d";
+const POLICY_LENGTH: usize = 105522; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "2120f177a7a4bb3fe445c450205d16aea5f68341f762b7a2e40c5bf678e2f065";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -527,8 +528,7 @@ fn load() -> Result<(Value, Arc<Value>), &'static str> {
             == ADDITIONS.iter().map(|p| Some(*p)).collect::<Vec<_>>(),
         "literal addition scope"
     );
-    // Original metadata is read as metadata. It is never substituted for a
-    // changed physical Rust source, and it retains its original individual cap.
+    // Original metadata is read as metadata. It is never substituted for a changed physical Rust source, and it retains its original individual cap.
     let extension = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     require!(
         held_4a6eb(

@@ -173,6 +173,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs")),
         "src/bounded_output/stage_debits/route_debits/retained_main_289.rs" => Some(include_str!("../../src/bounded_output/stage_debits/route_debits/retained_main_289.rs")),
         "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs")),
+        "tests/workspace.rs" => Some(include_str!("../../tests/workspace.rs")),
         _ => None,
     }
 }
@@ -250,6 +251,19 @@ mod tests {
         // Undo only this exact later literal scope and line-budget projection.
         // Every original fixed span and complete predecessor assertion follows.
         let mut checkpoint_root = root.to_owned();
+        let workspace = "tests/workspace.rs";
+        let declaration = format!("    {workspace:?},\n");
+        assert_eq!(checkpoint_root.matches(&declaration).count(), 1);
+        checkpoint_root = checkpoint_root.replacen(&declaration, "", 1);
+        let arm = format!("        {workspace:?} => Some(include_str!(\"../../{workspace}\")),\n");
+        assert_eq!(child.matches(&arm).count(), 1);
+        let checkpoint_child = child.replacen(&arm, "", 1);
+        let child = checkpoint_child.as_str();
+        let merged = "    // Original metadata is read as metadata. It is never substituted for a changed physical Rust source, and it retains its original individual cap.\n";
+        let original = "    // Original metadata is read as metadata. It is never substituted for a\n    // changed physical Rust source, and it retains its original individual cap.\n";
+        assert_eq!(checkpoint_root.matches(merged).count(), 1);
+        checkpoint_root = checkpoint_root.replacen(merged, original, 1);
+
         for source in [
             "src/cleanup_plan/replay/branch_clone.rs",
             "src/source_reflows_merge/main_e177_inputs.rs",

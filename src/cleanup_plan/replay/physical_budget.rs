@@ -884,6 +884,18 @@ impl ReplayBudget {
     }
 }
 
+// Only the selected local callers use this conversion. No global From impl
+// participates in unrelated Result inference; successful calls retain ByteFailure.
+macro_rules! compact_try {
+    ($result:expr) => {
+        match $result {
+            Ok(value) => value,
+            Err(error) => return Err(error.into_diagnostic()),
+        }
+    };
+}
+pub(super) use compact_try;
+
 #[cfg(test)]
 mod byte_failure_tests {
     use super::*;
@@ -951,15 +963,3 @@ mod byte_failure_tests {
         assert!(size_of::<Result<usize, ByteFailure>>() < size_of::<Result<usize, Diagnostic>>());
     }
 }
-
-// Only the selected local callers use this conversion. No global From impl
-// participates in unrelated Result inference; successful calls retain ByteFailure.
-macro_rules! compact_try {
-    ($result:expr) => {
-        match $result {
-            Ok(value) => value,
-            Err(error) => return Err(error.into_diagnostic()),
-        }
-    };
-}
-pub(super) use compact_try;
