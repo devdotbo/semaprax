@@ -114,7 +114,11 @@ pub(in crate::workspace_graph) fn construct_selected_core<'a>(
             + 2 * size_of::<&Vec<ModuleUse>>()
             + 2 * size_of::<std::slice::Iter<'_, ModuleUse>>()
             + 2 * size_of::<&mut std::slice::Iter<'_, ModuleUse>>()
-            + size_of::<&mut ()>(), // mutable borrow of the zero-capture predicate
+            + size_of::<&mut ()>() // mutable borrow of the source-bound predicate
+            + size_of::<[bool; 6]>() // three source gates, retained verdict and predicate argument/read
+            + size_of::<&Vec<crate::ast::SessionProtocolDeclaration>>()
+            + size_of::<&Vec<crate::ast::AgentDeclaration>>()
+            + size_of::<&Vec<crate::ast::ProtocolDeclaration>>(),
     )?;
     // Reserve all bounded scan roles before the first identity observation.
     // An early positive does not refund controls for later source entries.
@@ -126,9 +130,16 @@ pub(in crate::workspace_graph) fn construct_selected_core<'a>(
     owner.reserve(program.module_uses.len().saturating_mul(
         PER_IMPORT_BYTES + 2 * size_of::<&crate::ast::ModuleUseKind>() + 2 * size_of::<bool>(),
     ))?;
+    // The finite scalar producer below requires all three source inventories
+    // to be empty. A function import alone cannot select it in an Agent or
+    // protocol module; retain the full producer without entering a dead probe.
+    // Reserved wrapper identities still run their independent full classifier.
+    let ordinary_signature_possible = program.session_protocols.is_empty()
+        && program.agents.is_empty()
+        && program.protocols.is_empty();
     let possible = program.module_uses.iter().any(|import| {
         may_borrow_wrapper(import.persistent_id.as_str())
-            || import.kind == crate::ast::ModuleUseKind::Function
+            || (ordinary_signature_possible && import.kind == crate::ast::ModuleUseKind::Function)
     });
     if allow_transient && possible {
         construct_transient_alias_core(program, authored, programs, registry, core, owner)
