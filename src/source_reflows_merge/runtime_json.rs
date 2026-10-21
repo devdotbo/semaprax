@@ -281,7 +281,39 @@ fn main043_check_raw_subject(packet: &serde_json::Value, source: &str) -> String
             .unwrap()
             .trim_start_matches('/')
     );
-    let physical = main043_raw_file(std::path::Path::new(path), length, expected).unwrap();
+    // Bind both live channels before selecting this immutable RAW checkpoint.
+    let live = main043_raw_file(
+        std::path::Path::new(path),
+        compiled.len(),
+        &format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(compiled.as_bytes()))
+        ),
+    )
+    .unwrap();
+    assert_eq!(
+        live, compiled,
+        "complete latest physical and compiled RAW source"
+    );
+    let compiled_view = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source, expected, compiled,
+    );
+    let physical =
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(source, expected, &live);
+    let compiled = compiled_view.as_str();
+    assert_eq!(
+        physical.len(),
+        length,
+        "complete historical RAW checkpoint length"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(physical.as_bytes()))
+        ),
+        expected
+    );
+
     let held = main043_raw_file(std::path::Path::new(archive), length, expected).unwrap();
     assert_eq!(physical, compiled, "complete current compiled RAW source");
     assert_eq!(physical, held, "complete current RAW source archive");
@@ -341,6 +373,15 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
     let before: serde_json::Value = serde_json::from_str(&original).unwrap();
     let mut rows = before.clone();
     let mut seen = std::collections::BTreeSet::new();
+    let checkpoints = main043_raw_file(
+        &std::path::Path::new(env!("CARGO_MANIFEST_DIR"))
+            .join("docs/evidence/raw-checkpoints-20261021/checkpoint-inverses.json"),
+        424887,
+        "c0137c8c2a4f16e11ca4a385d57f764bae804b5170db0ae8a882bb7868546c41",
+    )
+    .unwrap();
+    let checkpoints: serde_json::Value = serde_json::from_str(&checkpoints).unwrap();
+    assert_eq!(checkpoints.as_array().unwrap().len(), 5);
     for patch in spec["rows"].as_array().unwrap() {
         let index = usize::try_from(patch["row"].as_u64().unwrap()).unwrap();
         assert!(seen.insert(index));
@@ -382,6 +423,46 @@ pub(super) fn main043_raw_metadata(fixture: super::main043_custody::Fixture) -> 
             main043_raw_pin(front["previous_sha256"].as_str().unwrap())
         );
         let mut outer = Vec::new();
+        let (_, live, _) = main043_raw_subject(source);
+        if live != current {
+            let matches = checkpoints
+                .as_array()
+                .unwrap()
+                .iter()
+                .filter(|row| row["source"] == source)
+                .collect::<Vec<_>>();
+            assert_eq!(matches.len(), 1, "unique latest RAW checkpoint inverse");
+            let checkpoint = matches[0];
+            assert_eq!(live.len() as u64, checkpoint["length"]);
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(live.as_bytes()))
+                ),
+                checkpoint["sha256"]
+            );
+            assert_eq!(current.len() as u64, checkpoint["checkpoint_length"]);
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))
+                ),
+                checkpoint["checkpoint_sha256"]
+            );
+            let mut restored = live.to_owned();
+            for pair in checkpoint["inverse"].as_array().unwrap() {
+                let after = pair[0].as_str().unwrap();
+                let before = pair[1].as_str().unwrap();
+                assert!(!after.is_empty());
+                assert_eq!(restored.matches(after).count(), 1);
+                restored = restored.replacen(after, before, 1);
+                let mut edit = serde_json::Map::new();
+                edit.insert(key.to_owned(), after.into());
+                edit.insert("before".to_owned(), before.into());
+                outer.push(serde_json::Value::Object(edit));
+            }
+            assert_eq!(restored, current, "complete latest-to-checkpoint inverse");
+        }
         for edit in front["steps"].as_array().unwrap() {
             let after = edit["after"].as_str().unwrap();
             let previous = edit["before"].as_str().unwrap();

@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 144,
       "full_role_production": 589,
       "full_role_test_only": 1121,
-      "full_raw_sha256": "13a43339ff265d5daae3505e1d75a81b2a3155889d635d79ec48aac3939fb932",
+      "full_raw_sha256": "761294dd2a235464b8654e7a5356b1874aaf66c0d29c30b69560c5d1a05b8c57",
       "boundary_production_sha256": "8ae2ab81dc71629e94c1be37ddc853f81541e14ad4f2b358664eec50d7929acc",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -67,7 +67,7 @@
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
   "registration_update": "EXACT_CODEC_FIXTURE_HISTORY_INPUT_STAGE",
-  "before_head": "858e78c3e75e89333dbbd7a3549923f32e4bb4c0",
+  "before_head": "74ab818c91afaeb97a23cd66b7687cdc81e34eb9",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
