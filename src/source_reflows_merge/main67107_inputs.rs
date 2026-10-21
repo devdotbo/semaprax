@@ -52,7 +52,16 @@ fn restore(rows: &serde_json::Value, domain: &str, current: &str) -> String {
     );
     let acquired =
         compile35f_expected_input(source, row["current_sha256"].as_str().unwrap(), &stage);
-    let current = acquired.as_str();
+    let selected = if domain == "followupCoreMAIN" {
+        super::main_e177_final_inputs::value_direct(
+            source,
+            row["current_sha256"].as_str().unwrap(),
+            &acquired,
+        )
+    } else {
+        acquired
+    };
+    let current = selected.as_str();
     assert_eq!(digest(current), row["current_sha256"]);
     assert_eq!(current, row["current"].as_str().unwrap());
     let edits = row["inverse"].as_array().unwrap();
