@@ -186,9 +186,11 @@ impl<'a> HirValidator<'a> {
             nominal_facts: nominal_facts::Lookup::default(),
             executable_profiles: match profiles {
                 Some(profiles) if profiles.is_current(&seed.program.declarations) => profiles,
-                Some(_) => return Err(hir_error_static(
-                    "executable profile observations do not belong to the current declaration index",
-                )),
+                Some(_) => {
+                    return Err(hir_error_static(
+                        "executable profile observations do not belong to the current declaration index",
+                    ));
+                }
                 None => executable_profiles::Lookup::for_program(seed.program)?,
             },
             functions: seed.functions,
@@ -2001,32 +2003,26 @@ impl<'a> HirValidator<'a> {
             },
             VariantMatchNext {
                 expression: &'e ResolvedExpr,
-                arms: &'e [ResolvedMatchArm],
                 cases: &'e [ResolvedVariantCaseDeclaration],
-                variant: &'e DeclarationId,
-                arguments: &'e [ResolvedType],
                 index: usize,
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
                 covered: variant_or::Covered<'e>,
                 wildcard_seen: bool,
-                result: Option<(ResolvedType, OwnershipMode)>,
+                result: Option<&'e ResolvedExpr>,
                 path: &'e str,
             },
             VariantMatchAfterArm {
                 expression: &'e ResolvedExpr,
-                arms: &'e [ResolvedMatchArm],
                 cases: &'e [ResolvedVariantCaseDeclaration],
-                variant: &'e DeclarationId,
-                arguments: &'e [ResolvedType],
                 index: usize,
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
                 covered: variant_or::Covered<'e>,
                 wildcard_seen: bool,
-                result: Option<(ResolvedType, OwnershipMode)>,
+                result: Option<&'e ResolvedExpr>,
                 path: &'e str,
             },
             /// Refutable Match v1 decision-chain twins. They mirror the
@@ -2038,7 +2034,7 @@ impl<'a> HirValidator<'a> {
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
-                result: Option<(ResolvedType, OwnershipMode)>,
+                result: Option<&'e ResolvedExpr>,
                 path: &'e str,
             },
             ScalarMatchAfterGuard {
@@ -2048,7 +2044,7 @@ impl<'a> HirValidator<'a> {
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
-                result: Option<(ResolvedType, OwnershipMode)>,
+                result: Option<&'e ResolvedExpr>,
                 path: &'e str,
             },
             ScalarMatchAfterArm {
@@ -2058,12 +2054,17 @@ impl<'a> HirValidator<'a> {
                 outer: scope_checkpoint::Scope,
                 outer_ids: scope_checkpoint::IdSnapshot,
                 arm_scopes: scope_checkpoint::Storage<scope_checkpoint::Scope>,
-                result: Option<(ResolvedType, OwnershipMode)>,
+                result: Option<&'e ResolvedExpr>,
                 path: &'e str,
             },
         }
 
         const { assert!(std::mem::size_of::<Frame<'static>>() <= super::VALIDATOR_FRAME_BYTES) };
+        #[cfg(test)]
+        lexical_exit::observe_frame_layout::<Frame<'static>>(
+            std::mem::size_of::<Frame<'static>>(),
+            std::mem::align_of::<Frame<'static>>(),
+        );
         #[cfg(test)]
         fn frame_owned_capacity(frame: &Frame<'_>) -> usize {
             let ids = |values: &scope_checkpoint::IdSnapshot| values.retained_capacity();
@@ -2154,7 +2155,6 @@ impl<'a> HirValidator<'a> {
                     outer_ids,
                     arm_scopes,
                     covered,
-                    result,
                     ..
                 }
                 | Frame::VariantMatchAfterArm {
@@ -2162,7 +2162,6 @@ impl<'a> HirValidator<'a> {
                     outer_ids,
                     arm_scopes,
                     covered,
-                    result,
                     ..
                 } => {
                     scope(outer)
@@ -2170,38 +2169,29 @@ impl<'a> HirValidator<'a> {
                         + arm_scopes.capacity() * std::mem::size_of::<scope_checkpoint::Scope>()
                         + arm_scopes.iter().map(scope).sum::<usize>()
                         + covered.owned_capacity()
-                        + result
-                            .as_ref()
-                            .map_or(0, |(ty, _)| resolved_type_owned_capacity(ty))
                 }
                 Frame::ScalarMatchNext {
                     outer,
                     outer_ids,
                     arm_scopes,
-                    result,
                     ..
                 }
                 | Frame::ScalarMatchAfterGuard {
                     outer,
                     outer_ids,
                     arm_scopes,
-                    result,
                     ..
                 }
                 | Frame::ScalarMatchAfterArm {
                     outer,
                     outer_ids,
                     arm_scopes,
-                    result,
                     ..
                 } => {
                     scope(outer)
                         + ids(outer_ids)
                         + arm_scopes.capacity() * std::mem::size_of::<scope_checkpoint::Scope>()
                         + arm_scopes.iter().map(scope).sum::<usize>()
-                        + result
-                            .as_ref()
-                            .map_or(0, |(ty, _)| resolved_type_owned_capacity(ty))
                 }
                 _ => 0,
             }
@@ -2553,10 +2543,12 @@ impl<'a> HirValidator<'a> {
                                             ));
                                         }
                                         Availability::MaybeMoved => {
-                                            return Err(scope_checkpoint::paths::diagnostic(format_args!(
-                                                "resolved place rooted at `{}` may be conditionally moved",
-                                                place.root
-                                            )));
+                                            return Err(scope_checkpoint::paths::diagnostic(
+                                                format_args!(
+                                                    "resolved place rooted at `{}` may be conditionally moved",
+                                                    place.root
+                                                ),
+                                            ));
                                         }
                                     }
                                 }
@@ -2768,9 +2760,11 @@ impl<'a> HirValidator<'a> {
                                     Some(allowed) => {
                                         for effect in target_effects.iter() {
                                             if !allowed.contains(effect) {
-                                                return Err(scope_checkpoint::paths::diagnostic(format_args!(
-                                                    "call to `{callee}` requires undeclared effect `{effect}`"
-                                                )));
+                                                return Err(scope_checkpoint::paths::diagnostic(
+                                                    format_args!(
+                                                        "call to `{callee}` requires undeclared effect `{effect}`"
+                                                    ),
+                                                ));
                                             }
                                         }
                                     }
@@ -4653,7 +4647,7 @@ impl<'a> HirValidator<'a> {
                     }
                     let ResolvedType::Nominal {
                         declaration: matched,
-                        arguments,
+                        arguments: _,
                     } = &scrutinee.ty
                     else {
                         return Err(hir_error("resolved match scrutinee is not nominal"));
@@ -4841,10 +4835,7 @@ impl<'a> HirValidator<'a> {
                         }
                         frames.push(Frame::VariantMatchNext {
                             expression,
-                            arms,
                             cases,
-                            variant: matched,
-                            arguments,
                             index: 0,
                             outer,
                             outer_ids,
@@ -4885,10 +4876,7 @@ impl<'a> HirValidator<'a> {
                 }
                 Frame::VariantMatchNext {
                     expression,
-                    arms,
                     cases,
-                    variant,
-                    arguments,
                     index,
                     outer,
                     outer_ids,
@@ -4898,12 +4886,29 @@ impl<'a> HirValidator<'a> {
                     result,
                     path,
                 } => {
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_frontier("variant", lexical_exit::VARIANT_VIEWS);
+                    scope_checkpoint::charge::reserve(Some(lexical_exit::VARIANT_VIEWS))?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_role("variant");
                     let ResolvedExprKind::Match {
-                        scrutinee, mode, ..
+                        scrutinee,
+                        mode,
+                        arms,
+                        ..
                     } = &expression.kind
                     else {
                         unreachable!()
                     };
+                    let ResolvedType::Nominal {
+                        declaration: variant,
+                        arguments,
+                    } = &scrutinee.ty
+                    else {
+                        unreachable!("variant continuation follows validated nominal scrutinee")
+                    };
+                    let arms: &[ResolvedMatchArm] = arms;
+                    let arguments: &[ResolvedType] = arguments;
                     if index == arms.len() {
                         if !wildcard_seen
                             && covered.len() != cases.len()
@@ -4911,7 +4916,15 @@ impl<'a> HirValidator<'a> {
                         {
                             return Err(hir_error("resolved match is not exhaustive"));
                         }
-                        let (ty, ownership) =
+                        #[cfg(test)]
+                        lexical_exit::observe_witness_frontier(
+                            "finish",
+                            lexical_exit::WITNESS_FINISH,
+                        );
+                        scope_checkpoint::charge::reserve(Some(lexical_exit::WITNESS_FINISH))?;
+                        #[cfg(test)]
+                        lexical_exit::observe_witness_role("finish");
+                        let witness =
                             result.ok_or_else(|| hir_error("resolved match has no result"))?;
                         let mut final_scope = outer;
                         if let Some((first, rest)) = arm_scopes.split_first() {
@@ -4935,7 +4948,7 @@ impl<'a> HirValidator<'a> {
                             )?;
                         }
                         publication.publish(&final_scope)?;
-                        self.finish_expr(expression, &ty, ownership)?;
+                        self.finish_expr(expression, &witness.ty, witness.ownership)?;
                         scopes.push(final_scope)?;
                     } else {
                         let arm = &arms[index];
@@ -5121,10 +5134,7 @@ impl<'a> HirValidator<'a> {
                         }
                         frames.push(Frame::VariantMatchAfterArm {
                             expression,
-                            arms,
                             cases,
-                            variant,
-                            arguments,
                             index,
                             outer,
                             outer_ids,
@@ -5146,10 +5156,7 @@ impl<'a> HirValidator<'a> {
                 }
                 Frame::VariantMatchAfterArm {
                     expression,
-                    arms,
                     cases,
-                    variant,
-                    arguments,
                     index,
                     outer,
                     outer_ids,
@@ -5159,6 +5166,15 @@ impl<'a> HirValidator<'a> {
                     mut result,
                     path,
                 } => {
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_frontier("arm", lexical_exit::VARIANT_ARM_VIEW);
+                    scope_checkpoint::charge::reserve(Some(lexical_exit::VARIANT_ARM_VIEW))?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_role("arm");
+                    let ResolvedExprKind::Match { arms, .. } = &expression.kind else {
+                        unreachable!("variant arm continuation retains its match")
+                    };
+                    let arms: &[ResolvedMatchArm] = arms;
                     let mut arm_scope = scopes.pop().expect("variant match arm scope retained");
                     if let ResolvedExprKind::Match {
                         scrutinee,
@@ -5195,16 +5211,20 @@ impl<'a> HirValidator<'a> {
                             "resolved owned variant match arm must produce a Copy scalar",
                         ));
                     }
-                    self.join_lexical_match(&mut result, &arm.value)?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_frontier("join", lexical_exit::WITNESS_JOIN);
+                    scope_checkpoint::charge::reserve(Some(lexical_exit::WITNESS_JOIN))?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_role("join");
+                    self.join_lexical_match_witness(&mut result, &arm.value)?;
+                    #[cfg(test)]
+                    lexical_exit::witness_unwind_point();
                     if !super::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope)?;
                     }
                     frames.push(Frame::VariantMatchNext {
                         expression,
-                        arms,
                         cases,
-                        variant,
-                        arguments,
                         index: index + 1,
                         outer,
                         outer_ids,
@@ -5242,7 +5262,15 @@ impl<'a> HirValidator<'a> {
                                  guard-free catch-all",
                             ));
                         }
-                        let (ty, ownership) =
+                        #[cfg(test)]
+                        lexical_exit::observe_witness_frontier(
+                            "finish",
+                            lexical_exit::WITNESS_FINISH,
+                        );
+                        scope_checkpoint::charge::reserve(Some(lexical_exit::WITNESS_FINISH))?;
+                        #[cfg(test)]
+                        lexical_exit::observe_witness_role("finish");
+                        let witness =
                             result.ok_or_else(|| hir_error("resolved match has no result"))?;
                         let mut final_scope = outer;
                         if let Some((first, rest)) = arm_scopes.split_first() {
@@ -5266,7 +5294,7 @@ impl<'a> HirValidator<'a> {
                             )?;
                         }
                         publication.publish(&final_scope)?;
-                        self.finish_expr(expression, &ty, ownership)?;
+                        self.finish_expr(expression, &witness.ty, witness.ownership)?;
                         scopes.push(final_scope)?;
                         continue;
                     }
@@ -5429,7 +5457,14 @@ impl<'a> HirValidator<'a> {
                 } => {
                     let arm_scope = scopes.pop().expect("scalar match arm scope retained");
                     let arm = &arms[index];
-                    self.join_lexical_match(&mut result, &arm.value)?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_frontier("join", lexical_exit::WITNESS_JOIN);
+                    scope_checkpoint::charge::reserve(Some(lexical_exit::WITNESS_JOIN))?;
+                    #[cfg(test)]
+                    lexical_exit::observe_witness_role("join");
+                    self.join_lexical_match_witness(&mut result, &arm.value)?;
+                    #[cfg(test)]
+                    lexical_exit::witness_unwind_point();
                     if !super::lexical_exit::returns_only(&arm.value) {
                         arm_scopes.push(arm_scope)?;
                     }

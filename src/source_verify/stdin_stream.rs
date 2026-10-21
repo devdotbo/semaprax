@@ -65,7 +65,7 @@ pub(super) fn check_with_cells(
     let streaming = crate::stdin_stream_ops::program_uses(program);
     for (_, function) in cells.iter().take(program.functions().len()) {
         if streaming {
-            function.payload().body.visit_all_nodes(&mut |expression| {
+            function.body().visit_all_nodes(&mut |expression| {
                 if matches!(expression.kind, ExprKind::Closure { .. }) {
                     refuse(
                         diagnostics,
@@ -81,7 +81,7 @@ pub(super) fn check_with_cells(
                 .params
                 .iter()
                 .any(|p| ast_type_uses(&p.ty))
-            || crate::stdin_stream_ops::ast_expression_uses(&function.payload().body);
+            || crate::stdin_stream_ops::ast_expression_uses(function.body());
         if !uses {
             continue;
         }
@@ -100,7 +100,7 @@ pub(super) fn check_with_cells(
             );
         }
         if crate::stdin_stream_ops::ast_forward_signature(function.payload()) {
-            let mut tail = &function.payload().body;
+            let mut tail = function.body();
             while let ExprKind::Block { tail: next, .. } = &tail.kind {
                 tail = next;
             }
@@ -117,8 +117,8 @@ pub(super) fn check_with_cells(
         }
 
         if !function.payload().type_parameters.is_empty()
-            || function.payload().yields.is_some()
-            || function.payload().follows.is_some()
+            || function.yields().is_some()
+            || function.follows().is_some()
         {
             refuse(
                 diagnostics,
@@ -154,9 +154,9 @@ pub(super) fn check_with_cells(
                 function.payload().name_span,
             );
         }
-        let mut pending = vec![(&function.payload().body, false)];
-        pending.extend(function.payload().requires.iter().map(|e| (e, true)));
-        pending.extend(function.payload().ensures.iter().map(|e| (e, true)));
+        let mut pending = vec![(function.body(), false)];
+        pending.extend(function.requires().iter().map(|e| (e, true)));
+        pending.extend(function.ensures().iter().map(|e| (e, true)));
         while let Some((expression, contract)) = pending.pop() {
             match &expression.kind {
                 ExprKind::Call {
@@ -260,7 +260,7 @@ fn open_bounds(
     let functions = cells
         .iter()
         .take(program.functions().len())
-        .map(|(_, function)| (function.name(), function.payload()))
+        .map(|(_, function)| (function.name(), function))
         .collect::<BTreeMap<_, _>>();
     let mut reverse = BTreeMap::<String, BTreeSet<&str>>::new();
     let mut relevant = BTreeSet::new();
@@ -271,11 +271,11 @@ fn open_bounds(
                 .params
                 .iter()
                 .any(|p| ast_is_reader(&p.ty))
-            || crate::stdin_stream_ops::ast_expression_uses(&function.payload().body)
+            || crate::stdin_stream_ops::ast_expression_uses(function.body())
         {
             relevant.insert(function.name());
         }
-        let mut expressions = vec![&function.payload().body];
+        let mut expressions = vec![function.body()];
         while let Some(expression) = expressions.pop() {
             work += 1;
             if work > crate::loan_plan::MAX_LOAN_PLAN_WORK_V1 {
@@ -327,7 +327,7 @@ fn open_bounds(
                 continue;
             };
             if finishing {
-                let cost = expression_open_bound(&function.payload().body, &summaries, &mut work)?;
+                let cost = expression_open_bound(function.body(), &summaries, &mut work)?;
                 if function
                     .payload()
                     .params
@@ -351,7 +351,7 @@ fn open_bounds(
                 ));
             }
             pending.push((name, true));
-            let mut expressions = vec![&function.payload().body];
+            let mut expressions = vec![function.body()];
             while let Some(expression) = expressions.pop() {
                 work += 1;
                 if work > crate::loan_plan::MAX_LOAN_PLAN_WORK_V1 {

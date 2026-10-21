@@ -3,368 +3,260 @@
 //! allocates/copies/frees, retaining both buffers until copy completion; this is
 //! an actual conforming allocator, not an estimated replacement-overlap charge.
 //! These metrics are requested backing bytes, not malloc usable bytes or RSS.
-use std::alloc::{GlobalAlloc, Layout, System};
-use std::cell::{Cell, RefCell};
-mod free_order;
-pub(crate) use free_order::watch_free_order;
+include!("test_allocation_observer/backing.rs");
 
-// Fixed test instrumentation capacity: the original 4096-row selected gate
-// holds 4096 title allocations plus its frame, row/slot tables and owned
-// backing. Four entries per maximum row leave a bounded margin for those
-// fixed allocations. This changes no runtime/compiler quota: exhaustion still
-// marks observation invalid, and the fixed tracking backing is excluded from the
-// measured requested layouts just as before.
-const SLOTS: usize = 16_384;
-#[derive(Clone, Copy)]
-struct Slot {
-    pointer: usize,
-    bytes: usize,
+#[derive(Clone, Copy, Debug, Eq, PartialEq)]
+enum PhaseLabel {
+    Reservation(crate::bounded_output::ReservationStage),
+    Function(&'static str),
 }
-const EMPTY: Slot = Slot {
-    pointer: 0,
-    bytes: 0,
-};
-#[derive(Clone, Copy, Debug, Default, Eq, PartialEq)]
-pub(crate) struct Metrics {
-    pub(crate) allocations: usize,
-    pub(crate) reallocations: usize,
-    pub(crate) allocated: usize,
-    pub(crate) freed: usize,
-    pub(crate) live: usize,
-    pub(crate) highwater: usize,
-    pub(crate) invalid: bool,
+
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PhaseObservation {
+    stage: PhaseLabel,
+    entry: Metrics,
+    exit: Metrics,
 }
-// Preallocated open-addressed instrumentation. Deletion shifts its probe chain,
-// so callbacks never allocate, grow or accumulate tombstones across long runs.
-struct ExtendedRegistry {
-    slots: Vec<Slot>,
-    live: usize,
-    limit: usize,
-}
-impl ExtendedRegistry {
-    fn home(pointer: usize, mask: usize) -> usize {
-        pointer.rotate_right(4).wrapping_mul(0x9e37_79b9) & mask
-    }
-    fn insert(&mut self, pointer: usize, bytes: usize) -> Result<(), &'static str> {
-        if self.live == self.limit {
-            return Err("pointer table exhausted");
-        }
-        let mask = self.slots.len() - 1;
-        let mut index = Self::home(pointer, mask);
-        while self.slots[index].pointer != 0 {
-            if self.slots[index].pointer == pointer {
-                return Err("duplicate observed live pointer");
-            }
-            index = (index + 1) & mask;
-        }
-        self.slots[index] = Slot { pointer, bytes };
-        self.live += 1;
-        Ok(())
-    }
-    fn remove(&mut self, pointer: usize) -> Option<usize> {
-        let mask = self.slots.len() - 1;
-        let mut hole = Self::home(pointer, mask);
-        while self.slots[hole].pointer != pointer {
-            if self.slots[hole].pointer == 0 {
-                return None;
-            }
-            hole = (hole + 1) & mask;
-        }
-        let bytes = self.slots[hole].bytes;
-        let mut scan = (hole + 1) & mask;
-        while self.slots[scan].pointer != 0 {
-            let home = Self::home(self.slots[scan].pointer, mask);
-            if (scan.wrapping_sub(home) & mask) >= (scan.wrapping_sub(hole) & mask) {
-                self.slots[hole] = self.slots[scan];
-                hole = scan;
-            }
-            scan = (scan + 1) & mask;
-        }
-        self.slots[hole] = EMPTY;
-        self.live -= 1;
-        Some(bytes)
-    }
-}
-struct State {
-    extended: Option<ExtendedRegistry>,
-    slots: Vec<Slot>,
-    metrics: Metrics,
-}
-impl State {
-    const fn new() -> Self {
-        Self {
-            extended: None,
-            slots: Vec::new(),
-            metrics: Metrics {
-                allocations: 0,
-                reallocations: 0,
-                allocated: 0,
-                freed: 0,
-                live: 0,
-                highwater: 0,
-                invalid: false,
-            },
-        }
-    }
-    fn allocated(&mut self, pointer: usize, bytes: usize) {
-        free_order::record_acquire(pointer);
-        if let Some(registry) = &mut self.extended {
-            if let Err(reason) = registry.insert(pointer, bytes) {
-                INVALID.with(|invalid| invalid.set(true));
-                note_invalid_reason(reason);
-                return;
-            }
-        } else {
-            let Some(slot) = self.slots.iter_mut().find(|slot| slot.pointer == 0) else {
-                INVALID.with(|invalid| invalid.set(true));
-                note_invalid_reason("pointer table exhausted");
-                return;
-            };
-            *slot = Slot { pointer, bytes };
-        }
-        let (Some(allocated), Some(live), Some(count)) = (
-            self.metrics.allocated.checked_add(bytes),
-            self.metrics.live.checked_add(bytes),
-            self.metrics.allocations.checked_add(1),
-        ) else {
-            INVALID.with(|invalid| invalid.set(true));
-            note_invalid_reason("allocation counter overflow");
-            return;
-        };
-        self.metrics.allocated = allocated;
-        self.metrics.live = live;
-        self.metrics.allocations = count;
-        self.metrics.highwater = self.metrics.highwater.max(live);
-    }
-    fn freed(&mut self, pointer: usize, bytes: usize) {
-        free_order::record_free(pointer);
-        let actual = if let Some(registry) = &mut self.extended {
-            let Some(actual) = registry.remove(pointer) else {
-                return;
-            };
-            actual
-        } else {
-            let Some(slot) = self.slots.iter_mut().find(|slot| slot.pointer == pointer) else {
-                return;
-            };
-            let actual = slot.bytes;
-            *slot = EMPTY;
-            actual
-        };
-        if actual != bytes {
-            INVALID.with(|invalid| invalid.set(true));
-            note_invalid_reason("deallocation layout mismatch");
-        }
-        let (Some(freed), Some(live)) = (
-            self.metrics.freed.checked_add(actual),
-            self.metrics.live.checked_sub(actual),
-        ) else {
-            INVALID.with(|invalid| invalid.set(true));
-            note_invalid_reason("deallocation counter underflow or overflow");
-            return;
-        };
-        self.metrics.freed = freed;
-        self.metrics.live = live;
-    }
+
+/// Fixed instrumentation, acquired outside the measured window. Intervals are
+/// inclusive of nested stages; their highwaters are cumulative, not additive
+/// or exclusive phase costs. Keep the occurrence with the largest highwater
+/// for each stage, including its entry snapshot to expose an earlier peak.
+#[derive(Clone, Copy, Debug)]
+pub(crate) struct PhaseTrace {
+    pub(crate) intervals: [Option<PhaseObservation>; 64],
+    pub(crate) overflow: bool,
 }
 thread_local! {
-    // Only the carrier lives in TLS. Its fixed backing is acquired before
-    // activation; allocator callbacks never allocate, grow or format metadata.
-    static STATE: RefCell<State> = const {RefCell::new(State::new())};
-    static ACTIVE: Cell<bool> = const {Cell::new(false)};
-    static INVALID: Cell<bool> = const {Cell::new(false)};
-    static INVALID_REASON: Cell<Option<&'static str>> = const {Cell::new(None)};
+    static PHASE_TRACE: RefCell<Option<PhaseTrace>> = const { RefCell::new(None) };
 }
-// Preserve the invalid flag and every measured counter. First-cause text is
-// fixed instrumentation only, so a failed probe can identify its own limit.
-fn note_invalid_reason(reason: &'static str) {
-    let _ = INVALID_REASON.try_with(|slot| {
-        if slot.get().is_none() {
-            slot.set(Some(reason));
-        }
-    });
+
+pub(crate) struct PhaseGuard(Option<(PhaseLabel, Metrics)>);
+pub(crate) fn phase_guard(stage: crate::bounded_output::ReservationStage) -> PhaseGuard {
+    labeled_phase_guard(PhaseLabel::Reservation(stage))
 }
-pub(crate) fn invalid_reason() -> Option<&'static str> {
-    INVALID_REASON.with(Cell::get)
+
+/// Fixed diagnostic label; no reservation, allocation, or semantic authority.
+pub(crate) fn function_phase_guard(function: &'static str) -> PhaseGuard {
+    labeled_phase_guard(PhaseLabel::Function(function))
 }
-fn active() -> bool {
-    ACTIVE.try_with(Cell::get).unwrap_or(false)
+
+fn labeled_phase_guard(stage: PhaseLabel) -> PhaseGuard {
+    let enabled = PHASE_TRACE.with(|trace| trace.borrow().is_some());
+    PhaseGuard(if enabled && active() {
+        Some((stage, current_metrics()))
+    } else {
+        None
+    })
 }
-fn record(callback: impl FnOnce(&mut State)) {
-    let result = STATE.try_with(|state| match state.try_borrow_mut() {
-        Ok(mut state) => callback(&mut state),
-        Err(_) => {
-            let _ = INVALID.try_with(|invalid| invalid.set(true));
-            note_invalid_reason("reentrant observer callback");
-        }
-    });
-    if result.is_err() {
-        let _ = INVALID.try_with(|invalid| invalid.set(true));
-        note_invalid_reason("observer thread-local unavailable");
-    }
-}
-struct ObservedSystem;
-#[global_allocator]
-static ALLOCATOR: ObservedSystem = ObservedSystem;
-// SAFETY: all pointers/layouts come from GlobalAlloc's caller. System remains
-// the allocator of every backing; realloc copies min(old,new) before releasing
-// the old allocation and leaves it intact if the new allocation fails.
-#[allow(unsafe_code)]
-unsafe impl GlobalAlloc for ObservedSystem {
-    unsafe fn alloc(&self, layout: Layout) -> *mut u8 {
-        // SAFETY: forward the valid caller layout unchanged.
-        let pointer = unsafe { System.alloc(layout) };
-        if active() && !pointer.is_null() {
-            record(|state| state.allocated(pointer as usize, layout.size()));
-        }
-        pointer
-    }
-    unsafe fn alloc_zeroed(&self, layout: Layout) -> *mut u8 {
-        // SAFETY: forward the valid caller layout unchanged.
-        let pointer = unsafe { System.alloc_zeroed(layout) };
-        if active() && !pointer.is_null() {
-            record(|state| state.allocated(pointer as usize, layout.size()));
-        }
-        pointer
-    }
-    unsafe fn dealloc(&self, pointer: *mut u8, layout: Layout) {
-        if active() {
-            record(|state| state.freed(pointer as usize, layout.size()));
-        }
-        // SAFETY: this allocation still belongs to System with its original layout.
-        unsafe { System.dealloc(pointer, layout) };
-    }
-    unsafe fn realloc(&self, pointer: *mut u8, layout: Layout, size: usize) -> *mut u8 {
-        if !active() {
-            // SAFETY: preserve ordinary System behavior outside the probe thread.
-            return unsafe { System.realloc(pointer, layout, size) };
-        }
-        let Ok(next) = Layout::from_size_align(size, layout.align()) else {
-            INVALID.with(|invalid| invalid.set(true));
-            note_invalid_reason("invalid replacement layout");
-            return std::ptr::null_mut();
-        };
-        // SAFETY: allocate disjoint replacement backing of the requested alignment.
-        let replacement = unsafe { System.alloc(next) };
-        if replacement.is_null() {
-            return replacement;
-        }
-        record(|state| {
-            state.metrics.reallocations = state.metrics.reallocations.saturating_add(1);
-            state.allocated(replacement as usize, size);
-        });
-        // SAFETY: both allocations are valid/nonoverlapping for min(old,new) bytes.
-        unsafe { std::ptr::copy_nonoverlapping(pointer, replacement, layout.size().min(size)) };
-        record(|state| state.freed(pointer as usize, layout.size()));
-        // SAFETY: copied bytes are retained in replacement; release original once.
-        unsafe { System.dealloc(pointer, layout) };
-        replacement
-    }
-}
-struct Guard;
-impl Drop for Guard {
+impl Drop for PhaseGuard {
     fn drop(&mut self) {
-        ACTIVE.with(|active| active.set(false));
-        // Instrumentation is destroyed after the observed operation's unwind
-        // and local Drop frontier, with observation already disabled.
-        let registry = STATE.with(|state| state.borrow_mut().extended.take());
-        drop(registry);
+        let Some((stage, entry)) = self.0 else {
+            return;
+        };
+        let exit = current_metrics();
+        PHASE_TRACE.with(|trace| {
+            let mut trace = trace.borrow_mut();
+            let trace = trace.as_mut().expect("phase trace outlives its guards");
+            let existing = trace
+                .intervals
+                .iter()
+                .position(|item| item.is_some_and(|item| item.stage == stage));
+            let slot = existing.or_else(|| trace.intervals.iter().position(Option::is_none));
+            if let Some(slot) = slot {
+                if trace.intervals[slot].is_none_or(|old| {
+                    exit.highwater > old.exit.highwater
+                        || (exit.highwater == old.exit.highwater
+                            && entry.highwater < old.entry.highwater)
+                }) {
+                    trace.intervals[slot] = Some(PhaseObservation { stage, entry, exit });
+                }
+            } else {
+                trace.overflow = true;
+            }
+        });
     }
 }
-/// Read the live counters inside an already active, nonnested observation.
-/// This copies fixed instrumentation only and never changes its pointer table.
-pub(crate) fn current_metrics() -> Metrics {
-    assert!(active(), "live metrics require an active observation");
-    STATE.with(|state| {
-        let mut metrics = state.borrow().metrics;
-        metrics.invalid = INVALID.with(Cell::get);
-        metrics
-    })
-}
-/// Attribute currently live observed layouts to an explicit owner graph.
-/// The predicate must borrow existing data only: callbacks run while the
-/// observation registry is borrowed. No metric, slot, or debit is rewritten.
-pub(crate) fn live_bytes_matching(mut owns: impl FnMut(usize) -> bool) -> usize {
-    assert!(active(), "live ownership requires an active observation");
-    STATE.with(|state| {
-        let state = state.borrow();
-        let slots = state
-            .extended
-            .as_ref()
-            .map_or(&state.slots[..], |registry| &registry.slots[..]);
-        slots
-            .iter()
-            .filter(|slot| slot.pointer != 0 && owns(slot.pointer))
-            .try_fold(0usize, |sum, slot| sum.checked_add(slot.bytes))
-            .expect("live ownership layout sum overflowed")
-    })
-}
 
-// Keep instrumentation outside the per-operation generic body. These helpers
-// prepare metadata before activation and retain the same observation and unwind
-// boundaries. Metadata backing is excluded, as the former TLS array was.
-fn begin_observation() -> Guard {
-    assert!(!active(), "allocation observation cannot nest");
-    STATE.with(|state| {
-        let mut state = state.borrow_mut();
-        state.slots.resize(SLOTS, EMPTY);
-        state.slots.fill(EMPTY);
-        if let Some(registry) = &mut state.extended {
-            registry.slots.fill(EMPTY);
-            registry.live = 0;
-        }
-        state.metrics = Metrics::default();
-    });
-    INVALID.with(|invalid| invalid.set(false));
-    INVALID_REASON.with(|reason| reason.set(None));
-    ACTIVE.with(|active| active.set(true));
-    Guard
-}
-fn finish_observation(guard: Guard) -> Metrics {
-    drop(guard);
-    STATE.with(|state| {
-        let mut metrics = state.borrow().metrics;
-        metrics.invalid = INVALID.with(Cell::get);
-        metrics
-    })
-}
-pub(crate) fn measure<T>(operation: impl FnOnce() -> T) -> (T, Metrics) {
-    let guard = begin_observation();
-    let result = operation();
-    let metrics = finish_observation(guard);
-    (result, metrics)
-}
-
-/// Explicit test instrumentation size, never a compiler or runtime allowance.
-/// The registry is wholly constructed before activation and dropped after it;
-/// every operation allocation, replacement overlap and final Drop stays visible.
-/// The default `measure` keeps its original fixed SLOTS exhaustion behavior.
-pub(crate) fn measure_with_capacity<T>(
-    pointer_limit: usize,
-    operation: impl FnOnce() -> T,
-) -> (T, Metrics) {
-    assert!(!active(), "allocation observation cannot nest");
-    assert!(pointer_limit > 0, "pointer registry must be nonempty");
-    let slots = pointer_limit
-        .checked_mul(2)
-        .and_then(usize::checked_next_power_of_two)
-        .expect("pointer instrumentation capacity overflow");
-    let slots = vec![EMPTY; slots];
-    STATE.with(|state| {
-        let mut state = state.borrow_mut();
-        assert!(state.extended.is_none());
-        state.extended = Some(ExtendedRegistry {
-            slots,
-            live: 0,
-            limit: pointer_limit,
+pub(crate) fn with_phase_trace<T>(operation: impl FnOnce() -> T) -> (T, PhaseTrace) {
+    assert!(
+        !active(),
+        "prepare phase instrumentation before observation"
+    );
+    PHASE_TRACE.with(|trace| {
+        let mut trace = trace.borrow_mut();
+        assert!(trace.is_none(), "phase traces cannot nest");
+        *trace = Some(PhaseTrace {
+            intervals: [None; 64],
+            overflow: false,
         });
     });
-    measure(operation)
+    struct Restore;
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            PHASE_TRACE.with(|trace| {
+                trace.borrow_mut().take();
+            });
+        }
+    }
+    let restore = Restore;
+    let value = operation();
+    let trace = PHASE_TRACE.with(|trace| trace.borrow_mut().take().unwrap());
+    drop(restore);
+    (value, trace)
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn phase_trace_keeps_nested_intervals_without_allocating_observed_backing() {
+        use crate::bounded_output::{with_reservation_stage, ReservationStage};
+        let operation = || {
+            with_reservation_stage(ReservationStage::HirLowering, || {
+                let bytes = vec![7_u8; 257];
+                with_reservation_stage(ReservationStage::HirValidation, || {
+                    std::hint::black_box(&bytes);
+                });
+                drop(bytes);
+            });
+        };
+        let (_, plain) = measure(operation);
+        let (((), observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!(plain, observed, "tracing changes no observed layouts");
+        assert_eq!(observed.live, 0);
+        assert!(!observed.invalid);
+        assert!(!trace.overflow);
+        assert_eq!(trace.intervals.iter().flatten().count(), 2);
+        for phase in trace.intervals.iter().flatten() {
+            assert_eq!(phase.exit.highwater, observed.highwater);
+            match phase.stage {
+                PhaseLabel::Reservation(ReservationStage::HirLowering) => {
+                    assert_eq!(phase.entry.live, 0);
+                    assert_eq!(phase.exit.live, 0);
+                }
+                PhaseLabel::Reservation(ReservationStage::HirValidation) => {
+                    assert_eq!(phase.entry.live, 257);
+                    assert_eq!(phase.exit.live, 257);
+                }
+                _ => panic!("unexpected allocation interval"),
+            }
+        }
+    }
+    #[test]
+    fn named_validation_intervals_are_inclusive_and_do_not_perturb_outcomes_or_layouts() {
+        let operation = || {
+            let _outer = function_phase_guard("test::validation");
+            let bytes = vec![9_u8; 67];
+            {
+                let _inner = function_phase_guard("test::validation::callee");
+                std::hint::black_box(&bytes);
+            }
+            drop(bytes);
+            23
+        };
+        let (plain_value, plain) = measure(operation);
+        let ((observed_value, observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!((plain_value, plain), (observed_value, observed));
+        assert!(!trace.overflow);
+        assert_eq!(trace.intervals.iter().flatten().count(), 2);
+        for interval in trace.intervals.iter().flatten() {
+            assert!(interval.entry.highwater <= interval.exit.highwater);
+            assert_eq!(interval.exit.highwater, observed.highwater);
+            match interval.stage {
+                PhaseLabel::Function("test::validation") => {
+                    assert_eq!((interval.entry.live, interval.exit.live), (0, 0));
+                }
+                PhaseLabel::Function("test::validation::callee") => {
+                    assert_eq!((interval.entry.live, interval.exit.live), (67, 67));
+                }
+                _ => panic!("unexpected fixed interval label"),
+            }
+        }
+    }
+
+    #[test]
+    fn named_validation_interval_overflow_is_explicit_and_allocation_free() {
+        const LABELS: [&str; 65] = [
+            "fixed::0",
+            "fixed::1",
+            "fixed::2",
+            "fixed::3",
+            "fixed::4",
+            "fixed::5",
+            "fixed::6",
+            "fixed::7",
+            "fixed::8",
+            "fixed::9",
+            "fixed::10",
+            "fixed::11",
+            "fixed::12",
+            "fixed::13",
+            "fixed::14",
+            "fixed::15",
+            "fixed::16",
+            "fixed::17",
+            "fixed::18",
+            "fixed::19",
+            "fixed::20",
+            "fixed::21",
+            "fixed::22",
+            "fixed::23",
+            "fixed::24",
+            "fixed::25",
+            "fixed::26",
+            "fixed::27",
+            "fixed::28",
+            "fixed::29",
+            "fixed::30",
+            "fixed::31",
+            "fixed::32",
+            "fixed::33",
+            "fixed::34",
+            "fixed::35",
+            "fixed::36",
+            "fixed::37",
+            "fixed::38",
+            "fixed::39",
+            "fixed::40",
+            "fixed::41",
+            "fixed::42",
+            "fixed::43",
+            "fixed::44",
+            "fixed::45",
+            "fixed::46",
+            "fixed::47",
+            "fixed::48",
+            "fixed::49",
+            "fixed::50",
+            "fixed::51",
+            "fixed::52",
+            "fixed::53",
+            "fixed::54",
+            "fixed::55",
+            "fixed::56",
+            "fixed::57",
+            "fixed::58",
+            "fixed::59",
+            "fixed::60",
+            "fixed::61",
+            "fixed::62",
+            "fixed::63",
+            "fixed::64",
+        ];
+        let operation = || {
+            for label in LABELS {
+                let _guard = function_phase_guard(label);
+                std::hint::black_box(label);
+            }
+        };
+        let (_, plain) = measure(operation);
+        let (((), observed), trace) = with_phase_trace(|| measure(operation));
+        assert_eq!(plain, observed);
+        assert_eq!(observed.allocated, 0);
+        assert_eq!(trace.intervals.iter().flatten().count(), 64);
+        assert!(trace.overflow);
+    }
+
     #[test]
     fn fixed_registry_backing_is_lazy_reused_and_outside_the_observed_window() {
         assert_eq!(SLOTS, 16_384);

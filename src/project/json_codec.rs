@@ -8,11 +8,17 @@ pub use retained_receipt::{
 mod suitability;
 pub use suitability::{explain_json_codec_suitability, JsonCodecSuitabilityOptions};
 mod collection_response;
+mod decode_only;
 mod emit;
 mod nested_request;
 mod nested_response;
 mod owned;
 mod plan;
+#[cfg(test)]
+pub(super) use plan::before as plan_before;
+pub(super) use plan::derive_replayed_json_codec_plan;
+#[cfg(test)]
+pub(super) use plan::tests as plan_tests;
 mod plan_input;
 pub use plan_input::decode_json_codec_plan;
 mod profile_selector;
@@ -83,6 +89,15 @@ pub enum JsonCodecProfile {
         max_string_bytes: usize,
         max_array_items: usize,
     },
+    /// Explicit decode-only successor; full v1 source remains unchanged.
+    OwnedRequestDecodeOnlyV1,
+    StreamOwnedRequestDecodeOnlyV1,
+    Utf8OwnedRequestDecodeOnlyV1 {
+        max_string_bytes: usize,
+    },
+    StreamUtf8OwnedRequestDecodeOnlyV1 {
+        max_string_bytes: usize,
+    },
 }
 
 pub(super) fn refusal(message: impl Into<String>) -> Vec<Diagnostic> {
@@ -151,7 +166,11 @@ fn derive_replacement(
         .ok_or_else(|| {
             refusal("JSON codec record identity was not found in the selected source")
         })?;
-    let fragment = profile_fragment(&program, declaration, profile)?;
+    let fragment = if let Some(full) = decode_only::full_profile(profile) {
+        decode_only::source(&program, declaration, full, source.source())?
+    } else {
+        profile_fragment(&program, declaration, profile)?
+    };
     let fragment = template::discard_bindings(&fragment, source.source(), source_path)
         .map_err(|error| vec![error])?;
     if fragment.len() > MAX_GENERATED_BYTES {
@@ -328,6 +347,15 @@ fn profile_fragment(
         JsonCodecProfile::StreamUtf8OwnedRequest { max_string_bytes } => {
             utf8::stream_source(program, declaration, max_string_bytes)?
         }
+        new @ (JsonCodecProfile::OwnedRequestDecodeOnlyV1
+        | JsonCodecProfile::StreamOwnedRequestDecodeOnlyV1
+        | JsonCodecProfile::Utf8OwnedRequestDecodeOnlyV1 { .. }
+        | JsonCodecProfile::StreamUtf8OwnedRequestDecodeOnlyV1 { .. }) => decode_only::source(
+            program,
+            declaration,
+            decode_only::full_profile(new).expect("closed profile"),
+            &crate::format::canonical(program),
+        )?,
         JsonCodecProfile::CollectionResponse { max_string_bytes } => {
             collection_response::source(program, declaration, max_string_bytes)?
         }

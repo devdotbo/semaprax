@@ -1147,8 +1147,11 @@ import walk. The original full wrapper classifier still admits the shape;
 unsupported declarations retain the owning fallback and ordinary diagnostics. The actual core selects this
 transient route only for retained-output uncached construction without a
 frontend; it cannot publish a checked cache key. A shared, prepaid allocation-free
-identity-family prefilter selects the original producer in both frontend modes
-when no imported identity can denote a retained Vec/Box wrapper. Positive family
+identity-family prefilter selects the original producer in cached mode and
+probes ordinary function imports only on the uncached transient route. Closed
+primitive/string signature views lend immutable metadata and exact finite defaults; their
+profile iterator preserves the original iterator carrier width while excluding
+only the provably false finite-default feature contribution. Positive family
 matches still run the full unchanged classifier and provider checks. This avoids
 an all-owned transient directory; it does not establish cache parity for actual
 retained wrappers or grant authority from a name. Existing semantic replay and
@@ -1260,9 +1263,17 @@ and [typed native tests](PROJECT-NATIVE-TEST-COLLECTION-RECORD-PURE-V1.md) own l
 `src/project/json_codec` owns checked-source application codec derivation and
 exact regeneration replay. Its `plan` child derives a bounded set against one
 immutable retained revision and admits the complete combined candidate through
-ordinary Project construction. It retains authored sources separately from the
+ordinary Project construction. Its private starter-only draft carries unverified
+source/receipt bytes; independent complete regeneration precedes one codec
+candidate build and both ordinary HIR checks. The public derive/verify APIs
+retain checked replay, and command activation retains its distinct final build.
+It retains authored sources separately from the
 complete candidate and exact per-entry evidence; no new semantic index, hidden
 helper admission or managed publication authority is introduced.
+Its `decode_only` child is an explicit versioned generation-stage projection:
+it checks a closed encoder/helper/import omission inventory and retained AST
+dependencies before removing source declarations; full old generators stay
+unchanged and the complete projected candidate follows ordinary admission.
 It emits ordinary source and rebuilds the original
 Project/profile; generated names have no HIR authority. Its `template` module
 expands compiler-owned markers once, keeping authored names and identities opaque

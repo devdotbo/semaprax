@@ -3950,6 +3950,11 @@ fn build_resolved_core_current(
     compact_order: Option<&[usize]>,
 ) -> Result<ResolvedCore, constructor_failure::receiving::CoreFailure> {
     #[cfg(test)]
+    let _component = constructor_failure::typed::before_function_alias_core::observe_component(
+        programs,
+        compact_order,
+    );
+    #[cfg(test)]
     if constructor_failure::typed::before_function_alias_core::selected() {
         return constructor_failure::typed::before_function_alias_core::build_resolved_core_current(
             programs,

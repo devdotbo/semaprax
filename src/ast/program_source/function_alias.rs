@@ -8,8 +8,15 @@ use super::{
 };
 use crate::ast::{Function, Program};
 
+#[derive(Debug)]
 pub(crate) struct FunctionView<'a> {
-    _provider: &'a Program,
+    // This is the original provider-field receiving word, not an added tag.
+    // Inline Some(provider) replaces the old reference field initialization;
+    // None is formed only by the prepaid closed finite-signature factory.
+    // Original/alias loans and its input lifetime retain exact provenance.
+    // Getters inspect this field by pattern at the former enum-variant probe;
+    // no forwarding Option helper, result carrier, or method receiver is added.
+    _provider: Option<&'a Program>,
     original: &'a Function,
     _alias: &'a str,
 }
@@ -27,12 +34,13 @@ impl<'a> FunctionView<'a> {
             return None;
         }
         Some(Self {
-            _provider: provider,
+            _provider: Some(provider),
             original,
             _alias: alias,
         })
     }
 }
+#[derive(Debug)]
 pub(crate) enum FunctionEntry<'a> {
     Owned(usize),
     Borrowed(FunctionView<'a>),
@@ -47,6 +55,15 @@ impl DeclarationDirectory<Function> for FunctionDirectory<'_> {
     }
     fn get(&self, index: usize) -> Option<&Function> {
         match &self.entries[index] {
+            FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
+            FunctionEntry::Borrowed(view) => Some(view.original),
+        }
+    }
+    fn profile_get(&self, index: usize) -> Option<&Function> {
+        match &self.entries[index] {
+            FunctionEntry::Borrowed(FunctionView {
+                _provider: None, ..
+            }) => None,
             FunctionEntry::Owned(index) => Some(&self.roots.functions[*index]),
             FunctionEntry::Borrowed(view) => Some(view.original),
         }
@@ -115,3 +132,9 @@ impl ProgramSource for TransientFunctions<'_> {
 // The stored alias cell is immutable while source, verifier and HIR receivers
 // borrow it. Unsupported producer shapes keep the complete owning route.
 pub(crate) mod presentation;
+
+pub(crate) mod scalar_signature;
+
+#[cfg(test)]
+#[path = "function_alias/before_string.rs"]
+mod before_string;

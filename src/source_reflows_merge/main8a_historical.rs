@@ -9,7 +9,7 @@ pub(crate) enum Domain {
 }
 #[derive(Clone, Copy)]
 struct Spec {
-    data: &'static str,
+    fixture: super::runtime_json::AdditionalFixture,
     length: usize,
     sha256: [u8; 32],
     rows: usize,
@@ -19,10 +19,7 @@ impl Domain {
         match self {
             // SPECS_BEGIN
             Self::Compact7 => Spec {
-                data: include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/docs/evidence/main8a-historical-readers-257-268-20261016/Compact7.json"
-                )),
+                fixture: super::runtime_json::AdditionalFixture::HistoricalCompact7,
                 length: 1084990,
                 sha256: [
                     0, 149, 173, 86, 200, 253, 74, 28, 73, 247, 87, 156, 250, 159, 42, 179, 31, 58,
@@ -31,10 +28,7 @@ impl Domain {
                 rows: 7,
             },
             Self::Receivers12 => Spec {
-                data: include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/docs/evidence/main8a-historical-readers-257-268-20261016/Receivers12.json"
-                )),
+                fixture: super::runtime_json::AdditionalFixture::HistoricalReceivers12,
                 length: 2125481,
                 sha256: [
                     223, 155, 190, 240, 51, 198, 246, 133, 193, 29, 115, 33, 18, 160, 218, 247,
@@ -68,7 +62,8 @@ fn checked(spec: Spec, data: &str, path: &str, current: &str) -> String {
 }
 pub(crate) fn input(domain: Domain, path: &str, current: &str) -> String {
     let spec = domain.spec();
-    checked(spec, spec.data, path, current)
+    let data = super::runtime_json::additional(spec.fixture);
+    checked(spec, &data, path, current)
 }
 
 #[cfg(test)]
@@ -133,7 +128,10 @@ mod tests {
     #[test]
     fn complete_historical_domains_refuse_changed_truncated_foreign_and_stale_inputs() {
         for domain in [Domain::Compact7, Domain::Receivers12] {
-            let rows: serde_json::Value = serde_json::from_str(domain.spec().data).unwrap();
+            let rows: serde_json::Value = serde_json::from_str(
+                &super::super::runtime_json::additional(domain.spec().fixture),
+            )
+            .unwrap();
             for row in rows.as_array().unwrap() {
                 let path = row["source"].as_str().unwrap();
                 let raw = current(path);
@@ -150,22 +148,21 @@ mod tests {
             assert!(
                 std::panic::catch_unwind(|| input(domain, "src/foreign.rs", "foreign")).is_err()
             );
-            let data = domain.spec().data;
-            assert!(std::panic::catch_unwind(|| checked(
-                domain.spec(),
-                &data[..data.len() - 1],
-                "src/foreign.rs",
-                ""
-            ))
-            .is_err());
+            let data = super::super::runtime_json::additional(domain.spec().fixture);
+            assert!(
+                std::panic::catch_unwind(|| checked(
+                    domain.spec(),
+                    &data[..data.len() - 1],
+                    "src/foreign.rs",
+                    ""
+                ))
+                .is_err()
+            );
             let changed = data.replacen('s', "t", 1);
-            assert!(std::panic::catch_unwind(|| checked(
-                domain.spec(),
-                &changed,
-                "src/foreign.rs",
-                ""
-            ))
-            .is_err());
+            assert!(
+                std::panic::catch_unwind(|| checked(domain.spec(), &changed, "src/foreign.rs", ""))
+                    .is_err()
+            );
         }
     }
 }

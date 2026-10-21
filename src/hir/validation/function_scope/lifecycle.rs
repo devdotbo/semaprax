@@ -7,6 +7,10 @@ fn fund(bytes: Option<usize>) -> Result<(), Diagnostic> {
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::Lifecycle,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::Lifecycle,
+    );
     match bytes {
         Some(bytes) if crate::bounded_output::reserve_active_required(bytes) => Ok(()),
         Some(_) => Err(budget()),

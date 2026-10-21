@@ -185,7 +185,7 @@ pub(super) fn reject_unmarked_finish(
 
 #[allow(
     clippy::too_many_arguments,
-    reason = "the complete audited receiving argument packet stays explicit"
+    reason = "explicit paid formals preserve the existing receiving ABI without an aggregate owner"
 )]
 pub(super) fn reserve(
     program: &dyn crate::cleanup::ReplayContext,
@@ -350,7 +350,7 @@ pub(super) fn reserve(
 
 #[allow(
     clippy::too_many_arguments,
-    reason = "the complete audited receiving argument packet stays explicit"
+    reason = "explicit paid formals preserve the existing receiving ABI without an aggregate owner"
 )]
 pub(super) fn renew(
     program: &dyn crate::cleanup::ReplayContext,
@@ -617,7 +617,7 @@ pub(super) fn validate_join_compatibility<'a>(
     );
     #[allow(
         clippy::redundant_pattern_matching,
-        reason = "inspect the prepaid Option directly without adding a method receiving boundary"
+        reason = "bare pattern preserves the paid Option receiving boundary without a method receiver"
     )]
     while let Some(_) = dynamic_next!(
         budget,

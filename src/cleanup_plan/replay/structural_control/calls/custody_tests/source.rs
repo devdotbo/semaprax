@@ -1,10 +1,11 @@
 //! Closed whole-source originals and complete old receiving-layout definitions.
 #[test]
 fn every_call_receiver_source_and_complete_before_body_remains_bound() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../../docs/evidence/selected-call-refusal-781/exact-source-inverses.json"
-    ))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::SelectedCalls,
+        ))
+        .unwrap();
     let files = [
         (
             "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
@@ -107,7 +108,7 @@ fn every_call_receiver_source_and_complete_before_body_remains_bound() {
             .collect::<Vec<_>>();
         assert_eq!(found.len(), 1, "{name}");
         let row = found[0];
-        let mut current = source.to_owned();
+        let mut current = crate::source_reflows_merge::receiver_fixture_source_before(name, source);
         for edit in row["edits"].as_array().unwrap() {
             let new = edit["new"].as_str().unwrap();
             assert_eq!(current.matches(new).count(), 1, "{name}");
@@ -132,7 +133,10 @@ fn every_call_receiver_source_and_complete_before_body_remains_bound() {
         )
     );
     assert_eq!(
-        include_str!("../../blocks_before_receipt.rs").replacen(
+        crate::source_reflows_merge::receiver_fixture_source_before(
+            "src/cleanup_plan/replay/structural_control/blocks_before_receipt.rs",
+            include_str!("../../blocks_before_receipt.rs"),
+        ).replacen(
             "use super::*;\nuse super::calls_before_receipt as calls;",
             "use super::*;",
             1

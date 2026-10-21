@@ -518,11 +518,44 @@ fn region_entry_original_input(source: &str, current: &str) -> String {
     use sha2::{Digest, Sha256};
     // Acquire the complete exact pre-885 source before the unchanged older
     // runtime-view/hash/registration authorities below. No assertion is waived.
+    let expected_entry = match source {
+        "src/cleanup_plan/replay.rs" => {
+            Some("cce98dd37682ccb93081bae2eeb53ea103562370461844c12d16a59cb732d31b")
+        }
+        "src/cleanup_plan/replay/lexical_replay.rs" => {
+            Some("d0f2b7fcfc3815f0c1207c064d8bcb14d4323dff614d953988b962138ff975d0")
+        }
+        "src/cleanup_plan/replay/expression_facts/receiving.rs" => {
+            Some("db822f51812769eadf1570bfee4b315ceadd31b689fc6efa643e5da03d7a9bb7")
+        }
+        "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs" => {
+            Some("112b1a3f5e47c5d0c99c476c2374e7eb9dbfdc04d9220a94f6bf73b613ee294e")
+        }
+        _ => None,
+    };
+    let entry = match expected_entry {
+        Some(expected) => {
+            let entry = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+                source, expected, current,
+            );
+            assert_eq!(
+                format!(
+                    "{:x}",
+                    crate::digest_hex::LowerHex(Sha256::digest(entry.as_bytes()))
+                ),
+                expected,
+                "complete region-entry historical input: {source}"
+            );
+            entry
+        }
+        None => current.to_owned(),
+    };
     let before_885 =
         crate::cleanup_plan::replay::expression_facts::arena::retained::tests::before_885_source(
-            source, current,
+            source, &entry,
         );
-    let current = before_885.as_str();
+    let directory_before_lookup = region_entry_directory_before_lookup(source, &before_885);
+    let current = directory_before_lookup.as_str();
     let rows: serde_json::Value = serde_json::from_str(include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/docs/evidence/region-status-import-view-d4-20261015/runtime-views.json"
@@ -551,4 +584,39 @@ fn region_entry_original_input(source: &str, current: &str) -> String {
         row["original_sha256"].as_str().unwrap()
     );
     original.to_owned()
+}
+
+// The existing OPT885 inverse runs first. This exact later lookup-stage inverse
+// then supplies its returned bytes to every unchanged original d4 row/hook.
+#[rustfmt::skip]
+fn region_entry_directory_before_lookup(source: &str, current: &str) -> String {
+    use sha2::{Digest, Sha256};
+    if source != "src/cleanup_plan/replay/expression_facts/receiving/directory.rs" {
+        return current.to_owned();
+    }
+    assert_eq!(current.len(), 20833);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))),
+        "71bddf2e91cd7b6768523035ce49c111e41686dc5104adbcdb8dd7165675e464");
+    let mut restored = current.to_owned();
+    for added in [
+        "    fn status_key(&self) -> Option<&StatusSourceId> {\n        None\n    }\n",
+        "    fn status_key(&self) -> Option<&StatusSourceId> {\n        Some(self)\n    }\n",
+        "    fn status_key(&self) -> Option<&StatusSourceId> {\n        T::status_key(self)\n    }\n",
+        "    lookup: Option<Box<status_prefix::FrozenStatusIndex>>,\n",
+        "\nstruct LookupCursor {\n    at: usize,\n    byte: usize,\n    mask: u16,\n    symbol: u16,\n    direction: bool,\n    units: usize,\n}\n// Complete initialized cursor plus receiving state, status-key Option and\n// borrowed receivers, final candidate/ordering and comparison temporaries.\nconst LOOKUP_BYTES: usize = 2 * std::mem::size_of::<LookupCursor>()\n    + 2 * std::mem::size_of::<Option<&StatusSourceId>>()\n    + 4 * std::mem::size_of::<&StatusSourceId>()\n    + std::mem::size_of::<&status_prefix::FrozenStatusIndex>()\n    + 2 * std::mem::size_of::<Option<usize>>()\n    + std::mem::size_of::<usize>()\n    + std::mem::size_of::<Ordering>();\n",
+        "    #[cfg(test)]\n    pub(super) fn has_frozen_lookup_for_test(&self) -> bool {\n        self.lookup.is_some()\n    }\n\n",
+        "        // The new optional field has two initialized receiving slots. Existing\n        // directory fields and reservation requests receive no credit.\n        budget.reserve_bytes(\n            function,\n            2 * std::mem::size_of::<Option<Box<status_prefix::FrozenStatusIndex>>>(),\n            phase,\n        )?;\n        budget.charge(function, 1, phase)?;\n",
+        "            lookup: None,\n",
+        "        if let Some(index) = &self.lookup {\n            // Binding checks read no foreign payer or cached key. A rejected\n            // receiver remains rejected even after its original owner returns.\n            if index.failed.get() {\n                return Err(Diagnostic::io(\"SPX-H006\", String::new()));\n            }\n            if !std::ptr::eq(index.function, function)\n                || !std::ptr::eq(index.budget, budget)\n                || !index.ledger.current()\n                || index.keys != self.nodes.as_ptr() as usize\n                || index.len != self.nodes.len()\n            {\n                index.failed.set(true);\n                return Err(Diagnostic::io(\"SPX-H006\", String::new()));\n            }\n            self.authenticate(function, budget)?;\n            // All traversal state is one fixed receiving frame. Loop steps\n            // update its paid fields rather than constructing a new path.\n            budget.reserve_bytes(function, LOOKUP_BYTES, self.phase)?;\n            budget.charge(function, 24, self.phase)?;\n            let Some(query) = key.status_key() else {\n                index.failed.set(true);\n                return Err(Diagnostic::io(\"SPX-H006\", String::new()));\n            };\n            let mut cursor = LookupCursor {\n                at: index.root,\n                byte: 0,\n                mask: 0,\n                symbol: 0,\n                direction: false,\n                units: 0,\n            };\n            cursor.byte = index.nodes[cursor.at].byte;\n            while cursor.byte != NIL {\n                budget.charge(function, VISIT_UNITS + 24, self.phase)?;\n                cursor.mask = index.nodes[cursor.at].mask;\n                cursor.symbol = if cursor.byte < query.expression.as_str().len() {\n                    256 | query.expression.as_str().as_bytes()[cursor.byte] as u16\n                } else if cursor.byte == query.expression.as_str().len() {\n                    match query.lane {\n                        StatusLane::OwnerAdmission => 0,\n                        StatusLane::OperationFailure => 1,\n                        StatusLane::AllocationFailure => 2,\n                        StatusLane::ContractFalse => 3,\n                    }\n                } else {\n                    0\n                };\n                cursor.direction = cursor.symbol & cursor.mask != 0;\n                cursor.at = if cursor.direction {\n                    index.nodes[cursor.at].one\n                } else {\n                    index.nodes[cursor.at].zero\n                };\n                cursor.byte = index.nodes[cursor.at].byte;\n            }\n            budget.charge(function, VISIT_UNITS + 2, self.phase)?;\n            cursor.at = index.nodes[cursor.at].zero;\n            let candidate = &self.nodes[cursor.at];\n            // The index selects only a candidate. Preserve the complete old\n            // key-comparison request and actual Ord equality, without a prefix\n            // discount, identifier parsing, hashes or numeric-ID authority.\n            cursor.units = match key\n                .comparison_units(&candidate.key)\n                .and_then(|units| units.checked_add(VISIT_UNITS))\n            {\n                Some(units) => units,\n                None => {\n                    return Err(overflow(\n                        function,\n                        budget,\n                        \"directory key comparison work overflow\",\n                    ))\n                }\n            };\n            budget.charge(function, cursor.units, self.phase)?;\n            return Ok(Ord::cmp(key, &candidate.key) == Ordering::Equal);\n        }\n",
+        "        if let Some(index) = &self.lookup {\n            // Publication seals this privately owned directory. No mutation or\n            // fallback can revive a rejected read-only index.\n            index.failed.set(true);\n            return Err(Diagnostic::io(\"SPX-H006\", String::new()));\n        }\n",
+        "\n#[cfg(test)]\nmod before_cursor;\n",
+
+    ] {
+        assert_eq!(restored.matches(added).count(), 1, "complete unique directory lookup-stage inverse");
+        restored = restored.replacen(added, "", 1);
+    }
+    assert_eq!(restored.len(), 15428);
+    assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))),
+        "d161622003e500b3b9197c0f463b88eee388d9447c5a87ba75f464d3aa2a59cc");
+    restored
 }

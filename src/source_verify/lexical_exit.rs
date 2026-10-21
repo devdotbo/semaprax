@@ -9,7 +9,7 @@ use crate::diagnostic::Diagnostic;
 pub(super) fn validate(program: &dyn ProgramSource, diagnostics: &mut Vec<Diagnostic>) {
     for function in program
         .functions()
-        .iter()
+        .profile_iter()
         .chain(program.types().iter().flat_map(|ty| match &ty.kind {
             TypeDeclarationKind::Class { methods, .. } => methods.as_slice(),
             _ => &[],

@@ -66,6 +66,10 @@ pub(in crate::workspace_graph) fn run<T>(
     }
 }
 impl<T> Attempt<T> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    pub(in crate::workspace_graph) fn observation_succeeded(&self) -> bool {
+        self.result.is_ok()
+    }
     pub(in crate::workspace_graph) fn into_parts(
         self,
     ) -> (Result<T, CoreFailure>, Option<Vec<Diagnostic>>) {

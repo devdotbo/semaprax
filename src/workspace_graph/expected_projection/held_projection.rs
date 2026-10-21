@@ -75,6 +75,13 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
     let (layout_mode, retention) = profile;
     let mut raw = StructuralCost::raw_ast(layout_mode >= 1).with_inline_values(layout_mode >= 2);
     ast_program_cost(program, &mut raw, include_imports)?;
+    let call_proof = if layout_mode >= 5 {
+        let proof = super::call_carriers::count(program, authored, include_imports);
+        raw.exact_carrier_free_calls = proof.roots;
+        proof.bytes
+    } else {
+        0
+    };
     let fresh;
     let held;
     let layout = if let Some(registry) = registry {
@@ -279,7 +286,8 @@ pub(in crate::workspace_graph) fn synthetic_builder_bytes_scoped_with_retention_
         maximum_identity_bytes,
     )?;
     let hir_upper = fixed_hir_upper
-        .checked_add(prelude_hir_upper)
+        .checked_add(call_proof)
+        .and_then(|bytes| bytes.checked_add(prelude_hir_upper))
         .and_then(|bytes| bytes.checked_add(identity_carrier_bytes))
         .and_then(|bytes| bytes.checked_add(identity_occurrence_upper))
         .ok_or_else(|| vec![limit_error("builder_bytes", active_builder_limit())])?;

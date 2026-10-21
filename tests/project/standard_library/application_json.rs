@@ -9,6 +9,8 @@ use sha2::{Digest, Sha256};
 mod builtin_calls;
 #[path = "application_json/collection_response.rs"]
 mod collection_response;
+#[path = "application_json/decode_only.rs"]
+mod decode_only;
 #[path = "application_json/nested_request.rs"]
 mod nested_request;
 #[path = "application_json/nested_response.rs"]

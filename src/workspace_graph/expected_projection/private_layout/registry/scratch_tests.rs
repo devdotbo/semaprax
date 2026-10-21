@@ -324,10 +324,11 @@ fn distinct_census_registry_observes_actual_allocated_reserved_peak_and_complete
 #[test]
 fn complete_old_registry_census_derivation_and_current_scratch_sources_remain_bound() {
     use sha2::{Digest, Sha256};
-    let packet: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../docs/evidence/registry-census-scratch-833/source-inverses.json"
-    ))
-    .unwrap();
+    let packet: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::RegistryScratch,
+        ))
+        .unwrap();
     for row in packet["owners"].as_array().unwrap() {
         let (mut current, original) = match row["source"].as_str().unwrap() {
             "src/workspace_graph.rs" => (include_str!("../../../../workspace_graph.rs").to_owned(), include_str!("../../../../../docs/evidence/registry-census-scratch-833/original/workspace_graph.rs")),
@@ -353,7 +354,10 @@ fn complete_old_registry_census_derivation_and_current_scratch_sources_remain_bo
         "../../../../../docs/evidence/registry-census-scratch-833/original/registry.rs"
     );
     assert_eq!(
-        include_str!("../before_registry.rs"),
+        crate::source_reflows_merge::receiver_child_entry(
+            "src/workspace_graph/expected_projection/private_layout/before_registry.rs",
+            include_str!("../before_registry.rs"),
+        ),
         old_registry
             .replace(
                 "LayoutClosure::derive_with_work(",

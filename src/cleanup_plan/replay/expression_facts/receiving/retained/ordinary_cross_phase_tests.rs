@@ -1,4 +1,9 @@
 use super::*;
+use crate::bounded_output::classifier_string::StorageParent;
+use crate::hir::{
+    DeclarationId, DeclarationIndex, FunctionInstanceId, ResolvedFunctionInstance,
+    ResolvedFunctionTemplate, ResolvedInterface, ResolvedTypeDeclaration,
+};
 use crate::test_allocation_observer::measure;
 use sha2::Digest;
 
@@ -50,7 +55,9 @@ fn run(
                 None,
             )
         } else {
-            validate_structure_with_budget_storage(
+            // Original C5 equations continue to exercise the independently
+            // compiled complete immediate implementation.
+            super::super::ordinary_block_before::validate_structure_with_budget_storage(
                 program,
                 function(program),
                 &mut budget,
@@ -207,7 +214,12 @@ fn whole_caller_drop_releases_actual_backing_on_success_and_refusal() {
 
 #[test]
 fn same_abi_source_has_no_early_owner_or_selector_and_consumes_budget_before_callbacks() {
-    let source = include_str!("ordinary_cross_phase.rs");
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+        "df9680ce32f6df7785f786d8357cf12b43959a504a623b86aee9622c07cae7b6",
+        include_str!("ordinary_cross_phase.rs"),
+    );
+    let source = acquired.as_str();
     let guard = source
         .find("if !prefix_owner.insert(function, &source.id, budget)?")
         .unwrap();
@@ -356,4 +368,481 @@ fn before_bare_pattern_source(path: &str, current: &str) -> String {
         row["before"]["sha256"].as_str().unwrap()
     );
     restored
+}
+
+// The immediate control is a complete independently compiled 04 receiver.
+// These tests alone select the transition successor; old C5 controls above
+// retain their original status/initial-edge equation and full old receiver.
+fn block_run(
+    context: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    current: bool,
+    cap: usize,
+    work: usize,
+) -> (Result<(), Diagnostic>, bool, usize, usize) {
+    let _ = crate::cleanup_plan::replay::ordinary_receiving::take_census();
+    let ((result, work), refused, paid) = crate::bounded_output::with_limit_usage(cap, || {
+        let mut budget = ReplayBudget::new();
+        budget.remaining = work;
+        // The production caller establishes this allowance on the same payer.
+        let result =
+            match reserve_program_skeleton_work(context, std::iter::once(function), &mut budget) {
+                Err(error) => Err(error),
+                Ok(_) => {
+                    if current {
+                        validate_structure_with_budget_storage(
+                            context,
+                            function,
+                            &mut budget,
+                            None,
+                            None,
+                        )
+                    } else {
+                        super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                            context,
+                            function,
+                            &mut budget,
+                            None,
+                            None,
+                        )
+                    }
+                }
+            };
+        (result, work - budget.remaining)
+    });
+    (result, refused, paid, work)
+}
+
+fn transition_counts(function: &ResolvedFunction) -> (usize, usize) {
+    let mut lookups = 0;
+    let mut callbacks = 0;
+    for block in &function.cleanup_plan.blocks {
+        for transition in &block.transitions {
+            match transition {
+                CleanupTransition::Initialize { .. }
+                | CleanupTransition::Transfer { .. }
+                | CleanupTransition::TransferVariant { .. }
+                | CleanupTransition::InitializeVariant { .. } => lookups += 1,
+                CleanupTransition::ReserveRenewal { .. }
+                | CleanupTransition::Renew { .. }
+                | CleanupTransition::AuthenticateVariantCase { .. }
+                | CleanupTransition::CallCommit { .. } => {
+                    lookups += 1;
+                    callbacks += 1;
+                }
+                CleanupTransition::StageCopyResult {
+                    source:
+                        StagedCopyResultSource::TryResidual { .. }
+                        | StagedCopyResultSource::TryOptionNone { .. },
+                    ..
+                } => lookups += 2,
+                _ => {}
+            }
+        }
+    }
+    (lookups, callbacks)
+}
+
+#[test]
+fn transition_scratch_has_complete_immediate_typed_invoice_and_unchanged_work() {
+    use std::mem::size_of;
+    for rows in [0, 1, 64] {
+        let program = fixture(rows, true);
+        let function = function(&program);
+        let old = block_run(&program, function, false, CAP, MAX_REPLAY_WORK_UNITS);
+        let current = block_run(&program, function, true, CAP, MAX_REPLAY_WORK_UNITS);
+        assert_eq!(current.0, old.0, "all six fields rows={rows}");
+        assert!(
+            current.0.is_ok() && !old.1 && !current.1,
+            "rows={rows}: old={old:?} current={current:?}"
+        );
+        assert_eq!(current.3, old.3, "every original query work debit remains");
+        if function.cleanup_plan.status_sources.len() < retained_lookup::MIN_ROWS {
+            assert_eq!(current, old, "ineligible route acquires no tail owner");
+            continue;
+        }
+        let (lookups, callbacks) = transition_counts(function);
+        let old_query = Session::OLD_SCRATCH
+            + 2 * size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>();
+        let new_query = Session::into_edge_local_bytes()
+            + Session::into_edge_query_bytes()
+            + size_of::<Option<&Option<CallFact<'_>>>>();
+        let guards = StorageParent::CURRENT_CONTROLS
+            + (size_of::<usize>() + 3 * size_of::<&str>() + size_of::<bool>());
+        let cold = StorageParent::ACQUISITION_CONTROLS
+            + StorageParent::TERMINAL_CONTROLS
+            + (size_of::<usize>() + 3 * size_of::<&str>() + size_of::<bool>());
+        // No second activation, allocation, selector or status/edge credit.
+        let old_tail = lookups * old_query;
+        let new_tail = lookups * new_query + callbacks * guards + cold;
+        assert_eq!(old.2 + new_tail, current.2 + old_tail);
+        if rows == 64 {
+            assert!(lookups > 0 && callbacks > 0);
+            assert!(old_tail > new_tail, "complete typed positive gate: lookups={lookups} callbacks={callbacks} old_query={old_query} new_query={new_query} guards={guards} cold={cold} old_tail={old_tail} new_tail={new_tail} old={old:?} current={current:?}");
+        }
+        eprintln!("transition-scratch rows={rows} lookups={lookups} callbacks={callbacks} old={old:?} current={current:?} old_query={old_query} new_query={new_query} guards={guards}");
+    }
+}
+
+#[test]
+fn transition_scratch_exact_short_zero_floor_and_work_cuts_keep_full_refusals() {
+    let program = fixture(4, true);
+    let function = function(&program);
+    let complete = block_run(&program, function, true, CAP, MAX_REPLAY_WORK_UNITS);
+    assert!(complete.0.is_ok() && !complete.1, "complete={complete:?}");
+    let exact = block_run(&program, function, true, complete.2, MAX_REPLAY_WORK_UNITS);
+    assert!(exact.0.is_ok() && !exact.1, "exact={exact:?}");
+    for cap in [0, complete.2 - 1] {
+        let short = block_run(&program, function, true, cap, MAX_REPLAY_WORK_UNITS);
+        assert!(short.0.is_err() && short.1);
+        assert_eq!(short.0.as_ref().unwrap_err().code, "SPX-H006");
+    }
+    for work in (0..=128.min(complete.3)).chain([
+        complete.3 / 3,
+        complete.3 / 2,
+        complete.3 - 1,
+        complete.3,
+    ]) {
+        let old = block_run(&program, function, false, CAP, work);
+        let current = block_run(&program, function, true, CAP, work);
+        assert_eq!(current.0, old.0, "all six fields at work={work}");
+        assert_eq!(current.3, old.3);
+    }
+    let ((first, retry), refused, _) = crate::bounded_output::with_limit_usage(CAP, || {
+        let mut budget = ReplayBudget::new();
+        let remaining = crate::bounded_output::active_remaining().unwrap();
+        assert!(crate::bounded_output::set_active_floor(remaining));
+        let first =
+            validate_structure_with_budget_storage(&program, function, &mut budget, None, None);
+        crate::bounded_output::clear_active_floor();
+        let retry = budget.reserve_bytes(function, 0, "restored floor cannot clear refusal");
+        (first, retry)
+    });
+    assert!(refused && first.is_err() && retry.is_err());
+}
+
+#[test]
+fn transition_scratch_keeps_missing_and_noncall_diagnostic_priority_and_source_immutability() {
+    for mode in 0..3 {
+        let mut program = fixture(8, true);
+        let owner = program
+            .functions
+            .iter_mut()
+            .find(|f| f.name == "main")
+            .unwrap();
+        let body = owner.body.id.clone();
+        let mut changed = false;
+        for block in &mut owner.cleanup_plan.blocks {
+            for transition in &mut block.transitions {
+                match transition {
+                    CleanupTransition::CallCommit { call, .. } if !changed => {
+                        *call = if mode == 0 {
+                            body.clone()
+                        } else {
+                            ExpressionId::from_owned(format!("missing.transition.{mode}"))
+                        };
+                        changed = true;
+                    }
+                    _ => {}
+                }
+            }
+        }
+        assert!(changed);
+        if mode == 2 {
+            owner.cleanup_plan.schema = "foreign.before-transition";
+        }
+        let whole = format!("{program:?}");
+        let function = function(&program);
+        let old = block_run(&program, function, false, CAP, MAX_REPLAY_WORK_UNITS);
+        let current = block_run(&program, function, true, CAP, MAX_REPLAY_WORK_UNITS);
+        assert!(old.0.is_err());
+        assert_eq!(current.0, old.0, "all six fields mode={mode}");
+        assert_eq!(current.3, old.3);
+        assert_eq!(format!("{program:?}"), whole);
+    }
+}
+
+struct CallbackContext<'a> {
+    program: &'a ResolvedProgram,
+    nested: &'a ResolvedProgram,
+    initial_queries: usize,
+    mode: u8,
+    fired: std::cell::Cell<bool>,
+    current: bool,
+    target: Option<usize>,
+    calls: std::cell::Cell<usize>,
+    fired_at: std::cell::Cell<usize>,
+    outer: ClassifierLedger,
+}
+impl crate::cleanup::ReplayContext for CallbackContext<'_> {
+    fn declarations(&self) -> &DeclarationIndex {
+        &self.program.declarations
+    }
+    fn types(&self) -> crate::hir::items::View<'_, ResolvedTypeDeclaration> {
+        crate::hir::items::View::slice(&self.program.types)
+    }
+    fn interfaces(&self) -> &[ResolvedInterface] {
+        &self.program.interfaces
+    }
+    fn functions(&self) -> crate::hir::items::View<'_, ResolvedFunction> {
+        crate::hir::items::View::slice(&self.program.functions)
+    }
+    fn function_templates(&self) -> &[ResolvedFunctionTemplate] {
+        &self.program.function_templates
+    }
+    fn function_instances(&self) -> &[ResolvedFunctionInstance] {
+        &self.program.function_instances
+    }
+    fn full_program(&self) -> Option<&ResolvedProgram> {
+        Some(self.program)
+    }
+    fn resolve_call_target(
+        &self,
+        callee: &DeclarationId,
+        instance: Option<&FunctionInstanceId>,
+    ) -> Option<&ResolvedFunction> {
+        // The existing detached census proves this is a callback AFTER an
+        // actual transition query, not an earlier schema/declaration probe.
+        let census = crate::cleanup_plan::replay::ordinary_receiving::peek_census();
+        assert!(!census.incomplete);
+        let at = self.calls.get() + 1;
+        self.calls.set(at);
+        let reached = match self.target {
+            Some(target) => at == target,
+            None => census.reached[3] > self.initial_queries,
+        };
+        if reached && !self.fired.replace(true) {
+            self.fired_at.set(at);
+            match self.mode {
+                0 => {}
+                1 => {
+                    let nested_function = function(self.nested);
+                    let ((result, _), refused, _) = crate::bounded_output::with_limit_usage(
+                        CAP,
+                        || {
+                            let mut budget = ReplayBudget::new();
+                            let result = match reserve_program_skeleton_work(
+                                self.nested,
+                                std::iter::once(nested_function),
+                                &mut budget,
+                            ) {
+                                Err(error) => Err(error),
+                                Ok(_) => {
+                                    if self.current {
+                                        validate_structure_with_budget_storage(
+                                            self.nested,
+                                            nested_function,
+                                            &mut budget,
+                                            None,
+                                            None,
+                                        )
+                                    } else {
+                                        super::super::ordinary_block_before::validate_structure_with_budget_storage(self.nested, nested_function, &mut budget, None, None)
+                                    }
+                                }
+                            };
+                            (result, budget.remaining)
+                        },
+                    );
+                    assert!(
+                        result.is_ok() && !refused,
+                        "nested current={}: result={result:?} refused={refused}",
+                        self.current
+                    );
+                }
+                2 => {
+                    assert!(!crate::bounded_output::reserve_active_required(usize::MAX));
+                }
+                3 => {
+                    let (same, _, used) = crate::bounded_output::with_limit_usage(CAP, || {
+                        self.outer.storage_parent_current()
+                    });
+                    assert!(!same);
+                    assert_eq!(used, 0, "foreign invocation buys no authority");
+                }
+                4 => return None,
+                5 => panic!("unwind inside actual transition callback"),
+                _ => unreachable!(),
+            }
+        }
+        crate::cleanup::ReplayContext::resolve_call_target(self.program, callee, instance)
+    }
+}
+
+fn callback_run(
+    program: &ResolvedProgram,
+    nested: &ResolvedProgram,
+    current: bool,
+    mode: u8,
+    target: Option<usize>,
+) -> ((Result<(), Diagnostic>, usize), bool, usize) {
+    let _ = crate::cleanup_plan::replay::ordinary_receiving::take_census();
+    crate::bounded_output::with_limit_usage(CAP, || {
+        let context = CallbackContext {
+            program,
+            nested,
+            mode,
+            current,
+            target,
+            initial_queries: queries(function(program)),
+            fired: std::cell::Cell::new(false),
+            calls: std::cell::Cell::new(0),
+            fired_at: std::cell::Cell::new(0),
+            outer: ClassifierLedger::capture(),
+        };
+        let mut budget = ReplayBudget::new();
+        let result = match reserve_program_skeleton_work(
+            &context,
+            std::iter::once(function(program)),
+            &mut budget,
+        ) {
+            Err(error) => Err(error),
+            Ok(_) => {
+                if current {
+                    validate_structure_with_budget_storage(
+                        &context,
+                        function(program),
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                } else {
+                    super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                        &context,
+                        function(program),
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                }
+            }
+        };
+        (result, context.fired_at.get())
+    })
+}
+
+#[test]
+fn transition_callback_restored_nested_sticky_foreign_and_original_error_keep_custody() {
+    let program = fixture(8, true);
+    let nested = fixture(0, false);
+    for mode in [0, 1, 2, 3, 4] {
+        let current = callback_run(&program, &nested, true, mode, None);
+        assert!(
+            current.0 .1 > 0,
+            "genuine post-query callback reached mode={mode}"
+        );
+        let old = callback_run(&program, &nested, false, mode, Some(current.0 .1));
+        assert_eq!(old.0 .1, current.0 .1, "same original callback ordinal");
+        assert_eq!(
+            old.0 .0, current.0 .0,
+            "complete original callback diagnostic, mode={mode}"
+        );
+        if mode <= 1 {
+            assert!(
+                current.0 .0.is_ok() && !current.1,
+                "mode={mode}: old={old:?} current={current:?}"
+            );
+        } else {
+            assert!(current.0 .0.is_err());
+            if mode != 4 {
+                assert_eq!(current.0 .0.unwrap_err().code, "SPX-H006");
+                assert!(current.1);
+            } else {
+                assert!(
+                    !current.1,
+                    "callback semantic error keeps priority over custody"
+                );
+            }
+        }
+    }
+}
+
+#[test]
+fn transition_scratch_callback_unwind_success_and_refusal_drop_all_backing() {
+    // Warm only the thread panic runtime before observing real compiler owners.
+    let runtime = std::panic::catch_unwind(|| panic!("885 initialize thread panic hook"));
+    assert!(runtime.is_err());
+    drop(runtime);
+    let program = fixture(8, true);
+    let nested = fixture(0, false);
+    for mode in [0, 2, 3, 5] {
+        let (_, metrics) = measure(|| {
+            let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+                callback_run(&program, &nested, true, mode, None)
+            }));
+            assert_eq!(result.is_err(), mode == 5);
+            drop(result);
+        });
+        assert!(
+            !metrics.invalid && metrics.live == 0,
+            "mode={mode}: {metrics:?}"
+        );
+    }
+}
+
+#[test]
+fn immediate_transition_oracle_restores_every_original_byte_and_keeps_all_old_queries() {
+    let whole = include_str!("ordinary_block_before.rs");
+    let glue = "#[cfg(any())]\n#[path = \"ordinary_cross_phase_tests.rs\"]\nmod tests;";
+    assert_eq!(whole.matches(glue).count(), 1);
+    let restored = whole.replacen(
+        glue,
+        "#[path = \"ordinary_cross_phase_tests.rs\"]\nmod tests;",
+        1,
+    );
+    assert_eq!(restored.len(), 79447);
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(sha2::Sha256::digest(restored.as_bytes()))
+        ),
+        "e920a1dd63770419dd6bb5459cfbfd7bd5f72c7e594b6c6c0e6ecd337a5dc739"
+    );
+    assert!(restored.contains("drop(failure);\n"));
+    assert_eq!(restored.matches("require_expression(\n").count(), 9);
+    assert!(restored.contains("expressions.fact(function, call, budget)?"));
+}
+
+#[test]
+fn transition_without_skeleton_preflight_keeps_complete_root_refusal_and_drop() {
+    let program = fixture(0, false);
+    let function = function(&program);
+    for current in [false, true] {
+        let (_, metrics) = measure(|| {
+            let (result, refused, _) = crate::bounded_output::with_limit_usage(CAP, || {
+                let mut budget = ReplayBudget::new();
+                if current {
+                    validate_structure_with_budget_storage(
+                        &program,
+                        function,
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                } else {
+                    super::super::ordinary_block_before::validate_structure_with_budget_storage(
+                        &program,
+                        function,
+                        &mut budget,
+                        None,
+                        None,
+                    )
+                }
+            });
+            assert_eq!(
+                result,
+                Err(replay_error(
+                    function,
+                    "cleanup replay work budget exhausted during HIR root path"
+                )),
+                "current={current}, refused={refused}"
+            );
+            assert!(!refused, "work refusal does not forge a byte refusal");
+            drop(result);
+        });
+        assert!(
+            !metrics.invalid && metrics.live == 0,
+            "current={current}: {metrics:?}"
+        );
+    }
 }

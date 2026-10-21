@@ -98,8 +98,7 @@ pub fn derive_application_starter(
     {
         return Err(refusal("starter admits compiler-bundled dependencies only; external subjects, Rust packages and law sources need their own complete installation contract"));
     }
-    let bundle = super::derive_json_codec_plan(revision, &entries)?;
-    super::verify_json_codec_plan(revision, &entries, &bundle)?;
+    let bundle = super::json_codec::derive_replayed_json_codec_plan(revision, &entries)?;
     if let Some(command) = command {
         if !revision.manifest().sources().contains(&command.path)
             || entries
@@ -231,3 +230,13 @@ pub fn derive_application_starter(
         workspace_revision: candidate.workspace_revision,
     })
 }
+
+// Exact parent API namespace for the complete independently compiled old driver.
+#[cfg(test)]
+use super::json_codec::plan_before::{derive_json_codec_plan, verify_json_codec_plan};
+#[cfg(test)]
+use super::{build, decode_json_codec_plan, ProjectManifest, ProjectProfile};
+#[cfg(test)]
+mod before;
+#[cfg(test)]
+mod tests;

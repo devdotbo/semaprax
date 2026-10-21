@@ -53,7 +53,7 @@ pub(super) fn descriptors_from_catalog(catalog: &Value) -> Value {
             .collect();
         tasks.push(serde_json::json!({"task":task,"template":template,"card":card,"project_profile":manifest.profile().unwrap(),"target":"native64","input":manifest.command_input().unwrap(),"capabilities":manifest.capabilities(),"dependencies":dependencies,"sources":manifest.sources(),"files":files,"declarations":ids.into_iter().collect::<Vec<_>>()}));
     }
-    serde_json::json!({"schema":"semaprax.authoring-tasks.v6","scaffold_name":"task-demo","layout":"tables","tasks":tasks,"json_task":json_descriptor(catalog)})
+    serde_json::json!({"schema":"semaprax.authoring-tasks.v6","scaffold_name":"task-demo","layout":"tables","tasks":tasks,"json_task":json_descriptor(catalog),"selected_file_task":selected_file_descriptor()})
 }
 
 // The same fixed paired-plan specimen already has complete compiler/backend
@@ -76,7 +76,7 @@ fn digest(bytes: &[u8]) -> String {
         semaprax::digest_hex::LowerHex(Sha256::digest(bytes))
     )
 }
-fn json_descriptor(catalog: &Value) -> Value {
+pub(super) fn retained_json_descriptor(catalog: &Value) -> Value {
     let root = repository();
     let specimen = "examples/shiftsim-typed-record-successor";
     let directory = root.join(specimen);
@@ -172,4 +172,84 @@ fn json_descriptor(catalog: &Value) -> Value {
         "input":manifest.command_input().unwrap(),"capabilities":manifest.capabilities(),
         "sources":manifest.sources(),"dependencies":dependencies,"dependency_closure":closure,"dependency_versions":versions,
         "declarations":declarations,"files":files,"plan":plan,"pipeline":pipeline})
+}
+
+fn json_descriptor(catalog: &Value) -> Value {
+    let descriptors: Value = serde_json::from_str(include_str!("catalog.json")).unwrap();
+    let route = descriptors["json_task"].clone();
+    let retained = retained_json_descriptor(catalog);
+    for key in [
+        "project_profile",
+        "target",
+        "input",
+        "capabilities",
+        "dependencies",
+        "dependency_closure",
+        "dependency_versions",
+        "declarations",
+    ] {
+        assert_eq!(
+            route[key], retained[key],
+            "exact generic prerequisite: {key}"
+        );
+    }
+    let manifest = route["files"]
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|file| file["path"] == "semaprax.toml")
+        .unwrap();
+    let manifest = ProjectManifest::parse(manifest["content"].as_str().unwrap()).unwrap();
+    assert_eq!(route["sources"], serde_json::json!(manifest.sources()));
+    for file in route["files"].as_array().unwrap() {
+        let path = file["path"].as_str().unwrap();
+        if path.ends_with(".spx") {
+            let source = file["content"].as_str().unwrap();
+            let (program, canonical) = semaprax::parse_canonical(source, path).unwrap();
+            assert_eq!(
+                source, canonical,
+                "canonical neutral JSON task source: {path}"
+            );
+            let hir = semaprax::hir::resolve(&program).unwrap();
+            semaprax::hir::validate(&hir).unwrap();
+        }
+    }
+    route
+}
+
+// The production descriptor contains only neutral examples. This test-only
+// owner checks their ordinary grammar/types and the exact existing profile.
+fn selected_file_descriptor() -> Value {
+    let descriptors: Value = serde_json::from_str(include_str!("catalog.json")).unwrap();
+    let route = descriptors["selected_file_task"].clone();
+    let original = std::fs::read_to_string(
+        repository().join("experiments/selected-file-input/loglens/semaprax.toml"),
+    )
+    .unwrap();
+    let original = ProjectManifest::parse(&original).unwrap();
+    let neutral = ProjectManifest::parse(route["manifest"].as_str().unwrap()).unwrap();
+    assert_eq!(neutral.profile(), original.profile());
+    assert_eq!(neutral.command_input(), original.command_input());
+    assert_eq!(neutral.capabilities(), original.capabilities());
+    assert_eq!(route["project_profile"], neutral.profile().unwrap());
+    assert_eq!(route["input"], neutral.command_input().unwrap());
+    assert_eq!(
+        route["capabilities"],
+        serde_json::json!(neutral.capabilities())
+    );
+    assert_eq!(route["sources"], serde_json::json!(neutral.sources()));
+    assert_eq!(route["command"], neutral.command().unwrap());
+    assert!(neutral.dependencies().is_empty());
+    for (key, path) in [("source", "main.spx"), ("test_source", "tests.spx")] {
+        let source = route[key].as_str().unwrap();
+        let (program, canonical) = semaprax::parse_canonical(source, path).unwrap();
+        assert_eq!(
+            source, canonical,
+            "canonical neutral selected-file task source: {path}"
+        );
+        assert!(program.module_uses.is_empty());
+        let hir = semaprax::hir::resolve(&program).unwrap();
+        semaprax::hir::validate(&hir).unwrap();
+    }
+    route
 }

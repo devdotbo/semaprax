@@ -589,12 +589,13 @@ use type @id("row") from vector.provider as ImportedRow;
             "/docs/evidence/constructor-signature-rewrite-825/source-inverses.json"
         )))
         .unwrap();
+        let current_receiver =
+            crate::source_reflows_merge::ReceiverFixture::signature_rewrite_source_before(
+                include_str!("receiving.rs"),
+            );
         let sources = [
             (
-                include_str!(concat!(
-                    env!("CARGO_MANIFEST_DIR"),
-                    "/src/workspace_graph/expected_projection/type_rewrite/receiving.rs"
-                )),
+                current_receiver.as_str(),
                 include_str!(concat!(
                     env!("CARGO_MANIFEST_DIR"),
                     "/docs/evidence/constructor-signature-rewrite-825/original/00.before"

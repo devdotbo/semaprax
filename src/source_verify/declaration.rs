@@ -138,11 +138,10 @@ fn verify_profile_funded<'p>(
         let mut private_call = None;
         for (_, function) in capacity_functions.iter() {
             for root in function
-                .payload()
-                .requires
+                .requires()
                 .iter()
-                .chain(std::iter::once(&function.payload().body))
-                .chain(&function.payload().ensures)
+                .chain(std::iter::once(function.body()))
+                .chain(function.ensures())
             {
                 root.visit_calls(&mut |name, span| {
                     if name == crate::construction_fusion::partition::NAME && private_call.is_none()
@@ -273,15 +272,18 @@ fn verify_profile_funded<'p>(
     check_class_overrides(program, &types, &class_parents, &mut diagnostics);
 
     let function_value_targets =
-        crate::source_verify::function_value_inventory::function_value_targets(program, &functions);
+        crate::source_verify::function_value_inventory::function_value_targets_in(
+            &capacity_functions[..program.functions().len()],
+            &functions,
+        );
     let call_graph = capacity_functions
         .iter()
         .take(program.functions().len())
         .map(|(_, function)| {
             (
                 function.name().to_owned(),
-                crate::source_verify::function_value_inventory::calls(
-                    function.payload(),
+                crate::source_verify::function_value_inventory::calls_ref(
+                    function,
                     &functions,
                     &function_value_targets,
                 ),

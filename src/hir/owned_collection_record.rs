@@ -56,9 +56,7 @@ pub(crate) fn admitted(root: &ResolvedType, index: &DeclarationIndex) -> bool {
                         d.kind != DeclarationKind::Record
                             || d.identity_origin != IdentityOrigin::Explicit
                     })
-                    || index
-                        .declaration(&DeclarationId::new(format!("{declaration}#invariant")))
-                        .is_some()
+                    || index.has_record_invariant(&declaration)
                     || !active.insert(declaration.clone())
                 {
                     return false;
@@ -271,3 +269,6 @@ pub(crate) fn borrowed_vec_argument(
 
 #[cfg(test)]
 mod tests;
+
+#[cfg(test)]
+pub(in crate::hir) mod identity_before;

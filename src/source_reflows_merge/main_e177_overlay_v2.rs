@@ -3,17 +3,19 @@ use super::{digest, held_4a6eb, SOURCE_CAP};
 use serde_json::Value;
 use std::collections::{BTreeMap, BTreeSet};
 use std::path::Path;
-
+use std::sync::{Arc, Mutex};
 const PAGE_CAP: usize = 262144;
 // Bound from the final original-parser source union; this draft grants no paths.
 const REPLACEMENTS: &[&str] = &[
     "CHANGELOG.md",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
+    "docs/ARCHITECTURE.md",
     "docs/SUMMARY.md",
     "src/cleanup_plan/replay.rs",
     "src/cleanup_plan/replay/branch_clone/direct.rs",
     "src/cleanup_plan/replay/branch_clone/direct/before.rs",
     "src/cleanup_plan/replay/branch_clone/direct/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/directory.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
@@ -24,21 +26,28 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows_merge.rs",
     "src/source_reflows_merge/main67107_inputs.rs",
     "src/source_reflows_merge/main99f_inputs.rs",
+    "src/source_reflows_merge/next_big_batch_inputs.rs",
     "tests/hir_module_boundaries.rs",
     "tests/workspace/semantic_graph.rs",
     "tests/workspace/semantic_graph/source_inventory.rs",
     "src/cleanup_plan/replay/branch_clone/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/arena_tests.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/tests.rs",
+    "src/cleanup_plan/replay/factored/continuation_receiver.rs",
+    "src/cleanup_plan/replay/factored/oracle_hook.rs",
     "src/source_reflows/semantic_receivers.rs",
     "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
     "platform-tests/wasm-scalar-browser-v1/test-fixtures.mjs",
     "src/cleanup_plan/replay/factored.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+    "src/workspace_graph/expected_projection/held_projection.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs",
@@ -46,18 +55,32 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity.rs",
+    "src/bounded_output.rs",
     "src/cleanup/schema_summary/tests.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/tests.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/regions_entry/tests.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/paid_many/source.rs",
+    "src/cleanup_plan/replay/factored/strategy.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/a.rs",
     "src/cleanup_plan/replay/live_oracle/source_custody/b.rs",
+    "src/cleanup_plan/replay/path_join.rs",
     "src/cleanup_plan/replay/physical_budget.rs",
+    "src/cleanup_plan/replay/selected_entry/tests/session_errors.rs",
+    "src/cleanup_plan/replay/semantic_refusal.rs",
+    "src/cleanup_plan/replay/semantic_refusal/tests.rs",
+    "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs",
+    "src/cleanup_plan/replay/structural_control/calls.rs",
+    "src/diagnostic/before_writer.rs",
     "src/hir/declaration_index/identity_payer.rs",
     "src/hir/expr_nodes.rs",
     "src/hir/ids/fixed_operation_tests.rs",
     "src/hir/lexical_exit.rs",
     "src/hir/resolve_program.rs",
+    "src/hir/resolve_program_methods.rs",
     "src/hir/validation.rs",
+    "src/loan_plan/paid_live.rs",
     "src/loop_calls/byte_writer/resolved.rs",
+    "src/project/json_codec.rs",
     "src/source_reflows/factored_sources.rs",
     "src/source_reflows/incoming090_semantic_receivers.rs",
     "src/source_reflows/incoming21_semantic_receivers.rs",
@@ -66,13 +89,24 @@ const REPLACEMENTS: &[&str] = &[
     "src/source_reflows/semantic_receivers_mainb80.rs",
     "src/source_reflows_merge/current344.rs",
     "src/source_reflows_merge/final_ready_inputs.rs",
+    "src/source_reflows_merge/main67107_inputs_tail.rs",
     "src/source_reflows_merge/main7f8_source_inputs.rs",
+    "src/source_reflows_merge/main8a_historical.rs",
     "src/source_reflows_merge/main_eb2_inputs.rs",
     "src/source_reflows_merge/ordinary_plan_inputs.rs",
     "src/source_reflows_merge/runtime_json.rs",
     "src/source_verify/declaration.rs",
+    "src/workspace_graph.rs",
+    "src/workspace_graph/constructor_failure/receiving/typed/tests.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias/owned_growth_tests.rs",
+    "src/workspace_graph/expected_projection/type_rewrite/receiving.rs",
+    "src/workspace_graph/function_alias/before_core.rs",
+    "src/workspace_graph/function_alias/before_core/tests.rs",
+    "src/workspace_graph/source_schema/nominal_context/main8a.rs",
     "src/workspace_graph/source_schema/static_text/tests.rs",
+    "src/workspace_graph/test_replay_context.rs",
     "tests/doctor_production_provisioner_v1.rs",
+    "tests/project/standard_library/application_json.rs",
     "tests/quality_routing.rs",
     "tests/support/production_source_inventory.rs",
     "tests/wasm/scalar_browser_ci_contract.rs",
@@ -81,9 +115,11 @@ const REPLACEMENTS: &[&str] = &[
     "src/bounded_output/stage_debits/route_debits.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified.rs",
     "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs",
+    "src/hir/ids/declaration_tag.rs",
     "src/hir/ids/declaration_tag/before.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid/queries.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid_before.rs",
     "src/cleanup_plan/replay/inventory_coverage/typed_tests/selected_family.rs",
@@ -106,6 +142,9 @@ const REPLACEMENTS: &[&str] = &[
     "src/cleanup_plan/replay/structural_control/selected/tests/boundary.rs",
     "src/cleanup_plan/replay/inventory_coverage.rs",
     "src/cleanup_plan/replay/inventory_coverage/paid.rs",
+    "src/cleanup_plan/replay/lexical_replay.rs",
+    "src/cleanup_plan/replay/scalar_replay.rs",
+    "src/iterator_ops.rs",
 ];
 const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/renewal_profile.rs",
@@ -132,16 +171,158 @@ const ADDITIONS: &[&str] = &[
     "src/cleanup_plan/replay/expression_facts/errors.rs",
     "docs/ORDINARY-REPLAY-RECEIVING-V1.md",
     "src/hir/ids/declaration_backing_tests.rs",
+    "src/cleanup_plan/replay/factored/before_inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+    "src/source_reflows_merge/runtime_json/sealed_io.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
+    "src/ast/program_source/function_alias/scalar_signature.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
+    "src/ast/program_source/function_alias/before_string.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "src/source_reflows_merge/main_e177_historical_before_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers.rs",
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
+    "src/workspace_graph/expected_projection/call_carriers_original.rs",
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs",
+    "src/ast/program_source/decl_slices.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/alias.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "src/workspace_graph/expected_projection/call_carriers_before_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs",
+    "src/workspace_graph/expected_projection.rs",
+    "src/workspace_graph/expected_projection/prelude_forecast_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+    "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs",
+    "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_runs.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_runs.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main7e_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+    "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs",
+    "src/workspace_graph/cold_canonical/tests.rs",
+    "src/workspace_graph/expected_projection/cost.rs",
+    "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main001_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_paired_tails.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+    "src/source_reflows_merge/main_e177_overlay_compiled.rs",
+    "src/source_reflows_merge/main_e177_packet_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs",
+    "src/test_allocation_observer/backing.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs",
+    "src/bounded_output/exclusive_debits.rs",
+    "src/hir/ids/lowering_identity_tests.rs",
+    "src/hir/owned_collection_record/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs",
+    "src/hir/resolve_for/identity_before.rs",
+    "src/hir/resolve_for_own/identity_before.rs",
+    "src/source_reflows_merge/main_e177_overlay_pins_v9.rs",
     "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/fixture_helpers.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/lexical_cursor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/mod.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_census.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs",
+    "src/bounded_output/stage_debits/route_debits/retained_main_289.rs",
 ];
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
-const POLICY_LENGTH: usize = 17335; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "4da7451b6a639e16915ec1dc2eb76bbd66ee2cb74ead0b6da69f16a40f02b161";
+const POLICY_LENGTH: usize = 105298; // Filled from the complete literal policy below.
+const POLICY_SHA256: &str = "981eaa64c8962270edd5a040793d8654a4a1997ecdf472d255425dca04bb17e4";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
-
 macro_rules! require {
     ($condition:expr, $message:literal) => {
         if !$condition {
@@ -260,7 +441,114 @@ fn page_bytes(
     );
     Ok(())
 }
-fn load() -> Result<(Value, Value), &'static str> {
+// One bounded immutable JSON DATA object, never a cached admission verdict.
+// Callers still acquire fresh regular handles and authenticate every live byte
+// before arriving here. Even hits repeat canonical equality on those new bytes.
+struct PageData {
+    page: Option<(String, Arc<Value>)>,
+}
+impl PageData {
+    fn parse(&mut self, raw: &str) -> Result<Arc<Value>, &'static str> {
+        require!(raw.len() <= PAGE_CAP, "page parse bound");
+        if let Some((bytes, parsed)) = &self.page {
+            if bytes == raw {
+                require!(
+                    canonical(parsed) == raw.as_bytes(),
+                    "noncanonical or duplicate JSON"
+                );
+                return Ok(Arc::clone(parsed));
+            }
+        }
+        // Preserve the original complete parser and duplicate/canonical check.
+        // Failed or changed input can never receive the prior parsed object.
+        let parsed = Arc::new(json(raw)?);
+        self.page = Some((raw.to_owned(), Arc::clone(&parsed)));
+        Ok(parsed)
+    }
+}
+fn page_data(raw: &str) -> Result<Arc<Value>, &'static str> {
+    static DATA: Mutex<PageData> = Mutex::new(PageData { page: None });
+    DATA.lock().map_err(|_| "page parse data lock")?.parse(raw)
+}
+fn load() -> Result<(Value, Arc<Value>), &'static str> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let compiled =
+        include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/policy.json");
+    require!(POLICY_LENGTH <= PAGE_CAP, "policy bound");
+    let raw = held_4a6eb(&root.join(POLICY_PATH), POLICY_LENGTH, POLICY_SHA256)?;
+    require!(raw == compiled, "policy compiled/physical");
+    let policy = json(&raw)?;
+    require!(
+        keys(
+            &policy,
+            &[
+                "schema",
+                "page",
+                "predecessor",
+                "replacements",
+                "additions",
+                "new_fragment_edges"
+            ]
+        ),
+        "policy keys"
+    );
+    require!(
+        policy["schema"] == "semaprax.finite-source-overlay-policy.v2",
+        "policy schema"
+    );
+    require!(
+        keys(&policy["page"], &["path", "length", "sha256"]) && policy["page"]["path"] == PAGE_PATH,
+        "one literal page"
+    );
+    require!(
+        keys(
+            &policy["predecessor"],
+            &["extension", "rows", "logical_sha256"]
+        ),
+        "predecessor keys"
+    );
+    require!(policy["predecessor"]["rows"] == 519, "predecessor rows");
+    require!(
+        policy["predecessor"]["extension"]
+            == serde_json::json!({"path":EXTENSION_PATH,"length":EXTENSION_LENGTH,"sha256":EXTENSION_SHA256}),
+        "predecessor extension"
+    );
+    require!(
+        policy["replacements"] == serde_json::json!(REPLACEMENTS),
+        "literal replacement scope"
+    );
+    require!(
+        policy["additions"]
+            .as_array()
+            .ok_or("additions")?
+            .iter()
+            .map(|r| r["source"].as_str())
+            .collect::<Vec<_>>()
+            == ADDITIONS.iter().map(|p| Some(*p)).collect::<Vec<_>>(),
+        "literal addition scope"
+    );
+    // Original metadata is read as metadata. It is never substituted for a
+    // changed physical Rust source, and it retains its original individual cap.
+    let extension = include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
+    require!(
+        held_4a6eb(
+            &root.join(EXTENSION_PATH),
+            EXTENSION_LENGTH,
+            EXTENSION_SHA256
+        )? == extension,
+        "predecessor physical/compiled"
+    );
+    let length = usize::try_from(policy["page"]["length"].as_u64().ok_or("page length")?)
+        .map_err(|_| "page length")?;
+    let sha = policy["page"]["sha256"].as_str().ok_or("page digest")?;
+    require!(length <= PAGE_CAP, "page bound");
+    let physical = held_4a6eb(&root.join(PAGE_PATH), length, sha)?;
+    let compiled = include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/page.json");
+    page_bytes(compiled, &physical, length, sha)?;
+    Ok((policy, page_data(&physical)?))
+}
+#[cfg(test)]
+fn load_before_page_data() -> Result<(Value, Value), &'static str> {
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let compiled =
         include_str!("../../docs/evidence/finite-source-overlay-v2-20261018/policy.json");
@@ -372,7 +660,35 @@ fn edges(packet: &Value) -> Result<Vec<(String, String)>, &'static str> {
     }
     Ok(result)
 }
+#[path = "main_e177_overlay_fragments_v3.rs"]
+mod fragments_v3;
 fn compose_values(before: Value, policy: &Value, page: &Value) -> Result<Value, &'static str> {
+    if page["schema"] == fragments_v3::SCHEMA_V9 {
+        let expanded = fragments_v3::expand_v9(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA_V8 {
+        let expanded = fragments_v3::expand_v8(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA_V7 {
+        let expanded = fragments_v3::expand_v7(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA_V6 {
+        let expanded = fragments_v3::expand_v6(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA_V5 {
+        let expanded = fragments_v3::expand_v5(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA_V4 {
+        let expanded = fragments_v3::expand_v4(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else if page["schema"] == fragments_v3::SCHEMA {
+        let expanded = fragments_v3::expand(&before, policy, page)?;
+        compose_values_v2(before, policy, &expanded)
+    } else {
+        compose_values_v2(before, policy, page)
+    }
+}
+fn compose_values_v2(before: Value, policy: &Value, page: &Value) -> Result<Value, &'static str> {
     require!(
         keys(
             page,
@@ -645,6 +961,39 @@ pub(super) fn held_source(
         image(prior)
     })())
 }
+pub(super) fn held_source_with_packet(
+    authenticated: &Value,
+    path: &Path,
+    length: usize,
+    expected: &str,
+) -> Option<Result<String, &'static str>> {
+    let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+    let relative = path.strip_prefix(root).ok()?.to_str()?;
+    if !normal(relative) {
+        return None;
+    }
+    // compose() authenticated policy membership against these exact constants.
+    if !REPLACEMENTS.contains(&relative) && !ADDITIONS.contains(&relative) {
+        return None;
+    }
+    let row = authenticated["rows"].as_array().unwrap().iter()
+        .find(|row| row["source"] == relative).unwrap();
+    Some((|| {
+        let actual = current(row)?;
+        if row["current"]["length"].as_u64() == Some(length as u64)
+            && row["current"]["sha256"] == expected
+        {
+            return Ok(actual);
+        }
+        let prior = row["views"]
+            .as_array()
+            .unwrap()
+            .iter()
+            .find(|p| p["length"].as_u64() == Some(length as u64) && p["sha256"] == expected)
+            .ok_or("foreign overlay tuple")?;
+        image(prior)
+    })())
+}
 fn stage(row: &Value) -> Option<Value> {
     let source = row["source"].as_str().unwrap();
     let current_row = affected_row(source)?;
@@ -699,45 +1048,56 @@ pub(super) fn stage_requested(
         }
     }))
 }
+#[path = "main_e177_overlay_compiled.rs"]
+#[rustfmt::skip]
+mod compiled_sources;
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
-    match source {
-        "src/source_reflows_merge/main_e177_overlay_v2.rs" => {
-            Some(include_str!("main_e177_overlay_v2.rs"))
-        }
-        "src/cleanup_plan/replay/expression_facts/errors.rs" => Some(include_str!(
-            "../../src/cleanup_plan/replay/expression_facts/errors.rs"
-        )),
-        "src/cleanup_plan/renewal_profile.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile.rs")),
-        "src/cleanup_plan/renewal_profile/funded.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile/funded.rs")),
-        "src/cleanup_plan/renewal_profile/funded_receiving.rs" => Some(include_str!("../../src/cleanup_plan/renewal_profile/funded_receiving.rs")),
-        "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs")),
-        "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/retained_into.rs")),
-        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs")),
-        "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs")),
-        "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs")),
-        "src/cleanup_plan/replay/ordinary_receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving.rs")),
-        "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving/caller_before.rs")),
-        "src/cleanup_plan/replay/ordinary_receiving/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/ordinary_receiving/tests.rs")),
-        "src/cleanup_plan/replay/skeleton_work/dag_storage.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/dag_storage.rs")),
-        "src/cleanup_plan/replay/skeleton_work/receiving.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/receiving.rs")),
-        "src/hir/lexical_exit/owner_funded.rs" => Some(include_str!("../../src/hir/lexical_exit/owner_funded.rs")),
-        "src/hir/lexical_exit/owner_funded_receiving.rs" => Some(include_str!("../../src/hir/lexical_exit/owner_funded_receiving.rs")),
-        "src/literal_format.rs" => Some(include_str!("../../src/literal_format.rs")),
-        "src/literal_format/funded.rs" => Some(include_str!("../../src/literal_format/funded.rs")),
-        "src/literal_format/funded_receiving.rs" => Some(include_str!("../../src/literal_format/funded_receiving.rs")),
-        "src/string_ops/conditions.rs" => Some(include_str!("../../src/string_ops/conditions.rs")),
-        "src/string_ops/conditions/funded.rs" => Some(include_str!("../../src/string_ops/conditions/funded.rs")),
-        "src/string_ops/conditions/funded_receiving.rs" => Some(include_str!("../../src/string_ops/conditions/funded_receiving.rs")),
-        "src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs" => Some(include_str!(
-            "../../src/cleanup_plan/replay/ordinary_plan_history/frontier_tests.rs"
-        )),
-        _ => None,
+    compiled_sources::compiled(source)
+}
+pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
+    // A whole logical-table view is selected only after its actual current
+    // physical, compiled and archive channels have authenticated. Preserve the
+    // complete historical stage fallback below for every other input.
+    let direct = super::value_direct_4a6eb(source, expected, supplied);
+    if digest(direct.as_bytes()) == expected {
+        return direct;
+    }
+
+    if let Some(value) = super::clippy_stage::requested(source, expected, supplied) {
+        let _ = super::packet();
+        return value;
+    }
+    let normalized = super::clippy_stage::normalize(source, supplied);
+    let result = super::value_direct_4a6eb(source, expected, normalized.as_ref());
+    if normalized.as_ref() != supplied
+        && result == normalized.as_ref()
+        && digest(result.as_bytes()) != expected
+    {
+        supplied.to_owned()
+    } else {
+        result
     }
 }
-
 #[cfg(test)]
 mod tests {
     use super::*;
+    #[test]
+    fn logical_current_view_precedes_stage_normalization_and_preserves_foreign_refusals() {
+        let source = "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs";
+        let expected = "700318b054f35e3dbf69cf25d7a83cd3bf65d04f5674327bcbbd5af02bbdec66";
+        let current = super::super::compiled(source).unwrap();
+        let previous = value_direct(source, expected, current);
+        assert_eq!(digest(previous.as_bytes()), expected);
+        assert_ne!(previous, current);
+        assert_eq!(value_direct(source, expected, &previous), previous);
+        for bad in [
+            String::new(),
+            format!("{current} "),
+            current.get(..current.len() / 2).unwrap_or("").to_owned(),
+        ] {
+            assert_eq!(value_direct(source, expected, &bad), bad);
+        }
+    }
     fn record(source: &str, value: &str) -> Value {
         serde_json::json!({"source":source,"compiled":false,
             "current":{"length":value.len(),"sha256":digest(value.as_bytes()),"archive":format!("e/{}",digest(value.as_bytes()))},
@@ -1001,106 +1361,139 @@ mod tests {
         }
         std::fs::remove_dir_all(path).unwrap();
     }
-}
-
-/// Acquire one registered whole-file digest under the caller's per-file bound.
-/// Current physical, compiled, archive and fragment channels precede history.
-pub(super) fn registered_file(source: &str, expected: &str, cap: usize) -> Option<String> {
-    if cap == 0
-        || !Path::new(source)
-            .components()
-            .all(|part| matches!(part, std::path::Component::Normal(_)))
-        || expected.len() != 64
-        || !expected
-            .bytes()
-            .all(|b| b.is_ascii_digit() || (b'a'..=b'f').contains(&b))
-    {
-        return None;
+    #[test]
+    fn finite_page_parsed_data_reuses_only_exact_complete_bytes_and_rechecks_canonical_form() {
+        let mut data = PageData { page: None };
+        let a = "{\"a\":1}\n";
+        let b = "{\"a\":2}\n";
+        let first = data.parse(a).unwrap();
+        let same = data.parse(a).unwrap();
+        assert!(Arc::ptr_eq(&first, &same));
+        for hostile in [
+            "{\"a\":1,\"a\":1}\n",
+            "{ \"a\":1}\n",
+            "{\"a\":1}\n ",
+            "not JSON",
+        ] {
+            assert_eq!(data.parse(hostile).unwrap_err(), json(hostile).unwrap_err());
+            assert!(Arc::ptr_eq(&first, &data.parse(a).unwrap()));
+        }
+        let changed = data.parse(b).unwrap();
+        assert!(!Arc::ptr_eq(&first, &changed));
+        assert_eq!(*changed, json(b).unwrap());
+        assert_eq!(
+            *first,
+            json(a).unwrap(),
+            "retained callers see immutable old data"
+        );
+        assert_eq!(data.page.as_ref().unwrap().0, b, "one retained entry only");
+        let again = data.parse(a).unwrap();
+        assert!(
+            !Arc::ptr_eq(&first, &again),
+            "evicted bytes really parse again"
+        );
+        // Even a same-key forged DATA object cannot substitute a verdict.
+        data.page = Some((a.to_owned(), Arc::new(serde_json::json!({"a":2}))));
+        assert_eq!(data.parse(a).unwrap_err(), "noncanonical or duplicate JSON");
+        let raw = format!(
+            "{{\"a\":\"{}\"}}\n",
+            "x".repeat(PAGE_CAP - b"{\"a\":\"\"}\n".len())
+        );
+        data.parse(&raw).unwrap();
+        assert_eq!(data.parse(&(raw + " ")).unwrap_err(), "page parse bound");
     }
-    let cap = cap.min(SOURCE_CAP);
-    let packet = super::packet();
-    let row = packet["rows"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|row| row["source"] == source)?;
-    let selected = std::iter::once(&row["current"])
-        .chain(row["views"].as_array().unwrap().iter())
-        .find(|pin| pin["sha256"] == expected)?;
-    let fits = |pin: &Value| pin["length"].as_u64().unwrap() <= cap as u64;
-    if !fits(selected) || !fits(&row["current"]) {
-        return None;
+    #[test]
+    fn finite_page_warm_data_never_skips_fresh_regular_read_eof_utf8_or_digest_refusal() {
+        let path =
+            std::env::temp_dir().join(format!("semaprax-overlay-data-{}", std::process::id()));
+        std::fs::create_dir(&path).unwrap();
+        let source = path.join("page.json");
+        let raw = "{\"a\":1}\n";
+        let sha = digest(raw.as_bytes());
+        let read = |data: &mut PageData| -> Result<Arc<Value>, &'static str> {
+            let physical = held_4a6eb(&source, raw.len(), &sha)?;
+            page_bytes(raw, &physical, raw.len(), &sha)?;
+            data.parse(&physical)
+        };
+        let mut data = PageData { page: None };
+        std::fs::write(&source, raw).unwrap();
+        let first = read(&mut data).unwrap();
+        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap()));
+        for bad in [
+            b"{\"a\":2}\n".as_slice(),
+            b"{\"a\":1}",
+            b"{\"a\":1}\n ",
+            &[255; 8],
+        ] {
+            std::fs::write(&source, bad).unwrap();
+            let expected = held_4a6eb(&source, raw.len(), &sha).unwrap_err();
+            assert_eq!(read(&mut data).unwrap_err(), expected);
+        }
+        std::fs::remove_file(&source).unwrap();
+        assert!(
+            read(&mut data).is_err(),
+            "missing source never uses cached data"
+        );
+        std::fs::create_dir(&source).unwrap();
+        assert!(
+            read(&mut data).is_err(),
+            "nonregular source never uses cached data"
+        );
+        std::fs::remove_dir(&source).unwrap();
+        #[cfg(unix)]
+        {
+            let target = path.join("target");
+            std::fs::write(&target, raw).unwrap();
+            std::os::unix::fs::symlink(&target, &source).unwrap();
+            assert!(read(&mut data).is_err(), "warm symlink remains refused");
+            std::fs::remove_file(&source).unwrap();
+        }
+        std::fs::write(&source, raw).unwrap();
+        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap()));
+        // Matching physical bytes with foreign compiled bytes are still refused.
+        assert!(page_bytes("{\"a\":2}\n", raw, raw.len(), &sha).is_err());
+        std::fs::remove_dir_all(path).unwrap();
     }
-    if let Some(children) = row.get("fragments") {
-        for child in children.as_array().unwrap() {
-            assert!(child.get("fragments").is_none());
-            if !fits(&child["current"]) {
-                return None;
-            }
+    #[test]
+    fn finite_page_complete_old_load_and_every_live_check_remain_exact() {
+        let source = include_str!("main_e177_overlay_v2.rs");
+        let old = source
+            .split_once("fn load_before_page_data()")
+            .unwrap()
+            .1
+            .split_once("fn edges(")
+            .unwrap()
+            .0;
+        let restored = format!("fn load(){old}");
+        assert_eq!(
+            digest(restored.as_bytes()),
+            "cbb41edc5fda3c84c595601c511bd69ccfbbc160a6793ff4cc4848d1f0e70c9c"
+        );
+        let current = source
+            .split_once("fn load()")
+            .unwrap()
+            .1
+            .split_once("#[cfg(test)]\nfn load_before_page_data()")
+            .unwrap()
+            .0;
+        let inverse = format!("fn load(){current}")
+            .replacen("Result<(Value, Arc<Value>)", "Result<(Value, Value)", 1)
+            .replacen(
+                "Ok((policy, page_data(&physical)?))",
+                "Ok((policy, json(&physical)?))",
+                1,
+            );
+        assert_eq!(
+            inverse, restored,
+            "all live I/O/config/policy/hash/version checks remain at their original frontiers"
+        );
+        let (old_policy, old_page) = load_before_page_data().unwrap();
+        for _ in 0..3 {
+            let (policy, page) = load().unwrap();
+            assert_eq!(policy, old_policy);
+            assert_eq!(*page, old_page);
         }
     }
-    let current = super::actual(row);
-    if selected == &row["current"] {
-        Some(current)
-    } else {
-        Some(super::read_view(selected))
-    }
 }
 
-#[test]
-fn registered_digest_reads_keep_current_history_and_each_original_file_bound() {
-    let packet = super::packet();
-    let rows = packet["rows"].as_array().unwrap();
-    let source = "src/source_reflows_merge/runtime_json.rs";
-    let row = rows.iter().find(|row| row["source"] == source).unwrap();
-    let current = super::actual(row);
-    let current_sha = row["current"]["sha256"].as_str().unwrap();
-    assert_eq!(
-        registered_file(source, current_sha, SOURCE_CAP),
-        Some(current.clone())
-    );
-    assert!(registered_file(source, current_sha, current.len() - 1).is_none());
-    assert!(registered_file(source, current_sha, 0).is_none());
-    assert!(registered_file(source, &"0".repeat(64), SOURCE_CAP).is_none());
-    assert!(registered_file("foreign-unregistered.rs", current_sha, SOURCE_CAP).is_none());
-    assert!(registered_file(
-        "../src/source_reflows_merge/runtime_json.rs",
-        current_sha,
-        SOURCE_CAP
-    )
-    .is_none());
-    assert!(registered_file(source, "not-a-digest", SOURCE_CAP).is_none());
-    let prior = row["views"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|pin| pin["length"].as_u64().unwrap() < current.len() as u64)
-        .unwrap();
-    let prior_sha = prior["sha256"].as_str().unwrap();
-    let before = super::read_view(prior);
-    assert_eq!(
-        registered_file(source, prior_sha, SOURCE_CAP),
-        Some(before.clone())
-    );
-    // A short historical output cannot hide a larger current source read.
-    assert!(registered_file(source, prior_sha, before.len()).is_none());
-    let parent = rows
-        .iter()
-        .find(|row| {
-            row.get("fragments").is_some_and(|children| {
-                children.as_array().unwrap().iter().any(|child| {
-                    child["current"]["length"].as_u64().unwrap()
-                        > row["current"]["length"].as_u64().unwrap()
-                })
-            })
-        })
-        .unwrap();
-    let source = parent["source"].as_str().unwrap();
-    let sha = parent["current"]["sha256"].as_str().unwrap();
-    let length = parent["current"]["length"].as_u64().unwrap() as usize;
-    assert!(registered_file(source, sha, length).is_none());
-    assert_eq!(
-        registered_file(source, sha, SOURCE_CAP),
-        Some(super::actual(parent))
-    );
-}
+// Nondelegating current/prior view front, followed by the entire old stage path.

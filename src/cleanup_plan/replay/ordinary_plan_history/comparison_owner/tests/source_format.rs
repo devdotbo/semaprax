@@ -12,14 +12,14 @@ pub(super) enum Kind {
 }
 pub(super) fn restore(kind: Kind, current: &str) -> String {
     let default_predecessor;
-    let current = if matches!(kind, Kind::Root) {
+    let current = if matches!(kind, Kind::Root) && exact_main_input(kind, current) {
         default_predecessor = before_default_selection(current);
         default_predecessor.as_str()
     } else {
         current
     };
     let prepared;
-    let current = if matches!(kind, Kind::Tests880 | Kind::Tests883) {
+    let current = if matches!(kind, Kind::Tests880 | Kind::Tests883) && exact_main_input(kind, current) {
         assert_eq!(current.matches("    frontiers::prepare();\n").count(), 2);
         prepared = current.replace("    frontiers::prepare();\n", "");
         assert_eq!(
@@ -34,6 +34,42 @@ pub(super) fn restore(kind: Kind, current: &str) -> String {
     } else {
         current
     };
+    // Exact incoming stages are selected only through the live current-source
+    // physical/compiled/archive front, before this unchanged formatter inverse.
+    let (source, expected) = match kind {
+        Kind::Root => (
+            "src/cleanup_plan/replay/ordinary_plan_history.rs",
+            "0fb0e0b5e6fa8ae948bdcd68f441253e4314cd82ec77c48326b3d151e1c3889c",
+        ),
+        Kind::OldCompare => (
+            "src/cleanup_plan/replay/ordinary_plan_history/before_comparison.rs",
+            "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf",
+        ),
+        Kind::BeforeLexical => (
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs",
+            "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936",
+        ),
+        Kind::BeforePair => (
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs",
+            "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8",
+        ),
+        Kind::Cursor => (
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+            "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+        ),
+        Kind::Tests880 => (
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+            "6a8c5d6332f92bd5170f845375ef6f42f08a5f182ad531b47d652126d254c0b2",
+        ),
+        Kind::Tests883 => (
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs",
+            "6a8c5d6332f92bd5170f845375ef6f42f08a5f182ad531b47d652126d254c0b2",
+        ),
+    };
+    let acquired = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        source, expected, current,
+    );
+    let current = acquired.as_str();
     let (length, prefix, edits) = match kind {
         Kind::Root => (18812, false, ROOT),
         Kind::OldCompare => (10345, false, OLDCOMPARE),
@@ -882,4 +918,27 @@ mod tests {
         let longer = format!("{CURRENT}\n");
         assert!(std::panic::catch_unwind(|| restore(Kind::Root, &longer)).is_err());
     }
+}
+
+// These two main-only inverses retain their exact immutable input domains.
+fn exact_main_input(kind: Kind, current: &str) -> bool {
+    use sha2::{Digest, Sha256};
+    let (length, expected) = match kind {
+        Kind::Root => (19991, "b6b728c5226cd8c7b6cac5e470a385095bb4f852e8f8879c5942145ace41466d"),
+        Kind::Tests880 | Kind::Tests883 => (43059, "b55944ab8d0bf07f12819355431dcc7ff83732a1efa2be6a63e0cf6f4bf7d521"),
+        _ => return false,
+    };
+    current.len() == length
+        && format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))) == expected
+}
+
+#[test]
+fn retained_main_default_inverse_keeps_its_exact_source_and_mutation_refusals() {
+    let current = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/merge-pr896-20261021/whole/b6b728c5226cd8c7b6cac5e470a385095bb4f852e8f8879c5942145ace41466d.txt"));
+    assert!(exact_main_input(Kind::Root, current));
+    let original = before_default_selection(current);
+    assert_eq!(original, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/flat-default-be20-20261019/whole/0fb0e0b5e6fa8ae948bdcd68f441253e4314cd82ec77c48326b3d151e1c3889c.txt")));
+    let changed = format!("{current}\n");
+    assert!(!exact_main_input(Kind::Root, &changed));
+    assert!(std::panic::catch_unwind(|| before_default_selection(&changed)).is_err());
 }

@@ -97,12 +97,12 @@
       "sha256": "a44bd5b6db7e3b1df60184035e062e6eefcc7f126189c328117e8ed615d161cf"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs": {
-      "length": 22498,
-      "sha256": "c8f66d4154fd2ed0bb830b4bcecb2c9153949b9c636ea2d4fc8977edfbf130f8"
+      "length": 28060,
+      "sha256": "e98bf0ffd40155974eeb159ffc5cb0a194c5c0b72f5735ad95381c3644d7dedd"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs": {
-      "length": 43059,
-      "sha256": "b55944ab8d0bf07f12819355431dcc7ff83732a1efa2be6a63e0cf6f4bf7d521"
+      "length": 45040,
+      "sha256": "b2790adfe64995687a557320a8dea8fa1c24a3ac750b3c508ceb0d680f7d9502"
     },
     "src/cleanup_plan/replay/owned_suffix_878.rs": {
       "length": 17919,
@@ -153,16 +153,16 @@
       "sha256": "dca81a7ea26bb7cb0273560d32fec6d05129b3696b8fa69f4cc91c6a30094991"
     },
     "src/source_reflows_merge/main_e177_final_inputs.rs": {
-      "length": 113245,
-      "sha256": "1dd0752fcd444371fc3c37a1915af44a94656e69f0e04a9df0f0e6f0540595b4"
+      "length": 113138,
+      "sha256": "21f45e03fe08b7309c02875226c65fb71129ec55e8dcc1e96689a76d537df75e"
     },
     "src/source_reflows_merge/main_e177_inputs.rs": {
       "length": 38749,
       "sha256": "156b25619d771da6e55dbde9936222e399c518c2f454426cff8d484077a1ec6c"
     },
     "src/source_reflows_merge/next_big_batch_inputs.rs": {
-      "length": 22882,
-      "sha256": "02752b3ca3be05370c5507cb2d4a7a482056c882e7c7c904e376ee287cfc0f7b"
+      "length": 22917,
+      "sha256": "2be13682ca79a665f9f8481118f9ff0b72b1ac9c34fd07d84cac990ba67b6ff1"
     },
     "src/workspace_graph/tests/core_attempt_trace.rs": {
       "length": 4672,
@@ -233,8 +233,8 @@
       "sha256": "db06143a7a46c5030fc813b49a7ca7be73a1f9d619a13bb14a198799a5c7c1d8"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs": {
-      "length": 26587,
-      "sha256": "4bfecd5cc338ed82e82fe87904011fcfe6f654d6cb4c024beb8b2681d36729cf"
+      "length": 30030,
+      "sha256": "b139d4bd10fa8244c90a0f8aea56f159771fc2959b0589e1c076682daa69e00a"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs": {
       "length": 18307,
@@ -261,8 +261,8 @@
       "sha256": "c9b6319b4fe0db8e85ec232e4d22b19a45ea45dbf4a2bbfad5d1c7a9721cb936"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs": {
-      "length": 33725,
-      "sha256": "768c23a10fcec91ef7dfdbd67dabd64885266291f236c66efd0e80ad21b29b6e"
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
     },
     "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs": {
       "length": 11775,
@@ -273,8 +273,8 @@
       "sha256": "64de669bef927e9c12b9d5ed8c38a2e6d70d83cbe282c2b903268ddbb4f8092c"
     },
     "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs": {
-      "length": 27750,
-      "sha256": "dcad168b4f31f6a81fa698f896ba0b2d4a4d2116a645990e87303b3ba8d085e0"
+      "length": 28813,
+      "sha256": "cf5ef9e70aa3abb631010a6fa82c7827ec0d0975a0f7abfe0cae488909157b74"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs": {
       "length": 12379,
@@ -285,8 +285,8 @@
       "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs": {
-      "length": 13841,
-      "sha256": "7dbd445bd9cc718886d8d99c2811c47f6fedb94815f4ab3f34b02bf8f844d794"
+      "length": 14407,
+      "sha256": "10b7aadc7f271ead518a33d6929eaf4a02dd7fe75172709e9ea9a0b0ccabc3a1"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs": {
       "length": 8334,
@@ -313,12 +313,12 @@
       "sha256": "64c7d372d34967e63112a3acb395184eca7d586663b6f61b6f83904f4e86bba8"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs": {
-      "length": 22294,
-      "sha256": "38549d9a47ec78e4f1153bdc27f04944a05a7a4d40ab284550f4b210d9cb0570"
+      "length": 42863,
+      "sha256": "1c0df0fbaa00c10ee174b435013c217b1a2f40b21f070cc4427e862da7898ea0"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs": {
-      "length": 55874,
-      "sha256": "2ef71d1a1613cab3e894b35d5aa07f9207e81917557827e10bc84a2e988dda0a"
+      "length": 58148,
+      "sha256": "ff93aa1d5126986ac294ced32a7f054b36f0f96f1ab5a4545f30baf47ab38602"
     },
     "src/workspace_graph/shape_identity/before785.rs": {
       "length": 1294,
@@ -353,8 +353,8 @@
       "sha256": "0c261c6c9148990f48149c6e87bd0cf2410ea28ceaf80dd90870c0e11670c498"
     },
     "src/hir/resolve_program_methods.rs": {
-      "length": 62433,
-      "sha256": "8b68aa63384ec2f05c38c05daa5b320f4b79f5e8060a547384519fa23d2cef8b"
+      "length": 62307,
+      "sha256": "f30dceeebb3777525afbef57858974fd5058acd0347483c8856fea62ae9bad96"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/borrowed_labels_tail.rs": {
       "length": 14862,
@@ -365,8 +365,8 @@
       "sha256": "00262caa57f8a1eded7f93aeb18901f09a62f2abc2749a967d4c93e6ce392b4e"
     },
     "src/source_reflows_merge/main67107_inputs_tail.rs": {
-      "length": 59391,
-      "sha256": "00121e0ed4e0a3cce18d33f63777b7012a99b8f8b1b20abf3095bfd53750792d"
+      "length": 59527,
+      "sha256": "efafdf720cc69602a40bd107508b2e959a88152aea399b6cc60402c935bec965"
     },
     "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs": {
       "length": 30973,
@@ -393,24 +393,24 @@
       "sha256": "46f5e7917928ff472768e6c14073ee83d3f641dc6ae86f14f40b1e96b7b4be89"
     },
     "src/hir/ids/declaration_tag.rs": {
-      "length": 29663,
-      "sha256": "7e7304eee12d16c73bec21d55f94cc25048c6667be4c57555f3bbc7273dda2d1"
+      "length": 29891,
+      "sha256": "58a3bbec53e96e2f429cebfe3bfe66105293a15ffc8862afe3503e293fd26ba9"
     },
     "src/hir/ids/declaration_tag/before.rs": {
       "length": 8897,
       "sha256": "f8bc3f4cb82c2192478c74a09f9f35d9da054b033757c7600611f1979071f355"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs": {
-      "length": 79447,
-      "sha256": "e920a1dd63770419dd6bb5459cfbfd7bd5f72c7e594b6c6c0e6ecd337a5dc739"
+      "length": 86698,
+      "sha256": "fa232cdadb3ff7ea321caa04554d8dc2c237928b976af5890f6ed555c276b1ec"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs": {
       "length": 4051,
       "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs": {
-      "length": 14795,
-      "sha256": "eba9e17ad42de748c18fd93ecbb8c897aa93ceb82ecb01f9b6484aabca8d2449"
+      "length": 34775,
+      "sha256": "01839373f37c9da3aec1e57906bcf9f1544868e9884248929a3036214d44a4a2"
     },
     "src/cleanup_plan/replay/inventory_coverage.rs": {
       "length": 17186,
@@ -505,8 +505,8 @@
       "sha256": "d0a1faed7d1d9a2d17b8b7983aa6fdc75f95f7636724cadb6bc4433a717e1e7e"
     },
     "src/cleanup_plan/replay/path_join/selected/renewal.rs": {
-      "length": 30989,
-      "sha256": "f95f204698e30191fee48f29ed45c97df0611ba959e928f491705fb05a3ce653"
+      "length": 31040,
+      "sha256": "ad4e3a0b28775c41b5da5a0573f5064925caaa0ee92addfcfcee212a731614c6"
     },
     "src/cleanup_plan/replay/path_join/selected/strings.rs": {
       "length": 9410,
@@ -557,8 +557,8 @@
       "sha256": "8db0e39a5ed2b200c8a3f0b18607e1bae9c485253137c20e5728679c84ddae70"
     },
     "src/cleanup_plan/replay/path_join/selected/walk.rs": {
-      "length": 61599,
-      "sha256": "10072cbc5b0a3fd2f8975babb45c4281cb04f715677d22f21da2963e8ad830a8"
+      "length": 61824,
+      "sha256": "a83992368a59d48c1d7cca887f9e184b5ec1457e985db6219efca294675302f4"
     },
     "src/cleanup_plan/replay/record_destructure/update.rs": {
       "length": 8042,
@@ -585,8 +585,8 @@
       "sha256": "4675bbabcac1a5ea20f670baad75c6e9330b969ab9afeff216c997b0da92cd41"
     },
     "src/cleanup_plan/replay/schema/selected_paid.rs": {
-      "length": 12902,
-      "sha256": "55af572e01cb28857920171445045f926a5f94ccf519784656e28e703d05e131"
+      "length": 12912,
+      "sha256": "ef75367f8fc45dff9d85ae572646181fb9a4faf3e16807eb98a9eaf6bc61c8e5"
     },
     "src/cleanup_plan/replay/schema/selected_paid/tests.rs": {
       "length": 5321,
@@ -713,8 +713,8 @@
       "sha256": "63e1be7b4114be13c261bd19e9a4b673c17cb2a36ea003e89b0ca88198feccfd"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs": {
-      "length": 10839,
-      "sha256": "2aa84bda96497c790ebf5a15f295b60f3bdc3d79dd96fd2be0fe4e1930444420"
+      "length": 11316,
+      "sha256": "ab2c1f29a0442e3784a885811ec6b8babb037d21c22471487b4728e6f46674b4"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs": {
       "length": 7359,
@@ -725,8 +725,8 @@
       "sha256": "e10b27ba0620c915d5434bd63a8205cd2ebfa6240dc57703fbb26eed9383b986"
     },
     "src/cleanup_plan/replay/ordinary_receiving.rs": {
-      "length": 17897,
-      "sha256": "a0d07737ee0815e540676847531cc48ed50db44d6624493e58561faca6aa2e12"
+      "length": 17990,
+      "sha256": "55d8ea74cba9410ab2c71d712d396331b2dd59e27e7013677623c231d960e5f6"
     },
     "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs": {
       "length": 4692,
@@ -749,31 +749,587 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 46629,
-      "sha256": "98558e7a677633d3bdabb345ece113914dbb08c8e8872270e5046cd4564a52bf"
+      "length": 68651,
+      "sha256": "94ef52cd964244a028adb07d0a5fb8bc1d8a0a3edfe76a0de88bcb60c5873f0a"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
       "sha256": "a5842cc2765416ddd9816e9dd682c511c726308c828431146325e72adb30ada8"
+    },
+    "src/cleanup_plan/replay/factored/before_inline_singleton.rs": {
+      "length": 5781,
+      "sha256": "8810bad4566b3c46b2b3d0b4a7c55679137fd4b82ccf6c975cd59d5271652b1d"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs": {
+      "length": 55814,
+      "sha256": "b6471558eaf00c76a99472843a9d96a58a11fe9e5779f50fdccbfc6f0011aa51"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs": {
+      "length": 3388,
+      "sha256": "d485b165d89d23d063fed7688b8df6e0c297f088982448c8c6dfec17b96ba5e1"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs": {
+      "length": 3466,
+      "sha256": "55a0223985cfa2be898ef1851ae0cd8a2069e6d5db1ec0419c0ff8b2c8457f9e"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs": {
+      "length": 33029,
+      "sha256": "39412583a543bf0b2d2f3f38c11d882183d89abfef4b8ae650f827142a3d2470"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs": {
+      "length": 25833,
+      "sha256": "f1c518ace8bba8eb5b79ad2716b6a98ed15c5c7198dd2d11232b184c0b988f60"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs": {
+      "length": 5325,
+      "sha256": "b20fa6833b1d03a2b28fd78b4dbc5be9eb31125dc1616295ab4de1de98570073"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs": {
+      "length": 8330,
+      "sha256": "e96169bac2c81637e3a741eb51dad2d48604d59eec0c3c441d9db1e2b7a4d649"
+    },
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs": {
+      "length": 30918,
+      "sha256": "7ba820da6e65243527976b6bee0ea1920440144c9c5c416a6d8e0d10d180698c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
+      "length": 20736,
+      "sha256": "cbabeca225942f20ffe4d4cd675199eb0200934c8be06940ddbfff1b05f74bb3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs": {
+      "length": 15748,
+      "sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs": {
+      "length": 28105,
+      "sha256": "efe37def7206f52eb92424c36d79bf3befbdbc1ba8e456d027fa8f30b62d93fa"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs": {
+      "length": 21382,
+      "sha256": "de6628881d539bd95eb53d7ba260be5d7865babf59432890a4d6e91a2f6964f3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs": {
+      "length": 60089,
+      "sha256": "6fd9a05db6f849b7bba7f82c815493f2a6c031c84475eae8451e8680403d5351"
+    },
+    "src/ast/program_source/function_alias/scalar_signature.rs": {
+      "length": 3398,
+      "sha256": "adbcb76a1b4c20c44f2543eba4fe5cfa262a11dd0f6ceb02ba5cd05312bbd287"
+    },
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs": {
+      "length": 79461,
+      "sha256": "4f0edf4d0ce83f6519240778eb45417329d6f30954c9e0d7d1177bd8197628ab"
+    },
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs": {
+      "length": 7855,
+      "sha256": "5714624d03743341b609d3e1fb85bf575a1648d84c1c88d6f8324dd2f02fbfbc"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs": {
+      "length": 15446,
+      "sha256": "90cf27667fe64714fdc3d5196406d0eec2ad59cbd12d1a07b16a23810eda066a"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs": {
+      "length": 22427,
+      "sha256": "24607db07dfce24677610d69f7073b44cb01fe47893f3f90bcfaab474c18ecdf"
+    },
+    "src/ast/program_source/function_alias/before_string.rs": {
+      "length": 1898,
+      "sha256": "3de6f80391541e690f04879f7f1b15ed0917870b1c54f2321f7d43d8bea639ea"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs": {
+      "length": 21776,
+      "sha256": "adea1ccc8383fdceab390253fcde53adcfc4223f395fc89efa76521c183b689d"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs": {
+      "length": 6323,
+      "sha256": "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs": {
+      "length": 48440,
+      "sha256": "3bcc9a83700d77eb24eacd0192f13f3254681459ff8841e0c4c38a95b785b79d"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs": {
+      "length": 6683,
+      "sha256": "d2121a25559a10894ce6f6bd883f8cd55f0c7bab29e182431e65d236aba2df4b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs": {
+      "length": 57313,
+      "sha256": "1382e002527db196ea28ac57f30ee964d1dfc3d233d3741f513e1e98ff5f018e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs": {
+      "length": 6294,
+      "sha256": "f4dee6ae5901cbf94798600c1a1e207640b790d5577cdfe6014c6b4129eefbf2"
+    },
+    "src/source_reflows_merge/main_e177_historical_before_data.rs": {
+      "length": 25356,
+      "sha256": "05ecc0163fa3593182d2044c5f2029e3c1dd0cd7143ed9904eccfd6e6b751a3d"
+    },
+    "src/source_reflows_merge/main_e177_historical_data.rs": {
+      "length": 1902,
+      "sha256": "67bfa3bf6ca2151ba8f99ae6390099fa9fcdfef7fb752ecbb831b150ce111310"
+    },
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs": {
+      "length": 6097,
+      "sha256": "ecc693e67e0a193efec4ddc0e22037fcd99b8626b7fd87e5f11c1123fd65d4f3"
+    },
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
+      "length": 61825,
+      "sha256": "f2d7a66a474f9b09204c3c03da4dc6aa617527298c7423ce6ce2ba63c795b135"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
+      "length": 19877,
+      "sha256": "e392af9c4f7bf39edfa9850d759e5d8a805e9c53cfb280633017afb64d112eb7"
+    },
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs": {
+      "length": 17171,
+      "sha256": "73742290da203264ad5410057c1787b921e051e456ace291d167a584f801fb3c"
+    },
+    "src/workspace_graph/expected_projection/call_carriers.rs": {
+      "length": 12395,
+      "sha256": "84802a57f88f708bbc10da608f169ebedba8307677b2e6858cd8e0850c505aaa"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs": {
+      "length": 30577,
+      "sha256": "30ee9b7d27da7985809d73823ad6b2297548873c76731723659b4464c9c49170"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs": {
+      "length": 4106,
+      "sha256": "5a0c22d81a09e58528af9e394df7313cb79198961b6de14a9159af360666f62f"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_original.rs": {
+      "length": 23564,
+      "sha256": "90f8c704f7a8eeb72cfc5318123b27febe80ce5bbba39b7b6a1952ec6e058f58"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs": {
+      "length": 23994,
+      "sha256": "04baeff68abf890ab6bfa855969786876b0b91ef59cf685f898b829e14e0c047"
+    },
+    "src/ast/program_source/decl_slices.rs": {
+      "length": 9428,
+      "sha256": "3e6cbf1036e73125905bdf4ac705e876929d24cd626eb365db2ae08434f33e12"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs": {
+      "length": 22454,
+      "sha256": "aed0aeafaf41aa8a9e187d855f2ec450cd570f29c4fcb593cd3627489628a106"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs": {
+      "length": 6431,
+      "sha256": "8a354f623f13b5e9b337dae1e8eb0199a9e67e3d81b704be8864570a8eb38b22"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs": {
+      "length": 40738,
+      "sha256": "f9e75926f5df0b6b7746a78cf3d2f705bf76d342356346c3581ddd8b6c04aba9"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs": {
+      "length": 9949,
+      "sha256": "dafb587e3248893d836b70f9407e8ca07dd292cd6b93b6e5f19fc01162c425be"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_before_directory.rs": {
+      "length": 12075,
+      "sha256": "87142dc1b3f98f9d381459f0f4f8925c807d28645aa0646ea453eea3c63cc512"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_directory.rs": {
+      "length": 21794,
+      "sha256": "1a61d40677748f217a193754f9be21184a8dfbf7e9ca82550f28f3146c99d999"
+    },
+    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs": {
+      "length": 20676,
+      "sha256": "d820534cafd4ccf394e3c847dd486a3b8797add74c42395087e5ca07b8a99da1"
+    },
+    "src/workspace_graph/expected_projection.rs": {
+      "length": 59698,
+      "sha256": "cdd35c1e31d513032b5f4943ee86efdb7cce9dd4a8b77e152b4640d2ba094ab4"
+    },
+    "src/workspace_graph/expected_projection/prelude_forecast_tests.rs": {
+      "length": 12973,
+      "sha256": "1118299b35a0009ce7476507741ea9f1495b0d12191af673a852a6da7cb771af"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs": {
+      "length": 28714,
+      "sha256": "f1458b012d31d958e5fb5cbb06cfc7b914ed5f10664f3ab654f99a9c3d6f16e9"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs": {
+      "length": 6457,
+      "sha256": "8db6b9a6110b31cdfea17414762febcdd689d9dc8889c7428ed502599f77928b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs": {
+      "length": 6267,
+      "sha256": "8f9fd563b7aca230f1a68f190973c80958b770ce7ea3ca91e71e80e38df95c0e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs": {
+      "length": 43627,
+      "sha256": "b67dd4267223136222edf4508cd19f0a7e8c4fc43338a1aa616d55430a3792a5"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs": {
+      "length": 23096,
+      "sha256": "05686e00fa0f335ef641ec25da1040201f10ef710579ac97ebfc81be8b1fe843"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs": {
+      "length": 40966,
+      "sha256": "218a90e31a351a47c984e889126beca53b1a7be512912499cc7fe7e85cd27f3c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs": {
+      "length": 11150,
+      "sha256": "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs": {
+      "length": 34204,
+      "sha256": "562c506a3064893f4799b778ae8fd6fc0f8ab28f918d32fc6c5cff88b4d12871"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs": {
+      "length": 25860,
+      "sha256": "1801e6dfb9e77d78c0547b710bda186cb382a022af36d6609901eb5f9020be26"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs": {
+      "length": 10841,
+      "sha256": "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs": {
+      "length": 43884,
+      "sha256": "cd73e40396090ee5fd3cb7a1c7f76e0dc3958e083e32611e4eef3e05432965e3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs": {
+      "length": 7075,
+      "sha256": "ca5747d15635434b22f7efa9375e2de495f2fc3895a2b54b3d8885fd235e2730"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs": {
+      "length": 6770,
+      "sha256": "b9f81fa616e8bfddfb89b76744b23c8e113ec69f526ed520628b257dd0b62cd2"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs": {
+      "length": 33186,
+      "sha256": "ba5e80400489f1c4546b9e6c724a6ab9dcea707e74e02a50c329895775aa54db"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs": {
+      "length": 20756,
+      "sha256": "dc422abd0e68fcb7cb563f09c35e5d0a5a1662309e0fe8f35223ac4ab9ae4943"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs": {
+      "length": 21023,
+      "sha256": "651542d472bf505cc7f9c5eacebaf31718b83f8043ab40ead8e90a706e0be3f4"
+    },
+    "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs": {
+      "length": 4531,
+      "sha256": "8d7ce550bcd6f49d491d9a5ea286b209e71307f23bf558f77ec9120e43bdb16a"
+    },
+    "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs": {
+      "length": 6885,
+      "sha256": "4c664503b8c2940f9c3519524d80c9a58f234f8dbdb9738438dda5eff6fd1edd"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs": {
+      "length": 32095,
+      "sha256": "8065d8caeefb5a556da49c3d51690e3191d829c665cd0d2079fc4829c154c918"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_runs.rs": {
+      "length": 25857,
+      "sha256": "51a2461a7ee906ad6b5a88ebdff6fc1f082a20e105c756bfe30cf83890310550"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs": {
+      "length": 34172,
+      "sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs": {
+      "length": 56129,
+      "sha256": "bc46f1c86a89bfdef97abfd3381e27177c837e3dfce5d9ec50d718dc1234a2e2"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_runs.rs": {
+      "length": 17993,
+      "sha256": "1278774f715445f4cee3784ef21bc2618c8be3e088a188785e2d8fd3649df0b9"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main7e_pair_scope_tests.rs": {
+      "length": 50993,
+      "sha256": "287ce9abf3b7a74164c1f58008deb3a6b8be214afb1218e98a90e4c320d30c7c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_certified.rs": {
+      "length": 7656,
+      "sha256": "f68af76308eb729dd805fd1453d23e738fa6cf3aa4ab9bbbe9518d72323c341e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_certified.rs": {
+      "length": 7383,
+      "sha256": "375d7cfdbb9ea4c2024d2b56a453e9e9cc7a57648057af869f7050a121e072ee"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs": {
+      "length": 23784,
+      "sha256": "921932de646b2be17d4f64a8a2f8e499d6ba0098a4e145d326ed0e88f66f90ca"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs": {
+      "length": 33043,
+      "sha256": "e108fda04b20450b6014c943da5984818ceb6fbc837e7f86b086ad22b6cea1f8"
+    },
+    "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs": {
+      "length": 17919,
+      "sha256": "a7e146f89c90b1cacb07a39971e7d51fe1eb32b8753305d092b6aee71627c890"
+    },
+    "src/workspace_graph/cold_canonical/tests.rs": {
+      "length": 16089,
+      "sha256": "9f86fbb6c40d5285d13ad2b90eb09860ecbb8292b94aa368a890b7c3e9d71cc6"
+    },
+    "src/workspace_graph/expected_projection/cost.rs": {
+      "length": 41013,
+      "sha256": "748f9c3acf0bf4f899e08793c769a80ba30f7bedf92c3d82e24fb5168d838bf8"
+    },
+    "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs": {
+      "length": 3320,
+      "sha256": "4db43502a74a83c16ca79f6b9538672a16cf92c65c3d317e189990b899fbe62f"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs": {
+      "length": 26651,
+      "sha256": "a437d1e8c4da2ae3e8595d72c5558d95f2731cb322738273edc0745b970080a3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs": {
+      "length": 25313,
+      "sha256": "8a69e12c45733ecfca3ef9e5f8907068b861b4a15c27b553d7cc8906c08708d3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs": {
+      "length": 27227,
+      "sha256": "366c69fef9c8648255b88498153cc08d5277629b8f607eeb99fd72bae83748b5"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_links.rs": {
+      "length": 34455,
+      "sha256": "4d37c539550c84bba56eab360ce7d6fcb0ab5425bedeeca1ce7d8d3e3b3769a2"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired_tail.rs": {
+      "length": 34170,
+      "sha256": "3bfddfb8c69711d9e5c5b423a3a400e74a1b16572ead764acb340ad8a8bbe417"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs": {
+      "length": 13860,
+      "sha256": "e4006e0c55c0ba9b9b6d214b8d142cbc9c279c63b9c392dc1b636fc600cc30ce"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs": {
+      "length": 32019,
+      "sha256": "4f77590d854ac3982ec412d797fe559b92ab781896b26e8b3fee1299064529ae"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_paired_tail.rs": {
+      "length": 32339,
+      "sha256": "9467284ebc12b7a48380d41f9d3d7005bbbcb707fff02fe81b4e48527402f76d"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs": {
+      "length": 21368,
+      "sha256": "f70a5ec7456c2b0e922b302aa194f8303575e1f7e794a9370ee409744538a5d3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs": {
+      "length": 30104,
+      "sha256": "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs": {
+      "length": 25469,
+      "sha256": "b54e7239b1e5c1f5a2dbe914d8ad4dbf17b343784d10d8cb1b1e450baf626f6c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_pair_links.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_paired_tail.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main001_pair_scope_tests.rs": {
+      "length": 50692,
+      "sha256": "b6f24502e16f6439d59c14ffe8700a84decc8c36876378e557e9245dc58e27bc"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs": {
+      "length": 55524,
+      "sha256": "0a76af1059064eaeaef23136068d1a35cdc77e5ad931e28eb0ee304a5a8baaa6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs": {
+      "length": 50866,
+      "sha256": "0b92d66d8c5b903c6c2b949b2b74517bc5e45117bc9e6d6ef46036f2173c8d0e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_paired_tails.rs": {
+      "length": 6335,
+      "sha256": "485410ab39853c26e2df54bace3891ae4b883029140f66113e481466d5c60954"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs": {
+      "length": 13652,
+      "sha256": "37dafd575afbf5444088af8142df92912133b56c8a3abc40170cbb46626a1a4f"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs": {
+      "length": 19373,
+      "sha256": "b0080c5a674ba46cdbf266647436c54e6395e2f48babdfdd71a092f39b5c22de"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs": {
+      "length": 7656,
+      "sha256": "f68af76308eb729dd805fd1453d23e738fa6cf3aa4ab9bbbe9518d72323c341e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_paired_tail.rs": {
+      "length": 8337,
+      "sha256": "40d1e9db7ef14c4791fcad0476fe1abcf2732022fd2d2a89e5b9b811ed5b6437"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_pair_links.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_paired_tail.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs": {
+      "length": 37475,
+      "sha256": "9fb7af33a5df12e64b70bce38e63636abb10f0866e22e485b250ff43550482fa"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs": {
+      "length": 6098,
+      "sha256": "753fcdc6ea3302c8f33a0355746d7d75b5fdc2c971d95aea6403467a8d8ef810"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs": {
+      "length": 44615,
+      "sha256": "6a803f908b40950adbc68c47589aa4170d6c54a8e3bb142b55de37e8058c3fe6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs": {
+      "length": 7872,
+      "sha256": "d5e2c99c048b76596ffd9e58412cf5a1f2eb467fe5c4855e62c96be80d84768b"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs": {
+      "length": 27194,
+      "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
+    },
+    "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
+      "length": 45269,
+      "sha256": "613ad4fc56c6bef78acb57a358a2c6916f65d7a5a2c99d66960c5088f9b8f117"
+    },
+    "src/source_reflows_merge/main_e177_packet_lookup.rs": {
+      "length": 33840,
+      "sha256": "1f39f504cadbe0fbc994a9f7d9a98cecff52861068e7c4d97541c64deb2e1f73"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs": {
+      "length": 32474,
+      "sha256": "ef34a166d42955f6755f645e89bcd925e7261c93e131fedaa7cb804bd4ab3b88"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs": {
+      "length": 33327,
+      "sha256": "a8f68ec06d4a418a6a4fd4b0a19ea75a411357899a32a66dcf7e5d0d46097460"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs": {
+      "length": 25645,
+      "sha256": "0934fe938e30310a2812c91b6c105bab6e511a214748613073be5343530064df"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs": {
+      "length": 15748,
+      "sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs": {
+      "length": 29552,
+      "sha256": "5db66026b82c264849c9bddc1ebb6f25b9433bd8fd4734fc606aead076dc2679"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs": {
+      "length": 34172,
+      "sha256": "d1a229642405a06f2037a30470188c82d66ecb51913c40f30842428c3984a1d6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs": {
+      "length": 9993,
+      "sha256": "2f4387d36e1e29ab15c409438dd74071439f2cb058d3fe53aa16c533ef79780e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs": {
+      "length": 18343,
+      "sha256": "263e2baf2761fd0eb175208e42406baccb00f7af1ee6514538110a3be6f8f612"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs": {
+      "length": 6956,
+      "sha256": "c63b8f98af8b1fa55f7e305819efc87107477db4a92f57743365544885b4973c"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs": {
+      "length": 15748,
+      "sha256": "0e289307a841d6ae175957fc9d0f510dc08ccf85959125748cf027b65a9b0de3"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs": {
+      "length": 7420,
+      "sha256": "faf2391a83182d4b60d1be8561c404ac7af427fcd1f59ff2bfa45c85058244d0"
+    },
+    "src/bounded_output/exclusive_debits.rs": {
+      "length": 35332,
+      "sha256": "9a4a2a5c7f297f12231521a279e0ef17cd70085ae6918ae30b1bd63ceaca2932"
+    },
+    "src/hir/ids/lowering_identity_tests.rs": {
+      "length": 24400,
+      "sha256": "030374fddb446ebeed72e8c9fa862e72dc7e14c255262a6c40ade044ed714af6"
+    },
+    "src/hir/owned_collection_record/identity_before.rs": {
+      "length": 3616,
+      "sha256": "69f16e619754676b5a87c9f3097d58430f6c2190337ab30bdc34c28c1669b66d"
+    },
+    "src/hir/resolve_expr/sort_keys/identity_before.rs": {
+      "length": 2603,
+      "sha256": "8b0ba9454b0cf8592977cfbafd468493d403affb2a05430eee86135a5019f3fb"
+    },
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs": {
+      "length": 13671,
+      "sha256": "8a34ae0c02a01252ea53fb730a10bd58d8d1229b24f556fd3917805b288518db"
+    },
+    "src/hir/resolve_for/identity_before.rs": {
+      "length": 9363,
+      "sha256": "9886243816b32ab0e64764367c110ae1ffcc4276e5b290955b560ec2fea100e0"
+    },
+    "src/hir/resolve_for_own/identity_before.rs": {
+      "length": 7868,
+      "sha256": "ea060f003061866b6bf8df5bbcba4d267b1a694b700168a8962351065e792842"
+    },
+    "src/source_reflows_merge/main_e177_overlay_pins_v9.rs": {
+      "length": 10093,
+      "sha256": "9f3a3343b8cb3230fbf78c23c9096b6bd43fb416f6cecf9aa4c0ef99e03b7112"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/fixture_helpers.rs": {
+      "length": 13740,
+      "sha256": "771f16f72fa8f2f97a6cae06798250d08ccab2e3193d6e635dcaf4213edc5ede"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/lexical_cursor.rs": {
+      "length": 33725,
+      "sha256": "768c23a10fcec91ef7dfdbd67dabd64885266291f236c66efd0e80ad21b29b6e"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/mod.rs": {
+      "length": 22735,
+      "sha256": "beecee19c500379a95adb5d086450843533e353abe35bfd5886d5b3b4126ab4d"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_census.rs": {
+      "length": 22325,
+      "sha256": "dea1a69cc0cbb97de935220a53628e001ad096cccce1307623461977d72211a6"
+    },
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/retained_main_289/pair_scope_tests.rs": {
+      "length": 56287,
+      "sha256": "954c0ad04b909e00edcec2834b7936fe3b6c3ccfa1864799c408e13c96225d09"
+    },
+    "src/bounded_output/stage_debits/route_debits/retained_main_289.rs": {
+      "length": 5037,
+      "sha256": "051797ccfc0fea98d81a9dde786a2a69537b3c1f897ff4b494f4df0152c18e18"
     }
   },
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 134002,
-      "sha256": "fc913ecc7db54fa1e4ef480952e459b972a04171e40e7237964aff5d81be7e95",
+      "length": 136942,
+      "sha256": "ffe6016f0c7b317ce89103f9fbe72f888a31ce212efd0f22fcd26e62c73d8a79",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 150776,
-      "sha256": "68338a176c682de788c747003b39a6c030128da1c39275f72ae24b5651410d19",
+      "length": 166104,
+      "sha256": "949eafef81d1d525a84d530c81101eced9a9ff87093032cbfc73c778308639dc",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 191952,
-      "sha256": "3b06439c8daabdb9be2c25da3ce633d18f640f37709dceb8fb09865bfe1916f8",
+      "length": 209093,
+      "sha256": "70232170ffb1b0ba99518a871ca1d5e07d6197a1d7138db9cd99a5bc4811ff65",
       "base": "../../../../../"
     }
   },
@@ -796,13 +1352,13 @@
   },
   "workspace_owner": {
     "path": "tests/workspace/semantic_graph.rs",
-    "length": 57423,
-    "sha256": "b4d8c484c115ff71427e873d8b97470048b85106f7d54043299cb00b0e987f6d"
+    "length": 57556,
+    "sha256": "199b49885168f659daaf1759593b72392aa83621f6340796a83f97ec397de96d"
   },
   "table": {
     "path": "docs/evidence/main-e177-final-source-binding-20261017/current-projection-inputs.tsv",
-    "length": 54800,
-    "sha256": "0227d9e2079821b6ccbc6fdbc657cbef8c27e8a7a1979482c66d8a3ed442bc5f",
+    "length": 65336,
+    "sha256": "de162ca5e36f49447e17383bdeb42316b509f6f99f2de67eb32d61d6bd28c0c6",
     "prior": {
       "length": 26040,
       "sha256": "bf9d90d2e54bd7fc117b8f885f94fba383d74207e8833a62c8c3eaa7adeeb190",
@@ -811,2382 +1367,2862 @@
     "insertions": [
       {
         "at": 24,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs"
+        "path": "src/cleanup_plan/replay/factored/before_inline_singleton.rs"
       },
       {
         "at": 25,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs"
       },
       {
         "at": 26,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs"
       },
       {
         "at": 27,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs"
       },
       {
         "at": 28,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs"
       },
       {
         "at": 29,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs"
       },
       {
         "at": 30,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs"
       },
       {
         "at": 31,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs"
       },
       {
         "at": 32,
-        "path": "src/cleanup_plan/replay/merge_census.rs"
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs"
       },
       {
         "at": 33,
-        "path": "src/cleanup_plan/replay/owned_suffix_878.rs"
-      },
-      {
-        "at": 34,
-        "path": "src/cleanup_plan/replay/owned_suffix_878_vector.rs"
-      },
-      {
-        "at": 35,
-        "path": "src/cleanup_plan/replay/skeleton_work/merge_keys_878.rs"
-      },
-      {
-        "at": 36,
-        "path": "src/cleanup_plan/replay/skeleton_work/merge_search.rs"
-      },
-      {
-        "at": 37,
-        "path": "src/source_reflows/main_e177_controllers.rs"
-      },
-      {
-        "at": 38,
-        "path": "src/source_reflows/main_e177_support.rs"
-      },
-      {
-        "at": 39,
-        "path": "src/source_reflows_merge/main_e177_final_inputs.rs"
-      },
-      {
-        "at": 40,
-        "path": "src/source_reflows_merge/main_e177_inputs.rs"
-      },
-      {
-        "at": 41,
-        "path": "tests/workspace/pin_capture.rs"
-      },
-      {
-        "at": 393,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs"
-      },
-      {
-        "at": 394,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs"
-      },
-      {
-        "at": 395,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs"
-      },
-      {
-        "at": 396,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs"
-      },
-      {
-        "at": 397,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs"
-      },
-      {
-        "at": 398,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs"
-      },
-      {
-        "at": 399,
-        "path": "src/source_reflows/semantic_receivers/status_inline.rs"
-      },
-      {
-        "at": 24,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors.rs"
       },
       {
-        "at": 25,
+        "at": 34,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/census.rs"
       },
       {
-        "at": 26,
+        "at": 35,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/tests.rs"
       },
       {
-        "at": 27,
+        "at": 36,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop.rs"
       },
       {
-        "at": 28,
+        "at": 37,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_borrowed_single.rs"
       },
       {
-        "at": 29,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs"
-      },
-      {
-        "at": 30,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs"
-      },
-      {
-        "at": 31,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs"
-      },
-      {
-        "at": 32,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs"
-      },
-      {
-        "at": 56,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
-      },
-      {
-        "at": 57,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs"
-      },
-      {
-        "at": 29,
+        "at": 38,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/before_arity_dispatch.rs"
       },
       {
-        "at": 60,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs"
+        "at": 39,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single.rs"
       },
       {
-        "at": 61,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs"
+        "at": 40,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/lexical_successors/frame_loop/borrowed_single/tests.rs"
       },
       {
-        "at": 62,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        "at": 41,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors.rs"
       },
       {
-        "at": 63,
-        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
-      },
-      {
-        "at": 260,
-        "path": "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs"
-      },
-      {
-        "at": 261,
-        "path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs"
-      },
-      {
-        "at": 262,
-        "path": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs"
-      },
-      {
-        "at": 406,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"
-      },
-      {
-        "at": 407,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"
-      },
-      {
-        "at": 408,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"
-      },
-      {
-        "at": 409,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"
-      },
-      {
-        "at": 33,
+        "at": 42,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors_methods.rs"
       },
       {
-        "at": 38,
+        "at": 43,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs"
+      },
+      {
+        "at": 44,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/empty_memo.rs"
+      },
+      {
+        "at": 45,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_scope_memo.rs"
+      },
+      {
+        "at": 46,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route.rs"
+      },
+      {
+        "at": 47,
         "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_route_methods.rs"
       },
       {
-        "at": 75,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs"
+        "at": 48,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/empty_memo/owned_tests.rs"
       },
       {
-        "at": 105,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs"
+        "at": 49,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/paid_route_tests.rs"
       },
       {
-        "at": 177,
-        "path": "src/cleanup_plan/replay/physical_budget/setup.rs"
+        "at": 50,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor.rs"
       },
       {
-        "at": 187,
-        "path": "src/cleanup_plan/replay/physical_storage/representative_measurements.rs"
-      },
-      {
-        "at": 188,
-        "path": "src/cleanup_plan/replay/physical_storage/representative_measurements/applications.rs"
-      },
-      {
-        "at": 191,
-        "path": "src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"
-      },
-      {
-        "at": 192,
-        "path": "src/cleanup_plan/replay/allocation/oracle/diagnostic/metered.rs"
-      },
-      {
-        "at": 193,
-        "path": "src/cleanup_plan/replay/allocation/oracle/invocation.rs"
-      },
-      {
-        "at": 242,
-        "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs"
-      },
-      {
-        "at": 259,
-        "path": "src/cleanup_plan/replay/constructed_variant.rs"
-      },
-      {
-        "at": 260,
-        "path": "src/cleanup_plan/replay/context_closure.rs"
-      },
-      {
-        "at": 261,
-        "path": "src/cleanup_plan/replay/continuation_storage.rs"
-      },
-      {
-        "at": 262,
-        "path": "src/cleanup_plan/replay/allocation_paths.rs"
-      },
-      {
-        "at": 263,
-        "path": "src/cleanup_plan/replay/call_paths.rs"
-      },
-      {
-        "at": 264,
-        "path": "src/cleanup_plan/replay/call_payload.rs"
-      },
-      {
-        "at": 265,
-        "path": "src/cleanup_plan/replay/expression_children.rs"
-      },
-      {
-        "at": 266,
-        "path": "src/cleanup_plan/replay/expression_facts.rs"
-      },
-      {
-        "at": 267,
-        "path": "src/cleanup_plan/replay/expression_facts/borrowed.rs"
-      },
-      {
-        "at": 268,
-        "path": "src/cleanup_plan/replay/expression_facts/capacity.rs"
-      },
-      {
-        "at": 269,
-        "path": "src/cleanup_plan/replay/expression_facts/saved.rs"
-      },
-      {
-        "at": 270,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving_before.rs"
-      },
-      {
-        "at": 271,
-        "path": "src/cleanup_plan/replay/expression_facts/ordinary_before.rs"
-      },
-      {
-        "at": 272,
-        "path": "src/cleanup_plan/replay/flat_records.rs"
-      },
-      {
-        "at": 273,
-        "path": "src/cleanup_plan/replay/inventory_coverage.rs"
-      },
-      {
-        "at": 274,
-        "path": "src/cleanup_plan/replay/physical_clone.rs"
-      },
-      {
-        "at": 275,
-        "path": "src/cleanup_plan/replay/scalar_match.rs"
-      },
-      {
-        "at": 276,
-        "path": "src/cleanup_plan/replay/scalar_replay.rs"
-      },
-      {
-        "at": 277,
-        "path": "src/cleanup_plan/replay/scalar_replay/records.rs"
-      },
-      {
-        "at": 278,
-        "path": "src/cleanup_plan/replay/scalar_replay_tree.rs"
-      },
-      {
-        "at": 279,
-        "path": "src/cleanup_plan/replay/scalar_replay_tree/records.rs"
-      },
-      {
-        "at": 280,
-        "path": "src/cleanup_plan/replay/selected_callees.rs"
-      },
-      {
-        "at": 281,
-        "path": "src/cleanup_plan/replay/shape_cursor.rs"
-      },
-      {
-        "at": 282,
-        "path": "src/cleanup_plan/replay/status_construction.rs"
-      },
-      {
-        "at": 283,
-        "path": "src/cleanup_plan/replay/status_construction/borrowed.rs"
-      },
-      {
-        "at": 284,
-        "path": "src/cleanup_plan/replay/structural_maps.rs"
-      },
-      {
-        "at": 285,
-        "path": "src/cleanup_plan/replay/status_validation.rs"
-      },
-      {
-        "at": 286,
-        "path": "src/cleanup_plan/replay/primitive_fixture.rs"
-      },
-      {
-        "at": 287,
-        "path": "src/cleanup_plan/replay/path_summary.rs"
-      },
-      {
-        "at": 288,
-        "path": "src/cleanup_plan/replay/skeleton_bound.rs"
-      },
-      {
-        "at": 289,
-        "path": "src/cleanup_plan/replay/skeleton_work.rs"
-      },
-      {
-        "at": 290,
-        "path": "src/cleanup_plan/replay/skeleton_work/dag_storage.rs"
-      },
-      {
-        "at": 291,
-        "path": "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"
-      },
-      {
-        "at": 292,
-        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs"
-      },
-      {
-        "at": 293,
-        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs"
-      },
-      {
-        "at": 294,
-        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs"
-      },
-      {
-        "at": 295,
-        "path": "src/cleanup_plan/replay/typed_storage.rs"
-      },
-      {
-        "at": 296,
-        "path": "src/cleanup_plan/replay/typed_storage/collections.rs"
-      },
-      {
-        "at": 297,
-        "path": "src/cleanup_plan/replay/guarded_variant.rs"
-      },
-      {
-        "at": 298,
-        "path": "src/cleanup_plan/replay/lexical_boundary.rs"
-      },
-      {
-        "at": 299,
-        "path": "src/cleanup_plan/replay/lexical_census.rs"
-      },
-      {
-        "at": 300,
-        "path": "src/cleanup_plan/replay/lexical_cert.rs"
-      },
-      {
-        "at": 301,
-        "path": "src/cleanup_plan/replay/lexical_cert/storage.rs"
-      },
-      {
-        "at": 302,
-        "path": "src/cleanup_plan/replay/lexical_cert/storage/ordinary_finalizers.rs"
-      },
-      {
-        "at": 303,
-        "path": "src/cleanup_plan/replay/lexical_flow.rs"
-      },
-      {
-        "at": 304,
-        "path": "src/cleanup_plan/replay/lexical_hir.rs"
-      },
-      {
-        "at": 305,
-        "path": "src/cleanup_plan/replay/lexical_skeleton.rs"
-      },
-      {
-        "at": 306,
-        "path": "src/cleanup_plan/replay/nested_shape.rs"
-      },
-      {
-        "at": 307,
-        "path": "src/cleanup_plan/replay/nested_shape/paid.rs"
-      },
-      {
-        "at": 308,
-        "path": "src/cleanup_plan/replay/nested_shape/paid/scratch.rs"
-      },
-      {
-        "at": 309,
-        "path": "src/cleanup_plan/replay/nested_shape/paid/oracle.rs"
-      },
-      {
-        "at": 310,
-        "path": "src/cleanup_plan/replay/nested_shape/paid_before.rs"
-      },
-      {
-        "at": 311,
-        "path": "src/cleanup_plan/replay/ordinary_inventory.rs"
-      },
-      {
-        "at": 312,
-        "path": "src/cleanup_plan/replay/ordinary_inventory/owned.rs"
-      },
-      {
-        "at": 313,
-        "path": "src/cleanup_plan/replay/ordinary_inventory/storage.rs"
-      },
-      {
-        "at": 314,
-        "path": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs"
-      },
-      {
-        "at": 315,
-        "path": "src/cleanup_plan/replay/ordinary_inventory/before.rs"
-      },
-      {
-        "at": 316,
-        "path": "src/cleanup_plan/replay/ordinary_renewals.rs"
-      },
-      {
-        "at": 317,
-        "path": "src/cleanup_plan/replay/paid_type_facts.rs"
-      },
-      {
-        "at": 318,
-        "path": "src/cleanup_plan/replay/paid_type_facts/droppability.rs"
-      },
-      {
-        "at": 319,
-        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/key.rs"
-      },
-      {
-        "at": 320,
-        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/paid.rs"
-      },
-      {
-        "at": 321,
-        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/saved_paid.rs"
-      },
-      {
-        "at": 322,
-        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/text.rs"
-      },
-      {
-        "at": 323,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs"
-      },
-      {
-        "at": 324,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs"
-      },
-      {
-        "at": 325,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"
-      },
-      {
-        "at": 326,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"
-      },
-      {
-        "at": 327,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs"
-      },
-      {
-        "at": 328,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs"
-      },
-      {
-        "at": 329,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs"
-      },
-      {
-        "at": 330,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_encoded.rs"
-      },
-      {
-        "at": 331,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs"
-      },
-      {
-        "at": 332,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs"
-      },
-      {
-        "at": 333,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs"
-      },
-      {
-        "at": 334,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key.rs"
-      },
-      {
-        "at": 335,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs"
-      },
-      {
-        "at": 336,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle.rs"
-      },
-      {
-        "at": 337,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/equal.rs"
-      },
-      {
-        "at": 338,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/native.rs"
-      },
-      {
-        "at": 339,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/outcome.rs"
-      },
-      {
-        "at": 340,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/step.rs"
-      },
-      {
-        "at": 341,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/variants.rs"
-      },
-      {
-        "at": 342,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"
-      },
-      {
-        "at": 343,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"
-      },
-      {
-        "at": 344,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"
-      },
-      {
-        "at": 345,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs"
-      },
-      {
-        "at": 346,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs"
-      },
-      {
-        "at": 347,
-        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"
-      },
-      {
-        "at": 348,
-        "path": "src/cleanup_plan/replay/paid_type_facts/oracle_inventory.rs"
-      },
-      {
-        "at": 349,
-        "path": "src/cleanup_plan/replay/path_join.rs"
-      },
-      {
-        "at": 350,
-        "path": "src/cleanup_plan/replay/path_join/branch_join.rs"
-      },
-      {
-        "at": 351,
-        "path": "src/cleanup_plan/replay/path_join/storage.rs"
-      },
-      {
-        "at": 352,
-        "path": "src/cleanup_plan/replay/renewal.rs"
-      },
-      {
-        "at": 353,
-        "path": "src/cleanup_plan/replay/renewal/owned_commit.rs"
-      },
-      {
-        "at": 354,
-        "path": "src/cleanup_plan/replay/string_replacement.rs"
-      },
-      {
-        "at": 355,
-        "path": "src/cleanup_plan/replay/strings.rs"
-      },
-      {
-        "at": 356,
-        "path": "src/cleanup_plan/replay/strings/selected.rs"
-      },
-      {
-        "at": 357,
-        "path": "src/cleanup_plan/replay/transition.rs"
-      },
-      {
-        "at": 358,
-        "path": "src/cleanup_plan/replay/transition_storage.rs"
-      },
-      {
-        "at": 359,
-        "path": "src/cleanup_plan/replay/record_destructure.rs"
-      },
-      {
-        "at": 360,
-        "path": "src/cleanup_plan/replay/record_destructure/update.rs"
-      },
-      {
-        "at": 361,
-        "path": "src/cleanup_plan/replay/record_destructure/funded.rs"
-      },
-      {
-        "at": 362,
-        "path": "src/cleanup_plan/replay/record_destructure/funded/admission.rs"
-      },
-      {
-        "at": 363,
-        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/byte.rs"
-      },
-      {
-        "at": 364,
-        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/collection.rs"
-      },
-      {
-        "at": 365,
-        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/text.rs"
-      },
-      {
-        "at": 366,
-        "path": "src/cleanup_plan/replay/resolved_call.rs"
-      },
-      {
-        "at": 367,
-        "path": "src/cleanup_plan/replay/resolved_call/param_view.rs"
-      },
-      {
-        "at": 368,
-        "path": "src/cleanup_plan/replay/supplemental.rs"
-      },
-      {
-        "at": 369,
-        "path": "src/cleanup_plan/replay/schema.rs"
-      },
-      {
-        "at": 370,
-        "path": "src/cleanup_plan/replay/schema/borrowed.rs"
-      },
-      {
-        "at": 371,
-        "path": "src/cleanup_plan/replay/schema/borrowed/decision.rs"
-      },
-      {
-        "at": 372,
-        "path": "src/cleanup_plan/replay/schema/paid_summary.rs"
-      },
-      {
-        "at": 373,
-        "path": "src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs"
-      },
-      {
-        "at": 374,
-        "path": "src/cleanup_plan/replay/allocation.rs"
-      },
-      {
-        "at": 375,
-        "path": "src/cleanup_plan/replay/cfg_bounds.rs"
-      },
-      {
-        "at": 376,
-        "path": "src/cleanup_plan/replay/oracle_controls.rs"
-      },
-      {
-        "at": 377,
-        "path": "src/cleanup_plan/replay/phase_measurement.rs"
-      },
-      {
-        "at": 378,
-        "path": "src/cleanup_plan/replay/live_oracle.rs"
-      },
-      {
-        "at": 379,
-        "path": "src/cleanup_plan/replay/live_oracle/source_custody.rs"
-      },
-      {
-        "at": 395,
-        "path": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs"
-      },
-      {
-        "at": 396,
-        "path": "src/cleanup_plan/replay/expression_facts/arena/producer.rs"
-      },
-      {
-        "at": 403,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"
-      },
-      {
-        "at": 412,
-        "path": "src/cleanup_plan/replay/factored/borrowed_canonical.rs"
-      },
-      {
-        "at": 413,
-        "path": "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary.rs"
-      },
-      {
-        "at": 414,
-        "path": "src/cleanup_plan/replay/factored/canonical_before.rs"
-      },
-      {
-        "at": 415,
-        "path": "src/cleanup_plan/replay/factored/copy_regions.rs"
-      },
-      {
-        "at": 416,
-        "path": "src/cleanup_plan/replay/factored/dag_memo.rs"
-      },
-      {
-        "at": 417,
-        "path": "src/cleanup_plan/replay/factored/dag_memo/ordinal.rs"
-      },
-      {
-        "at": 418,
-        "path": "src/cleanup_plan/replay/factored/instrumentation.rs"
-      },
-      {
-        "at": 419,
-        "path": "src/cleanup_plan/replay/factored/storage.rs"
-      },
-      {
-        "at": 420,
-        "path": "src/cleanup_plan/replay/factored/strategy.rs"
-      },
-      {
-        "at": 421,
-        "path": "src/cleanup_plan/replay/factored/oracle_order.rs"
-      },
-      {
-        "at": 425,
-        "path": "src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"
-      },
-      {
-        "at": 427,
-        "path": "src/cleanup_plan/replay/leaf_index/paid.rs"
-      },
-      {
-        "at": 429,
-        "path": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs"
-      },
-      {
-        "at": 431,
-        "path": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs"
-      },
-      {
-        "at": 433,
-        "path": "src/cleanup_plan/replay/selected_context/borrowed.rs"
-      },
-      {
-        "at": 435,
-        "path": "src/cleanup_plan/replay/selected_entry/borrowed.rs"
-      },
-      {
-        "at": 438,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/recovering.rs"
-      },
-      {
-        "at": 439,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/setup.rs"
-      },
-      {
-        "at": 440,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/paid.rs"
-      },
-      {
-        "at": 441,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/transition_errors.rs"
-      },
-      {
-        "at": 442,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/transition_errors/old.rs"
-      },
-      {
-        "at": 446,
-        "path": "src/cleanup_plan/replay/selected_profile/collections.rs"
-      },
-      {
-        "at": 447,
-        "path": "src/cleanup_plan/replay/selected_profile/conditions.rs"
-      },
-      {
-        "at": 448,
-        "path": "src/cleanup_plan/replay/selected_profile/row_loan.rs"
-      },
-      {
-        "at": 449,
-        "path": "src/cleanup_plan/replay/selected_profile/string_transfer.rs"
-      },
-      {
-        "at": 451,
-        "path": "src/hir/owned_collection_record.rs"
-      },
-      {
-        "at": 452,
-        "path": "src/hir/owned_collection_record/saved.rs"
-      },
-      {
-        "at": 453,
-        "path": "src/hir/owned_record_subtree.rs"
-      },
-      {
-        "at": 454,
-        "path": "src/hir/owned_text_record.rs"
-      },
-      {
-        "at": 455,
-        "path": "src/hir/owned_text_record/paid.rs"
-      },
-      {
-        "at": 456,
-        "path": "src/hir/owned_text_record/paid/substitution.rs"
-      },
-      {
-        "at": 457,
-        "path": "src/hir/owned_text_record/saved.rs"
-      },
-      {
-        "at": 458,
-        "path": "src/hir/projected_string_view.rs"
-      },
-      {
-        "at": 459,
-        "path": "src/hir/vec_field.rs"
-      },
-      {
-        "at": 460,
-        "path": "src/hir/agent_nodes.rs"
-      },
-      {
-        "at": 461,
-        "path": "src/hir/agent_validation.rs"
-      },
-      {
-        "at": 462,
-        "path": "src/hir/agent_validation/embedded.rs"
-      },
-      {
-        "at": 463,
-        "path": "src/hir/byte_capacity.rs"
-      },
-      {
-        "at": 464,
-        "path": "src/hir/byte_capacity/static_extent.rs"
-      },
-      {
-        "at": 465,
-        "path": "src/hir/byte_capacity/fused_selection.rs"
-      },
-      {
-        "at": 466,
-        "path": "src/hir/byte_slice_provenance.rs"
-      },
-      {
-        "at": 467,
-        "path": "src/hir/byte_slice_provenance/inline_range.rs"
-      },
-      {
-        "at": 468,
-        "path": "src/hir/byte_slice_provenance/vec_field.rs"
-      },
-      {
-        "at": 469,
-        "path": "src/hir/ordinary_scan.rs"
-      },
-      {
-        "at": 470,
-        "path": "src/hir/static_text.rs"
-      },
-      {
-        "at": 471,
-        "path": "src/hir/static_text/backing.rs"
-      },
-      {
-        "at": 472,
-        "path": "src/hir/static_text/origin.rs"
-      },
-      {
-        "at": 473,
-        "path": "src/hir/capacity_probe.rs"
-      },
-      {
-        "at": 474,
-        "path": "src/hir/closure.rs"
-      },
-      {
-        "at": 475,
-        "path": "src/hir/closure/resolve.rs"
-      },
-      {
-        "at": 476,
-        "path": "src/hir/closure/validation.rs"
-      },
-      {
-        "at": 477,
-        "path": "src/hir/closure/owning_desugar.rs"
-      },
-      {
-        "at": 478,
-        "path": "src/hir/closure/materialize.rs"
-      },
-      {
-        "at": 479,
-        "path": "src/hir/closure/borrowed.rs"
-      },
-      {
-        "at": 480,
-        "path": "src/hir/closure/mutable.rs"
-      },
-      {
-        "at": 481,
-        "path": "src/hir/closure/once.rs"
-      },
-      {
-        "at": 482,
-        "path": "src/hir/closure/paid.rs"
-      },
-      {
-        "at": 483,
-        "path": "src/hir/closure/paid/copy.rs"
-      },
-      {
-        "at": 484,
-        "path": "src/hir/copy_discard.rs"
-      },
-      {
-        "at": 485,
-        "path": "src/hir/fused_construction.rs"
-      },
-      {
-        "at": 486,
-        "path": "src/hir/fused_construction/correspond.rs"
-      },
-      {
-        "at": 487,
-        "path": "src/hir/fused_construction/join.rs"
-      },
-      {
-        "at": 488,
-        "path": "src/hir/fused_construction/shape.rs"
-      },
-      {
-        "at": 489,
-        "path": "src/hir/fused_construction/suffix.rs"
-      },
-      {
-        "at": 490,
-        "path": "src/hir/lexical_exit.rs"
-      },
-      {
-        "at": 491,
-        "path": "src/hir/lexical_exit/walk.rs"
-      },
-      {
-        "at": 492,
-        "path": "src/hir/lexical_exit/owner.rs"
-      },
-      {
-        "at": 493,
-        "path": "src/hir/lexical_exit/rekey.rs"
-      },
-      {
-        "at": 494,
-        "path": "src/hir/lexical_exit/latch.rs"
-      },
-      {
-        "at": 495,
-        "path": "src/hir/lexical_exit/wrapper.rs"
-      },
-      {
-        "at": 496,
-        "path": "src/hir/lexical_exit/validation.rs"
-      },
-      {
-        "at": 497,
-        "path": "src/hir/lexical_exit/return_operand.rs"
-      },
-      {
-        "at": 498,
-        "path": "src/hir/byte_partition.rs"
-      },
-      {
-        "at": 499,
-        "path": "src/hir/canonical_loan_storage.rs"
-      },
-      {
-        "at": 500,
-        "path": "src/hir/canonical_loan_storage/caller.rs"
-      },
-      {
-        "at": 501,
-        "path": "src/hir/canonical_loan_storage/caller/owned_before.rs"
-      },
-      {
-        "at": 502,
-        "path": "src/hir/canonical_loan_storage/caller/shared.rs"
-      },
-      {
-        "at": 503,
-        "path": "src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"
-      },
-      {
-        "at": 504,
-        "path": "src/hir/canonical_loan_storage/caller_before.rs"
-      },
-      {
-        "at": 505,
-        "path": "src/hir/canonical_loan_storage/scratch.rs"
-      },
-      {
-        "at": 506,
-        "path": "src/hir/canonical_loan_storage/deferred.rs"
-      },
-      {
-        "at": 507,
-        "path": "src/hir/function_directory.rs"
-      },
-      {
-        "at": 508,
-        "path": "src/hir/function_directory/caller.rs"
-      },
-      {
-        "at": 509,
-        "path": "src/hir/function_value.rs"
-      },
-      {
-        "at": 510,
-        "path": "src/hir/function_value/paid_walk.rs"
-      },
-      {
-        "at": 511,
-        "path": "src/hir/function_value/resolve.rs"
-      },
-      {
-        "at": 512,
-        "path": "src/hir/ids.rs"
-      },
-      {
-        "at": 513,
-        "path": "src/hir/ids/compiler.rs"
-      },
-      {
-        "at": 514,
-        "path": "src/hir/ids/streamed.rs"
-      },
-      {
-        "at": 515,
-        "path": "src/hir/ids/metered_owner.rs"
-      },
-      {
-        "at": 516,
-        "path": "src/hir/ids/metered_owner/oracle.rs"
-      },
-      {
-        "at": 517,
-        "path": "src/hir/inspection.rs"
-      },
-      {
-        "at": 518,
-        "path": "src/hir/inspection/audit_pending.rs"
-      },
-      {
-        "at": 519,
-        "path": "src/hir/inspection/calls.rs"
-      },
-      {
-        "at": 520,
-        "path": "src/hir/inspection/paid_nul.rs"
-      },
-      {
-        "at": 521,
-        "path": "src/hir/inspection/paid_nul/pending.rs"
-      },
-      {
-        "at": 522,
-        "path": "src/hir/inspection/paid_nul/text.rs"
-      },
-      {
-        "at": 523,
-        "path": "src/hir/monomorphize.rs"
-      },
-      {
-        "at": 524,
-        "path": "src/hir/monomorphize/substitution_saved.rs"
-      },
-      {
-        "at": 525,
-        "path": "src/hir/nodes.rs"
-      },
-      {
-        "at": 526,
-        "path": "src/hir/nodes/import_result_type.rs"
-      },
-      {
-        "at": 527,
-        "path": "src/hir/owned_result_try.rs"
-      },
-      {
-        "at": 528,
-        "path": "src/hir/record_evolution.rs"
-      },
-      {
-        "at": 529,
-        "path": "src/hir/record_invariants.rs"
-      },
-      {
-        "at": 530,
-        "path": "src/hir/record_invariants/source.rs"
-      },
-      {
-        "at": 531,
-        "path": "src/hir/resolve_box_call.rs"
-      },
-      {
-        "at": 532,
-        "path": "src/hir/resolve_box_call/iterator.rs"
-      },
-      {
-        "at": 533,
-        "path": "src/hir/resolve_box_call/list.rs"
-      },
-      {
-        "at": 534,
-        "path": "src/hir/resolve_box_call/map.rs"
-      },
-      {
-        "at": 535,
-        "path": "src/hir/resolve_class.rs"
-      },
-      {
-        "at": 536,
-        "path": "src/hir/resolve_expr.rs"
-      },
-      {
-        "at": 537,
-        "path": "src/hir/resolve_expr/byte_view.rs"
-      },
-      {
-        "at": 538,
-        "path": "src/hir/resolve_expr/capacity.rs"
-      },
-      {
-        "at": 539,
-        "path": "src/hir/resolve_expr/finish.rs"
-      },
-      {
-        "at": 540,
-        "path": "src/hir/resolve_expr/lexical_exit.rs"
-      },
-      {
-        "at": 541,
-        "path": "src/hir/resolve_expr/literal_format.rs"
-      },
-      {
-        "at": 542,
-        "path": "src/hir/resolve_expr/path_arena.rs"
-      },
-      {
-        "at": 543,
-        "path": "src/hir/resolve_expr/sort_keys.rs"
-      },
-      {
-        "at": 544,
-        "path": "src/hir/resolve_expr/super_method.rs"
-      },
-      {
-        "at": 545,
-        "path": "src/hir/resolve_expr/variable.rs"
-      },
-      {
-        "at": 546,
-        "path": "src/hir/resolve_expr/vec_constructor.rs"
-      },
-      {
-        "at": 547,
-        "path": "src/hir/resolve_expr/vec_field.rs"
-      },
-      {
-        "at": 548,
-        "path": "src/hir/resolver_scope.rs"
-      },
-      {
-        "at": 549,
-        "path": "src/hir/resolver_scope/source_audit.rs"
-      },
-      {
-        "at": 550,
-        "path": "src/hir/borrowed_root_oracle.rs"
-      },
-      {
-        "at": 551,
-        "path": "src/hir/borrowed_root_oracle/resolve_box_call.rs"
-      },
-      {
-        "at": 552,
-        "path": "src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs"
-      },
-      {
-        "at": 553,
-        "path": "src/hir/borrowed_root_oracle/resolve_box_call/list.rs"
-      },
-      {
-        "at": 554,
-        "path": "src/hir/borrowed_root_oracle/resolve_box_call/map.rs"
-      },
-      {
-        "at": 555,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr.rs"
-      },
-      {
-        "at": 556,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs"
-      },
-      {
-        "at": 557,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/capacity.rs"
-      },
-      {
-        "at": 558,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/finish.rs"
-      },
-      {
-        "at": 559,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs"
-      },
-      {
-        "at": 560,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs"
-      },
-      {
-        "at": 561,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs"
-      },
-      {
-        "at": 562,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/super_method.rs"
-      },
-      {
-        "at": 563,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/variable.rs"
-      },
-      {
-        "at": 564,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs"
-      },
-      {
-        "at": 565,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs"
-      },
-      {
-        "at": 566,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame.rs"
-      },
-      {
-        "at": 567,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs"
-      },
-      {
-        "at": 568,
-        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs"
-      },
-      {
-        "at": 569,
-        "path": "src/hir/borrowed_root_oracle/resolve_for.rs"
-      },
-      {
-        "at": 570,
-        "path": "src/hir/borrowed_root_oracle/resolve_for/bytes.rs"
-      },
-      {
-        "at": 571,
-        "path": "src/hir/borrowed_root_oracle/resolve_for/record.rs"
-      },
-      {
-        "at": 572,
-        "path": "src/hir/borrowed_root_oracle/resolve_for_own.rs"
-      },
-      {
-        "at": 573,
-        "path": "src/hir/borrowed_root_oracle/resolve_pattern.rs"
-      },
-      {
-        "at": 574,
-        "path": "src/hir/borrowed_root_oracle/resolve_statement.rs"
-      },
-      {
-        "at": 575,
-        "path": "src/hir/borrowed_root_oracle/resolve_vec_call.rs"
-      },
-      {
-        "at": 576,
-        "path": "src/hir/resolve_expr_frame.rs"
-      },
-      {
-        "at": 577,
-        "path": "src/hir/resolve_expr_frame/fixed_results.rs"
-      },
-      {
-        "at": 578,
-        "path": "src/hir/resolve_expr_frame/capacity_old.rs"
-      },
-      {
-        "at": 579,
-        "path": "src/hir/resolve_expr_reference.rs"
-      },
-      {
-        "at": 580,
-        "path": "src/hir/resolve_expr_reference/block.rs"
-      },
-      {
-        "at": 581,
-        "path": "src/hir/resolve_expr_reference/control.rs"
-      },
-      {
-        "at": 582,
-        "path": "src/hir/resolve_expr_reference/literal_format.rs"
-      },
-      {
-        "at": 583,
-        "path": "src/hir/resolve_expr_reference/projection.rs"
-      },
-      {
-        "at": 584,
-        "path": "src/hir/resolve_expr_reference/static_text.rs"
-      },
-      {
-        "at": 585,
-        "path": "src/hir/resolve_for.rs"
-      },
-      {
-        "at": 586,
-        "path": "src/hir/resolve_for/bytes.rs"
-      },
-      {
-        "at": 587,
-        "path": "src/hir/resolve_for/record.rs"
-      },
-      {
-        "at": 588,
-        "path": "src/hir/resolve_for_own.rs"
-      },
-      {
-        "at": 589,
-        "path": "src/hir/resolve_native_rust_result.rs"
-      },
-      {
-        "at": 590,
-        "path": "src/hir/resolve_pattern.rs"
-      },
-      {
-        "at": 591,
-        "path": "src/hir/resolve_program.rs"
-      },
-      {
-        "at": 592,
-        "path": "src/hir/resolve_program/initial_loan_plans.rs"
-      },
-      {
-        "at": 593,
-        "path": "src/hir/resolve_program/initial_loan_plans/staging.rs"
-      },
-      {
-        "at": 594,
-        "path": "src/hir/resolve_program/reuse_lowered.rs"
-      },
-      {
-        "at": 595,
-        "path": "src/hir/resolve_statement.rs"
-      },
-      {
-        "at": 596,
-        "path": "src/hir/resolve_stdin_stream.rs"
-      },
-      {
-        "at": 597,
-        "path": "src/hir/resolve_variant_or.rs"
-      },
-      {
-        "at": 598,
-        "path": "src/hir/resolve_vec_call.rs"
-      },
-      {
-        "at": 599,
-        "path": "src/hir/resolve_yield.rs"
-      },
-      {
-        "at": 600,
-        "path": "src/hir/selected_fused_candidate.rs"
-      },
-      {
-        "at": 601,
-        "path": "src/hir/type_reachability.rs"
-      },
-      {
-        "at": 602,
-        "path": "src/hir/type_reachability/nested_generic_function.rs"
-      },
-      {
-        "at": 603,
-        "path": "src/hir/type_reachability/owned_oracle.rs"
-      },
-      {
-        "at": 604,
-        "path": "src/hir/type_reachability/owned_oracle/native_owner_old.rs"
-      },
-      {
-        "at": 605,
-        "path": "src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs"
-      },
-      {
-        "at": 606,
-        "path": "src/hir/type_reachability/leaf_saved.rs"
-      },
-      {
-        "at": 607,
-        "path": "src/hir/vec_constructor.rs"
-      },
-      {
-        "at": 608,
-        "path": "src/hir/vec_constructor/capture.rs"
-      },
-      {
-        "at": 609,
-        "path": "src/hir/variant_equality.rs"
-      },
-      {
-        "at": 610,
-        "path": "src/hir/workspace_link.rs"
-      },
-      {
-        "at": 611,
-        "path": "src/hir/workspace_link/compiler_prelude.rs"
-      },
-      {
-        "at": 612,
-        "path": "src/hir/workspace_link/profile_diagnostics.rs"
-      },
-      {
-        "at": 613,
-        "path": "src/hir/workspace_link/stdin_stream.rs"
-      },
-      {
-        "at": 614,
-        "path": "src/hir/workspace_link/stream_collection_record.rs"
-      },
-      {
-        "at": 615,
-        "path": "src/hir/workspace_link/stream_nested_outcome.rs"
-      },
-      {
-        "at": 616,
-        "path": "src/hir/workspace_link/stream_owned.rs"
-      },
-      {
-        "at": 617,
-        "path": "src/hir/workspace_link/stream_record.rs"
-      },
-      {
-        "at": 618,
-        "path": "src/hir/yield_aggregate.rs"
-      },
-      {
-        "at": 619,
-        "path": "src/hir/cache_codec.rs"
-      },
-      {
-        "at": 620,
-        "path": "src/hir/declaration_index.rs"
-      },
-      {
-        "at": 621,
-        "path": "src/hir/declaration_index/flags.rs"
-      },
-      {
-        "at": 622,
-        "path": "src/hir/declaration_index/flags/nominal_key.rs"
-      },
-      {
-        "at": 623,
-        "path": "src/hir/declaration_index/flags/nominal_key/compound.rs"
-      },
-      {
-        "at": 624,
-        "path": "src/hir/declaration_index/flags/paid.rs"
-      },
-      {
-        "at": 625,
-        "path": "src/hir/declaration_index/flags/paid/admission.rs"
-      },
-      {
-        "at": 626,
-        "path": "src/hir/declaration_index/flags/paid/builtin.rs"
-      },
-      {
-        "at": 627,
-        "path": "src/hir/declaration_index/flags/paid/compute.rs"
-      },
-      {
-        "at": 628,
-        "path": "src/hir/declaration_index/flags/paid/key.rs"
-      },
-      {
-        "at": 629,
-        "path": "src/hir/declaration_index/flags/paid/storage.rs"
-      },
-      {
-        "at": 630,
-        "path": "src/hir/declaration_index/flags/paid/substitute.rs"
-      },
-      {
-        "at": 631,
-        "path": "src/hir/declaration_index/flags/paid/inventory_constructor.rs"
-      },
-      {
-        "at": 632,
-        "path": "src/hir/declaration_index/flags/paid/inventory_constructor/key.rs"
-      },
-      {
-        "at": 633,
-        "path": "src/hir/declaration_index/flags/paid/inventory_constructor/substitute.rs"
-      },
-      {
-        "at": 634,
-        "path": "src/hir/declaration_index/flags/owned_key_oracle.rs"
-      },
-      {
-        "at": 635,
-        "path": "src/hir/declaration_index/inventory_lookup.rs"
-      },
-      {
-        "at": 636,
-        "path": "src/hir/declaration_index/inventory_lookup/compound.rs"
-      },
-      {
-        "at": 637,
-        "path": "src/hir/declaration_index/inventory_lookup/nominal.rs"
-      },
-      {
-        "at": 638,
-        "path": "src/hir/declaration_index/owned_builtin.rs"
-      },
-      {
-        "at": 639,
-        "path": "src/hir/declaration_index/owner_name.rs"
-      },
-      {
-        "at": 640,
-        "path": "src/hir/declaration_index/primitive_replay.rs"
-      },
-      {
-        "at": 641,
-        "path": "src/hir/declaration_index/primitive_replay/flat_record.rs"
-      },
-      {
-        "at": 642,
-        "path": "src/hir/declaration_index/projection.rs"
-      },
-      {
-        "at": 643,
-        "path": "src/hir/declaration_index/source.rs"
-      },
-      {
-        "at": 644,
-        "path": "src/hir/identity_resolution.rs"
-      },
-      {
-        "at": 645,
-        "path": "src/hir/identity_resolution/previous_source.rs"
-      },
-      {
-        "at": 646,
-        "path": "src/hir/ordinary_identity.rs"
-      },
-      {
-        "at": 647,
-        "path": "src/hir/vec_field_origin.rs"
-      },
-      {
-        "at": 648,
-        "path": "src/hir/row_loan.rs"
-      },
-      {
-        "at": 649,
-        "path": "src/hir/row_loan/producer.rs"
-      },
-      {
-        "at": 650,
-        "path": "src/hir/row_loan/validate.rs"
-      },
-      {
-        "at": 651,
-        "path": "src/hir/row_loan/validate/budget.rs"
-      },
-      {
-        "at": 652,
-        "path": "src/hir/row_loan/validate/comparisons.rs"
-      },
-      {
-        "at": 653,
-        "path": "src/hir/collection_outcome.rs"
-      },
-      {
-        "at": 654,
-        "path": "src/hir/collection_outcome/nested.rs"
-      },
-      {
-        "at": 655,
-        "path": "src/hir/collection_outcome/nested/profile.rs"
-      },
-      {
-        "at": 656,
-        "path": "src/hir/collection_outcome/owned.rs"
-      },
-      {
-        "at": 657,
-        "path": "src/hir/collection_outcome/stream_input.rs"
-      },
-      {
-        "at": 658,
-        "path": "src/hir/copy_record_collection.rs"
-      },
-      {
-        "at": 659,
-        "path": "src/hir/declared_collection.rs"
-      },
-      {
-        "at": 660,
-        "path": "src/hir/declared_collection/paid.rs"
-      },
-      {
-        "at": 661,
-        "path": "src/hir/declared_collection/paid/early.rs"
-      },
-      {
-        "at": 662,
-        "path": "src/hir/generic_collection.rs"
-      },
-      {
-        "at": 663,
-        "path": "src/hir/generic_inference.rs"
-      },
-      {
-        "at": 664,
-        "path": "src/hir/generic_result.rs"
-      },
-      {
-        "at": 665,
-        "path": "src/hir/iterator_loop.rs"
-      },
-      {
-        "at": 666,
-        "path": "src/hir/iterator_loop/renewal.rs"
-      },
-      {
-        "at": 667,
-        "path": "src/hir/iterator_loop/renewal/paid_scan.rs"
-      },
-      {
-        "at": 668,
-        "path": "src/hir/iterator_loop/paid.rs"
-      },
-      {
-        "at": 669,
-        "path": "src/hir/owned_leaf_collection.rs"
-      },
-      {
-        "at": 670,
-        "path": "src/hir/owned_record_collection.rs"
-      },
-      {
-        "at": 671,
-        "path": "src/hir/renewal_probes.rs"
-      },
-      {
-        "at": 672,
-        "path": "src/hir/renewal_probes/phase.rs"
-      },
-      {
-        "at": 673,
-        "path": "src/hir/vec_loop_renewal.rs"
-      },
-      {
-        "at": 674,
-        "path": "src/hir/vec_loop_renewal/consuming.rs"
-      },
-      {
-        "at": 675,
-        "path": "src/hir/vec_loop_renewal/consuming/empty_clone.rs"
-      },
-      {
-        "at": 676,
-        "path": "src/hir/generic_mapping.rs"
-      },
-      {
-        "at": 677,
-        "path": "src/hir/generic_variant.rs"
-      },
-      {
-        "at": 678,
-        "path": "src/hir/function_reuse_source.rs"
-      },
-      {
-        "at": 681,
-        "path": "src/hir/validation/function_lookup.rs"
-      },
-      {
-        "at": 682,
-        "path": "src/hir/validation/function_lookup/permits.rs"
-      },
-      {
-        "at": 683,
-        "path": "src/hir/validation/function_lookup/original.rs"
-      },
-      {
-        "at": 684,
-        "path": "src/hir/validation/function_lookup/paid_custody.rs"
-      },
-      {
-        "at": 685,
-        "path": "src/hir/validation/function_scope.rs"
-      },
-      {
-        "at": 686,
-        "path": "src/hir/validation/function_scope/old.rs"
-      },
-      {
-        "at": 687,
-        "path": "src/hir/validation/function_scope/backing_saved.rs"
-      },
-      {
-        "at": 688,
-        "path": "src/hir/validation/function_scope/lifecycle_receiver_saved.rs"
-      },
-      {
-        "at": 689,
-        "path": "src/hir/validation/function_scope/empty_ensures.rs"
-      },
-      {
-        "at": 690,
-        "path": "src/hir/validation/function_scope/empty_ensures/before.rs"
-      },
-      {
-        "at": 691,
-        "path": "src/hir/validation/identity_directory.rs"
-      },
-      {
-        "at": 692,
-        "path": "src/hir/validation/identity_directory/iter.rs"
-      },
-      {
-        "at": 693,
-        "path": "src/hir/validation/identity_directory/oracle_entries.rs"
-      },
-      {
-        "at": 694,
-        "path": "src/hir/validation/identity_directory/transaction.rs"
-      },
-      {
-        "at": 695,
-        "path": "src/hir/validation/identity_insert.rs"
-      },
-      {
-        "at": 696,
-        "path": "src/hir/validation/identity_insert/coarse.rs"
-      },
-      {
-        "at": 697,
-        "path": "src/hir/validation/identity_scratch.rs"
-      },
-      {
-        "at": 698,
-        "path": "src/hir/validation/owned_iterative_oracle.rs"
-      },
-      {
-        "at": 699,
-        "path": "src/hir/validation/scope_checkpoint.rs"
-      },
-      {
-        "at": 700,
-        "path": "src/hir/validation/scope_checkpoint/charge.rs"
-      },
-      {
-        "at": 701,
-        "path": "src/hir/validation/scope_checkpoint/coarse.rs"
-      },
-      {
-        "at": 702,
-        "path": "src/hir/validation/scope_checkpoint/fresh.rs"
-      },
-      {
-        "at": 703,
-        "path": "src/hir/validation/scope_checkpoint/marks.rs"
-      },
-      {
-        "at": 704,
-        "path": "src/hir/validation/scope_checkpoint/merge.rs"
-      },
-      {
-        "at": 705,
-        "path": "src/hir/validation/scope_checkpoint/merge/saved.rs"
-      },
-      {
-        "at": 706,
-        "path": "src/hir/validation/scope_checkpoint/paths.rs"
-      },
-      {
-        "at": 707,
-        "path": "src/hir/validation/scope_checkpoint/storage.rs"
-      },
-      {
-        "at": 708,
-        "path": "src/hir/validation/scope_checkpoint/transaction.rs"
-      },
-      {
-        "at": 709,
-        "path": "src/hir/validation/scope_checkpoint/tree.rs"
-      },
-      {
-        "at": 710,
-        "path": "src/hir/validation/scope_checkpoint/views.rs"
-      },
-      {
-        "at": 711,
-        "path": "src/hir/validation/type_requirement.rs"
-      },
-      {
-        "at": 712,
-        "path": "src/hir/validation/aggregate_metadata.rs"
-      },
-      {
-        "at": 713,
-        "path": "src/hir/validation/assign_field.rs"
-      },
-      {
-        "at": 714,
-        "path": "src/hir/validation/continuation_path.rs"
-      },
-      {
-        "at": 715,
-        "path": "src/hir/validation/path_label.rs"
-      },
-      {
-        "at": 716,
-        "path": "src/hir/validation/borrowed_argument.rs"
-      },
-      {
-        "at": 717,
-        "path": "src/hir/validation/borrowed_str.rs"
-      },
-      {
-        "at": 718,
-        "path": "src/hir/validation/box_intrinsic.rs"
-      },
-      {
-        "at": 719,
-        "path": "src/hir/validation/branch_merge.rs"
-      },
-      {
-        "at": 720,
-        "path": "src/hir/validation/byte_range.rs"
-      },
-      {
-        "at": 721,
-        "path": "src/hir/validation/call_parameters.rs"
-      },
-      {
-        "at": 722,
-        "path": "src/hir/validation/call_parameters/copy_before.rs"
-      },
-      {
-        "at": 723,
-        "path": "src/hir/validation/call_signature.rs"
-      },
-      {
-        "at": 724,
-        "path": "src/hir/validation/callable_types.rs"
-      },
-      {
-        "at": 725,
-        "path": "src/hir/validation/callable_types/inline_frames.rs"
-      },
-      {
-        "at": 726,
-        "path": "src/hir/validation/callable_types/original_receiver.rs"
-      },
-      {
-        "at": 727,
-        "path": "src/hir/validation/canonical_loans.rs"
-      },
-      {
-        "at": 728,
-        "path": "src/hir/validation/canonical_loans/constructors_before.rs"
-      },
-      {
-        "at": 729,
-        "path": "src/hir/validation/closure.rs"
-      },
-      {
-        "at": 730,
-        "path": "src/hir/validation/closure/old.rs"
-      },
-      {
-        "at": 731,
-        "path": "src/hir/validation/contract_owners.rs"
-      },
-      {
-        "at": 732,
-        "path": "src/hir/validation/effect_keys.rs"
-      },
-      {
-        "at": 733,
-        "path": "src/hir/validation/executable_profiles.rs"
-      },
-      {
-        "at": 734,
-        "path": "src/hir/validation/generic_record_composition.rs"
-      },
-      {
-        "at": 735,
-        "path": "src/hir/validation/generic_template.rs"
-      },
-      {
-        "at": 736,
-        "path": "src/hir/validation/generic_template/reachability.rs"
-      },
-      {
-        "at": 737,
-        "path": "src/hir/validation/generic_template/values.rs"
-      },
-      {
-        "at": 738,
-        "path": "src/hir/validation/generic_template/values/charge.rs"
-      },
-      {
-        "at": 739,
-        "path": "src/hir/validation/generic_template/values/tree.rs"
-      },
-      {
-        "at": 740,
-        "path": "src/hir/validation/host_command.rs"
-      },
-      {
-        "at": 741,
-        "path": "src/hir/validation/lexical_exit.rs"
-      },
-      {
-        "at": 742,
-        "path": "src/hir/validation/native_borrow.rs"
-      },
-      {
-        "at": 743,
-        "path": "src/hir/validation/nominal_facts.rs"
-      },
-      {
-        "at": 744,
-        "path": "src/hir/validation/owned_buffer.rs"
-      },
-      {
-        "at": 745,
-        "path": "src/hir/validation/owned_buffer/iterator_view.rs"
-      },
-      {
-        "at": 746,
-        "path": "src/hir/validation/owned_result_try.rs"
-      },
-      {
-        "at": 747,
-        "path": "src/hir/validation/owner_renewal.rs"
-      },
-      {
-        "at": 748,
-        "path": "src/hir/validation/ownership_flags.rs"
-      },
-      {
-        "at": 749,
-        "path": "src/hir/validation/ownership_flags/before.rs"
-      },
-      {
-        "at": 750,
-        "path": "src/hir/validation/proof_return.rs"
-      },
-      {
-        "at": 751,
-        "path": "src/hir/validation/record_pattern.rs"
-      },
-      {
-        "at": 752,
-        "path": "src/hir/validation/record_pattern/binding_path.rs"
-      },
-      {
-        "at": 753,
-        "path": "src/hir/validation/record_pattern/owned.rs"
-      },
-      {
-        "at": 754,
-        "path": "src/hir/validation/record_traversal.rs"
-      },
-      {
-        "at": 755,
-        "path": "src/hir/validation/row_loan.rs"
-      },
-      {
-        "at": 756,
-        "path": "src/hir/validation/stdin_stream.rs"
-      },
-      {
-        "at": 757,
-        "path": "src/hir/validation/stdin_stream/paid.rs"
-      },
-      {
-        "at": 758,
-        "path": "src/hir/validation/stdin_stream/paid/analysis.rs"
-      },
-      {
-        "at": 759,
-        "path": "src/hir/validation/string_intrinsic.rs"
-      },
-      {
-        "at": 760,
-        "path": "src/hir/validation/type_profiles.rs"
-      },
-      {
-        "at": 761,
-        "path": "src/hir/validation/unsafe_scan.rs"
-      },
-      {
-        "at": 762,
-        "path": "src/hir/validation/unsafe_scan/paid.rs"
-      },
-      {
-        "at": 763,
-        "path": "src/hir/validation/upcast.rs"
-      },
-      {
-        "at": 764,
-        "path": "src/hir/validation/vec_field.rs"
-      },
-      {
-        "at": 765,
-        "path": "src/hir/validation/vec_intrinsic.rs"
-      },
-      {
-        "at": 766,
-        "path": "src/hir/validation/fused_selection.rs"
-      },
-      {
-        "at": 767,
-        "path": "src/hir/validation/generic_variant.rs"
-      },
-      {
-        "at": 768,
-        "path": "src/hir/validation/iterator_loops.rs"
-      },
-      {
-        "at": 769,
-        "path": "src/hir/validation/iterator_loops/field_scope.rs"
-      },
-      {
-        "at": 770,
-        "path": "src/hir/validation/place_resolution.rs"
-      },
-      {
-        "at": 771,
-        "path": "src/hir/validation/string_replacement.rs"
-      },
-      {
-        "at": 772,
-        "path": "src/hir/validation/variant_guard_state.rs"
-      },
-      {
-        "at": 773,
-        "path": "src/hir/validation/variant_or.rs"
-      },
-      {
-        "at": 774,
-        "path": "src/hir/validation/variant_or/covered.rs"
-      },
-      {
-        "at": 777,
-        "path": "src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"
-      },
-      {
-        "at": 792,
-        "path": "src/source_verify/declaration/classes.rs"
-      },
-      {
-        "at": 793,
-        "path": "src/source_verify/declaration/declarations.rs"
-      },
-      {
-        "at": 794,
-        "path": "src/source_verify/declaration/functions.rs"
-      },
-      {
-        "at": 795,
-        "path": "src/source_verify/declaration/functions/signature_refusal.rs"
-      },
-      {
-        "at": 796,
-        "path": "src/source_verify/declaration/functions/traversal_scope.rs"
-      },
-      {
-        "at": 797,
-        "path": "src/source_verify/declaration/functions/old.rs"
-      },
-      {
-        "at": 798,
-        "path": "src/source_verify/declaration/fusion.rs"
-      },
-      {
-        "at": 799,
-        "path": "src/source_verify/declaration/fusion/consumers.rs"
-      },
-      {
-        "at": 800,
-        "path": "src/source_verify/declaration/identity.rs"
-      },
-      {
-        "at": 801,
-        "path": "src/source_verify/declaration/old.rs"
-      },
-      {
-        "at": 802,
-        "path": "src/source_verify/declaration/public_signature_before.rs"
-      },
-      {
-        "at": 804,
-        "path": "tests/hir_module_boundaries/oracle_source_inventory.rs"
-      },
-      {
-        "at": 207,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs"
-      },
-      {
-        "at": 208,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs"
-      },
-      {
-        "at": 209,
-        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs"
-      },
-      {
-        "at": 905,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs"
-      },
-      {
-        "at": 906,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs"
-      },
-      {
-        "at": 907,
-        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"
-      },
-      {
-        "at": 277,
-        "path": "src/cleanup_plan/replay/inventory_coverage/paid_before.rs"
-      },
-      {
-        "at": 281,
-        "path": "src/cleanup_plan/replay/scalar_replay/paid_before.rs"
-      },
-      {
-        "at": 282,
-        "path": "src/cleanup_plan/replay/scalar_replay/selected_family_tests.rs"
-      },
-      {
-        "at": 283,
-        "path": "src/cleanup_plan/replay/scalar_replay/before_selected_control.rs"
-      },
-      {
-        "at": 284,
-        "path": "src/cleanup_plan/replay/scalar_replay/before_selected_path.rs"
-      },
-      {
-        "at": 358,
-        "path": "src/cleanup_plan/replay/path_join/selected.rs"
-      },
-      {
-        "at": 359,
-        "path": "src/cleanup_plan/replay/path_join/selected/reason.rs"
-      },
-      {
-        "at": 360,
-        "path": "src/cleanup_plan/replay/path_join/selected/execution.rs"
-      },
-      {
-        "at": 361,
-        "path": "src/cleanup_plan/replay/path_join/selected/finish.rs"
-      },
-      {
-        "at": 362,
-        "path": "src/cleanup_plan/replay/path_join/selected/history.rs"
-      },
-      {
-        "at": 363,
-        "path": "src/cleanup_plan/replay/path_join/selected/joins.rs"
-      },
-      {
-        "at": 364,
-        "path": "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs"
-      },
-      {
-        "at": 365,
-        "path": "src/cleanup_plan/replay/path_join/selected/lookup.rs"
-      },
-      {
-        "at": 366,
-        "path": "src/cleanup_plan/replay/path_join/selected/queries.rs"
-      },
-      {
-        "at": 367,
-        "path": "src/cleanup_plan/replay/path_join/selected/receiving.rs"
-      },
-      {
-        "at": 368,
-        "path": "src/cleanup_plan/replay/path_join/selected/renewal.rs"
-      },
-      {
-        "at": 369,
-        "path": "src/cleanup_plan/replay/path_join/selected/strings.rs"
-      },
-      {
-        "at": 370,
-        "path": "src/cleanup_plan/replay/path_join/selected/walk.rs"
-      },
-      {
-        "at": 371,
-        "path": "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs"
-      },
-      {
-        "at": 372,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs"
-      },
-      {
-        "at": 373,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/boundary.rs"
-      },
-      {
-        "at": 374,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/layout.rs"
-      },
-      {
-        "at": 375,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/reason_before_path.rs"
-      },
-      {
-        "at": 376,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/nominal.rs"
-      },
-      {
-        "at": 377,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/session.rs"
-      },
-      {
-        "at": 378,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/whole.rs"
-      },
-      {
-        "at": 379,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/history.rs"
-      },
-      {
-        "at": 380,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/renewal.rs"
-      },
-      {
-        "at": 381,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs"
-      },
-      {
-        "at": 382,
-        "path": "src/cleanup_plan/replay/path_join/selected/tests/strings.rs"
-      },
-      {
-        "at": 403,
-        "path": "src/cleanup_plan/replay/schema/selected_paid.rs"
-      },
-      {
-        "at": 404,
-        "path": "src/cleanup_plan/replay/schema/selected_paid/tests.rs"
-      },
-      {
-        "at": 468,
-        "path": "src/cleanup_plan/replay/selected_context/family.rs"
-      },
-      {
-        "at": 477,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs"
-      },
-      {
-        "at": 478,
-        "path": "src/cleanup_plan/replay/selected_entry/tests/paid/selected_control.rs"
+        "at": 51,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/qualification.rs"
       },
       {
         "at": 52,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/before_cursor/status_prefix.rs"
+      },
+      {
+        "at": 53,
+        "path": "src/cleanup_plan/replay/merge_census.rs"
+      },
+      {
+        "at": 54,
+        "path": "src/cleanup_plan/replay/owned_suffix_878.rs"
+      },
+      {
+        "at": 55,
+        "path": "src/cleanup_plan/replay/owned_suffix_878_vector.rs"
+      },
+      {
+        "at": 56,
+        "path": "src/cleanup_plan/replay/skeleton_work/merge_keys_878.rs"
+      },
+      {
+        "at": 57,
+        "path": "src/cleanup_plan/replay/skeleton_work/merge_search.rs"
+      },
+      {
+        "at": 58,
+        "path": "src/source_reflows/main_e177_controllers.rs"
+      },
+      {
+        "at": 59,
+        "path": "src/source_reflows/main_e177_support.rs"
+      },
+      {
+        "at": 60,
+        "path": "src/source_reflows_merge/main_e177_final_inputs.rs"
+      },
+      {
+        "at": 61,
         "path": "src/source_reflows_merge/main_e177_overlay_v2.rs"
       },
       {
-        "at": 263,
+        "at": 62,
+        "path": "src/source_reflows_merge/main_e177_overlay_compiled.rs"
+      },
+      {
+        "at": 63,
+        "path": "src/source_reflows_merge/main_e177_inputs.rs"
+      },
+      {
+        "at": 64,
+        "path": "tests/workspace/pin_capture.rs"
+      },
+      {
+        "at": 70,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+      },
+      {
+        "at": 71,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"
+      },
+      {
+        "at": 72,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs"
+      },
+      {
+        "at": 73,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_lexical_cursor.rs"
+      },
+      {
+        "at": 75,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/mod.rs"
+      },
+      {
+        "at": 76,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_scope/lexical_cursor.rs"
+      },
+      {
+        "at": 77,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+      },
+      {
+        "at": 78,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+      },
+      {
+        "at": 88,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/before_selected_labels_methods.rs"
+      },
+      {
+        "at": 118,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/arena_tests_tail.rs"
+      },
+      {
+        "at": 190,
+        "path": "src/cleanup_plan/replay/physical_budget/setup.rs"
+      },
+      {
+        "at": 200,
+        "path": "src/cleanup_plan/replay/physical_storage/representative_measurements.rs"
+      },
+      {
+        "at": 201,
+        "path": "src/cleanup_plan/replay/physical_storage/representative_measurements/applications.rs"
+      },
+      {
+        "at": 204,
+        "path": "src/cleanup_plan/replay/allocation/oracle/diagnostic.rs"
+      },
+      {
+        "at": 205,
+        "path": "src/cleanup_plan/replay/allocation/oracle/diagnostic/metered.rs"
+      },
+      {
+        "at": 206,
+        "path": "src/cleanup_plan/replay/allocation/oracle/invocation.rs"
+      },
+      {
+        "at": 220,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers.rs"
+      },
+      {
+        "at": 221,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/memo.rs"
+      },
+      {
+        "at": 222,
+        "path": "src/cleanup_plan/replay/factored/canonical_shared/matched_receiving_layers/successor_targets.rs"
+      },
+      {
+        "at": 258,
+        "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory_leaf_views.rs"
+      },
+      {
+        "at": 275,
         "path": "src/cleanup_plan/replay/ordinary_receiving.rs"
       },
       {
-        "at": 264,
+        "at": 276,
         "path": "src/cleanup_plan/replay/ordinary_receiving/caller_before.rs"
       },
       {
-        "at": 265,
+        "at": 277,
         "path": "src/cleanup_plan/replay/ordinary_receiving/tests.rs"
       },
       {
-        "at": 274,
+        "at": 278,
+        "path": "src/cleanup_plan/replay/constructed_variant.rs"
+      },
+      {
+        "at": 279,
+        "path": "src/cleanup_plan/replay/context_closure.rs"
+      },
+      {
+        "at": 280,
+        "path": "src/cleanup_plan/replay/continuation_storage.rs"
+      },
+      {
+        "at": 281,
+        "path": "src/cleanup_plan/replay/allocation_paths.rs"
+      },
+      {
+        "at": 282,
+        "path": "src/cleanup_plan/replay/call_paths.rs"
+      },
+      {
+        "at": 283,
+        "path": "src/cleanup_plan/replay/call_payload.rs"
+      },
+      {
+        "at": 284,
+        "path": "src/cleanup_plan/replay/expression_children.rs"
+      },
+      {
+        "at": 285,
+        "path": "src/cleanup_plan/replay/expression_facts.rs"
+      },
+      {
+        "at": 286,
         "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs"
       },
       {
+        "at": 287,
+        "path": "src/cleanup_plan/replay/expression_facts/borrowed.rs"
+      },
+      {
+        "at": 288,
+        "path": "src/cleanup_plan/replay/expression_facts/capacity.rs"
+      },
+      {
+        "at": 289,
+        "path": "src/cleanup_plan/replay/expression_facts/saved.rs"
+      },
+      {
+        "at": 290,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving_before.rs"
+      },
+      {
+        "at": 291,
+        "path": "src/cleanup_plan/replay/expression_facts/ordinary_before.rs"
+      },
+      {
+        "at": 292,
+        "path": "src/cleanup_plan/replay/flat_records.rs"
+      },
+      {
+        "at": 293,
+        "path": "src/cleanup_plan/replay/inventory_coverage.rs"
+      },
+      {
+        "at": 294,
+        "path": "src/cleanup_plan/replay/inventory_coverage/paid_before.rs"
+      },
+      {
+        "at": 295,
+        "path": "src/cleanup_plan/replay/physical_clone.rs"
+      },
+      {
+        "at": 296,
+        "path": "src/cleanup_plan/replay/scalar_match.rs"
+      },
+      {
+        "at": 297,
+        "path": "src/cleanup_plan/replay/scalar_replay.rs"
+      },
+      {
+        "at": 298,
+        "path": "src/cleanup_plan/replay/scalar_replay/paid_before.rs"
+      },
+      {
+        "at": 299,
+        "path": "src/cleanup_plan/replay/scalar_replay/selected_family_tests.rs"
+      },
+      {
+        "at": 300,
+        "path": "src/cleanup_plan/replay/scalar_replay/before_selected_control.rs"
+      },
+      {
+        "at": 301,
+        "path": "src/cleanup_plan/replay/scalar_replay/before_selected_path.rs"
+      },
+      {
+        "at": 302,
+        "path": "src/cleanup_plan/replay/scalar_replay/records.rs"
+      },
+      {
         "at": 303,
+        "path": "src/cleanup_plan/replay/scalar_replay_tree.rs"
+      },
+      {
+        "at": 304,
+        "path": "src/cleanup_plan/replay/scalar_replay_tree/records.rs"
+      },
+      {
+        "at": 305,
+        "path": "src/cleanup_plan/replay/selected_callees.rs"
+      },
+      {
+        "at": 306,
+        "path": "src/cleanup_plan/replay/shape_cursor.rs"
+      },
+      {
+        "at": 307,
+        "path": "src/cleanup_plan/replay/status_construction.rs"
+      },
+      {
+        "at": 308,
+        "path": "src/cleanup_plan/replay/status_construction/borrowed.rs"
+      },
+      {
+        "at": 309,
+        "path": "src/cleanup_plan/replay/structural_maps.rs"
+      },
+      {
+        "at": 310,
+        "path": "src/cleanup_plan/replay/status_validation.rs"
+      },
+      {
+        "at": 311,
+        "path": "src/cleanup_plan/replay/primitive_fixture.rs"
+      },
+      {
+        "at": 312,
+        "path": "src/cleanup_plan/replay/path_summary.rs"
+      },
+      {
+        "at": 313,
+        "path": "src/cleanup_plan/replay/skeleton_bound.rs"
+      },
+      {
+        "at": 314,
+        "path": "src/cleanup_plan/replay/skeleton_work.rs"
+      },
+      {
+        "at": 315,
         "path": "src/cleanup_plan/replay/skeleton_work/receiving.rs"
       },
       {
-        "at": 435,
+        "at": 316,
+        "path": "src/cleanup_plan/replay/skeleton_work/dag_storage.rs"
+      },
+      {
+        "at": 317,
+        "path": "src/cleanup_plan/replay/skeleton_work/oracle_entry.rs"
+      },
+      {
+        "at": 318,
+        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag.rs"
+      },
+      {
+        "at": 319,
+        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/frontier.rs"
+      },
+      {
+        "at": 320,
+        "path": "src/cleanup_plan/replay/skeleton_work/ordinary_dag/saved.rs"
+      },
+      {
+        "at": 321,
+        "path": "src/cleanup_plan/replay/typed_storage.rs"
+      },
+      {
+        "at": 322,
+        "path": "src/cleanup_plan/replay/typed_storage/collections.rs"
+      },
+      {
+        "at": 323,
+        "path": "src/cleanup_plan/replay/guarded_variant.rs"
+      },
+      {
+        "at": 324,
+        "path": "src/cleanup_plan/replay/lexical_boundary.rs"
+      },
+      {
+        "at": 325,
+        "path": "src/cleanup_plan/replay/lexical_census.rs"
+      },
+      {
+        "at": 326,
+        "path": "src/cleanup_plan/replay/lexical_cert.rs"
+      },
+      {
+        "at": 327,
+        "path": "src/cleanup_plan/replay/lexical_cert/storage.rs"
+      },
+      {
+        "at": 328,
+        "path": "src/cleanup_plan/replay/lexical_cert/storage/ordinary_finalizers.rs"
+      },
+      {
+        "at": 329,
+        "path": "src/cleanup_plan/replay/lexical_flow.rs"
+      },
+      {
+        "at": 330,
+        "path": "src/cleanup_plan/replay/lexical_hir.rs"
+      },
+      {
+        "at": 331,
+        "path": "src/cleanup_plan/replay/lexical_skeleton.rs"
+      },
+      {
+        "at": 332,
+        "path": "src/cleanup_plan/replay/nested_shape.rs"
+      },
+      {
+        "at": 333,
+        "path": "src/cleanup_plan/replay/nested_shape/paid.rs"
+      },
+      {
+        "at": 334,
+        "path": "src/cleanup_plan/replay/nested_shape/paid/scratch.rs"
+      },
+      {
+        "at": 335,
+        "path": "src/cleanup_plan/replay/nested_shape/paid/oracle.rs"
+      },
+      {
+        "at": 336,
+        "path": "src/cleanup_plan/replay/nested_shape/paid_before.rs"
+      },
+      {
+        "at": 337,
+        "path": "src/cleanup_plan/replay/ordinary_inventory.rs"
+      },
+      {
+        "at": 338,
+        "path": "src/cleanup_plan/replay/ordinary_inventory/owned.rs"
+      },
+      {
+        "at": 339,
+        "path": "src/cleanup_plan/replay/ordinary_inventory/storage.rs"
+      },
+      {
+        "at": 340,
+        "path": "src/cleanup_plan/replay/ordinary_inventory/substitute.rs"
+      },
+      {
+        "at": 341,
+        "path": "src/cleanup_plan/replay/ordinary_inventory/before.rs"
+      },
+      {
+        "at": 342,
+        "path": "src/cleanup_plan/replay/ordinary_renewals.rs"
+      },
+      {
+        "at": 343,
+        "path": "src/cleanup_plan/replay/paid_type_facts.rs"
+      },
+      {
+        "at": 344,
+        "path": "src/cleanup_plan/replay/paid_type_facts/droppability.rs"
+      },
+      {
+        "at": 345,
+        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/key.rs"
+      },
+      {
+        "at": 346,
+        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/paid.rs"
+      },
+      {
+        "at": 347,
+        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/saved_paid.rs"
+      },
+      {
+        "at": 348,
+        "path": "src/cleanup_plan/replay/paid_type_facts/droppability/text.rs"
+      },
+      {
+        "at": 349,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_substitute.rs"
+      },
+      {
+        "at": 350,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_clone.rs"
+      },
+      {
+        "at": 351,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_text.rs"
+      },
+      {
+        "at": 352,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_profile.rs"
+      },
+      {
+        "at": 353,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_metadata.rs"
+      },
+      {
+        "at": 354,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_metadata/admission.rs"
+      },
+      {
+        "at": 355,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_nested.rs"
+      },
+      {
+        "at": 356,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_encoded.rs"
+      },
+      {
+        "at": 357,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_ordered.rs"
+      },
+      {
+        "at": 358,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_flags.rs"
+      },
+      {
+        "at": 359,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_flags/families.rs"
+      },
+      {
+        "at": 360,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_raw_key.rs"
+      },
+      {
+        "at": 361,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_drop.rs"
+      },
+      {
+        "at": 362,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle.rs"
+      },
+      {
+        "at": 363,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/equal.rs"
+      },
+      {
+        "at": 364,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/native.rs"
+      },
+      {
+        "at": 365,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/outcome.rs"
+      },
+      {
+        "at": 366,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/step.rs"
+      },
+      {
+        "at": 367,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_lifecycle/variants.rs"
+      },
+      {
+        "at": 368,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary.rs"
+      },
+      {
+        "at": 369,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/collector.rs"
+      },
+      {
+        "at": 370,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/generic.rs"
+      },
+      {
+        "at": 371,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/profile.rs"
+      },
+      {
+        "at": 372,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape.rs"
+      },
+      {
+        "at": 373,
+        "path": "src/cleanup_plan/replay/paid_type_facts/inventory_summary/shape_original.rs"
+      },
+      {
+        "at": 374,
+        "path": "src/cleanup_plan/replay/paid_type_facts/oracle_inventory.rs"
+      },
+      {
+        "at": 375,
+        "path": "src/cleanup_plan/replay/path_join.rs"
+      },
+      {
+        "at": 376,
+        "path": "src/cleanup_plan/replay/path_join/selected.rs"
+      },
+      {
+        "at": 377,
+        "path": "src/cleanup_plan/replay/path_join/selected/reason.rs"
+      },
+      {
+        "at": 378,
+        "path": "src/cleanup_plan/replay/path_join/selected/execution.rs"
+      },
+      {
+        "at": 379,
+        "path": "src/cleanup_plan/replay/path_join/selected/finish.rs"
+      },
+      {
+        "at": 380,
+        "path": "src/cleanup_plan/replay/path_join/selected/history.rs"
+      },
+      {
+        "at": 381,
+        "path": "src/cleanup_plan/replay/path_join/selected/joins.rs"
+      },
+      {
+        "at": 382,
+        "path": "src/cleanup_plan/replay/path_join/selected/lexical_flow.rs"
+      },
+      {
+        "at": 383,
+        "path": "src/cleanup_plan/replay/path_join/selected/lookup.rs"
+      },
+      {
+        "at": 384,
+        "path": "src/cleanup_plan/replay/path_join/selected/queries.rs"
+      },
+      {
+        "at": 385,
+        "path": "src/cleanup_plan/replay/path_join/selected/receiving.rs"
+      },
+      {
+        "at": 386,
+        "path": "src/cleanup_plan/replay/path_join/selected/renewal.rs"
+      },
+      {
+        "at": 387,
+        "path": "src/cleanup_plan/replay/path_join/selected/strings.rs"
+      },
+      {
+        "at": 388,
+        "path": "src/cleanup_plan/replay/path_join/selected/walk.rs"
+      },
+      {
+        "at": 389,
+        "path": "src/cleanup_plan/replay/path_join/selected/append_before_formals.rs"
+      },
+      {
+        "at": 390,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/mod.rs"
+      },
+      {
+        "at": 391,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/boundary.rs"
+      },
+      {
+        "at": 392,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/layout.rs"
+      },
+      {
+        "at": 393,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/reason_before_path.rs"
+      },
+      {
+        "at": 394,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/nominal.rs"
+      },
+      {
+        "at": 395,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/session.rs"
+      },
+      {
+        "at": 396,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/whole.rs"
+      },
+      {
+        "at": 397,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/history.rs"
+      },
+      {
+        "at": 398,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/renewal.rs"
+      },
+      {
+        "at": 399,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/lookup.rs"
+      },
+      {
+        "at": 400,
+        "path": "src/cleanup_plan/replay/path_join/selected/tests/strings.rs"
+      },
+      {
+        "at": 401,
+        "path": "src/cleanup_plan/replay/path_join/branch_join.rs"
+      },
+      {
+        "at": 402,
+        "path": "src/cleanup_plan/replay/path_join/storage.rs"
+      },
+      {
+        "at": 403,
+        "path": "src/cleanup_plan/replay/renewal.rs"
+      },
+      {
+        "at": 404,
+        "path": "src/cleanup_plan/replay/renewal/owned_commit.rs"
+      },
+      {
+        "at": 405,
+        "path": "src/cleanup_plan/replay/string_replacement.rs"
+      },
+      {
+        "at": 406,
+        "path": "src/cleanup_plan/replay/strings.rs"
+      },
+      {
+        "at": 407,
+        "path": "src/cleanup_plan/replay/strings/selected.rs"
+      },
+      {
+        "at": 408,
+        "path": "src/cleanup_plan/replay/transition.rs"
+      },
+      {
+        "at": 409,
+        "path": "src/cleanup_plan/replay/transition_storage.rs"
+      },
+      {
+        "at": 410,
+        "path": "src/cleanup_plan/replay/record_destructure.rs"
+      },
+      {
+        "at": 411,
+        "path": "src/cleanup_plan/replay/record_destructure/update.rs"
+      },
+      {
+        "at": 412,
+        "path": "src/cleanup_plan/replay/record_destructure/funded.rs"
+      },
+      {
+        "at": 413,
+        "path": "src/cleanup_plan/replay/record_destructure/funded/admission.rs"
+      },
+      {
+        "at": 414,
+        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/byte.rs"
+      },
+      {
+        "at": 415,
+        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/collection.rs"
+      },
+      {
+        "at": 416,
+        "path": "src/cleanup_plan/replay/record_destructure/funded/admission/text.rs"
+      },
+      {
+        "at": 417,
+        "path": "src/cleanup_plan/replay/resolved_call.rs"
+      },
+      {
+        "at": 418,
+        "path": "src/cleanup_plan/replay/resolved_call/param_view.rs"
+      },
+      {
+        "at": 419,
+        "path": "src/cleanup_plan/replay/supplemental.rs"
+      },
+      {
+        "at": 420,
+        "path": "src/cleanup_plan/replay/schema.rs"
+      },
+      {
+        "at": 421,
+        "path": "src/cleanup_plan/replay/schema/selected_paid.rs"
+      },
+      {
+        "at": 422,
+        "path": "src/cleanup_plan/replay/schema/selected_paid/tests.rs"
+      },
+      {
+        "at": 423,
+        "path": "src/cleanup_plan/replay/schema/borrowed.rs"
+      },
+      {
+        "at": 424,
+        "path": "src/cleanup_plan/replay/schema/borrowed/decision.rs"
+      },
+      {
+        "at": 425,
+        "path": "src/cleanup_plan/replay/schema/paid_summary.rs"
+      },
+      {
+        "at": 426,
+        "path": "src/cleanup_plan/replay/schema/paid_summary/original_receiver.rs"
+      },
+      {
+        "at": 427,
+        "path": "src/cleanup_plan/replay/allocation.rs"
+      },
+      {
+        "at": 428,
+        "path": "src/cleanup_plan/replay/cfg_bounds.rs"
+      },
+      {
+        "at": 429,
+        "path": "src/cleanup_plan/replay/oracle_controls.rs"
+      },
+      {
+        "at": 430,
+        "path": "src/cleanup_plan/replay/phase_measurement.rs"
+      },
+      {
+        "at": 431,
+        "path": "src/cleanup_plan/replay/live_oracle.rs"
+      },
+      {
+        "at": 432,
+        "path": "src/cleanup_plan/replay/live_oracle/source_custody.rs"
+      },
+      {
+        "at": 445,
+        "path": "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs"
+      },
+      {
+        "at": 446,
+        "path": "src/cleanup_plan/replay/expression_facts/arena/retained.rs"
+      },
+      {
+        "at": 447,
         "path": "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs"
       },
       {
-        "at": 436,
+        "at": 448,
         "path": "src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs"
       },
       {
-        "at": 947,
+        "at": 449,
+        "path": "src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs"
+      },
+      {
+        "at": 450,
+        "path": "src/cleanup_plan/replay/expression_facts/arena/prefix.rs"
+      },
+      {
+        "at": 451,
+        "path": "src/cleanup_plan/replay/expression_facts/arena/producer.rs"
+      },
+      {
+        "at": 458,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/exit_prefix.rs"
+      },
+      {
+        "at": 467,
+        "path": "src/cleanup_plan/replay/factored/borrowed_canonical.rs"
+      },
+      {
+        "at": 468,
+        "path": "src/cleanup_plan/replay/factored/borrowed_canonical/dictionary.rs"
+      },
+      {
+        "at": 469,
+        "path": "src/cleanup_plan/replay/factored/canonical_before.rs"
+      },
+      {
+        "at": 470,
+        "path": "src/cleanup_plan/replay/factored/copy_regions.rs"
+      },
+      {
+        "at": 471,
+        "path": "src/cleanup_plan/replay/factored/dag_memo.rs"
+      },
+      {
+        "at": 472,
+        "path": "src/cleanup_plan/replay/factored/dag_memo/ordinal.rs"
+      },
+      {
+        "at": 473,
+        "path": "src/cleanup_plan/replay/factored/instrumentation.rs"
+      },
+      {
+        "at": 474,
+        "path": "src/cleanup_plan/replay/factored/storage.rs"
+      },
+      {
+        "at": 475,
+        "path": "src/cleanup_plan/replay/factored/strategy.rs"
+      },
+      {
+        "at": 476,
+        "path": "src/cleanup_plan/replay/factored/oracle_order.rs"
+      },
+      {
+        "at": 480,
+        "path": "src/cleanup_plan/replay/factored/oracle_hook/closure_controls.rs"
+      },
+      {
+        "at": 482,
+        "path": "src/cleanup_plan/replay/leaf_index/paid.rs"
+      },
+      {
+        "at": 484,
+        "path": "src/cleanup_plan/replay/live_oracle/source_custody/a_tail.rs"
+      },
+      {
+        "at": 486,
+        "path": "src/cleanup_plan/replay/live_oracle/source_custody/b_tail.rs"
+      },
+      {
+        "at": 488,
+        "path": "src/cleanup_plan/replay/selected_context/family.rs"
+      },
+      {
+        "at": 489,
+        "path": "src/cleanup_plan/replay/selected_context/borrowed.rs"
+      },
+      {
+        "at": 491,
+        "path": "src/cleanup_plan/replay/selected_entry/borrowed.rs"
+      },
+      {
+        "at": 494,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/recovering.rs"
+      },
+      {
+        "at": 495,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/setup.rs"
+      },
+      {
+        "at": 496,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/paid.rs"
+      },
+      {
+        "at": 497,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/paid/selected_family.rs"
+      },
+      {
+        "at": 498,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/paid/selected_control.rs"
+      },
+      {
+        "at": 499,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/transition_errors.rs"
+      },
+      {
+        "at": 500,
+        "path": "src/cleanup_plan/replay/selected_entry/tests/transition_errors/old.rs"
+      },
+      {
+        "at": 504,
+        "path": "src/cleanup_plan/replay/selected_profile/collections.rs"
+      },
+      {
+        "at": 505,
+        "path": "src/cleanup_plan/replay/selected_profile/conditions.rs"
+      },
+      {
+        "at": 506,
+        "path": "src/cleanup_plan/replay/selected_profile/row_loan.rs"
+      },
+      {
+        "at": 507,
+        "path": "src/cleanup_plan/replay/selected_profile/string_transfer.rs"
+      },
+      {
+        "at": 509,
+        "path": "src/hir/owned_collection_record.rs"
+      },
+      {
+        "at": 510,
+        "path": "src/hir/owned_collection_record/saved.rs"
+      },
+      {
+        "at": 511,
+        "path": "src/hir/owned_record_subtree.rs"
+      },
+      {
+        "at": 512,
+        "path": "src/hir/owned_text_record.rs"
+      },
+      {
+        "at": 513,
+        "path": "src/hir/owned_text_record/paid.rs"
+      },
+      {
+        "at": 514,
+        "path": "src/hir/owned_text_record/paid/substitution.rs"
+      },
+      {
+        "at": 515,
+        "path": "src/hir/owned_text_record/saved.rs"
+      },
+      {
+        "at": 516,
+        "path": "src/hir/projected_string_view.rs"
+      },
+      {
+        "at": 517,
+        "path": "src/hir/vec_field.rs"
+      },
+      {
+        "at": 518,
+        "path": "src/hir/agent_nodes.rs"
+      },
+      {
+        "at": 519,
+        "path": "src/hir/agent_validation.rs"
+      },
+      {
+        "at": 520,
+        "path": "src/hir/agent_validation/embedded.rs"
+      },
+      {
+        "at": 521,
+        "path": "src/hir/byte_capacity.rs"
+      },
+      {
+        "at": 522,
+        "path": "src/hir/byte_capacity/static_extent.rs"
+      },
+      {
+        "at": 523,
+        "path": "src/hir/byte_capacity/fused_selection.rs"
+      },
+      {
+        "at": 524,
+        "path": "src/hir/byte_slice_provenance.rs"
+      },
+      {
+        "at": 525,
+        "path": "src/hir/byte_slice_provenance/inline_range.rs"
+      },
+      {
+        "at": 526,
+        "path": "src/hir/byte_slice_provenance/vec_field.rs"
+      },
+      {
+        "at": 527,
+        "path": "src/hir/ordinary_scan.rs"
+      },
+      {
+        "at": 528,
+        "path": "src/hir/static_text.rs"
+      },
+      {
+        "at": 529,
+        "path": "src/hir/static_text/backing.rs"
+      },
+      {
+        "at": 530,
+        "path": "src/hir/static_text/origin.rs"
+      },
+      {
+        "at": 531,
+        "path": "src/hir/capacity_probe.rs"
+      },
+      {
+        "at": 532,
+        "path": "src/hir/closure.rs"
+      },
+      {
+        "at": 533,
+        "path": "src/hir/closure/resolve.rs"
+      },
+      {
+        "at": 534,
+        "path": "src/hir/closure/validation.rs"
+      },
+      {
+        "at": 535,
+        "path": "src/hir/closure/owning_desugar.rs"
+      },
+      {
+        "at": 536,
+        "path": "src/hir/closure/materialize.rs"
+      },
+      {
+        "at": 537,
+        "path": "src/hir/closure/borrowed.rs"
+      },
+      {
+        "at": 538,
+        "path": "src/hir/closure/mutable.rs"
+      },
+      {
+        "at": 539,
+        "path": "src/hir/closure/once.rs"
+      },
+      {
+        "at": 540,
+        "path": "src/hir/closure/paid.rs"
+      },
+      {
+        "at": 541,
+        "path": "src/hir/closure/paid/copy.rs"
+      },
+      {
+        "at": 542,
+        "path": "src/hir/copy_discard.rs"
+      },
+      {
+        "at": 543,
+        "path": "src/hir/fused_construction.rs"
+      },
+      {
+        "at": 544,
+        "path": "src/hir/fused_construction/correspond.rs"
+      },
+      {
+        "at": 545,
+        "path": "src/hir/fused_construction/join.rs"
+      },
+      {
+        "at": 546,
+        "path": "src/hir/fused_construction/shape.rs"
+      },
+      {
+        "at": 547,
+        "path": "src/hir/fused_construction/suffix.rs"
+      },
+      {
+        "at": 548,
+        "path": "src/hir/lexical_exit.rs"
+      },
+      {
+        "at": 549,
+        "path": "src/hir/lexical_exit/walk.rs"
+      },
+      {
+        "at": 550,
+        "path": "src/hir/lexical_exit/owner.rs"
+      },
+      {
+        "at": 551,
+        "path": "src/hir/lexical_exit/rekey.rs"
+      },
+      {
+        "at": 552,
+        "path": "src/hir/lexical_exit/latch.rs"
+      },
+      {
+        "at": 553,
+        "path": "src/hir/lexical_exit/wrapper.rs"
+      },
+      {
+        "at": 554,
+        "path": "src/hir/lexical_exit/validation.rs"
+      },
+      {
+        "at": 555,
+        "path": "src/hir/lexical_exit/return_operand.rs"
+      },
+      {
+        "at": 556,
+        "path": "src/hir/byte_partition.rs"
+      },
+      {
+        "at": 557,
+        "path": "src/hir/canonical_loan_storage.rs"
+      },
+      {
+        "at": 558,
+        "path": "src/hir/canonical_loan_storage/caller.rs"
+      },
+      {
+        "at": 559,
+        "path": "src/hir/canonical_loan_storage/caller/owned_before.rs"
+      },
+      {
+        "at": 560,
+        "path": "src/hir/canonical_loan_storage/caller/shared.rs"
+      },
+      {
+        "at": 561,
+        "path": "src/hir/canonical_loan_storage/caller/sealed_before_stage.rs"
+      },
+      {
+        "at": 562,
+        "path": "src/hir/canonical_loan_storage/caller_before.rs"
+      },
+      {
+        "at": 563,
+        "path": "src/hir/canonical_loan_storage/scratch.rs"
+      },
+      {
+        "at": 564,
+        "path": "src/hir/canonical_loan_storage/deferred.rs"
+      },
+      {
+        "at": 565,
+        "path": "src/hir/function_directory.rs"
+      },
+      {
+        "at": 566,
+        "path": "src/hir/function_directory/caller.rs"
+      },
+      {
+        "at": 567,
+        "path": "src/hir/function_value.rs"
+      },
+      {
+        "at": 568,
+        "path": "src/hir/function_value/paid_walk.rs"
+      },
+      {
+        "at": 569,
+        "path": "src/hir/function_value/resolve.rs"
+      },
+      {
+        "at": 570,
+        "path": "src/hir/ids.rs"
+      },
+      {
+        "at": 571,
+        "path": "src/hir/ids/compiler.rs"
+      },
+      {
+        "at": 572,
+        "path": "src/hir/ids/streamed.rs"
+      },
+      {
+        "at": 573,
+        "path": "src/hir/ids/metered_owner.rs"
+      },
+      {
+        "at": 574,
+        "path": "src/hir/ids/metered_owner/oracle.rs"
+      },
+      {
+        "at": 575,
+        "path": "src/hir/inspection.rs"
+      },
+      {
+        "at": 576,
+        "path": "src/hir/inspection/audit_pending.rs"
+      },
+      {
+        "at": 577,
+        "path": "src/hir/inspection/calls.rs"
+      },
+      {
+        "at": 578,
+        "path": "src/hir/inspection/paid_nul.rs"
+      },
+      {
+        "at": 579,
+        "path": "src/hir/inspection/paid_nul/pending.rs"
+      },
+      {
+        "at": 580,
+        "path": "src/hir/inspection/paid_nul/text.rs"
+      },
+      {
+        "at": 581,
+        "path": "src/hir/monomorphize.rs"
+      },
+      {
+        "at": 582,
+        "path": "src/hir/monomorphize/substitution_saved.rs"
+      },
+      {
+        "at": 583,
+        "path": "src/hir/nodes.rs"
+      },
+      {
+        "at": 584,
+        "path": "src/hir/nodes/import_result_type.rs"
+      },
+      {
+        "at": 585,
+        "path": "src/hir/owned_result_try.rs"
+      },
+      {
+        "at": 586,
+        "path": "src/hir/record_evolution.rs"
+      },
+      {
+        "at": 587,
+        "path": "src/hir/record_invariants.rs"
+      },
+      {
+        "at": 588,
+        "path": "src/hir/record_invariants/source.rs"
+      },
+      {
+        "at": 589,
+        "path": "src/hir/resolve_box_call.rs"
+      },
+      {
+        "at": 590,
+        "path": "src/hir/resolve_box_call/iterator.rs"
+      },
+      {
+        "at": 591,
+        "path": "src/hir/resolve_box_call/list.rs"
+      },
+      {
+        "at": 592,
+        "path": "src/hir/resolve_box_call/map.rs"
+      },
+      {
+        "at": 593,
+        "path": "src/hir/resolve_class.rs"
+      },
+      {
+        "at": 594,
+        "path": "src/hir/resolve_expr.rs"
+      },
+      {
+        "at": 595,
+        "path": "src/hir/resolve_expr/byte_view.rs"
+      },
+      {
+        "at": 596,
+        "path": "src/hir/resolve_expr/capacity.rs"
+      },
+      {
+        "at": 597,
+        "path": "src/hir/resolve_expr/finish.rs"
+      },
+      {
+        "at": 598,
+        "path": "src/hir/resolve_expr/lexical_exit.rs"
+      },
+      {
+        "at": 599,
+        "path": "src/hir/resolve_expr/literal_format.rs"
+      },
+      {
+        "at": 600,
+        "path": "src/hir/resolve_expr/path_arena.rs"
+      },
+      {
+        "at": 601,
+        "path": "src/hir/resolve_expr/sort_keys.rs"
+      },
+      {
+        "at": 602,
+        "path": "src/hir/resolve_expr/super_method.rs"
+      },
+      {
+        "at": 603,
+        "path": "src/hir/resolve_expr/variable.rs"
+      },
+      {
+        "at": 604,
+        "path": "src/hir/resolve_expr/vec_constructor.rs"
+      },
+      {
+        "at": 605,
+        "path": "src/hir/resolve_expr/vec_field.rs"
+      },
+      {
+        "at": 606,
+        "path": "src/hir/resolver_scope.rs"
+      },
+      {
+        "at": 607,
+        "path": "src/hir/resolver_scope/source_audit.rs"
+      },
+      {
+        "at": 608,
+        "path": "src/hir/borrowed_root_oracle.rs"
+      },
+      {
+        "at": 609,
+        "path": "src/hir/borrowed_root_oracle/resolve_box_call.rs"
+      },
+      {
+        "at": 610,
+        "path": "src/hir/borrowed_root_oracle/resolve_box_call/iterator.rs"
+      },
+      {
+        "at": 611,
+        "path": "src/hir/borrowed_root_oracle/resolve_box_call/list.rs"
+      },
+      {
+        "at": 612,
+        "path": "src/hir/borrowed_root_oracle/resolve_box_call/map.rs"
+      },
+      {
+        "at": 613,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr.rs"
+      },
+      {
+        "at": 614,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/byte_view.rs"
+      },
+      {
+        "at": 615,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/capacity.rs"
+      },
+      {
+        "at": 616,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/finish.rs"
+      },
+      {
+        "at": 617,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/lexical_exit.rs"
+      },
+      {
+        "at": 618,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/literal_format.rs"
+      },
+      {
+        "at": 619,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/sort_keys.rs"
+      },
+      {
+        "at": 620,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/super_method.rs"
+      },
+      {
+        "at": 621,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/variable.rs"
+      },
+      {
+        "at": 622,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/vec_constructor.rs"
+      },
+      {
+        "at": 623,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr/vec_field.rs"
+      },
+      {
+        "at": 624,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame.rs"
+      },
+      {
+        "at": 625,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame/fixed_results.rs"
+      },
+      {
+        "at": 626,
+        "path": "src/hir/borrowed_root_oracle/resolve_expr_frame/capacity_old.rs"
+      },
+      {
+        "at": 627,
+        "path": "src/hir/borrowed_root_oracle/resolve_for.rs"
+      },
+      {
+        "at": 628,
+        "path": "src/hir/borrowed_root_oracle/resolve_for/bytes.rs"
+      },
+      {
+        "at": 629,
+        "path": "src/hir/borrowed_root_oracle/resolve_for/record.rs"
+      },
+      {
+        "at": 630,
+        "path": "src/hir/borrowed_root_oracle/resolve_for_own.rs"
+      },
+      {
+        "at": 631,
+        "path": "src/hir/borrowed_root_oracle/resolve_pattern.rs"
+      },
+      {
+        "at": 632,
+        "path": "src/hir/borrowed_root_oracle/resolve_statement.rs"
+      },
+      {
+        "at": 633,
+        "path": "src/hir/borrowed_root_oracle/resolve_vec_call.rs"
+      },
+      {
+        "at": 634,
+        "path": "src/hir/resolve_expr_frame.rs"
+      },
+      {
+        "at": 635,
+        "path": "src/hir/resolve_expr_frame/fixed_results.rs"
+      },
+      {
+        "at": 636,
+        "path": "src/hir/resolve_expr_frame/capacity_old.rs"
+      },
+      {
+        "at": 637,
+        "path": "src/hir/resolve_expr_reference.rs"
+      },
+      {
+        "at": 638,
+        "path": "src/hir/resolve_expr_reference/block.rs"
+      },
+      {
+        "at": 639,
+        "path": "src/hir/resolve_expr_reference/control.rs"
+      },
+      {
+        "at": 640,
+        "path": "src/hir/resolve_expr_reference/literal_format.rs"
+      },
+      {
+        "at": 641,
+        "path": "src/hir/resolve_expr_reference/projection.rs"
+      },
+      {
+        "at": 642,
+        "path": "src/hir/resolve_expr_reference/static_text.rs"
+      },
+      {
+        "at": 643,
+        "path": "src/hir/resolve_for.rs"
+      },
+      {
+        "at": 644,
+        "path": "src/hir/resolve_for/bytes.rs"
+      },
+      {
+        "at": 645,
+        "path": "src/hir/resolve_for/record.rs"
+      },
+      {
+        "at": 646,
+        "path": "src/hir/resolve_for_own.rs"
+      },
+      {
+        "at": 647,
+        "path": "src/hir/resolve_native_rust_result.rs"
+      },
+      {
+        "at": 648,
+        "path": "src/hir/resolve_pattern.rs"
+      },
+      {
+        "at": 649,
+        "path": "src/hir/resolve_program.rs"
+      },
+      {
+        "at": 650,
+        "path": "src/hir/resolve_program/initial_loan_plans.rs"
+      },
+      {
+        "at": 651,
+        "path": "src/hir/resolve_program/initial_loan_plans/staging.rs"
+      },
+      {
+        "at": 652,
+        "path": "src/hir/resolve_program/reuse_lowered.rs"
+      },
+      {
+        "at": 653,
+        "path": "src/hir/resolve_statement.rs"
+      },
+      {
+        "at": 654,
+        "path": "src/hir/resolve_stdin_stream.rs"
+      },
+      {
+        "at": 655,
+        "path": "src/hir/resolve_variant_or.rs"
+      },
+      {
+        "at": 656,
+        "path": "src/hir/resolve_vec_call.rs"
+      },
+      {
+        "at": 657,
+        "path": "src/hir/resolve_yield.rs"
+      },
+      {
+        "at": 658,
+        "path": "src/hir/selected_fused_candidate.rs"
+      },
+      {
+        "at": 659,
+        "path": "src/hir/type_reachability.rs"
+      },
+      {
+        "at": 660,
+        "path": "src/hir/type_reachability/nested_generic_function.rs"
+      },
+      {
+        "at": 661,
+        "path": "src/hir/type_reachability/owned_oracle.rs"
+      },
+      {
+        "at": 662,
+        "path": "src/hir/type_reachability/owned_oracle/native_owner_old.rs"
+      },
+      {
+        "at": 663,
+        "path": "src/hir/type_reachability/owned_oracle/native_owner_old/url_view.rs"
+      },
+      {
+        "at": 664,
+        "path": "src/hir/type_reachability/leaf_saved.rs"
+      },
+      {
+        "at": 665,
+        "path": "src/hir/vec_constructor.rs"
+      },
+      {
+        "at": 666,
+        "path": "src/hir/vec_constructor/capture.rs"
+      },
+      {
+        "at": 667,
+        "path": "src/hir/variant_equality.rs"
+      },
+      {
+        "at": 668,
+        "path": "src/hir/workspace_link.rs"
+      },
+      {
+        "at": 669,
+        "path": "src/hir/workspace_link/compiler_prelude.rs"
+      },
+      {
+        "at": 670,
+        "path": "src/hir/workspace_link/profile_diagnostics.rs"
+      },
+      {
+        "at": 671,
+        "path": "src/hir/workspace_link/stdin_stream.rs"
+      },
+      {
+        "at": 672,
+        "path": "src/hir/workspace_link/stream_collection_record.rs"
+      },
+      {
+        "at": 673,
+        "path": "src/hir/workspace_link/stream_nested_outcome.rs"
+      },
+      {
+        "at": 674,
+        "path": "src/hir/workspace_link/stream_owned.rs"
+      },
+      {
+        "at": 675,
+        "path": "src/hir/workspace_link/stream_record.rs"
+      },
+      {
+        "at": 676,
+        "path": "src/hir/yield_aggregate.rs"
+      },
+      {
+        "at": 677,
+        "path": "src/hir/cache_codec.rs"
+      },
+      {
+        "at": 678,
+        "path": "src/hir/declaration_index.rs"
+      },
+      {
+        "at": 679,
+        "path": "src/hir/declaration_index/flags.rs"
+      },
+      {
+        "at": 680,
+        "path": "src/hir/declaration_index/flags/nominal_key.rs"
+      },
+      {
+        "at": 681,
+        "path": "src/hir/declaration_index/flags/nominal_key/compound.rs"
+      },
+      {
+        "at": 682,
+        "path": "src/hir/declaration_index/flags/paid.rs"
+      },
+      {
+        "at": 683,
+        "path": "src/hir/declaration_index/flags/paid/admission.rs"
+      },
+      {
+        "at": 684,
+        "path": "src/hir/declaration_index/flags/paid/builtin.rs"
+      },
+      {
+        "at": 685,
+        "path": "src/hir/declaration_index/flags/paid/compute.rs"
+      },
+      {
+        "at": 686,
+        "path": "src/hir/declaration_index/flags/paid/key.rs"
+      },
+      {
+        "at": 687,
+        "path": "src/hir/declaration_index/flags/paid/storage.rs"
+      },
+      {
+        "at": 688,
+        "path": "src/hir/declaration_index/flags/paid/substitute.rs"
+      },
+      {
+        "at": 689,
+        "path": "src/hir/declaration_index/flags/paid/inventory_constructor.rs"
+      },
+      {
+        "at": 690,
+        "path": "src/hir/declaration_index/flags/paid/inventory_constructor/key.rs"
+      },
+      {
+        "at": 691,
+        "path": "src/hir/declaration_index/flags/paid/inventory_constructor/substitute.rs"
+      },
+      {
+        "at": 692,
+        "path": "src/hir/declaration_index/flags/owned_key_oracle.rs"
+      },
+      {
+        "at": 693,
+        "path": "src/hir/declaration_index/inventory_lookup.rs"
+      },
+      {
+        "at": 694,
+        "path": "src/hir/declaration_index/inventory_lookup/compound.rs"
+      },
+      {
+        "at": 695,
+        "path": "src/hir/declaration_index/inventory_lookup/nominal.rs"
+      },
+      {
+        "at": 696,
+        "path": "src/hir/declaration_index/owned_builtin.rs"
+      },
+      {
+        "at": 697,
+        "path": "src/hir/declaration_index/owner_name.rs"
+      },
+      {
+        "at": 698,
+        "path": "src/hir/declaration_index/primitive_replay.rs"
+      },
+      {
+        "at": 699,
+        "path": "src/hir/declaration_index/primitive_replay/flat_record.rs"
+      },
+      {
+        "at": 700,
+        "path": "src/hir/declaration_index/projection.rs"
+      },
+      {
+        "at": 701,
+        "path": "src/hir/declaration_index/source.rs"
+      },
+      {
+        "at": 702,
+        "path": "src/hir/identity_resolution.rs"
+      },
+      {
+        "at": 703,
+        "path": "src/hir/identity_resolution/previous_source.rs"
+      },
+      {
+        "at": 704,
+        "path": "src/hir/ordinary_identity.rs"
+      },
+      {
+        "at": 705,
+        "path": "src/hir/vec_field_origin.rs"
+      },
+      {
+        "at": 706,
+        "path": "src/hir/row_loan.rs"
+      },
+      {
+        "at": 707,
+        "path": "src/hir/row_loan/producer.rs"
+      },
+      {
+        "at": 708,
+        "path": "src/hir/row_loan/validate.rs"
+      },
+      {
+        "at": 709,
+        "path": "src/hir/row_loan/validate/budget.rs"
+      },
+      {
+        "at": 710,
+        "path": "src/hir/row_loan/validate/comparisons.rs"
+      },
+      {
+        "at": 711,
+        "path": "src/hir/collection_outcome.rs"
+      },
+      {
+        "at": 712,
+        "path": "src/hir/collection_outcome/nested.rs"
+      },
+      {
+        "at": 713,
+        "path": "src/hir/collection_outcome/nested/profile.rs"
+      },
+      {
+        "at": 714,
+        "path": "src/hir/collection_outcome/owned.rs"
+      },
+      {
+        "at": 715,
+        "path": "src/hir/collection_outcome/stream_input.rs"
+      },
+      {
+        "at": 716,
+        "path": "src/hir/copy_record_collection.rs"
+      },
+      {
+        "at": 717,
+        "path": "src/hir/declared_collection.rs"
+      },
+      {
+        "at": 718,
+        "path": "src/hir/declared_collection/paid.rs"
+      },
+      {
+        "at": 719,
+        "path": "src/hir/declared_collection/paid/early.rs"
+      },
+      {
+        "at": 720,
+        "path": "src/hir/generic_collection.rs"
+      },
+      {
+        "at": 721,
+        "path": "src/hir/generic_inference.rs"
+      },
+      {
+        "at": 722,
+        "path": "src/hir/generic_result.rs"
+      },
+      {
+        "at": 723,
+        "path": "src/hir/iterator_loop.rs"
+      },
+      {
+        "at": 724,
+        "path": "src/hir/iterator_loop/renewal.rs"
+      },
+      {
+        "at": 725,
+        "path": "src/hir/iterator_loop/renewal/paid_scan.rs"
+      },
+      {
+        "at": 726,
+        "path": "src/hir/iterator_loop/paid.rs"
+      },
+      {
+        "at": 727,
+        "path": "src/hir/owned_leaf_collection.rs"
+      },
+      {
+        "at": 728,
+        "path": "src/hir/owned_record_collection.rs"
+      },
+      {
+        "at": 729,
+        "path": "src/hir/renewal_probes.rs"
+      },
+      {
+        "at": 730,
+        "path": "src/hir/renewal_probes/phase.rs"
+      },
+      {
+        "at": 731,
+        "path": "src/hir/vec_loop_renewal.rs"
+      },
+      {
+        "at": 732,
+        "path": "src/hir/vec_loop_renewal/consuming.rs"
+      },
+      {
+        "at": 733,
+        "path": "src/hir/vec_loop_renewal/consuming/empty_clone.rs"
+      },
+      {
+        "at": 734,
+        "path": "src/hir/generic_mapping.rs"
+      },
+      {
+        "at": 735,
+        "path": "src/hir/generic_variant.rs"
+      },
+      {
+        "at": 736,
+        "path": "src/hir/function_reuse_source.rs"
+      },
+      {
+        "at": 739,
+        "path": "src/hir/validation/function_lookup.rs"
+      },
+      {
+        "at": 740,
+        "path": "src/hir/validation/function_lookup/permits.rs"
+      },
+      {
+        "at": 741,
+        "path": "src/hir/validation/function_lookup/original.rs"
+      },
+      {
+        "at": 742,
+        "path": "src/hir/validation/function_lookup/paid_custody.rs"
+      },
+      {
+        "at": 743,
+        "path": "src/hir/validation/function_scope.rs"
+      },
+      {
+        "at": 744,
+        "path": "src/hir/validation/function_scope/old.rs"
+      },
+      {
+        "at": 745,
+        "path": "src/hir/validation/function_scope/backing_saved.rs"
+      },
+      {
+        "at": 746,
+        "path": "src/hir/validation/function_scope/lifecycle_receiver_saved.rs"
+      },
+      {
+        "at": 747,
+        "path": "src/hir/validation/function_scope/empty_ensures.rs"
+      },
+      {
+        "at": 748,
+        "path": "src/hir/validation/function_scope/empty_ensures/before.rs"
+      },
+      {
+        "at": 749,
+        "path": "src/hir/validation/identity_directory.rs"
+      },
+      {
+        "at": 750,
+        "path": "src/hir/validation/identity_directory/iter.rs"
+      },
+      {
+        "at": 751,
+        "path": "src/hir/validation/identity_directory/oracle_entries.rs"
+      },
+      {
+        "at": 752,
+        "path": "src/hir/validation/identity_directory/transaction.rs"
+      },
+      {
+        "at": 753,
+        "path": "src/hir/validation/identity_insert.rs"
+      },
+      {
+        "at": 754,
+        "path": "src/hir/validation/identity_insert/coarse.rs"
+      },
+      {
+        "at": 755,
+        "path": "src/hir/validation/identity_scratch.rs"
+      },
+      {
+        "at": 756,
+        "path": "src/hir/validation/owned_iterative_oracle.rs"
+      },
+      {
+        "at": 757,
+        "path": "src/hir/validation/scope_checkpoint.rs"
+      },
+      {
+        "at": 758,
+        "path": "src/hir/validation/scope_checkpoint/charge.rs"
+      },
+      {
+        "at": 759,
+        "path": "src/hir/validation/scope_checkpoint/coarse.rs"
+      },
+      {
+        "at": 760,
+        "path": "src/hir/validation/scope_checkpoint/fresh.rs"
+      },
+      {
+        "at": 761,
+        "path": "src/hir/validation/scope_checkpoint/marks.rs"
+      },
+      {
+        "at": 762,
+        "path": "src/hir/validation/scope_checkpoint/merge.rs"
+      },
+      {
+        "at": 763,
+        "path": "src/hir/validation/scope_checkpoint/merge/saved.rs"
+      },
+      {
+        "at": 764,
+        "path": "src/hir/validation/scope_checkpoint/paths.rs"
+      },
+      {
+        "at": 765,
+        "path": "src/hir/validation/scope_checkpoint/storage.rs"
+      },
+      {
+        "at": 766,
+        "path": "src/hir/validation/scope_checkpoint/transaction.rs"
+      },
+      {
+        "at": 767,
+        "path": "src/hir/validation/scope_checkpoint/tree.rs"
+      },
+      {
+        "at": 768,
+        "path": "src/hir/validation/scope_checkpoint/views.rs"
+      },
+      {
+        "at": 769,
+        "path": "src/hir/validation/type_requirement.rs"
+      },
+      {
+        "at": 770,
+        "path": "src/hir/validation/aggregate_metadata.rs"
+      },
+      {
+        "at": 771,
+        "path": "src/hir/validation/assign_field.rs"
+      },
+      {
+        "at": 772,
+        "path": "src/hir/validation/continuation_path.rs"
+      },
+      {
+        "at": 773,
+        "path": "src/hir/validation/path_label.rs"
+      },
+      {
+        "at": 774,
+        "path": "src/hir/validation/borrowed_argument.rs"
+      },
+      {
+        "at": 775,
+        "path": "src/hir/validation/borrowed_str.rs"
+      },
+      {
+        "at": 776,
+        "path": "src/hir/validation/box_intrinsic.rs"
+      },
+      {
+        "at": 777,
+        "path": "src/hir/validation/branch_merge.rs"
+      },
+      {
+        "at": 778,
+        "path": "src/hir/validation/byte_range.rs"
+      },
+      {
+        "at": 779,
+        "path": "src/hir/validation/call_parameters.rs"
+      },
+      {
+        "at": 780,
+        "path": "src/hir/validation/call_parameters/copy_before.rs"
+      },
+      {
+        "at": 781,
+        "path": "src/hir/validation/call_signature.rs"
+      },
+      {
+        "at": 782,
+        "path": "src/hir/validation/callable_types.rs"
+      },
+      {
+        "at": 783,
+        "path": "src/hir/validation/callable_types/inline_frames.rs"
+      },
+      {
+        "at": 784,
+        "path": "src/hir/validation/callable_types/original_receiver.rs"
+      },
+      {
+        "at": 785,
+        "path": "src/hir/validation/canonical_loans.rs"
+      },
+      {
+        "at": 786,
+        "path": "src/hir/validation/canonical_loans/constructors_before.rs"
+      },
+      {
+        "at": 787,
+        "path": "src/hir/validation/closure.rs"
+      },
+      {
+        "at": 788,
+        "path": "src/hir/validation/closure/old.rs"
+      },
+      {
+        "at": 789,
+        "path": "src/hir/validation/contract_owners.rs"
+      },
+      {
+        "at": 790,
+        "path": "src/hir/validation/effect_keys.rs"
+      },
+      {
+        "at": 791,
+        "path": "src/hir/validation/executable_profiles.rs"
+      },
+      {
+        "at": 792,
+        "path": "src/hir/validation/generic_record_composition.rs"
+      },
+      {
+        "at": 793,
+        "path": "src/hir/validation/generic_template.rs"
+      },
+      {
+        "at": 794,
+        "path": "src/hir/validation/generic_template/reachability.rs"
+      },
+      {
+        "at": 795,
+        "path": "src/hir/validation/generic_template/values.rs"
+      },
+      {
+        "at": 796,
+        "path": "src/hir/validation/generic_template/values/charge.rs"
+      },
+      {
+        "at": 797,
+        "path": "src/hir/validation/generic_template/values/tree.rs"
+      },
+      {
+        "at": 798,
+        "path": "src/hir/validation/host_command.rs"
+      },
+      {
+        "at": 799,
+        "path": "src/hir/validation/lexical_exit.rs"
+      },
+      {
+        "at": 800,
+        "path": "src/hir/validation/native_borrow.rs"
+      },
+      {
+        "at": 801,
+        "path": "src/hir/validation/nominal_facts.rs"
+      },
+      {
+        "at": 802,
+        "path": "src/hir/validation/owned_buffer.rs"
+      },
+      {
+        "at": 803,
+        "path": "src/hir/validation/owned_buffer/iterator_view.rs"
+      },
+      {
+        "at": 804,
+        "path": "src/hir/validation/owned_result_try.rs"
+      },
+      {
+        "at": 805,
+        "path": "src/hir/validation/owner_renewal.rs"
+      },
+      {
+        "at": 806,
+        "path": "src/hir/validation/ownership_flags.rs"
+      },
+      {
+        "at": 807,
+        "path": "src/hir/validation/ownership_flags/before.rs"
+      },
+      {
+        "at": 808,
+        "path": "src/hir/validation/proof_return.rs"
+      },
+      {
+        "at": 809,
+        "path": "src/hir/validation/record_pattern.rs"
+      },
+      {
+        "at": 810,
+        "path": "src/hir/validation/record_pattern/binding_path.rs"
+      },
+      {
+        "at": 811,
+        "path": "src/hir/validation/record_pattern/owned.rs"
+      },
+      {
+        "at": 812,
+        "path": "src/hir/validation/record_traversal.rs"
+      },
+      {
+        "at": 813,
+        "path": "src/hir/validation/row_loan.rs"
+      },
+      {
+        "at": 814,
+        "path": "src/hir/validation/stdin_stream.rs"
+      },
+      {
+        "at": 815,
+        "path": "src/hir/validation/stdin_stream/paid.rs"
+      },
+      {
+        "at": 816,
+        "path": "src/hir/validation/stdin_stream/paid/analysis.rs"
+      },
+      {
+        "at": 817,
+        "path": "src/hir/validation/string_intrinsic.rs"
+      },
+      {
+        "at": 818,
+        "path": "src/hir/validation/type_profiles.rs"
+      },
+      {
+        "at": 819,
+        "path": "src/hir/validation/unsafe_scan.rs"
+      },
+      {
+        "at": 820,
+        "path": "src/hir/validation/unsafe_scan/paid.rs"
+      },
+      {
+        "at": 821,
+        "path": "src/hir/validation/upcast.rs"
+      },
+      {
+        "at": 822,
+        "path": "src/hir/validation/vec_field.rs"
+      },
+      {
+        "at": 823,
+        "path": "src/hir/validation/vec_intrinsic.rs"
+      },
+      {
+        "at": 824,
+        "path": "src/hir/validation/fused_selection.rs"
+      },
+      {
+        "at": 825,
+        "path": "src/hir/validation/generic_variant.rs"
+      },
+      {
+        "at": 826,
+        "path": "src/hir/validation/iterator_loops.rs"
+      },
+      {
+        "at": 827,
+        "path": "src/hir/validation/iterator_loops/field_scope.rs"
+      },
+      {
+        "at": 828,
+        "path": "src/hir/validation/place_resolution.rs"
+      },
+      {
+        "at": 829,
+        "path": "src/hir/validation/string_replacement.rs"
+      },
+      {
+        "at": 830,
+        "path": "src/hir/validation/variant_guard_state.rs"
+      },
+      {
+        "at": 831,
+        "path": "src/hir/validation/variant_or.rs"
+      },
+      {
+        "at": 832,
+        "path": "src/hir/validation/variant_or/covered.rs"
+      },
+      {
+        "at": 835,
+        "path": "src/hir/validation/function_scope/lifecycle/completed/inline_path.rs"
+      },
+      {
+        "at": 850,
+        "path": "src/source_verify/declaration/classes.rs"
+      },
+      {
+        "at": 851,
+        "path": "src/source_verify/declaration/declarations.rs"
+      },
+      {
+        "at": 852,
+        "path": "src/source_verify/declaration/functions.rs"
+      },
+      {
+        "at": 853,
+        "path": "src/source_verify/declaration/functions/signature_refusal.rs"
+      },
+      {
+        "at": 854,
+        "path": "src/source_verify/declaration/functions/traversal_scope.rs"
+      },
+      {
+        "at": 855,
+        "path": "src/source_verify/declaration/functions/old.rs"
+      },
+      {
+        "at": 856,
+        "path": "src/source_verify/declaration/fusion.rs"
+      },
+      {
+        "at": 857,
+        "path": "src/source_verify/declaration/fusion/consumers.rs"
+      },
+      {
+        "at": 858,
+        "path": "src/source_verify/declaration/identity.rs"
+      },
+      {
+        "at": 859,
+        "path": "src/source_verify/declaration/old.rs"
+      },
+      {
+        "at": 860,
+        "path": "src/source_verify/declaration/public_signature_before.rs"
+      },
+      {
+        "at": 862,
+        "path": "tests/hir_module_boundaries/oracle_source_inventory.rs"
+      },
+      {
+        "at": 959,
         "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs"
       },
       {
-        "at": 955,
+        "at": 960,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs"
+      },
+      {
+        "at": 961,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs"
+      },
+      {
+        "at": 962,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs"
+      },
+      {
+        "at": 963,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs"
+      },
+      {
+        "at": 964,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_before.rs"
+      },
+      {
+        "at": 965,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_caller_before.rs"
+      },
+      {
+        "at": 966,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs"
+      },
+      {
+        "at": 967,
         "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs"
+      },
+      {
+        "at": 974,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs"
+      },
+      {
+        "at": 975,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor/tests.rs"
+      },
+      {
+        "at": 976,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline.rs"
+      },
+      {
+        "at": 977,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/inline/tests.rs"
+      },
+      {
+        "at": 978,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs"
+      },
+      {
+        "at": 979,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status/tests.rs"
+      },
+      {
+        "at": 980,
+        "path": "src/source_reflows/semantic_receivers/status_inline.rs"
+      },
+      {
+        "at": 1032,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs"
+      },
+      {
+        "at": 1033,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs"
+      },
+      {
+        "at": 1034,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs"
+      },
+      {
+        "at": 1035,
+        "path": "src/ast/program_source/function_alias/scalar_signature.rs"
+      },
+      {
+        "at": 1036,
+        "path": "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs"
+      },
+      {
+        "at": 1037,
+        "path": "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs"
+      },
+      {
+        "at": 1038,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs"
+      },
+      {
+        "at": 1039,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs"
+      },
+      {
+        "at": 1040,
+        "path": "src/ast/program_source/function_alias/before_string.rs"
+      },
+      {
+        "at": 1041,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs"
+      },
+      {
+        "at": 1042,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs"
+      },
+      {
+        "at": 1043,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs"
+      },
+      {
+        "at": 1044,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs"
+      },
+      {
+        "at": 1045,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs"
+      },
+      {
+        "at": 1046,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs"
+      },
+      {
+        "at": 1047,
+        "path": "src/source_reflows_merge/main_e177_historical_before_data.rs"
+      },
+      {
+        "at": 1048,
+        "path": "src/source_reflows_merge/main_e177_historical_data.rs"
+      },
+      {
+        "at": 1049,
+        "path": "src/source_reflows_merge/main_e177_historical_data_tests.rs"
+      },
+      {
+        "at": 1050,
+        "path": "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs"
+      },
+      {
+        "at": 1051,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs"
+      },
+      {
+        "at": 1052,
+        "path": "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs"
+      },
+      {
+        "at": 1053,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs"
+      },
+      {
+        "at": 1054,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs"
+      },
+      {
+        "at": 1055,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs"
+      },
+      {
+        "at": 1056,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs"
+      },
+      {
+        "at": 1057,
+        "path": "src/workspace_graph/expected_projection/call_carriers_before_directory.rs"
+      },
+      {
+        "at": 1058,
+        "path": "src/workspace_graph/expected_projection/call_carriers_directory.rs"
+      },
+      {
+        "at": 1059,
+        "path": "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs"
+      },
+      {
+        "at": 1060,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs"
+      },
+      {
+        "at": 1061,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs"
+      },
+      {
+        "at": 1062,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs"
+      },
+      {
+        "at": 1063,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs"
+      },
+      {
+        "at": 1064,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs"
+      },
+      {
+        "at": 1065,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs"
+      },
+      {
+        "at": 1066,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs"
+      },
+      {
+        "at": 1067,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs"
+      },
+      {
+        "at": 1068,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+      },
+      {
+        "at": 1069,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs"
+      },
+      {
+        "at": 1070,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs"
+      },
+      {
+        "at": 1071,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs"
+      },
+      {
+        "at": 1072,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs"
+      },
+      {
+        "at": 1073,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs"
+      },
+      {
+        "at": 1074,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs"
+      },
+      {
+        "at": 1075,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs"
+      },
+      {
+        "at": 1076,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs"
+      },
+      {
+        "at": 1077,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+      },
+      {
+        "at": 1078,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs"
+      },
+      {
+        "at": 1079,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_runs.rs"
+      },
+      {
+        "at": 1080,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs"
+      },
+      {
+        "at": 1081,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs"
+      },
+      {
+        "at": 1082,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs"
+      },
+      {
+        "at": 1083,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_runs.rs"
+      },
+      {
+        "at": 1084,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main7e_pair_scope_tests.rs"
+      },
+      {
+        "at": 1085,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_certified.rs"
+      },
+      {
+        "at": 1086,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_certified.rs"
+      },
+      {
+        "at": 1087,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+      },
+      {
+        "at": 1088,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"
+      },
+      {
+        "at": 1089,
+        "path": "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs"
+      },
+      {
+        "at": 1090,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs"
+      },
+      {
+        "at": 1091,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs"
+      },
+      {
+        "at": 1092,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs"
+      },
+      {
+        "at": 1093,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_links.rs"
+      },
+      {
+        "at": 1094,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired_tail.rs"
+      },
+      {
+        "at": 1095,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs"
+      },
+      {
+        "at": 1096,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs"
+      },
+      {
+        "at": 1097,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_paired_tail.rs"
+      },
+      {
+        "at": 1098,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs"
+      },
+      {
+        "at": 1099,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs"
+      },
+      {
+        "at": 1100,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs"
+      },
+      {
+        "at": 1101,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_pair_links.rs"
+      },
+      {
+        "at": 1102,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_paired_tail.rs"
+      },
+      {
+        "at": 1103,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main001_pair_scope_tests.rs"
+      },
+      {
+        "at": 1104,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs"
+      },
+      {
+        "at": 1105,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs"
+      },
+      {
+        "at": 1106,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_paired_tails.rs"
+      },
+      {
+        "at": 1107,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs"
+      },
+      {
+        "at": 1108,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs"
+      },
+      {
+        "at": 1109,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs"
+      },
+      {
+        "at": 1110,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_paired_tail.rs"
+      },
+      {
+        "at": 1111,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_pair_links.rs"
+      },
+      {
+        "at": 1112,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_paired_tail.rs"
+      },
+      {
+        "at": 1113,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
+      },
+      {
+        "at": 1114,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs"
+      },
+      {
+        "at": 1115,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs"
+      },
+      {
+        "at": 1116,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"
+      },
+      {
+        "at": 1117,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"
+      },
+      {
+        "at": 1118,
+        "path": "src/source_reflows_merge/main_e177_packet_lookup.rs"
+      },
+      {
+        "at": 1119,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs"
+      },
+      {
+        "at": 1120,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs"
+      },
+      {
+        "at": 1121,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs"
+      },
+      {
+        "at": 1122,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs"
+      },
+      {
+        "at": 1123,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs"
+      },
+      {
+        "at": 1124,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs"
+      },
+      {
+        "at": 1125,
+        "path": "src/bounded_output/exclusive_debits.rs"
+      },
+      {
+        "at": 1126,
+        "path": "src/hir/ids/lowering_identity_tests.rs"
+      },
+      {
+        "at": 1127,
+        "path": "src/hir/owned_collection_record/identity_before.rs"
+      },
+      {
+        "at": 1128,
+        "path": "src/hir/resolve_expr/sort_keys/identity_before.rs"
+      },
+      {
+        "at": 1129,
+        "path": "src/hir/resolve_expr/sort_keys/identity_tests.rs"
+      },
+      {
+        "at": 1130,
+        "path": "src/hir/resolve_for/identity_before.rs"
+      },
+      {
+        "at": 1131,
+        "path": "src/hir/resolve_for_own/identity_before.rs"
+      },
+      {
+        "at": 1132,
+        "path": "src/source_reflows_merge/main_e177_overlay_pins_v9.rs"
+      },
+      {
+        "at": 1133,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs"
+      },
+      {
+        "at": 1134,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs"
+      },
+      {
+        "at": 1135,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs"
+      },
+      {
+        "at": 1136,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs"
+      },
+      {
+        "at": 1137,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs"
+      },
+      {
+        "at": 1138,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs"
+      },
+      {
+        "at": 1139,
+        "path": "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs"
       }
     ],
-    "rows": 1020
+    "rows": 1140
   },
   "closed_prior_sources": [
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
@@ -3767,18 +4803,150 @@
     "src/literal_format/funded_receiving.rs",
     "src/source_reflows_merge/main_e177_overlay_v2.rs",
     "src/string_ops/conditions/funded_receiving.rs",
-    "src/hir/ids/declaration_backing_tests.rs"
+    "src/hir/ids/declaration_backing_tests.rs",
+    "src/cleanup_plan/replay/factored/before_inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/inline_exit/census.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
+    "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs",
+    "src/source_reflows_merge/runtime_json/sealed_io.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_flat_view.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_fused_flat.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/combined_pair_scope_tests.rs",
+    "src/ast/program_source/function_alias/scalar_signature.rs",
+    "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_block_before.rs",
+    "src/workspace_graph/constructor_failure/before_scalar_dispatch.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_scalar_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs",
+    "src/ast/program_source/function_alias/before_string.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_retained_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/matched_tail_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/source_format.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+    "src/source_reflows_merge/main_e177_historical_before_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data.rs",
+    "src/source_reflows_merge/main_e177_historical_data_tests.rs",
+    "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs",
+    "src/workspace_graph/expected_projection/borrowed_imports/typed/string_signature_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers.rs",
+    "src/workspace_graph/expected_projection/call_carriers_historical_tests.rs",
+    "src/workspace_graph/expected_projection/call_carriers_inverse.rs",
+    "src/workspace_graph/expected_projection/call_carriers_original.rs",
+    "src/workspace_graph/expected_projection/call_carriers_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_prepared_pairing.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_prepared_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/prepared_pairing_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links.rs",
+    "src/workspace_graph/expected_projection/call_carriers_before_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory.rs",
+    "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_identity_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_identity.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_reachable_before.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/reachable_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_event_prefix.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main99_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_event_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+    "src/cleanup_plan/replay/lexical_replay/operand_tests/source.rs",
+    "src/workspace_graph/expected_projection/private_layout/capacity_tests/source.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_runs.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_runs.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main7e_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_certified.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+    "src/workspace_graph/expected_projection/private_layout/registry/scratch_tests.rs",
+    "src/workspace_graph/cold_canonical/tests.rs",
+    "src/workspace_graph/expected_projection/cost.rs",
+    "src/bounded_output/stage_debits/route_debits/json_codec_probe.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/borrowed_reader_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main001_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main487_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_pair_scope_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/main_b692_paired_tails.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_link_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_tail_composition_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_pair_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_paired_tail.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/fused_readers.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+    "src/source_reflows_merge/main_e177_overlay_compiled.rs",
+    "src/source_reflows_merge/main_e177_packet_lookup.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/empty_selector_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_empty.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_empty.rs",
+    "src/test_allocation_observer/backing.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/final_affine_tests.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value_before_final_affine.rs",
+    "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix_before_final_affine.rs",
+    "src/bounded_output/exclusive_debits.rs",
+    "src/hir/ids/lowering_identity_tests.rs",
+    "src/hir/owned_collection_record/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_before.rs",
+    "src/hir/resolve_expr/sort_keys/identity_tests.rs",
+    "src/hir/resolve_for/identity_before.rs",
+    "src/hir/resolve_for_own/identity_before.rs",
+    "src/source_reflows_merge/main_e177_overlay_pins_v9.rs"
   ],
   "extension": {
     "path": "docs/evidence/fmt-local-441-20261018/extension.json",
     "length": 262076,
     "sha256": "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6"
   },
-  "logical_rows": 519,
+  "logical_rows": 687,
   "source_successor": {
-    "path": "docs/evidence/source-fronts-aaa2-20261020/stage-inputs.json",
-    "length": 94100,
-    "sha256": "9dc9790e8607be4d232ea956ec2a0d058f28e62de67edc3d0cc9f9a717db7ee5"
+    "path": "docs/evidence/clippy-11a0-integration/inputs.json",
+    "length": 74925,
+    "sha256": "fd11fdc6330063376d95f97a77b3e4c83f75147bff01dd34118c48d34ff96211"
   },
   "previous_successor": {
     "path": "docs/evidence/clippy-4a6eb/inputs.json",

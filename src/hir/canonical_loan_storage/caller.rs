@@ -123,16 +123,36 @@ pub(in crate::hir) fn validate_with_comparison<'a>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::CoreValidation,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::CoreValidation,
+    );
     // Preserve ModuleIndex before the complete constructor preflight, and the
     // preflight before every independent canonical-plan rebuild/allocation.
     let observation = crate::hir::validation::owner_renewal::Observation::default();
-    let helpers = crate::loop_calls::byte_writer::ModuleIndex::new(program)?;
-    let seed = ConstructorSeed::authenticate(program, directory)?;
+    let helpers = {
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_constructor = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::ModuleIndex,
+        );
+        crate::loop_calls::byte_writer::ModuleIndex::new(program)?
+    };
+    let seed = {
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_constructor = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::ConstructorSeed,
+        );
+        ConstructorSeed::authenticate(program, directory)?
+    };
     let (storage, deferred) = prepare_with_comparison(&seed, program)?;
     let validator = {
         #[cfg(test)]
         let _operation = crate::bounded_output::stage_debits::operation_guard(
             crate::bounded_output::stage_debits::Operation::ValidatorConstructor,
+        );
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+            crate::bounded_output::exclusive_debits::Operation::ValidatorConstructor,
         );
         HirValidator::with_storage(seed, &storage)?
     };
@@ -181,6 +201,10 @@ fn prepare_sealed<'a, T>(
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::CanonicalLoanStorage,
+    );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::CanonicalLoanStorage,
     );
     if !std::ptr::eq(seed.program(), program) {
         return Err(hir_error(

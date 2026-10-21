@@ -468,9 +468,15 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
             free: 26,
             ifs: 1,
             vars: 8,
-            blocks: 0,
+            blocks: 2,
         }
     );
+    // Braced if arms are actual free Block nodes, including empty-statement
+    // arms. Keep full AST/HIR/cost equality and the independent zero boundary.
+    let mut helper = Census::default();
+    ast_census(&parsed.functions[0].body, false, true, &mut helper);
+    assert_eq!(helper.blocks, 0);
+    assert_eq!(ast.blocks, 2);
     let cost = cost_census(&parsed);
     assert_eq!(cost.exact_absent_roots, ast.kinds);
     assert_eq!(cost.exact_carrier_free_roots, ast.free);
@@ -501,6 +507,11 @@ fn raw_ast_resolved_and_cost_censuses_agree_on_every_carrier_free_root() {
         assert!(function.requires.is_empty() && function.ensures.is_empty());
         built += hir_census(&function.body, false, true, &mut hir);
     }
+    let mut helper_hir = Census::default();
+    let add = resolved.functions.iter().find(|f| f.name == "add").unwrap();
+    hir_census(&add.body, false, true, &mut helper_hir);
+    assert_eq!(helper_hir.blocks, 0);
+    assert_eq!(hir.blocks, 2);
     // No literal/unary/binary root is folded, elided, or moved into a carrier.
     assert_eq!(hir, ast);
     // Exactly the three authored statements (two with bindings) exist, all
@@ -660,8 +671,29 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
     for mode in [5, 6] {
         let (free_hir, free_total) = retained(&free, mode);
         let (delegated_hir, delegated_total) = retained(&delegated, mode);
-        assert_eq!(delegated_hir - free_hir, N * carriers());
-        assert_eq!(delegated_total - free_total, N * carriers());
+        let free_proof = super::super::call_carriers::count(
+            &free[0],
+            &crate::workspace_graph::index_authored(&free).unwrap(),
+            true,
+        );
+        let delegated_proof = super::super::call_carriers::count(
+            &delegated[0],
+            &crate::workspace_graph::index_authored(&delegated).unwrap(),
+            true,
+        );
+        assert_eq!(free_proof.roots, 1);
+        assert_eq!(delegated_proof.roots, N + 1);
+        // Moving N literal/if/variable/block roots to argument positions
+        // moves N ordinary call roots in the opposite direction. Their six
+        // carrier deltas cancel; only the explicit new proof invoice differs.
+        assert_eq!(
+            delegated_hir + free_proof.bytes,
+            free_hir + delegated_proof.bytes
+        );
+        assert_eq!(
+            delegated_total + free_proof.bytes,
+            free_total + delegated_proof.bytes
+        );
     }
     for (retention, copies) in [
         (cached_exact::Retention::Parsed, 1),
@@ -672,8 +704,28 @@ fn moved_roots_differ_by_exact_carriers(moved: fn(usize) -> String) {
             cached_exact::summed(programs, &authored, retention).unwrap()
         };
         let (free_sum, delegated_sum) = (sum(&free), sum(&delegated));
-        assert_eq!(delegated_sum.0 - free_sum.0, copies * N * carriers());
-        assert_eq!(delegated_sum.1 - free_sum.1, copies * N * carriers());
+        let free_proof = super::super::call_carriers::count(
+            &free[0],
+            &crate::workspace_graph::index_authored(&free).unwrap(),
+            true,
+        );
+        let delegated_proof = super::super::call_carriers::count(
+            &delegated[0],
+            &crate::workspace_graph::index_authored(&delegated).unwrap(),
+            true,
+        );
+        assert_eq!(
+            delegated_sum.0 + free_proof.bytes,
+            free_sum.0 + delegated_proof.bytes
+        );
+        assert_eq!(
+            delegated_sum.1 + free_proof.bytes,
+            free_sum.1 + delegated_proof.bytes
+        );
+        assert_eq!(
+            copies * (delegated_proof.roots - free_proof.roots),
+            copies * N
+        );
         // Exact limit admits, one short refuses, and the delegated twin
         // (same bytes under the old formula) refuses at the free bound.
         let previous =

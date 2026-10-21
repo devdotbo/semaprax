@@ -114,8 +114,7 @@ pub(in crate::source_verify) fn verify_selected_capacity_with_cells(
             )
             .map_err(|()| command_io::source_capacity_invariant(&function.payload().stable_id))?;
             let mut execution = function
-                .payload()
-                .requires
+                .requires()
                 .iter()
                 .enumerate()
                 .map(|(index, expression)| {
@@ -135,7 +134,7 @@ pub(in crate::source_verify) fn verify_selected_capacity_with_cells(
                 .collect::<Result<Vec<_>, _>>()?;
             execution.push(
                 source_capacity_expr(
-                    &function.payload().body,
+                    function.body(),
                     &format!("{}.body", function.payload().stable_id),
                     &mut bindings,
                     &mut transcript_roots,
@@ -149,8 +148,7 @@ pub(in crate::source_verify) fn verify_selected_capacity_with_cells(
             );
             execution.extend(
                 function
-                    .payload()
-                    .ensures
+                    .ensures()
                     .iter()
                     .enumerate()
                     .map(|(index, expression)| {

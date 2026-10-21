@@ -208,7 +208,10 @@ fn retained_comparator_matches_complete_immediate_work_cuts_sort_and_six_field_f
             let new_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);
             assert_eq!(a, b, "complete output/work/status mutation{mutation}");
             assert_eq!(old_swaps, new_swaps);
-            eprintln!("OPT880 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}", a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater);
+            eprintln!(
+                "OPT880 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}",
+                a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater
+            );
             balanced(ma);
             balanced(mb);
             let spent = MAX_REPLAY_WORK_UNITS - a.remaining;
@@ -383,7 +386,10 @@ fn retained_comparator_actual_owner_exact_short_zero_floor_sticky_and_full_drop(
 
 #[test]
 fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_and_exact() {
-    let before = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt880-comparison-owner-v1/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
+    let before = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt880-comparison-owner-v1/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
+    ));
     let after = source_format::restore(
         source_format::Kind::OldCompare,
         include_str!("../before_comparison.rs"),
@@ -395,7 +401,12 @@ fn complete_immediate_comparator_tariffs_and_cursor_bodies_remain_independent_an
         .split_once("\n#[cfg(test)]\nmod before_hir_compare;")
         .unwrap()
         .0;
-    assert_eq!(after, format!("//! Complete immediate comparator and original tariffs; no candidate calls.\nuse super::*;\n\nconst COMPARE_CONTROLS:{body}\n"));
+    assert_eq!(
+        after,
+        format!(
+            "//! Complete immediate comparator and original tariffs; no candidate calls.\nuse super::*;\n\nconst COMPARE_CONTROLS:{body}\n"
+        )
+    );
     let cursor = before
         .split_once("struct Cursor {")
         .unwrap()
@@ -537,7 +548,10 @@ fn lexical_plan_cursor_preserves_complete_immediate_sort_work_cuts_and_six_field
             let new_swaps = frontiers::finish().last().map_or(0, |event| event.swaps);
             assert_eq!(a, b, "complete output/work/status mutation{mutation}");
             assert_eq!(old_swaps, new_swaps);
-            eprintln!("OPT883 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}", a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater);
+            eprintln!(
+                "OPT883 mutation{mutation} old paid-frame result={:?} allocated={} peak={} current result={:?} allocated={} peak={}",
+                a.result, ma.allocated, ma.highwater, b.result, mb.allocated, mb.highwater
+            );
             balanced(ma);
             balanced(mb);
             let spent = MAX_REPLAY_WORK_UNITS - a.remaining;
@@ -730,9 +744,16 @@ fn lexical_plan_cursor_reports_complete_immediate_actual_paid_work_and_drop() {
             assert!(outcome.result.is_ok() && !refused && receipt.is_none());
             assert!(paid >= heap.allocated);
             balanced(heap);
-            eprintln!("OPT883 immediate880={old} function={} paid={paid} ordinary_work={} skeleton_spent={} allocated={} peak={} freed={} live={}",
-                function.id, MAX_REPLAY_WORK_UNITS-outcome.remaining, outcome.skeleton_spent,
-                heap.allocated, heap.highwater, heap.freed, heap.live);
+            eprintln!(
+                "OPT883 immediate880={old} function={} paid={paid} ordinary_work={} skeleton_spent={} allocated={} peak={} freed={} live={}",
+                function.id,
+                MAX_REPLAY_WORK_UNITS - outcome.remaining,
+                outcome.skeleton_spent,
+                heap.allocated,
+                heap.highwater,
+                heap.freed,
+                heap.live
+            );
         }
     }
 }
@@ -743,12 +764,18 @@ fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_ex
         source_format::Kind::Root,
         include_str!("../../ordinary_plan_history.rs"),
     );
-    let old_root = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"));
+    let old_root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history.rs.before.txt"
+    ));
     assert_eq!(
         root, old_root,
         "original Cursor and every root caller/control unchanged"
     );
-    let old = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt"));
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner.rs.before.txt"
+    ));
     let cursor = root
         .split_once("struct Cursor {")
         .unwrap()
@@ -761,12 +788,24 @@ fn lexical_plan_cursor_whole_immediate_methods_prices_and_original_owners_are_ex
         include_str!("before_lexical_cursor.rs"),
     );
     let body = old.strip_prefix("//! One comparison invocation owns sort and pair state. No nested order/sift calls.\nuse super::*;\n").unwrap().strip_suffix("\n#[cfg(test)]\nmod tests;\n").unwrap();
-    assert_eq!(before, format!("//! Complete immediate880 comparator and Cursor; namespace-only test module.\nuse super::*;\n\nstruct Cursor {{{cursor}\n{body}"));
-    let current = include_str!("../comparison_owner.rs");
+    assert_eq!(
+        before,
+        format!(
+            "//! Complete immediate880 comparator and Cursor; namespace-only test module.\nuse super::*;\n\nstruct Cursor {{{cursor}\n{body}"
+        )
+    );
+    let current = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "d8f885053f07529877ba05b8f1c7d6687970ae9049ea34d9993eca1ba309d33d",
+        include_str!("../comparison_owner.rs"),
+    );
     assert_eq!(current.matches("lexical_plan_next!(").count(), 4);
     assert!(!current.contains(".cursors[0].next("));
     assert!(!current.contains(".cursors[1].next("));
-    let original_tests = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"));
+    let original_tests = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt883-lexical-plan-cursor-20261017/src__cleanup_plan__replay__ordinary_plan_history__comparison_owner__tests.rs.before.txt"
+    ));
     assert!(
         source_format::restore(source_format::Kind::Tests880, include_str!("tests.rs"))
             .starts_with(original_tests),
@@ -935,7 +974,10 @@ fn lexical_plan_cursor_immutable_hir_deep_empty_tail_and_malformed_composition_k
                             "actual original forward/segment and HIR work priority"
                         );
                     }
-                    eprintln!("OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included", expected[0].observations.prefix.is_some());
+                    eprintln!(
+                        "OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included",
+                        expected[0].observations.prefix.is_some()
+                    );
                 }
             }
         }
@@ -1110,8 +1152,60 @@ fn retained_arena_slice_wide_pair_measures_real_shipping880_paid_bytes_without_o
         heap.allocated, old_heap.allocated,
         "the retained slice view adds no heap backing"
     );
-    eprintln!("OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim");
+    eprintln!(
+        "OPT883 retained-arena two equal256-observation paths old_shipping880_paid={old_paid} current_paid={paid} old_heap={old_heap:?} current_heap={heap:?}; comparison-only, setup excluded; no application fit claim"
+    );
 }
 
 #[path = "pair_scope_tests.rs"]
 mod pair_scope_tests;
+
+#[path = "combined_pair_scope_tests.rs"]
+mod combined_pair_scope_tests;
+
+#[path = "matched_tail_tests.rs"]
+mod matched_tail_tests;
+
+#[path = "prepared_pairing_tests.rs"]
+#[rustfmt::skip]
+mod prepared_pairing_tests;
+
+#[path = "shared_prefix_tests.rs"]
+mod shared_prefix_tests;
+
+#[path = "reachable_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod reachable_pair_scope_tests;
+
+#[path = "shared_prefix_before_event_tests.rs"]
+#[rustfmt::skip]
+mod shared_prefix_before_event_tests;
+
+#[path = "main99_pair_scope_tests.rs"]
+mod main99_pair_scope_tests;
+
+#[path = "main7e_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main7e_pair_scope_tests;
+
+#[path = "tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"]
+mod main7e_boundary_sources;
+
+#[path = "main001_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main001_pair_scope_tests;
+
+#[path = "tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"]
+mod main001_link_sources;
+
+#[path = "main_b692_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main_b692_pair_scope_tests;
+
+#[path = "main487_pair_scope_tests.rs"]
+#[rustfmt::skip]
+mod main487_pair_scope_tests;
+
+// Execute the complete main comparison and invoice controls alongside its successor.
+#[path = "retained_main_289/mod.rs"]
+mod retained_main_289;

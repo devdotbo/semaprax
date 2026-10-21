@@ -214,16 +214,17 @@ pub(super) fn lookup(query: &str) -> Result<String, String> {
             "Temporary/call roots, forged or stale paths, unsupported profiles, and nonliteral/unknown fields stay refused; SPX-T310 still requires one admitted record type. vec_clone_at creates an owned clone; use it only for detached owners. Contract: docs/SCOPED-VEC-FIELD-READS-V1.md.\n"
         ).to_owned()),
         "author:json-codec" => Ok(concat!(
-            "Read-only shape discovery: json-codec <project> --explain --type <stable-id>. Optional bounds report unmet policy; whole-row pages bind the current revision. Candidate/backend admission is not evaluated. Contract: docs/JSON-CODEC-SUITABILITY-V1.md.\n",
-            "Checked source generator implementation; focused/application qualification pending.\n",
+            "Read-only discovery: json-codec <project> --explain --type <stable-id>. Optional bounds report unmet policy; whole-row pages bind current revision. No candidate/backend admission. docs/JSON-CODEC-SUITABILITY-V1.md.\n",
+            "Checked source generator; focused/application qualification pending.\n",
             "semaprax json-codec <project> --source <module-path> --type <record-id> --output <new-file> [--profile <selector>]\n",
-            "UTF-8 owned request and bounded-collection-response.v1 profiles require --max-string-bytes 1..64. See their authoring cards.\n",
-            "bounded-nested-request.v1 additionally requires --max-array-items 1..256; see author:json-nested-request; bounded-nested-response.v1 uses the same bounds for borrowed encoding.\n",
-            "Omit --profile for the default flat scalar record (1..8 i64/u8/usize/bool fields). Choose by source shape: help language author:json-identifier-views, author:json-request-views or author:json-stream-request-views.\n",
-            "Declare std.data.json.scan/token/digits/write. Single-codec output is a new complete module, never an overwrite. Generated helpers are ordinary checked source.\n",
-            "For paired setup, json-codec <project> --plan <plan-json> --output <new-bundle> derives 1..8 distinct source replacements against one immutable revision and validates the combined candidate. The closed JSON plan preserves original authored schemas separately from candidate sources and exact per-entry receipts. Raw bundles have no managed publication authority. Contract: docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\n",
-            "Declared Vec<string> in a request-view schema is description only: runtime carries Copy views and Vec<View>, not owned String collections. For owning requests: help language author:json-owned-request. This is not a generic JSON codec.\n",
-            "View implementations exist; owning combined gates are pending. Stream errors use raw input offsets; post-Ready request/schema errors use normalized-input offsets. Exact profiles, limits and gates: docs/APPLICATION-JSON-CODECS-V1.md.\n"
+            "UTF-8 owned request (including decode-only) and bounded-collection-response.v1 require --max-string-bytes 1..64.\n",
+            "bounded-nested-request.v1 also requires --max-array-items 1..256; author:json-nested-request. bounded-nested-response.v1 uses the same bounds for borrowed encoding.\n",
+            "Omit --profile for the default flat scalar record (1..8 i64/u8/usize/bool fields). Shape cards: author:json-identifier-views, author:json-request-views, author:json-stream-request-views.\n",
+            "Decode-only: owned-request-decode-only.v1, stream-owned-request-decode-only.v1, utf8-owned-request-decode-only.v1, stream-utf8-owned-request-decode-only.v1. Retain decoders/materializers; omit encoder-only helpers, not validation. Full profiles stay unchanged. Stream variants still require process.stdin.read on the authored schema; no capability grant.\n",
+            "Declare std.data.json.scan/token/digits/write. Output: new complete module, never overwrite; helpers are ordinary checked source.\n",
+            "Paired: json-codec <project> --plan <plan-json> --output <new-bundle>; 1..8 distinct replacements, one immutable revision, combined validation. Closed plan keeps authored schemas separate from candidates and exact per-entry receipts. Raw bundles grant no managed publication. docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\n",
+            "Declared Vec<string> in a request-view schema is description only: runtime uses Copy views/Vec<View>, not owned Strings. Owning: author:json-owned-request. No generic codec.\n",
+            "Stream errors use raw offsets; post-Ready request/schema errors use normalized-input offsets. Exact profiles/limits/gates: docs/APPLICATION-JSON-CODECS-V1.md.\n",
         ).to_owned()),
         "author:json-identifier-views" => Ok(concat!(
             "Select --profile identifier-views.v1 for a flat record with exactly one string identifier and up to six i64/u8/usize/bool fields.\n",
@@ -815,6 +816,39 @@ mod tests {
         assert!(codec.contains("author:json-identifier-views"));
         assert!(codec.contains("Declared Vec<string> in a request-view schema is description only"));
         assert!(codec.contains("post-Ready request/schema errors use normalized-input offsets"));
+        for fact in [
+            "Retain decoders/materializers; omit encoder-only helpers, not validation",
+            "Full profiles stay unchanged",
+            "Stream variants still require process.stdin.read on the authored schema",
+            "no capability grant",
+        ] {
+            assert!(codec.contains(fact), "{fact}");
+        }
+        for selector in [
+            "owned-request-decode-only.v1",
+            "stream-owned-request-decode-only.v1",
+            "utf8-owned-request-decode-only.v1",
+            "stream-utf8-owned-request-decode-only.v1",
+        ] {
+            assert!(codec
+                .split(|c: char| c == ',' || c.is_whitespace())
+                .any(|word| word.trim_end_matches('.') == selector));
+            let query = format!("author:find:{selector}:0");
+            let page = lookup(&query).unwrap();
+            assert!(page.contains("author:json-codec"));
+            assert!(page.contains("Coverage: complete matching authoring cards."));
+            assert_eq!(page, lookup(&query).unwrap());
+            assert!(page.len() <= MAX_BYTES);
+            let exact = (1..=MAX_BYTES)
+                .find(|budget| super::discovery::search(&query, *budget).is_ok())
+                .unwrap();
+            assert_eq!(
+                super::discovery::search(&query, exact).unwrap().len(),
+                exact
+            );
+            assert!(super::discovery::search(&query, exact - 1).is_err());
+            assert!(super::discovery::search(&query, exact + 1).unwrap().len() <= exact + 1);
+        }
         let identifier_views = lookup("author:json-identifier-views").unwrap();
         assert!(identifier_views.contains("exactly one string identifier"));
         assert!(identifier_views.contains("combined gates pending"));

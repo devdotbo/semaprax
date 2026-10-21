@@ -1,206 +1,8 @@
 //! Pair-local successor: real complete producer+comparison boundaries.
+use super::super::before_flat_view::{ComparisonOwner, compare};
 use super::*;
-#[path = "pair_scope_tests/paired_segments.rs"]
-mod paired_segments;
-#[path = "pair_scope_tests/paired_tails.rs"]
-mod paired_tails;
 use crate::bounded_output::with_limit_usage_refusal;
-use crate::test_allocation_observer::{measure, Metrics};
-// Source-type coefficients are independent of measured debit differences.
-fn tail_receiver_prices() -> (usize, usize, usize) {
-    let old = size_of::<&History>()
-        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-        + 2 * size_of::<usize>()
-        + 3 * size_of::<Option<&Rc<SkeletonObservation>>>()
-        + 2 * size_of::<&Option<&Rc<SkeletonObservation>>>()
-        + size_of::<bool>()
-        + size_of::<usize>()
-        + size_of::<&Rc<SkeletonObservation>>()
-        + 2 * size_of::<&Rc<SkeletonObservation>>()
-        + size_of::<&SkeletonObservation>()
-        + 2 * size_of::<Option<&SkeletonObservation>>();
-    let current = size_of::<&Rc<SkeletonObservation>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
-        + 2 * size_of::<&Rc<SkeletonObservation>>()
-        + size_of::<&SkeletonObservation>()
-        + 2 * size_of::<Option<&SkeletonObservation>>()
-        + size_of::<usize>();
-    let view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-    (old, current, view)
-}
-// Independent source-type invoice for consuming prepared links. Every existing
-// before/current physical, diagnostic, ownership and work-cut gate remains.
-fn prepared_link_prices() -> (usize, usize, usize, usize) {
-    let old_step = 2 * size_of::<&Vec<usize>>() + size_of::<usize>();
-    let new_step = 2 * size_of::<usize>();
-    let old_load = 2 * size_of::<&Vec<usize>>()
-        + 2 * size_of::<&[usize]>()
-        + 2 * size_of::<&[usize]>()
-        + size_of::<usize>()
-        + 2 * size_of::<usize>()
-        + 2 * size_of::<&[usize]>()
-        + 2 * size_of::<usize>()
-        + size_of::<&usize>()
-        + size_of::<usize>();
-    let new_load = 2 * size_of::<&mut Vec<usize>>()
-        + size_of::<Option<usize>>()
-        + size_of::<usize>()
-        + size_of::<bool>();
-    let setup = 4 * size_of::<usize>(); // owner fields and initial scalar values
-    let limit = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();
-    (old_step - new_step, old_load - new_load, setup, limit)
-}
-// Independent source-type invoice for the reachable primitive-site bank.
-// No measured debit difference is used as a coefficient.
-fn reachable_primitive_prices(paths: usize) -> (usize, usize) {
-    let header = 2 * size_of::<&ResolvedFunction>()
-        + 2 * size_of::<&mut ReplayBudget>()
-        + 2 * size_of::<&str>()
-        + 2 * size_of::<usize>()
-        + 2 * size_of::<Result<(), Diagnostic>>();
-    let selector = header + 3 * size_of::<usize>() + 2 * size_of::<bool>();
-    let reachable = match paths {
-        0 => 0,
-        1 => 5 * header,
-        _ => 20 * header,
-    };
-    (20 * header, selector + reachable)
-}
-// Independent source-type invoice for the actual shared-step cells. The old
-// complete883 invoice stays additive; no measured debit delta is a coefficient.
-// Independent additive invoice for the boundary branch. Original invoices
-// and every older physical/work/diagnostic assertion remain complete.
-fn boundary_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
-    let header = 2 * size_of::<&ResolvedFunction>()
-        + 2 * size_of::<&mut ReplayBudget>()
-        + 2 * size_of::<&str>()
-        + 2 * size_of::<usize>()
-        + 2 * size_of::<Result<(), Diagnostic>>();
-    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
-        + 6 * size_of::<&SkeletonObservation>()
-        + 4 * size_of::<&SkeletonTerminal>()
-        + 2 * size_of::<Ordering>();
-    let step = 2 * size_of::<usize>()
-        + 3 * size_of::<bool>()
-        + 3 * size_of::<&Rc<SkeletonObservation>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
-        + size_of::<&SkeletonObservation>()
-        + 2 * size_of::<Option<&SkeletonObservation>>()
-        + 3 * size_of::<usize>()
-        + size_of::<bool>();
-    let load = 2 * size_of::<&mut Vec<usize>>()
-        + size_of::<Option<usize>>()
-        + 4 * size_of::<usize>()
-        + 2 * size_of::<bool>()
-        + 2 * size_of::<&[Segment]>()
-        + size_of::<&Segment>()
-        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-    let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();
-    let query = 2 * size_of::<&[Segment]>()
-        + 2 * size_of::<usize>()
-        + size_of::<&Segment>()
-        + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-        + 3 * size_of::<&[Rc<SkeletonObservation>]>()
-        + size_of::<bool>();
-    let advance = 2 * size_of::<&[usize]>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
-        + (4 * size_of::<usize>() + 4 * size_of::<usize>())
-        + 4 * size_of::<bool>()
-        + size_of::<Ordering>();
-    (
-        (pair + 4 * step + 2 * load) * row.shared_boundaries,
-        if paths >= 2 { 11 * header } else { 0 }
-            + size_of::<bool>() * row.shared_empty_checks
-            + links * row.shared_links
-            + query * row.shared_queries
-            + advance * row.shared_boundaries,
-    )
-}
-fn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
-    // The original equation quotes the preceding physical receiver counts.
-    // Actual diagnostic rows stay untouched; this copy is only an invoice
-    // operand, checked against the complete compiled immediate predecessor.
-    let previous = paired_segments::predecessor_price_counts(row);
-    let (removed, retained) = shared_step_prices_before(paths, &previous);
-    let (next_removed, next_retained) = paired_segments::prices(paths, row);
-    (removed + next_removed, retained + next_retained)
-}
-fn shared_step_prices_before(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
-    let header = 2 * size_of::<&ResolvedFunction>()
-        + 2 * size_of::<&mut ReplayBudget>()
-        + 2 * size_of::<&str>()
-        + 2 * size_of::<usize>()
-        + 2 * size_of::<Result<(), Diagnostic>>();
-    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
-        + 6 * size_of::<&SkeletonObservation>()
-        + 4 * size_of::<&SkeletonTerminal>()
-        + 2 * size_of::<Ordering>();
-    let step = 2 * size_of::<usize>()
-        + 3 * size_of::<bool>()
-        + 3 * size_of::<&Rc<SkeletonObservation>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>()
-        + size_of::<&SkeletonObservation>()
-        + 2 * size_of::<Option<&SkeletonObservation>>()
-        + size_of::<usize>()
-        + 2 * size_of::<usize>()
-        + size_of::<bool>();
-    let retained = 4 * size_of::<usize>()
-        + if paths >= 2 { 10 * header } else { 0 }
-        + size_of::<usize>() * row.loads
-        + 3 * size_of::<bool>() * row.shared_checks
-        + size_of::<bool>() * row.shared_patterns
-        + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata
-        + (4 * size_of::<&Vec<usize>>() + 4 * size_of::<&[usize]>()) * row.pairs
-        + (2 * size_of::<&[Rc<SkeletonObservation>]>()
-            + 4 * size_of::<usize>()
-            + 6 * size_of::<std::iter::Take<std::iter::Repeat<()>>>()
-            + 2 * size_of::<&mut std::iter::Take<std::iter::Repeat<()>>>()
-            + 2 * size_of::<Option<()>>())
-            * row.shared_runs
-        + (4 * size_of::<&[Rc<SkeletonObservation>]>()
-            + 4 * size_of::<usize>()
-            + size_of::<Ordering>())
-            * row.shared_runs;
-    let (boundary_removed, boundary_retained) = boundary_prices(paths, row);
-    let (tail_removed, tail_retained) = paired_tails::prices(paths, row);
-    let (reader_removed, reader_retained) = fused_reader_prices(paths, row);
-    (
-        (pair + 2 * step) * row.shared_steps + boundary_removed + tail_removed + reader_removed,
-        retained + boundary_retained + tail_retained + reader_retained,
-    )
-}
-
-// Independent of the producer constants and reservation delta. All old
-// physical/work/diagnostic fixtures use this invoice, including full HIR.
-fn fused_reader_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {
-    let header = 2 * size_of::<&ResolvedFunction>()
-        + 2 * size_of::<&mut ReplayBudget>()
-        + 2 * size_of::<&str>()
-        + 2 * size_of::<usize>()
-        + 2 * size_of::<Result<(), Diagnostic>>();
-    let options = 2 * size_of::<Option<&SkeletonObservation>>();
-    let as_ref = 2 * size_of::<&Rc<SkeletonObservation>>() + size_of::<&SkeletonObservation>();
-    let left_loan = 2 * size_of::<&Rc<SkeletonObservation>>();
-    let old_match = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()
-        + 2 * size_of::<&SkeletonObservation>();
-    let comparison_loans =
-        4 * size_of::<&Rc<SkeletonObservation>>() + 2 * size_of::<&SkeletonObservation>();
-    (
-        (options + as_ref)
-            * (row.pair_left_steps
-                + row.pair_right_steps
-                + row.pair_left_tails
-                + row.pair_right_tails)
-            + old_match * row.pair_receivers,
-        if paths >= 2 { 5 * header } else { 0 }
-            + left_loan * (row.pair_left_steps + row.pair_left_tails)
-            + comparison_loans * row.pair_receivers,
-    )
-}
-
+use crate::test_allocation_observer::{Metrics, measure};
 fn observe_pair(
     function: &ResolvedFunction,
     expected: &[SkeletonPath],
@@ -303,7 +105,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
     for function in &program.functions {
         let expected = expected(&program, function);
         pair_scope_census::reset();
-        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_pair(
+        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_886_pair(
             function,
             &expected,
             true,
@@ -315,7 +117,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
         let old_swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
         let old_row = complete_row(true);
         pair_scope_census::reset();
-        let ((current, heap), refused, paid, receipt) = observe_pair(
+        let ((current, heap), refused, paid, receipt) = observe_886_pair(
             function,
             &expected,
             false,
@@ -325,7 +127,7 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             0,
         );
         let swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
-        let row = complete_row(false);
+        let row = complete_row(true); // Frozen886 is an old receiver in this generation.
         assert_eq!(current, old);
         assert!(
             current.result.is_ok()
@@ -348,53 +150,26 @@ fn pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equatio
             (row.payer, row.selected, row.invocation),
             (old_row.payer, old_row.selected, old_row.invocation)
         );
-        // Independent source-type coefficients, not measured debit subtraction.
-        // A successful flat comparison reads every member and its None sentinel.
-        let flat_paths = expected
-            .iter()
-            .filter(|p| p.observations.prefix.is_none())
-            .count();
-        let flat_rounds: usize = expected
-            .iter()
-            .filter(|p| p.observations.prefix.is_none())
-            .map(|p| p.observations.items.len() + 1)
-            .sum();
-        let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
-        let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-            + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-        let (old_tail, tail, tail_view) = tail_receiver_prices();
-        let (step, load, setup, limit) = prepared_link_prices();
-        let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
-        let (shared_removed, shared_retained) = shared_step_prices(expected.len(), &row);
+        // Source-counted independent coefficients. No measured paid subtraction.
         assert_eq!(
-            paid + 4 * PATH_INDEX * row.rounds
-                + removed_view * flat_rounds
-                + (old_tail - tail) * row.tails
-                + step * row.steps
-                + load * row.loads
-                + all_primitives
-                + shared_removed,
-            old_paid
-                + PAIR_SCOPE * row.pairs
-                + PAIR_PRIMITIVE
-                + PAYMENT_HEADER
-                + retained_view * flat_paths
-                + tail_view * (2 * row.pairs + expected.len())
-                + setup
-                + limit * (2 * row.pairs + expected.len())
-                + reachable_primitives
-                + shared_retained
+            paid + 4 * PATH_INDEX * row.rounds,
+            old_paid + PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE
         );
-        eprintln!("OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
-            function.id,MAX_REPLAY_WORK_UNITS-current.remaining,row.pairs,row.rounds);
+        eprintln!(
+            "OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
+            function.id,
+            MAX_REPLAY_WORK_UNITS - current.remaining,
+            row.pairs,
+            row.rounds
+        );
         let spent = MAX_REPLAY_WORK_UNITS - current.remaining;
         for mutation in 0..4 {
             for cut in 0..=spent {
                 let ((a, ma), _, _, _) =
-                    observe_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
+                    observe_886_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
                 frontiers::finish();
                 let ((b, mb), _, _, _) =
-                    observe_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
+                    observe_886_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
                 frontiers::finish();
                 assert_eq!(
                     a, b,
@@ -435,7 +210,6 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                 "ordinary plan retained comparison owner",
                 "ordinary plan history pair-local paths",
                 "ordinary plan history paired cursor next",
-                "ordinary plan history flat HIR retained slice",
             ]
         };
         for phase in phases {
@@ -477,10 +251,10 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                         0,
                     );
                     frontiers::finish();
-                    assert_eq!(a.0 .0, b.0 .0);
+                    assert_eq!(a.0.0, b.0.0);
                     assert_eq!((a.1, a.2, a.3), (b.1, b.2, b.3));
-                    balanced(a.0 .1);
-                    balanced(b.0 .1);
+                    balanced(a.0.1);
+                    balanced(b.0.1);
                     if limit == end && floor == 0 {
                         assert_eq!(trace[ordinal].after, Some(end));
                     }
@@ -488,14 +262,14 @@ fn pair_local_paths_own_exact_short_zero_floor_sticky_and_full_drop_frontiers() 
                         || (limit == end && floor == 1)
                         || (limit == event.before && floor == 0)
                     {
-                        assert!(a.1 && a.0 .0.result.is_err());
+                        assert!(a.1 && a.0.0.result.is_err());
                         let first = a.3.unwrap();
                         assert_eq!(
                             (first.requested, first.remaining, first.floor),
                             (end - event.before, limit - event.before, floor)
                         );
                         assert_eq!(
-                            a.0 .0.result.as_ref().unwrap_err(),
+                            a.0.0.result.as_ref().unwrap_err(),
                             &primitive_failure(function, event, limit, floor)
                         );
                     }
@@ -610,7 +384,10 @@ fn pair_local_immutable_hir_deep_empty_tail_and_malformed_composition_keeps_old_
                             "actual original forward/segment and HIR work priority"
                         );
                     }
-                    eprintln!("OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included", expected[0].observations.prefix.is_some());
+                    eprintln!(
+                        "OPT883 shaped shared={} depth={depth} tail={tail} malformed={malformed} old_paid={old_paid} current_paid={new_paid}; input construction excluded, complete comparison and receiver Drop included",
+                        expected[0].observations.prefix.is_some()
+                    );
                 }
             }
         }
@@ -769,50 +546,29 @@ fn pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() 
     };
     pair_scope_census::reset();
     let (old, old_heap, old_paid) =
-        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
     let old_row = complete_row(true);
     pair_scope_census::reset();
     let (current, heap, paid) =
-        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-    let row = complete_row(false);
+        observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(true); // Frozen886 is an old receiver in this generation.
     assert_eq!(current, old);
     assert!(current.result.is_ok());
     assert_eq!(heap, old_heap);
     assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
-    let removed_view = 2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
-    let retained_view = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-    let flat_rounds: usize = expected
-        .iter()
-        .map(|p| p.observations.items.len() + 1)
-        .sum();
-    let (old_tail, tail, tail_view) = tail_receiver_prices();
-    let (step, load, setup, limit) = prepared_link_prices();
-    let (all_primitives, reachable_primitives) = reachable_primitive_prices(expected.len());
-    let (shared_removed, shared_retained) = shared_step_prices(expected.len(), &row);
-    let removed = 4 * PATH_INDEX * row.rounds
-        + removed_view * flat_rounds
-        + (old_tail - tail) * row.tails
-        + step * row.steps
-        + load * row.loads
-        + all_primitives
-        + shared_removed;
-    let retained = PAIR_SCOPE * row.pairs
-        + PAIR_PRIMITIVE
-        + PAYMENT_HEADER
-        + retained_view * expected.len()
-        + tail_view * (2 * row.pairs + expected.len())
-        + setup
-        + limit * (2 * row.pairs + expected.len())
-        + reachable_primitives
-        + shared_retained;
-    assert_eq!(paid + removed, old_paid + retained);
-    assert!(removed > retained);
+    assert_eq!(
+        paid + 4 * PATH_INDEX * row.rounds,
+        old_paid + PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE
+    );
+    assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
     assert!(
         paid < old_paid,
         "actual complete883 receives its exact original tariff"
     );
-    eprintln!("OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",row.pairs,row.rounds);
+    eprintln!(
+        "OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",
+        row.pairs, row.rounds
+    );
 }
 #[test]
 fn pair_census_dropped_rows_and_original_unwind_never_claim_complete() {
@@ -852,12 +608,12 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
     };
     pair_scope_census::reset();
     let (old, old_heap, old_paid) =
-        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+        observe_886_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
     let old_row = complete_row(true);
     pair_scope_census::reset();
     let (current, heap, paid) =
-        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-    let row = complete_row(false);
+        observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(true); // Frozen886 is an old receiver in this generation.
     assert_eq!(current, old);
     assert_eq!(heap, old_heap);
     assert!(current.result.is_ok());
@@ -866,21 +622,33 @@ fn pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
         (0, 0, 0, 0)
     );
     assert_eq!(
-        paid + reachable_primitive_prices(0).0 + shared_step_prices(0, &row).0,
-        old_paid
-            + PAIR_PRIMITIVE
-            + PAYMENT_HEADER
-            + prepared_link_prices().2
-            + reachable_primitive_prices(0).1
-            + shared_step_prices(0, &row).1,
-        "every reachable primitive site and the complete new selector are funded"
+        paid,
+        old_paid + PAIR_PRIMITIVE,
+        "new primitive frames are honestly funded even on this unused path"
     );
-    eprintln!("OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim");
+    eprintln!(
+        "OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim"
+    );
 }
 #[test]
 fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() {
-    let old=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"));
-    let root=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history.rs"));
+    // Authenticate the real compiled current source before acquiring its exact
+    // whole pre-format generation; the original old-source assertions stay exact.
+    let whole_before_format = |leaf: &str, expected: &str, current: &str| {
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            &format!("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/{leaf}"),
+            expected,
+            current,
+        )
+    };
+    let old = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+    ));
+    let root = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history.rs"
+    ));
     let cursor_body=format!("struct Cursor {{{}",root.split_once("struct Cursor {").unwrap().1.split_once("\n#[cfg(test)]\nmod before_comparison;").unwrap().0)
         .replacen("impl Cursor {","#[allow(dead_code, reason = \"complete immediate883 Cursor retains its original unused next method\")]\nimpl Cursor {",1);
     let expected=old.replacen("use super::*;\n",&format!("use super::*;\n\n{cursor_body}\n"),1).replace("#[cfg(test)]\nmod before_lexical_cursor;\n","")
@@ -889,28 +657,58 @@ fn pair_local_whole_883_control_cursor_prices_and_prior_tests_remain_complete() 
         .replacen("                owner.step = Step::PairNext;","                census.pair();\n                owner.step = Step::PairNext;",1)
         .replacen("                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,","                census.round();\n                paid!(budget, function, 4 * PATH_INDEX + PAIR_MATCH,",1)
         .replacen("    Ok(())\n}","    census.success();\n    Ok(())\n}",1);
-    assert_eq!(source_format::restore(source_format::Kind::BeforePair, include_str!("before_pair_scope/mod.rs")),expected,"entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated");
-    let cursor=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"));
     assert_eq!(
-        source_format::restore(
-            source_format::Kind::Cursor,
+        whole_before_format(
+            "before_pair_scope/mod.rs",
+            "b5047bfb49ce1264ce57a0b6194a2cfce8bd79e24d8f1da852223912509947b6",
+            include_str!("before_pair_scope/mod.rs")
+        ),
+        expected,
+        "entire actual883 comparator, full methods and tariffs; namespace registration/diagnostic-only insertions enumerated"
+    );
+    let cursor = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+    ));
+    assert_eq!(
+        whole_before_format(
+            "before_pair_scope/lexical_cursor.rs",
+            "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
             include_str!("before_pair_scope/lexical_cursor.rs")
         ),
         cursor,
         "whole old macro source and every tariff exact"
     );
+    let current_cursor = include_str!("lexical_cursor.rs");
     assert_eq!(
-        source_format::restore(
-            source_format::Kind::Cursor,
-            &tail_source::previous(include_str!("lexical_cursor.rs")),
+        whole_before_format(
+            "lexical_cursor.rs",
+            "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399",
+            current_cursor,
+        ),
+        include_str!("lexical_cursor_before_tail.rs"),
+        "frozen cursor is the complete authenticated pre-tail generation"
+    );
+    assert_eq!(
+        whole_before_format(
+            "lexical_cursor.rs",
+            "2f2869ba18029a3fe6bf5eb6beb8c444a0b35f2b4b11e4d2c5b0edadf1509996",
+            current_cursor,
         ),
         cursor,
-        "entire declared retained-tail transform and complete independent old macro"
+        "retained cursor macro/API/prices unchanged"
     );
-    let tests=include_str!(concat!(env!("CARGO_MANIFEST_DIR"),"/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"));
+    let tests = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/opt886-pair-local-paths-20261018/whole-before/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests.rs"
+    ));
     assert!(
-        source_format::restore(source_format::Kind::Tests883, include_str!("tests.rs"))
-            .starts_with(tests),
+        whole_before_format(
+            "tests.rs",
+            "b025d55c3208e7460d37efa45e6e1c57af9337a620e4cfccd57a32defcea094a",
+            include_str!("tests.rs")
+        )
+        .starts_with(tests),
         "every existing owner assertion/body retained verbatim"
     );
 }
@@ -928,8 +726,8 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
         MAX_REPLAY_WORK_UNITS,
         0,
     );
-    assert!(full.0 .0.result.is_ok());
-    balanced(full.0 .1);
+    assert!(full.0.0.result.is_ok());
+    balanced(full.0.1);
     let events = frontiers::finish();
     let event = *events
         .iter()
@@ -949,8 +747,8 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
     let (rows, lost) = pair_scope_census::finish();
     assert_eq!(lost, 0);
     assert_eq!(rows.len(), 1);
-    assert!(refused.1 && refused.0 .0.result.is_err());
-    balanced(refused.0 .1);
+    assert!(refused.1 && refused.0.0.result.is_err());
+    balanced(refused.0.1);
     assert!(
         rows[0].ended
             && !rows[0].unwound
@@ -964,233 +762,262 @@ fn pair_census_refused_prefix_keeps_original_failure_and_never_claims_full_compa
         "first work charge and both preparations precede the new acquisition"
     );
     assert_eq!(
-        refused.0 .0.result.as_ref().unwrap_err(),
+        refused.0.0.result.as_ref().unwrap_err(),
         &primitive_failure(function, event, event.before, 0)
     );
 }
 
-#[test]
-fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagnostics() {
-    let program = super::super::super::tests::program();
-    let function = &program.functions[0];
-    for len in [0usize, 1, 64, 256] {
-        let seed: Vec<_> = (0..len)
-            .map(|index| {
-                Rc::new(SkeletonObservation::Boolean {
-                    expression: function.body.id.clone(),
-                    value: index % 2 == 0,
-                })
-            })
-            .collect();
-        let expected = vec![SkeletonPath {
-            observations: seed.clone().into(),
-            terminal: SkeletonTerminal::Success,
-        }];
-        for mutation in 0..3 {
-            let mut tail = seed.clone();
-            if mutation == 1 {
-                if tail.pop().is_none() {
-                    tail.push(Rc::new(SkeletonObservation::Boolean {
-                        expression: function.body.id.clone(),
-                        value: false,
-                    }));
+// Complete-success equation only. Refusal controls use reached real frontiers.
+fn fused_removed(row: &pair_scope_census::Row) -> usize {
+    size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>() * row.rounds
+        + 2 * size_of::<Option<&SkeletonObservation>>() * (row.value_steps + row.value_tails)
+}
+fn observe_886_pair(
+    function: &ResolvedFunction,
+    expected: &[SkeletonPath],
+    old: bool,
+    physical: usize,
+    floor: usize,
+    comparison_work: usize,
+    mutation: usize,
+) -> Observed {
+    with_limit_usage_refusal(physical, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            assert!(comparison_work <= MAX_REPLAY_WORK_UNITS);
+            budget.remaining = comparison_work; // initial test allowance, before any work/debit
+            assert!(crate::bounded_output::set_active_floor(floor));
+            frontiers::reset();
+            let result = (|| {
+                paid!(
+                    &mut budget,
+                    function,
+                    PRODUCE_CALL_CONTROLS,
+                    "retained test producer call"
+                )?;
+                let mut actual = produce(function, &mut budget)?;
+                match mutation {
+                    1 => actual.paths.reverse(),
+                    2 => {
+                        actual.paths[0].history.previous = Some(actual.arena.len());
+                    }
+                    3 => {
+                        if let Some(segment) = actual.arena.first_mut() {
+                            segment.depth = 0;
+                        }
+                    }
+                    _ => {}
                 }
-            } else if mutation == 2 {
-                tail.push(Rc::new(SkeletonObservation::Boolean {
-                    expression: function.body.id.clone(),
-                    value: true,
-                }));
-            }
-            let observe = |old| {
-                with_limit_usage_refusal(usize::MAX, || {
-                    measure(|| {
-                        let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
-                        // Identical fixture backing in both observations. The seeded
-                        // immutable observations stay held outside both invocations.
-                        budget
-                            .reserve_array::<Rc<SkeletonObservation>>(
-                                function,
-                                tail.len(),
-                                "flat-view test tail",
-                            )
-                            .unwrap();
-                        budget
-                            .reserve_array::<PlanPath>(function, 1, "flat-view test path")
-                            .unwrap();
-                        let actual = HistorySet {
-                            arena: Vec::new(),
-                            max_depth: 0,
-                            paths: vec![PlanPath {
-                                history: History {
-                                    previous: None,
-                                    tail: tail.clone(),
-                                },
-                                terminal: SkeletonTerminal::Success,
-                            }],
-                        };
-                        let result = if old {
-                            before_pair_scope::compare(function, &mut budget, actual, &expected)
-                        } else {
-                            compare(function, &mut budget, actual, &expected)
-                        };
-                        let outcome = (
-                            result.as_ref().map(|_| ()).map_err(failure),
-                            budget.remaining,
-                            budget.skeleton_spent,
-                        );
-                        drop(result);
-                        outcome
-                    })
-                })
-            };
-            pair_scope_census::reset();
-            let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
-            frontiers::finish();
-            pair_scope_census::finish();
-            pair_scope_census::reset();
-            let ((current, heap), refused, paid, receipt) = observe(false);
-            frontiers::finish();
-            let (rows, lost) = pair_scope_census::finish();
-            assert_eq!(lost, 0);
-            assert_eq!(rows.len(), 1);
-            assert!(!rows[0].old && !rows[0].overflow && !rows[0].truncated);
-
-            assert_eq!(
-                current, old,
-                "all diagnostic fields and work, len={len} mutation={mutation}"
-            );
-            assert!(!refused && !old_refused && receipt.is_none() && old_receipt.is_none());
-            balanced(heap);
-            balanced(old_heap);
-            assert_eq!(
-                heap, old_heap,
-                "identical fixture backing and complete invocation Drop"
-            );
-            if mutation == 0 {
-                assert!(current.0.is_ok());
-                let removed =
-                    2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
-                let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
-                    + 2 * size_of::<&[Rc<SkeletonObservation>]>();
-                let (old_tail, tail, tail_view) = tail_receiver_prices();
-                let (step, load, setup, limit) = prepared_link_prices();
-                let (all_primitives, reachable_primitives) = reachable_primitive_prices(1);
-                let (shared_removed, shared_retained) = shared_step_prices(1, &rows[0]);
-                assert!(rows[0].complete && rows[0].ended);
-                assert_eq!(rows[0].tails, len + 1);
+                paid!(
+                    &mut budget,
+                    function,
+                    COMPARE_CALL_CONTROLS,
+                    "retained test comparison call"
+                )?;
+                if old {
+                    before_pair_scope::compare(function, &mut budget, actual, expected)
+                } else {
+                    super::super::super::before_paired::compare(
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
+                }
+            })();
+            let saved = result.as_ref().map(|_| ()).map_err(failure);
+            let retry = if result.is_err()
+                && (budget.refusal_spent || crate::bounded_output::active_refused())
+            {
+                crate::bounded_output::clear_active_floor();
+                let before = crate::bounded_output::active_remaining();
+                let remaining = budget.remaining;
+                let allocation = crate::test_allocation_observer::current_metrics();
+                let retry = budget
+                    .reserve_bytes(function, 0, "retained comparator sticky zero")
+                    .unwrap_err();
+                assert_eq!(crate::bounded_output::active_remaining(), before);
+                assert_eq!(budget.remaining, remaining);
                 assert_eq!(
-                    paid + (removed + old_tail - tail) * (len + 1)
-                        + step * rows[0].steps
-                        + load * rows[0].loads
-                        + all_primitives
-                        + shared_removed,
-                    old_paid
-                        + PAIR_PRIMITIVE
-                        + PAYMENT_HEADER
-                        + retained
-                        + tail_view
-                        + setup
-                        + limit
-                        + reachable_primitives
-                        + shared_retained
+                    crate::test_allocation_observer::current_metrics(),
+                    allocation
                 );
-                if len >= 64 {
-                    assert!(
-                        paid < old_paid,
-                        "long complete comparisons must reduce real reservations"
-                    );
-                }
+                let empty = Diagnostic::io("SPX-H006", String::new());
+                assert_eq!(failure(&retry), failure(&empty));
+                assert_eq!(result.as_ref().map(|_| ()).map_err(failure), saved);
+                Some(retry)
             } else {
-                assert_eq!(current.0.unwrap_err().code, "SPX-H006");
+                None
+            };
+            let outcome = Outcome {
+                result: saved,
+                retry: retry.as_ref().map(failure),
+                remaining: budget.remaining,
+                skeleton_spent: budget.skeleton_spent,
+            };
+            crate::bounded_output::clear_active_floor();
+            drop(budget);
+            drop(result);
+            drop(retry);
+            outcome
+        })
+    })
+}
+
+fn observe_886_shaped_pair(
+    function: &ResolvedFunction,
+    expected: &[SkeletonPath],
+    actual: HistorySet,
+    old: bool,
+    units: usize,
+) -> (Outcome, Metrics, usize) {
+    let ((outcome, metrics), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            budget.remaining = units;
+            let result = (|| {
+                paid!(
+                    &mut budget,
+                    function,
+                    COMPARE_CALL_CONTROLS,
+                    "883 shaped comparison receiving"
+                )?;
+                if old {
+                    before_pair_scope::compare(function, &mut budget, actual, expected)
+                } else {
+                    super::super::super::before_paired::compare(
+                        function,
+                        &mut budget,
+                        actual,
+                        expected,
+                    )
+                }
+            })();
+            let result = result.as_ref().map(|_| ()).map_err(failure);
+            let outcome = Outcome {
+                result,
+                retry: None,
+                remaining: budget.remaining,
+                skeleton_spent: budget.skeleton_spent,
+            };
+            drop(budget);
+            outcome
+        })
+    });
+    assert!(
+        !refused && first.is_none(),
+        "this comparison is byte-unlimited, including work errors"
+    );
+    balanced(metrics);
+    assert!(paid >= metrics.allocated);
+    (outcome, metrics, paid)
+}
+
+#[test]
+fn fused_pair_local_paths_match_whole_883_exact_work_heap_swaps_and_typed_role_equation() {
+    let program = super::super::super::tests::program();
+    for function in &program.functions {
+        let expected = expected(&program, function);
+        pair_scope_census::reset();
+        let ((old, old_heap), old_refused, old_paid, old_receipt) = observe_pair(
+            function,
+            &expected,
+            true,
+            usize::MAX,
+            0,
+            MAX_REPLAY_WORK_UNITS,
+            0,
+        );
+        let old_swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
+        let old_row = complete_row(true);
+        pair_scope_census::reset();
+        let ((current, heap), refused, paid, receipt) = observe_pair(
+            function,
+            &expected,
+            false,
+            usize::MAX,
+            0,
+            MAX_REPLAY_WORK_UNITS,
+            0,
+        );
+        let swaps = frontiers::finish().last().map_or(0, |e| e.swaps);
+        let row = complete_row(false);
+        assert_eq!(current, old);
+        assert!(
+            current.result.is_ok()
+                && !refused
+                && !old_refused
+                && receipt.is_none()
+                && old_receipt.is_none()
+        );
+        assert_eq!(swaps, old_swaps);
+        assert_eq!(
+            heap, old_heap,
+            "actual paths/arena/backing and full Drop are unchanged"
+        );
+        balanced(heap);
+        balanced(old_heap);
+        assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
+        assert_eq!(row.function, old_row.function);
+        assert_eq!(row.function_len, function.id.as_str().len());
+        assert_eq!(
+            (row.payer, row.selected, row.invocation),
+            (old_row.payer, old_row.selected, old_row.invocation)
+        );
+        // Source-counted independent coefficients. No measured paid subtraction.
+        assert_eq!(
+            paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row),
+            old_paid
+                + PAIR_SCOPE * row.pairs
+                + PAIR_PRIMITIVE
+                + super::super::before_flat_view::PAIRED_PRIMITIVES
+                + NEW_PAIR_REFERENCES * row.rounds
+        );
+        eprintln!(
+            "OPT886 function={} old883/current paid={old_paid}/{paid} work={} pairs={} rounds={} old_heap={old_heap:?} heap={heap:?}; unit-build diagnostic only, no shipping/application claim",
+            function.id,
+            MAX_REPLAY_WORK_UNITS - current.remaining,
+            row.pairs,
+            row.rounds
+        );
+        let spent = MAX_REPLAY_WORK_UNITS - current.remaining;
+        for mutation in 0..4 {
+            for cut in 0..=spent {
+                let ((a, ma), _, _, _) =
+                    observe_pair(function, &expected, true, usize::MAX, 0, cut, mutation);
+                frontiers::finish();
+                let ((b, mb), _, _, _) =
+                    observe_pair(function, &expected, false, usize::MAX, 0, cut, mutation);
+                frontiers::finish();
+                assert_eq!(
+                    a, b,
+                    "six-field Diagnostic/work cut{cut} mutation{mutation}"
+                );
+                balanced(ma);
+                balanced(mb);
             }
         }
     }
 }
-
 #[test]
-fn shared_boundary_one_item_and_empty_segments_preserve_real_883_status_and_work_cuts() {
+fn fused_pair_local_wide_equal_pair_has_real_typed_net_savings_against_complete_883() {
     let program = super::super::super::tests::program();
     let function = program
         .functions
         .iter()
         .find(|f| f.id.as_str() == "f")
         .unwrap();
-    let item = Rc::new(SkeletonObservation::Boolean {
-        expression: function.body.id.clone(),
-        value: true,
-    });
+    let items = (0..256)
+        .map(|_| {
+            Rc::new(SkeletonObservation::Boolean {
+                expression: function.body.id.clone(),
+                value: true,
+            })
+        })
+        .collect::<Vec<_>>();
     let expected = vec![
         SkeletonPath {
-            observations: vec![item.clone(); 3].into(),
-            terminal: SkeletonTerminal::Success
-        };
-        2
-    ];
-    let actual = || HistorySet {
-        arena: (0usize..4)
-            .map(|at| Segment {
-                previous: at.checked_sub(1),
-                depth: at + 1,
-                items: if at == 1 {
-                    Vec::new()
-                } else {
-                    vec![item.clone()]
-                },
-            })
-            .collect(),
-        paths: (0..2)
-            .map(|_| PlanPath {
-                history: History {
-                    previous: Some(3),
-                    tail: Vec::new(),
-                },
-                terminal: SkeletonTerminal::Success,
-            })
-            .collect(),
-        max_depth: 4,
-    };
-    pair_scope_census::reset();
-    let (old, old_heap, _) =
-        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
-    pair_scope_census::reset();
-    let (new, new_heap, _) =
-        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-    let row = complete_row(false);
-    assert!(
-        row.shared_boundaries > 0,
-        "exercise the actual boundary branch"
-    );
-    assert_eq!(new, old);
-    assert!(new.result.is_ok());
-    assert_eq!(new_heap, old_heap);
-    let spent = MAX_REPLAY_WORK_UNITS - old.remaining;
-    for cut in 0..=spent {
-        pair_scope_census::reset();
-        let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
-        pair_scope_census::reset();
-        let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
-        assert_eq!(
-            new, old,
-            "all six diagnostic fields and exact remaining work at cut {cut}"
-        );
-    }
-}
-
-#[test]
-fn shared_run_replays_every_real_883_work_cut_before_private_cursor_publication() {
-    let program = super::super::super::tests::program();
-    let function = program
-        .functions
-        .iter()
-        .find(|f| f.id.as_str() == "f")
-        .unwrap();
-    let item = Rc::new(SkeletonObservation::Boolean {
-        expression: function.body.id.clone(),
-        value: true,
-    });
-    let expected = vec![
-        SkeletonPath {
-            observations: vec![item.clone(); 4].into(),
+            observations: items.clone().into(),
             terminal: SkeletonTerminal::Success
         };
         2
@@ -1198,8 +1025,8 @@ fn shared_run_replays_every_real_883_work_cut_before_private_cursor_publication(
     let actual = || HistorySet {
         arena: vec![Segment {
             previous: None,
+            items: items.clone(),
             depth: 1,
-            items: vec![item.clone(); 4],
         }],
         paths: (0..2)
             .map(|_| PlanPath {
@@ -1213,129 +1040,405 @@ fn shared_run_replays_every_real_883_work_cut_before_private_cursor_publication(
         max_depth: 1,
     };
     pair_scope_census::reset();
-    let (old, old_heap, _) =
+    let (old, old_heap, old_paid) =
         observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    let old_row = complete_row(true);
     pair_scope_census::reset();
-    let (new, new_heap, _) =
+    let (current, heap, paid) =
         observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
     let row = complete_row(false);
-    assert!(row.shared_runs > 0 && row.shared_steps > row.shared_runs);
-    assert_eq!(row.shared_turns, row.shared_steps + row.shared_runs);
-    assert_eq!(new, old);
-    assert!(new.result.is_ok());
-    assert_eq!(new_heap, old_heap);
-    let spent = MAX_REPLAY_WORK_UNITS - old.remaining;
-    for cut in 0..=spent {
+    assert_eq!(current, old);
+    assert!(current.result.is_ok());
+    assert_eq!(heap, old_heap);
+    assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
+    assert_eq!(
+        paid + 4 * PATH_INDEX * row.rounds + fused_removed(&row),
+        old_paid
+            + PAIR_SCOPE * row.pairs
+            + PAIR_PRIMITIVE
+            + super::super::before_flat_view::PAIRED_PRIMITIVES
+            + NEW_PAIR_REFERENCES * row.rounds
+    );
+    assert!(4 * PATH_INDEX * row.rounds > PAIR_SCOPE * row.pairs + PAIR_PRIMITIVE);
+    assert!(
+        paid < old_paid,
+        "actual complete883 receives its exact original tariff"
+    );
+    eprintln!(
+        "OPT886 comparison-only equal256 pair old883/current={old_paid}/{paid} P={} N={} old_heap={old_heap:?} current_heap={heap:?}; setup excluded, no application fit claim",
+        row.pairs, row.rounds
+    );
+}
+#[test]
+fn fused_pair_local_zero_pairs_report_real_invocation_tradeoff_without_old_padding() {
+    let program = super::super::super::tests::program();
+    let function = &program.functions[0];
+    let expected = Vec::new();
+    let actual = || HistorySet {
+        arena: Vec::new(),
+        paths: Vec::new(),
+        max_depth: 0,
+    };
+    pair_scope_census::reset();
+    let (old, old_heap, old_paid) =
+        observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
+    let old_row = complete_row(true);
+    pair_scope_census::reset();
+    let (current, heap, paid) =
+        observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+    let row = complete_row(false);
+    assert_eq!(current, old);
+    assert_eq!(heap, old_heap);
+    assert!(current.result.is_ok());
+    assert_eq!(
+        (row.pairs, row.rounds, old_row.pairs, old_row.rounds),
+        (0, 0, 0, 0)
+    );
+    assert_eq!(
+        paid,
+        old_paid + PAIR_PRIMITIVE + super::super::before_flat_view::PAIRED_PRIMITIVES,
+        "new primitive frames are honestly funded even on this unused path"
+    );
+    eprintln!(
+        "OPT886 zero-pair tradeoff old883/current={old_paid}/{paid}; no universal paid saving claim"
+    );
+}
+
+#[test]
+fn fused_pair_matches_immediate_886_empty_short_many_tails_every_work_cut_and_exact_invoice() {
+    assert_eq!(
+        size_of::<ComparisonOwner<'static>>(),
+        size_of::<super::super::super::before_paired::ComparisonOwner<'static>>(),
+        "actual unchanged owner layout, no uncounted added state"
+    );
+    assert_eq!(
+        super::super::before_flat_view::PAIRED_PRIMITIVES,
+        5 * PAYMENT_HEADER
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_STEP,
+        super::super::before_flat_view::PAIRED_STEP + 2 * size_of::<Option<&SkeletonObservation>>()
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_TAIL,
+        super::super::before_flat_view::PAIRED_TAIL + 2 * size_of::<Option<&SkeletonObservation>>()
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_LOAD,
+        super::super::before_flat_view::PAIRED_LOAD
+    );
+    assert_eq!(
+        super::super::before_flat_view::LEXICAL_EMPTY,
+        super::super::before_flat_view::PAIRED_EMPTY
+    );
+    let program = super::super::super::tests::program();
+    let function = &program.functions[0];
+    for (left_len, right_len, tail) in [
+        (0, 0, false),
+        (0, 1, true),
+        (1, 0, false),
+        (1, 1, false),
+        (32, 32, true),
+        (256, 256, false),
+    ] {
+        let items = |n| {
+            (0..n)
+                .map(|_| {
+                    Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: true,
+                    })
+                })
+                .collect::<Vec<_>>()
+        };
+        let left = items(left_len);
+        let right = items(right_len);
+        let mut expected = vec![
+            SkeletonPath {
+                observations: left.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            },
+            SkeletonPath {
+                observations: right.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            },
+        ];
+        expected.sort();
+        let actual = || HistorySet {
+            arena: if tail {
+                Vec::new()
+            } else {
+                vec![
+                    Segment {
+                        previous: None,
+                        items: left.clone(),
+                        depth: 1,
+                    },
+                    Segment {
+                        previous: None,
+                        items: right.clone(),
+                        depth: 1,
+                    },
+                ]
+            },
+            paths: [left.clone(), right.clone()]
+                .into_iter()
+                .enumerate()
+                .map(|(i, items)| PlanPath {
+                    history: History {
+                        previous: if tail { None } else { Some(i) },
+                        tail: if tail { items } else { Vec::new() },
+                    },
+                    terminal: SkeletonTerminal::Success,
+                })
+                .collect(),
+            max_depth: if tail { 0 } else { 1 },
+        };
         pair_scope_census::reset();
-        let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
+        let (old, old_heap, old_paid) =
+            observe_886_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        let old_row = complete_row(true);
+        frontiers::finish();
         pair_scope_census::reset();
-        let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
+        let (current, heap, paid) =
+            observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
+        let row = complete_row(false);
+        frontiers::finish();
+        assert_eq!(current, old);
+        assert!(current.result.is_ok());
+        assert_eq!(heap, old_heap);
+        assert_eq!((row.pairs, row.rounds), (old_row.pairs, old_row.rounds));
         assert_eq!(
-            new, old,
-            "complete six-field diagnostics and exact remaining work at cut {cut}"
+            paid + fused_removed(&row),
+            old_paid
+                + super::super::before_flat_view::PAIRED_PRIMITIVES
+                + NEW_PAIR_REFERENCES * row.rounds
+        );
+        if left_len <= 1 && right_len <= 1 {
+            assert!(
+                paid > old_paid,
+                "honest cold regression on short genuine paths"
+            );
+        } else {
+            assert!(
+                paid < old_paid,
+                "only this actual complete dense fixture qualifies"
+            );
+        }
+        eprintln!(
+            "OPT888 old886/current={old_paid}/{paid} N={} STEP={} TAIL={} pairs={} left={left_len} right={right_len} tail={tail}; no application result",
+            row.rounds, row.value_steps, row.value_tails, row.pairs
+        );
+        for cut in 0..=MAX_REPLAY_WORK_UNITS - current.remaining {
+            let a = observe_886_shaped_pair(function, &expected, actual(), false, cut);
+            frontiers::finish();
+            let b = observe_shaped_pair(function, &expected, actual(), false, cut);
+            frontiers::finish();
+            assert_eq!(
+                a.0, b.0,
+                "full six fields/work left={left_len} right={right_len} tail={tail} cut={cut}"
+            );
+            balanced(a.1);
+            balanced(b.1);
+        }
+    }
+}
+
+#[test]
+fn fused_whole_immediate_886_oracle_and_original_cursor_have_exact_finite_glue() {
+    for (witness, length, sha, paired) in [
+        (
+            include_str!("before_flat_view.rs"),
+            27481,
+            "adbcf2e056ebe4c833699b0da53ee16dbe323289aae4ce69d469165240354755",
+            true,
+        ),
+        (
+            include_str!("before_fused_flat.rs"),
+            21433,
+            "18c4c6b650c593407387346a3315dbd803a2242b308316c9eb2be0f1baeb4888",
+            false,
+        ),
+    ] {
+        let witness = if paired {
+            witness.strip_suffix("// Exact compiled-generation tariff exports for its own matched controls.\npub(super) const LEXICAL_STEP: usize = lexical_cursor::STEP;\npub(super) const LEXICAL_TAIL: usize = lexical_cursor::TAIL;\npub(super) const LEXICAL_LOAD: usize = lexical_cursor::LOAD;\npub(super) const LEXICAL_EMPTY: usize = lexical_cursor::EMPTY;\npub(super) const PAIRED_STEP: usize = paired_value::STEP;\npub(super) const PAIRED_TAIL: usize = paired_value::TAIL;\npub(super) const PAIRED_LOAD: usize = paired_value::LOAD;\npub(super) const PAIRED_EMPTY: usize = paired_value::EMPTY;\npub(super) const PAIRED_PRIMITIVES: usize = paired_value::ADDITIONAL_PRIMITIVES;\n").unwrap()
+        } else {
+            witness
+        };
+        let mut restored = witness
+            .replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "")
+            .replace("pub(super) mod lexical_cursor;", "mod lexical_cursor;")
+            .replace("pub(super) mod paired_value;", "mod paired_value;")
+            .replace(
+                "pub(super) struct ComparisonOwner",
+                "struct ComparisonOwner",
+            );
+        if paired {
+            restored = restored.replace("#[path = \"paired_value_before_tail.rs\"]\n", "");
+        }
+        restored = restored.replace(
+            "#[cfg(test)]\nuse super::pair_scope_census;",
+            if paired {
+                "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\npub(super) mod pair_scope_census;"
+            } else {
+                "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;"
+            },
+        );
+        restored += "#[cfg(test)]\nmod tests;\n";
+        assert_eq!(restored.len(), length);
+        use sha2::{Digest, Sha256};
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+            ),
+            sha
         );
     }
+    let before = include_str!("before_paired.rs");
+    let old_label = "let census = pair_scope_census::begin(function, budget, false);";
+    let oracle_label = "let census = pair_scope_census::begin(function, budget, true);";
+    assert_eq!(before.matches(oracle_label).count(), 1);
+    assert_eq!(before.matches(old_label).count(), 0);
+    let restored = before
+        .replacen(oracle_label, old_label, 1)
+        .replace("#[path = \"lexical_cursor_before_tail.rs\"]\n", "")
+        .replace("#[cfg(test)]\nuse super::comparison_owner::pair_scope_census;\n", "#[cfg(test)]\nmod before_lexical_cursor;\n#[cfg(test)]\nmod before_pair_scope;\n#[cfg(test)]\nmod pair_scope_census;\n")
+        .replace("pub(in crate::cleanup_plan::replay::ordinary_plan_history) struct ComparisonOwner", "struct ComparisonOwner")
+        + "\n#[cfg(test)]\nmod tests;\n";
+    assert_eq!(restored.len(), 20712);
+    use sha2::{Digest, Sha256};
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(restored.as_bytes()))
+        ),
+        "4f9c140083625e08eae643deb36ffc91272c1a23b8fa8f79fbbb737756bf7903"
+    );
+    assert_eq!(
+        format!(
+            "{:x}",
+            crate::digest_hex::LowerHex(Sha256::digest(include_bytes!(
+                "lexical_cursor_before_tail.rs"
+            )))
+        ),
+        "7614b53a5d5f30197157064a13ecc408c886f3b907eb3afeb5830bfcd1cbd399"
+    );
 }
 
-#[test]
-fn sealed_unit_driver_is_exactly_unit_only_and_never_allocates_or_owns_cleanup() {
-    use lexical_cursor::SharedUnitDriver;
-    fn unit_iter<I: Iterator<Item = ()>>(_: &I) {}
-    assert_eq!(size_of::<()>(), 0);
-    assert!(!std::mem::needs_drop::<SharedUnitDriver>());
-    for length in [0, 1, 2, 4, 257] {
-        let ((), heap) = measure(|| {
-            let repeating = std::iter::repeat(());
-            let mut driver: SharedUnitDriver = repeating.take(length);
-            unit_iter(&driver);
-            for _ in 0..length {
-                assert_eq!(driver.next(), Some(()));
-            }
-            assert_eq!(driver.next(), None); // this sole terminal call ends the primitive
-        });
-        assert_eq!(heap, Metrics::default());
-    }
-}
-
-#[test]
-fn fused_fallback_real_values_keep_success_and_every_work_refusal() {
-    let program = super::super::super::tests::program();
-    let function = program
-        .functions
-        .iter()
-        .find(|f| f.id.as_str() == "f")
-        .unwrap();
-    let item = Rc::new(SkeletonObservation::Boolean {
-        expression: function.body.id.clone(),
-        value: true,
-    });
-    let other = Rc::new(SkeletonObservation::Boolean {
-        expression: function.body.id.clone(),
-        value: false,
-    });
-    let expected = vec![
-        SkeletonPath {
-            observations: vec![item.clone(); 64].into(),
-            terminal: SkeletonTerminal::Success,
-        };
-        2
-    ];
-    for mutation in 0..2 {
-        let actual = || {
-            let mut left = vec![item.clone(); 64];
-            if mutation == 1 {
-                left[63] = other.clone();
-            }
-            HistorySet {
-                arena: vec![
-                    Segment {
-                        previous: None,
-                        items: left,
-                        depth: 1,
-                    },
-                    Segment {
-                        previous: None,
-                        items: vec![item.clone(); 64],
-                        depth: 1,
-                    },
-                ],
-                max_depth: 1,
-                paths: (0..2)
-                    .map(|side| PlanPath {
-                        history: History {
-                            previous: Some(side),
-                            tail: Vec::new(),
-                        },
-                        terminal: SkeletonTerminal::Success,
+mod matched_flat_generation {
+    use super::super::super::before_fused_flat::compare;
+    use super::*;
+    #[test]
+    fn retained_flat_view_keeps_complete_long_comparisons_and_stable_mismatch_diagnostics() {
+        let program = super::super::super::super::tests::program();
+        let function = &program.functions[0];
+        for len in [0usize, 1, 64, 256] {
+            let seed: Vec<_> = (0..len)
+                .map(|index| {
+                    Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: index % 2 == 0,
                     })
-                    .collect(),
+                })
+                .collect();
+            let expected = vec![SkeletonPath {
+                observations: seed.clone().into(),
+                terminal: SkeletonTerminal::Success,
+            }];
+            for mutation in 0..3 {
+                let mut tail = seed.clone();
+                if mutation == 1 {
+                    if tail.pop().is_none() {
+                        tail.push(Rc::new(SkeletonObservation::Boolean {
+                            expression: function.body.id.clone(),
+                            value: false,
+                        }));
+                    }
+                } else if mutation == 2 {
+                    tail.push(Rc::new(SkeletonObservation::Boolean {
+                        expression: function.body.id.clone(),
+                        value: true,
+                    }));
+                }
+                let observe = |old| {
+                    with_limit_usage_refusal(usize::MAX, || {
+                        measure(|| {
+                            let mut budget =
+                                ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+                            // Identical fixture backing in both observations. The seeded
+                            // immutable observations stay held outside both invocations.
+                            budget
+                                .reserve_array::<Rc<SkeletonObservation>>(
+                                    function,
+                                    tail.len(),
+                                    "flat-view test tail",
+                                )
+                                .unwrap();
+                            budget
+                                .reserve_array::<PlanPath>(function, 1, "flat-view test path")
+                                .unwrap();
+                            let actual = HistorySet {
+                                arena: Vec::new(),
+                                max_depth: 0,
+                                paths: vec![PlanPath {
+                                    history: History {
+                                        previous: None,
+                                        tail: tail.clone(),
+                                    },
+                                    terminal: SkeletonTerminal::Success,
+                                }],
+                            };
+                            let result = if old {
+                                before_pair_scope::compare(function, &mut budget, actual, &expected)
+                            } else {
+                                compare(function, &mut budget, actual, &expected)
+                            };
+                            let outcome = (
+                                result.as_ref().map(|_| ()).map_err(failure),
+                                budget.remaining,
+                                budget.skeleton_spent,
+                            );
+                            drop(result);
+                            outcome
+                        })
+                    })
+                };
+                let ((old, old_heap), old_refused, old_paid, old_receipt) = observe(true);
+                frontiers::finish();
+                let ((current, heap), refused, paid, receipt) = observe(false);
+                frontiers::finish();
+                assert_eq!(
+                    current, old,
+                    "all diagnostic fields and work, len={len} mutation={mutation}"
+                );
+                assert!(!refused && !old_refused && receipt.is_none() && old_receipt.is_none());
+                balanced(heap);
+                balanced(old_heap);
+                assert_eq!(
+                    heap, old_heap,
+                    "identical fixture backing and complete invocation Drop"
+                );
+                if mutation == 0 {
+                    assert!(current.0.is_ok());
+                    let removed =
+                        2 * size_of::<&Observations>() + size_of::<&[Rc<SkeletonObservation>]>();
+                    let retained = 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()
+                        + 2 * size_of::<&[Rc<SkeletonObservation>]>();
+                    assert_eq!(
+                        paid + removed * (len + 1),
+                        old_paid + PAIR_PRIMITIVE + PAYMENT_HEADER + retained
+                    );
+                    if len >= 64 {
+                        assert!(
+                            paid < old_paid,
+                            "long complete comparisons must reduce real reservations"
+                        );
+                    }
+                } else {
+                    assert_eq!(current.0.unwrap_err().code, "SPX-H006");
+                }
             }
-        };
-        pair_scope_census::reset();
-        let (old, old_heap, _) =
-            observe_shaped_pair(function, &expected, actual(), true, MAX_REPLAY_WORK_UNITS);
-        pair_scope_census::reset();
-        let (new, heap, _) =
-            observe_shaped_pair(function, &expected, actual(), false, MAX_REPLAY_WORK_UNITS);
-        let (rows, lost) = pair_scope_census::finish();
-        assert_eq!(lost, 0);
-        assert_eq!(rows.len(), 1);
-        let row = rows[0];
-        assert!(!row.old && row.ended && !row.unwound && !row.truncated && !row.overflow);
-        assert_eq!(row.complete, mutation == 0);
-        assert_eq!(new.result.is_ok(), mutation == 0);
-        assert!(row.pair_receivers > 0 && row.pair_left_steps > 0 && row.pair_right_steps > 0);
-        assert_eq!(new, old);
-        assert_eq!(heap, old_heap);
-        for cut in 0..=MAX_REPLAY_WORK_UNITS - old.remaining {
-            pair_scope_census::reset();
-            let (old, _, _) = observe_shaped_pair(function, &expected, actual(), true, cut);
-            pair_scope_census::reset();
-            let (new, _, _) = observe_shaped_pair(function, &expected, actual(), false, cut);
-            assert_eq!(
-                new, old,
-                "all diagnostic fields/work, mutation{mutation} cut{cut}"
-            );
         }
     }
 }

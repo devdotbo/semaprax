@@ -510,17 +510,22 @@ use function @id("identity") from fixture.provider as identity;
 
 #[test]
 fn complete_original_receiver_and_all_joined_source_inverses_remain_byte_exact() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../docs/evidence/borrowed-generic-type-rewrite-141387/whole-source-inverses.json"
-    ))
-    .unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,
+        ))
+        .unwrap();
     let inputs=[
         (include_str!("../generic_type_import.rs"),include_str!("../../../docs/evidence/borrowed-generic-type-rewrite-141387/generic_type_import.rs.before.txt")),
         (include_str!("../expected_projection/cost.rs"),include_str!("../../../docs/evidence/borrowed-generic-type-rewrite-141387/cost.rs.before.txt")),
         (include_str!("../../../tests/workspace/semantic_graph/source_inventory.rs"),include_str!("../../../docs/evidence/borrowed-generic-type-rewrite-141387/source_inventory.rs.before.txt")),
     ];
     for (index, (input, before)) in inputs.into_iter().enumerate() {
-        let mut restored = input.to_owned();
+        let mut restored = crate::source_reflows_merge::receiver_fixture_entry(
+            crate::source_reflows_merge::ReceiverFixture::BorrowedGeneric,
+            rows[index]["source"].as_str().unwrap(),
+            input,
+        );
         for hook in rows[index]["hooks"].as_array().unwrap() {
             let after = hook["after"].as_str().unwrap();
             let old = hook["before"].as_str().unwrap();

@@ -3,9 +3,6 @@
 //! inventories continue to include the current modules and their new children.
 use super::*;
 
-const PROOFS: &str = include_str!(
-    "../../docs/evidence/main67107-production-composition-20261017/receiver-main12.json"
-);
 const LIVE_AUDITS: &str =
     include_str!("../../docs/evidence/live-source-audit-custody-v1/inverse.json");
 static PROOF_RECORDS: OnceLock<Vec<serde_json::Value>> = OnceLock::new();
@@ -57,8 +54,13 @@ fn ordinary_helpers() -> &'static [serde_json::Value] {
 }
 
 fn proofs() -> &'static [serde_json::Value] {
+    // Preserve the old parsed metadata cache, but authenticate the runtime
+    // dependency on every reached lookup, including an already warm cache.
+    let payload = crate::source_reflows_merge::receiver_fixture(
+        crate::source_reflows_merge::ReceiverFixture::Main67107,
+    );
     PROOF_RECORDS.get_or_init(|| {
-        let mut original: Vec<serde_json::Value> = serde_json::from_str(PROOFS).unwrap();
+        let mut original: Vec<serde_json::Value> = serde_json::from_str(&payload).unwrap();
         let additional: Vec<serde_json::Value> = serde_json::from_str(LIVE_AUDITS).unwrap();
         assert_eq!(original.len(), 12);
         assert_eq!(additional.len(), 2);
@@ -81,7 +83,57 @@ pub(super) fn invert_ordinary(proof: &serde_json::Value, current: &str) -> Strin
         current,
     );
     let current = current_view.as_str();
-    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(proof, current);
+    // Only these nine exact Main67107 entry tuples changed after this packet.
+    // The full existing MAIN21 acquisition and every inverse below still run.
+    let path = proof["path"].as_str().unwrap();
+    let expected = proof["after_sha256"].as_str().unwrap();
+    let entry = match (path, expected) {
+        (
+            "src/cleanup_plan/replay.rs",
+            "30616d71694d393a730c0c8e49a25bbad7539b07ff96ed901b9d07be29765b9c",
+        )
+        | (
+            "tests/hir_module_boundaries.rs",
+            "f25b784eba1a2ea26a07b260b2ddff67b6dd90c0a6402fd143dc42ca68847d4e",
+        )
+        | (
+            "tests/workspace/semantic_graph/source_inventory.rs",
+            "59e5b98593c2c2d443d1479e7c89564551d515ca921f7abab2cc8f5d579c8c21",
+        )
+        | (
+            "src/source_verify/declaration.rs",
+            "c93ac4c883fe6b10c831a2603c994ea03880986fd0b7a394bfa41ec8a06d88cb",
+        )
+        | (
+            "src/cleanup_plan/replay/branch_clone/tests.rs",
+            "46bf0451ef390225f540d031f326100c7f4288cf7e9d50e30ce7ddb68a448e0f",
+        )
+        | (
+            "src/cleanup_plan/replay/factored.rs",
+            "343eda3712d0c3b224742d72c34838a327e0c69449c8a94fd7eb81dc5e0134a6",
+        )
+        | (
+            "src/cleanup_plan/replay/factored/oracle_hook.rs",
+            "0126d25150ca4b96f11995293fc9043d23fc8fff2008485e9560abe5c85cb7ae",
+        )
+        | (
+            "src/hir/validation.rs",
+            "f89e882a3d8ed796b8b8b864247e4e7eb19631d6299cd0dd94ddcc6b5ca17eba",
+        )
+        | (
+            "src/hir/expr_nodes.rs",
+            "e2291267786bdec4371b969031209b4e77aa6876f4564048ad1c7561b004b73f",
+        ) => Some(
+            crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+                path, expected, current,
+            ),
+        ),
+        _ => None,
+    };
+    let acquired = super::semantic_receivers::incoming_main21::ours_expected_input(
+        proof,
+        entry.as_deref().unwrap_or(current),
+    );
     let current = acquired.as_str();
     let path = proof["path"].as_str().unwrap();
     assert_eq!(

@@ -75,6 +75,8 @@ class LiveCampaignTests(unittest.TestCase):
         base = ["json-codec", "semaprax.toml", "--source", "src/schema.spx",
                 "--type", "app.request", "--output", "derived.spx"]
         bounded_profiles = ("utf8-owned-request.v1", "stream-utf8-owned-request.v1",
+                            "utf8-owned-request-decode-only.v1",
+                            "stream-utf8-owned-request-decode-only.v1",
                             "bounded-collection-response.v1")
         for profile in bounded_profiles:
             good = [*base, "--profile", profile, "--max-string-bytes", "64"]
@@ -87,6 +89,11 @@ class LiveCampaignTests(unittest.TestCase):
         self.assertIsNone(compiler_capture._options([
             *base, "--profile", "owned-request.v1", "--max-string-bytes", "8"
         ]))
+        for profile in ("owned-request-decode-only.v1", "stream-owned-request-decode-only.v1"):
+            self.assertEqual(compiler_capture._options([*base, "--profile", profile])["--profile"], profile)
+        for profile in ("owned-request-decode-only.v2", "stream-owned-request-decode-only.v2",
+                        "utf8-owned-request-decode-only.v2", "stream-utf8-owned-request-decode-only.v2"):
+            self.assertIsNone(compiler_capture._options([*base, "--profile", profile]))
         for profile in compiler_capture.PROFILES - set(bounded_profiles):
             self.assertIsNone(compiler_capture._options([
                 *base, "--profile", profile, "--max-string-bytes", "8"
@@ -121,6 +128,8 @@ class LiveCampaignTests(unittest.TestCase):
                     if profile is not None:
                         args.extend(["--profile", profile])
                         if profile in ("utf8-owned-request.v1", "stream-utf8-owned-request.v1",
+                                       "utf8-owned-request-decode-only.v1",
+                                       "stream-utf8-owned-request-decode-only.v1",
                                        "bounded-collection-response.v1", "bounded-nested-request.v1",
                                        "bounded-stream-nested-request.v1"):
                             args.extend(["--max-string-bytes", "64"])

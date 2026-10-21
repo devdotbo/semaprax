@@ -17,6 +17,16 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_owner_before_fused(&fused_readers::previous_owner(current))
 }
 fn previous_owner_before_fused(current: &str) -> String {
@@ -32,6 +42,16 @@ const OWNER: &[(usize, &str, &str)] = &[
     (589, "    tail_mask: u8,\n", ""),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_macro_before_fused(&fused_readers::previous_macro(current))
 }
 fn previous_macro_before_fused(current: &str) -> String {
@@ -45,6 +65,16 @@ const MACRO: &[(usize, &str, &str)] = &[
     (489, "// Paired-tail selection adds one payment site; its bulk loop adds one\n// payload payment and three work sites, each with a complete primitive frame.\npub(super) const PRIMITIVE_FRAMES: usize = 46 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 41 * PAYMENT_HEADER;\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+        "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_census_before_fused(&fused_readers::previous_census(current))
 }
 fn previous_census_before_fused(current: &str) -> String {
@@ -58,6 +88,16 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (509, "    pub mask_checks: usize,\n    pub tail_marks: usize,\n    pub fused_turns: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_pair_tests_before_fused(&fused_readers::previous_pair_tests(current))
 }
 fn previous_pair_tests_before_fused(current: &str) -> String {
@@ -71,6 +111,16 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (86, "#[path = \"pair_scope_tests/paired_tails.rs\"]\nmod paired_tails;\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/bounded_output/stage_debits/route_debits.rs",
+        "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_route_before_fused(&fused_readers::previous_route(current))
 }
 fn previous_route_before_fused(current: &str) -> String {
@@ -83,6 +133,16 @@ const ROUTE: &[(usize, &str, &str)] = &[
     (33690, "    let shared = phases(owner, \"shared_plan_pair_step!(\", &[11]);\n", "    let shared = phases(owner, \"shared_plan_pair_step!(\", &[7]);\n"),
 ];
 pub(super) fn previous_controls(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+        "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 25298, CONTROLS)
 }
 #[rustfmt::skip]
@@ -96,6 +156,16 @@ const CONTROLS: &[(usize, &str, &str)] = &[
     (755, "    previous_owner_tail_stage(&paired_tails::previous_owner(current))\n}\nfn previous_owner_tail_stage(current: &str) -> String {\n", ""),
 ];
 pub(super) fn previous_constructor(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+        "9dc41df52f983bad1552fd556c0af3db2622a8e7eb1328356db230db906520ae",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 4999, CONSTRUCTOR)
 }
 #[rustfmt::skip]
@@ -104,6 +174,16 @@ const CONSTRUCTOR: &[(usize, &str, &str)] = &[
     (778, "    previous_pair_tests_tail_stage(&super::paired_tails::previous_pair_tests(current))\n}\nfn previous_pair_tests_tail_stage(current: &str) -> String {\n", ""),
 ];
 pub(super) fn previous_json(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+        "4e01eab3ec8c582b781958702d3a82e044e959c93a49ba94e02c4be65ce8fa63",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 6272, JSON)
 }
 #[rustfmt::skip]
@@ -116,6 +196,16 @@ const JSON: &[(usize, &str, &str)] = &[
     (777, "    previous_route_tail_stage(&super::paired_tails::previous_route(current))\n}\nfn previous_route_tail_stage(current: &str) -> String {\n", ""),
 ];
 pub(super) fn previous_runs(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+        "084e3c34169f471e5cc7a2f9b2b1593da9ce0b447a17178799877762f4c8e92d",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 19859, RUNS)
 }
 #[rustfmt::skip]
@@ -132,6 +222,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())

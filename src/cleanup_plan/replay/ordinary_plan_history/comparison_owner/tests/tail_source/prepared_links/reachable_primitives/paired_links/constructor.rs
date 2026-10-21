@@ -15,6 +15,16 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_pair_tests_tail_stage(&super::paired_tails::previous_pair_tests(current))
 }
 fn previous_pair_tests_tail_stage(current: &str) -> String {
@@ -25,6 +35,16 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (50110, "            let repeating = std::iter::repeat(());\n            let mut driver: SharedUnitDriver = repeating.take(length);\n", "            let mut driver: SharedUnitDriver = std::iter::repeat(()).take(length);\n"),
 ];
 pub(super) fn previous_controls(current: &str) -> String {
+    let stage = super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+        "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_controls_stage(&super::json_ledger::previous_controls(current))
 }
 fn previous_controls_stage(current: &str) -> String {
@@ -45,6 +65,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())

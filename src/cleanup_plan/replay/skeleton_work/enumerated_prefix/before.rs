@@ -123,9 +123,7 @@ pub(super) fn sequence_skeleton_paths(
         // Lexical remainder of the original first clone: no second charge and
         // no newly forwarded Result<Observations, Diagnostic>.
         let observations = skeleton_work::prefix_fusion::after_work!(
-            work,
-            prefix.observations,
-            first_suffix.observations
+            work, prefix.observations, first_suffix.observations
         );
         let owned_source = work.clone_owned(
             &first_suffix.owned_source,
@@ -275,30 +273,29 @@ pub(super) fn validate_typed_control_skeleton_with_index<'hir>(
         hir_skeleton_paths_with_index_storage(program, function, budget, helpers, continuations)?;
     // Match the existing received reference, with no new payer/tag/flag carrier.
     if let ReplayBudget {
-        payer: AllocationPayer::ActiveBuilder,
-        ..
-    } = budget
-    {
-        budget.reserve_bytes(
-            function,
-            ordinary_plan_history::SELECT_CALL_CONTROLS,
-            "ordinary plan history selector call receivers",
-        )?;
-        if ordinary_plan_history::select(function, budget)? {
+            payer: AllocationPayer::ActiveBuilder,
+            ..
+        } = budget {
             budget.reserve_bytes(
                 function,
-                ordinary_plan_history::PRODUCE_CALL_CONTROLS,
-                "ordinary plan history producer call receivers",
+                ordinary_plan_history::SELECT_CALL_CONTROLS,
+                "ordinary plan history selector call receivers",
             )?;
-            let actual = ordinary_plan_history::produce(function, budget)?;
-            expected.sort();
-            budget.reserve_bytes(
-                function,
-                ordinary_plan_history::COMPARE_CALL_CONTROLS,
-                "ordinary plan history owned comparison call receivers",
-            )?;
-            return ordinary_plan_history::compare(function, budget, actual, &expected);
-        }
+            if ordinary_plan_history::select(function, budget)? {
+                budget.reserve_bytes(
+                    function,
+                    ordinary_plan_history::PRODUCE_CALL_CONTROLS,
+                    "ordinary plan history producer call receivers",
+                )?;
+                let actual = ordinary_plan_history::produce(function, budget)?;
+                expected.sort();
+                budget.reserve_bytes(
+                    function,
+                    ordinary_plan_history::COMPARE_CALL_CONTROLS,
+                    "ordinary plan history owned comparison call receivers",
+                )?;
+                return ordinary_plan_history::compare(function, budget, actual, &expected);
+            }
     }
     let mut actual = plan_skeleton_paths(function, budget)?;
     expected.sort();

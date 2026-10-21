@@ -380,7 +380,7 @@ pub(crate) fn program_uses(program: &dyn ProgramSource) -> bool {
     }
     program
         .functions()
-        .iter()
+        .profile_iter()
         .any(|function| function_uses(function.payload()))
         || program
             .types()

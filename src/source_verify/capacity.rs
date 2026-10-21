@@ -1426,8 +1426,11 @@ fn source_capacity_expr(
                             });
                             let finite = if matches!(statement, Statement::ForOwn { .. }) {
                                 context.ordinary.values().find_map(|function| {
-                                    crate::finite_byte_scratch::source(function.payload(), body)
-                                        .map(|proof| proof.iterations)
+                                    crate::finite_byte_scratch::source(
+                                        function.classifier_payload()?,
+                                        body,
+                                    )
+                                    .map(|proof| proof.iterations)
                                 })
                             } else {
                                 crate::source_verify::finite_row_loop(context.program, body)
@@ -1436,7 +1439,7 @@ fn source_capacity_expr(
                                             .then(|| {
                                                 context.ordinary.values().find_map(|function| {
                                                     crate::finite_owned_record_loop::source(
-                                                        function.payload(),
+                                                        function.classifier_payload()?,
                                                         body,
                                                     )
                                                     .map(|proof| proof.iterations)

@@ -49,8 +49,11 @@
 - Retain the explicitly selected macOS SDK in cleared native fixture environments so the real Apple Clang can resolve its standard headers.
 - Authenticate the exact inventory and clone-source formatting successors before replaying their unchanged whole-source audit inverses.
 - Compare complete immutable cleanup-history segments in one receiver loop while retaining every original validation, work request and resource ceiling.
+- Reuse closed compiler declaration identities and fund dynamic sort-key identity backing through its existing payer, preserving wire identities and diagnostic precedence.
+- Add optional fixed-storage captures of exclusive resolved-core debits alongside the existing inclusive phase observations, retaining compiler budgets and complete historical source checks.
 - Fix test source restoration so a rejected input cannot poison the shared cache or cascade into unrelated source-audit failures.
 - Avoid the recursive type-copy census cursor for one- and two-leaf nominal metadata. Pay the exact argument-vector backing before cloning; retain sticky refusal and the complete recursive, callable, wide-type and depth-bound fallback.
+- Source-only OPT #897 adds four explicit decode-only owned request codec profiles; unchanged full generators feed a closed source projection before whole ordinary candidate validation. Full profiles, decoder semantics, caps and existing application cohorts remain unchanged; executable qualification and net-cost measurements are pending.
 - Factor decimal loop decisions into scalar helpers and stop comparison at the first unequal digit so the complete ordinary project fits its unchanged graph budget. Preserve all eight supported APIs, every original contract and conformance case; add lazy-admission, early-difference and exhausted-cursor regressions.
 - Refresh both browser graph known answers from the actual 4872530969 Linux compiler capture after fused fallback pricing. Preserve every input, revision, assertion and non-budget graph byte; retain the original graph and source limits.
 - Fuse fallback PLAN comparison readers with plain immutable loans, retaining every work request and full HIR validation. Independently invoice every removed transport and remaining payload; preserve all prior physical, diagnostic and source-drift controls and graph limits.
@@ -67,6 +70,9 @@
 - Attribute the reachable PLAN primitive bank to the existing owner census and capture settled STD-08 preparation data after an owning CI failure. Preserve all thirteen categories, every original counter/refusal case, the full application gate and its failure; the diagnostic is not qualification.
 - Fund only reachable ordinary PLAN cursor primitive-site groups for zero/one-path comparisons, after paying the full owner and selector; preserve all twenty headers on larger sets, every dynamic payload debit and complete old controls. Bounded body comparisons pass; full compiler, physical and application qualification remain pending.
 - Select the fully paid inline clone for short two-edge plan histories whose maximum possible backing saving cannot cover the direct query and call receivers. Preserve complete prior enumerators, work/refusal/Drop controls and all compiler limits; focused runtime and application qualification remain pending.
+
+- OPT #888: author paired PLAN bare-reference consumption with complete immediate886 controls and explicit cold/reference costs; qualification pending.
+- OPT #895: source-only private starter codec regeneration compares full unverified drafts before one ordinary checked codec candidate; public replay and the final activated build remain complete. Qualification and net-cost measurement are pending.
 - Correct the native Rust SDK disposal-frame layout pin to the measured 48-byte closed-tag layout; keep exact assertions and size-based ledger accounting. Full hosted qualification remains pending.
 - Source-only #890 reuses complete ordinary HIR validation over the same immutable native emission borrow when building resource ABI descriptors. Raw builders and selected receiving validation remain intact; whole previous emission, hostile diagnostic, invocation-count and carrier-layout controls are authored. Compilation, runtime, measured cost and application-fit qualification remain pending.
 

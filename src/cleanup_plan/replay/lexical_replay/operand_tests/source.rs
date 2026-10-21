@@ -1,9 +1,11 @@
 //! Exact whole original caller and new source closure remain bound.
 #[test]
 fn whole_old_lexical_caller_and_all_new_inventory_sources_remain_bound() {
-    let rows: serde_json::Value = serde_json::from_str(include_str!(
-        "../../../../../docs/evidence/ordinary-lexical-return-operands-832/exact-source-inverses.json"
-    )).unwrap();
+    let rows: serde_json::Value =
+        serde_json::from_str(&crate::source_reflows_merge::receiver_fixture(
+            crate::source_reflows_merge::ReceiverFixture::LexicalOperands,
+        ))
+        .unwrap();
     let sources = [
         (
             "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",

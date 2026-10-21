@@ -65,6 +65,10 @@ pub(crate) fn admitted<'a>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::TextRuntime,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::TextRuntime,
+    );
     fund(Some(0))?;
     if !matches!(root, ResolvedType::Nominal { .. }) {
         return Ok(false);
@@ -166,6 +170,10 @@ pub(crate) fn contains_string<'a>(
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::TextContains,
+    );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::TextContains,
     );
     fund(Some(0))?;
     if !matches!(root, ResolvedType::Nominal { declaration, .. }

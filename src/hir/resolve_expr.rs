@@ -1082,7 +1082,7 @@ impl Resolver<'_, '_> {
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
-                            callee: DeclarationId::new(op.id()),
+                            callee: DeclarationId::compiler(CId::StrOperation(op)),
                             type_arguments: Vec::new(),
                             instance: None,
                             args,
@@ -1130,7 +1130,9 @@ impl Resolver<'_, '_> {
                             ty,
                             ownership: OwnershipMode::Borrow,
                             kind: ResolvedExprKind::ByteRange {
-                                operation: DeclarationId::new(crate::byte_ops::RANGE_ID),
+                                operation: DeclarationId::compiler(CId::ByteOperation(
+                                    crate::byte_ops::ByteOp::Range,
+                                )),
                                 source: Box::new(source),
                                 start: Box::new(start),
                                 end: Box::new(end),
@@ -1158,7 +1160,7 @@ impl Resolver<'_, '_> {
                             ty,
                             ownership: OwnershipMode::Borrow,
                             kind: ResolvedExprKind::BorrowPlace {
-                                operation: DeclarationId::new(op.id()),
+                                operation: DeclarationId::compiler(CId::ByteOperation(op)),
                                 place: place.clone(),
                             },
                             span,
@@ -1170,7 +1172,7 @@ impl Resolver<'_, '_> {
                         ty,
                         ownership,
                         kind: ResolvedExprKind::Call {
-                            callee: DeclarationId::new(op.id()),
+                            callee: DeclarationId::compiler(CId::ByteOperation(op)),
                             type_arguments: Vec::new(),
                             instance: None,
                             args,
@@ -1221,7 +1223,7 @@ impl Resolver<'_, '_> {
                         ty: op.return_type(),
                         ownership: OwnershipMode::Value,
                         kind: ResolvedExprKind::Call {
-                            callee: DeclarationId::new(op.id()),
+                            callee: DeclarationId::compiler(CId::HostIoOperation(op)),
                             type_arguments: Vec::new(),
                             instance: None,
                             args,
@@ -2647,11 +2649,9 @@ impl Resolver<'_, '_> {
                         (crate::prelude::OPTION_ID, [some_type]) => (
                             ResolvedExprKind::TryOption {
                                 operand: Box::new(operand),
-                                option: DeclarationId::new(crate::prelude::OPTION_ID),
-                                some_case: DeclarationId::new(crate::prelude::OPTION_SOME_ID),
-                                some_field: DeclarationId::new(
-                                    crate::prelude::OPTION_SOME_VALUE_ID,
-                                ),
+                                option: DeclarationId::compiler(CId::Option),
+                                some_case: DeclarationId::compiler(CId::OptionSome),
+                                some_field: DeclarationId::compiler(CId::OptionSomeValue),
                                 none_case: DeclarationId::compiler(CId::OptionNone),
                                 residual_type,
                             },

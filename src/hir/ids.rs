@@ -686,3 +686,6 @@ pub(in crate::hir) mod instance_match;
 #[cfg(test)]
 #[path = "ids/declaration_tag.rs"]
 mod declaration_tag;
+
+#[cfg(test)]
+mod lowering_identity_tests;

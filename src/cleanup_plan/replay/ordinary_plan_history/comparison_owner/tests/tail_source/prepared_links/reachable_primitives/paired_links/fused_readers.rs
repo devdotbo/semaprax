@@ -20,9 +20,22 @@ fn restore(current: &str, before: &str, length: usize, edits: &[(usize, &str, &s
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    if !exact_main_subject(current, 22498, "c8f66d4154fd2ed0bb830b4bcecb2c9153949b9c636ea2d4fc8977edfbf130f8") {
+        return previous_owner_before_independent(current);
+    }
     previous_owner_before_independent(&independent_segments::previous_owner(current))
 }
 fn previous_owner_before_independent(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -42,9 +55,22 @@ const OWNER: &[(usize, &str, &str)] = &[
     (15182, "                    'paired_observations: loop {\n", "                    loop {\n"),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    if !exact_main_subject(current, 33725, "768c23a10fcec91ef7dfdbd67dabd64885266291f236c66efd0e80ad21b29b6e") {
+        return previous_macro_before_independent(current);
+    }
     previous_macro_before_independent(&independent_segments::previous_macro(current))
 }
 fn previous_macro_before_independent(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -66,9 +92,22 @@ const MACRO: &[(usize, &str, &str)] = &[
     (261, "// Two final-HIR readers and three paired branches each retain every work site.\n// The paired branches transport plain immutable Rc loans without Option outputs.\n", "// Four expansions each have forward+segment work and STEP+LOAD+TAIL payment.\n"),
 ];
 pub(super) fn previous_census(current: &str) -> String {
+    if !exact_main_subject(current, 22294, "38549d9a47ec78e4f1153bdc27f04944a05a7a4d40ab284550f4b210d9cb0570") {
+        return previous_census_before_independent(current);
+    }
     previous_census_before_independent(&independent_segments::previous_census(current))
 }
 fn previous_census_before_independent(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+        "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -87,9 +126,22 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (592, "    pub pair_left_steps: usize,\n    pub pair_right_steps: usize,\n    pub pair_left_tails: usize,\n    pub pair_right_tails: usize,\n    pub pair_receivers: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    if !exact_main_subject(current, 55874, "2ef71d1a1613cab3e894b35d5aa07f9207e81917557827e10bc84a2e988dda0a") {
+        return previous_pair_tests_before_independent(current);
+    }
     previous_pair_tests_before_independent(&independent_segments::previous_pair_tests(current))
 }
 fn previous_pair_tests_before_independent(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -108,9 +160,22 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (7288, "    let (reader_removed, reader_retained) = fused_reader_prices(paths, row);\n", ""),
 ];
 pub(super) fn previous_route(current: &str) -> String {
+    if !exact_main_subject(current, 36241, "9e0b85cb25e817c7e7c87ef86455819f54c7b9657df6064165d41c99f5f0592d") {
+        return previous_route_before_independent(current);
+    }
     previous_route_before_independent(&independent_segments::previous_route(current))
 }
 fn previous_route_before_independent(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/bounded_output/stage_debits/route_debits.rs",
+        "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -131,6 +196,16 @@ const ROUTE: &[(usize, &str, &str)] = &[
     (33621, "    let forwarded = phases(owner, \"lexical_plan_next!(\", &[4, 10, 12]);\n", "    let forwarded = phases(owner, \"lexical_plan_next!(\", &[10, 11]);\n"),
 ];
 pub(super) fn previous_controls(current: &str) -> String {
+    let stage = super::super::incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+        "9bcdf29f73430c509a567889238b552be190de2d5b11bfb7ee6c22c21fae62e5",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(
         current,
         include_str!(concat!(
@@ -162,6 +237,18 @@ mod tests {
     fn complete_fused_reader_subjects_restore_and_refuse_all_source_drift() {
         {
             let current = include_str!("../../../../../../comparison_owner.rs");
+            assert!(std::panic::catch_unwind(|| previous_owner(&format!("{current} "))).is_err());
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_owner(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_owner(current);
             assert_eq!(
                 restored,
@@ -186,6 +273,18 @@ mod tests {
         }
         {
             let current = include_str!("../../../../../lexical_cursor.rs");
+            assert!(std::panic::catch_unwind(|| previous_macro(&format!("{current} "))).is_err());
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_macro(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_macro(current);
             assert_eq!(
                 restored,
@@ -210,6 +309,18 @@ mod tests {
         }
         {
             let current = include_str!("../../../../../pair_scope_census.rs");
+            assert!(std::panic::catch_unwind(|| previous_census(&format!("{current} "))).is_err());
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_census(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_census(current);
             assert_eq!(
                 restored,
@@ -234,6 +345,20 @@ mod tests {
         }
         {
             let current = include_str!("../../../../../pair_scope_tests.rs");
+            assert!(
+                std::panic::catch_unwind(|| previous_pair_tests(&format!("{current} "))).is_err()
+            );
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_pair_tests(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_pair_tests(current);
             assert_eq!(
                 restored,
@@ -262,6 +387,18 @@ mod tests {
             let current = include_str!(
                 "../../../../../../../../../bounded_output/stage_debits/route_debits.rs"
             );
+            assert!(std::panic::catch_unwind(|| previous_route(&format!("{current} "))).is_err());
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_route(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_route(current);
             assert_eq!(
                 restored,
@@ -286,6 +423,20 @@ mod tests {
         }
         {
             let current = include_str!("paired_tails.rs");
+            assert!(
+                std::panic::catch_unwind(|| previous_controls(&format!("{current} "))).is_err()
+            );
+            let mut physical_drift = current.to_owned();
+            let end = physical_drift.chars().next().unwrap().len_utf8();
+            let replacement = if &physical_drift[..end] == "x" {
+                "y"
+            } else {
+                "x"
+            };
+            physical_drift.replace_range(..end, replacement);
+            assert!(std::panic::catch_unwind(|| previous_controls(&physical_drift)).is_err());
+            let stage = super::super::super::incoming_current_stage(current);
+            let current = stage.as_str();
             let restored = previous_controls(current);
             assert_eq!(
                 restored,
@@ -311,4 +462,12 @@ mod tests {
             assert!(std::panic::catch_unwind(|| previous_controls(&outside)).is_err());
         }
     }
+}
+
+// Preserve both independently fixed source stages; unknown bodies are never
+// repaired by the main-only inverse before the ordinary full comparison.
+fn exact_main_subject(current: &str, length: usize, expected: &str) -> bool {
+    use sha2::{Digest, Sha256};
+    current.len() == length
+        && format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(current.as_bytes()))) == expected
 }

@@ -1,1 +1,0 @@
-{"status": "READ_ONLY_PREFLIGHT_REACHED_PUBLICATION", "head": "dd121c154f08b6eb6d6aba8d3de577b84c4097eb", "exception_type": "ReadOnlyPublication", "reason": "blocked os.remove", "blocked_write_events": ["open", "os.remove"], "original_producer_completed": false, "both_authoritative_outputs_unchanged": true}

@@ -106,7 +106,7 @@ fn observe_immediate_shaped_pair(
                     "883 shaped comparison receiving"
                 )?;
                 if old {
-                    crate::cleanup_plan::replay::ordinary_plan_history::comparison_owner::paired_segments_before::compare(function, &mut budget, actual, expected)
+                    super::super::paired_segments_before::compare(function, &mut budget, actual, expected)
                 } else {
                     compare(function, &mut budget, actual, expected)
                 }
@@ -133,7 +133,7 @@ fn observe_immediate_shaped_pair(
 
 #[test]
 fn independent_segments_keep_complete_before_values_work_drop_and_source_price_projection() {
-    let program = super::super::super::super::tests::program();
+    let program = crate::cleanup_plan::replay::ordinary_plan_history::tests::program();
     let function = program
         .functions
         .iter()
@@ -282,7 +282,7 @@ fn observe_funded(
                     "883 shaped comparison receiving"
                 )?;
                 if old {
-                    crate::cleanup_plan::replay::ordinary_plan_history::comparison_owner::paired_segments_before::compare(
+                    super::super::paired_segments_before::compare(
                         function, &mut budget, actual, expected)
                 } else {
                     compare(function, &mut budget, actual, expected)
@@ -327,7 +327,7 @@ fn observe_funded(
 
 #[test]
 fn independent_segments_exact_short_floor_zero_sticky_and_projection_refusals_are_real() {
-    let program = super::super::super::super::tests::program();
+    let program = crate::cleanup_plan::replay::ordinary_plan_history::tests::program();
     let function = program
         .functions
         .iter()

@@ -14,11 +14,10 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
-mod shared_boundaries;
 pub(super) fn previous_macro(current: &str) -> String {
-    previous_macro_stage(&shared_boundaries::previous_macro(current))
-}
-fn previous_macro_stage(current: &str) -> String {
+    let stage = super::super::super::super::super::reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs", "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded", current);
+    let current = stage.as_str();
     restore(current, 10841, MACRO)
 }
 #[rustfmt::skip]
@@ -30,8 +29,9 @@ const MACRO: &[(usize, &str, &str)] = &[
     (339, "// The shared immutable-step branch adds four payment and five work sites.\n", ""),
 ];
 pub(super) fn previous_owner(current: &str) -> String {
-    let current = super::paired_links::previous_owner(current);
-    let current = current.as_str();
+    let stage = super::super::super::super::super::reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs", "a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8", current);
+    let current = stage.as_str();
     restore(current, 23539, OWNER)
 }
 #[rustfmt::skip]
@@ -42,9 +42,9 @@ const OWNER: &[(usize, &str, &str)] = &[
     (640, "    left_link: usize,\n    right_link: usize,\n", ""),
 ];
 pub(super) fn previous_pair_tests(current: &str) -> String {
-    previous_pair_tests_stage(&shared_boundaries::previous_pair_tests(current))
-}
-fn previous_pair_tests_stage(current: &str) -> String {
+    let stage = super::super::super::super::super::reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs", "10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5", current);
+    let current = stage.as_str();
     restore(current, 42740, PAIR_TESTS)
 }
 #[rustfmt::skip]
@@ -62,9 +62,9 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (2956, "}\n// Independent source-type invoice for the actual shared-step cells. The old\n// complete883 invoice stays additive; no measured debit delta is a coefficient.\nfn shared_step_prices(paths: usize, row: &pair_scope_census::Row) -> (usize, usize) {\n    let header = 2 * size_of::<&ResolvedFunction>()\n        + 2 * size_of::<&mut ReplayBudget>()\n        + 2 * size_of::<&str>()\n        + 2 * size_of::<usize>()\n        + 2 * size_of::<Result<(), Diagnostic>>();\n    let pair = size_of::<(Option<&SkeletonObservation>, Option<&SkeletonObservation>)>()\n        + 6 * size_of::<&SkeletonObservation>()\n        + 4 * size_of::<&SkeletonTerminal>()\n        + 2 * size_of::<Ordering>();\n    let step = 2 * size_of::<usize>()\n        + 3 * size_of::<bool>()\n        + 3 * size_of::<&Rc<SkeletonObservation>>()\n        + 2 * size_of::<&[Rc<SkeletonObservation>]>()\n        + size_of::<&SkeletonObservation>()\n        + 2 * size_of::<Option<&SkeletonObservation>>()\n        + size_of::<usize>()\n        + 2 * size_of::<usize>()\n        + size_of::<bool>();\n    let retained = 4 * size_of::<usize>()\n        + if paths >= 2 { 9 * header } else { 0 }\n        + size_of::<usize>() * row.loads\n        + 3 * size_of::<bool>() * row.shared_checks\n        + (size_of::<&[Rc<SkeletonObservation>]>() + size_of::<bool>()) * row.shared_patterns\n        + (4 * size_of::<usize>() + 3 * size_of::<bool>()) * row.shared_metadata\n        + (3 * size_of::<&[Rc<SkeletonObservation>]>()\n            + 2 * size_of::<usize>()\n            + size_of::<Ordering>()\n            + size_of::<bool>())\n            * row.shared_steps;\n    ((pair + 2 * step) * row.shared_steps, retained)\n", ""),
 ];
 pub(super) fn previous_census(current: &str) -> String {
-    previous_census_stage(&shared_boundaries::previous_census(current))
-}
-fn previous_census_stage(current: &str) -> String {
+    let stage = super::super::super::super::super::reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs", "ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5", current);
+    let current = stage.as_str();
     restore(current, 12959, CENSUS)
 }
 #[rustfmt::skip]
@@ -75,8 +75,9 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (479, "    pub shared_checks: usize,\n    pub shared_patterns: usize,\n    pub shared_metadata: usize,\n    pub shared_steps: usize,\n", ""),
 ];
 pub(super) fn previous_reachable(current: &str) -> String {
-    let current = super::paired_links::previous_reachable(current);
-    let current = current.as_str();
+    let stage = super::super::super::super::super::reachable_stage(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs", "fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921", current);
+    let current = stage.as_str();
     restore(current, 11132, REACHABLE)
 }
 #[rustfmt::skip]
@@ -97,7 +98,19 @@ mod tests {
         inverse: fn(&str) -> String,
         before: &str,
         edits: &[(usize, &str, &str)],
+        stage: (&str, &str, usize),
     ) {
+        // Public current-first acquisition must still reject physical drift.
+        assert_eq!(inverse(current), before);
+        assert!(std::panic::catch_unwind(|| inverse(&format!("{current} "))).is_err());
+        let acquired = super::super::super::super::super::super::reachable_stage(
+            stage.0, stage.1, current);
+        assert_eq!(acquired.len(), stage.2);
+        let current = acquired.as_str();
+        // Archived inverse offsets apply to this authenticated complete stage,
+        // not to the later physical source which legitimately has another size.
+        let inverse = |current: &str| restore(current, stage.2, edits);
+        assert_eq!(inverse(current), before);
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -169,55 +182,54 @@ mod tests {
     #[test]
     fn all_new_source_subjects_refuse_span_extent_and_outside_drift() {
         hostile(
-            &shared_boundaries::previous_macro(include_str!("../../../../lexical_cursor.rs")),
-            previous_macro_stage,
+            include_str!("../../../../lexical_cursor.rs"),
+            previous_macro,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-macro.rs.txt"
             )),
             MACRO,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs", "e3278dc29dcce665dd9d3a67ce048e552254a65c5a939f769b2b7c1eb86a9ded", 10841),
         );
         hostile(
-            &super::super::paired_links::previous_owner(include_str!(
-                "../../../../../comparison_owner.rs"
-            )),
+            include_str!("../../../../../comparison_owner.rs"),
             previous_owner,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-owner.rs.txt"
             )),
             OWNER,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs", "a9b5037a2522c8e1bd7d24363894176aef29983900d48028b30fa86e6dabe5c8", 23539),
         );
         hostile(
-            &shared_boundaries::previous_pair_tests(include_str!(
-                "../../../../pair_scope_tests.rs"
-            )),
-            previous_pair_tests_stage,
+            include_str!("../../../../pair_scope_tests.rs"),
+            previous_pair_tests,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-pair-tests.rs.txt"
             )),
             PAIR_TESTS,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs", "10ecb901fd3ce0805b1fbc81f68ad221d9a4fc3ddf3f707ff05fc38fff5b13e5", 42740),
         );
         hostile(
-            &shared_boundaries::previous_census(include_str!("../../../../pair_scope_census.rs")),
-            previous_census_stage,
+            include_str!("../../../../pair_scope_census.rs"),
+            previous_census,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-census.rs.txt"
             )),
             CENSUS,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs", "ced9cc53bd363653bcc182b443bcbc41b2be69c005d441e3c4a3599f20e90ef5", 12959),
         );
         hostile(
-            &super::super::paired_links::previous_reachable(include_str!(
-                "../reachable_primitives.rs"
-            )),
+            include_str!("../reachable_primitives.rs"),
             previous_reachable,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-pair-c79-20261018/before-reachable.rs.txt"
             )),
             REACHABLE,
+            ("src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs", "fc15bb2a80a9821f3616075f730b8e1dc9e958427c7f42a55e12d7d9d894c921", 11132),
         );
     }
 }

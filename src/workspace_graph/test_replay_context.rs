@@ -53,6 +53,14 @@ impl SourceRecordReplayFixture {
         &self,
         apply: impl FnOnce(&dyn crate::cleanup::ReplayContext) -> T,
     ) -> T {
+        self.try_with_prepared_context(apply).unwrap()
+    }
+    /// Preserve the authentic preparation's fail-closed result for negative
+    /// controls; no synthetic directory or report is substituted on failure.
+    pub(crate) fn try_with_prepared_context<T>(
+        &self,
+        apply: impl FnOnce(&dyn crate::cleanup::ReplayContext) -> T,
+    ) -> Result<T, Vec<Diagnostic>> {
         let anchor = self
             .module()
             .functions
@@ -78,7 +86,6 @@ impl SourceRecordReplayFixture {
                 apply(context)
             },
         )
-        .unwrap()
     }
     /// Complete non-static-text controls use the production owned-data linker,
     /// not the closed literal-source receiver. Its roots are exact retained

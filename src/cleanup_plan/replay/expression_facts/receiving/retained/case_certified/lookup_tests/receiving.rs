@@ -50,7 +50,10 @@ fn whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed() {
         let current = run(&program, false, 64 * 1024 * 1024);
         let census = ordinary_receiving::take_census();
         assert_eq!(current.0, old.0); // complete Result and all six error fields
-        assert!(current.0.is_ok() && !old.1 && !current.1);
+        assert!(
+            current.0.is_ok() && !old.1 && !current.1,
+            "rows={rows} old(result,refused,paid)={old:?} current(result,refused,paid)={current:?} census={census:?}"
+        );
         assert!(!census.incomplete);
         assert!(census.reached[0] > 0);
         if census.reached[1] > 0 {
@@ -191,11 +194,16 @@ fn exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are
     let census = ordinary_receiving::take_census();
     assert_eq!(current.0, old.0);
     assert!(current.0.is_ok() && !old.1 && !current.1);
-    assert_eq!(census.reached, [1, 0, 0, 0]);
+    // The ordinary receiver constructs once. Its unchanged test-only
+    // cross_check independently constructs the enumerating and factored HIR
+    // paths too; all three use the same active payer and remain in this invoice.
+    const COMPLETE_SETUP_CALLS: usize = 3;
+    assert_eq!(census.reached, [COMPLETE_SETUP_CALLS, 0, 0, 0]);
     assert!(!census.incomplete);
     assert_eq!(
         old.2 as i128 - current.2 as i128,
-        old_setup_invoice() as i128 - skeleton_work::receiving::acquisition_bytes() as i128
+        COMPLETE_SETUP_CALLS as i128
+            * (old_setup_invoice() as i128 - skeleton_work::receiving::acquisition_bytes() as i128)
     );
     eprintln!(
         "exact old scalar invoice old={} current={} delta={}",

@@ -57,7 +57,7 @@ pub(crate) fn program_uses(program: &dyn crate::ast::program_source::ProgramSour
         }
         false
     };
-    program.functions().iter().any(uses) || program.types().iter().any(|ty| matches!(&ty.kind, crate::ast::TypeDeclarationKind::Class { methods, .. } if methods.iter().any(uses)))
+    program.functions().profile_iter().any(uses) || program.types().iter().any(|ty| matches!(&ty.kind, crate::ast::TypeDeclarationKind::Class { methods, .. } if methods.iter().any(uses)))
 }
 pub(crate) fn resolved_program_uses(program: &crate::hir::ResolvedProgram) -> bool {
     program

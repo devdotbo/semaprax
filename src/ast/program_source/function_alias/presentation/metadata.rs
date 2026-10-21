@@ -185,7 +185,7 @@ impl<'a> FunctionSlices<'a> {
 
     pub(crate) fn contains_presentation(&self, target: &FunctionRef<'_>) -> bool {
         let ordinary = |function: &Function| {
-            target.alias_cell.is_none() && std::ptr::eq(function, target.payload)
+            target.alias_entry.is_none() && std::ptr::eq(function, target.payload)
         };
         match self {
             Self::Ordinary {
@@ -215,8 +215,8 @@ impl<'a> FunctionSlices<'a> {
                             FunctionEntry::Borrowed(view) => {
                                 std::ptr::eq(view.original, target.payload)
                                     && target
-                                        .alias_cell
-                                        .is_some_and(|cell| std::ptr::eq(cell, &view._alias))
+                                        .alias_entry
+                                        .is_some_and(|cell| std::ptr::eq(cell, entry))
                             }
                         })
                     })

@@ -8,7 +8,8 @@ const INDEX: &str = concat!(
     "help language author:task:file-text:source-command.v1:native64:0\n",
     "help language author:task:stdin-stream:language-command-io.stream-data.v1:native64:0\n",
     "help language author:task:stdin-json:language-command-io.collection-record.v1:native64:0\n",
-    "JSON specimen: ordinary compiler admission and executable qualification pending.\n",
+    "help language author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0\n",
+    "JSON and selected-file examples: ordinary compiler admission and executable qualification pending.\n",
     "Other profiles/tasks: outside this pilot; help language author:routes.\n",
     "Full/exact catalog remains: help library all; help library <module|name|stable-id>.\n"
 );
@@ -34,6 +35,15 @@ pub(super) fn lookup(query: &str, budget: usize) -> Result<String, String> {
         .filter(|n| n.to_string() == *offset)
         .ok_or_else(|| "task offset must be canonical unsigned decimal".to_owned())?;
     let descriptors: Value = serde_json::from_str(DESCRIPTORS).expect("checked task descriptors");
+    if *task == "selected-file" {
+        let route = &descriptors["selected_file_task"];
+        if text(route, "project_profile") != *profile || text(route, "target") != *target {
+            return Err("selected-file task requires source-command.selected-file.resource-output.v1 and native64; source-command.v1 and v33 remain distinct; use author:selected-file-resource".to_owned());
+        }
+        let catalog: Value =
+            serde_json::from_str(super::super::LIBRARY_INDEX).expect("checked library catalog");
+        return selected_file_page(route, &catalog, start, budget);
+    }
     if *task == "stdin-json" {
         let route = &descriptors["json_task"];
         if text(route, "project_profile") != *profile || text(route, "target") != *target {
@@ -196,7 +206,7 @@ fn page(route: &Value, catalog: &Value, start: usize, budget: usize) -> Result<S
 mod tests;
 
 fn json_capsule(route: &Value) -> String {
-    format!("Task v6: stdin-json request -> decision -> response\nProfile {}; target {}; input {}\nCapabilities (declare AND grant): {}\nFixed ShiftSim specimen; source implementation, executable qualification pending. Ordinary admission (including SPX-G171) may refuse; help grants no authority.\n",
+    format!("Task v6: stdin-json request -> decision -> response\nProfile {}; target {}; input {}\nCapabilities (declare AND grant): {}\nGeneric schema/command sketch; executable qualification pending. Ordinary admission (including SPX-G171) may refuse; help grants no authority.\n",
         text(route,"project_profile"),text(route,"target"),text(route,"input"),list(&route["capabilities"]))
 }
 fn json_items(route: &Value, catalog: &Value) -> Result<Vec<String>, String> {
@@ -215,37 +225,17 @@ fn json_items(route: &Value, catalog: &Value) -> Result<Vec<String>, String> {
         .map(|id| declaration(catalog, id.as_str().unwrap()))
         .collect::<Result<Vec<_>, _>>()?;
     let mut items = vec![
-        format!("Minimal route, from the unchanged specimen checkout:\np={}\nsemaprax-full new fresh-app --from \"$p\" --codec-plan \"$p/codec-plan.json\" --command-profile language-command-io.collection-record.v1 --command-path src/app.spx --command-source \"$p/src/app.command.spx\"\nsemaprax check fresh-app\nsemaprax test fresh-app --target native-collection-record-pure.v1\nsemaprax build fresh-app --target native -o app-bin\n./app-bin < \"$p/fixtures/request.json\"\nNative64/full-host installation only; no Web/Wasm or implicit capabilities. No source overwrite or runtime execution during installation. Old v31 --target native test refusal remains.\n",text(route,"specimen")),
-        format!("Specimen: {} (requires its unchanged source checkout)\nComplete authored source inventory: {}\nPipeline: normalize/decode Request; schedule decision; encode Report; publish one JSON line.\n",text(route,"specimen"),list(&route["sources"])),
-        format!("Paired plan (exact selectors/bounds, not admission): {}\nExternal review remains available: json-codec <project> --plan <plan-json> --output <new-bundle>; install only through ordinary source/managed authority.\n",serde_json::to_string(&route["plan"]).unwrap()),
-        "Prerequisites/limits: native64 only; original v31 ownership, fuel, input/output and builder bounds remain. Fixed specimen identifiers are nonempty ASCII <=16 bytes, <=8 servers and <=256 patients; numeric/application validation remains. No general JSON schema, arbitrary Unicode identifiers, Wasm/web, foreign profiles or capacity increase is implied.\nDetail: help language author:collection-records; author:json-request-response; author:json-collection-response; docs/APPLICATION-STARTER-V1.md; docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\n".to_owned(),
+        "Author the displayed generic inputs under my-json-tool; the command currently returns zero. Implement your own decoder -> application logic -> response encoder pipeline and meaningful tests. This is NOT a new template or a qualified application.\nsemaprax-full new fresh-app --from my-json-tool --codec-plan my-json-tool/codec-plan.json --command-profile language-command-io.collection-record.v1 --command-path src/app.spx --command-source my-json-tool/src/app.spx\nsemaprax check fresh-app\nsemaprax test fresh-app --target native-collection-record-pure.v1\nsemaprax build fresh-app --target native -o app-bin\n./app-bin < your-request.json\nNative64/full-host installation only; no Web/Wasm or implicit capabilities. No source overwrite or runtime execution during installation. Old v31 --target native test refusal remains.\n".to_owned(),
+        format!("Complete generic authored source inventory: {}\nThe generated codecs do not supply your application's policy or algorithm. Use explicit decoding, validation, computation and output; the minimal command reads/writes nothing.\n",list(&route["sources"])),
+        format!("Paired plan (exact selectors/bounds, not admission): {}\nExternal review: json-codec <project> --plan <plan-json> --output <new-bundle>; install only through ordinary source/managed authority.\n",serde_json::to_string(&route["plan"]).unwrap()),
+        "Prerequisites/limits: native64 only; original v31 ownership, fuel, input/output and builder bounds remain. Request identifiers are unique decoded 1..16-byte ASCII letters/digits/_/-; first array <=8, record array <=256, nonempty records require a first-array identifier. The row has exactly one String identifier among scalar fields. max_string_bytes=16 is explicit for response encoding. Further application policies must be authored and checked; no arbitrary JSON schema, Unicode extension, foreign profile or capacity increase is implied.\nDetail: help language author:collection-records; author:json-request-response; author:json-collection-response; docs/APPLICATION-STARTER-V1.md; docs/APPLICATION-JSON-CODEC-PLAN-V1.md.\n".to_owned(),
         format!("Direct manifest dependencies: {}\nComplete transitive bundled module closure: {}\nResolved bundled versions: {}\nFollowing exact catalog signatures cover this dependency closure, not a claim every declaration is callable under the consumer Project profile. Library required-profile remains a separate role.\n",serde_json::to_string(&route["dependencies"]).unwrap(),list(&route["dependency_closure"]),serde_json::to_string(&route["dependency_versions"]).unwrap()),
     ];
-    for file in route["files"]
-        .as_array()
-        .expect("complete specimen input bindings")
-    {
+    for file in route["files"].as_array().expect("complete generic inputs") {
         items.push(format!(
-            "Specimen input {} sha256 {}\n",
+            "Generic input {} (complete):\n{}\n",
             text(file, "path"),
-            text(file, "sha256")
-        ));
-    }
-    for stage in route["pipeline"]
-        .as_array()
-        .expect("actual pipeline documentation")
-    {
-        items.push(format!(
-            "Pipeline declaration {} in {}\n{}\n",
-            text(stage, "id"),
-            text(stage, "source"),
-            stage["head"]
-                .as_array()
-                .unwrap()
-                .iter()
-                .map(|v| v.as_str().unwrap())
-                .collect::<Vec<_>>()
-                .join("\n")
+            text(file, "content")
         ));
     }
     items.extend(rows);
@@ -281,5 +271,68 @@ fn json_page(
         return Err("JSON task prerequisite capsule plus whole entry exceeds byte budget; use help library <stable-id> or docs/CLI-HELP-V6.md".to_owned());
     }
     output.push_str(&json_continuation(next, items.len()));
+    Ok(output)
+}
+
+fn selected_file_capsule(route: &Value) -> String {
+    format!("Task v6: selected-file tool; minimal example, executable qualification pending.\nProfile {}; target native64 Unix only; input {}\nCommand {} -> i64; sources {}\nCapabilities (declare AND grant): {}\nBounds: 256 argv, 65536 aggregate argv bytes, 4096 path bytes, 65536 UTF-8 file bytes, 64 read attempts/1MiB reserved reads, 1048576-byte String/combined output.\nPrefix: --spx-selected-file-v1 INDEX -- <unchanged app args>; INDEX=0..255 canonical decimal. No prefix means no file grant. Source checks usage before read; selected symlinks followed, one regular-file descriptor held until settlement; metadata mutation checks are not an atomic snapshot.\nInterpreter/Web/Wasm/npm/non-Unix refuse. Ordinary admission may refuse (including G171); help grants no authority.\n", text(route,"project_profile"), text(route,"input"), text(route,"command"), list(&route["sources"]), list(&route["capabilities"]))
+}
+fn selected_file_items(route: &Value, catalog: &Value) -> Result<Vec<String>, String> {
+    let ids = route["declarations"]
+        .as_array()
+        .expect("checked imported identities");
+    if !ids
+        .windows(2)
+        .all(|p| p[0].as_str().unwrap() < p[1].as_str().unwrap())
+    {
+        return Err("selected-file identities are not strictly ordered and unique".to_owned());
+    }
+    // Resolve every identity before pagination, including identities on later pages.
+    let rows = ids
+        .iter()
+        .map(|id| declaration(catalog, id.as_str().unwrap()))
+        .collect::<Result<Vec<_>, _>>()?;
+    let mut items = vec![
+        format!("Minimal manifest (complete):\n{}", text(route,"manifest")),
+        format!("Minimal main.spx (declares features; no application logic):\n{}\nMinimal tests.spx (primitive smoke only):\n{}", text(route,"source"), text(route,"test_source")),
+        "Author your own tool in a fresh directory; this is NOT a new template or a qualified application. Implement argument validation before file_read_text; select the file's unchanged argument index. Add your own parsing, computation, output and meaningful tests. Use help language author:selected-file-resource and help language author:find:file_read_text:0 for exact built-in details.\n".to_owned(),
+        "Save the displayed manifest, main.spx and tests.spx under my-tool, then:\np=my-tool\nsemaprax check \"$p\"\nsemaprax test \"$p\" --target native\nsemaprax build \"$p\" --target native -o app-bin\n./app-bin --spx-selected-file-v1 0 -- <file> <your-options>\nThe minimal example returns zero without reading. Without the prefix no file is granted; your own source defines usage and options. The old source-command-file-text template stays source-command.v1.\n".to_owned(),
+        format!("Manifest dependencies: {}. Compiler profile operations are not external library imports; no JSON codec/generator is required. This example establishes primitive grammar/type checks only, not useful application behavior or current backend admission.\n", serde_json::to_string(&route["dependencies"]).unwrap()),
+    ];
+    items.extend(rows);
+    Ok(items)
+}
+fn selected_file_continuation(next: usize, total: usize) -> String {
+    if next == total {
+        "\nCoverage: complete selected-file example prerequisites/imports; executable qualification pending.\n".to_owned()
+    } else {
+        format!("\nCoverage: partial selected-file ({next}/{total}); next: help language author:task:selected-file:source-command.selected-file.resource-output.v1:native64:{next}\n")
+    }
+}
+fn selected_file_page(
+    route: &Value,
+    catalog: &Value,
+    start: usize,
+    budget: usize,
+) -> Result<String, String> {
+    let items = selected_file_items(route, catalog)?;
+    if start >= items.len() {
+        return Err("selected-file offset is outside its complete entry inventory".to_owned());
+    }
+    let mut output = selected_file_capsule(route);
+    let mut next = start;
+    while next < items.len()
+        && output.len()
+            + items[next].len()
+            + selected_file_continuation(next + 1, items.len()).len()
+            <= budget
+    {
+        output.push_str(&items[next]);
+        next += 1;
+    }
+    if next == start {
+        return Err("selected-file complete prerequisite capsule plus whole entry exceeds byte budget; use author:selected-file-resource".to_owned());
+    }
+    output.push_str(&selected_file_continuation(next, items.len()));
     Ok(output)
 }

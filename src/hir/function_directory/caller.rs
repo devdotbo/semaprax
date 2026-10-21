@@ -11,6 +11,10 @@ pub(in crate::hir) fn prepare(program: &ResolvedProgram) -> Result<Directory<'_>
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::FunctionDirectory,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::FunctionDirectory,
+    );
     let count = program.functions.len();
     let bytes = count
         .checked_mul(std::mem::size_of::<Entry<'_>>())

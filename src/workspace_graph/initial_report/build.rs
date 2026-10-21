@@ -223,7 +223,13 @@ pub(in crate::workspace_graph) fn build_owned_inner<E: super::Policy>(
                     layouts.receipt(),
                     fallback_mode,
                 );
-                constructor_failure::attempt::run(active_builder_limit(), || {
+                #[cfg(feature = "unstable-workflow-profiling")]
+                let mut exclusive = crate::bounded_output::exclusive_debits::attempt(
+                    resolve_builder_bytes,
+                    layouts.receipt(),
+                    fallback_mode,
+                );
+                let result = constructor_failure::attempt::run(active_builder_limit(), || {
                     constructor_failure::attempt::reserve(layouts.receipt())?;
                     staged!(
                         CorePrebound,
@@ -259,7 +265,10 @@ pub(in crate::workspace_graph) fn build_owned_inner<E: super::Policy>(
                         )
                     )?;
                     Ok::<_, constructor_failure::receiving::CoreFailure>((core, custody))
-                })
+                });
+                #[cfg(feature = "unstable-workflow-profiling")]
+                exclusive.complete(result.observation_succeeded());
+                result
             });
         let (core, paid_refusal) = core.into_parts();
         #[cfg(test)]

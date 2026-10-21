@@ -2,7 +2,7 @@
 use super::*;
 use std::cell::RefCell;
 #[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
-pub(super) struct Cell {
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) struct Cell {
     pub attempts: usize,
     pub requested: usize,
     pub acquired: usize,
@@ -11,7 +11,7 @@ pub(super) struct Cell {
     pub selection_requested: usize,
 }
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
-pub(super) struct Report {
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) struct Report {
     // [old/current][other/HIR/PLAN][general/unit]
     pub cells: [[[Cell; 2]; 3]; 2],
     pub complete: bool,
@@ -70,10 +70,10 @@ fn add(slot: &mut usize, value: usize, complete: &mut bool) {
         }
     }
 }
-pub(super) struct Observation {
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) struct Observation {
     previous: bool,
 }
-pub(super) fn observe(function: &ResolvedFunction, budget: &ReplayBudget) -> Observation {
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn observe(function: &ResolvedFunction, budget: &ReplayBudget) -> Observation {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         let previous = s.enabled;
@@ -92,7 +92,7 @@ pub(super) fn observe(function: &ResolvedFunction, budget: &ReplayBudget) -> Obs
         Observation { previous }
     })
 }
-pub(super) fn take() -> Report {
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn take() -> Report {
     STATE.with(|s| {
         let mut s = s.borrow_mut();
         if let Some(p) = s.pending.take() {
@@ -818,4 +818,110 @@ fn application_closed_report_stream_preserves_original_unwind_after_fixture_drop
         assert_eq!(writes.get(), 2);
         assert!(!APPLICATION.with(|slot| slot.get().enabled));
     }
+}
+
+// OPT889 diagnostic adapter; original observers and all old bodies stay exact.
+pub(in crate::cleanup_plan::replay::factored::canonical_shared) fn request_inline(
+    unit: bool,
+    warm: bool,
+    function: &ResolvedFunction,
+    budget: &ReplayBudget,
+    bytes: usize,
+) {
+    let old = false;
+    application_request_inline(unit, old, warm, function, budget, bytes);
+    STATE.with(|s| {
+        let mut s = s.borrow_mut();
+        if !s.enabled {
+            return;
+        }
+        if s.report.function != std::ptr::from_ref(function) as usize
+            || s.report.budget != std::ptr::from_ref(budget) as usize
+        {
+            s.report.foreign_observation = true;
+            s.report.complete = false;
+            return;
+        }
+        if s.pending.is_some() {
+            s.report.complete = false;
+            return;
+        }
+        let old = usize::from(!old);
+        let phase = s.phase;
+        let unit = usize::from(unit);
+        let banks = usize::from(old == 0 || !warm);
+        let mut complete = s.report.complete;
+        let c = &mut s.report.cells[old][phase][unit];
+        add(&mut c.attempts, 1, &mut complete);
+        add(&mut c.requested, bytes, &mut complete);
+        if old == 1 {
+            add(&mut c.selection_requested, PER_USE_SELECTION, &mut complete);
+        }
+        s.report.complete = complete;
+        s.pending = Some(Pending {
+            old,
+            phase,
+            unit,
+            bytes,
+            banks,
+        });
+    });
+}
+fn application_request_inline(
+    unit: bool,
+    old: bool,
+    warm: bool,
+    function: &ResolvedFunction,
+    budget: &ReplayBudget,
+    bytes: usize,
+) {
+    APPLICATION.with(|slot| {
+        let mut state = slot.get();
+        if !state.enabled {
+            return;
+        }
+        let old = usize::from(!old);
+        let valid = state.current.is_some_and(|id| {
+            id.old == old
+                && id.serial == state.serial
+                && id.phase == state.phase
+                && id.function == std::ptr::from_ref(function) as usize
+                && id.budget == std::ptr::from_ref(budget) as usize
+        });
+        if !valid || state.suppressed != 0 || state.pending.is_some() {
+            state.lost();
+            slot.set(state);
+            return;
+        }
+        let phase = state.phase;
+        let unit = usize::from(unit);
+        let banks = usize::from(old == 0 || !warm);
+        let c = &mut state.report.cells[old][phase][unit];
+        application_add(
+            &mut c.attempted_entries,
+            1,
+            &mut state.report.complete,
+            &mut state.report.overflowed,
+        );
+        application_add(
+            &mut c.requested,
+            bytes,
+            &mut state.report.complete,
+            &mut state.report.overflowed,
+        );
+        application_add(
+            &mut c.attempted_banks,
+            banks,
+            &mut state.report.complete,
+            &mut state.report.overflowed,
+        );
+        state.pending = Some(Pending {
+            old,
+            phase,
+            unit,
+            bytes,
+            banks,
+        });
+        slot.set(state);
+    });
 }

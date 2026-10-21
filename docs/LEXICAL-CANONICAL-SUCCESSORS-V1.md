@@ -137,3 +137,54 @@ owner unwind. The source-only closed-writer control covers normal return and
 fixture teardown during an unchanged synthetic panic; it does not intercept an
 actual application producer. Missing or truncated report output grants no
 measurement or qualification claim. Execution remains pending.
+
+## Inline singleton Exit candidate (#889)
+
+The separate `canonical_shared::inline_singleton::Canonicalizer` keeps a
+completed one-label group inline until its Exit frame. Empty and multiple-label
+outputs keep their original Vec producer and scheduling continuation. The
+complete immediate Canonicalizer, its helper implementations, tests and tariff
+constants remain compiled independently; a whole immediate comparison caller
+also retains both original HIR and PLAN traversals.
+
+The candidate requires exact equality of the actual old and current Frame
+widths, alignment and constructor invoice. Capacity growth still uses the
+actual Frame type and original push order. It does not buy smaller singleton
+backing by increasing every frame slot. The one-label result is a narrow
+`(u64, &Label, Rc<SmallWeighted>)`. Its label borrow points into the immutable
+automaton held for the complete Canonicalizer lifetime. A miss alone clones the
+label into the final owned signature; the original automaton-owned Rc backing
+cannot die earlier. Both state and child Rc owners retain their old Drop points.
+No wide result enum or runtime callback is introduced. The old zero-byte authentication, full Result transport invoices,
+ordered target accumulation, work charges and checked overflow remain. The
+child Rc on a signature miss dies before arena insertion; a hit retains the
+whole row through state insertion, matching the old Vec teardown order.
+
+New selectors, retained primitive sites, actual output/row/borrow receivers,
+miss-clone arguments/results and explicit vector-continuation Drop boundaries
+are charged before formation. All vector branches converge lexically on one
+scheduling body. The earlier owned-label candidate's eight extra growth-site
+invoice remains an independent historical constant; the live implementation
+has two extra growth sites. Their complete headers are acquired at root
+admission. Direct branch assignments use the original producer-output/caller
+scalar and Vec receiving places, with every original transport fee retained.
+Legacy field-place assignment consumes the original returned Some payload; it
+constructs no additional tuple. No initialized Option, extra Vec alias,
+predicate or callback carries the continuation.
+The fixed diagnostic census records actual completed arities and reached
+vector Drop sites. It grants no authority. Empty, cold and multiple-label
+inputs can cost more; their old invoices must not be padded to report savings.
+The long-singleton owner asserts its full old-minus-current typed equation,
+positive net debit and fewer physical allocations at the unchanged 64 MiB cap.
+That gate is authored and unrun: no layout, gain, application-fit or performance
+claim follows from this source checkpoint. An unsuccessful gate rejects the
+shipping replacement rather than changing the cap or its old baseline.
+
+Focused owners additionally compare every signature/state and real frame
+capacity, distinct equal observations, cycles and arithmetic overflow, all
+small work cuts with six diagnostic fields, foreign and restored ledger
+custody, exact/short/zero/floor refusal, and complete Drop. The complete ordinary
+comparison pays production skeleton preflight inside the same measured payer
+on both sides. Source custody joins and actual qualification belong to the
+combined batch; older source controls and generation-specific equations remain
+required.

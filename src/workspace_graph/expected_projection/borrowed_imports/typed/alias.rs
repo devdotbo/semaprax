@@ -207,7 +207,13 @@ pub(in crate::workspace_graph) fn construct_transient<'p>(
                 crate::vec_ops::source_wrapper(provider, original).is_some()
                     || crate::box_ops::source_wrapper(provider, original).is_some()
             });
-        owner.reserve(2 * std::mem::size_of::<bool>())?;
+        owner.reserve(
+            2 * std::mem::size_of::<bool>()
+                + 3 * std::mem::size_of::<bool>()
+                + 2 * std::mem::size_of::<&Vec<crate::ast::SessionProtocolDeclaration>>()
+                + 2 * std::mem::size_of::<&Vec<crate::ast::AgentDeclaration>>()
+                + 2 * std::mem::size_of::<&Vec<crate::ast::ProtocolDeclaration>>(),
+        )?;
         // Raw byte-helper proof memo/cursors have ordinary payload subjects.
         // A Bytes-returning alias must retain the complete owning producer.
         if retain_body && !owning_invariants && original.return_type != Type::Bytes {
@@ -243,6 +249,86 @@ pub(in crate::workspace_graph) fn construct_transient<'p>(
                 entries.push(FunctionEntry::Borrowed(view));
                 #[cfg(test)]
                 crate::workspace_graph::constructor_failure::typed::before_function_alias_core::borrowed_entry();
+                continue;
+            }
+        }
+        // Ordinary scalar signatures keep provider-owned metadata and the exact
+        // finite default. Every argument/formal/output, check, iterator and
+        // reached bounded scan role is admitted before constructing the view.
+        if !retain_body
+            && !owning_invariants
+            && program.session_protocols.is_empty()
+            && program.agents.is_empty()
+            && program.protocols.is_empty()
+        {
+            use crate::ast::program_source::function_alias::scalar_signature::ScalarSignature;
+            use std::mem::size_of;
+            owner.reserve(
+                4 * size_of::<&Program>()
+                    + 4 * size_of::<&Function>()
+                    + 4 * size_of::<&str>()
+                    + 2 * size_of::<&String>()
+                    + size_of::<ScalarSignature<'p>>()
+                    // The former outer Signature binding is consumed as its
+                    // exact view field; same lifetime and publication boundary.
+                    + size_of::<FunctionView<'p>>()
+                    + 2 * size_of::<Option<ScalarSignature<'p>>>()
+                    + size_of::<FunctionView<'p>>()
+                    + size_of::<FunctionEntry<'p>>()
+                    + size_of::<std::slice::Iter<'_, Program>>()
+                    + size_of::<std::slice::Iter<'_, crate::ast::Param>>()
+                    + size_of::<&Vec<crate::ast::TypeParameterDeclaration>>()
+                    + size_of::<&Vec<crate::ast::Param>>()
+                    + 10 * size_of::<bool>()
+                    + 2 * size_of::<&Option<crate::ast::YieldsClause>>()
+                    + 2 * size_of::<&Option<Box<crate::ast::SessionProtocolFollowsClause>>>()
+                    + original.params.len()
+                        * (size_of::<Option<&crate::ast::Param>>()
+                            + size_of::<&crate::ast::Param>()
+                            + 2 * size_of::<bool>())
+                    + size_of::<Option<&crate::ast::Param>>(),
+            )?;
+            let mut providers = programs.iter();
+            let provider = loop {
+                owner.reserve(
+                    2 * size_of::<&mut std::slice::Iter<'_, Program>>()
+                        + 2 * size_of::<Option<&Program>>()
+                        + 2 * size_of::<&Program>()
+                        + 2 * size_of::<&String>()
+                        + 2 * size_of::<&str>()
+                        + size_of::<bool>(),
+                )?;
+                match providers.next() {
+                    Some(candidate) if candidate.module == target.module => break candidate,
+                    Some(_) => {}
+                    None => unreachable!("validated function target has its provider"),
+                }
+            };
+            owner.reserve(
+                size_of::<std::slice::Iter<'_, Function>>()
+                    + 2 * size_of::<&Vec<Function>>()
+                    + provider.functions.len()
+                        * (size_of::<Option<&Function>>()
+                            + 2 * size_of::<&Function>()
+                            + 2 * size_of::<*const Function>()
+                            + 2 * size_of::<bool>())
+                    + size_of::<Option<&Function>>(),
+            )?;
+            if let Some(ScalarSignature { view }) =
+                ScalarSignature::checked(provider, original, &import.alias)
+            {
+                // Keep original proof-current checks and their ordering even
+                // though primitive defaults cannot consume either permission.
+                let _owned =
+                    super::super::super::super::owned_function_import::admitted_with_layout(
+                        program, target, authored, programs, &layout,
+                    );
+                let _bytes = byte_proofs
+                    .get()
+                    .map_err(Failure::one)?
+                    .authorized(original, target.module)
+                    .map_err(Failure::one)?;
+                entries.push(FunctionEntry::Borrowed(view));
                 continue;
             }
         }

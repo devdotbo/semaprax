@@ -14,6 +14,13 @@ pub(crate) enum CompilerDeclaration {
     VecOperation(crate::vec_ops::VecOp),
     BoxOperation(crate::box_ops::BoxOp),
     StdinInspection(crate::stdin_stream_ops::PureOp),
+    StrOperation(crate::str_ops::StrOp),
+    ByteOperation(crate::byte_ops::ByteOp),
+    HostIoOperation(crate::host_io_ops::HostIoOp),
+    IterYield,
+    IterDone,
+    IterItem,
+    IterRest,
     Box,
     Option,
     OptionNone,
@@ -62,6 +69,13 @@ impl CompilerDeclaration {
             Self::VecOperation(op) => op.id(),
             Self::BoxOperation(op) => op.id(),
             Self::StdinInspection(op) => op.id(),
+            Self::StrOperation(op) => op.id(),
+            Self::ByteOperation(op) => op.id(),
+            Self::HostIoOperation(op) => op.id(),
+            Self::IterYield => crate::iterator_ops::YIELD_ID,
+            Self::IterDone => crate::iterator_ops::DONE_ID,
+            Self::IterItem => crate::iterator_ops::ITEM_ID,
+            Self::IterRest => crate::iterator_ops::REST_ID,
             Self::Box => crate::prelude::BOX_ID,
             Self::Option => crate::prelude::OPTION_ID,
             Self::OptionNone => crate::prelude::OPTION_NONE_ID,
@@ -105,3 +119,4 @@ impl CompilerDeclaration {
 // These existing owned-call sites formerly received an &str into new(). The
 // closed enum replaces that receiver; it introduces no larger call carrier.
 const _: () = assert!(std::mem::size_of::<CompilerDeclaration>() <= std::mem::size_of::<&str>());
+const _: () = assert!(std::mem::align_of::<CompilerDeclaration>() <= std::mem::align_of::<&str>());

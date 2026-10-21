@@ -437,25 +437,23 @@ pub(super) fn check_function_declarations<'p>(
                 diagnostics.push(diagnostic);
             }
             let invalid_contract = function
-                .payload()
-                .requires
+                .requires()
                 .iter()
-                .chain(&function.payload().ensures)
+                .chain(function.ensures())
                 .any(|expression| !generic_function_expression_is_direct_scalar(expression));
-            let invalid_body =
-                !crate::source_verify::declared_type::generic_variant::body(
+            let invalid_body = !crate::source_verify::declared_type::generic_variant::body(
+                function.payload(),
+                types,
+                function.body(),
+            ) && !generic_result::body(function.payload(), function.body())
+                && !generic_function_expression_is_direct_scalar(function.body())
+                && !generic_function_expression_is_owned_record_composition(
                     function.payload(),
                     types,
-                    &function.payload().body,
-                ) && !generic_result::body(function.payload(), &function.payload().body)
-                    && !generic_function_expression_is_direct_scalar(&function.payload().body)
-                    && !generic_function_expression_is_owned_record_composition(
-                        function.payload(),
-                        types,
-                        &function.payload().body,
-                    );
+                    function.body(),
+                );
             let invalid_body = invalid_body && !(crate::source_verify::generic_collection_profile(function.payload())
-                && crate::source_verify::declared_type::generic_collection_expression_is_admitted(&function.payload().body));
+                && crate::source_verify::declared_type::generic_collection_expression_is_admitted(function.body()));
             if invalid_contract || invalid_body {
                 diagnostics.push(error(
                     program,
@@ -491,11 +489,10 @@ pub(super) fn check_generic_function_cycles_with_types<'p>(
             .map(|parameter| (parameter.name.clone(), static_binding(parameter.ty.clone())))
             .collect::<HashMap<_, _>>();
         for expression in function
-            .payload()
-            .requires
+            .requires()
             .iter()
-            .chain(std::iter::once(&function.payload().body))
-            .chain(&function.payload().ensures)
+            .chain(std::iter::once(function.body()))
+            .chain(function.ensures())
         {
             check_omitted_generic_mappings(
                 program,
@@ -1011,9 +1008,14 @@ pub(super) fn check_function_bodies<'p>(
     } = output;
     let byte_helpers = crate::loop_calls::byte_writer::SourceIndex::new(program);
     let function_value_targets =
-        crate::source_verify::function_value_inventory::function_value_targets(program, functions);
+        crate::source_verify::function_value_inventory::function_value_targets_in(
+            &cells[..program.functions().len()],
+            functions,
+        );
     for (_, template) in cells.iter().take(program.functions().len()) {
-        reject_function(program, template.payload(), types, diagnostics);
+        if let Some(payload) = template.classifier_payload() {
+            reject_function(program, payload, types, diagnostics);
+        }
         let type_parameters = template
             .payload()
             .type_parameters
@@ -1220,7 +1222,7 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
 
-            for contract in &function.payload().requires {
+            for contract in function.requires() {
                 contract.visit_calls(&mut |callee, span| {
                     if crate::host_io_ops::by_name(callee).is_some() {
                         diagnostics.push(error(
@@ -1256,7 +1258,7 @@ pub(super) fn check_function_bodies<'p>(
             let (body_value, refusal_view) = check_expr_with_signature_cell(
                 program,
                 function,
-                &function.payload().body,
+                function.body(),
                 &mut variables,
                 functions,
                 types,
@@ -1269,12 +1271,7 @@ pub(super) fn check_function_bodies<'p>(
             );
             if let Some(actual) = body_value {
                 if actual.native_unit {
-                    reject_native_unit_value(
-                        program,
-                        &function.payload().body,
-                        &actual,
-                        diagnostics,
-                    );
+                    reject_native_unit_value(program, function.body(), &actual, diagnostics);
                 }
                 if !actual.native_unit
                     && actual.ty != Type::Never
@@ -1298,7 +1295,7 @@ pub(super) fn check_function_bodies<'p>(
                                 &function.payload().return_type
                             )
                         ),
-                        function.payload().body.span,
+                        function.body().span,
                     ));
                 }
                 if actual.ty != Type::Never
@@ -1315,7 +1312,7 @@ pub(super) fn check_function_bodies<'p>(
                                 function.name(),
                                 actual.mode.text()
                             ),
-                            function.payload().body.span,
+                            function.body().span,
                         )
                         .with_help(
                             "return an owned resource or declare a future lifetime-bound view",
@@ -1324,7 +1321,7 @@ pub(super) fn check_function_bodies<'p>(
                 }
             }
 
-            for contract in &function.payload().ensures {
+            for contract in function.ensures() {
                 contract.visit_calls(&mut |callee, span| {
                     if crate::host_io_ops::by_name(callee).is_some() {
                         diagnostics.push(error(
@@ -1372,8 +1369,8 @@ pub(super) fn check_function_bodies<'p>(
             }
             required_lifecycle_effects
                 .extend(types.lifecycle_effects(&function.payload().return_type, import_keys));
-            for callee in crate::source_verify::function_value_inventory::calls(
-                function.payload(),
+            for callee in crate::source_verify::function_value_inventory::calls_ref(
+                function,
                 functions,
                 &function_value_targets,
             ) {
@@ -1408,12 +1405,12 @@ pub(super) fn check_function_bodies<'p>(
                     ));
                 }
             }
-            for callee in crate::source_verify::function_value_inventory::calls(
-                function.payload(),
+            for callee in crate::source_verify::function_value_inventory::calls_ref(
+                function,
                 functions,
                 &function_value_targets,
             ) {
-                let span = function.payload().body.span;
+                let span = function.body().span;
                 if let Some(effect) = crate::string_ops::by_name(&callee)
                     .and_then(crate::string_ops::StringOp::effect)
                 {

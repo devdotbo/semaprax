@@ -1,5 +1,20 @@
 //! Fixed complete before/current witness for the retained-tail mechanism.
 //! This is an explicit semantic transformation witness, separate from formatting.
+pub(super) fn prepared_owner_stage(current: &str) -> String {
+    crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "41cb2cf4267b055c3aee09c6a6bb143da182c28a6b583524ca7608e590133c10",
+        current,
+    )
+}
+pub(super) fn prepared_tail_stage(current: &str) -> String {
+    crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source.rs",
+        "1b4fe517fc67c10d948bde00946cb17bf88c84b0f6c333d2b365851b28f22d37",
+        current,
+    )
+}
+
 fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> String {
     assert_eq!(
         current.len(),
@@ -31,7 +46,11 @@ pub(super) fn previous(current: &str) -> String {
     previous_stage(&prepared_links::previous_macro(current))
 }
 pub(super) fn previous_owner(current: &str) -> String {
-    restore(&prepared_links::previous_owner(current), 21817, OWNER)
+    restore(
+        &prepared_links::previous_owner(&prepared_owner_stage(current)),
+        21817,
+        OWNER,
+    )
 }
 #[rustfmt::skip]
 const MACRO: &[(usize, &str, &str)] = &[

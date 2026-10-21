@@ -351,6 +351,7 @@ mod refusal_tests;
     dead_code,
     reason = "complete independent original diagnostic renderer"
 )]
+#[rustfmt::skip]
 mod before_writer;
 /// Shared borrowed diagnostic output; caller storage remains ordinary output.
 pub mod writer;

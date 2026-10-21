@@ -3,6 +3,9 @@
 pub(crate) trait DeclarationDirectory<T> {
     fn len(&self) -> usize;
     fn get(&self, index: usize) -> Option<&T>;
+    fn profile_get(&self, index: usize) -> Option<&T> {
+        self.get(index)
+    }
 }
 pub(crate) enum DeclSlices<'a, T> {
     Ordinary {
@@ -227,3 +230,72 @@ mod alias_tests;
 #[cfg(test)]
 #[path = "decl_slices/before_alias.rs"]
 mod before_alias;
+
+/// Feature-only projection. The complete metadata/HIR directory is unchanged.
+/// A checked scalar signature contributes false to every prelude predicate.
+/// This has exactly the original iterator's fields and transports its original
+/// Option<&Function>; it introduces no row presentation or fallible scan ABI.
+pub(crate) struct ProfileIter<'a> {
+    view: DeclSlices<'a, crate::ast::Function>,
+    front: usize,
+    back: usize,
+}
+impl<'a> DeclSlices<'a, crate::ast::Function> {
+    pub(crate) fn profile_iter(&self) -> ProfileIter<'a> {
+        ProfileIter {
+            view: match self {
+                Self::Ordinary {
+                    authored,
+                    indices,
+                    generated,
+                } => Self::Ordinary {
+                    authored,
+                    indices: *indices,
+                    generated,
+                },
+                Self::Projected {
+                    authored,
+                    directory,
+                    start,
+                } => Self::Projected {
+                    authored,
+                    directory: *directory,
+                    start: *start,
+                },
+            },
+            front: 0,
+            back: self.len(),
+        }
+    }
+}
+impl<'a> Iterator for ProfileIter<'a> {
+    type Item = &'a crate::ast::Function;
+    fn next(&mut self) -> Option<Self::Item> {
+        while self.front < self.back {
+            // This is the original get() receiver/field-loan boundary, moved
+            // into next, with the original output Option. The caller's Some
+            // pattern/false-predicate continuation is consumed here for an
+            // exact finite scalar; no new row view or index tuple is formed.
+            let next = match &self.view {
+                DeclSlices::Projected {
+                    authored,
+                    directory,
+                    start,
+                } if self.front >= authored.len() => {
+                    directory.profile_get(start + self.front - authored.len())
+                }
+                _ => self.view.get(self.front),
+            };
+            self.front += 1;
+            match next {
+                None => continue,
+                _ => return next,
+            }
+        }
+        None
+    }
+    fn size_hint(&self) -> (usize, Option<usize>) {
+        (0, Some(self.back - self.front))
+    }
+}
+impl std::iter::FusedIterator for ProfileIter<'_> {}

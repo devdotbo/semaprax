@@ -1,6 +1,15 @@
 //! Closed final-batch historical acquisition. No production authority or raw-audit projection.
 #[path = "main_e177_overlay_v2.rs"]
 mod overlay_v2;
+#[macro_use]
+#[path = "main_e177_historical_data.rs"]
+mod historical_json_data;
+#[cfg(test)]
+#[path = "main_e177_historical_before_data.rs"]
+mod historical_before_data;
+#[path = "main_e177_packet_lookup.rs"]
+mod packet_lookup;
+pub(crate) use packet_lookup::ProjectionInvocation;
 use sha2::{Digest, Sha256};
 use std::path::Path;
 const SOURCE_CAP: usize = 9753094;
@@ -15,10 +24,11 @@ fn packet_before_overlay() -> serde_json::Value {
     let base=packet_fmt433();
     let data=include_str!("../../docs/evidence/fmt-local-441-20261018/extension.json");
     assert!(data.len()<=262144);
-    assert_eq!((data.len(),digest(data.as_bytes())),(262076,"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6".to_owned()));
+    let compiled_digest = digest(data.as_bytes());
+    assert_eq!((data.len(),compiled_digest.clone()),(262076,"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6".to_owned()));
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&digest(data.as_bytes())).unwrap(),data);
-    let ext:serde_json::Value=serde_json::from_str(data).unwrap();
+    assert_eq!(held(&root.join("docs/evidence/fmt-local-441-20261018/extension.json"),data.len(),&compiled_digest).unwrap(),data);
+    let ext:serde_json::Value=historical_json!(data).unwrap();
     assert_eq!(ext["schema"],"semaprax.fmt433-local133-extension.v1");
     assert_eq!(ext["base_sha256"],"de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc");
     assert_eq!(ext["compiled_upgrades"],serde_json::json!(["src/cleanup_plan/replay/factored/canonical_shared/receiving_layer_tests.rs"]));
@@ -44,7 +54,7 @@ fn packet_before_overlay() -> serde_json::Value {
     let local_data=include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
     assert_eq!((local_data.len(),digest(local_data.as_bytes())),(123158,"319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045".to_owned()));
     assert_eq!(read_view(&ext["whole_local133"]),local_data,"whole local133 physical/compiled anchor");
-    let local=packet_local133();assert_eq!(local,serde_json::from_str::<serde_json::Value>(local_data).unwrap(),"entire original133 loader replay");assert_eq!(local["rows"].as_array().unwrap().len(),133);
+    let local=packet_local133();assert_eq!(local,historical_json!(local_data).unwrap(),"entire original133 loader replay");assert_eq!(local["rows"].as_array().unwrap().len(),133);
     for prior in local["rows"].as_array().unwrap(){
         let row=rows.iter().find(|r|r["source"]==prior["source"]).unwrap();assert_eq!(row["compiled"],prior["compiled"]);
         let views=row["views"].as_array().unwrap();assert!(prior["views"].as_array().unwrap().iter().all(|v|views.contains(v)));
@@ -58,17 +68,18 @@ fn packet_before_overlay() -> serde_json::Value {
 fn packet_local133() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt");
     assert_eq!(data.len(), 123158);
-    assert_eq!(digest(data.as_bytes()), "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045");
+    let compiled_digest = digest(data.as_bytes());
+    assert_eq!(compiled_digest, "319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045");
     let root=Path::new(env!("CARGO_MANIFEST_DIR"));
-    let physical=held(&root.join("docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt"),data.len(),&digest(data.as_bytes())).unwrap();
+    let physical=held(&root.join("docs/evidence/fmt-local-441-20261018/whole/319ad85e33b0a6b384b9b4c7eeb10753cd321113bb048b27469c33c0ab7cc045.txt"),data.len(),&compiled_digest).unwrap();
     assert_eq!(physical,data,"complete physical and compiled current manifest");
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 133);
     {
-    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let packet: serde_json::Value = historical_json!(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
     {
-    let packet: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
+    let packet: serde_json::Value = historical_json!(&read_view(&packet["whole_current99_before"])).unwrap();
     let before=read_view(&packet["immediate_before"]);
     let mut restored=packet.clone();
     let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
@@ -78,10 +89,10 @@ fn packet_local133() -> serde_json::Value {
     assert_eq!(previous["name"],"whole886-next-big");
     previous.as_object_mut().unwrap().remove("name");route["current"]=previous;
     restored.as_object_mut().unwrap().remove("immediate_before");
-    assert_eq!(restored,serde_json::from_str::<serde_json::Value>(&before).unwrap(),"complete original98 source table retained");
+    assert_eq!(restored,historical_json!(&before).unwrap(),"complete original98 source table retained");
     }
     {
-    let previous: serde_json::Value = serde_json::from_str(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
+    let previous: serde_json::Value = historical_json!(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
     let mut restored=packet.clone();
     let added=restored["rows"].as_array_mut().unwrap().pop().unwrap();
     assert_eq!(added["source"], "src/workspace_graph/tests.rs");
@@ -98,7 +109,7 @@ fn packet_local133() -> serde_json::Value {
     let _remote = packet_remote_d88();
     }
     {
-    let previous:serde_json::Value=serde_json::from_str(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
+    let previous:serde_json::Value=historical_json!(&read_view(&packet["whole_current124_before_fixture_repairs"])).unwrap();
     let mut restored=packet.clone();
     restored["rows"]=previous["rows"].clone();
     restored["complete_old_table_anchors"]=previous["complete_old_table_anchors"].clone();
@@ -149,8 +160,9 @@ fn packet_fmt433() -> serde_json::Value {
         "../../docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"
     );
     assert_eq!(data.len(), 260977);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "de6103a37cb677be139de99b4a945ddf2d588b5292a01ca058715b3d7f8734dc"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -158,13 +170,13 @@ fn packet_fmt433() -> serde_json::Value {
         held(
             &root.join("docs/evidence/main-e177-final-source-binding-20261017/current-inputs.json"),
             data.len(),
-            &digest(data.as_bytes())
+            &compiled_digest
         )
         .unwrap(),
         data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["source_cap"].as_u64(), Some(SOURCE_CAP as u64));
     let rows = packet["rows"].as_array().unwrap();
@@ -234,8 +246,9 @@ fn packet_a110() -> serde_json::Value {
         "../../docs/evidence/fmt-a110/packet-wV4m7PTunyjrIa8VFcfB0eaqPxmD03tBMXOGHXLXakY.json.txt"
     );
     assert_eq!(data.len(), 112949);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "c15e26ecf4ee9f28eb21af1515c7c1d1e6aa3f1983d37b413173861d72d76a46"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -244,19 +257,19 @@ fn packet_a110() -> serde_json::Value {
             "docs/evidence/fmt-a110/packet-wV4m7PTunyjrIa8VFcfB0eaqPxmD03tBMXOGHXLXakY.json.txt",
         ),
         data.len(),
-        &digest(data.as_bytes()),
+        &compiled_digest,
     )
     .unwrap();
     assert_eq!(
         physical, data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 124);
     {
         let packet: serde_json::Value =
-            serde_json::from_str(&read_view(&packet["whole_current99_before"])).unwrap();
+            historical_json!(&read_view(&packet["whole_current99_before"])).unwrap();
         let before = read_view(&packet["immediate_before"]);
         let mut restored = packet.clone();
         let added = restored["rows"].as_array_mut().unwrap().pop().unwrap();
@@ -277,13 +290,13 @@ fn packet_a110() -> serde_json::Value {
         restored.as_object_mut().unwrap().remove("immediate_before");
         assert_eq!(
             restored,
-            serde_json::from_str::<serde_json::Value>(&before).unwrap(),
+            historical_json!(&before).unwrap(),
             "complete original98 source table retained"
         );
     }
     {
         let previous: serde_json::Value =
-            serde_json::from_str(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
+            historical_json!(&read_view(&packet["whole_3bf_current123_before"])).unwrap();
         let mut restored = packet.clone();
         let added = restored["rows"].as_array_mut().unwrap().pop().unwrap();
         assert_eq!(added["source"], "src/workspace_graph/tests.rs");
@@ -332,13 +345,14 @@ fn packet_a110() -> serde_json::Value {
 fn packet_remote_d88() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt");
     assert_eq!(data.len(), 68224);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &digest(data.as_bytes())).unwrap(), data, "complete physical and compiled current manifest");
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    assert_eq!(held(&root.join("docs/evidence/main-e177-final-source-binding-20261017/views/f3591ff220c338d79adaa9106b347daef4bea5b4227ef47063d58dabdeade469.txt"), data.len(), &compiled_digest).unwrap(), data, "complete physical and compiled current manifest");
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     let mut restored = packet.clone();
     let row = restored["rows"].as_array_mut().unwrap().iter_mut().find(|row| row["source"] == "src/cleanup_plan/replay/factored/canonical_shared/before_lexical_successors/compare.rs").unwrap();
     let mut previous = row["views"].as_array_mut().unwrap().pop().unwrap();
@@ -355,17 +369,18 @@ fn packet_remote_d88() -> serde_json::Value {
 fn packet_previous_remote_d88() -> serde_json::Value {
     let data = include_str!("../../docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt");
     assert_eq!(data.len(), 84171);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
-    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&digest(data.as_bytes())).unwrap();
+    let physical=held(&root.join("docs/evidence/ci-msrv-parent-import-20261018/whole/3384be6e49144e547e28e613294b2aa53aa8b538acb9cfd84b3dd003a9126a71.txt"),data.len(),&compiled_digest).unwrap();
     assert_eq!(
         physical, data,
         "complete physical and compiled current manifest"
     );
-    let packet: serde_json::Value = serde_json::from_str(data).unwrap();
+    let packet: serde_json::Value = historical_json!(data).unwrap();
     assert_eq!(packet["schema"], "semaprax.main-e177-final-whole-inputs.v1");
     assert_eq!(packet["rows"].as_array().unwrap().len(), 99);
     let before = read_view(&packet["immediate_before"]);
@@ -388,7 +403,7 @@ fn packet_previous_remote_d88() -> serde_json::Value {
     restored.as_object_mut().unwrap().remove("immediate_before");
     assert_eq!(
         restored,
-        serde_json::from_str::<serde_json::Value>(&before).unwrap(),
+        historical_json!(&before).unwrap(),
         "complete original98 source table retained"
     );
     for anchor in packet["complete_old_table_anchors"].as_array().unwrap() {
@@ -780,10 +795,14 @@ fn actual(row: &serde_json::Value) -> String {
     value
 }
 pub(crate) fn registered_file(source: &str, expected: &str, cap: usize) -> Option<String> {
-    overlay_v2::registered_file(source, expected, cap)
+    packet_lookup::registered_file(source, expected, cap)
 }
 
 pub(crate) fn file(path: &Path, length: usize, expected: &str) -> Option<String> {
+    ProjectionInvocation::new().file(path, length, expected)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn file_before_nested_context(path: &Path, length: usize, expected: &str) -> Option<String> {
     if let Some(Ok(value)) = clippy_stage::read(path, length, expected) {
         let _ = packet();
         return Some(value);
@@ -815,54 +834,14 @@ fn file_4a6eb(path: &Path, length: usize, expected: &str) -> Option<String> {
     Some(read_view(prior))
 }
 pub(crate) fn value(source: &str, expected: &str, supplied: &str) -> String {
-    // Current and prior logical-table views retain their complete scope before
-    // the separately authenticated historical Clippy-stage acquisition.
-    let direct = value_4a6eb(source, expected, supplied);
-    if digest(direct.as_bytes()) == expected {
-        return direct;
-    }
-    if let Some(value) = clippy_stage::requested(source, expected, supplied) {
-        let _ = packet();
-        return value;
-    }
-    let normalized = clippy_stage::normalize(source, supplied);
-    let result = value_4a6eb(source, expected, normalized.as_ref());
-    if normalized.as_ref() != supplied
-        && result == normalized.as_ref()
-        && digest(result.as_bytes()) != expected
-    {
-        supplied.to_owned()
-    } else {
-        result
-    }
+    ProjectionInvocation::new().value(source, expected, supplied)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn value_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {
+    packet_lookup::with_packet(&packet(), source, expected, supplied)
 }
 fn value_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
-    let packet = packet();
-    let Some(row) = packet["rows"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|r| r["source"] == source)
-    else {
-        return crate::source_reflows_merge::next_big_batch_inputs::value_local(
-            source, expected, supplied,
-        );
-    };
-    let Some(prior) = row["views"]
-        .as_array()
-        .unwrap()
-        .iter()
-        .find(|v| v["sha256"] == expected)
-    else {
-        return supplied.to_owned();
-    };
-    let current = actual(row);
-    let previous = read_view(prior);
-    if supplied == current || supplied == previous {
-        previous
-    } else {
-        supplied.to_owned()
-    }
+    packet_lookup::from_packet(&packet(), source, expected, supplied)
 }
 #[test]
 fn latest_main_and_afa_complete_views_preserve_all_prior_controls_and_refuse_wrong_stages() {
@@ -905,8 +884,9 @@ fn combined_side_packet() -> serde_json::Value {
         "../../docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"
     );
     assert_eq!(data.len(), 18033);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "c185ed85f164ff3295e55d29d69e47de8616d3a582ffe359abb959b5d693713c"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
@@ -915,7 +895,7 @@ fn combined_side_packet() -> serde_json::Value {
             &root
                 .join("docs/evidence/next-large-side-source-composition-20261017/side-inputs.json"),
             data.len(),
-            &digest(data.as_bytes())
+            &compiled_digest
         )
         .unwrap(),
         data
@@ -1081,9 +1061,11 @@ fn combined_785_885_and_projection_carriers_authenticate_each_whole_side_before_
 // Nondelegating entry for the older owner's compiled-channel normalization.
 // Membership is tested before calling the public delegating route.
 pub(crate) fn value_direct(source: &str, expected: &str, supplied: &str) -> String {
-    // The closed member's public route selects the exact requested view before
-    // attempting any older Clippy projection. Foreign subjects never delegate.
-    value_direct_4a6eb(source, expected, supplied)
+    ProjectionInvocation::new().value_direct(source, expected, supplied)
+}
+#[allow(dead_code, reason = "Invocable complete predecessor acquisition route")]
+fn value_direct_before_nested_context(source: &str, expected: &str, supplied: &str) -> String {
+    overlay_v2::value_direct(source, expected, supplied)
 }
 
 fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
@@ -1094,7 +1076,7 @@ fn value_direct_4a6eb(source: &str, expected: &str, supplied: &str) -> String {
         .iter()
         .any(|row| row["source"] == source)
     {
-        value(source, expected, supplied)
+        packet_lookup::with_packet(&current, source, expected, supplied)
     } else {
         supplied.to_owned()
     }
@@ -1490,4 +1472,9 @@ fn complete_current_compiled_sources_precede_strict_historical_stage_acquisition
         assert!(clippy_stage::requested(source, &expected, &foreign).is_none());
         assert!(clippy_stage::requested(source, &"0".repeat(64), compiled).is_none());
     }
+}
+
+#[test]
+fn registered_digest_reads_keep_current_history_and_each_original_file_bound() {
+    packet_lookup::registered_digest_reads_keep_current_history_and_each_original_file_bound();
 }

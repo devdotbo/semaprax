@@ -157,8 +157,10 @@ use function @id("alias.current.value") from alias.current as current;
     };
     // No preparatory build/cache warming: each side performs its actual full
     // Project preflight, core selection, source retention, graph and admission.
-    let (old, old_borrowed) = super::parity_run(true, build);
-    let (current, current_borrowed) = super::parity_run(false, build);
+    let ((old, old_borrowed), old_components) =
+        super::component_run(|| super::parity_run(true, build));
+    let ((current, current_borrowed), current_components) =
+        super::component_run(|| super::parity_run(false, build));
     assert_eq!(old_borrowed, 0);
     assert!(
         current_borrowed > 0,
@@ -187,13 +189,73 @@ use function @id("alias.current.value") from alias.current as current;
             .collect::<Vec<_>>()
     };
     assert_eq!(facts(&old), facts(&current));
-    assert_eq!(old.semantic_graph(), current.semantic_graph());
-    assert_eq!(old.semantic_graph_digest(), current.semantic_graph_digest());
+    // The graph owns its real resource usage. Calibrate the complete changed
+    // constructor/retention component independently of that published total;
+    // every debit outside it must remain exactly equal. No field is discarded.
+    assert_eq!(old_components.len, current_components.len);
+    let mut old_core = 0usize;
+    let mut current_core = 0usize;
+    for (before, after) in old_components.rows[..old_components.len]
+        .iter()
+        .zip(&current_components.rows[..current_components.len])
+    {
+        assert_eq!(before.inputs, 4, "all four real authenticated modules");
+        assert_eq!(
+            (before.inputs, before.identity, before.compact),
+            (after.inputs, after.identity, after.compact)
+        );
+        assert!(before.finished && after.finished);
+        old_core = old_core.checked_add(before.bytes).unwrap();
+        current_core = current_core.checked_add(after.bytes).unwrap();
+    }
+    let old_graph: serde_json::Value = serde_json::from_str(old.semantic_graph()).unwrap();
+    let current_graph: serde_json::Value = serde_json::from_str(current.semantic_graph()).unwrap();
+    let old_used =
+        usize::try_from(old_graph["budget"]["used_builder_bytes"].as_u64().unwrap()).unwrap();
+    let current_used = usize::try_from(
+        current_graph["budget"]["used_builder_bytes"]
+            .as_u64()
+            .unwrap(),
+    )
+    .unwrap();
+    let outside = old_used.checked_sub(old_core).unwrap();
+    assert_eq!(current_used.checked_sub(current_core), Some(outside));
+    assert!(
+        current_core < old_core,
+        "the real borrowed-alias fixture must save complete component debits"
+    );
+    let expected_used = outside.checked_add(current_core).unwrap();
+    let expected_graph = calibrated_graph(
+        old.semantic_graph(),
+        old.semantic_graph_digest(),
+        old_used,
+        expected_used,
+    );
+    assert_eq!(expected_graph.0, current.semantic_graph());
+    assert_eq!(expected_graph.1, current.semantic_graph_digest());
+    let roundtrip = calibrated_graph(
+        current.semantic_graph(),
+        current.semantic_graph_digest(),
+        current_used,
+        old_used,
+    );
+    assert_eq!(roundtrip.0, old.semantic_graph());
+    assert_eq!(roundtrip.1, old.semantic_graph_digest());
     let old_image = ProjectSemanticImage::derive(Arc::clone(&old), old.project_revision()).unwrap();
     let current_image =
         ProjectSemanticImage::derive(Arc::clone(&current), current.project_revision()).unwrap();
-    assert_eq!(old_image.to_json(), current_image.to_json());
-    assert_eq!(old_image.image_digest(), current_image.image_digest());
+    let expected_image =
+        calibrated_image(old_image.to_json(), &expected_graph.0, &expected_graph.1);
+    assert_eq!(expected_image.0, current_image.to_json());
+    assert_eq!(expected_image.1, current_image.image_digest());
+    let old_roundtrip = calibrated_image(
+        current_image.to_json(),
+        old.semantic_graph(),
+        old.semantic_graph_digest(),
+    );
+    assert_eq!(old_roundtrip.0, old_image.to_json());
+    assert_eq!(old_roundtrip.1, old_image.image_digest());
+    eprintln!("847 independent full-core component old/current={old_core}/{current_core} unchanged_outside={outside} published_old/current={old_used}/{current_used}; measured component equation, no application-fit or shipping-allocation claim");
     eprintln!("847 actual borrowed Project parity entries={current_borrowed} graph={} image={} graph_bytes={} image_bytes={}",
         current.semantic_graph_digest(), current_image.image_digest(), current.semantic_graph().len(), current_image.to_json().len());
     drop((old_image, current_image, old, current));
@@ -228,4 +290,42 @@ use function @id("alias.current.value") from alias.current as current;
     assert_eq!(errors[0].path, expected.path);
     assert_eq!(errors[0].span, expected.span);
     assert_eq!(errors[0].help, expected.help);
+}
+
+// The exact compiler graph ordering is retained, including every budget field.
+// Only the independently calibrated total changes; the ordinary digest domain
+// rebinds the complete resulting payload. No semantic field is normalized.
+fn calibrated_graph(graph: &str, digest: &str, old: usize, new: usize) -> (String, String) {
+    let identity = format!(",\"graph_digest\":\"{digest}\"");
+    assert_eq!(graph.matches(&identity).count(), 1);
+    let payload = graph.replacen(&identity, "", 1);
+    assert_eq!(
+        project_artifact_digest(PROJECT_GRAPH_DIGEST_DOMAIN, payload.as_bytes()),
+        digest
+    );
+    let before = format!("\"used_builder_bytes\":{old},");
+    let after = format!("\"used_builder_bytes\":{new},");
+    assert_eq!(payload.matches(&before).count(), 1);
+    let expected_payload = payload.replacen(&before, &after, 1);
+    let expected_digest =
+        project_artifact_digest(PROJECT_GRAPH_DIGEST_DOMAIN, expected_payload.as_bytes());
+    let expected = graph.replacen(&before, &after, 1).replacen(
+        &identity,
+        &format!(",\"graph_digest\":\"{expected_digest}\""),
+        1,
+    );
+    (expected, expected_digest)
+}
+fn calibrated_image(image: &str, graph: &str, digest: &str) -> (String, String) {
+    let mut expected: serde_json::Value = serde_json::from_str(image).unwrap();
+    expected["project_graph"] = serde_json::from_str(graph).unwrap();
+    expected["project_graph_digest"] = digest.into();
+    // Match the existing image renderer's deterministic complete object order.
+    expected.sort_all_objects();
+    let expected = serde_json::to_string(&expected).unwrap() + "\n";
+    let identity = project_artifact_digest(
+        b"semaprax.semantic-workspace-image.digest.v1\0",
+        expected.as_bytes(),
+    );
+    (expected, identity)
 }

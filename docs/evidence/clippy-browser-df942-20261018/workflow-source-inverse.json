@@ -1,6 +1,0 @@
-{
-  "all_original_workflow_bytes_retained": true,
-  "only_one_failure_only_serial_diagnostic_step_added": true,
-  "existing_exact_test_selector_checked_by_original_harness": true,
-  "original_failure_status_not_replaced": true
-}

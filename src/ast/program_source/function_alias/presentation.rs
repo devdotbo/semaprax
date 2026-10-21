@@ -27,7 +27,7 @@ impl Function {
 #[derive(Clone, Copy, Debug)]
 pub(crate) struct FunctionRef<'a> {
     payload: &'a Function,
-    alias_cell: Option<&'a &'a str>,
+    alias_entry: Option<&'a FunctionEntry<'a>>,
 }
 /// The original capacity owner: a class declaration pointer is sufficient to
 /// recover its exact name, leaving the tuple's backing available for the view.
@@ -37,12 +37,13 @@ impl<'a> FunctionRef<'a> {
     pub(crate) fn ordinary(payload: &'a Function) -> Self {
         Self {
             payload,
-            alias_cell: None,
+            alias_entry: None,
         }
     }
     pub(crate) fn name(&self) -> &'a str {
-        match self.alias_cell {
-            Some(cell) => cell,
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(view)) => view._alias,
+            Some(FunctionEntry::Owned(_)) => unreachable!("owned entry uses its ordinary payload"),
             None => &self.payload.name,
         }
     }
@@ -53,15 +54,87 @@ impl<'a> FunctionRef<'a> {
     pub(crate) fn payload(&self) -> &'a Function {
         self.payload
     }
+    /// Only raw-body classifiers proven false for the finite scalar default.
+    /// This does not remove the function from ordinary source/HIR validation.
+    pub(crate) fn classifier_payload(&self) -> Option<&'a Function> {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => None,
+            _ => Some(self.payload),
+        }
+    }
+    pub(crate) fn is_signature(&self) -> bool {
+        matches!(
+            self.alias_entry,
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None,
+                ..
+            }))
+        )
+    }
+    // Each getter replaces payload() plus the corresponding field loan. Its
+    // receiver/return remain two references; no owning AST or extra view forms.
+    pub(crate) fn body(&self) -> &'a crate::ast::Expr {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => match self.payload.return_type {
+                crate::ast::Type::I64 => &super::scalar_signature::I64,
+                crate::ast::Type::I32 => &super::scalar_signature::I32,
+                crate::ast::Type::Char => &super::scalar_signature::CHAR,
+                crate::ast::Type::U8 => &super::scalar_signature::U8,
+                crate::ast::Type::Usize => &super::scalar_signature::USIZE,
+                crate::ast::Type::F32 => &super::scalar_signature::F32,
+                crate::ast::Type::F64 => &super::scalar_signature::F64,
+                crate::ast::Type::Bool => &super::scalar_signature::BOOL,
+                crate::ast::Type::String => &super::scalar_signature::STRING,
+                _ => unreachable!("signature producer admitted a finite scalar return"),
+            },
+            _ => &self.payload.body,
+        }
+    }
+    pub(crate) fn requires(&self) -> &'a Vec<crate::ast::Expr> {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &super::scalar_signature::EMPTY,
+            _ => &self.payload.requires,
+        }
+    }
+    pub(crate) fn ensures(&self) -> &'a Vec<crate::ast::Expr> {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &super::scalar_signature::EMPTY,
+            _ => &self.payload.ensures,
+        }
+    }
+    pub(crate) fn yields(&self) -> &'a Option<crate::ast::YieldsClause> {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &None,
+            _ => &self.payload.yields,
+        }
+    }
+    pub(crate) fn follows(&self) -> &'a Option<Box<crate::ast::SessionProtocolFollowsClause>> {
+        match self.alias_entry {
+            Some(FunctionEntry::Borrowed(super::FunctionView {
+                _provider: None, ..
+            })) => &None,
+            _ => &self.payload.follows,
+        }
+    }
     pub(crate) fn has_stored_alias(&self) -> bool {
-        self.alias_cell.is_some()
+        self.alias_entry.is_some()
     }
 
     /// A genuine owning transform materializes the effective name once. Raw
     /// payload Clone order is retained and no provider-name String is cloned
     /// only to be discarded. This is never used for lookup or classification.
     pub(crate) fn materialize(&self) -> Function {
-        if self.name() == self.payload.name {
+        if !self.is_signature() && self.name() == self.payload.name {
             return self.payload.clone();
         }
         let source = self.payload;
@@ -74,11 +147,11 @@ impl<'a> FunctionRef<'a> {
             params: source.params.clone(),
             return_type: source.return_type.clone(),
             effects: source.effects.clone(),
-            yields: source.yields.clone(),
-            follows: source.follows.clone(),
-            requires: source.requires.clone(),
-            ensures: source.ensures.clone(),
-            body: source.body.clone(),
+            yields: self.yields().clone(),
+            follows: self.follows().clone(),
+            requires: self.requires().to_vec(),
+            ensures: self.ensures().to_vec(),
+            body: self.body().clone(),
             span: source.span,
         }
     }
@@ -92,7 +165,7 @@ impl<'a> FunctionRef<'a> {
     {
         FunctionRef {
             payload,
-            alias_cell: self.alias_cell,
+            alias_entry: self.alias_entry,
         }
     }
 
@@ -100,7 +173,7 @@ impl<'a> FunctionRef<'a> {
     /// Declaration equality remains a separate semantic comparison below.
     pub(crate) fn same_presentation(&self, other: &Self) -> bool {
         std::ptr::eq(self.payload, other.payload)
-            && match (self.alias_cell, other.alias_cell) {
+            && match (self.alias_entry, other.alias_entry) {
                 (None, None) => true,
                 (Some(a), Some(b)) => std::ptr::eq(a, b),
                 _ => false,
@@ -110,7 +183,7 @@ impl<'a> FunctionRef<'a> {
     /// Stored alias-cell identity, independent of a genuine specialized payload.
     /// This predicate alone grants no membership or producer authority.
     pub(crate) fn same_alias_cell(&self, other: &Self) -> bool {
-        match (self.alias_cell, other.alias_cell) {
+        match (self.alias_entry, other.alias_entry) {
             (None, None) => true,
             (Some(a), Some(b)) => std::ptr::eq(a, b),
             _ => false,
@@ -120,7 +193,23 @@ impl<'a> FunctionRef<'a> {
     /// Historical reuse-environment equality deliberately excludes the body.
     /// Individual lowered-function reuse still compares complete declarations.
     pub(crate) fn same_signature(&self, other: &Self) -> bool {
-        self.name() == other.name() && Self::signature_fields(self.payload, other.payload)
+        self.name() == other.name()
+            && self.signature_metadata(other.payload)
+            && self.yields() == other.yields()
+            && self.follows() == other.follows()
+            && self.requires() == other.requires()
+            && self.ensures() == other.ensures()
+    }
+    fn signature_metadata(&self, b: &Function) -> bool {
+        let a = self.payload;
+        a.stable_id == b.stable_id
+            && a.explicit_id == b.explicit_id
+            && a.name_span == b.name_span
+            && a.type_parameters == b.type_parameters
+            && a.params == b.params
+            && a.return_type == b.return_type
+            && a.effects == b.effects
+            && a.span == b.span
     }
     pub(crate) fn same_ordinary_signature(a: &Function, b: &Function) -> bool {
         a.name == b.name && Self::signature_fields(a, b)
@@ -143,39 +232,16 @@ impl<'a> FunctionRef<'a> {
     /// Equality of the historical renamed Function, without materializing it.
     /// The provider spelling alone is not part of the projected declaration.
     pub(crate) fn same_declaration(&self, other: &Self) -> bool {
-        let a = self.payload;
-        let b = other.payload;
-        self.name() == other.name()
-            && a.stable_id == b.stable_id
-            && a.explicit_id == b.explicit_id
-            && a.name_span == b.name_span
-            && a.type_parameters == b.type_parameters
-            && a.params == b.params
-            && a.return_type == b.return_type
-            && a.effects == b.effects
-            && a.yields == b.yields
-            && a.follows == b.follows
-            && a.requires == b.requires
-            && a.ensures == b.ensures
-            && a.body == b.body
-            && a.span == b.span
+        self.same_signature(other) && self.body() == other.body()
     }
     pub(crate) fn same_ordinary_declaration(&self, b: &Function) -> bool {
-        let a = self.payload;
         self.name() == b.name
-            && a.stable_id == b.stable_id
-            && a.explicit_id == b.explicit_id
-            && a.name_span == b.name_span
-            && a.type_parameters == b.type_parameters
-            && a.params == b.params
-            && a.return_type == b.return_type
-            && a.effects == b.effects
-            && a.yields == b.yields
-            && a.follows == b.follows
-            && a.requires == b.requires
-            && a.ensures == b.ensures
-            && a.body == b.body
-            && a.span == b.span
+            && self.signature_metadata(b)
+            && self.yields() == &b.yields
+            && self.follows() == &b.follows
+            && self.requires() == &b.requires
+            && self.ensures() == &b.ensures
+            && self.body() == &b.body
     }
 }
 
@@ -295,9 +361,9 @@ impl<'a> FunctionSlices<'a> {
                         .functions
                         .get(*index)
                         .map(FunctionRef::ordinary),
-                    FunctionEntry::Borrowed(view) => Some(FunctionRef {
+                    entry @ FunctionEntry::Borrowed(view) => Some(FunctionRef {
                         payload: view.original,
-                        alias_cell: Some(&view._alias),
+                        alias_entry: Some(entry),
                     }),
                 }
             }

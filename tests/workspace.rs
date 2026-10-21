@@ -111,3 +111,8 @@ pub(crate) mod next_big_batch_inputs;
 mod source_reflows_merge {
     pub(crate) use crate::{main_e177_final_inputs, next_big_batch_inputs};
 }
+
+// Use the same real allocator/registry as the library test image.
+#[allow(dead_code, unused_imports)]
+#[path = "../src/test_allocation_observer/backing.rs"]
+mod test_allocation_observer;

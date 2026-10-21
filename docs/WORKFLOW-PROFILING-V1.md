@@ -113,3 +113,92 @@ Use the values to compare like-for-like observations with the recorded subject,
 fixture, profile, and host metadata. Product equality is a separate invariant
 from timing equality, and neither one upgrades local benchmark evidence into a
 semantic, hosted, or production claim.
+
+## PLAN comparison diagnostic census
+
+The same explicit feature also exposes `workflow_profile::plan_comparison`.
+`Capture::begin(Binding)` enables a separate, current-thread, fixed-storage
+census; `finish` must follow compiler owner teardown. It never enables an old
+comparison arm, changes admission, or changes any payment, work request, result,
+cap, diagnostic, or publication. The existing timing capture is independent.
+This is **instrumented production-algorithm** data when the library is built
+without `cfg(test)`, and **instrumented library-test** data otherwise. Neither
+is default-shipping evidence or a wall-time/allocation performance result.
+The fixed TLS storage and instrumentation frames are outside the compiler's
+allocation ledger; this overhead is not a saving and is not priced as compiler
+work. Recording does not allocate Rust heap storage. Formatting the report is a
+host operation after teardown.
+
+The closed route records actual reached prefixes: owner admission, successful
+left/right prepare payments and completed resets, prepared pairs P, comparison
+rounds N, pair-scope/match payments, STEP (including its EMPTY bank), LOAD,
+exhausted segments, TAIL, segment heads and tail-Some yields, left/right
+exhaustion, terminal comparisons, and invocation success/end/unwind. Per-site
+byte totals include only successful admitted banks, never future iterations.
+Each detailed row carries the actual compiled invoice, copied function span,
+payer and selected-route classification. Refused prefixes remain distinct from
+successful invocations; counters do not authenticate a budget or source.
+
+Storage retains 128 detailed invocation rows plus checked aggregate counters.
+Exceeding that bound marks `detail_complete: false` while aggregate counting
+continues. Nesting beyond 32 also loses detail. Checked overflow, reentrant
+storage access, or inconsistent guard closure invalidates `counts_complete`;
+a live invocation refuses `finish`. Sessions and guards are thread-bound and
+capture generations cannot wrap. Function IDs retain full byte length, SHA256,
+and a bounded byte prefix, which can end within UTF-8 and is never a full-string
+claim. No function/payer pointers survive teardown.
+
+`Binding` is explicitly caller-labelled fixture/source metadata, with optional
+caller revision bytes. It carries no validation authority. The two existing
+native string-vector fixtures emit this diagnostic only with the feature,
+after their original generator returns or unwinds; they retain all original
+inputs, options, C fault/allocation assertions and panic payloads. Their label
+marks revision unknown: the external round manifest must bind the actual source
+HEAD and instrumented binary. No old shipping baseline, application admission,
+or complete old/current net is established by a census alone.
+
+The same `Capture` also returns an independent fixed `paid_phases` bank for
+cleanup canonical rebuilding/frontier validation, structural replay, factored construction and
+comparison, HIR/PLAN path construction, and final comparison. This bank never
+uses comparator rows, serials, event counters, or their nesting stack. Each
+phase has an explicit payer (`ActiveBuilder`, `Unobserved`, `Oracle`, `Selected`,
+or `Unknown`) and lexical origin (`Shipping` or `TestCrosscheck`). Ordinary
+test-only crosschecks can debit the active builder; their true payer is retained
+while their children inherit `TestCrosscheck`. That label never exempts a check
+or changes its account. Production-library captures contain no such test hook.
+
+`CanonicalRebuild` deliberately encloses frontier current/finish/advance, full
+plan rebuilding, and canonical comparison; it is not a narrower constructor-only
+measurement. Phase scope exit is not semantic success. The bank records balanced entries and
+ends, normal exits, unwind, ordinary sticky-refusal prefixes, unknown intervals,
+and checked sums of known same-ledger debits. Values are inclusive: nested
+phase totals must not be added. Restoring even the same outer ledger invalidates
+an enclosing snapshot through the existing epoch; missing or foreign accounts
+remain unknown rather than zero. Phase overflow or inconsistent closure is
+reported separately from comparator counters; a live phase refuses `finish`.
+No pointers survive teardown. Instrumentation and its fixed TLS bookkeeping
+remain absent in a default build, and supply no allocator/RSS measurement,
+forecast discount, application admission, fee credit, or validation authority.
+The feature-only native Normalizer owner uses the exact six application and six
+standard-library sources through public semantic-workspace initialization at
+its unchanged default 64MiB cap. It reports an actual refusal without relabelling
+that refusal as successful application qualification.
+
+The #905 suffix selector appends `EmptySelectorAdmitted` and
+`EmptySelectorSkipped` to the existing closed comparator-site sequence; earlier
+site indices and meanings remain unchanged. The former records only an actually
+admitted `size_of::<bool>()` bank, the latter the ensuing structural empty
+branch with zero admitted bytes. The old `IdentityEmptyProbe` remains the
+original full-PROBE empty-branch event for independently compiled old callers;
+it is not reused for the cheaper selector. Nonempty shipping runs still report
+their full retained `IdentityProbeAdmitted` bank. These additive counts retain
+the same fixed capture, overflow, partial-prefix and source-binding rules and
+supply no admission or whole-net conclusion by themselves.
+
+The #907 diagnostic successor appends final independent-comparison admissions at
+site indices52–55: `FinalFlatAdmitted`, `FinalSharedAdmitted`,
+`FinalStepAdmitted`, and `FinalTailAdmitted`. All previous52 indices and meanings
+remain unchanged. Counts and admitted bytes record successful actual banks,
+including exhaustion visits; they do not relabel these as PLAN-sort packets.
+The separate100-row paid-phase bank and its10×5×2 ordering remain unchanged.
+Matched old/current arms must retain this same additive observer API and hooks.

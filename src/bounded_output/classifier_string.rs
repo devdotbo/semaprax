@@ -190,7 +190,108 @@ impl ClassifierString {
 /// Exact invocation binding only; this scalar/Rc carrier grants no allowance,
 /// cached admission or source authority. Its caller pays its containing control.
 pub(crate) struct ClassifierLedger(Option<Rc<Budget>>);
+
+/// Borrowed identity, never allowance: the containing ledger must stay alive.
+/// No TLS loan is retained and every use reads ACTIVE again.
+pub(crate) struct StorageParent<'a>(&'a Budget);
+impl StorageParent<'_> {
+    pub(crate) const ACQUISITION_CONTROLS: usize = {
+        let method = 2 * size_of::<&ClassifierLedger>();
+        let pattern = size_of::<&Option<Rc<Budget>>>() + size_of::<&Rc<Budget>>();
+        // Rc::deref actual/formal and return, then the witness field loan.
+        let field = 2 * size_of::<&Rc<Budget>>() + 2 * size_of::<&Budget>();
+        let constructed = size_of::<Self>();
+        let returned = 2 * size_of::<Option<Self>>();
+        let received_pattern = size_of::<Self>();
+        method + pattern + field + constructed + returned + received_pattern
+    };
+
+    /// One successful-call bank; the immediately returning mismatch uses the
+    /// separate terminal bank, prepaid ONCE by the containing continuation.
+    pub(crate) const CURRENT_CONTROLS: usize = {
+        use std::cell::{Cell, Ref, RefCell};
+        use std::thread::LocalKey;
+        type Active = RefCell<Option<Rc<Budget>>>;
+        type Loan = Ref<'static, Option<Rc<Budget>>>;
+        let helper = 2 * size_of::<&Self>() + 3 * size_of::<bool>();
+        let tls = 2 * size_of::<&LocalKey<Active>>() + 2 * size_of::<&Self>() + size_of::<bool>();
+        let callback = 2 * size_of::<&Active>() + size_of::<bool>();
+        let borrow = 2 * size_of::<&Active>() + size_of::<Loan>();
+        let option_loan = 2 * size_of::<&Loan>() + size_of::<&Option<Rc<Budget>>>();
+        let pattern = size_of::<&Option<Rc<Budget>>>() + size_of::<&Rc<Budget>>();
+        // Current Rc dereference, then ptr::eq actual/formal pairs and guard.
+        // The held operand is already a Budget loan; no held Rc is dereferenced.
+        let identity = 2 * size_of::<&Rc<Budget>>()
+            + size_of::<&Budget>()
+            + 4 * size_of::<&Budget>()
+            + size_of::<bool>();
+        let sticky = 2 * size_of::<&Cell<bool>>() + 2 * size_of::<bool>();
+        helper + tls + callback + borrow + option_loan + pattern + identity + sticky
+    };
+
+    /// At most one reached mismatch in the whole continuation. A false result
+    /// must immediately exit; this bank cannot fund a second mismatch call.
+    pub(crate) const TERMINAL_CONTROLS: usize = {
+        use std::cell::Cell;
+        type Receipt = Option<super::ReservationRefusal>;
+        type Site = Option<&'static std::panic::Location<'static>>;
+        type Stage = Option<super::ReservationStage>;
+        let mismatch = 2 * size_of::<&Budget>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<bool>>()
+            + 2 * size_of::<bool>()
+            + size_of::<bool>();
+        let first_refusal_get = 2 * size_of::<&Cell<Receipt>>() + size_of::<Receipt>();
+        let first_refusal_test = 2 * size_of::<&Receipt>() + size_of::<bool>();
+        let first_site = size_of::<&'static std::panic::Location<'static>>()
+            + 2 * size_of::<Site>()
+            + 2 * size_of::<&Cell<Site>>();
+        let receipt_fields = 4 * size_of::<&Cell<usize>>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<Stage>>()
+            + size_of::<Stage>();
+        let first_receipt = size_of::<super::ReservationRefusal>()
+            + 2 * size_of::<Receipt>()
+            + 2 * size_of::<&Cell<Receipt>>();
+        let terminal = mismatch
+            + first_refusal_get
+            + first_refusal_test
+            + first_site
+            + receipt_fields
+            + first_receipt;
+        // The complete original guard bank stays an independent target-layout
+        // upper bound; no original caller's fee is reduced by this successor.
+        assert!(
+            Self::CURRENT_CONTROLS + terminal <= ClassifierLedger::STORAGE_PARENT_CURRENT_CONTROLS
+        );
+        terminal
+    };
+
+    pub(crate) fn current(&self) -> bool {
+        super::ACTIVE.with(|active| match &*active.borrow() {
+            Some(current) if std::ptr::eq(self.0, &**current) => !self.0.overflowed.get(),
+            _ => {
+                super::record_refusal(self.0, 0);
+                self.0.overflowed.set(true);
+                false
+            }
+        })
+    }
+}
 impl ClassifierLedger {
+    /// Acquisition does not authenticate ACTIVE or spend allowance. The caller
+    /// prepays it on the known parent and later uses fresh current() checks.
+    #[allow(
+        clippy::manual_map,
+        clippy::explicit_auto_deref,
+        reason = "Keep the explicit match and Rc dereference aligned with the complete acquisition invoice; a map closure introduces different receiving roles."
+    )]
+    pub(crate) fn storage_parent(&self) -> Option<StorageParent<'_>> {
+        match &self.0 {
+            Some(budget) => Some(StorageParent(&**budget)),
+            None => None,
+        }
+    }
     /// Empty field initializer for an already prepaid receiving owner. The
     /// caller must pay capture_into_controls before filling the real binding.
     pub(crate) fn empty_receiving() -> Self {
@@ -273,6 +374,92 @@ impl ClassifierLedger {
             }
         })
     }
+    /// Complete fresh borrowed parent check. Every named term belongs to an
+    /// actual lexical boundary above; no Option<&Rc<Budget>> is constructed.
+    /// The known parent prepays both arms BEFORE the callback. The later check
+    /// never spends ACTIVE funds, including when ACTIVE is a foreign ledger.
+    pub(crate) const STORAGE_PARENT_CURRENT_CONTROLS: usize = {
+        use std::cell::{Cell, Ref, RefCell};
+        use std::thread::LocalKey;
+        type Active = RefCell<Option<Rc<Budget>>>;
+        type Loan = Ref<'static, Option<Rc<Budget>>>;
+        // Caller/formal self and helper return/caller boolean, plus caller !.
+        let helper = 2 * size_of::<&Self>() + 3 * size_of::<bool>();
+        // The closure captures only self. Its actual/formal environments each
+        // contain that one borrow; with returns the closure's boolean.
+        let tls = 2 * size_of::<&LocalKey<Active>>() + 2 * size_of::<&Self>() + size_of::<bool>();
+        // with supplies active to the closure: actual/formal active, then the
+        // distinct actual/formal RefCell::borrow receiver and owned Ref result.
+        let callback = 2 * size_of::<&Active>() + size_of::<bool>();
+        let borrow = 2 * size_of::<&Active>() + size_of::<Loan>();
+        // &*active.borrow(): Ref::deref actual/formal and returned option loan.
+        let option_loan = 2 * size_of::<&Loan>() + size_of::<&Option<Rc<Budget>>>();
+        // &self.0, the actual two-field match tuple, and the successful Some
+        // bindings are separate roles, not an Option::as_ref return.
+        let pattern = size_of::<&Option<Rc<Budget>>>()
+            + size_of::<(&Option<Rc<Budget>>, &Option<Rc<Budget>>)>()
+            + 2 * size_of::<&Rc<Budget>>();
+        let pointer_test = 4 * size_of::<&Rc<Budget>>() + size_of::<bool>();
+        // held.overflowed: Rc::deref actual/formal/output, Cell::get receiver
+        // actual/formal, returned bool and its lexical negation.
+        let successful = 2 * size_of::<&Rc<Budget>>()
+            + size_of::<&Budget>()
+            + 2 * size_of::<&Cell<bool>>()
+            + 2 * size_of::<bool>();
+        // The mismatch if-let has its own option loan and held binding. Its two
+        // Rc dereferences belong respectively to record_refusal's coercion and
+        // the subsequent overflowed field; neither borrows the success bank.
+        let mismatch = size_of::<&Option<Rc<Budget>>>()
+            + size_of::<&Rc<Budget>>()
+            + 4 * size_of::<&Rc<Budget>>()
+            + 2 * size_of::<&Budget>()
+            + 2 * size_of::<&Budget>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<bool>>()
+            + 2 * size_of::<bool>();
+        // One reached record_refusal body, not the insertion owner's unrelated
+        // two-call bank: get/is_none precede the optional first sticky receipt.
+        type Receipt = Option<super::ReservationRefusal>;
+        type Site = Option<&'static std::panic::Location<'static>>;
+        type Stage = Option<super::ReservationStage>;
+        let first_refusal_get = 2 * size_of::<&Cell<Receipt>>() + size_of::<Receipt>();
+        let first_refusal_test = 2 * size_of::<&Receipt>() + size_of::<bool>();
+        // Location::caller output, Some(site) actual and Cell::set value formal,
+        // and that distinct set's actual/formal receiver loans.
+        let first_site = size_of::<&'static std::panic::Location<'static>>()
+            + 2 * size_of::<Site>()
+            + 2 * size_of::<&Cell<Site>>();
+        // remaining/floor get actual/formal receivers and returned usize values;
+        // stage get has its own actual/formal receiver and Option return.
+        let receipt_fields = 4 * size_of::<&Cell<usize>>()
+            + 2 * size_of::<usize>()
+            + 2 * size_of::<&Cell<Stage>>()
+            + size_of::<Stage>();
+        // Complete struct construction, Some(receipt) actual and set formal,
+        // plus the first_refusal.set actual/formal receiver loans.
+        let first_receipt = size_of::<super::ReservationRefusal>()
+            + 2 * size_of::<Receipt>()
+            + 2 * size_of::<&Cell<Receipt>>();
+        // The empty-parent true and mismatch false are actual distinct literal
+        // producers. Unit returns at record_refusal/Cell::set have zero width.
+        let terminal_literals = 2 * size_of::<bool>();
+        helper
+            + tls
+            + callback
+            + borrow
+            + option_loan
+            + pattern
+            + pointer_test
+            + successful
+            + mismatch
+            + first_refusal_get
+            + first_refusal_test
+            + first_site
+            + receipt_fields
+            + first_receipt
+            + terminal_literals
+    };
+
     /// Actual new callers of current() prepay its cloned ACTIVE return/local,
     /// match tuple and arm receiver, TLS borrow, borrowed predicates and bools.
     /// Original current() below is unchanged; this inventory grants no authority.

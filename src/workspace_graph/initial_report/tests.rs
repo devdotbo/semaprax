@@ -281,7 +281,10 @@ fn complete_original_builder_mappers_and_all_current_owners_remain_authenticated
     let start = old.find("fn build_owned_inner(").unwrap();
     let end = old[start..].find("\ntype ResolvedCore").unwrap() + start;
     let body = old[start..end].replace("fn build_owned_inner(", "pub(super) fn build_owned_inner(");
-    assert!(include_str!("before.rs").contains(&body));
+    let complete_before = crate::source_reflows_merge::initial845_input(
+        "src/workspace_graph/initial_report/before.rs", include_str!("before.rs"),
+    );
+    assert!(complete_before.contains(&body));
     let legacy = std::fs::read_to_string(packet.join("before/src/bounded_output.rs")).unwrap();
     let current = crate::source_reflows_merge::initial845_input(
         "src/bounded_output.rs",
@@ -293,4 +296,58 @@ fn complete_original_builder_mappers_and_all_current_owners_remain_authenticated
             .unwrap(),
         legacy
     );
+}
+
+#[cfg(feature = "unstable-workflow-profiling")]
+#[test]
+fn exclusive_core_capture_keeps_complete_real_builder_outputs_and_every_original_limit() {
+    use crate::workflow_profile::plan_comparison::{Binding, Capture, CoreDebitAlgorithm};
+    for limit in [0, 1, 127, 1023, 8191, MAX_BUILDER_BYTES] {
+        let run = || {
+            build_owned_retaining_sources_with_frontend_limit::<Vec<Diagnostic>>(
+                sources(),
+                limit,
+                None,
+                false,
+                None,
+            )
+            .map(|(build, _)| build.source_graph_schemas().unwrap())
+        };
+        let plain = run();
+        let capture = Capture::begin(Binding::caller_labelled(
+            "real initial builder parity",
+            [0; 32],
+        ))
+        .unwrap();
+        let watched = run();
+        let report = capture.finish().unwrap();
+        assert_eq!(
+            plain, watched,
+            "actual full compiler product at unchanged limit {limit}"
+        );
+        assert_eq!(
+            report.resolved_core.algorithm,
+            CoreDebitAlgorithm::InstrumentedLibraryTest
+        );
+        assert!(
+            report.resolved_core.complete
+                && !report.resolved_core.invalid
+                && !report.resolved_core.lost
+                && !report.resolved_core.overflow,
+            "{report:?}"
+        );
+        for attempt in &report.resolved_core.attempts[..report.resolved_core.stored_attempts] {
+            assert!(attempt.complete && !attempt.invalid);
+            assert_eq!(attempt.stage_sum(), Some(attempt.consumed));
+            assert_eq!(attempt.operation_sum(), Some(attempt.consumed));
+        }
+        if limit == MAX_BUILDER_BYTES {
+            assert!(watched.is_ok());
+            assert!(report.resolved_core.entered_attempts > 0);
+            assert_eq!(
+                report.resolved_core.final_attempt_ordinal,
+                Some(report.resolved_core.entered_attempts - 1)
+            );
+        }
+    }
 }

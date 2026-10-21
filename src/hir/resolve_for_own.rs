@@ -167,7 +167,7 @@ fn source_element(
     Ok(element.clone())
 }
 #[allow(clippy::too_many_arguments)]
-fn lower(
+pub(super) fn lower(
     function: &FunctionExecutionId,
     path: &str,
     item: &str,
@@ -225,7 +225,11 @@ fn lower(
             step_ty.clone(),
             OwnershipMode::Own,
             ResolvedExprKind::Call {
-                callee: DeclarationId::new(crate::iterator_ops::NEXT_ID),
+                callee: DeclarationId::compiler(
+                    super::ids::CompilerDeclaration::IteratorOperation(
+                        crate::iterator_ops::IteratorOp::Next,
+                    ),
+                ),
                 type_arguments: vec![element.clone()],
                 instance: None,
                 args: vec![arg],
@@ -233,18 +237,18 @@ fn lower(
         )
     };
     let pattern = |yielded: bool, fields| ResolvedMatchPattern::Variant {
-        variant: DeclarationId::new(crate::iterator_ops::STEP_ID),
-        case: DeclarationId::new(if yielded {
-            crate::iterator_ops::YIELD_ID
+        variant: DeclarationId::compiler(super::ids::CompilerDeclaration::IterStep),
+        case: DeclarationId::compiler(if yielded {
+            super::ids::CompilerDeclaration::IterYield
         } else {
-            crate::iterator_ops::DONE_ID
+            super::ids::CompilerDeclaration::IterDone
         }),
         fields,
     };
     let field_bindings = |p: &str, ownership| {
         vec![
             ResolvedMatchPatternField {
-                field: DeclarationId::new(crate::iterator_ops::ITEM_ID),
+                field: DeclarationId::compiler(super::ids::CompilerDeclaration::IterItem),
                 binding: ResolvedBinding {
                     span: item_span,
                     ..binding(
@@ -259,7 +263,7 @@ fn lower(
                 },
             },
             ResolvedMatchPatternField {
-                field: DeclarationId::new(crate::iterator_ops::REST_ID),
+                field: DeclarationId::compiler(super::ids::CompilerDeclaration::IterRest),
                 binding: binding(
                     &format!("{p}.binding.1"),
                     "#for-own-rest",
@@ -337,8 +341,8 @@ fn lower(
         step_ty.clone(),
         OwnershipMode::Own,
         ResolvedExprKind::ConstructVariant {
-            variant: DeclarationId::new(crate::iterator_ops::STEP_ID),
-            case: DeclarationId::new(crate::iterator_ops::DONE_ID),
+            variant: DeclarationId::compiler(super::ids::CompilerDeclaration::IterStep),
+            case: DeclarationId::compiler(super::ids::CompilerDeclaration::IterDone),
             fields: vec![],
         },
     );
@@ -543,3 +547,6 @@ pub(super) fn resolve_statement_reference(
         _ => unreachable!(),
     }
 }
+
+#[cfg(test)]
+pub(in crate::hir) mod identity_before;

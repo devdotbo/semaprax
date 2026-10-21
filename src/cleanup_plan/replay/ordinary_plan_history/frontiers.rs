@@ -16,12 +16,13 @@ const EMPTY: Event = Event {
 struct Trace {
     enabled: bool,
     count: usize,
-    pending: usize,
+    pending: Option<usize>,
+    swaps_only: bool,
     swaps: usize,
     events: Vec<Event>,
 }
 thread_local! {
-    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, pending: 0, swaps: 0, events: Vec::new() }) };
+    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, pending: None, swaps_only: false, swaps: 0, events: Vec::new() }) };
 }
 // Prepare instrumentation before any measured allocation or compiler ledger.
 pub(super) fn prepare() {
@@ -32,6 +33,14 @@ fn consumed() -> usize {
         - crate::bounded_output::active_remaining().unwrap()
 }
 pub(super) fn reset() {
+    reset_mode(false);
+}
+// The cold/hot invoice corpus needs complete swap order, not every debit.
+// Keep the same fixed buffer and fail closed if the selected stream fills it.
+pub(super) fn reset_swaps() {
+    reset_mode(true);
+}
+fn reset_mode(swaps_only: bool) {
     TRACE.with(|trace| {
         let mut t = trace.borrow_mut();
         assert_eq!(
@@ -41,7 +50,8 @@ pub(super) fn reset() {
         );
         t.enabled = true;
         t.count = 0;
-        t.pending = 0;
+        t.pending = None;
+        t.swaps_only = swaps_only;
         t.swaps = 0;
     });
 }
@@ -49,6 +59,13 @@ pub(super) fn before(phase: &'static str) {
     TRACE.with(|trace| {
         let mut t = trace.borrow_mut();
         if !t.enabled {
+            return;
+        }
+        t.pending = None;
+        if t.swaps_only
+            && phase != "ordinary plan retained drain swap receivers"
+            && phase != "ordinary plan retained sift swap receivers"
+        {
             return;
         }
         assert!(
@@ -62,7 +79,7 @@ pub(super) fn before(phase: &'static str) {
             after: None,
             swaps: t.swaps,
         };
-        t.pending = index;
+        t.pending = Some(index);
         t.count += 1;
     });
 }
@@ -70,8 +87,9 @@ pub(super) fn after() {
     TRACE.with(|trace| {
         let mut t = trace.borrow_mut();
         if t.enabled {
-            let index = t.pending;
-            t.events[index].after = Some(consumed());
+            if let Some(index) = t.pending {
+                t.events[index].after = Some(consumed());
+            }
         }
     });
 }

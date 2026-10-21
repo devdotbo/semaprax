@@ -39,6 +39,93 @@ if accepted && same && required=={length}usize{{724}}else{{0}}
         invalid = invalid
     )
 }
+// Diagnostic build only: all compiler owners unwind/drop before reporting.
+// This labels the fixture bytes, not an authenticated repository revision.
+#[cfg(feature = "unstable-workflow-profiling")]
+fn observed_generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
+    eprintln!(
+        "PLAN_GENERATED_PROJECT_SOURCE_EXPECTED checkpoints=initial-written,request-codec-written,response-codec-written,final-app-written; only reached checkpoints emit four actual byte hashes; absent checkpoints remain unobserved"
+    );
+    use semaprax::workflow_profile::plan_comparison::{Binding, Capture};
+    use sha2::{Digest, Sha256};
+    let mut digest = Sha256::new();
+    digest.update(SCHEMA.replace("Vec<Row>", "Vec<string>").as_bytes());
+    digest.update(include_bytes!("../bulk_utf8/semaprax.toml"));
+    digest.update(INPUT_V2.as_bytes());
+    digest.update(OUTPUT_V2.as_bytes());
+    digest.update(b"request=NestedRequest/64/256; generated-v2-v1");
+    digest.update(app_v2(invalid).as_bytes());
+    digest.update(format!("{response:?}/{invalid}").as_bytes());
+    let capture = match Capture::begin(Binding::caller_labelled(
+        "native/string-vectors/generated-v2; revision=unknown (bind external round manifest); caller-labelled",
+        digest.finalize().into(),
+    )) {
+        Ok(capture) => capture,
+        Err(error) => {
+            eprintln!("PLAN_COMPARISON_DIAGNOSTIC_REFUSED {error:?}");
+            return generated_v2(response, invalid);
+        }
+    };
+    let result = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        generated_v2(response, invalid)
+    }));
+    match capture.finish() {
+        Ok(report) => {
+            use semaprax::workflow_profile::plan_comparison::Site;
+            eprintln!(
+        "PLAN_COMPARISON_DIAGNOSTIC build={:?} generation={} P={} N={} STEP={} LOAD={} EMPTY={} TAIL={} left_head={} right_head={} left_exhaustion={} right_exhaustion={} terminal={} started={} ended={} success={} unwind={} counts_complete={} detail_complete={} overflow={}",
+        report.build, report.generation,
+        report.counts.at(Site::PairPrepared), report.counts.at(Site::Round),
+        report.counts.at(Site::StepAdmitted), report.counts.at(Site::LoadAdmitted),
+        report.counts.at(Site::EmptySegment), report.counts.at(Site::TailAdmitted),
+        report.counts.at(Site::LeftHead), report.counts.at(Site::RightHead),
+        report.counts.at(Site::LeftExhausted), report.counts.at(Site::RightExhausted),
+        report.counts.at(Site::TerminalCompared), report.counts.started, report.counts.ended,
+        report.counts.succeeded, report.counts.unwound,
+        report.counts_complete, report.detail_complete, report.overflow,
+    );
+            eprintln!("PLAN_COMPARISON_DIAGNOSTIC_DETAILS {report:?}");
+        }
+        Err(error) => eprintln!("PLAN_COMPARISON_DIAGNOSTIC_INCOMPLETE {error:?}"),
+    }
+    match result {
+        Ok(value) => value,
+        Err(payload) => std::panic::resume_unwind(payload),
+    }
+}
+// Host-fixture diagnostics only: hash actual written bytes before each compiler
+// admission. Unreached checkpoints have no equality claim. This does not emit
+// compiler events, change generated source, or enter the generated-C allocator.
+#[cfg(feature = "unstable-workflow-profiling")]
+fn generated_project_fingerprints(
+    root: &std::path::Path,
+    checkpoint: &'static str,
+    response: project::JsonCodecProfile,
+    invalid: bool,
+) {
+    use sha2::{Digest, Sha256};
+    for relative_path in [
+        "semaprax.toml",
+        "src/schema.spx",
+        "src/app.spx",
+        "src/tests.spx",
+    ] {
+        let bytes = fs::read(root.join(relative_path)).expect("written native fixture source");
+        let sha256 = Sha256::digest(&bytes)
+            .iter()
+            .map(|byte| format!("{byte:02x}"))
+            .collect::<String>();
+        eprintln!(
+            "PLAN_GENERATED_PROJECT_SOURCE {}",
+            serde_json::json!({
+                "checkpoint": checkpoint, "response_profile": format!("{response:?}"),
+                "invalid": invalid, "relative_path": relative_path,
+                "byte_length": bytes.len(), "sha256": sha256,
+                "scope": "reached-written-source-only; absent stages unobserved"
+            })
+        );
+    }
+}
 fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
     let root = std::env::temp_dir().join(format!(
         "native-codec-allocation-{}-{}-{}",
@@ -74,6 +161,8 @@ fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
     ] {
         fs::write(root.join(path), canonical(source)).unwrap();
     }
+    #[cfg(feature = "unstable-workflow-profiling")]
+    generated_project_fingerprints(&root, "initial-written", response, invalid);
     for policy in [
         project::JsonCodecProfile::NestedRequest {
             max_string_bytes: 64,
@@ -101,8 +190,21 @@ fn generated_v2(response: project::JsonCodecProfile, invalid: bool) -> String {
         })
         .unwrap();
         fs::write(root.join("src/schema.spx"), source).unwrap();
+        #[cfg(feature = "unstable-workflow-profiling")]
+        generated_project_fingerprints(
+            &root,
+            if matches!(&policy, project::JsonCodecProfile::NestedRequest { .. }) {
+                "request-codec-written"
+            } else {
+                "response-codec-written"
+            },
+            response,
+            invalid,
+        );
     }
     fs::write(root.join("src/app.spx"), canonical(&app_v2(invalid))).unwrap();
+    #[cfg(feature = "unstable-workflow-profiling")]
+    generated_project_fingerprints(&root, "final-app-written", response, invalid);
     let result = project::with_authenticated_project(&root.join("semaprax.toml"), |snapshot| {
         hir::validate(snapshot.entry_program()).map_err(|error| vec![error])?;
         let first = codegen::emit_hir_c(snapshot.entry_program()).map_err(|error| vec![error])?;
@@ -167,7 +269,16 @@ fn expected_wire_bytes() -> String {
 }
 #[test]
 fn primitive_string_codec_reads_and_short_refusal_allocate_nothing_then_copy_final_string_once() {
+    #[cfg(not(feature = "unstable-workflow-profiling"))]
     let generated = observe_slot_copies(generated_v2(
+        project::JsonCodecProfile::NestedResponseV2 {
+            max_string_bytes: 64,
+            max_array_items: 256,
+        },
+        false,
+    ));
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let generated = observe_slot_copies(observed_generated_v2(
         project::JsonCodecProfile::NestedResponseV2 {
             max_string_bytes: 64,
             max_array_items: 256,
@@ -270,7 +381,10 @@ fn primitive_string_codec_actual_byte_and_item_plus_one_preflight_never_reserve_
             },
         ),
     ] {
+        #[cfg(not(feature = "unstable-workflow-profiling"))]
         let generated = observe_slot_copies(generated_v2(policy, true));
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let generated = observe_slot_copies(observed_generated_v2(policy, true));
         let raw = INPUT_V2
             .bytes()
             .map(|b| b.to_string())
@@ -339,5 +453,199 @@ REQUIRE(!memcmp(fault_borrowed_input,fault_input,sizeof fault_input));REQUIRE(mu
             &source,
             false,
         );
+    }
+}
+
+// Exact public-workspace host for production-library paid attribution. This
+// does not assert admission when the unchanged 64MiB builder refuses.
+#[cfg(feature = "unstable-workflow-profiling")]
+#[test]
+fn catalog_normalizer_public_workspace_reports_actual_paid_validation_phases() {
+    use semaprax::workflow_profile::plan_comparison::{
+        Binding, Build, Capture, PaidPhase, PhaseOrigin, PhasePayer,
+    };
+    use sha2::{Digest, Sha256};
+    const MANIFEST: &str =
+        include_str!("../../../../examples/catalog-normalizer-project/semaprax.toml");
+    const SOURCES: &[(&str, &str)] = &[
+        (
+            "src/app.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/app.spx"),
+        ),
+        (
+            "src/batch.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/batch.spx"),
+        ),
+        (
+            "src/enrichment.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/enrichment.spx"),
+        ),
+        (
+            "src/limits.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/limits.spx"),
+        ),
+        (
+            "src/record.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/record.spx"),
+        ),
+        (
+            "src/tests.spx",
+            include_str!("../../../../examples/catalog-normalizer-project/src/tests.spx"),
+        ),
+        (
+            "dependencies/std.data.json.dec/0.1.0/dec.spx",
+            include_str!("../../../../std/data-json-dec/src/dec.spx"),
+        ),
+        (
+            "dependencies/std.data.json.doc/0.1.0/doc.spx",
+            include_str!("../../../../std/data-json-doc/src/doc.spx"),
+        ),
+        (
+            "dependencies/std.io/0.1.0/io.spx",
+            include_str!("../../../../std/io/src/io.spx"),
+        ),
+        (
+            "dependencies/std.data.ndjson/0.1.0/ndjson.spx",
+            include_str!("../../../../std/data-ndjson/src/ndjson.spx"),
+        ),
+        (
+            "dependencies/std.io.lines/0.1.0/lines.spx",
+            include_str!("../../../../std/io-lines/src/lines.spx"),
+        ),
+        (
+            "dependencies/std.data.json.utf8/0.1.0/utf8.spx",
+            include_str!("../../../../std/data-json-utf8/src/utf8.spx"),
+        ),
+    ];
+    let manifest = project::ProjectManifest::parse(MANIFEST).unwrap();
+    assert_eq!(manifest.sources().len(), 6);
+    for (path, _) in &SOURCES[..6] {
+        assert!(manifest.sources().iter().any(|p| p.as_str() == *path));
+    }
+    assert_eq!(SOURCES.len(), 12);
+    let root = std::env::temp_dir().join(format!(
+        "native-normalizer-paid-{}-{}",
+        std::process::id(),
+        SERIAL.fetch_add(1, Ordering::Relaxed)
+    ));
+    fs::create_dir(&root).unwrap();
+    let root = fs::canonicalize(root).unwrap();
+    struct Remove(std::path::PathBuf);
+    impl Drop for Remove {
+        fn drop(&mut self) {
+            let _ = std::fs::remove_dir_all(&self.0);
+        }
+    }
+    let _remove = Remove(root.clone());
+    fs::write(root.join("semaprax.toml"), MANIFEST).unwrap();
+    let mut ordered = SOURCES.iter().copied().collect::<Vec<_>>();
+    ordered.sort_by(|left, right| left.0.cmp(right.0));
+    let mut digest = Sha256::new();
+    digest.update((MANIFEST.len() as u64).to_le_bytes());
+    digest.update(MANIFEST.as_bytes());
+    let mut files = Vec::new();
+    for (path, source) in ordered {
+        let destination = root.join(path);
+        fs::create_dir_all(destination.parent().unwrap()).unwrap();
+        fs::write(&destination, source).unwrap();
+        let actual = fs::read(&destination).unwrap();
+        assert_eq!(actual, source.as_bytes());
+        digest.update((path.len() as u64).to_le_bytes());
+        digest.update(path.as_bytes());
+        digest.update((actual.len() as u64).to_le_bytes());
+        digest.update(&actual);
+        eprintln!(
+            "NORMALIZER_PAID_INPUT path={path} bytes={} sha256={:x}",
+            actual.len(),
+            semaprax::digest_hex::LowerHex(Sha256::digest(&actual))
+        );
+        files.push(serde_json::json!({"path":path}));
+    }
+    let paths = root.join("paths.json");
+    fs::write(
+        &paths,
+        format!(
+            "{{\"schema\":\"semaprax.workspace-semantic-path-set.v1\",\"files\":{}}}\n",
+            serde_json::to_string(&files).unwrap()
+        ),
+    )
+    .unwrap();
+    let capture = Capture::begin(Binding::caller_labelled("catalog-normalizer exact12/public-semantic-workspace/default64MiB; revision externally bound", digest.finalize().into())).unwrap();
+    let outcome = std::panic::catch_unwind(std::panic::AssertUnwindSafe(|| {
+        semaprax::semantic_workspace::initialize(&root, &paths)
+    }));
+    // The public route has returned or unwound and all compiler owners dropped.
+    let report = capture.finish().unwrap();
+    eprintln!(
+        "NORMALIZER_PAID_PHASES default_builder_cap=67108864 inclusive_not_additive=true report={report:?}"
+    );
+    let result = match outcome {
+        Ok(result) => result,
+        Err(payload) => std::panic::resume_unwind(payload),
+    };
+    assert_eq!(report.build, Build::InstrumentedProductionAlgorithm);
+    let exclusive = &report.resolved_core;
+    assert_eq!(exclusive.algorithm, semaprax::workflow_profile::plan_comparison::CoreDebitAlgorithm::InstrumentedProductionAlgorithm);
+    assert!(
+        exclusive.complete && !exclusive.overflow && !exclusive.lost && !exclusive.invalid,
+        "{exclusive:?}"
+    );
+    assert!(exclusive.entered_attempts > 0);
+    assert_eq!(
+        exclusive.final_attempt_ordinal,
+        Some(exclusive.entered_attempts - 1)
+    );
+    for attempt in &exclusive.attempts[..exclusive.stored_attempts] {
+        assert!(attempt.complete && !attempt.invalid, "{attempt:?}");
+        assert_eq!(attempt.stage_sum(), Some(attempt.consumed));
+        assert_eq!(attempt.operation_sum(), Some(attempt.consumed));
+    }
+    eprintln!(
+        "NORMALIZER_EXCLUSIVE_CORE_DEBITS reservations_not_allocations=true attempts_nonadditive=true final_attempt_explicit=true report={exclusive:?}"
+    );
+    assert!(report.paid_phases.balanced && !report.paid_phases.overflow);
+    for phase in [
+        PaidPhase::CrosscheckEnumerated,
+        PaidPhase::CrosscheckFactored,
+    ] {
+        for payer in [
+            PhasePayer::ActiveBuilder,
+            PhasePayer::Unobserved,
+            PhasePayer::Oracle,
+            PhasePayer::Selected,
+            PhasePayer::Unknown,
+        ] {
+            assert_eq!(
+                report
+                    .paid_phases
+                    .row(phase, payer, PhaseOrigin::TestCrosscheck)
+                    .entered,
+                0,
+                "production library has no cfgtest crosscheck"
+            );
+        }
+    }
+    let validation = report.paid_phases.row(
+        PaidPhase::CleanupValidation,
+        PhasePayer::ActiveBuilder,
+        PhaseOrigin::Shipping,
+    );
+    assert!(
+        validation.entered > 0 && validation.ended == validation.entered,
+        "{report:?}"
+    );
+    assert!(
+        validation.known_paid > 0 && validation.unknown == 0,
+        "{report:?}"
+    );
+    match result {
+        Ok(revision) => assert!(!revision.is_empty()),
+        Err(errors) => {
+            eprintln!("NORMALIZER_PAID_REAL_REFUSAL {errors:?}");
+            assert!(
+                !errors.is_empty() && errors.iter().all(|e| e.code == "SPX-G171"),
+                "{errors:?}"
+            );
+        }
     }
 }

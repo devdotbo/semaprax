@@ -617,6 +617,20 @@ mod main_capacity {
     #[test]
     fn next_fork_capacity_keeps_every_full_arithmetic_path_and_original_work() {
         let mut source = String::from("module next_fork; @id(\"f\") fn f(x:i64)->i64 {");
+        // Before the last arithmetic fork, the original fixture has 95 Status
+        // observations. Each owning literal adds Initialize and Transfer in
+        // this ordinary plan, without adding a failure branch. Use the least prefix
+        // that reaches the real cutoff; do not force the cheaper small route
+        // to run a query or change any of the 96 arithmetic operations.
+        let cutoff = super::super::direct::SMALL_COPY_LIMIT;
+        let prefix_count = cutoff.saturating_sub(95).div_ceil(2);
+        assert!(2 * prefix_count + 95 >= cutoff);
+        if prefix_count != 0 {
+            assert!(2 * (prefix_count - 1) + 95 < cutoff);
+        }
+        for index in 0..prefix_count {
+            source.push_str(&format!("let prefix{index}=\"next-fork-{index}\";"));
+        }
         for index in 0..96 {
             let input = if index == 0 {
                 "x".to_owned()
@@ -631,6 +645,28 @@ mod main_capacity {
         let checked = crate::check(&canonical, "next-fork.spx").unwrap();
         assert_eq!(crate::format::canonical(&checked), canonical);
         let program = crate::hir::resolve(&checked).unwrap();
+        let plan = &program.functions[0].cleanup_plan;
+        assert_eq!(plan.status_sources.len(), 96);
+        assert!(plan.status_sources.iter().all(|source| matches!(
+            source.producer,
+            crate::cleanup_plan::StatusProducer::CheckedArithmetic { .. }
+        )));
+        assert_eq!(
+            plan.blocks
+                .iter()
+                .flat_map(|block| &block.transitions)
+                .filter(|transition| matches!(transition, CleanupTransition::Initialize { .. }))
+                .count(),
+            prefix_count
+        );
+        assert_eq!(
+            plan.blocks
+                .iter()
+                .flat_map(|block| &block.transitions)
+                .filter(|transition| matches!(transition, CleanupTransition::Transfer { .. }))
+                .count(),
+            prefix_count
+        );
         let before_copies = PLAN_COPIES.with(Cell::get);
         let (((), allocation), refused, paid, first) = with_limit_usage_refusal(usize::MAX, || {
             measure(|| {

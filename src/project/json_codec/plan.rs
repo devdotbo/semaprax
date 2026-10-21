@@ -78,6 +78,18 @@ pub(super) fn profile_fields(
         IdentifierViews => ("identifier-views.v1", None, None),
         RequestViews => ("request-views.v1", None, None),
         StreamRequestViews => ("stream-request-views.v1", None, None),
+        OwnedRequestDecodeOnlyV1 => ("owned-request-decode-only.v1", None, None),
+        StreamOwnedRequestDecodeOnlyV1 => ("stream-owned-request-decode-only.v1", None, None),
+        Utf8OwnedRequestDecodeOnlyV1 { max_string_bytes } => (
+            "utf8-owned-request-decode-only.v1",
+            Some(max_string_bytes),
+            None,
+        ),
+        StreamUtf8OwnedRequestDecodeOnlyV1 { max_string_bytes } => (
+            "stream-utf8-owned-request-decode-only.v1",
+            Some(max_string_bytes),
+            None,
+        ),
         OwnedRequest => ("owned-request.v1", None, None),
         StreamOwnedRequest => ("stream-owned-request.v1", None, None),
         Utf8OwnedRequest { max_string_bytes } => {
@@ -126,12 +138,69 @@ pub(super) fn profile_fields(
     }
 }
 
+// Unverified bytes only. No HIR, candidate revision, checked flag, root path,
+// publication operation or public constructor exists on this private carrier.
+struct Draft {
+    authored_project_revision: String,
+    manifest: String,
+    authored_sources: Vec<JsonCodecBundleSource>,
+    candidate_sources: Vec<SemanticWorkspaceSource>,
+    entries: Vec<JsonCodecEntryReceipt>,
+}
+impl PartialEq for Draft {
+    fn eq(&self, other: &Self) -> bool {
+        self.authored_project_revision == other.authored_project_revision
+            && self.manifest == other.manifest
+            && self.authored_sources == other.authored_sources
+            && self.entries == other.entries
+            && self.candidate_sources.len() == other.candidate_sources.len()
+            && self
+                .candidate_sources
+                .iter()
+                .zip(&other.candidate_sources)
+                .all(|(a, b)| a.path == b.path && a.source == b.source)
+    }
+}
+
 /// All selectors read the same revision. No intermediate replacement is an input
 /// to another entry. The complete linked candidate is checked before return.
+/// Public derivation retains its complete ordinary build and both HIR checks.
 pub fn derive_json_codec_plan(
     revision: &ProjectRevision,
     entries: &[JsonCodecPlanEntry],
 ) -> Result<JsonCodecBundle, Vec<Diagnostic>> {
+    let draft = derive_draft(revision, entries)?;
+    check_draft(revision, draft)
+}
+
+/// Starter-only replay: independent generation compares every field and full
+/// source byte before ONE ordinary candidate build. Public replay stays below.
+pub(in crate::project) fn derive_replayed_json_codec_plan(
+    revision: &ProjectRevision,
+    entries: &[JsonCodecPlanEntry],
+) -> Result<JsonCodecBundle, Vec<Diagnostic>> {
+    let draft = derive_draft(revision, entries)?;
+    replay_draft(revision, entries, draft)
+}
+fn replay_draft(
+    revision: &ProjectRevision,
+    entries: &[JsonCodecPlanEntry],
+    draft: Draft,
+) -> Result<JsonCodecBundle, Vec<Diagnostic>> {
+    let regenerated = derive_draft(revision, entries)?;
+    if draft != regenerated {
+        return Err(refusal(
+            "JSON codec bundle differs from its exact immutable-revision plan replay",
+        ));
+    }
+    drop(regenerated); // No second draft backing survives candidate admission.
+    check_draft(revision, draft)
+}
+
+fn derive_draft(
+    revision: &ProjectRevision,
+    entries: &[JsonCodecPlanEntry],
+) -> Result<Draft, Vec<Diagnostic>> {
     revision.check()?;
     if entries.is_empty()
         || entries.len() > MAX_ENTRIES
@@ -222,17 +291,37 @@ pub fn derive_json_codec_plan(
             "JSON codec combined candidate exceeds its fixed total source bound",
         ));
     }
-    // Ordinary complete Project resolution rejects cross-entry declaration and
-    // import collisions; no helper names or receipt fields bypass admission.
-    let candidate = crate::project::build::build_owned(revision.manifest(), candidate_sources)?;
-    crate::hir::validate(&candidate.entry_program).map_err(|e| vec![e])?;
-    crate::hir::validate(&candidate.test_program).map_err(|e| vec![e])?;
     let mut originals = revision
         .sources()
         .iter()
         .map(|s| source(s.path(), s.source()))
         .collect::<Vec<_>>();
     originals.sort_by(|a, b| a.path.cmp(&b.path));
+    Ok(Draft {
+        authored_project_revision: revision.project_revision().to_owned(),
+        manifest: revision.manifest().to_canonical_toml(),
+        authored_sources: originals,
+        candidate_sources,
+        entries: receipts,
+    })
+}
+
+fn check_draft(
+    revision: &ProjectRevision,
+    draft: Draft,
+) -> Result<JsonCodecBundle, Vec<Diagnostic>> {
+    // Ordinary complete Project resolution rejects cross-entry declaration and
+    // import collisions; no helper names or receipt fields bypass admission.
+    #[cfg(test)]
+    tests::note_check(0);
+    let candidate =
+        crate::project::build::build_owned(revision.manifest(), draft.candidate_sources)?;
+    #[cfg(test)]
+    tests::note_check(1);
+    crate::hir::validate(&candidate.entry_program).map_err(|e| vec![e])?;
+    #[cfg(test)]
+    tests::note_check(2);
+    crate::hir::validate(&candidate.test_program).map_err(|e| vec![e])?;
     let mut sources = candidate
         .sources
         .iter()
@@ -241,13 +330,13 @@ pub fn derive_json_codec_plan(
     sources.sort_by(|a, b| a.path.cmp(&b.path));
     let bundle = JsonCodecBundle {
         schema: "semaprax.json-codec-bundle.v1".to_owned(),
-        authored_project_revision: revision.project_revision().to_owned(),
+        authored_project_revision: draft.authored_project_revision,
         candidate_project_revision: candidate.project_revision,
         candidate_workspace_revision: candidate.workspace_revision,
-        manifest: revision.manifest().to_canonical_toml(),
-        authored_sources: originals,
+        manifest: draft.manifest,
+        authored_sources: draft.authored_sources,
         candidate_sources: sources,
-        entries: receipts,
+        entries: draft.entries,
     };
     // Count serialized bytes without allocating a second oversized artifact.
     struct Count(usize);
@@ -293,3 +382,8 @@ pub fn verify_json_codec_plan(
     }
     Ok(())
 }
+
+#[cfg(test)]
+pub(in crate::project) mod before;
+#[cfg(test)]
+pub(in crate::project) mod tests;

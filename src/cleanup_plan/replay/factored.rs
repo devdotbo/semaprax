@@ -32,6 +32,8 @@ use std::rc::Rc;
 #[cfg(test)]
 mod before_closure_invocation;
 #[cfg(test)]
+mod before_inline_singleton;
+#[cfg(test)]
 mod borrowed_canonical;
 #[cfg(test)]
 mod canonical_before;
@@ -138,6 +140,10 @@ pub(super) fn validate_with_index_storage<'hir>(
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayFactored,
     );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayFactored,
+    );
     let cfg_paths = branch_sensitive_cfg_bounds(function)?.terminal_paths;
     let semantic_paths = hir_terminal_path_bound(function)?;
     let selected = selected_paid(
@@ -221,6 +227,10 @@ fn compare_with_index_storage<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<Option<bool>, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase =
+        budget.paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::FactoredComparison);
+
     let BuiltComparison {
         automaton,
         sink,
@@ -279,14 +289,14 @@ fn compare_with_index_storage<'hir>(
 
     budget.reserve_bytes(
         function,
-        canonical_shared::Canonicalizer::CONSTRUCTOR_CONTROLS,
+        canonical_shared::inline_singleton::Canonicalizer::CONSTRUCTOR_CONTROLS,
         "canonical ordered dictionary owner receiving",
     )?;
-    let mut canonical = canonical_shared::Canonicalizer::new(&automaton, sink);
+    let mut canonical = canonical_shared::inline_singleton::Canonicalizer::new(&automaton, sink);
     if budget.pays_allocations() {
         budget.reserve_bytes(
             function,
-            canonical_shared::Canonicalizer::COLD_NODE_CONTROLS,
+            canonical_shared::inline_singleton::Canonicalizer::COLD_NODE_CONTROLS,
             "factored cold terminal node predicate",
         )?;
     }
@@ -359,9 +369,17 @@ fn build_comparison<'hir>(
     helpers: Option<&crate::loop_calls::byte_writer::ModuleIndex<'hir>>,
     continuations: Option<&mut continuation_storage::Storage<'hir>>,
 ) -> Result<BuiltComparison, Diagnostic> {
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _paid_phase = budget
+        .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::FactoredConstruction);
+
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayFactoredConstruction,
+    );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayFactoredConstruction,
     );
     // Both independent constructors debit skeleton helpers as well as ordinary
     // constructors. Keep one active allowance through the HIR walk AND plan
@@ -1002,6 +1020,9 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
     let _debit_phase = debit_routes::phase(debit_routes::Phase::EnumeratedHIR);
     let saved = SKELETON_MATERIALIZATIONS.with(Cell::get);
     let mut enumerating = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let paid_enumeration = enumerating
+        .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckEnumerated);
     let enumerated = hir_skeleton_paths(program, function, &mut enumerating).and_then(|mut hir| {
         let _debit_phase = debit_routes::phase(debit_routes::Phase::FlatPLAN);
         let mut plan = plan_skeleton_paths(function, &mut enumerating)?;
@@ -1011,8 +1032,13 @@ fn cross_check(program: &dyn crate::cleanup::ReplayContext, function: &ResolvedF
         Ok(hir == plan)
     });
     let _debit_phase = debit_routes::phase(debit_routes::Phase::OtherReplay);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    drop(paid_enumeration);
     if let Ok(true) = enumerated {
         let mut factored = ReplayBudget::with_skeleton_limit(0);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        let _paid_crosscheck = factored
+            .paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::CrosscheckFactored);
         let verdict = compare(program, function, &mut factored);
         assert!(
             matches!(verdict, Ok(Some(true))),

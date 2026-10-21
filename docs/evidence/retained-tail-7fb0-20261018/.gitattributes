@@ -1,2 +1,0 @@
-# Preserve the complete actual CI capture, including its original whitespace.
-before-macos-build.log -text -whitespace

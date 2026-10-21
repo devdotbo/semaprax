@@ -10,15 +10,16 @@ fn packet() -> serde_json::Value {
         "../../docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json"
     );
     assert_eq!(data.len(), 112927);
+    let compiled_digest = digest(data.as_bytes());
     assert_eq!(
-        digest(data.as_bytes()),
+        compiled_digest,
         "336d79ff6cddc852d4750aa304b85a31494ac98c2e015bb52dfb615db7d98fe3"
     );
     let root = Path::new(env!("CARGO_MANIFEST_DIR"));
     let physical = held(
         &root.join("docs/evidence/next-big-batch-source-binding-20261017/current-inputs.json"),
         data.len(),
-        &digest(data.as_bytes()),
+        &compiled_digest,
     )
     .unwrap();
     assert_eq!(

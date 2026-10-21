@@ -435,7 +435,9 @@ pub(super) fn lower(
         Profile {
             wrapper: "#for",
             length: "#for-length",
-            length_callee: crate::vec_ops::LEN_ID,
+            length_callee: super::ids::CompilerDeclaration::VecOperation(
+                crate::vec_ops::VecOp::Len,
+            ),
             length_arguments,
             item: element.clone(),
             kind: super::SourceForKind::Copy,
@@ -445,7 +447,9 @@ pub(super) fn lower(
             ty: element.clone(),
             ownership: OwnershipMode::Value,
             kind: ResolvedExprKind::Call {
-                callee: DeclarationId::new(crate::vec_ops::GET_ID),
+                callee: DeclarationId::compiler(super::ids::CompilerDeclaration::VecOperation(
+                    crate::vec_ops::VecOp::Get,
+                )),
                 type_arguments: vec![element],
                 instance: None,
                 args: vec![
@@ -465,7 +469,7 @@ pub(super) fn lower(
 pub(super) struct Profile {
     pub(super) wrapper: &'static str,
     pub(super) length: &'static str,
-    pub(super) length_callee: &'static str,
+    pub(super) length_callee: super::ids::CompilerDeclaration,
     pub(super) length_arguments: Vec<ResolvedType>,
     pub(super) item: ResolvedType,
     pub(super) kind: super::SourceForKind,
@@ -525,7 +529,7 @@ pub(super) fn lower_profile(
         ty: ResolvedType::Usize,
         ownership: OwnershipMode::Value,
         kind: ResolvedExprKind::Call {
-            callee: DeclarationId::new(profile.length_callee),
+            callee: DeclarationId::compiler(profile.length_callee),
             type_arguments: profile.length_arguments,
             instance: None,
             args: vec![place(
@@ -665,3 +669,6 @@ pub(super) fn lower_profile(
         span,
     }
 }
+
+#[cfg(test)]
+pub(in crate::hir) mod identity_before;

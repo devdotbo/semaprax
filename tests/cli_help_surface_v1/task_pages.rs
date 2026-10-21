@@ -140,7 +140,18 @@ fn json_task_pages_keep_full_host_boundaries_and_complete_source_inventory_inert
     }
     for file in route["files"].as_array().unwrap() {
         assert!(pages.contains(file["path"].as_str().unwrap()));
-        assert!(pages.contains(file["sha256"].as_str().unwrap()));
+        assert!(pages.contains(file["content"].as_str().unwrap()));
+    }
+    for forbidden in [
+        "ShiftSim",
+        "shiftsim",
+        "examples/shiftsim",
+        "schedule decision",
+    ] {
+        assert!(
+            !pages.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
+        );
     }
     for id in route["declarations"].as_array().unwrap() {
         assert_eq!(
@@ -160,6 +171,86 @@ fn json_task_pages_keep_full_host_boundaries_and_complete_source_inventory_inert
         "author:task:stdin-json:language-command-io.collection-record.v1:native64:999999",
     ] {
         let (page, directory) = invoke(&["help", "language", selector]);
+        assert_eq!(page.status.code(), Some(2));
+        assert!(page.stdout.is_empty() && !page.stderr.is_empty());
+        assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);
+        std::fs::remove_dir(directory).unwrap();
+    }
+}
+
+#[test]
+fn selected_file_resource_task_pages_keep_exact_profile_limits_and_zero_side_effects() {
+    let descriptors: serde_json::Value = serde_json::from_str(include_str!(
+        "../../src/cli/help/authoring/tasks/catalog.json"
+    ))
+    .unwrap();
+    let route = &descriptors["selected_file_task"];
+    let mut query =
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:0"
+            .to_owned();
+    let mut pages = String::new();
+    loop {
+        let (page, directory) = invoke(&["help", "language", &query]);
+        let (again, second) = invoke(&["help", "language", &query]);
+        assert!(page.status.success() && page.stderr.is_empty());
+        assert_eq!(page.stdout, again.stdout);
+        assert!(again.status.success() && again.stderr.is_empty() && page.stdout.len() <= 2048);
+        let output = std::str::from_utf8(&page.stdout).unwrap();
+        for required in [
+            "source-command.selected-file.resource-output.v1",
+            "argv-utf8-256+selected-file.follow.v1",
+            "native64 Unix only",
+            "256 argv",
+            "1048576-byte",
+            "qualification pending",
+            "including G171",
+        ] {
+            assert!(output.contains(required), "{query}: {required}");
+        }
+        for cap in route["capabilities"].as_array().unwrap() {
+            assert!(output.contains(cap.as_str().unwrap()));
+        }
+        for path in [directory, second] {
+            assert_eq!(std::fs::read_dir(&path).unwrap().count(), 0);
+            std::fs::remove_dir(path).unwrap();
+        }
+        pages.push_str(output);
+        if let Some(next) = output.lines().find_map(|line| {
+            line.split_once("next: help language ")
+                .map(|(_, next)| next)
+        }) {
+            assert_ne!(next, query);
+            query = next.to_owned();
+        } else {
+            assert!(output.contains("Coverage: complete selected-file"));
+            break;
+        }
+    }
+    assert!(pages.contains(route["manifest"].as_str().unwrap()));
+    assert!(pages.contains("NOT a new template"));
+    assert!(pages.contains("./app-bin --spx-selected-file-v1 0 -- <file> <your-options>"));
+    for forbidden in [
+        "LogLens",
+        "loglens",
+        "experiments/selected-file-input",
+        "sha256",
+        "--top",
+    ] {
+        assert!(
+            !pages.contains(forbidden),
+            "benchmark assistance leaked: {forbidden}"
+        );
+    }
+    assert!(pages.contains(route["source"].as_str().unwrap()));
+    assert!(pages.contains(route["test_source"].as_str().unwrap()));
+    for query in [
+        "author:task:selected-file:source-command.v1:native64:0",
+        "author:task:selected-file:source-command.selected-file.v1:native64:0",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:wasm32:0",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:00",
+        "author:task:selected-file:source-command.selected-file.resource-output.v1:native64:999999",
+    ] {
+        let (page, directory) = invoke(&["help", "language", query]);
         assert_eq!(page.status.code(), Some(2));
         assert!(page.stdout.is_empty() && !page.stderr.is_empty());
         assert_eq!(std::fs::read_dir(&directory).unwrap().count(), 0);

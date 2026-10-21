@@ -1,8 +1,8 @@
 //! #885 whole ordinary ABI with an actual lexical status/initial-edge owner.
 //! SOURCE WIP: typed receiving ledger and independent controls pending review.
-use super::super::require_expression;
 use super::case_certified::retained_lookup;
 use super::*;
+use crate::bounded_output::classifier_string::StorageParent;
 use crate::cleanup_plan::replay::expression_facts::arena::retained::Session;
 use crate::cleanup_plan::replay::ordinary_receiving::{
     prepare_into, refuse_into, reserve_into, Failure,
@@ -17,6 +17,10 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
     #[cfg(test)]
     let _operation = crate::bounded_output::stage_debits::operation_guard(
         crate::bounded_output::stage_debits::Operation::ReplayStructure,
+    );
+    #[cfg(feature = "unstable-workflow-profiling")]
+    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(
+        crate::bounded_output::exclusive_debits::Operation::ReplayStructure,
     );
     let plan = &function.cleanup_plan;
     if helpers.is_some_and(|index| {
@@ -48,7 +52,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
             ),
         ));
     }
-
     if lexical_cert::requires_lexical(function) {
         return lexical_replay::validate_with_index(program, function, budget, helpers);
     }
@@ -64,7 +67,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
         plan_structure_units(plan),
         "structural validation",
     )?;
-
     let expression_facts = expression_facts::with_budget(function, budget)?;
     ordinary_inventory::validate_inventory_coverage(program, function, budget)?;
     let status_cases =
@@ -429,25 +431,138 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                     }
                                 }
                             }
-
-                            // The existing owner ends before every program-dependent transition callback.
-                            drop(failure);
-                            let budget = session.budget;
+                            // One prepaid terminal producer: every false guard immediately returns.
+                            if !reserve_into!(
+                                session.budget,
+                                function,
+                                failure,
+                                StorageParent::ACQUISITION_CONTROLS
+                                    + StorageParent::TERMINAL_CONTROLS
+                                    + std::mem::size_of::<usize>()
+                                    + 3 * std::mem::size_of::<&str>()
+                                    + std::mem::size_of::<bool>(),
+                                "retained transition parent and terminal controls"
+                            ) {
+                                return Err(failure
+                                    .error
+                                    .take()
+                                    .expect("parent acquisition payment"));
+                            }
+                            let Some(transition_parent) = statuses.ledger.storage_parent() else {
+                                refuse_into!(
+                                    session.budget,
+                                    function,
+                                    failure,
+                                    "ordinary builder already failed",
+                                    ""
+                                );
+                                return Err(failure
+                                    .error
+                                    .take()
+                                    .expect("missing transition parent"));
+                            };
+                            // Keep the existing fully paid output/error slots through
+                            // the last transition query; never lend scratch to callbacks.
+                            macro_rules! transition_fact {
+                                ($query:expr) => {{
+                                    session.budget.reserve_bytes(
+                                        function,
+                                        0,
+                                        "expression-fact arena lookup authentication",
+                                    )?;
+                                    session.budget.charge(
+                                        function,
+                                        0,
+                                        "expression-fact arena lookup authentication",
+                                    )?;
+                                    session.budget.reserve_bytes(
+                                        function,
+                                        Session::into_edge_local_bytes()
+                                            + Session::into_edge_query_bytes()
+                                            + std::mem::size_of::<Option<&Option<CallFact<'_>>>>(),
+                                        "retained transition expression-fact query controls",
+                                    )?;
+                                    if !session.fact_edge_into_prepaid(
+                                        $query,
+                                        &mut received,
+                                        &mut failure,
+                                    ) {
+                                        return Err(failure
+                                            .error
+                                            .take()
+                                            .expect("transition query selected first error"));
+                                    }
+                                    received
+                                }};
+                            }
+                            macro_rules! require_transition_expression {
+                                ($query:expr) => {
+                                    #[allow(clippy::redundant_pattern_matching,
+                                        reason = "bare receiving pattern forms no Option-method boundary")]
+                                    if let None = transition_fact!($query) {
+                                        return Err(replay_error(function,
+                                            format_args!("cleanup plan references unknown expression `{}`", $query)));
+                                    }
+                                };
+                            }
+                            macro_rules! transition_callback_prepare {
+                                () => {
+                                    if !reserve_into!(
+                                        session.budget,
+                                        function,
+                                        failure,
+                                        StorageParent::CURRENT_CONTROLS
+                                            + std::mem::size_of::<usize>()
+                                            + 3 * std::mem::size_of::<&str>()
+                                            + std::mem::size_of::<bool>(),
+                                        "retained transition callback identity controls"
+                                    ) {
+                                        return Err(failure.error.take().expect(
+                                            "callback guard payment selected first error",
+                                        ));
+                                    }
+                                };
+                            }
+                            macro_rules! transition_callback_complete {
+                                () => {
+                                    if !transition_parent.current() {
+                                        // The original prepaid renderer keeps the complete
+                                        // sticky-builder diagnostic; no foreign debit.
+                                        refuse_into!(
+                                            session.budget,
+                                            function,
+                                            failure,
+                                            "ordinary builder already failed",
+                                            ""
+                                        );
+                                        return Err(failure
+                                            .error
+                                            .take()
+                                            .expect("callback identity refusal"));
+                                    }
+                                };
+                            }
+                            // Helpers borrow only the original budget; scratch remains inaccessible
+                            // until the complete callback sequence has returned successfully.
                             let expressions: &dyn Lookup = facts;
                             {
                                 let storage = &storage;
                                 let leaves = &leaves;
                                 let statuses = status_ids;
                                 // Preserve the original directory constructor's zero/current/sticky checks.
-                                budget.reserve_bytes(
+                                session.budget.reserve_bytes(
                                     function,
                                     0,
                                     "cleanup referenced exit directory",
                                 )?;
-                                budget.charge(function, 0, "cleanup referenced exit directory")?;
+                                session.budget.charge(
+                                    function,
+                                    0,
+                                    "cleanup referenced exit directory",
+                                )?;
                                 let mut committed_calls = Directory::new(
                                     function,
-                                    budget,
+                                    session.budget,
                                     "cleanup committed call directory",
                                 )?;
                                 for (index, block) in plan.blocks.iter().enumerate() {
@@ -465,32 +580,33 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                     for transition in &block.transitions {
                                         match transition {
                                             CleanupTransition::Initialize { at, destination } => {
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                require_transition_expression!(at);
                                                 helpers::validate_place(
                                                     function,
                                                     destination,
                                                     storage,
                                                     leaves,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
                                             }
                                             CleanupTransition::ReserveRenewal { at, binding } => {
+                                                transition_callback_prepare!();
                                                 renewal::validate_binding(
-                                                    program, function, at, binding, helpers, budget,
-                                                )?;
-                                                require_expression(
+                                                    program,
                                                     function,
-                                                    expressions,
                                                     at,
-                                                    budget,
+                                                    binding,
+                                                    helpers,
+                                                    session.budget,
                                                 )?;
+                                                transition_callback_complete!();
+                                                require_transition_expression!(at);
                                                 helpers::validate_place(
-                                                    function, binding, storage, leaves, budget,
+                                                    function,
+                                                    binding,
+                                                    storage,
+                                                    leaves,
+                                                    session.budget,
                                                 )?;
                                             }
                                             CleanupTransition::Renew {
@@ -498,29 +614,30 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 source,
                                                 destination,
                                             } => {
+                                                transition_callback_prepare!();
                                                 renewal::validate_binding(
                                                     program,
                                                     function,
                                                     at,
                                                     destination,
                                                     helpers,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                transition_callback_complete!();
+                                                require_transition_expression!(at);
                                                 helpers::validate_place(
-                                                    function, source, storage, leaves, budget,
+                                                    function,
+                                                    source,
+                                                    storage,
+                                                    leaves,
+                                                    session.budget,
                                                 )?;
                                                 helpers::validate_place(
                                                     function,
                                                     destination,
                                                     storage,
                                                     leaves,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
                                             }
                                             CleanupTransition::Transfer {
@@ -528,39 +645,44 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 source,
                                                 destination,
                                             } => {
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                require_transition_expression!(at);
                                                 let source_flags = helpers::validate_place(
-                                                    function, source, storage, leaves, budget,
+                                                    function,
+                                                    source,
+                                                    storage,
+                                                    leaves,
+                                                    session.budget,
                                                 )?;
                                                 let destination_flags = helpers::validate_place(
                                                     function,
                                                     destination,
                                                     storage,
                                                     leaves,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
                                                 let mut source_directory = Directory::new(
                                                     function,
-                                                    budget,
+                                                    session.budget,
                                                     "cleanup transfer source flag directory",
                                                 )?;
                                                 for flag in source_flags {
-                                                    source_directory
-                                                        .insert(function, flag, budget)?;
+                                                    source_directory.insert(
+                                                        function,
+                                                        flag,
+                                                        session.budget,
+                                                    )?;
                                                 }
                                                 let mut destination_directory = Directory::new(
                                                     function,
-                                                    budget,
+                                                    session.budget,
                                                     "cleanup transfer destination flag directory",
                                                 )?;
                                                 for flag in destination_flags {
-                                                    destination_directory
-                                                        .insert(function, flag, budget)?;
+                                                    destination_directory.insert(
+                                                        function,
+                                                        flag,
+                                                        session.budget,
+                                                    )?;
                                                 }
                                                 let source_flags = source_directory;
                                                 let destination_flags = destination_directory;
@@ -568,7 +690,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                     || !source_flags.is_disjoint(
                                                         &destination_flags,
                                                         function,
-                                                        budget,
+                                                        session.budget,
                                                     )?
                                                 {
                                                     return Err(replay_error(
@@ -583,15 +705,15 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 variant,
                                                 case,
                                             } => {
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                require_transition_expression!(at);
                                                 helpers::validate_place(
-                                                    function, source, storage, leaves, budget,
+                                                    function,
+                                                    source,
+                                                    storage,
+                                                    leaves,
+                                                    session.budget,
                                                 )?;
+                                                transition_callback_prepare!();
                                                 let Some(cases) =
                                                     program.declarations().variant_cases(variant)
                                                 else {
@@ -626,6 +748,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             "variant authentication source type disagrees with its variant",
                         ));
                                                 }
+                                                transition_callback_complete!();
                                             }
                                             CleanupTransition::TransferVariant {
                                                 at,
@@ -633,21 +756,20 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 destination,
                                                 variant,
                                             } => {
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                require_transition_expression!(at);
                                                 let source_flags = helpers::validate_place(
-                                                    function, source, storage, leaves, budget,
+                                                    function,
+                                                    source,
+                                                    storage,
+                                                    leaves,
+                                                    session.budget,
                                                 )?;
                                                 let destination_flags = helpers::validate_place(
                                                     function,
                                                     destination,
                                                     storage,
                                                     leaves,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
                                                 if source_flags.len() != destination_flags.len()
                         || function
@@ -677,18 +799,13 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 destination,
                                                 variant,
                                             } => {
-                                                require_expression(
-                                                    function,
-                                                    expressions,
-                                                    at,
-                                                    budget,
-                                                )?;
+                                                require_transition_expression!(at);
                                                 helpers::validate_place(
                                                     function,
                                                     destination,
                                                     storage,
                                                     leaves,
-                                                    budget,
+                                                    session.budget,
                                                 )?;
                                                 let slot = function
                         .cleanup_plan
@@ -717,8 +834,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 }
                                             }
                                             CleanupTransition::CallCommit { call, arguments } => {
-                                                let Some(Some(fact)) =
-                                                    expressions.fact(function, call, budget)?
+                                                let Some(Some(fact)) = transition_fact!(call)
                                                 else {
                                                     return Err(replay_error(
                             function,
@@ -728,15 +844,18 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                 // Lexical return domains duplicate postcondition bodies, so one
                                                 // call legitimately commits once per proof domain; the typed
                                                 // skeleton comparison counts those per-domain commits exactly.
-                                                if !committed_calls
-                                                    .insert(function, call, budget)?
-                                                    && plan.lexical_control.is_none()
+                                                if !committed_calls.insert(
+                                                    function,
+                                                    call,
+                                                    session.budget,
+                                                )? && plan.lexical_control.is_none()
                                                 {
                                                     return Err(replay_error(
                                                         function,
                                                         "call has more than one atomic commit",
                                                     ));
                                                 }
+                                                transition_callback_prepare!();
                                                 let params = resolved_call::resolved_call_param_view(
                         program,
                         function,
@@ -770,10 +889,11 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                             "call commit does not contain every and only owned droppable parameter",
                         ));
                                                 }
+                                                transition_callback_complete!();
                                                 let mut previous = None;
                                                 let mut consumed = Directory::new(
                                                     function,
-                                                    budget,
+                                                    session.budget,
                                                     "cleanup consumed flag directory",
                                                 )?;
                                                 for argument in arguments {
@@ -823,11 +943,13 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                         &argument.source,
                                                         storage,
                                                         leaves,
-                                                        budget,
+                                                        session.budget,
                                                     )? {
-                                                        if !consumed
-                                                            .insert(function, flag, budget)?
-                                                        {
+                                                        if !consumed.insert(
+                                                            function,
+                                                            flag,
+                                                            session.budget,
+                                                        )? {
                                                             return Err(replay_error(
                                     function,
                                     "atomic call commit consumes overlapping argument epochs",
@@ -838,7 +960,10 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                             }
                                             CleanupTransition::SelectFailure { source } => {
                                                 require_status_paid(
-                                                    function, statuses, source, budget,
+                                                    function,
+                                                    statuses,
+                                                    source,
+                                                    session.budget,
                                                 )?;
                                                 if selected.replace(source).is_some() {
                                                     return Err(replay_error(
@@ -871,18 +996,8 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                                         operand,
                                                         ..
                                                     } => {
-                                                        require_expression(
-                                                            function,
-                                                            expressions,
-                                                            expression,
-                                                            budget,
-                                                        )?;
-                                                        require_expression(
-                                                            function,
-                                                            expressions,
-                                                            operand,
-                                                            budget,
-                                                        )?;
+                                                        require_transition_expression!(expression);
+                                                        require_transition_expression!(operand);
                                                     }
                                                 }
                                             }
@@ -950,12 +1065,12 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                             }
                                             // The eliminated insert authenticated even an already-paid
                                             // slot. Keep both zero checks before the original owner read.
-                                            budget.reserve_bytes(
+                                            session.budget.reserve_bytes(
                                                 function,
                                                 0,
                                                 "cleanup referenced exit directory",
                                             )?;
-                                            budget.charge(
+                                            session.budget.charge(
                                                 function,
                                                 0,
                                                 "cleanup referenced exit directory",
@@ -963,12 +1078,12 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                             if plan.exits[exit.0 as usize].from != block.id {
                                                 // Only a malformed owner needs a bounded previous-block
                                                 // proof. Pay every control and step before these new reads.
-                                                budget.reserve_bytes(
+                                                session.budget.reserve_bytes(
                                                     function,
                                                     exit_prefix::CONTROL_BYTES,
                                                     "cleanup prior exit reference controls",
                                                 )?;
-                                                budget.charge(
+                                                session.budget.charge(
                                                     function,
                                                     exit_prefix::PROBE_UNITS,
                                                     "cleanup prior exit reference proof",
@@ -1003,6 +1118,8 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                         }
                                     }
                                 }
+                                drop(failure);
+                                let budget = session.budget;
                                 let mut expected_calls = Directory::new(
                                     function,
                                     budget,
@@ -1367,7 +1484,6 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
     }
     Ok(())
 }
-
 #[cfg(test)]
 #[allow(
     clippy::duplicate_mod,

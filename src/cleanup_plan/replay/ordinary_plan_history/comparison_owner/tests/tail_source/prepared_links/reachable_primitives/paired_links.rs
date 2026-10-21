@@ -15,6 +15,16 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     result
 }
 pub(super) fn previous_owner(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+        "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_owner_tail_stage(&paired_tails::previous_owner(current))
 }
 fn previous_owner_tail_stage(current: &str) -> String {
@@ -29,6 +39,16 @@ const OWNER: &[(usize, &str, &str)] = &[
     (14296, "                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW + 2 * lexical_cursor::PAIR_LINK_VIEW,\n", "                    PAIR_SCOPE + 2 * lexical_cursor::TAIL_VIEW,\n"),
 ];
 pub(super) fn previous_macro(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+        "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_macro_tail_stage(&paired_tails::previous_macro(current))
 }
 fn previous_macro_tail_stage(current: &str) -> String {
@@ -57,8 +77,19 @@ const MACRO: &[(usize, &str, &str)] = &[
     (489, "pub(super) const PRIMITIVE_FRAMES: usize = 41 * PAYMENT_HEADER;\n", "pub(super) const PRIMITIVE_FRAMES: usize = 42 * PAYMENT_HEADER;\n"),
     (339, "// The shared immutable-step branch adds five payment and five work sites.\n", "// The shared immutable-step branch adds six payment and five work sites.\n"),
 ];
+#[path = "paired_links/constructor.rs"]
 mod constructor;
 pub(super) fn previous_pair_tests(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+        "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_pair_tests_stage(&constructor::previous_pair_tests(current))
 }
 fn previous_pair_tests_stage(current: &str) -> String {
@@ -73,12 +104,24 @@ const PAIR_TESTS: &[(usize, &str, &str)] = &[
     (4788, "    let advance = 2 * size_of::<&[usize]>()\n", "    let advance = 4 * size_of::<&mut Vec<usize>>()\n        + 2 * size_of::<Option<usize>>()\n        + 10 * size_of::<usize>()\n        + 6 * size_of::<bool>()\n"),
     (4447, "    let links = 2 * size_of::<&[usize]>() + 4 * size_of::<usize>() + 3 * size_of::<bool>();\n", "    let links = 4 * size_of::<&Vec<usize>>()\n        + 4 * size_of::<&[usize]>()\n        + 4 * size_of::<usize>()\n        + 3 * size_of::<bool>();\n"),
 ];
+#[path = "paired_links/json_ledger.rs"]
 mod json_ledger;
+#[path = "paired_links/paired_tails.rs"]
 mod paired_tails;
 pub(super) fn previous_tail_census(current: &str) -> String {
     paired_tails::previous_census(current)
 }
 pub(super) fn previous_route(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/bounded_output/stage_debits/route_debits.rs",
+        "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_route_stage(&json_ledger::previous_route(current))
 }
 fn previous_route_stage(current: &str) -> String {
@@ -97,6 +140,16 @@ const ROUTE: &[(usize, &str, &str)] = &[
     (31549, "    fn phases<'a>(source: &'a str, token: &str, arguments: &[usize]) -> Vec<(&'a str, usize)> {\n", "    fn phases<'a>(source: &'a str, token: &str, arguments: usize) -> Vec<&'a str> {\n"),
 ];
 pub(super) fn previous_reachable(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+        "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 11150, REACHABLE)
 }
 #[rustfmt::skip]
@@ -104,6 +157,16 @@ const REACHABLE: &[(usize, &str, &str)] = &[
     (899, "mod paired_links;\n", ""),
 ];
 pub(super) fn previous_stage1(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+        "0c0437fd827d8461cdda760700ce7d8186c79b49a6242cd30eb909c2d9044002",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 18935, STAGE1)
 }
 #[rustfmt::skip]
@@ -114,6 +177,16 @@ const STAGE1: &[(usize, &str, &str)] = &[
     (5993, "    let current = super::paired_links::previous_owner(current);\n    let current = current.as_str();\n", ""),
 ];
 pub(super) fn previous_stage3(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+        "084e3c34169f471e5cc7a2f9b2b1593da9ce0b447a17178799877762f4c8e92d",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"
+        )),
+    );
+    let current = stage.as_str();
     previous_stage3_tail_stage(&paired_tails::previous_runs(current))
 }
 fn previous_stage3_tail_stage(current: &str) -> String {
@@ -132,6 +205,16 @@ const STAGE3: &[(usize, &str, &str)] = &[
     (785, "    let current = super::super::super::paired_links::previous_macro(current);\n    let current = current.as_str();\n", ""),
 ];
 pub(super) fn previous_boundary_controls(current: &str) -> String {
+    let stage = incoming_stage(
+        current,
+        "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+        "db28863e00f2732ab65d3322bbebe3bf2f5f9928f8cad813260d6e5ab6890b85",
+        include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        )),
+    );
+    let current = stage.as_str();
     restore(current, 23201, STAGE2)
 }
 #[rustfmt::skip]
@@ -148,6 +231,8 @@ mod tests {
         before: &str,
         edits: &[(usize, &str, &str)],
     ) {
+        let stage = super::incoming_current_stage(current);
+        let current = stage.as_str();
         let &(at, after, _) = edits
             .iter()
             .find(|(_, after, _)| !after.is_empty())
@@ -324,4 +409,199 @@ mod tests {
             STAGE2,
         );
     }
+}
+
+fn incoming_stage(current: &str, path: &str, sha: &str, live: &str) -> String {
+    if current == live {
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(path, sha, current)
+    } else {
+        current.to_owned()
+    }
+}
+
+// Closed current-first acquisition precedes mutations at genuine historical offsets.
+fn incoming_current_stage(current: &str) -> String {
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/bounded_output/stage_debits/route_debits.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/bounded_output/stage_debits/route_debits.rs",
+                "250e351274cf1e0f745a0b8326f24fa6addbab59a4923313229bb9f8394c8c2a",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs",
+                "23469f3a0ec012a0975f50e627811aa4874fdf4215b6a1c734b1c93a7a043955",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs",
+                "b66e1c1f47583c8c687e352be56bcb01e49da9456b81c3e36862a359416e5583",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_census.rs",
+                "e0ff7f5bd4f8a4fef1cc91114440e0819fde58098f5c64e1ba3bf28546537bbc",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/pair_scope_tests.rs",
+                "b46e7bfec30cd08b716e6070975651a38d235b0a8ad3ffd851d7534fc0b94d52",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives.rs",
+                "15ffb8da630f6bfdd8bcd92399dd4bb3fef1716c1cc0e7b635a89bfd5a02393d",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links.rs",
+                "0c85f1f992d5b831e601ea927e832e4f1df0cf5b0bcc27688eea9aa944a3b6f2",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/constructor.rs",
+                "9dc41df52f983bad1552fd556c0af3db2622a8e7eb1328356db230db906520ae",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/json_ledger.rs",
+                "4e01eab3ec8c582b781958702d3a82e044e959c93a49ba94e02c4be65ce8fa63",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/paired_links/paired_tails.rs",
+                "9bcdf29f73430c509a567889238b552be190de2d5b11bfb7ee6c22c21fae62e5",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+                "0c0437fd827d8461cdda760700ce7d8186c79b49a6242cd30eb909c2d9044002",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries.rs",
+                "db28863e00f2732ab65d3322bbebe3bf2f5f9928f8cad813260d6e5ab6890b85",
+                live,
+            );
+        }
+    }
+    {
+        let live = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs"
+        ));
+        if current == live {
+            return incoming_stage(
+                current,
+                "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps/shared_boundaries/shared_runs.rs",
+                "084e3c34169f471e5cc7a2f9b2b1593da9ce0b447a17178799877762f4c8e92d",
+                live,
+            );
+        }
+    }
+    current.to_owned()
 }

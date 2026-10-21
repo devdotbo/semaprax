@@ -273,7 +273,7 @@ pub(crate) fn program_uses_list(program: &dyn ProgramSource) -> bool {
                     found
                 })
     }
-    program.functions().iter().any(function_uses)
+    program.functions().profile_iter().any(function_uses)
         || program.types().iter().any(|declaration| {
             matches!(&declaration.kind, crate::ast::TypeDeclarationKind::Class { methods, .. }
                 if methods.iter().any(function_uses))

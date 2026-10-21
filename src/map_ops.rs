@@ -391,7 +391,7 @@ pub(crate) fn ast_resolved(ty: &Type) -> Option<ResolvedType> {
     })
 }
 pub(crate) fn program_uses(program: &dyn ProgramSource) -> bool {
-    program.functions().iter().any(|function| {
+    program.functions().profile_iter().any(|function| {
         function
             .params
             .iter()

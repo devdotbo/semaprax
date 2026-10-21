@@ -23,6 +23,9 @@ mod reachable_primitives;
 fn previous_macro_stage(current: &str) -> String {
     restore(current, 6457, MACRO)
 }
+pub(super) fn previous_macro(current: &str) -> String {
+    previous_macro_stage(&reachable_primitives::previous_macro(current))
+}
 #[rustfmt::skip]
 const MACRO: &[(usize, &str, &str)] = &[
     (5160, "                    #[cfg(test)]\n                    $census.load();\n                    let Some(link) = $owner.$cursor.links.pop() else {\n                        unreachable!(\"prepared ordinary plan links\");\n                    };\n", "                    let links = $owner.$cursor.links.as_slice();\n                    let link = links[links.len() - $owner.$cursor.segment - 1];\n"),
@@ -31,10 +34,7 @@ const MACRO: &[(usize, &str, &str)] = &[
     (1674, "pub(super) const LIMIT: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<usize>();\n// Prepared backward links are consumed from the back. Their original extent\n// remains in the comparison owner; the cursor segment/item counters stay exact.\npub(super) const LOAD: usize = 2 * size_of::<&mut Vec<usize>>()\n    + size_of::<Option<usize>>()\n    + size_of::<usize>()\n    + size_of::<bool>()\n    + 2 * size_of::<&[Segment]>()\n    + 2 * size_of::<usize>()\n    + size_of::<&Segment>()\n    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>()\n    + 2 * size_of::<&[Rc<SkeletonObservation>]>()\n", "pub(super) const LOAD: usize = 2 * size_of::<&Vec<usize>>() + 2 * size_of::<&[usize]>() // as_slice actual/formal/return/local\n    + 2 * size_of::<&[usize]>() + size_of::<usize>() // len actual/formal/return\n    + 2 * size_of::<usize>() // subtraction intermediates\n    + 2 * size_of::<&[usize]>() + 2 * size_of::<usize>() // slice index actual/formal\n    + size_of::<&usize>() + size_of::<usize>() // returned reference and copied link\n    + 2 * size_of::<&[Segment]>() + 2 * size_of::<usize>() + size_of::<&Segment>()\n    + 2 * size_of::<&Vec<Rc<SkeletonObservation>>>() // items as_slice actual/formal\n    + 2 * size_of::<&[Rc<SkeletonObservation>]>() // as_slice return and stored field copy\n"),
     (983, "pub(super) const STEP: usize = 2 * size_of::<usize>() + size_of::<bool>() // retained segment extent and condition\n", "pub(super) const STEP: usize = 2 * size_of::<&Vec<usize>>() + size_of::<usize>() + size_of::<bool>() // unchanged len/condition\n"),
 ];
-pub(super) fn previous_macro(current: &str) -> String {
-    previous_macro_stage(&reachable_primitives::previous_macro(current))
-}
-fn previous_owner_stage(current: &str) -> String {
+pub(super) fn previous_owner(current: &str) -> String {
     restore(current, 22474, OWNER)
 }
 #[rustfmt::skip]
@@ -53,9 +53,6 @@ const OWNER: &[(usize, &str, &str)] = &[
     (7503, "    + 2 * size_of::<usize>() // initial retained segment extents\n", ""),
     (640, "    left_segments: usize,\n    right_segments: usize,\n", ""),
 ];
-pub(super) fn previous_owner(current: &str) -> String {
-    previous_owner_stage(&reachable_primitives::previous_owner(current))
-}
 pub(super) fn previous_tail_source(current: &str) -> String {
     restore(current, 5600, TAIL_SOURCE)
 }
@@ -119,14 +116,18 @@ mod tests {
             ))
         );
         assert_eq!(
-            previous_owner(include_str!("../../../comparison_owner.rs")),
+            previous_owner(&super::super::prepared_owner_stage(include_str!(
+                "../../../comparison_owner.rs"
+            ))),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/prepared-links-ad676-20261018/before-owner.rs.txt"
             ))
         );
         assert_eq!(
-            previous_tail_source(include_str!("../tail_source.rs")),
+            previous_tail_source(&super::super::prepared_tail_stage(include_str!(
+                "../tail_source.rs"
+            ))),
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/prepared-links-ad676-20261018/before-tail-source.rs.txt"
@@ -146,11 +147,9 @@ mod tests {
             )),
             MACRO,
         );
-        let owner_stage =
-            reachable_primitives::previous_owner(include_str!("../../../comparison_owner.rs"));
         hostile(
-            &owner_stage,
-            previous_owner_stage,
+            &super::super::prepared_owner_stage(include_str!("../../../comparison_owner.rs")),
+            previous_owner,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/prepared-links-ad676-20261018/before-owner.rs.txt"
@@ -158,7 +157,7 @@ mod tests {
             OWNER,
         );
         hostile(
-            include_str!("../tail_source.rs"),
+            &super::super::prepared_tail_stage(include_str!("../tail_source.rs")),
             previous_tail_source,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),

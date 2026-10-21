@@ -5,13 +5,13 @@
   "domains": {
     "hir": {
       "original_roots": 1046,
-      "current_boundary_members": 1224,
-      "current_boundary_production": 438,
-      "outside_production_still_fully_authenticated": 100,
-      "full_role_production": 538,
-      "full_role_test_only": 977,
-      "full_raw_sha256": "a9f4dd0996275081581964dd80c7afcbc37c653a951ca16a8d300fb6b1b9731c",
-      "boundary_production_sha256": "1a4543ffb1e7441df97aa65323d2277111db3927748b85003af3e22b9927f3c5",
+      "current_boundary_members": 1243,
+      "current_boundary_production": 445,
+      "outside_production_still_fully_authenticated": 144,
+      "full_role_production": 589,
+      "full_role_test_only": 1117,
+      "full_raw_sha256": "0b729e9aaceae8c961ced3df1b7b374dd05caccd64fa575ee7d4a82c6a711d8a",
+      "boundary_production_sha256": "3d086ac81f2f59994c263809097079ce2fb26b6b91af82e461cfa66a2b70f576",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
         "impl Resolver",
@@ -31,13 +31,13 @@
     },
     "projection": {
       "original_roots": 179,
-      "current_boundary_members": 198,
-      "current_boundary_production": 73,
-      "outside_production_still_fully_authenticated": 584,
-      "full_role_production": 657,
-      "full_role_test_only": 1034,
-      "full_raw_sha256": "b4bc9ac1a9ea1b6619b5c51d4e46460d3bf3ae31fe0110a575ff27f51f186970",
-      "boundary_production_sha256": "1a0d0c9b78b63ae22b6e2d725d985139a114af6e778328096c4b0d5756b72e35",
+      "current_boundary_members": 212,
+      "current_boundary_production": 76,
+      "outside_production_still_fully_authenticated": 594,
+      "full_role_production": 670,
+      "full_role_test_only": 1130,
+      "full_raw_sha256": "632904d3a4a9084110cc2adfa6dd63d16f730c38eb05750e6c642e3b47e6f80f",
+      "boundary_production_sha256": "aaf2f55cb25236c9abdbb321f30ae5f5d51029f02b68a55bc3a4c4824e90a35d",
       "exact_original_forbidden_tokens": [
         "use super::*;",
         "workspace::",
@@ -56,7 +56,7 @@
       "global_polluted_purity_result_not_claimed": true
     }
   },
-  "actual_acquisition_completion_sha256": "75e5d8260e9d99d71bedc7c84bd9d25fc8806c6fedc352adab4635fe6eaea825",
+  "actual_acquisition_completion_sha256": "129e5ed0970db6007f756a2657326b5e69846d69662b51c68629548b96dc24ce",
   "negative_controls": {
     "dropped_actual_child_refused": true,
     "coordinated_class_drop_not_original_generated_output": true,
@@ -66,9 +66,9 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "EXACT_SOURCE_RECEIVER_NAMESPACE_ACQUISITION",
-  "before_head": "e7d18893be01e9412ac6238ae42bc5f5fe58e7b6",
-  "incoming_main": "e7d18893be01e9412ac6238ae42bc5f5fe58e7b6",
+  "registration_update": "MERGED_PR896_COMPLETE_CURRENT_SOURCE_CUSTODY",
+  "before_head": "289e0543dc1d2645265901c8b90ddbcf97d8e9a1",
+  "incoming_main": "e544f89290fc997edc464e1f92caa69a029d61b4",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",

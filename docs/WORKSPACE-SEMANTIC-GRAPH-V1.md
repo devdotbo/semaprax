@@ -296,6 +296,30 @@ all ten fields from authenticated AST occurrences, rejects missing, extra and
 duplicate occurrences, then checks retained HIR and capability projections.
 Every allocation still consumes the live ledger; the 64 MiB cap is unchanged.
 
+The authored ordinary-call absence proof applies only to the final exact
+profiles' already carrier-free boxed/argument-vector positions outside closures.
+It authenticates unique local or imported monomorphic function headers and
+excludes every spelling bound anywhere in the owner, native imports, compiler
+operations and generic owners/targets. Incomplete bounded name/traversal scratch
+keeps the historical carrier charge. Only six auxiliary carrier footprints are
+omitted per qualified root per retained HIR copy; all four cleanup-storage
+footprints, the complete expression, children, identities, strings, plans and
+bookkeeping remain charged. A separate typed proof invoice is added once to
+each participating module forecast, including zero-qualified and failed proofs;
+it receives no AST/HIR expansion multiplier or semantic-cache copy factor.
+For modules with 64–512 participating raw headers, the proof uses a bounded
+sorted multiset of borrowed interface, local-function and enabled-import
+headers, with one invocation-local last-position hint. The hint selects only a
+raw row; it retains no admission verdict. Every selected query rechecks the
+original compiler-operation, multiplicity, import kind, provider/module/ID,
+generic and arity predicates. Duplicate spellings remain separate rows. Its
+array capacities, initialization, sorting, selector, receiving slots and
+queries all enter the module proof invoice; small and oversized modules retain
+the complete linear scan plus the selector invoice. Cold and sparse programs
+can therefore cost more. Whole immediate-linear and pre-proof forecasts remain
+independent controls; application fit and net savings require current execution.
+Source and regression definitions await executable qualification (#898).
+
 [Prelude forecast accounting v1](WORKSPACE-GRAPH-PRELUDE-FORECAST-V1.md)
 corrects the missing unconditional Option/Result retained-declaration term in
 all private forecast modes. For that term only it supersedes the historical
@@ -351,6 +375,23 @@ and a missing scalar main. Ordinary Vec/Box wrapper classifiers retain the same
 complete imported body, including generic materialization. Class methods keep
 the same exact copied imported declaration. Every ordinary import, ownership,
 byte-helper, source, prelude and declaration-index check still runs.
+
+The uncached ordinary-import producer may instead retain a closed scalar
+signature view: nongeneric value-mode primitive or standalone `string`
+parameters and results, with no reserved `std.` identity or yielding/session
+clause. Invariant, Agent and protocol-sensitive presentations retain the complete owning fallback.
+The view lends the provider's exact signature metadata and uses the original
+finite zero/default expression (including the exact empty-string literal),
+empty checking contracts and no continuation clause. It carries no checked authority. Source and HIR validation still visit
+all effective functions; expression identities remain function-scoped even when
+two views share a finite default's immutable AST address. Only presence scans
+whose finite-default contribution is false use the separate same-width profile
+projection. Constructor/provider checks are prepaid before view formation;
+there is no per-pass presentation allocation or credit against existing fees.
+The shared empty-string AST has zero buffer capacity and is process-static;
+each resolved expression still receives its own function-scoped identity.
+Owned/borrowed string parameter modes and aggregate defaults stay owning.
+Broader ordinary imported signatures retain the original owning producer.
 
 Generated directories and the complete borrowed type-name index are paid before
 allocation. Recursive generated roots retain the existing iterative `Program`

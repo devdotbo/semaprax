@@ -5,6 +5,8 @@ pub(crate) mod key_directory;
 pub(crate) mod prepaid;
 #[cfg(test)]
 pub(crate) mod stage_debits;
+#[cfg(feature = "unstable-workflow-profiling")]
+pub(crate) mod exclusive_debits;
 use std::cell::{Cell, RefCell};
 use std::fmt::{self, Write as _};
 use std::ops::Deref;
@@ -153,6 +155,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
             ACTIVE.with(|active| {
                 active.replace(previous.clone());
             });
+            #[cfg(feature = "unstable-workflow-profiling")]
+            crate::workflow_profile::plan_comparison::observe_ledger_transition();
             if let Some(parent) = previous {
                 if !reserve(Some(&parent), consumed) {
                     record_refusal(&parent, consumed);
@@ -165,6 +169,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
                     parent.remaining.set(remaining.saturating_sub(consumed));
                     #[cfg(test)]
                     stage_debits::debit(&parent, remaining.min(consumed));
+                    #[cfg(feature = "unstable-workflow-profiling")]
+                    exclusive_debits::exceptional_settlement(&parent, remaining.min(consumed));
                     parent.overflowed.set(true);
                 }
             }
@@ -184,6 +190,8 @@ pub(crate) fn with_limit_usage_refusal<T>(
         stage: Cell::new(None),
     });
     let previous = ACTIVE.with(|active| active.replace(Some(Rc::clone(&budget))));
+    #[cfg(feature = "unstable-workflow-profiling")]
+    crate::workflow_profile::plan_comparison::observe_ledger_transition();
     let restore = Restore {
         previous,
         current: Rc::clone(&budget),
@@ -227,6 +235,8 @@ fn record_refusal(budget: &Budget, length: usize) {
     if budget.first_refusal.get().is_none() {
         #[cfg(test)]
         stage_debits::refusal(budget, length);
+        #[cfg(feature = "unstable-workflow-profiling")]
+        exclusive_debits::refusal(budget, length);
         budget.first_site.set(Some(std::panic::Location::caller()));
         budget.first_refusal.set(Some(ReservationRefusal {
             requested: length,
@@ -243,6 +253,8 @@ pub(crate) fn with_reservation_stage<T>(
     stage: ReservationStage,
     operation: impl FnOnce() -> T,
 ) -> T {
+    #[cfg(test)]
+    let _allocation_phase = crate::test_allocation_observer::phase_guard(stage);
     let restore = reservation_stage_guard(stage);
     let value = operation();
     drop(restore);
@@ -322,6 +334,8 @@ fn reserve_optional(budget: Option<&Budget>, length: usize) -> bool {
     budget.remaining.set(remaining - length);
     #[cfg(test)]
     stage_debits::debit(budget, length);
+    #[cfg(feature = "unstable-workflow-profiling")]
+    exclusive_debits::debit(budget, length);
     true
 }
 
@@ -402,6 +416,20 @@ pub(crate) fn clear_active_floor() {
     if let Some(budget) = active() {
         budget.floor.set(0);
     }
+}
+
+// Read-only feature evidence; no ledger reference or reservation authority escapes.
+#[cfg(feature = "unstable-workflow-profiling")]
+pub(crate) fn active_ledger_snapshot()
+-> Option<crate::workflow_profile::plan_comparison::LedgerSnapshot> {
+    ACTIVE.with(|active| {
+        let active = active.try_borrow().ok()?;
+        let budget = active.as_ref()?;
+        crate::workflow_profile::plan_comparison::LedgerSnapshot::observe(
+            Rc::as_ptr(budget) as usize,
+            budget.remaining.get(),
+        )
+    })
 }
 
 pub(crate) fn active_remaining() -> Option<usize> {

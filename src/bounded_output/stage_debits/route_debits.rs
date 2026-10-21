@@ -76,7 +76,29 @@ fn comparison_phase(phase: &str) -> Option<usize> {
         "ordinary plan history right cursor prepare" => Some(6),
         "ordinary plan history HIR cursor prepare"
         | "ordinary plan history flat HIR retained slice" => Some(7),
-        "ordinary plan history paired cursor next" => Some(8),
+        "ordinary plan history paired cursor next"
+        | "ordinary plan fresh right segment base"
+        | "ordinary plan fresh right link pop"
+        | "ordinary plan certified right slice assignment"
+        | "ordinary plan certified first observation"
+        | "ordinary plan foreign right segment view and head"
+        | "ordinary plan loaded right head"
+        | "ordinary plan exhausted right step retained envelope"
+        | "ordinary plan fresh segment identity event"
+        | "ordinary plan shared suffix pattern probe"
+        | "ordinary plan certified boundary loaded guards"
+        | "ordinary plan certified boundary left empty"
+        | "ordinary plan certified boundary right empty"
+        | "ordinary plan certified boundary next links"
+        | "ordinary plan certified boundary next view"
+        | "ordinary plan certified boundary transition"
+        | "ordinary plan certified suffix empty selector"
+        | "ordinary plan certified numeric run capture"
+        | "ordinary plan certified numeric run turn"
+        | "ordinary plan certified numeric run publication"
+        | "ordinary plan shared suffix scalar receivers"
+        | "ordinary plan paired tail selection"
+        | "ordinary plan paired tail turn" => Some(8),
         "ordinary plan history HIR cursor next" => Some(9),
         "ordinary plan retained drain swap receivers" => Some(10),
         "ordinary plan retained sift swap receivers" => Some(11),
@@ -504,7 +526,7 @@ pub(crate) fn print_settled() {
 fn child_replay_operations_keep_route_cells_and_refusal_attribution_reconciled() {
     use super::Operation;
     use crate::bounded_output::{
-        reserve_active_required, with_limit_usage_refusal, with_reservation_stage, ReservationStage,
+        ReservationStage, reserve_active_required, with_limit_usage_refusal, with_reservation_stage,
     };
     let _observation = observe();
     let (((), metrics), refused, used, first) = with_limit_usage_refusal(64, || {
@@ -803,7 +825,9 @@ fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
     // Read and print only after all original ledger ownership has settled.
     let maximum = super::take_completed();
     let last = super::take_last_completed();
-    eprintln!("STD08_PREFIX diagnostic expected source forecast=4345378 layouts=4; unit observation profile, not an integration/backend pass");
+    eprintln!(
+        "STD08_PREFIX diagnostic expected source forecast=4345378 layouts=4; unit observation profile, not an integration/backend pass"
+    );
     eprintln!("STD08_PREFIX maximum core trace: {maximum:?}");
     eprintln!("STD08_PREFIX final core trace: {last:?}");
     print_settled();
@@ -820,7 +844,7 @@ fn std08_io_lines_preparation_reports_actual_ledger_and_preserves_failure() {
 fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_site() {
     // Closed current invocation grammar. An unfamiliar source shape fails this
     // guard instead of silently omitting a real payment from the census.
-    fn phases<'a>(source: &'a str, token: &str, arguments: &[usize]) -> Vec<(&'a str, usize)> {
+    fn phases<'a>(source: &'a str, token: &str, arguments: usize) -> Vec<&'a str> {
         let mut phases = Vec::new();
         for (start, _) in source.match_indices(token) {
             let begin = start + token.len();
@@ -858,70 +882,336 @@ fn comparison_census_covers_every_actual_owner_payment_and_lexical_forwarding_si
             );
             let first = body.find('"').unwrap();
             let last = body.rfind('"').unwrap();
-            let arity = body[..first].matches(',').count() + 1;
-            assert!(arguments.contains(&arity), "unknown macro arity");
+            assert_eq!(body[..first].matches(',').count(), arguments - 1);
             assert!(body[last + 1..].trim().trim_matches(',').trim().is_empty());
-            phases.push((&body[first + 1..last], arity));
+            phases.push(&body[first + 1..last]);
         }
         phases
     }
     let owner = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
-        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_certified_heads.rs"
     ));
-    let direct = phases(owner, "paid!(", &[4]);
-    let forwarded = phases(owner, "lexical_plan_next!(", &[4, 10, 12]);
-    let shared = phases(owner, "shared_plan_pair_step!(", &[12]);
+    // Preserve the complete incoming generation's own exact site inventory.
+    // Its redundant poll remains independently compiled, never charged to shipping.
+    let incoming_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_shared_steps.rs"
+    ))
+    .split_once("\n// Complete incoming99 generation;")
+    .unwrap()
+    .0;
+    let incoming_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_shared_steps.rs"
+    ));
     assert_eq!(
-        (direct.len(), forwarded.len(), shared.len()),
-        (12, 4, 1),
+        (
+            phases(incoming_owner, "paid!(", 4).len(),
+            phases(incoming_owner, "lexical_plan_next!(", 10).len(),
+            phases(incoming_owner, "shared_plan_pair_step!(", 5).len()
+        ),
+        (13, 4, 1)
+    );
+    assert_eq!(incoming_macro.matches("paid!(").count(), 7);
+    let pair_link_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main001.rs"
+    ));
+    let pair_link_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main001.rs"
+    ));
+    assert_eq!(
+        (
+            phases(pair_link_owner, "paid!(", 4).len(),
+            pair_link_owner.matches("lexical_plan_next!(").count(),
+            pair_link_owner.matches("shared_plan_pair_step!(").count()
+        ),
+        (13, 4, 1)
+    );
+    assert_eq!(pair_link_macro.matches("paid!(").count(), 15);
+    let tail_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main_b692.rs"
+    ));
+    let tail_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main_b692.rs"
+    ));
+    assert_eq!(
+        (
+            phases(tail_owner, "paid!(", 4).len(),
+            tail_owner.matches("shared_plan_pair_step!(").count()
+        ),
+        (13, 1)
+    );
+    assert_eq!(tail_macro.matches("paid!(").count(), 17);
+    // Genuine complete incoming487 remains independently compiled. Its fused
+    // reader's larger old bare-reader replacement is not charged to shipping
+    // a second time: current already has three lexical certified readers.
+    let fused_owner = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_main487.rs"
+    ));
+    let fused_macro = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor_main487.rs"
+    ));
+    assert_eq!(phases(fused_owner, "paid!(", 4).len(), 12);
+    assert_eq!(fused_owner.matches("lexical_plan_next!(").count(), 4);
+    assert_eq!(fused_owner.matches("shared_plan_pair_step!(").count(), 1);
+    assert_eq!(fused_macro.matches("paid!(").count(), 24);
+    assert!(!fused_macro.contains("lexical_pair_plan_next!"));
+
+    let direct = phases(owner, "paid!(", 4);
+    let forwarded = phases(owner, "lexical_plan_next!(", 10);
+    // The fresh-head continuation covers every aligned nonempty shared segment:
+    // each prepared chain visits a segment once, each ordinary round advances
+    // both item offsets equally. Polling those same items cannot add a hit.
+    assert_eq!(owner.matches("shared_plan_pair_step!(").count(), 0);
+    assert_eq!(
+        (
+            owner.matches("lexical_plan_value!(").count(),
+            owner.matches("shared_prefix_first_comparison!(").count(),
+            owner.matches("replay_shared_prefix!(").count()
+        ),
+        (4, 2, 1)
+    );
+    assert_eq!(
+        (direct.len(), forwarded.len()),
+        (13, 2),
         "audit new lexical payment sites explicitly"
     );
-    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 10).count(), 2);
-    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 4).count(), 1);
-    assert_eq!(forwarded.iter().filter(|(_, n)| *n == 12).count(), 1);
     let lexical = include_str!(concat!(
         env!("CARGO_MANIFEST_DIR"),
         "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/lexical_cursor.rs"
     ));
-    let sites: Vec<_> = lexical.match_indices("paid!(").collect();
-    assert_eq!(sites.len(), 27, "audit every generic payment site");
-    assert_eq!(lexical.matches("shared_plan_boundary!(").count(), 1);
-    assert_eq!(lexical.matches("shared_plan_segment_run!(").count(), 1);
-    assert_eq!(lexical.matches("independent_plan_segment_run!(").count(), 1);
-    assert_eq!(lexical.matches("paired_plan_tails!(").count(), 1);
-    assert_eq!(lexical.matches("remember_plan_tail!(").count(), 3);
-    let compact: String = lexical.split_whitespace().collect();
-    assert!(!compact.contains("lexical_pair_plan_next!"));
-    assert_eq!(compact.matches("paired_plan_observations!($owner,$left_path,$right_path,$left_tail,$right_tail,$left_links,$right_links,$census,$function,$budget,$pair_loop,$phase);").count(), 1);
+    let paired = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/paired_value.rs"
+    ));
+    let suffix = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/shared_prefix.rs"
+    ));
     assert_eq!(
-        compact
-            .matches("shared_plan_boundary!($owner,$left_links,$right_links,$census,$function,$budget,$phase);")
-            .count(),
-        1
+        (
+            lexical.matches("paid!(").count(),
+            paired.matches("paid!(").count(),
+            suffix.matches("paid!(").count()
+        ),
+        (3, 5, 3)
+    );
+    let (paired_forward, paired_tail) = paired
+        .split_once("// Five actual new primitive sites:")
+        .unwrap();
+    assert_eq!(
+        (
+            paired_tail.matches("paid!(").count(),
+            paired_tail.matches(".charge(").count()
+        ),
+        (2, 3)
     );
     assert_eq!(
-        compact
-            .matches("shared_plan_segment_run!($owner,$census,$function,$budget,$phase);")
-            .count(),
-        1
+        phases(paired_tail, "paid!(", 4),
+        vec![
+            "ordinary plan paired tail selection",
+            "ordinary plan paired tail turn"
+        ]
     );
-    assert_eq!(compact.matches("independent_plan_segment_run!($owner,$census,$function,$budget,$pair_loop,$phase);").count(), 1);
-    for (at, _) in sites {
-        let body = &lexical[at + "paid!(".len()..];
-        let end = body.find(")?;").expect("unknown generic payment shape");
-        let phase = body[..end].trim().trim_end_matches(',').trim();
-        assert!(
-            phase
-                .rsplit_once(',')
-                .is_some_and(|(_, last)| last.trim() == "$phase"),
-            "unknown generic payment forwarding shape: {phase}"
-        );
+    // Both lexical producers forward only the caller's already-checked phase.
+    for lexical in [lexical, paired_forward] {
+        let sites: Vec<_> = lexical.match_indices("paid!(").collect();
+        for (at, _) in sites {
+            let body = &lexical[at + "paid!(".len()..];
+            let end = body.find(")?;").expect("unknown generic payment shape");
+            let phase = body[..end].trim().trim_end_matches(',').trim();
+            assert!(
+                phase
+                    .rsplit_once(',')
+                    .is_some_and(|(_, last)| last.trim() == "$phase"),
+                "unknown generic payment forwarding shape: {phase}"
+            );
+        }
     }
-    for (phase, _) in direct.into_iter().chain(forwarded).chain(shared) {
+    let suffix_phases = phases(suffix, "paid!(", 4);
+    assert_eq!(suffix_phases.len(), 3);
+    // Split only top-level macro arguments, preserving nested continuation
+    // blocks. Flat comma/quote counting would silently lose their real calls.
+    fn macro_arguments<'a>(source: &'a str, token: &str) -> Vec<Vec<&'a str>> {
+        let mut calls = Vec::new();
+        for (start, _) in source.match_indices(token) {
+            let begin = start + token.len();
+            let mut field = begin;
+            let mut fields = Vec::new();
+            let mut stack = vec![b')'];
+            let mut quoted = false;
+            let mut escaped = false;
+            let mut comment = false;
+            let bytes = source.as_bytes();
+            let mut at = begin;
+            while !stack.is_empty() {
+                assert!(at < bytes.len(), "unterminated production macro");
+                let byte = bytes[at];
+                if comment {
+                    if byte == b'\n' {
+                        comment = false;
+                    }
+                } else if quoted {
+                    if escaped {
+                        escaped = false;
+                    } else if byte == b'\\' {
+                        escaped = true;
+                    } else if byte == b'"' {
+                        quoted = false;
+                    }
+                } else {
+                    match byte {
+                        b'/' if bytes.get(at + 1) == Some(&b'/') => comment = true,
+                        b'"' => quoted = true,
+                        b'(' => stack.push(b')'),
+                        b'[' => stack.push(b']'),
+                        b'{' => stack.push(b'}'),
+                        b')' | b']' | b'}' => {
+                            assert_eq!(stack.pop(), Some(byte));
+                            if stack.is_empty() {
+                                let last = source[field..at].trim();
+                                if !last.is_empty() {
+                                    fields.push(last);
+                                }
+                            }
+                        }
+                        b',' if stack.len() == 1 => {
+                            fields.push(source[field..at].trim());
+                            field = at + 1;
+                        }
+                        _ => {}
+                    }
+                }
+                at += 1;
+            }
+            calls.push(fields);
+        }
+        calls
+    }
+    let bare_calls = macro_arguments(owner, "lexical_plan_value!(");
+    assert_eq!(bare_calls.len(), 4);
+    for call in bare_calls {
+        assert_eq!(call.len(), 13);
+        assert_eq!(call[10], "\"ordinary plan history paired cursor next\"");
+    }
+    for call in macro_arguments(owner, "shared_prefix_first_comparison!(") {
+        assert_eq!(call.len(), 8);
+        assert_eq!((&call[3], &call[4]), (&"function", &"budget"));
+    }
+    for call in macro_arguments(owner, "replay_shared_prefix!(") {
+        assert_eq!(call.len(), 7);
+        assert_eq!((&call[3], &call[4]), (&"function", &"budget"));
+    }
+    for phase in direct
+        .into_iter()
+        .chain(forwarded)
+        .chain(suffix_phases)
+        .chain(["ordinary plan history paired cursor next"])
+    {
         assert!(
             comparison_phase(phase).is_some(),
             "unattributed actual payment phase: {phase}"
         );
     }
+
+    let current = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner.rs"
+    ));
+    let heads = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/certified_heads.rs"
+    ));
+    let (heads, left_and_suffix) = heads
+        .split_once("// BEGIN LEFT FIRST-HEAD PRODUCER")
+        .unwrap();
+    let (left, suffix) = left_and_suffix
+        .split_once("// BEGIN CERTIFIED SUFFIX")
+        .unwrap();
+    assert_eq!(
+        (
+            phases(current, "paid!(", 4).len(),
+            current.matches("lexical_plan_next!(").count(),
+            current.matches("borrowed_right_value!(").count(),
+            current.matches("certified_left_value!(").count(),
+            current.matches("certified_right_value!(").count()
+        ),
+        (12, 2, 2, 1, 1)
+    );
+    assert_eq!(
+        (
+            left.matches("paid!(").count(),
+            left.matches("certified_match!(").count(),
+            left.matches(".charge(").count()
+        ),
+        (3, 2, 2)
+    );
+    assert_eq!(
+        (
+            heads.matches("paid!(").count(),
+            heads.matches("certified_match!(").count(),
+            heads.matches(".charge(").count(),
+            heads.matches("shared_prefix_first_comparison!(").count()
+        ),
+        (10, 2, 3, 1)
+    ); // one paid! belongs to the MATCH macro, expanded four times
+    assert_eq!(
+        (
+            suffix.matches("paid!(").count(),
+            suffix.matches(".charge(").count()
+        ),
+        (10, 12)
+    );
+    assert_eq!(current.matches("fused_plan_tails!(").count(), 1);
+    let right_calls = macro_arguments(current, "borrowed_right_value!(");
+    assert_eq!(right_calls.len(), 2);
+    let mut supplied_success_work = Vec::new();
+    for call in right_calls {
+        assert_eq!(call.len(), 9);
+        assert_eq!(call[5], "\"ordinary plan history paired cursor next\"");
+        supplied_success_work.push(call[7].matches(".charge(").count());
+    }
+    assert_eq!(supplied_success_work, [0, 1]);
+    // The success body has two actual expansions (segment and tail), not an
+    // unpriced callback or a helper return. This is the sole new work site
+    // relative to the old single comparison after its right bare yield.
+    assert_eq!(paired_forward.matches("                $some").count(), 2);
+    assert_eq!(paired_forward.matches(".charge(").count(), 2);
+    assert_eq!(paired_forward.matches("paid!(").count(), 3);
+    assert!(!paired_forward.contains("as_ref("));
+    assert!(!paired_forward.contains("Some::<"));
+
+    // Old loop: MATCH + four five-site producers + two first-work sites +
+    // eight event/suffix sites. New loop: seven-site left + two old producers
+    // + fifteen-site right + nine numeric/selector sites + thirteen boundary sites.
+    // These are real expansions, including every fallback and zero sentinel.
+    assert_eq!((7 + 2 * 5 + 15 + 9 + 13) - (1 + 4 * 5 + 2 + 8), 23);
+    // Tail selection/turn and three individual work sites are additive; no
+    // existing reachable primitive bank is reduced or charged twice.
+    assert_eq!(
+        23 + paired_tail.matches("paid!(").count()
+            + paired_tail.matches(".charge(").count()
+            + (2 - 1), // real right-success work expansions minus old common work site
+        29
+    );
+    for phase in phases(heads, "paid!(", 4)
+        .into_iter()
+        .chain(phases(suffix, "paid!(", 4))
+        .chain(phases(paired_tail, "paid!(", 4))
+    {
+        assert!(
+            comparison_phase(phase).is_some(),
+            "unattributed certified payment: {phase}"
+        );
+    }
 }
+
+// The retained main kernel keeps its independent source-type payment census.
+mod retained_main_289;

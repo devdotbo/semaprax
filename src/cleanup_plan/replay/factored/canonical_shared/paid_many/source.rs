@@ -50,6 +50,14 @@ macro_rules! include_str {
             ::std::include_str!("../../../factored.rs"),
         )
     };
+    ("../before_paid_many/terminal_leaf.rs") => {
+        &whole_source_value(
+            "src/cleanup_plan/replay/factored/canonical_shared/before_paid_many/terminal_leaf.rs",
+            7251,
+            "102960d3ec7d589141b46b6fbcc6f94fb789abcfb1b33d37a5de73492e793275",
+            ::std::include_str!("../before_paid_many/terminal_leaf.rs"),
+        )
+    };
     ("../terminal_leaf.rs") => {
         &whole_source_value(
             "src/cleanup_plan/replay/factored/canonical_shared/terminal_leaf.rs",

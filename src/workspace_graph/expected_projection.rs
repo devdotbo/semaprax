@@ -26,6 +26,12 @@ pub(in crate::workspace_graph) mod borrowed_imports;
 pub(in crate::workspace_graph) mod borrowed_leaf;
 #[path = "expected_projection/cached_exact.rs"]
 pub(super) mod cached_exact;
+#[path = "expected_projection/call_carriers.rs"]
+mod call_carriers;
+#[cfg(test)]
+#[path = "expected_projection/call_carriers_original.rs"]
+#[allow(dead_code, reason = "complete independent pre-898 forecaster control")]
+mod call_carriers_original;
 #[path = "expected_projection/call_identity.rs"]
 mod call_identity;
 #[path = "expected_projection/call_sites.rs"]

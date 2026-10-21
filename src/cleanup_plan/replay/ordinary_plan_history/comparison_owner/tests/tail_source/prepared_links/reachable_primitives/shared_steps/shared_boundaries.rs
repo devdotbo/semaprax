@@ -14,6 +14,7 @@ fn restore(current: &str, length: usize, edits: &[(usize, &str, &str)]) -> Strin
     }
     result
 }
+#[path = "shared_boundaries/shared_runs.rs"]
 mod shared_runs;
 pub(super) fn previous_macro(current: &str) -> String {
     previous_macro_stage(&shared_runs::previous_macro(current))
@@ -53,9 +54,21 @@ const CENSUS: &[(usize, &str, &str)] = &[
     (602, "    pub shared_empty_checks: usize,\n    pub shared_links: usize,\n    pub shared_queries: usize,\n    pub shared_boundaries: usize,\n", ""),
 ];
 pub(super) fn previous_shared_steps(current: &str) -> String {
-    previous_shared_steps_stage(&super::super::paired_links::previous_stage1(current))
-}
-fn previous_shared_steps_stage(current: &str) -> String {
+    let stage = if current
+        == include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs"
+        )) {
+        crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/tests/tail_source/prepared_links/reachable_primitives/shared_steps.rs",
+            "329c0b6c60e477128d26f30383223566cc0bca79e13063e97a7c79ef7fa03255",
+            current,
+        )
+    } else {
+        current.to_owned()
+    };
+    let stage = shared_runs::previous_shared_step_controls(&stage);
+    let current = stage.as_str();
     restore(current, 18577, SHARED_STEPS)
 }
 #[rustfmt::skip]
@@ -187,8 +200,8 @@ mod tests {
             CENSUS,
         );
         hostile(
-            &super::super::super::paired_links::previous_stage1(include_str!("../shared_steps.rs")),
-            previous_shared_steps_stage,
+            include_str!("../shared_steps.rs"),
+            previous_shared_steps,
             include_str!(concat!(
                 env!("CARGO_MANIFEST_DIR"),
                 "/docs/evidence/shared-boundaries-99b-20261018/before-shared-steps.rs.txt"

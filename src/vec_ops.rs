@@ -620,7 +620,7 @@ pub(crate) fn program_uses_owned_payload(program: &dyn ProgramSource) -> bool {
                     found
                 })
     };
-    program.functions().iter().any(function_uses)
+    program.functions().profile_iter().any(function_uses)
 }
 
 pub(crate) fn resolved_program_uses_owned_payload(program: &crate::hir::ResolvedProgram) -> bool {
@@ -679,7 +679,7 @@ pub(crate) fn is_same_owner_reassignment_source(
     let direct = by_name(callee).filter(|op| op.reopens_same_owner());
     let wrapper = program
         .functions()
-        .iter()
+        .profile_iter()
         .find(|function| function.name == *callee)
         .and_then(|function| source_wrapper(program, function))
         .filter(|op| op.reopens_same_owner());

@@ -69,3 +69,10 @@ scripts to `benchmarks/performance-v1/`.
 All results are local, single-host evidence. See
 [`benchmarks/performance-v1/docs/METHODOLOGY.md`](./performance-v1/docs/METHODOLOGY.md)
 for host disclosure and methodology.
+
+## Paid campaign resource coverage
+
+[Campaign resource observation v1](CAMPAIGN-RESOURCE-OBSERVATION-V1.md) separates
+the original disk eligibility from bounded process/RAM samples and interval
+coverage. Missing coverage is unknown; sampled eligibility is not causal
+isolation. Acceptance and all attempted costs remain unchanged.

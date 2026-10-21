@@ -4,7 +4,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 const QUARANTINE: &str = "src/project/candidate/git_publication/process/platform.rs";
-const TEST_ALLOCATOR: &str = "src/test_allocation_observer.rs";
+const TEST_ALLOCATOR: &str = "src/test_allocation_observer/backing.rs";
 
 fn rust_sources(directory: &Path, files: &mut Vec<PathBuf>) {
     for entry in fs::read_dir(directory).unwrap() {
@@ -214,11 +214,20 @@ fn root_unsafe_exceptions_are_confined_to_audited_authority_modules() {
     assert!(solver.starts_with("//! Explicit solver provisioning"));
     assert_eq!(solver.matches("#[allow(unsafe_code)]").count(), 2);
 
-    // This allocator observes physical backing only in the library test binary.
+    // This same allocator observes physical backing only in the library, workspace and Wasm test binaries.
     // Its one relaxation belongs to the audited System-forwarding impl; it is
     // never compiled into the production compiler or granted blanket authority.
-    let observer = fs::read_to_string(root.join(TEST_ALLOCATOR)).unwrap();
-    assert!(observer.starts_with("//! Test-only, thread-bound observation"));
+    let observer_root = fs::read_to_string(root.join("src/test_allocation_observer.rs")).unwrap();
+    let observer_core = fs::read_to_string(root.join(TEST_ALLOCATOR)).unwrap();
+    assert!(observer_root.starts_with("//! Test-only, thread-bound observation"));
+    assert_eq!(
+        observer_root
+            .matches("include!(\"test_allocation_observer/backing.rs\");")
+            .count(),
+        1
+    );
+    assert!(relaxing_unsafe_attributes(&observer_root).is_empty());
+    let observer = observer_root + &observer_core;
     assert_eq!(
         relaxing_unsafe_attributes(&observer),
         ["#[allow(unsafe_code)]"]
@@ -238,6 +247,15 @@ fn root_unsafe_exceptions_are_confined_to_audited_authority_modules() {
         1,
         "the allocation observer must remain test-only"
     );
+
+    for harness in ["tests/workspace.rs", "tests/wasm.rs"] {
+        let source = fs::read_to_string(root.join(harness)).unwrap();
+        assert_eq!(
+            source.matches("#[path = \"../src/test_allocation_observer/backing.rs\"]\nmod test_allocation_observer;").count(),
+            1,
+            "one real shared allocator per independent test image: {harness}"
+        );
+    }
 
     let mut sources = Vec::new();
     rust_sources(&root.join("src"), &mut sources);
@@ -270,8 +288,10 @@ fn root_unsafe_exceptions_are_confined_to_audited_authority_modules() {
         relaxing_unsafe_attributes("#[warn(unsafe_code)] fn lowered() {}").len(),
         1
     );
-    assert!(relaxing_unsafe_attributes(
-        "const GENERATED: &str = r#\"#[allow(unsafe_code)]\"#; #![forbid(unsafe_code)]"
-    )
-    .is_empty());
+    assert!(
+        relaxing_unsafe_attributes(
+            "const GENERATED: &str = r#\"#[allow(unsafe_code)]\"#; #![forbid(unsafe_code)]"
+        )
+        .is_empty()
+    );
 }

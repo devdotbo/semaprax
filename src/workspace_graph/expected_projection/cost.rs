@@ -56,6 +56,7 @@ pub(in crate::workspace_graph) struct StructuralCost {
     pub(super) exact_carrier_free_ifs: usize,
     pub(super) exact_carrier_free_vars: usize,
     pub(super) exact_carrier_free_blocks: usize,
+    pub(super) exact_carrier_free_calls: usize,
 }
 
 /// Per-kind census of authored roots whose root storage is proved absent.
@@ -72,7 +73,9 @@ pub(super) enum AbsentStorageRoot {
 // retaining every map/tree allowance and live debit. Only the same four
 // independently absent root storage footprints are excluded, once per authored
 // root, plus the six auxiliary carriers of authored carrier-free
-// literal/unary/binary/`if` roots and variable roots outside closures.
+// literal/unary/binary/`if` roots and variable/block roots outside closures.
+// Authenticated authored ordinary call roots in those same positions omit
+// only the six carriers and keep all four storage footprints.
 // Runtime/default expansions retain their complete storage bundles.
 pub(super) fn fixed_hir_discount(
     mode: u8,
@@ -148,6 +151,7 @@ impl StructuralCost {
             exact_carrier_free_ifs: 0,
             exact_carrier_free_vars: 0,
             exact_carrier_free_blocks: 0,
+            exact_carrier_free_calls: 0,
         }
     }
 
@@ -368,6 +372,7 @@ impl StructuralCost {
             exact_carrier_free_ifs: 0,
             exact_carrier_free_vars: 0,
             exact_carrier_free_blocks: 0,
+            exact_carrier_free_calls: 0,
         }
     }
 
@@ -742,6 +747,7 @@ pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Di
             .checked_add(raw.exact_carrier_free_ifs)
             .and_then(|count| count.checked_add(raw.exact_carrier_free_vars))
             .and_then(|count| count.checked_add(raw.exact_carrier_free_blocks))
+            .and_then(|count| count.checked_add(raw.exact_carrier_free_calls))
             .is_none_or(|censused| censused > raw.exact_expressions)
     {
         return Err(overflow());
@@ -751,6 +757,7 @@ pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Di
         .checked_add(raw.exact_carrier_free_ifs)
         .and_then(|count| count.checked_add(raw.exact_carrier_free_vars))
         .and_then(|count| count.checked_add(raw.exact_carrier_free_blocks))
+        .and_then(|count| count.checked_add(raw.exact_carrier_free_calls))
         .ok_or_else(overflow)?;
     roots
         .checked_mul(LITERAL_ABSENT_STORAGE)
@@ -775,7 +782,12 @@ pub(super) fn exact_absent_storage(raw: &StructuralCost) -> Result<usize, Vec<Di
 // without constructing an additional auxiliary carrier at the root. All four
 // storage footprints remain charged for variables and blocks. Closure
 // subtrees are excluded because capture rewriting can add binding carriers,
-// including through delegated statement/field/arm children. None constructs a
+// including through delegated statement/field/arm children. An authenticated
+// ordinary monomorphic call (`call_carriers`) likewise moves its arguments
+// in FinishCall; bind_row_loans mutates their metadata without auxiliary
+// carriers. Call roots keep all four storage footprints, including owned
+// results. Its proof invoice stays separate from retained HIR copies.
+// None constructs a
 // binding, statement, field initializer, arm or pattern field. Upcasts, the
 // only resolver wrapper of an authored root, re-enter only `let` values and
 // method receivers. An `if` may own its result, so it keeps all storage.
@@ -983,3 +995,7 @@ pub(in crate::workspace_graph) mod generic_rewrite_test_bridge;
 
 #[path = "cost/constructor.rs"]
 pub(in crate::workspace_graph) mod constructor;
+
+#[cfg(test)]
+#[path = "call_carriers_historical_tests.rs"]
+mod call_carriers_historical_tests;

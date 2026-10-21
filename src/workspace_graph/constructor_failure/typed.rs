@@ -63,7 +63,7 @@ pub(in crate::workspace_graph) fn construct_transient_core<'a>(
     }
 }
 /// A conservative negative prefilter, never provider or wrapper authority.
-/// Only these reserved identity families can reach FunctionEntry::Borrowed;
+/// Reserved wrappers and ordinary function imports can trigger a full probe;
 /// a positive still executes the unchanged full producer and classifier.
 /// Both cache modes pay and perform this same allocation-free selection.
 #[allow(clippy::too_many_arguments)]
@@ -79,9 +79,23 @@ pub(in crate::workspace_graph) fn construct_selected_core<'a>(
     use crate::ast::ModuleUse;
     use std::mem::size_of;
     #[cfg(test)]
+    if SCALAR_SIGNATURE_BEFORE.with(std::cell::Cell::get) {
+        return before_scalar_dispatch::construct_selected_core(
+            program,
+            authored,
+            programs,
+            registry,
+            core,
+            allow_transient,
+            owner,
+        );
+    }
+    #[cfg(test)]
     if ORIGINAL_ALIAS_DISPATCH.with(std::cell::Cell::get) {
         return if allow_transient {
-            construct_transient_alias_core(program, authored, programs, registry, core, owner)
+            before_scalar_dispatch::construct_transient_alias_core(
+                program, authored, programs, registry, core, owner,
+            )
         } else {
             construct_transient_core(program, authored, programs, registry, core, owner)
         };
@@ -109,11 +123,13 @@ pub(in crate::workspace_graph) fn construct_selected_core<'a>(
         + 2 * size_of::<&String>()
         + 12 * size_of::<&str>() // id return/receiver, predicate argument/formal, both prefix pairs
         + 6 * size_of::<bool>(); // prefix results, OR, helper return/receiver and predicate
-    owner.reserve(program.module_uses.len().saturating_mul(PER_IMPORT_BYTES))?;
-    let possible = program
-        .module_uses
-        .iter()
-        .any(|import| may_borrow_wrapper(import.persistent_id.as_str()));
+    owner.reserve(program.module_uses.len().saturating_mul(
+        PER_IMPORT_BYTES + 2 * size_of::<&crate::ast::ModuleUseKind>() + 2 * size_of::<bool>(),
+    ))?;
+    let possible = program.module_uses.iter().any(|import| {
+        may_borrow_wrapper(import.persistent_id.as_str())
+            || import.kind == crate::ast::ModuleUseKind::Function
+    });
     if allow_transient && possible {
         construct_transient_alias_core(program, authored, programs, registry, core, owner)
     } else {
@@ -231,3 +247,26 @@ impl Receiver {
 #[cfg(test)]
 #[path = "../function_alias/before_core.rs"]
 pub(in crate::workspace_graph) mod before_function_alias_core;
+
+#[cfg(test)]
+#[path = "before_scalar_dispatch.rs"]
+pub(in crate::workspace_graph) mod before_scalar_dispatch;
+
+#[cfg(test)]
+thread_local! {
+    static SCALAR_SIGNATURE_BEFORE: std::cell::Cell<bool> = const { std::cell::Cell::new(false) };
+}
+/// The entire immediate-old actual selector and its original producer choices.
+#[cfg(test)]
+pub(in crate::workspace_graph) fn with_original_scalar_dispatch<T>(run: impl FnOnce() -> T) -> T {
+    struct Restore(bool);
+    impl Drop for Restore {
+        fn drop(&mut self) {
+            SCALAR_SIGNATURE_BEFORE.with(|value| value.set(self.0));
+        }
+    }
+    let restore = Restore(SCALAR_SIGNATURE_BEFORE.with(|value| value.replace(true)));
+    let result = run();
+    drop(restore);
+    result
+}
