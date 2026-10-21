@@ -19,14 +19,15 @@ struct Trace {
     pending: Option<usize>,
     swaps_only: bool,
     swaps: usize,
-    events: Vec<Event>,
+    events: [Event; 4096],
 }
 thread_local! {
-    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, pending: None, swaps_only: false, swaps: 0, events: Vec::new() }) };
+    static TRACE: RefCell<Trace> = const { RefCell::new(Trace { enabled: false, count: 0, pending: None, swaps_only: false, swaps: 0, events: [EMPTY; 4096] }) };
 }
-// Prepare instrumentation before any measured allocation or compiler ledger.
+// The fixed TLS buffer has no heap backing. Warm thread-local access before
+// measurements when a caller already has an explicit preparation boundary.
 pub(super) fn prepare() {
-    TRACE.with(|trace| trace.borrow_mut().events.resize(4096, EMPTY));
+    TRACE.with(|_| {});
 }
 fn consumed() -> usize {
     crate::bounded_output::active_limit().unwrap()
@@ -108,3 +109,6 @@ pub(super) fn finish() -> Vec<Event> {
         t.events[..t.count].to_vec()
     })
 }
+
+#[cfg(test)]
+mod initialization_tests;

@@ -281,8 +281,8 @@
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/frontiers.rs",
-    "sha256": "cbe6f17984a61badfdf361d9e7fb6f90de6e0681fe389135dc008fdab5075150",
-    "lines": 110
+    "sha256": "f6631dae5796aba642c9a9b294a0479ff45e984856ae836591e563888cae9dba",
+    "lines": 114
   },
   {
     "source": "src/cleanup_plan/replay/ordinary_plan_history/owned_tests.rs",
