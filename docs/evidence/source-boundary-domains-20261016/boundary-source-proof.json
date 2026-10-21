@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 144,
       "full_role_production": 589,
       "full_role_test_only": 1117,
-      "full_raw_sha256": "b533f0518ea2f9e1ce6a82cf079be6ce20f7a1469449c0152f0c95bd4e6cef64",
+      "full_raw_sha256": "cde4d0b570b6c073fc74910d80bc06fe1b5385dd6e2851f2788c712ada1fe452",
       "boundary_production_sha256": "7f3e41d006e4d3a2fd4d183540f04549b0873b7b3c9e40a823cd3a27e73ab376",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -66,8 +66,8 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "registration_update": "COMPLETE_FORMAT_GATE_WITH_EXACT_AUTHENTICATED_LOOKUP_INVERSE",
-  "before_head": "7d42ad08b79b80c9087077dca21fa4072ec0e5a6",
+  "registration_update": "AUTHENTICATED_LINUX_BROWSER_GRAPH_PINS_WITH_COMPLETE_PRIOR_WIRE_RETENTION",
+  "before_head": "8d4a15bdd5e00373401bf5d8905c668b45798054",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
