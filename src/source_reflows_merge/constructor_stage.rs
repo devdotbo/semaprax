@@ -153,6 +153,7 @@ pub(super) fn entry(source: &str, expected: &str) -> bool {
         ),
     ];
     STAGES.contains(&(source, expected))
+        || super::main_e177_final_inputs::registered_file(source, expected, usize::MAX).is_some()
 }
 
 #[test]
@@ -298,6 +299,32 @@ fn complete_metadata_inverses_keep_original_outputs_and_refuse_changed_inputs() 
             assert!(
                 std::panic::catch_unwind(|| super::project(&payload, source, &hostile)).is_err(),
                 "changed complete input: {source}"
+            );
+        }
+    }
+}
+
+#[test]
+fn existing_registered_oracle_stage_keeps_four_complete_inverses_and_refuses_foreign_tuples() {
+    use super::runtime_json;
+    const SOURCE: &str = "src/cleanup_plan/replay/allocation/oracle.rs";
+    const EXPECTED: &str = "fac362691f9d979a58f9274596f07027ee5ce5d14550695e6db47c481a1532ee";
+    assert!(entry(SOURCE, EXPECTED));
+    assert!(!entry("foreign.rs", EXPECTED));
+    assert!(!entry(SOURCE, &"0".repeat(64)));
+    let raw = include_str!("../cleanup_plan/replay/allocation/oracle.rs");
+    for fixture in [
+        runtime_json::Fixture::F03,
+        runtime_json::Fixture::F12,
+        runtime_json::Fixture::F13,
+        runtime_json::Fixture::F38,
+    ] {
+        let payload = runtime_json::load(fixture);
+        let before = super::project(&payload, SOURCE, raw);
+        assert_ne!(before, raw);
+        for hostile in [format!("{raw}\n"), raw[..raw.len() - 1].to_owned()] {
+            assert!(
+                std::panic::catch_unwind(|| super::project(&payload, SOURCE, &hostile)).is_err()
             );
         }
     }

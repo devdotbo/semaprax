@@ -8,6 +8,9 @@ use std::sync::{Mutex, OnceLock};
 
 use sha2::{Digest, Sha256};
 
+#[path = "source_reflows/ci_inputs.rs"]
+mod ci_inputs;
+
 macro_rules! ci_str {
     ($path:expr) => {
         $crate::source_reflows::source(file!(), $path, ::std::include_str!($path))
@@ -77,6 +80,8 @@ fn logical_path(caller: &str, included: &str) -> String {
 
 fn restore(record: &serde_json::Value, current: &str) -> String {
     let path = record["path"].as_str().unwrap();
+    let prior = ci_inputs::for_ci(path, current);
+    let current = prior.as_ref();
     let merged = crate::source_reflows_merge::main(path, current);
     let current = merged.as_str();
     restore_formatting(record, current)
@@ -252,6 +257,8 @@ fn main927_records() -> &'static [serde_json::Value] {
 }
 fn restore_main927(record: &serde_json::Value, current: &str) -> String {
     let path = record["path"].as_str().unwrap();
+    let prior = ci_inputs::for_ci(path, current);
+    let current = prior.as_ref();
     let mut restored = crate::source_reflows_merge::main927_input(path, current);
     assert_eq!(
         format!(

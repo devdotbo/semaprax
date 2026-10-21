@@ -238,7 +238,7 @@ fn project(rows: &str, source: &str, current: &str) -> String {
         &entry,
     );
     let current = acquired.as_str();
-    assert_eq!(source_sha(current), row["current_sha256"]);
+    assert_eq!(source_sha(current), row["current_sha256"], "{source}");
     let mut result = current.to_owned();
     for edit in row["edits"].as_array().unwrap() {
         let new = edit["new"].as_str().unwrap();
