@@ -1,5 +1,9 @@
 # Current source custody and compact byte transports
 
+Status: partial CI repair evidence; qualification is limited to the checks recorded below.
+
+Audience: compiler maintainers and CI reviewers.
+
 This is an incremental CI repair. It does not qualify the full main CI suite.
 
 The additive generator uses the byte-identical sealed registration parser and
