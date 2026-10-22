@@ -1461,6 +1461,7 @@ fn current_projection_facade_input(current: &str, live: &str) -> String {
 #[path = "../../src/source_reflows_merge/opt858_sequence_input.rs"]
 mod opt858_sequence_input;
 // Keep the shared source reader and its authenticated outer adapter together.
+use crate::main_e177_final_inputs;
 #[path = "../../src/source_reflows_merge/final_ready_inputs.rs"]
 mod final_ready_inputs;
 #[allow(dead_code, unused_imports, reason = "Retained reader.")]
