@@ -10,7 +10,7 @@
       "outside_production_still_fully_authenticated": 144,
       "full_role_production": 589,
       "full_role_test_only": 1122,
-      "full_raw_sha256": "a080617b90170ca4157c012b0f3aadc8298e24ad9e773fe39440b681399276a7",
+      "full_raw_sha256": "4db5ae1b502d2561e35309f5f2987ec86c246ef5c64f12b5d3fcce2b326ffba1",
       "boundary_production_sha256": "60b5f263c6696cb96f9ba0acb9258a619e8a14683cd955ef68769759069e4303",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -36,7 +36,7 @@
       "outside_production_still_fully_authenticated": 594,
       "full_role_production": 670,
       "full_role_test_only": 1133,
-      "full_raw_sha256": "e20f049ee80128f74db39cf9d623ba205c54aa746f8a56478bbdd12ddf5f2f90",
+      "full_raw_sha256": "22c42bcb6565d4ed53777afb559b710f6d42c16facec822aca25ac73febe59b7",
       "boundary_production_sha256": "3559e1932f9e80d1277f10f5327df7afc0ce30ad4e6487030e39a2d7c6c0862e",
       "exact_original_forbidden_tokens": [
         "use super::*;",
@@ -67,7 +67,7 @@
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
   "registration_update": "EXACT_CODEC_FIXTURE_HISTORY_INPUT_STAGE",
-  "before_head": "2d4719bb454eee28718d09dea0013e0f163b0f7d",
+  "before_head": "e91e9227033c60e34fcbe481c8b10eaf332199c2",
   "global_polluted_purity_result_not_claimed": true,
   "verification_storage": "Original verifier body and assertions unchanged; immutable UTF8 snapshots and exact concatenation on external SSD. Complete expected manifest compared as exact canonical bytes.",
   "storage_controls_sha256": "448e67b57f94b7904976a5c2c0f448de40f2fade64363a818e8eb969d16a847e",
