@@ -366,3 +366,110 @@ fn fourteen_complete_ci_input_inverses_keep_independent_git_bodies_and_refuse_st
     assert_eq!(prior("foreign.rs", "unlisted input"), "unlisted input");
     reader::controls();
 }
+
+// This controller alone consumes the pre-profile intrinsic-dispatch source.
+// The actual compiler and every other source reader keep the current iterator.
+pub(super) fn intrinsic_profile_entry(
+    caller: &str,
+    source: &str,
+    supplied: &str,
+) -> Option<String> {
+    const CALLER: &str = "src/hir/validation/constructor_seed/intrinsic_tests.rs";
+    if caller != CALLER
+        && !caller.ends_with(concat!(
+            "/",
+            "src/hir/validation/constructor_seed/intrinsic_tests.rs"
+        ))
+    {
+        return None;
+    }
+    let compiled = match source {
+        "src/list_ops.rs" => include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/list_ops.rs")),
+        "src/iterator_ops.rs" => {
+            include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/iterator_ops.rs"))
+        }
+        _ => return None,
+    };
+    const DATA: &str =
+        include_str!("../../docs/evidence/intrinsic-profile-entry-20261022/inputs.json");
+    assert_eq!(DATA.len(), 1156);
+    assert_eq!(
+        digest(DATA),
+        "f7d25b201e0a48dd3675539096dbe998e92b1fbc0ee611fe7f7f3e73f7679a14"
+    );
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(
+        reader::read(
+            &root.join("docs/evidence/intrinsic-profile-entry-20261022/inputs.json"),
+            DATA.len(),
+            &digest(DATA),
+            2_097_152
+        )
+        .unwrap(),
+        DATA
+    );
+    let rows: serde_json::Value = serde_json::from_str(DATA).unwrap();
+    assert_eq!(rows.as_array().unwrap().len(), 2);
+    let row = rows
+        .as_array()
+        .unwrap()
+        .iter()
+        .find(|row| row["source"] == source)
+        .unwrap();
+    assert_eq!(
+        supplied, compiled,
+        "complete actual intrinsic source channel"
+    );
+    assert_eq!(compiled.len() as u64, row["current_length"]);
+    assert_eq!(digest(compiled), row["current_sha256"]);
+    assert_eq!(
+        reader::read(
+            &root.join(source),
+            compiled.len(),
+            row["current_sha256"].as_str().unwrap(),
+            2_097_152
+        )
+        .unwrap(),
+        compiled
+    );
+    let after = row["after"].as_str().unwrap();
+    assert_eq!(compiled.matches(after).count(), 1);
+    let previous = compiled.replacen(after, row["before"].as_str().unwrap(), 1);
+    assert_eq!(previous.len() as u64, row["before_length"]);
+    assert_eq!(digest(&previous), row["before_sha256"]);
+    assert_eq!(
+        reader::read(
+            &root.join(row["archive"].as_str().unwrap()),
+            previous.len(),
+            row["before_sha256"].as_str().unwrap(),
+            2_097_152
+        )
+        .unwrap(),
+        previous
+    );
+    Some(previous)
+}
+
+#[test]
+fn intrinsic_profile_entry_keeps_exact_controller_scope_and_refuses_complete_source_drift() {
+    let caller = "src/hir/validation/constructor_seed/intrinsic_tests.rs";
+    for (source, current) in [
+        ("src/list_ops.rs", include_str!("../list_ops.rs")),
+        ("src/iterator_ops.rs", include_str!("../iterator_ops.rs")),
+    ] {
+        let before = intrinsic_profile_entry(caller, source, current).unwrap();
+        assert_ne!(before, current);
+        assert!(intrinsic_profile_entry("src/another_controller.rs", source, current).is_none());
+        for changed in [
+            format!("{current}\n"),
+            current[..current.len() - 1].to_owned(),
+            before,
+        ] {
+            assert!(
+                std::panic::catch_unwind(|| intrinsic_profile_entry(caller, source, &changed))
+                    .is_err()
+            );
+        }
+    }
+    assert!(intrinsic_profile_entry(caller, "src/hir.rs", "foreign source").is_none());
+}
