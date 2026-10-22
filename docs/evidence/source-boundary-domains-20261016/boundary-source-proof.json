@@ -9,7 +9,7 @@
       "outside_production_still_fully_authenticated": 227,
       "full_role_production": 677,
       "full_role_test_only": 1145,
-      "full_raw_sha256": "0bd2509af4671c4b439fe0c7f0a388c29bc23adccb7466afb7a22061b774f750",
+      "full_raw_sha256": "815b259b00e785be7dc694f5f100bd0db47201f4ff86f2e77a5a1a35422f16a1",
       "boundary_production_sha256": "ee7691d10920ac42bef382f2438fc9ef7867919581c19f598e34e239b80f5256",
       "exact_original_forbidden_tokens": [
         "struct Resolver",
@@ -67,6 +67,6 @@
     "foreign_path_child_cannot_escape": true
   },
   "status": "SOURCE_ONLY_EXACT_BOUNDARIES_AND_COMPLETE_SOURCE_ROLE_CUSTODY_PASS",
-  "before_head": "b60370fe3550f485707927eddf2ad5e266872a39",
-  "peak_RSS_bytes": 591118336
+  "before_head": "1a4385642bb412366957085a9b917cbbc0c60495",
+  "peak_RSS_bytes": 589643776
 }
