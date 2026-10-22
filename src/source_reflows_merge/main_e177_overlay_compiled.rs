@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/source_reflows_merge/final_ready_inputs/projection_publication.rs" => Some(include_str!("../../src/source_reflows_merge/final_ready_inputs/projection_publication.rs")),
         "src/bounded_output/exclusive_debits.rs" => Some(include_str!("../../src/bounded_output/exclusive_debits.rs")),
         "src/hir/ids/lowering_identity_tests.rs" => Some(include_str!("../../src/hir/ids/lowering_identity_tests.rs")),
         "src/hir/owned_collection_record/identity_before.rs" => Some(include_str!("../../src/hir/owned_collection_record/identity_before.rs")),
@@ -316,6 +317,7 @@ mod tests {
             "src/cleanup_plan/replay/sequence_vector.rs",
             "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs",
             "tests/source_locked_contracts.rs",
+            "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         ] {
             let declaration = format!("    {source:?},\n");
             assert_eq!(current_scope_root.matches(&declaration).count(), 1);
@@ -334,6 +336,7 @@ mod tests {
             "src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs",
             "src/cleanup_plan/replay/sequence_vector.rs",
             "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs",
+            "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         ] {
             let arm = format!("        {source:?} => Some(include_str!(\"../../{source}\")),\n");
             assert_eq!(current_scope_child.matches(&arm).count(), 1);

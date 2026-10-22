@@ -2769,7 +2769,11 @@
         "src/ast.rs",
         "src/ast/expression_statement.rs",
         "src/ast/program_source.rs",
+        "src/ast/program_source/checked_key.rs",
+        "src/ast/program_source/checked_key/encode.rs",
         "src/ast/program_source/decl_slices.rs",
+        "src/ast/program_source/generated_roots.rs",
+        "src/ast/program_source/receiving_roots.rs",
         "src/bounded_output.rs",
         "src/bounded_output/classifier_string.rs",
         "src/bounded_output/exclusive_debits.rs",
@@ -2777,6 +2781,7 @@
         "src/bounded_output/identity_reservation/function_cells.rs",
         "src/bounded_output/identity_reservation/source_abort.rs",
         "src/bounded_output/invocation_binding.rs",
+        "src/bounded_output/key_directory.rs",
         "src/byte_ops.rs",
         "src/cleanup.rs",
         "src/cleanup/inventory_builder.rs",
@@ -2994,9 +2999,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "e659db15a32453f54371fd4f3ff95d835cc7549136f604993dfa2c8cc90dff8f",
-      "full_raw_sha256": "54b44a9cbdb27befa6feb12199adf70748859e5ee197ae19a2fdd4453e44e71c",
-      "full_authenticated_production_sha256": "98f227beea7b013cf481dab0f45f3ffdd6d394ae01dca02eef754c4cdc6042c3"
+      "full_manifest_sha256": "fa9c425aee09a0d410a986ee7aec13b78d44a03d5ffce4e14600e70c7ba8b524",
+      "full_raw_sha256": "a8dc672d3cea8f4895ea920dc1997a8a96ade6e431c65bf077b1f989982a15d4",
+      "full_authenticated_production_sha256": "aa048169244a5c683e5b9479c195e7f29969cc8bff45814613a7dd0fbd5de915"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -4138,8 +4143,8 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "2c7bdbe61642d49b47b73e3f0396a4aed6002c0921f997544527ade6e6cbd6e9",
-      "full_raw_sha256": "6439cd04d898ed4291e8d6da03fd1645d4f281c6806d7e2d1dd3ad3a3a73868c",
+      "full_manifest_sha256": "c04966247e9591a23f5b34bf04853f5559c7236d88a37c46c1a46e02a8383dad",
+      "full_raw_sha256": "d7e1994243b5eb593381e9a54e629566cbc08dcf85714fb28a497e766aa2bb7e",
       "full_authenticated_production_sha256": "aa88051e449afd0fe00973f4d5992bc730d1cd97199e804f5aeb225537410d1b"
     }
   }
