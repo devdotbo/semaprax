@@ -268,12 +268,13 @@ fn check_descriptor_project(files: &[Value]) {
             std::fs::remove_dir_all(&self.0).unwrap();
         }
     }
-    let directory = Directory(std::env::temp_dir().join(format!(
+    let directory_path = std::env::temp_dir().join(format!(
         "semaprax-task-descriptor-{}-{}",
         std::process::id(),
         NEXT.fetch_add(1, Ordering::Relaxed)
-    )));
-    std::fs::create_dir(&directory.0).unwrap();
+    ));
+    std::fs::create_dir(&directory_path).unwrap();
+    let directory = Directory(directory_path);
     for file in files {
         let path = std::path::Path::new(file["path"].as_str().unwrap());
         assert!(path

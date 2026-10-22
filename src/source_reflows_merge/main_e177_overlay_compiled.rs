@@ -257,6 +257,29 @@ mod tests {
         // source images, before any metadata or whole-source normalization.
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
+        // Reverse this exact later metadata scope and comment-only packing
+        // before every unchanged original span and whole-predecessor check.
+        let mut preceding_root = root.to_owned();
+        for source in [
+            "src/cleanup_plan.rs",
+            "src/cleanup_plan/replay/path_array/main44/mod.rs",
+            "src/cleanup_plan/replay/path_array/main44/source_domain.rs",
+            "src/source_reflows_merge/main44_custody.rs",
+        ] {
+            let declaration = format!("    {source:?},\n");
+            assert_eq!(preceding_root.matches(&declaration).count(), 1);
+            preceding_root = preceding_root.replacen(&declaration, "", 1);
+        }
+        for (packed, previous) in [
+            ("    } // compose() authenticated policy membership against these exact constants.\n", "    }\n    // compose() authenticated policy membership against these exact constants.\n"),
+            ("        } // A genuine declared leaf edge has to use the complete same-scope row.\n", "        }\n        // A genuine declared leaf edge has to use the complete same-scope row.\n"),
+            ("        ); // Even a same-key forged DATA object cannot substitute a verdict.\n", "        );\n        // Even a same-key forged DATA object cannot substitute a verdict.\n"),
+            ("        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap())); // Matching physical bytes with foreign compiled bytes are still refused.\n", "        assert!(Arc::ptr_eq(&first, &read(&mut data).unwrap()));\n        // Matching physical bytes with foreign compiled bytes are still refused.\n"),
+        ] {
+            assert_eq!(preceding_root.matches(packed).count(), 1);
+            preceding_root = preceding_root.replacen(packed, previous, 1);
+        }
+        let root = preceding_root.as_str();
         // Undo this exact later funded-test acquisition before the complete old inverses.
         let declaration = "    \"src/cleanup_plan/replay/sequence_vector/funded_tests.rs\",\n";
         assert_eq!(root.matches(declaration).count(), 1);
