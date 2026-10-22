@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 68694,
-      "sha256": "b630ebc6fa41611ed4094dc1f74e9f09b2f74a28bd099f5dc61bef3cff0c176c"
+      "length": 68393,
+      "sha256": "3f084d0d61039e3db92a0638b5406f235bf13476187edd4dc909f748793b9d1e"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -777,8 +777,8 @@
       "sha256": "39412583a543bf0b2d2f3f38c11d882183d89abfef4b8ae650f827142a3d2470"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs": {
-      "length": 25833,
-      "sha256": "f1c518ace8bba8eb5b79ad2716b6a98ed15c5c7198dd2d11232b184c0b988f60"
+      "length": 25929,
+      "sha256": "2a64ea81fe25ac38ad7d3060cb1dae31de835e46c4572c5bf425ea979a477917"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs": {
       "length": 5325,
@@ -789,8 +789,8 @@
       "sha256": "e96169bac2c81637e3a741eb51dad2d48604d59eec0c3c441d9db1e2b7a4d649"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs": {
-      "length": 30918,
-      "sha256": "7ba820da6e65243527976b6bee0ea1920440144c9c5c416a6d8e0d10d180698c"
+      "length": 30940,
+      "sha256": "c8e1ee615fb6a8547bb5807f7259dc516d114dbf0f1dd7798369d3e3cdd22f27"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
       "length": 20736,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 81615,
-      "sha256": "292c35433afc72999d10e69c46cef1186d3e10d26c2fdce285b9a3fa21fd96d5"
+      "length": 88836,
+      "sha256": "afb62b9ef8dfaff9b09dce659eccffe06eed4a9c0ea4d9f6c6f070441033947a"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,
