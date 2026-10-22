@@ -23,7 +23,7 @@ assert raw.decode().count(old)==1
 current=raw.decode().replace(old,new,1)
 assert current.replace(new,old,1).encode()==raw
 helper=R/'docs/evidence/main-e177-final-source-binding-20261017/guard_payload.py'
-helper_raw=bounded(helper,11549,'bf2a8d44102a461806ebb87bfb4cc18667d13d1ebdb624135b2ca031cc0148f3')
+helper_raw=bounded(helper,11549,'a2fc0d00a4234e7a8e77112426d56aea2c2e8c0868015d675d150ba9351d87ac')
 ns={'__file__':str(helper),'_AUTHENTICATED_PROGRAM':helper_raw};exec(compile(helper_raw,str(helper),'exec'),ns)
 old_guard='guard=runpy.run_path(str(guard_path))'
 new_guard='guard=_accepted_guard_extensions(R)'

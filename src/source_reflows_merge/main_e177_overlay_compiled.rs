@@ -315,6 +315,7 @@ mod tests {
             "src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs",
             "src/cleanup_plan/replay/sequence_vector.rs",
             "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs",
+            "tests/source_locked_contracts.rs",
         ] {
             let declaration = format!("    {source:?},\n");
             assert_eq!(current_scope_root.matches(&declaration).count(), 1);

@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 68393,
-      "sha256": "a15b6f65a26f9590c1a1c1ced52a2e5a45050df66a194c76b3db05cd2934ebca"
+      "length": 68428,
+      "sha256": "63f6724a8148480133cad798d63aba86eb54981b144f3b6ded37617ac7fb139e"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 88836,
-      "sha256": "afb62b9ef8dfaff9b09dce659eccffe06eed4a9c0ea4d9f6c6f070441033947a"
+      "length": 88884,
+      "sha256": "f34025fd7fe9c1ea651919764f78d09208bf950f5e3b4ded118ce94a6108b1c8"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,
@@ -1316,20 +1316,20 @@
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 136942,
-      "sha256": "ffe6016f0c7b317ce89103f9fbe72f888a31ce212efd0f22fcd26e62c73d8a79",
+      "length": 139693,
+      "sha256": "4025420fbf9748241121bc6c815e8c36d664b9709676a51d5f7607382c5b757d",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 166104,
-      "sha256": "949eafef81d1d525a84d530c81101eced9a9ff87093032cbfc73c778308639dc",
+      "length": 166632,
+      "sha256": "91b3e9f6026b02c39c3c9db9b72a0d439d48a116eac9a07f6b534c223559d110",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 209317,
-      "sha256": "3ddaeebfec59463ae0c78e955c06dffca9865357cd347d6036b538dc9e671b28",
+      "length": 212477,
+      "sha256": "86671af49080563d9f3a5aad0bd89ec73e3a0efcf3f156d5b84de76fbb2eafd7",
       "base": "../../../../../"
     }
   },
