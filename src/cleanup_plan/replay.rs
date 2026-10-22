@@ -11,6 +11,7 @@ mod constructed_variant;
 mod context_closure;
 mod continuation_storage;
 mod final_output;
+use final_output::compact as compact_path;
 mod path_array;
 use constructed_variant::materialize_constructed_variant;
 pub(in crate::cleanup_plan) mod allocation_coverage;
@@ -3077,7 +3078,7 @@ fn sequence_skeleton_paths(
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
     let mut combined = Vec::new();
-    let minimum = path_array::count!(
+    let minimum = compact_path::count!(
         work,
         true,
         if suffixes.is_empty() {
@@ -3101,7 +3102,7 @@ fn sequence_skeleton_paths(
                 sequence_vector::stopped_after_work!(work, first, minimum, combined, prefix);
                 continue;
             }
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -3133,7 +3134,7 @@ fn sequence_skeleton_paths(
                 &suffix.owned_source,
                 "sequenced skeleton owned-source clone",
             )?;
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -3214,7 +3215,7 @@ fn sequence_skeleton_paths(
                 &suffix.owned_source,
                 "sequenced skeleton owned-source clone",
             )?;
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -3279,7 +3280,7 @@ fn sequence_skeleton_paths(
         )?;
         let owned_source =
             work.clone_owned(&last.owned_source, "sequenced skeleton owned-source clone")?;
-        path_array::push!(
+        compact_path::push!(
             work,
             first,
             minimum,

@@ -177,24 +177,24 @@ macro_rules! compact_one_pass_successors {
                         } => {
                             $compact_attempt!($budget.reserve_compact_bytes(
                                 $function,
-                                paid_many::PROMOTE_RECEIVING,
+                                compact_targets::PROMOTE_RECEIVING,
                                 "factored one-pass distinct-target receivers"
                             ));
                             #[cfg(test)]
                             if $budget.pays_allocations() {
                                 paid_many::note_branch(true);
                             }
-                            *$targets = $attempt!(paid_many::promote(
+                            *$targets = $compact_attempt!(compact_targets::promote(
                                 $function, $budget, *first, *total, *$child, *$weight
                             ));
                         }
                         paid_many::Targets::PaidMany(flat) => {
                             $compact_attempt!($budget.reserve_compact_bytes(
                                 $function,
-                                paid_many::ADD_RECEIVING,
+                                compact_targets::ADD_RECEIVING,
                                 "factored one-pass flat-target receivers"
                             ));
-                            if !$attempt!(paid_many::add(
+                            if !$compact_attempt!(compact_targets::add(
                                 $function, $budget, flat, *$child, *$weight
                             )) {
                                 $receiving.finish_overflow();

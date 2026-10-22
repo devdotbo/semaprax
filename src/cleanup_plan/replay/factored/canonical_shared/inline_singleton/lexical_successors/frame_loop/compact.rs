@@ -3,6 +3,7 @@ use super::*;
 use payments as compact_successors;
 #[macro_use]
 mod payments;
+mod compact_targets;
 
 impl<'hir> Canonicalizer<'hir> {
     #[allow(

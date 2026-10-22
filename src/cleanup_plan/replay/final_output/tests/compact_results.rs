@@ -66,3 +66,24 @@ fn compact_vector_banks_preserve_all_other_actual_receivers() {
         delta
     );
 }
+
+#[test]
+fn compact_path_banks_keep_every_original_count_and_capacity_receiver() {
+    let delta = size_of::<Result<(), Diagnostic>>() - size_of::<Result<(), ByteFailure>>();
+    assert!(delta > 0);
+    assert_eq!(
+        crate::cleanup_plan::replay::path_array::count_controls::<true>()
+            - compact::path_count_controls::<true>(),
+        delta
+    );
+    assert_eq!(
+        crate::cleanup_plan::replay::path_array::count_controls::<false>()
+            - compact::path_count_controls::<false>(),
+        delta
+    );
+    assert_eq!(
+        crate::cleanup_plan::replay::path_array::capacity_controls()
+            - compact::path_capacity_controls(),
+        delta
+    );
+}

@@ -12,6 +12,11 @@ on:
         type: boolean
         required: false
         default: false
+      focused_controls:
+        description: Run focused full-library unit controls on a hosted runner (diagnostic only)
+        type: boolean
+        required: false
+        default: false
       resolved_core:
         description: Capture production-algorithm project reservation totals on Linux
         type: boolean
@@ -24,7 +29,7 @@ concurrency:
   cancel-in-progress: false
 jobs:
   cli:
-    if: ${{ ! inputs.linux_stack && ! inputs.resolved_core }}
+    if: ${{ ! inputs.linux_stack && ! inputs.resolved_core && ! inputs.focused_controls }}
     runs-on: macos-15
     timeout-minutes: 120
     env:
@@ -281,3 +286,40 @@ jobs:
             resolved-core-build.jsonl
           if-no-files-found: error
           retention-days: 1
+
+  focused-controls:
+    name: Focused complete-library unit controls (diagnostic only)
+    if: inputs.focused_controls
+    runs-on: ubuntu-24.04
+    timeout-minutes: 40
+    env:
+      CARGO_BUILD_JOBS: "1"
+      CARGO_INCREMENTAL: "0"
+      CARGO_PROFILE_DEV_DEBUG: "0"
+      CARGO_PROFILE_TEST_DEBUG: "0"
+      CARGO_PROFILE_TEST_OPT_LEVEL: "0"
+      CARGO_TARGET_DIR: target/focused-unit-diagnostic
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1
+        with:
+          fetch-depth: 1
+          filter: blob:none
+          fetch-tags: false
+          lfs: false
+      - uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8
+        with:
+          toolchain: 1.97.1
+      - name: Bind the build to this exact checkout
+        run: test "$(git rev-parse HEAD)" = "$GITHUB_SHA"
+      - name: Fetch locked dependencies
+        run: cargo fetch --locked
+      - name: Build the actual complete library test harness
+        run: cargo test --locked --offline -p semaprax --lib --features unstable-workflow-profiling --no-run --jobs 1
+      - name: Run every focused control and preserve any failure
+        shell: bash
+        run: |
+          status=0
+          for selector in compact_flat_probe_ compact_vec_tests:: compact_targets::tests; do
+            cargo test --locked --offline -p semaprax --lib --features unstable-workflow-profiling --jobs 1 "$selector" -- --nocapture --test-threads=1 || status=1
+          done
+          exit "$status"

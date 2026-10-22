@@ -245,7 +245,7 @@ fn sequence_core(
             .any(|suffix| suffix.observations.prefix.is_some())
     };
     let mut combined = Vec::new();
-    let minimum = path_array::count!(
+    let minimum = compact_path::count!(
         work,
         true,
         if suffixes.is_empty() {
@@ -269,7 +269,7 @@ fn sequence_core(
                 sequence_vector::stopped_after_work!(work, first, minimum, combined, prefix);
                 continue;
             }
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -299,7 +299,7 @@ fn sequence_core(
             )?;
             let owned_source =
                 work.clone_owned(suffix.owned_source, "sequenced skeleton owned-source clone")?;
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -377,7 +377,7 @@ fn sequence_core(
             )?;
             let owned_source =
                 work.clone_owned(suffix.owned_source, "sequenced skeleton owned-source clone")?;
-            path_array::push!(
+            compact_path::push!(
                 work,
                 first,
                 minimum,
@@ -442,7 +442,7 @@ fn sequence_core(
         )?;
         let owned_source =
             work.clone_owned(last.owned_source, "sequenced skeleton owned-source clone")?;
-        path_array::push!(
+        compact_path::push!(
             work,
             first,
             minimum,
