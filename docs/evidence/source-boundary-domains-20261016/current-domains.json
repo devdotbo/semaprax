@@ -3971,8 +3971,8 @@
         "src/source_verify/declaration/identity.rs",
         "src/source_verify/declaration/record_shape.rs"
       ],
-      "full_manifest_sha256": "91dca73bcc304893587814a78a94d3551b3acf08fb1bead9821b32f90b643d5c",
-      "full_raw_sha256": "a5fd377a51b59c91328bf007f2eefdaf64907d180126a3368c20f822f9e76264",
+      "full_manifest_sha256": "3e2b041d2d8aebcf3f3ae93d3bb59aa991de09cb1a9db59516122624265fb5c2",
+      "full_raw_sha256": "e20f049ee80128f74db39cf9d623ba205c54aa746f8a56478bbdd12ddf5f2f90",
       "full_authenticated_production_sha256": "4bfaf864e4efb8bb3f7c3b0018b9ce281c0e4132aa2e76272ef0f131175082f7"
     }
   }
