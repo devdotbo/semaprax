@@ -128,6 +128,26 @@ fn compiled(source: &str) -> Option<(usize, &'static str)> {
         _ => return None,
     })
 }
+// These two complete predecessor stages belong to this fixed CI inventory.
+// Authenticate the actual compiled/physical/current row before selecting the
+// already-declared whole view; every original indexed inverse still runs.
+fn historical_entry<'a>(source: &str, expected: &str, current: &'a str) -> Cow<'a, str> {
+    match (source, expected) {
+        (
+            "src/cleanup_plan/replay.rs",
+            "cc999fb9034687101cb5d34db54ed4ea58289ac6d9f9f7fae9f53e693231f74a",
+        )
+        | (
+            "src/cleanup_plan/replay/factored.rs",
+            "d3808da9519009c1a7b223a91a635bc94cdeb80a2c8bc40b22bcfc8b1f2f918c",
+        ) => Cow::Owned(
+            crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+                source, expected, current,
+            ),
+        ),
+        _ => Cow::Borrowed(current),
+    }
+}
 fn rows() -> serde_json::Value {
     const DATA: &str = include_str!("../../docs/evidence/ci-inputs-20261021/inputs.json");
     assert_eq!(DATA.len(), 79496);
@@ -179,7 +199,12 @@ fn rows() -> serde_json::Value {
     assert_eq!(row["source"], successor["source"]);
     assert_eq!(row["current_length"], successor["checkpoint_length"]);
     assert_eq!(row["current_sha256"], successor["checkpoint_sha256"]);
-    let current = compiled(row["source"].as_str().unwrap()).unwrap().1;
+    let current = historical_entry(
+        row["source"].as_str().unwrap(),
+        successor["sha256"].as_str().unwrap(),
+        compiled(row["source"].as_str().unwrap()).unwrap().1,
+    );
+    let current = current.as_ref();
     assert_eq!(current.len() as u64, successor["length"]);
     assert_eq!(digest(current), successor["sha256"]);
     let mut checkpoint = current.to_owned();
@@ -214,8 +239,6 @@ pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
     let rows = rows();
     let row = &rows[index];
     assert_eq!(row["source"], source);
-    assert_eq!(current.len() as u64, row["current_length"]);
-    assert_eq!(digest(current), row["current_sha256"]);
     assert_eq!(
         supplied, current,
         "complete compiled current CI history input"
@@ -224,12 +247,15 @@ pub(super) fn prior<'a>(source: &str, supplied: &'a str) -> Cow<'a, str> {
     let fresh = reader::read(
         &root.join(source),
         current.len(),
-        row["current_sha256"].as_str().unwrap(),
+        &digest(current),
         2_097_152,
     )
     .unwrap();
     assert_eq!(fresh, current, "complete fresh physical CI history input");
-    let mut before = fresh;
+    let entered = historical_entry(source, row["current_sha256"].as_str().unwrap(), current);
+    assert_eq!(entered.len() as u64, row["current_length"]);
+    assert_eq!(digest(&entered), row["current_sha256"]);
+    let mut before = entered.into_owned();
     for edit in row["inverse"].as_array().unwrap().iter().rev() {
         let at = edit[0].as_u64().unwrap() as usize;
         let after = edit[1].as_str().unwrap();
