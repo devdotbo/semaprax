@@ -374,6 +374,10 @@ pub(super) fn intrinsic_profile_entry(
     source: &str,
     supplied: &str,
 ) -> Option<String> {
+    const PAID: &str = "src/hir/validation/function_lookup/paid_custody.rs";
+    if caller == PAID || caller.ends_with("/src/hir/validation/function_lookup/paid_custody.rs") {
+        return paid_constructor_entry(source, supplied);
+    }
     const CALLER: &str = "src/hir/validation/constructor_seed/intrinsic_tests.rs";
     if caller != CALLER
         && !caller.ends_with(concat!(
@@ -472,4 +476,110 @@ fn intrinsic_profile_entry_keeps_exact_controller_scope_and_refuses_complete_sou
         }
     }
     assert!(intrinsic_profile_entry(caller, "src/hir.rs", "foreign source").is_none());
+}
+
+fn paid_constructor_entry(source: &str, supplied: &str) -> Option<String> {
+    if source == "src/stdin_stream_ops.rs" {
+        return paid_stdin_entry(supplied);
+    }
+    if source != "src/hir/function_directory/caller.rs" {
+        return None;
+    }
+    const CURRENT: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/hir/function_directory/caller.rs"
+    ));
+    assert_eq!(supplied, CURRENT, "complete actual paid-constructor source");
+    assert_eq!(CURRENT.len(), 4600);
+    assert_eq!(
+        digest(CURRENT),
+        "63c8121f756943b8be3cfa53a0c4862459c7af14c3ef3124b75468546a42af35"
+    );
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(
+        reader::read(
+            &root.join(source),
+            CURRENT.len(),
+            &digest(CURRENT),
+            2_097_152
+        )
+        .unwrap(),
+        CURRENT
+    );
+    const AFTER: &str = "    #[cfg(feature = \"unstable-workflow-profiling\")]\n    let _exclusive_operation = crate::bounded_output::exclusive_debits::operation_guard(\n        crate::bounded_output::exclusive_debits::Operation::FunctionDirectory,\n    );\n";
+    assert_eq!(CURRENT.matches(AFTER).count(), 1);
+    let before = CURRENT.replacen(AFTER, "", 1);
+    assert_eq!(before.len(), 4373);
+    assert_eq!(
+        digest(&before),
+        "217896ad2e11c8bcbdfde236ec29a9cc1c00da142c9c18968a6015b79451127a"
+    );
+    assert_eq!(reader::read(&root.join("docs/evidence/paid-constructor-entry-20261022/217896ad2e11c8bcbdfde236ec29a9cc1c00da142c9c18968a6015b79451127a.txt"), before.len(), &digest(&before), 2_097_152).unwrap(), before);
+    Some(before)
+}
+
+fn paid_stdin_entry(supplied: &str) -> Option<String> {
+    const CURRENT: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/src/stdin_stream_ops.rs"
+    ));
+    assert_eq!(supplied, CURRENT, "complete actual paid stdin source");
+    assert_eq!(CURRENT.len(), 17324);
+    assert_eq!(
+        digest(CURRENT),
+        "5c216d1345d20face39f0e07ac9554c2d659b0a171fcf0cbb33dd60684961836"
+    );
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(
+        reader::read(
+            &root.join("src/stdin_stream_ops.rs"),
+            CURRENT.len(),
+            &digest(CURRENT),
+            2_097_152
+        )
+        .unwrap(),
+        CURRENT
+    );
+    let mut before = CURRENT.to_owned();
+    assert_eq!(before.matches(".function_refs()\n                .find_named_payload(operation.as_str(), ast_forward_signature)\n                .is_some()").count(), 1);
+    before = before.replacen(".function_refs()\n                .find_named_payload(operation.as_str(), ast_forward_signature)\n                .is_some()", ".functions()\n                .iter()\n                .any(|function| function.name == *operation && ast_forward_signature(function))", 1);
+    assert_eq!(before.matches("program\n        .functions()\n        .profile_iter()\n        .any(|function| function_uses(function.payload()))").count(), 1);
+    before = before.replacen("program\n        .functions()\n        .profile_iter()\n        .any(|function| function_uses(function.payload()))", "program.functions().iter().any(function_uses)", 1);
+    assert_eq!(before.len(), 17268);
+    assert_eq!(
+        digest(&before),
+        "bc1e107b8756db7b323000b0d282b731db08b06b29b21ca9a3e86bb6366bef97"
+    );
+    assert_eq!(reader::read(&root.join("docs/evidence/paid-constructor-entry-20261022/bc1e107b8756db7b323000b0d282b731db08b06b29b21ca9a3e86bb6366bef97.txt"), before.len(), &digest(&before), 2_097_152).unwrap(), before);
+    Some(before)
+}
+
+#[test]
+fn paid_constructor_entries_refuse_foreign_controllers_and_changed_whole_sources() {
+    let caller = "src/hir/validation/function_lookup/paid_custody.rs";
+    for (source, current) in [
+        (
+            "src/hir/function_directory/caller.rs",
+            include_str!("../hir/function_directory/caller.rs"),
+        ),
+        (
+            "src/stdin_stream_ops.rs",
+            include_str!("../stdin_stream_ops.rs"),
+        ),
+    ] {
+        let before = intrinsic_profile_entry(caller, source, current).unwrap();
+        assert_ne!(before, current);
+        assert!(intrinsic_profile_entry("src/foreign.rs", source, current).is_none());
+        for changed in [
+            format!("{current}\n"),
+            current[..current.len() - 1].to_owned(),
+            before,
+        ] {
+            assert!(
+                std::panic::catch_unwind(|| intrinsic_profile_entry(caller, source, &changed))
+                    .is_err()
+            );
+        }
+    }
+    assert!(intrinsic_profile_entry(caller, "src/hir.rs", "foreign").is_none());
 }
