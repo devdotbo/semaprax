@@ -1251,6 +1251,11 @@ boundary. Existing codec derivation remains the only source candidate consumer.
 with an explicit same-profile command activation, canonical authored inventory
 and exact original/generated source receipts. It performs full ordinary Project
 construction without filesystem or native execution authority. The full host's
+`new_project/application/held_input_path` supplies only lexical Windows drive/UNC
+verbatim spelling for the held input parent. It performs no filesystem resolution;
+the original selected spelling still owns metadata and final identity rechecks,
+and the platform retains its strict canonical-path and no-follow checks.
+
 `new_project/application` invokes the original scaffold `publish_files` held-parent
 sequence; `project_publication/application` supplies a bounded owned-name source
 inventory to that same authority. Static template inventories and frozen capsules

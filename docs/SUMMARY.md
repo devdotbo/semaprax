@@ -1882,3 +1882,5 @@ Audience: all documentation readers.
 - [Explicit byte-traversal heap capture](evidence/edge-proof-observer-scope-20261023/README.md)
 
 - [Owned-provider validation receipt](evidence/native-provider-validation-receipt-20261023/README.md)
+
+- [Windows starter-input parent spelling](evidence/windows-starter-path-20261023/README.md)

@@ -1,6 +1,9 @@
 //! Complete predecessor provider and immutable validation handoff controls.
-use super::*;
+use super::emit_provider;
 use crate::codegen::{emit_hir_c_with_labels, reject_native_rust_for_native, NativeOutputProfile};
+use crate::diagnostic::Diagnostic;
+use crate::hir::{DeclarationId, ResolvedProgram};
+use crate::project::PublicApiSubject;
 use std::collections::HashMap;
 fn emit_hir_c_for_owned_data_provider(program: &ResolvedProgram) -> Result<String, Diagnostic> {
     reject_native_rust_for_native(program)?;
@@ -22,8 +25,15 @@ fn emit_hir_c_for_owned_utf8_provider(program: &ResolvedProgram) -> Result<Strin
 }
 
 mod before {
-    use super::super::*;
-    use crate::project::replay_public_api_descriptor;
+    use super::super::{
+        emit_export, emit_provider_runtime_profile, provider_error, NativeOwnedDataProviderArtifact,
+    };
+    use crate::diagnostic::Diagnostic;
+    use crate::hir::ResolvedProgram;
+    use crate::project::{
+        replay_public_api_descriptor, PublicApiResultType, PublicApiSubject,
+        PUBLIC_OWNED_UTF8_PROJECT_SCHEMA,
+    };
     use std::fmt::Write as _;
     include!("emit_provider_before.rs");
 }
