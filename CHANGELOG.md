@@ -1,3 +1,7 @@
+## Tokio I/O safety dependency repair (2026-10-23)
+
+- Pin Tokio 1.53.3 in active manifests, generated consumers and lockfiles to address RUSTSEC-2026-0386. Preserve historical evidence locks and all unrelated locked packages.
+
 ## CI reservation transport and append-only label maps (2026-10-23)
 
 - Skip continuation-allocation queries when their complete receiving cost exceeds the greatest possible backing saving; retain exact path/work behavior and independently prepaid short-copy controls.
