@@ -1,5 +1,7 @@
 ## Tokio I/O safety dependency repair (2026-10-23)
 
+- Pin both public and full-host `new` help shapes in the standalone CLI integration regression, matching the existing qualified help contract.
+
 - Pin Tokio 1.53.3 in active manifests, generated consumers and lockfiles to address RUSTSEC-2026-0386. Preserve historical evidence locks and all unrelated locked packages.
 
 ## CI reservation transport and append-only label maps (2026-10-23)
