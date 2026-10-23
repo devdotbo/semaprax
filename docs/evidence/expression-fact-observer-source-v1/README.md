@@ -3,6 +3,8 @@
 Status: two original complete source tests and the new hostile-input regression
 pass locally in a source-only harness; full CI is pending.
 
+Audience: compiler contributors and reviewers.
+
 The receiving test still authenticates its original provenance, executes every
 original projection hook and compares each complete original source. Its
 expression-fact projection contains a later 409-byte profiling scope block.
