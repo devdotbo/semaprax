@@ -1,5 +1,7 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/branch_clone/short_plan.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/short_plan.rs")),
+        "src/cleanup_plan/replay/nested_shape.rs" => Some(include_str!("../../src/cleanup_plan/replay/nested_shape.rs")),
         "src/source_reflows_merge/main_e177_overlay_pins_v10.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_pins_v10.rs")),
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs")),
         "src/source_reflows_merge/final_ready_inputs/projection_publication.rs" => Some(include_str!("../../src/source_reflows_merge/final_ready_inputs/projection_publication.rs")),
@@ -307,6 +309,13 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/cleanup_plan/replay/branch_clone/inline_tests.rs",
+            "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
+            "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
+            "src/cleanup_plan/replay/branch_clone/production_capacity/before_short.rs",
+            "src/cleanup_plan/replay/branch_clone/short_plan.rs",
+            "src/cleanup_plan/replay/nested_shape.rs",
+            "src/cleanup_plan/replay/nested_shape/scalar_tests.rs",
             "src/source_reflows_merge/main_e177_overlay_pins_v10.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
             "src/cleanup_plan/replay/owned_suffix.rs",
@@ -332,6 +341,8 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/cleanup_plan/replay/branch_clone/short_plan.rs",
+            "src/cleanup_plan/replay/nested_shape.rs",
             "src/source_reflows_merge/main_e177_overlay_pins_v10.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact.rs",

@@ -1150,8 +1150,10 @@
         "src/cleanup_plan/replay/branch_clone/main8a/tests.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity/before.rs",
+        "src/cleanup_plan/replay/branch_clone/production_capacity/before_short.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity/main_c883.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
+        "src/cleanup_plan/replay/branch_clone/short_plan.rs",
         "src/cleanup_plan/replay/branch_clone/tests.rs",
         "src/cleanup_plan/replay/compact_stage.rs",
         "src/cleanup_plan/replay/compact_stage/before.rs",
@@ -1464,6 +1466,7 @@
         "src/cleanup_plan/replay/nested_shape/paid/oracle.rs",
         "src/cleanup_plan/replay/nested_shape/paid/scratch.rs",
         "src/cleanup_plan/replay/nested_shape/paid_before.rs",
+        "src/cleanup_plan/replay/nested_shape/scalar_tests.rs",
         "src/cleanup_plan/replay/oracle_controls.rs",
         "src/cleanup_plan/replay/ordinary_inventory/before.rs",
         "src/cleanup_plan/replay/ordinary_inventory/substitute.rs",
@@ -2373,6 +2376,7 @@
         "src/cleanup_plan/replay/branch_clone.rs",
         "src/cleanup_plan/replay/branch_clone/direct.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
+        "src/cleanup_plan/replay/branch_clone/short_plan.rs",
         "src/cleanup_plan/replay/compact_stage.rs",
         "src/cleanup_plan/replay/expression_facts.rs",
         "src/cleanup_plan/replay/expression_facts/arena.rs",
@@ -3009,9 +3013,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "681a1f03fd74b449b6784e9cc62f628914301a5adccf04d32fb5cd9c0eae3d95",
-      "full_raw_sha256": "404a08088a70560a09433d4408ddb079563dc80c1e22a58e5bf6ac8aa1be8515",
-      "full_authenticated_production_sha256": "c7b6549701d22894a191ddb5731a85b51e7124d39f0b26c6361e62000ef2f20a"
+      "full_manifest_sha256": "950876817b5b4c806ef2912169ff2dea2c333ef1ac1e108076095c125310dff1",
+      "full_raw_sha256": "648071b62bacaf4fb72d374ed170c7be6bec415ccde938ea456e8dc7e02076fb",
+      "full_authenticated_production_sha256": "44b706ff92f0bc1b78fef96d24984264365d0ed7ed96eab4e0ad29e4728b7cd0"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3519,6 +3523,7 @@
         "src/cleanup_plan/replay/branch_clone.rs",
         "src/cleanup_plan/replay/branch_clone/direct.rs",
         "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
+        "src/cleanup_plan/replay/branch_clone/short_plan.rs",
         "src/cleanup_plan/replay/call_paths.rs",
         "src/cleanup_plan/replay/call_payload.rs",
         "src/cleanup_plan/replay/cfg_bounds.rs",
@@ -4157,9 +4162,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "dde75f1a76097ada75497cce97f962c9ce36236a81964fc4ab2c993d2a340206",
-      "full_raw_sha256": "afae0c3d440001601e732231cbd69ab63bb57d4628c97b12f8764252b592216a",
-      "full_authenticated_production_sha256": "960b5f54cea24fa7450cdecf7b0ab8954d8cd5af48bf82cd7df41ebe9f00b4da"
+      "full_manifest_sha256": "d69aeb249cabd1f35e73546d6f27a493303c60a62b281308dbe3325de326cdd2",
+      "full_raw_sha256": "7ac76a1e309aa5406c80746bc9addd3d1447551b14f3edb64270219b7e0234ea",
+      "full_authenticated_production_sha256": "b0ce918061b37405851d5f56db2309a7f33f3bb5258989b33dabd60b50dc8186"
     }
   }
 }

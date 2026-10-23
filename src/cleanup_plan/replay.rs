@@ -7163,6 +7163,14 @@ fn plan_skeleton_paths(
                         ..
                     } = budget
                     {
+                        branch_clone::short_plan::produce!(
+                            budget,
+                            function,
+                            observations,
+                            observation,
+                            edge,
+                            queue
+                        );
                         budget.reserve_bytes(
                             function,
                             branch_clone::production_capacity::production_inline_controls::<

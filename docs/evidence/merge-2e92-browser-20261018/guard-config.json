@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 68859,
-      "sha256": "16b3a6935a9f77d417791b13607fcf043dd52aa3a9383c4230c168acc1a588e6"
+      "length": 69269,
+      "sha256": "fb9e0db267949173b3737a28a05dd653cec505350228c7f19101b21f9f5f3e91"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 90537,
-      "sha256": "4cb11a583db8b96866a94ef6b76e2e6d485cb70baac6438ebae12b40dd28acf8"
+      "length": 91425,
+      "sha256": "7150ab82b93877ef0b8fbe5222e47854dea94316cd4c0eae53712881c999987b"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,
@@ -1316,14 +1316,14 @@
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 140314,
-      "sha256": "5b1f1348a5da25d3a5a4ac7b7d4852ba9277dfeb6bbe46a433651bd4d9527f99",
+      "length": 140384,
+      "sha256": "05f49fddc3099e0a769b55a19b09556c84d35be28cf47db74098a4c17a390fad",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 167271,
-      "sha256": "37ce296120877922fc427a69ad4cf4836dc1fc88b7b97f54c88de436494428d0",
+      "length": 167344,
+      "sha256": "229f4cfca629c2a8a755523a54490c3c6ceed478394f3b03a91bc0b1b175c6da",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
