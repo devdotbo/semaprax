@@ -37,8 +37,8 @@
   ],
   "modules": {
     "src/cleanup_plan/replay/branch_clone/direct.rs": {
-      "length": 22560,
-      "sha256": "856febdd75b7bdfbea132187849877d9d5c9711e63f75ba04a174a48c3db18a0"
+      "length": 24689,
+      "sha256": "68d1b7487fc5d6766bf72b0dacb933c78bf8e5a3a7986856ba96a09b6d60887c"
     },
     "src/cleanup_plan/replay/branch_clone/direct/before.rs": {
       "length": 60395,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 68500,
-      "sha256": "39df89138f00efcf9f99a0a1928edae96329d893284a69ea5989eb1720100ac4"
+      "length": 68617,
+      "sha256": "e84d82d20a3961fa00ab728cdbcd46975226924ad6f9357a866efb36aed32aea"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -789,8 +789,8 @@
       "sha256": "e96169bac2c81637e3a741eb51dad2d48604d59eec0c3c441d9db1e2b7a4d649"
     },
     "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs": {
-      "length": 30940,
-      "sha256": "c8e1ee615fb6a8547bb5807f7259dc516d114dbf0f1dd7798369d3e3cdd22f27"
+      "length": 30961,
+      "sha256": "61478bcc50bb3c4a2d640abb3cf8a05cf2a42816d1af80a9a01f7974633c6ba2"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_paired.rs": {
       "length": 20736,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 89236,
-      "sha256": "c980ba0e85291ba91fb044d55fc05a04b4ea36a9e8d6a1513eb86938da03b413"
+      "length": 89768,
+      "sha256": "f5944380e5fee421e48789423916bac9bd300c71d20c7c66d65bff4749655269"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,
@@ -1316,20 +1316,20 @@
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 139693,
-      "sha256": "4025420fbf9748241121bc6c815e8c36d664b9709676a51d5f7607382c5b757d",
+      "length": 140239,
+      "sha256": "03fb078055a148b20beb88451b4e072f1db8a37dc9afdde36efbb1faf584c4f4",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 166632,
-      "sha256": "91b3e9f6026b02c39c3c9db9b72a0d439d48a116eac9a07f6b534c223559d110",
+      "length": 167193,
+      "sha256": "caa8979edba27c9334fd5624e0744a128cfe9bc7ef664270bc9661781c4d30ae",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 212477,
-      "sha256": "86671af49080563d9f3a5aad0bd89ec73e3a0efcf3f156d5b84de76fbb2eafd7",
+      "length": 213083,
+      "sha256": "d57ebef0e05c022e19751d769962425ced305d64ff6b5dc65ec951077a85e01d",
       "base": "../../../../../"
     }
   },

@@ -1320,10 +1320,13 @@
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active_tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/compact_targets.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/payments.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests/active_builder.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/tests/compact_results.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_weighted/source.rs",
@@ -1398,10 +1401,12 @@
         "src/cleanup_plan/replay/final_output.rs",
         "src/cleanup_plan/replay/final_output/before.rs",
         "src/cleanup_plan/replay/final_output/before_compaction.rs",
+        "src/cleanup_plan/replay/final_output/before_plan_compact.rs",
         "src/cleanup_plan/replay/final_output/before_transfer_current.rs",
         "src/cleanup_plan/replay/final_output/compact.rs",
         "src/cleanup_plan/replay/final_output/current_observation_tests.rs",
         "src/cleanup_plan/replay/final_output/fanout_tests.rs",
+        "src/cleanup_plan/replay/final_output/plan_compact_tests.rs",
         "src/cleanup_plan/replay/final_output/tests.rs",
         "src/cleanup_plan/replay/final_output/tests/compact_results.rs",
         "src/cleanup_plan/replay/flat_records/paid_leaves.rs",
@@ -2408,6 +2413,8 @@
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active_tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/compact_targets.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/payments.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
@@ -2999,9 +3006,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "fa9c425aee09a0d410a986ee7aec13b78d44a03d5ffce4e14600e70c7ba8b524",
-      "full_raw_sha256": "a8dc672d3cea8f4895ea920dc1997a8a96ade6e431c65bf077b1f989982a15d4",
-      "full_authenticated_production_sha256": "aa048169244a5c683e5b9479c195e7f29969cc8bff45814613a7dd0fbd5de915"
+      "full_manifest_sha256": "b1de36db51b6141928d0ae263c07e1bfbfbb005a313c1a827e926d40553bdc04",
+      "full_raw_sha256": "a8f5c2b0e29318252660e6d2fb402ce181734f4fbd8451bf8b149ae8a8b565eb",
+      "full_authenticated_production_sha256": "f1034dfb8fbe7045023396cae1f0a6471ede81115c611560fd88c9716a344b5d"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3226,10 +3233,12 @@
         "src/cleanup_plan/replay/final_output.rs",
         "src/cleanup_plan/replay/final_output/before.rs",
         "src/cleanup_plan/replay/final_output/before_compaction.rs",
+        "src/cleanup_plan/replay/final_output/before_plan_compact.rs",
         "src/cleanup_plan/replay/final_output/before_transfer_current.rs",
         "src/cleanup_plan/replay/final_output/compact.rs",
         "src/cleanup_plan/replay/final_output/current_observation_tests.rs",
         "src/cleanup_plan/replay/final_output/fanout_tests.rs",
+        "src/cleanup_plan/replay/final_output/plan_compact_tests.rs",
         "src/cleanup_plan/replay/final_output/tests.rs",
         "src/cleanup_plan/replay/final_output/tests/compact_results.rs",
         "src/cleanup_plan/replay/path_array.rs",
@@ -3557,6 +3566,8 @@
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/borrowed_single.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
+        "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active_tests.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/compact_targets.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/payments.rs",
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/terminal_leaf.rs",
@@ -4143,9 +4154,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "c04966247e9591a23f5b34bf04853f5559c7236d88a37c46c1a46e02a8383dad",
-      "full_raw_sha256": "d7e1994243b5eb593381e9a54e629566cbc08dcf85714fb28a497e766aa2bb7e",
-      "full_authenticated_production_sha256": "aa88051e449afd0fe00973f4d5992bc730d1cd97199e804f5aeb225537410d1b"
+      "full_manifest_sha256": "8ef39520267016a25cfecbfc4e5994d16516e725106b095ef49ce3f4332d2660",
+      "full_raw_sha256": "827e3a206fbefcd107982b9e76fb9d5c4cd95afb148b57b05d88aa804fb4e034",
+      "full_authenticated_production_sha256": "51725f23e3ab09dbb988e497ab24072cf24e3bf1a233c989fac08d162ac94830"
     }
   }
 }
