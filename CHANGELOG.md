@@ -1,3 +1,9 @@
+## Verifier refusal corpus and historical operator control (2026-10-23)
+
+- Preserve the recursive oracle's original results for nine exact malformed scalar fixtures while requiring current refusal and independently pinned complete diagnostics.
+- Authenticate the complete saved operator receiver before reversing its later verifier lifetime and formatting adaptations; retain the exact historical image and reject truncated or drifted source.
+- Preserve the frozen operator image byte for byte under Windows Git checkout; reproduce and reject the original CRLF conversion with real Git filters.
+
 ## Tokio I/O safety dependency repair (2026-10-23)
 
 - Pin both public and full-host `new` help shapes in the standalone CLI integration regression, matching the existing qualified help contract.

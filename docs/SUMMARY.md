@@ -1885,3 +1885,4 @@ Audience: all documentation readers.
 
 - [Windows starter-input parent spelling](evidence/windows-starter-path-20261023/README.md)
 - [Short-history branch allocation](evidence/short-history-branch-20261023/README.md)
+- [Exact verifier refusal corpus and manifest source custody](evidence/verifier-corpus-20261023/README.md)
