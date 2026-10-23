@@ -333,6 +333,8 @@ mod tests {
             "src/cleanup_plan/replay/sequence_vector.rs",
             "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs",
             "tests/source_locked_contracts.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs",
+            "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
             "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         ] {
             let declaration = format!("    {source:?},\n");

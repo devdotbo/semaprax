@@ -1,6 +1,7 @@
 //! Whole immediate current ordinary composition, including actual HIR caller.
 use super::super::super::ordinary_cross_phase_before_receiving::validate_structure_with_budget_storage_before_receiving;
 use super::*;
+use crate::bounded_output::classifier_string::StorageParent;
 use crate::cleanup_plan::replay::expression_facts::arena::retained::Session;
 use crate::cleanup_plan::replay::ordinary_receiving;
 
@@ -59,16 +60,50 @@ fn whole_immediate_ordinary_result_exact_short_zero_and_real_nm_are_observed() {
         if census.reached[1] > 0 {
             assert!(census.reached[2] > 0);
         }
+        // The retained owner now continues into the transition receiver. Count
+        // those genuine HIR queries and callback guards independently rather
+        // than pricing every edge/transition query as the earlier edge ABI.
+        let mut transition_queries = 0usize;
+        let mut transition_callbacks = 0usize;
+        let mut transition_owners = 0usize;
+        for function in &program.functions {
+            if function.cleanup_plan.status_sources.len() >= retained_lookup::MIN_ROWS {
+                let (queries, callbacks) = receiving_transition_counts(function);
+                transition_queries += queries;
+                transition_callbacks += callbacks;
+                transition_owners += 1;
+            }
+        }
+        assert_eq!(transition_owners, census.reached[1]);
+        assert!(transition_queries <= census.reached[3]);
+        let initial_edge_queries = census.reached[3] - transition_queries;
+        let callback_packet = std::mem::size_of::<usize>()
+            + 3 * std::mem::size_of::<&str>()
+            + std::mem::size_of::<bool>();
         let expected = census.reached[0] as i128
             * (old_setup_invoice() as i128 - skeleton_work::receiving::acquisition_bytes() as i128)
             + census.reached[2] as i128
                 * (2 * std::mem::size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>()
                     as i128
                     - Session::added_status_query_bytes() as i128)
-            + census.reached[3] as i128
+            + initial_edge_queries as i128
                 * (2 * std::mem::size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>()
                     as i128
                     - Session::added_edge_query_bytes() as i128)
+            + transition_queries as i128
+                * ((Session::OLD_SCRATCH
+                    + 2 * std::mem::size_of::<Result<Option<&Option<CallFact<'_>>>, Diagnostic>>())
+                    as i128
+                    - (Session::into_edge_local_bytes()
+                        + Session::into_edge_query_bytes()
+                        + std::mem::size_of::<Option<&Option<CallFact<'_>>>>())
+                        as i128)
+            - transition_callbacks as i128
+                * (StorageParent::CURRENT_CONTROLS + callback_packet) as i128
+            - transition_owners as i128
+                * (StorageParent::ACQUISITION_CONTROLS
+                    + StorageParent::TERMINAL_CONTROLS
+                    + callback_packet) as i128
             - census.reached[1] as i128 * ordinary_receiving::Failure::acquisition_bytes() as i128;
         assert_eq!(
             old.2 as i128 - current.2 as i128,
@@ -268,4 +303,35 @@ fn exact_original_scalar_fixture_current_invoice_work_cuts_and_earlier_error_are
     let census = ordinary_receiving::take_census();
     assert_eq!(census.reached, [0; 4]);
     assert!(!census.incomplete);
+}
+
+// Same structural census as the independent transition ABI regression.
+fn receiving_transition_counts(function: &ResolvedFunction) -> (usize, usize) {
+    let mut lookups = 0;
+    let mut callbacks = 0;
+    for block in &function.cleanup_plan.blocks {
+        for transition in &block.transitions {
+            match transition {
+                CleanupTransition::Initialize { .. }
+                | CleanupTransition::Transfer { .. }
+                | CleanupTransition::TransferVariant { .. }
+                | CleanupTransition::InitializeVariant { .. } => lookups += 1,
+                CleanupTransition::ReserveRenewal { .. }
+                | CleanupTransition::Renew { .. }
+                | CleanupTransition::AuthenticateVariantCase { .. }
+                | CleanupTransition::CallCommit { .. } => {
+                    lookups += 1;
+                    callbacks += 1;
+                }
+                CleanupTransition::StageCopyResult {
+                    source:
+                        StagedCopyResultSource::TryResidual { .. }
+                        | StagedCopyResultSource::TryOptionNone { .. },
+                    ..
+                } => lookups += 2,
+                _ => {}
+            }
+        }
+    }
+    (lookups, callbacks)
 }

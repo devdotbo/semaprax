@@ -285,8 +285,8 @@
       "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs": {
-      "length": 14407,
-      "sha256": "10b7aadc7f271ead518a33d6929eaf4a02dd7fe75172709e9ea9a0b0ccabc3a1"
+      "length": 15446,
+      "sha256": "2bd12be9b146263f0c7c66f5c0cf07c3a91715a8dabb808162dca62ef5237bf2"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs": {
       "length": 8334,
@@ -409,8 +409,8 @@
       "sha256": "ccb54e4d4221e6731a6b2feb4c459a445c4739808b5e2b21d5f5375aa00b98e3"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs": {
-      "length": 34775,
-      "sha256": "01839373f37c9da3aec1e57906bcf9f1544868e9884248929a3036214d44a4a2"
+      "length": 35057,
+      "sha256": "0d7baf71c215dfc2c927a1992025e6cc76ddfa1604879585aa62f8fb31ec7450"
     },
     "src/cleanup_plan/replay/inventory_coverage.rs": {
       "length": 17186,
@@ -713,8 +713,8 @@
       "sha256": "63e1be7b4114be13c261bd19e9a4b673c17cb2a36ea003e89b0ca88198feccfd"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests/receiving.rs": {
-      "length": 11316,
-      "sha256": "ab2c1f29a0442e3784a885811ec6b8babb037d21c22471487b4728e6f46674b4"
+      "length": 14483,
+      "sha256": "fcd3a360eaf7681316cc2432e0165729766a29ea18ce80424cef798cfc421e38"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup_before_receiving.rs": {
       "length": 7359,
@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 69269,
-      "sha256": "fb9e0db267949173b3737a28a05dd653cec505350228c7f19101b21f9f5f3e91"
+      "length": 69428,
+      "sha256": "71e94716cb505b305da91dbca08f4e1fd7670c91bc2aefdb135c2f65363fff6a"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 91425,
-      "sha256": "7150ab82b93877ef0b8fbe5222e47854dea94316cd4c0eae53712881c999987b"
+      "length": 91610,
+      "sha256": "70f7249104e6d73bb4fc04fff3af95639ed6dc6d7f87c7b70498fb231f34a3e2"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,
@@ -1316,20 +1316,20 @@
   "carriers": {
     "tests/hir_module_boundaries.rs": {
       "path": "tests/hir_module_boundaries.rs",
-      "length": 140384,
-      "sha256": "05f49fddc3099e0a769b55a19b09556c84d35be28cf47db74098a4c17a390fad",
+      "length": 140563,
+      "sha256": "7fbf376462b414bfa418140ac77605e836e5a901b39a26fd62effbc92df8e412",
       "base": "../"
     },
     "tests/workspace/semantic_graph/source_inventory.rs": {
       "path": "tests/workspace/semantic_graph/source_inventory.rs",
-      "length": 167344,
-      "sha256": "229f4cfca629c2a8a755523a54490c3c6ceed478394f3b03a91bc0b1b175c6da",
+      "length": 167529,
+      "sha256": "4b57d9a1540c392f265a41470445f0dc56a55e6ec9b04b10c85c7891de0259bd",
       "base": "../../"
     },
     "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs": {
       "path": "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs",
-      "length": 213170,
-      "sha256": "2429d3828939997c7f04f86ac37c3a292d600d781a33966baff89b3686971983",
+      "length": 213373,
+      "sha256": "f6548d960715440ae229df6c3a01dda62f035c5379ce2301e2193eb9339f499b",
       "base": "../../../../../"
     }
   },
