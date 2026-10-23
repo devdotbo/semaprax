@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/source_reflows_merge/main_e177_overlay_pins_v10.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_pins_v10.rs")),
         "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs")),
         "src/source_reflows_merge/final_ready_inputs/projection_publication.rs" => Some(include_str!("../../src/source_reflows_merge/final_ready_inputs/projection_publication.rs")),
         "src/bounded_output/exclusive_debits.rs" => Some(include_str!("../../src/bounded_output/exclusive_debits.rs")),
@@ -274,6 +275,9 @@ mod tests {
         // Reverse only the exact current literal-list packing and new scope.
         // Actual current root/child equality above precedes every inverse.
         let mut current_scope_root = root.to_owned();
+        let v10_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V10 {\n        let expanded = fragments_v3::expand_v10(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V9 {";
+        assert_eq!(current_scope_root.matches(v10_dispatch).count(), 1);
+        current_scope_root = current_scope_root.replacen(v10_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V9 {", 1);
         let wrapped_comment = concat!(
             "    // Original metadata is read as metadata. It is never substituted for a\n",
             "    // changed physical Rust source, and it retains its original individual cap.\n",
@@ -303,6 +307,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/source_reflows_merge/main_e177_overlay_pins_v10.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
             "src/cleanup_plan/replay/owned_suffix.rs",
             "src/cleanup_plan/replay/final_output/current_observation_tests.rs",
@@ -327,6 +332,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/source_reflows_merge/main_e177_overlay_pins_v10.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/active.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/inline_singleton/lexical_successors/frame_loop/compact/compact_targets.rs",

@@ -45,3 +45,17 @@ readers. The generator requires exact whole-V8 equality after its round trip;
 composition, numeric positions, archive authentication, single-page 262144-byte
 cap and source admissions retain their existing meanings. This private
 transport grants no authority or runtime qualification.
+
+V10 transports repeated exact current pins by their positions in the same
+whole authenticated 519-row predecessor. A current pin reference is `[index]`;
+a named view reference is `[name, index]`. Only the existing positional pin
+slots participate. Literal pins, extra fields, nonminimal literal tuples,
+reference objects, unknown metadata, and ordering remain unchanged. Decoding
+reconstructs the entire canonical V9 page before invoking the unchanged V9
+through V2 readers. The predecessor digest, index range, pin shape and name
+are checked; no path is opened or admitted by the codec. The single wire-page
+cap remains 262144 bytes, and current physical, compiled and archive channels
+still require their ordinary authentication. The executable frozen-page
+inverse, complete-packet equality and hostile controls live in
+`src/source_reflows_merge/main_e177_overlay_pins_v10.rs`; their run-specific
+results are recorded separately and confer no runtime qualification.

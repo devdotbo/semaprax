@@ -583,6 +583,9 @@ pub(super) fn expand_v8(
 #[path = "main_e177_overlay_pins_v9.rs"]
 mod pins_v9;
 pub(super) use pins_v9::{expand_v9, SCHEMA_V9};
+#[path = "main_e177_overlay_pins_v10.rs"]
+mod pins_v10;
+pub(super) use pins_v10::{expand_v10, SCHEMA_V10};
 
 #[cfg(test)]
 mod tests {
