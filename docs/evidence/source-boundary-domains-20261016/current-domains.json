@@ -1708,6 +1708,8 @@
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix.rs",
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/before.rs",
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs",
+        "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe/before.rs",
+        "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe/receiving_tests.rs",
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/source_custody.rs",
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/tests.rs",
         "src/cleanup_plan/replay/skeleton_work/isolated_paths.rs",
@@ -3007,9 +3009,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "80d9773622a5940c45bf600927ebb17af925ac3981ba05256def7923565fcf83",
-      "full_raw_sha256": "7a7aecc855cf1bdfbe9710a52b2caa3d58d17ebb78d42e4ef450d51123798b4d",
-      "full_authenticated_production_sha256": "c9256596c664dd7744a06b467013423c0b913a2295e9da3f8fa458121883a169"
+      "full_manifest_sha256": "5226ca6036361fdf298db323e5329dfe5ddeea2b525e6a64d380a819397eb45d",
+      "full_raw_sha256": "98c6f30fd1de01e624753f2cfa17185d733a8d11d83eb08812936ca306814aed",
+      "full_authenticated_production_sha256": "894caf84c417fb0035eb4e76bc85b3fe0bdfec072dcbd3472bf271aa0fd391bc"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -4155,9 +4157,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "e4f62b6d52e8d1af8e1be335c5f75f55a366e89f750bff09094d509be694dc45",
-      "full_raw_sha256": "2e7e64912349532070f5830f352f9240cb97487e4e8905212c4638cd5f8fb23b",
-      "full_authenticated_production_sha256": "257dafaeff52411886d3b97050a9730882b5e6b5ca28880fe64166ecf11b2efb"
+      "full_manifest_sha256": "e520f4f0ef6b854b78f542cfc962ea4c00599bceef5140e5a3ff93db0c337716",
+      "full_raw_sha256": "afae0c3d440001601e732231cbd69ab63bb57d4628c97b12f8764252b592216a",
+      "full_authenticated_production_sha256": "63b7d512f0294eb7727d185f004efa9eff59eb8375b8128d54a7f406edb945f1"
     }
   }
 }
