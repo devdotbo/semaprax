@@ -436,6 +436,11 @@ pub(crate) fn active_remaining() -> Option<usize> {
     active().map(|budget| budget.remaining.get())
 }
 
+/// Read-only allowance outside the reserved trailer lane; grants no storage.
+pub(crate) fn active_usable_remaining() -> Option<usize> {
+    active().map(|budget| budget.remaining.get().saturating_sub(budget.floor.get()))
+}
+
 /// Infallible bounded helpers may return an empty carrier after refusal.
 /// Publication boundaries must reject that sticky state even when their
 /// surrounding operation otherwise returned success.

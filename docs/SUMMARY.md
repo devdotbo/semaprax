@@ -1878,3 +1878,7 @@ Audience: all documentation readers.
 - [Optional PLAN profiling storage and low-stack diagnosis](evidence/optional-profile-tls-20261022/README.md)
 
 - [Paid constructor snapshot entry after diagnostic and profile changes](evidence/paid-constructor-entry-20261022/README.md)
+
+- [Explicit byte-traversal heap capture](evidence/edge-proof-observer-scope-20261023/README.md)
+
+- [Owned-provider validation receipt](evidence/native-provider-validation-receipt-20261023/README.md)
