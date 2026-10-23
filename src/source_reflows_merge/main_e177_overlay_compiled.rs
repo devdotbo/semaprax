@@ -199,6 +199,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs")),
         "src/cleanup_plan/replay/sequence_vector.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector.rs")),
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs")),
+        "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles573.rs")),
         _ => None,
     }
 }
@@ -337,6 +338,7 @@ mod tests {
             "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
+            "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs",
             "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         ] {
             let declaration = format!("    {source:?},\n");
@@ -345,6 +347,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs",
             "src/cleanup_plan/replay/branch_clone/short_plan.rs",
             "src/cleanup_plan/replay/nested_shape.rs",
             "src/source_reflows_merge/main_e177_overlay_pins_v10.rs",
