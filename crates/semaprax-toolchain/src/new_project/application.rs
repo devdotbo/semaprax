@@ -2,6 +2,7 @@
 use super::*;
 use semaprax_native_rust_interop_platform as platform;
 
+#[path = "application/held_input_path.rs"]
 mod held_input_path;
 
 fn failure(message: impl Into<String>) -> NewProjectFailure {
