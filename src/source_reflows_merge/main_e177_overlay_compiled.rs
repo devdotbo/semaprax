@@ -336,6 +336,7 @@ mod tests {
             "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/counter_tests.rs",
             "src/cleanup_plan/replay/expression_facts/arena/prefix/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/retained/case_proof/tests.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
             "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
         ] {
             let declaration = format!("    {source:?},\n");
