@@ -1,3 +1,9 @@
+## Held replay states and checked native byte reads (2026-10-24)
+
+- Restore the original parent-view source gate by binding the complete current initial-report builder and retaining its exact frozen parent image.
+- Reuse boxed ownership states across singleton cleanup edges while preserving the complete by-value edge helper, multi-state replay and per-transfer owning transport charges.
+- Reuse the UTF-8 validation of a direct immutable String-as-Str local during native byte reads. Producers and foreign or aliased views retain full validation; Unicode, NUL, unsigned bounds and cleanup behavior are unchanged.
+
 ## Ordinary builder factored crossover (2026-10-24)
 
 - Select complete factored comparison above 128 paths for ordinary owned and Copy functions, preserving the original selected/reference routes, structural admission, 4096-path native oracle window, and public byte/work limits.

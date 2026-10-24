@@ -48,6 +48,16 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
             }
         }
     }
+    // The held edge helper uses only nonrecursive borrowed receiver frames.
+    // Acquire their complete fixed capacity here; owned results retain their
+    // ordinary per-call paths and insertion backing remains independently paid.
+    budget.reserve_bytes(
+        function,
+        8 * std::mem::size_of::<&mut PathState>()
+            + 4 * std::mem::size_of::<Result<(), Diagnostic>>()
+            + 2 * std::mem::size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>(),
+        "held-state borrowed receiver controls",
+    )?;
     let plan = &function.cleanup_plan;
     let storage_regions = storage::storage_regions(function, budget)?;
     // Exact ownership state each lexical loop body must restore, captured once
@@ -216,7 +226,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
             // The validated singleton already owns the complete joined fields.
             // Consume it once; neither original vector nor any nested identity
             // is cloned, replaced from a clone, or temporarily reinitialized.
-            let mut state = *states
+            let mut state = states
                 .into_iter()
                 .next()
                 .expect("replay control group is non-empty");
@@ -254,9 +264,20 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                 CleanupTerminator::Goto(edge) => {
                     require_normal_flow_state(function, &state, block_id)?;
                     let edge = &plan.edges[edge.0 as usize];
-                    let state =
-                        state_for_edge(function, state, &edge.condition, &contract_sources)?;
-                    insertions.insert_owned(
+                    super::transition::state_for_held_edge(
+                        function,
+                        &mut state,
+                        &edge.condition,
+                        &contract_sources,
+                    )?;
+                    // Preserve actual/formal owning Box transports at every
+                    // reused insertion; only the new allocation disappears.
+                    budget.reserve_bytes(
+                        function,
+                        2 * std::mem::size_of::<Box<PathState>>(),
+                        "held-state owning box transports",
+                    )?;
+                    insertions.insert_held(
                         function,
                         &mut incoming[edge.to.0 as usize],
                         state,
@@ -303,7 +324,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                                 budget,
                                 "ownership branch clone",
                             )?;
-                            state.clone()
+                            state.as_ref().clone()
                         };
                         let next =
                             state_for_edge(function, cloned, &edge.condition, &contract_sources)?;
@@ -335,8 +356,13 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                             renewal::retained_units(&state),
                             "renewal branch history clone",
                         )?;
-                        let next =
-                            state_for_edge(function, state, &edge.condition, &contract_sources)?;
+                        super::transition::state_for_held_edge(
+                            function,
+                            &mut state,
+                            &edge.condition,
+                            &contract_sources,
+                        )?;
+                        let next = state;
                         if let Some(auth) = lexical {
                             lexical_flow::capture_loop_entry(
                                 function,
@@ -347,7 +373,12 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                                 budget,
                             )?;
                         }
-                        insertions.insert_owned(
+                        budget.reserve_bytes(
+                            function,
+                            2 * std::mem::size_of::<Box<PathState>>(),
+                            "held-state owning box transports",
+                        )?;
+                        insertions.insert_held(
                             function,
                             &mut incoming[edge.to.0 as usize],
                             next,
@@ -380,7 +411,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                                     budget,
                                     "ownership branch clone",
                                 )?;
-                                state.clone()
+                                state.as_ref().clone()
                             };
                             let next = state_for_edge(
                                 function,
@@ -411,6 +442,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                     }
                 }
                 CleanupTerminator::Exit(exit_id) => {
+                    let state = *state;
                     let exit = &plan.exits[exit_id.0 as usize];
                     let extra = lexical
                         .and_then(|auth| auth.item_disposals.get(exit_id))
@@ -1147,6 +1179,7 @@ fn join_conditional_variants(
 }
 
 #[cfg(test)]
+#[rustfmt::skip] // Preserve the complete immutable receiver, including whitespace.
 mod before_singleton;
 #[cfg(test)]
 mod singleton_tests;

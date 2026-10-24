@@ -1,5 +1,8 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/workspace_graph/initial_report/build.rs" => Some(include_str!("../../src/workspace_graph/initial_report/build.rs")),
+        "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs")),
+        "src/cleanup_plan/replay/transition.rs" => Some(include_str!("../../src/cleanup_plan/replay/transition.rs")),
         "src/cleanup_plan/replay/branch_clone/short_plan.rs" => Some(include_str!("../../src/cleanup_plan/replay/branch_clone/short_plan.rs")),
         "src/cleanup_plan/replay/nested_shape.rs" => Some(include_str!("../../src/cleanup_plan/replay/nested_shape.rs")),
         "src/source_reflows_merge/main_e177_overlay_pins_v10.rs" => Some(include_str!("../../src/source_reflows_merge/main_e177_overlay_pins_v10.rs")),
@@ -290,7 +293,11 @@ mod tests {
         let mut current_scope_root = root.to_owned();
         let v10_dispatch = "    if page[\"schema\"] == fragments_v3::SCHEMA_V10 {\n        let expanded = fragments_v3::expand_v10(&before, policy, page)?;\n        compose_values_v2(before, policy, &expanded)\n    } else if page[\"schema\"] == fragments_v3::SCHEMA_V9 {";
         assert_eq!(current_scope_root.matches(v10_dispatch).count(), 1);
-        current_scope_root = current_scope_root.replacen(v10_dispatch, "    if page[\"schema\"] == fragments_v3::SCHEMA_V9 {", 1);
+        current_scope_root = current_scope_root.replacen(
+            v10_dispatch,
+            "    if page[\"schema\"] == fragments_v3::SCHEMA_V9 {",
+            1,
+        );
         let wrapped_comment = concat!(
             "    // Original metadata is read as metadata. It is never substituted for a\n",
             "    // changed physical Rust source, and it retains its original individual cap.\n",
@@ -320,6 +327,11 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/cleanup_plan/replay/path_join/before_singleton.rs",
+            "docs/AGENT-SKILL-BUNDLE-V1.json",
+            "src/workspace_graph/initial_report/build.rs",
+            "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs",
+            "src/cleanup_plan/replay/transition.rs",
             "src/project/mod.rs",
             "src/cleanup_plan/replay/factored/moderate_tests.rs",
             "src/cleanup_plan/replay/factored/paired.rs",
@@ -365,6 +377,9 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/workspace_graph/initial_report/build.rs",
+            "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs",
+            "src/cleanup_plan/replay/transition.rs",
             "src/cleanup_plan/replay/factored.rs",
             "src/cleanup_plan/replay/factored/strategy.rs",
             "src/cleanup_plan/replay/factored/paired.rs",
@@ -748,10 +763,29 @@ mod tests {
     fn remaining_source_view_requires_the_complete_current_compiled_channel() {
         use sha2::{Digest, Sha256};
         let source = "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs";
-        let raw = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs"));
+        let raw = include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs"
+        ));
         assert_eq!(super::compiled(source), Some(raw));
-        let old = crate::source_reflows_merge::main_e177_final_inputs::value_direct(source, "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4", raw);
-        assert_eq!(old, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/e/e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4")));
-        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(old.as_bytes()))), "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4");
+        let old = crate::source_reflows_merge::main_e177_final_inputs::value_direct(
+            source,
+            "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4",
+            raw,
+        );
+        assert_eq!(
+            old,
+            include_str!(concat!(
+                env!("CARGO_MANIFEST_DIR"),
+                "/e/e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4"
+            ))
+        );
+        assert_eq!(
+            format!(
+                "{:x}",
+                crate::digest_hex::LowerHex(Sha256::digest(old.as_bytes()))
+            ),
+            "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4"
+        );
     }
 }
