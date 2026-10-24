@@ -200,6 +200,11 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/sequence_vector.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector.rs")),
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs")),
         "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs")),
+        "src/cleanup_plan.rs" => Some(include_str!("../../src/cleanup_plan.rs")),
+        "src/workspace_graph/tests.rs" => Some(include_str!("../../src/workspace_graph/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs")),
+        "src/cleanup_plan/replay/workspace_oracle.rs" => Some(include_str!("../../src/cleanup_plan/replay/workspace_oracle.rs")),
         "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles573.rs")),
         _ => None,
     }
@@ -311,6 +316,10 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/workspace_graph/tests.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+            "src/cleanup_plan/replay/workspace_oracle.rs",
             "src/cleanup_plan/replay/branch_clone/inline_tests.rs",
             "src/cleanup_plan/replay/branch_clone/production_capacity.rs",
             "src/cleanup_plan/replay/branch_clone/production_capacity/tests.rs",
@@ -348,6 +357,11 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/cleanup_plan.rs",
+            "src/workspace_graph/tests.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs",
+            "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
+            "src/cleanup_plan/replay/workspace_oracle.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs",
             "src/cleanup_plan/replay/branch_clone/short_plan.rs",
