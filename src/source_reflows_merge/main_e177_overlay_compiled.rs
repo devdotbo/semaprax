@@ -320,6 +320,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/project/mod.rs",
             "src/cleanup_plan/replay/factored/moderate_tests.rs",
             "src/cleanup_plan/replay/factored/paired.rs",
             "src/cleanup_plan/replay/factored/paired/tests.rs",
