@@ -199,6 +199,7 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/boxed_states/receiving_tests.rs")),
         "src/cleanup_plan/replay/sequence_vector.rs" => Some(include_str!("../../src/cleanup_plan/replay/sequence_vector.rs")),
         "src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs" => Some(include_str!("../../src/cleanup_plan/replay/skeleton_work/enumerated_prefix/flat_probe.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs")),
         "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles573.rs")),
         _ => None,
     }
@@ -347,6 +348,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs",
             "src/cleanup_plan/replay/branch_clone/short_plan.rs",
             "src/cleanup_plan/replay/nested_shape.rs",
@@ -714,5 +716,16 @@ mod tests {
             assert_ne!(root, ROOT);
             assert!(std::panic::catch_unwind(|| restore_whole_before(&root, CHILD)).is_err());
         }
+    }
+
+    #[test]
+    fn remaining_source_view_requires_the_complete_current_compiled_channel() {
+        use sha2::{Digest, Sha256};
+        let source = "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs";
+        let raw = include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs"));
+        assert_eq!(super::compiled(source), Some(raw));
+        let old = crate::source_reflows_merge::main_e177_final_inputs::value_direct(source, "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4", raw);
+        assert_eq!(old, include_str!(concat!(env!("CARGO_MANIFEST_DIR"), "/e/e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4")));
+        assert_eq!(format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(old.as_bytes()))), "e6d9241f9287e8e00d5c8413623383b53b46e5efbe6da50e576dcf6bbd642db4");
     }
 }
