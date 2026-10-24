@@ -328,6 +328,19 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
+            "src/workspace_graph/type_proof_tests.rs",
+            "src/workspace_graph/tests/builder_limits.rs",
+            "src/bounded_output/stage_debits.rs",
+            "src/cleanup_plan/renewal_profile/child_refusal.rs",
+            "src/cleanup_plan/replay/branch_clone/before.rs",
+            "src/cleanup_plan/replay/compact_stage.rs",
+            "src/cleanup_plan/replay/factored/canonical_shared/main_unit_weight/unit_weight_tests.rs",
+            "src/cleanup_plan/replay/factored/oracle_order/tests.rs",
+            "src/cleanup_plan/replay/path_array/funded_tests.rs",
+            "src/cleanup_plan/replay/path_array/tests.rs",
+            "src/cleanup_plan/replay/factored/compact_nodes/tests.rs",
+            "src/cleanup_plan/replay/selected_context/child.rs",
             "src/cleanup_plan/replay/path_join/before_singleton.rs",
             "docs/AGENT-SKILL-BUNDLE-V1.json",
             "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",

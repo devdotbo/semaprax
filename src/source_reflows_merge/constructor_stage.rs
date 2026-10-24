@@ -329,3 +329,43 @@ fn existing_registered_oracle_stage_keeps_four_complete_inverses_and_refuses_for
         }
     }
 }
+
+#[test]
+fn every_fixed_metadata_stage_has_its_complete_registered_input() {
+    use super::main_e177_final_inputs::ProjectionInvocation;
+    let rows: serde_json::Value = serde_json::from_str(include_str!(
+        "../../docs/evidence/metadata-views-20261024/new-views.json"
+    ))
+    .unwrap();
+    let rows = rows.as_array().unwrap();
+    assert_eq!(rows.len(), 204);
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let mut invocation = ProjectionInvocation::new();
+    for row in rows {
+        let source = row["source"].as_str().unwrap();
+        let view = &row["view"];
+        let expected = view["sha256"].as_str().unwrap();
+        let current = std::fs::read_to_string(root.join(source)).unwrap();
+        let prior = invocation.value_direct(source, expected, &current);
+        assert_eq!(prior.len() as u64, view["length"].as_u64().unwrap());
+        assert_eq!(super::source_sha(&prior), expected, "{source}");
+        assert_eq!(
+            prior,
+            std::fs::read_to_string(root.join(view["archive"].as_str().unwrap())).unwrap()
+        );
+    }
+    let row = &rows[0];
+    let source = row["source"].as_str().unwrap();
+    let expected = row["view"]["sha256"].as_str().unwrap();
+    let current = std::fs::read_to_string(root.join(source)).unwrap();
+    assert!(entry(source, expected));
+    assert!(!entry("foreign.rs", expected));
+    assert!(!entry(source, &"0".repeat(64)));
+    for hostile in [
+        format!("{current}\n"),
+        current[..current.len() - 1].to_owned(),
+    ] {
+        let value = invocation.value_direct(source, expected, &hostile);
+        assert_ne!(super::source_sha(&value), expected);
+    }
+}
