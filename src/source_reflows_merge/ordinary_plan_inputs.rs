@@ -368,19 +368,21 @@ fn final_ingress_file(path: &std::path::Path, length: usize, expected: &str) -> 
 // A separate newest->FINAL phase. The sealed FINAL, integrated and legacy
 // records below remain unchanged and replay their original inverses.
 fn latest_ingress_records() -> serde_json::Value {
-    let data = include_str!("../../docs/evidence/ordinary-ingress-c4-20261024/latest-inputs.json");
+    let data = include_str!(
+        "../../docs/evidence/source-coverage-254-20261024/latest-ordinary-inputs.json"
+    );
     assert!(data.len() <= FINAL_INGRESS_CAP);
-    assert_eq!(data.len(), 524353);
+    assert_eq!(data.len(), 499221);
     assert_eq!(
         digest(data),
-        "e6ccd499c0f7d66141670cfa82c007784f255d28fde21016bc8895b9c59e69ac"
+        "575f816ae3634fcef8f5b2da7f1516a5e4d6a7723273871fe0722aec215861a8"
     );
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     assert_eq!(
         final_ingress_file(
-            &root.join("docs/evidence/ordinary-ingress-c4-20261024/latest-inputs.json"),
+            &root.join("docs/evidence/source-coverage-254-20261024/latest-ordinary-inputs.json"),
             data.len(),
-            "e6ccd499c0f7d66141670cfa82c007784f255d28fde21016bc8895b9c59e69ac"
+            "575f816ae3634fcef8f5b2da7f1516a5e4d6a7723273871fe0722aec215861a8"
         ),
         data
     );

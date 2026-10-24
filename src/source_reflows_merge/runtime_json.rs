@@ -380,14 +380,14 @@ fn main043_before_successors(
     }
     let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
     let data = main043_raw_file(
-        &root.join("docs/evidence/raw-checkpoints-6184-20261024/latest-to-successors.json"),
-        283366,
-        "0edf45cfa60c3f15c74565c9fa86d8474c77457f34986c4629f487927504155e",
+        &root.join("docs/evidence/source-coverage-254-20261024/latest-to-successors.json"),
+        286968,
+        "7746c771eaf205e67df886e43f027083ec1e61b4dae4380d16c3476e303f6734",
     )
     .unwrap();
     assert_eq!(
         data,
-        include_str!("../../docs/evidence/raw-checkpoints-6184-20261024/latest-to-successors.json")
+        include_str!("../../docs/evidence/source-coverage-254-20261024/latest-to-successors.json")
     );
     let spec: serde_json::Value = serde_json::from_str(&data).unwrap();
     assert_eq!(
