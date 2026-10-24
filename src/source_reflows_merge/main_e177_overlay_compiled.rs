@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs")),
         "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs")),
         "src/workspace_graph/initial_report/build.rs" => Some(include_str!("../../src/workspace_graph/initial_report/build.rs")),
         "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs")),
@@ -328,6 +329,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
             "src/source_reflows_merge/maina3_custody.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
             "src/workspace_graph/type_proof_tests.rs",
@@ -393,6 +395,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",
             "src/workspace_graph/initial_report/build.rs",
             "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs",
