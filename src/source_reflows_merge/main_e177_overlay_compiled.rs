@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs")),
         "src/workspace_graph/initial_report/build.rs" => Some(include_str!("../../src/workspace_graph/initial_report/build.rs")),
         "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs")),
         "src/cleanup_plan/replay/transition.rs" => Some(include_str!("../../src/cleanup_plan/replay/transition.rs")),
@@ -329,6 +330,7 @@ mod tests {
         for source in [
             "src/cleanup_plan/replay/path_join/before_singleton.rs",
             "docs/AGENT-SKILL-BUNDLE-V1.json",
+            "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",
             "src/workspace_graph/initial_report/build.rs",
             "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs",
             "src/cleanup_plan/replay/transition.rs",
@@ -377,6 +379,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",
             "src/workspace_graph/initial_report/build.rs",
             "src/cleanup_plan/replay/path_join/main_single_groups/receiver_tests.rs",
             "src/cleanup_plan/replay/transition.rs",
