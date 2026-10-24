@@ -205,6 +205,10 @@ pub(super) fn compiled(source: &str) -> Option<&'static str> {
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs")),
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs")),
         "src/cleanup_plan/replay/workspace_oracle.rs" => Some(include_str!("../../src/cleanup_plan/replay/workspace_oracle.rs")),
+        "src/cleanup_plan/replay/factored.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored.rs")),
+        "src/cleanup_plan/replay/factored/strategy.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/strategy.rs")),
+        "src/cleanup_plan/replay/factored/paired.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/paired.rs")),
+        "src/cleanup_plan/replay/factored/paired/tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/paired/tests.rs")),
         "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles573.rs")),
         _ => None,
     }
@@ -316,6 +320,8 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/cleanup_plan/replay/factored/paired.rs",
+            "src/cleanup_plan/replay/factored/paired/tests.rs",
             "src/workspace_graph/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/retained/exits/tests.rs",
@@ -357,6 +363,10 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/cleanup_plan/replay/factored.rs",
+            "src/cleanup_plan/replay/factored/strategy.rs",
+            "src/cleanup_plan/replay/factored/paired.rs",
+            "src/cleanup_plan/replay/factored/paired/tests.rs",
             "src/cleanup_plan.rs",
             "src/workspace_graph/tests.rs",
             "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs",

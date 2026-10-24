@@ -43,6 +43,7 @@ pub(super) mod copy_regions;
 mod dag_memo;
 #[cfg(test)]
 mod instrumentation;
+mod paired;
 mod storage;
 #[cfg(test)]
 use canonical_before::Receiver as Canonicalizer;
@@ -231,12 +232,23 @@ fn compare_with_index_storage<'hir>(
     let _paid_phase =
         budget.paid_phase(crate::workflow_profile::plan_comparison::PaidPhase::FactoredComparison);
 
+    let built = build_comparison(program, function, budget, helpers, continuations)?;
+    if budget.payer == AllocationPayer::ActiveBuilder {
+        budget.reserve_bytes(
+            function,
+            paired::entry_controls(),
+            "paired weighted comparison entry",
+        )?;
+        if paired::positive(function, &built, budget)? == Some(true) {
+            return Ok(Some(true));
+        }
+    }
     let BuiltComparison {
         automaton,
         sink,
         hir_root,
         plan_root,
-    } = build_comparison(program, function, budget, helpers, continuations)?;
+    } = built;
 
     #[cfg(test)]
     if budget.oracle_lease().is_some() {

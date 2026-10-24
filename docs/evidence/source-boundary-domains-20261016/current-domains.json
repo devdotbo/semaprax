@@ -2821,6 +2821,7 @@
         "src/cleanup_plan/replay/factored.rs",
         "src/cleanup_plan/replay/factored/copy_regions.rs",
         "src/cleanup_plan/replay/factored/dag_memo.rs",
+        "src/cleanup_plan/replay/factored/paired.rs",
         "src/cleanup_plan/replay/factored/storage.rs",
         "src/cleanup_plan/replay/factored/strategy.rs",
         "src/cleanup_plan/replay/flat_records.rs",
@@ -3016,9 +3017,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "700ebbc88a328ac0e27f4ccb2569fc228890d595596d384688b298844b5cd802",
-      "full_raw_sha256": "83e77bec4f44cdd615dcb1cd731ab2ec434c70fdf8193b1b7e99869231673522",
-      "full_authenticated_production_sha256": "cadfb2b9e2e9d69b8e2b8682fa6d407e5d1f49724189e7dedfb935ddd4827390"
+      "full_manifest_sha256": "f119fc510423bb907299f86ab10e79d0b7e17ecb0b16fa37c9793fdf3c1feefd",
+      "full_raw_sha256": "f49b90c12c64ea1d1e4459a9185b60ecf8a50753ef2fede37d7c39fe879e50b2",
+      "full_authenticated_production_sha256": "b5807204619043ac8c48e2007b3228c2af453b80a45e11964ed24c7b2f05c7a3"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3595,6 +3596,7 @@
         "src/cleanup_plan/replay/factored/compact_nodes.rs",
         "src/cleanup_plan/replay/factored/copy_regions.rs",
         "src/cleanup_plan/replay/factored/dag_memo.rs",
+        "src/cleanup_plan/replay/factored/paired.rs",
         "src/cleanup_plan/replay/factored/storage.rs",
         "src/cleanup_plan/replay/factored/strategy.rs",
         "src/cleanup_plan/replay/flat_records.rs",
@@ -4165,9 +4167,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "e22f6aa98a976f3a1c357f838b772f1095b5c307bea7a0d96babe25f28bf6a7f",
-      "full_raw_sha256": "3995df17d2d2d197edf35af7f008493ecdf5b76aa4fee763db16c293f2db65af",
-      "full_authenticated_production_sha256": "377bee2e441d9cd266642fdc2eb67ff4a047754a0eabbc28f53f206667e6952e"
+      "full_manifest_sha256": "00d81bce199c09e6a06139fa2dca83afe112a4af08c64616495ccf9450e23dd2",
+      "full_raw_sha256": "ba23d342099758ab4533ca8fc7ab058b3e0494bafdac8d81b27ea33e97771a20",
+      "full_authenticated_production_sha256": "e447198ec0d536345d2f92d168698b2fc85aec8d0583b372260193037f2f0e87"
     }
   }
 }
