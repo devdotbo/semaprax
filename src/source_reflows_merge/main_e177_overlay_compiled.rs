@@ -328,6 +328,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/source_reflows_merge/maina3_custody.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
             "src/workspace_graph/type_proof_tests.rs",
             "src/workspace_graph/tests/builder_limits.rs",
