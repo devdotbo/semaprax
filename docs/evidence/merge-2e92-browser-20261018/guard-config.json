@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 72038,
-      "sha256": "c60b22da2841d94ad5e0502f6cd4c4140a111cf82cf677566c4fb8242067af88"
+      "length": 72575,
+      "sha256": "10e82543b96523acf75cff27c8d0af4465ca0dd1ea48926756b9e7e52da75fef"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -873,8 +873,8 @@
       "sha256": "ecc693e67e0a193efec4ddc0e22037fcd99b8626b7fd87e5f11c1123fd65d4f3"
     },
     "src/source_reflows_merge/main_e177_overlay_fragments_v3.rs": {
-      "length": 63621,
-      "sha256": "a9ce21837dde802472a2d72400e44d5550aeae33a04f1399022c6bc29cc85792"
+      "length": 63645,
+      "sha256": "0e56671d0b4d9d10b4956782810e82a7393492af21966c3dfbd797abcc914a22"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/before_string_signature.rs": {
       "length": 19877,
@@ -1197,8 +1197,8 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 99191,
-      "sha256": "125136fe079ccbc92afa8e9fd14f9c6a621f0208be7d8567538d2d8d876d0bca"
+      "length": 102942,
+      "sha256": "8678353f16d853770080d0915578df3c35ee5b466db2771eddf42c35cf866d04"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
       "length": 35103,

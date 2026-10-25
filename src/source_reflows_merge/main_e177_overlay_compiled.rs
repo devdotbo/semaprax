@@ -291,6 +291,15 @@ mod tests {
         assert_eq!(root, ROOT);
         assert_eq!(child, CHILD);
         // CURRENT_SCOPE_NORMALIZATION_BEGIN
+        // Undo only the complete new wire dispatch and its test view; all old inverses follow.
+        let mut v11_root = root.to_owned();
+        let added = "    if page[\"schema\"] == fragments_v3::SCHEMA_V11 {\n        let expanded = fragments_v3::expand_v11(&before, policy, page)?;\n        return compose_values_v2(before, policy, &expanded);\n    }\n";
+        assert_eq!(v11_root.matches(added).count(), 1);
+        v11_root = v11_root.replacen(added, "", 1);
+        let added = "        // Decode only the new wire envelope before the unchanged full predecessor checks.\n        let page = if page[\"schema\"] == fragments_v3::SCHEMA_V11 {\n            fragments_v3::expand_v11(&before, &policy, &page).unwrap()\n        } else {\n            (*page).clone()\n        };\n";
+        assert_eq!(v11_root.matches(added).count(), 1);
+        v11_root = v11_root.replacen(added, "", 1);
+        let root = v11_root.as_str();
         // Reverse only the exact current literal-list packing and new scope.
         // Actual current root/child equality above precedes every inverse.
         let mut current_scope_root = root.to_owned();
@@ -390,6 +399,16 @@ mod tests {
             "src/cleanup_plan/replay/expression_facts/receiving/remaining/tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles573.rs",
             "src/source_reflows_merge/final_ready_inputs/projection_publication.rs",
+            "src/workspace_graph/expected_projection/identity_prebound_tests.rs",
+            "docs/evidence/prelude-forecast-286/exact-source-inverses.json",
+            "src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs",
+            "src/workspace_graph/diagnostics/borrowed_help_tests.rs",
+            "docs/evidence/borrowed-refusal-help-824/exact-source-inverse.json",
+            "src/workspace_graph/expected_projection/call_sites.rs",
+            "docs/WORKSPACE-SEMANTIC-GRAPH-V1.md",
+            "docs/evidence/borrowed-refusal-help-824/default-message-20261025.json",
+            "docs/evidence/compact-replay-h006-transport-20261025/source-coverage-followup.json",
+            "docs/evidence/finite-source-overlay-v2-20261018/README.md",
         ] {
             let declaration = format!("    {source:?},\n");
             assert_eq!(current_scope_root.matches(&declaration).count(), 1);
@@ -631,6 +650,11 @@ mod tests {
         let root = ordered_root.as_str();
         // Restore only the four token gaps removed to keep the current module
         // within its source-size budget; every original inverse runs below.
+        // The complete current literal lists grew after these fixed byte positions.
+        // Keep the entire old locator as an exact negative, then restore the same
+        // four gaps by unique full token contexts. The ENTIRE old root equality
+        // and every original lookup/refusal assertion remain below.
+        fn original_fixed_gaps(root: &str) -> String {
         let mut uncompressed_root = root.to_owned();
         assert_eq!(&uncompressed_root[49557..49558], "\n");
         uncompressed_root.replace_range(49557..49558, "\n\n");
@@ -640,6 +664,26 @@ mod tests {
         uncompressed_root.replace_range(23915..23916, "\n\n");
         assert_eq!(&uncompressed_root[239..240], "\n");
         uncompressed_root.replace_range(239..240, "\n\n");
+            uncompressed_root
+        }
+        assert!(std::panic::catch_unwind(|| original_fixed_gaps(root)).is_err());
+        let mut uncompressed_root = root.to_owned();
+        let current = "use std::sync::{Arc, Mutex};\nconst PAGE_CAP:";
+        let previous = "use std::sync::{Arc, Mutex};\n\nconst PAGE_CAP:";
+        assert_eq!(uncompressed_root.matches(current).count(), 1);
+        uncompressed_root = uncompressed_root.replacen(current, previous, 1);
+        let current = "const EXTENSION_SHA256: &str = \"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6\";\nmacro_rules! require {";
+        let previous = "const EXTENSION_SHA256: &str = \"2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6\";\n\nmacro_rules! require {";
+        assert_eq!(uncompressed_root.matches(current).count(), 1);
+        uncompressed_root = uncompressed_root.replacen(current, previous, 1);
+        let current = "#[path = \"main_e177_overlay_compiled.rs\"]\n#[rustfmt::skip]\nmod compiled_sources;\npub(super) fn compiled(source: &str)";
+        let previous = "#[path = \"main_e177_overlay_compiled.rs\"]\n#[rustfmt::skip]\nmod compiled_sources;\n\npub(super) fn compiled(source: &str)";
+        assert_eq!(uncompressed_root.matches(current).count(), 1);
+        uncompressed_root = uncompressed_root.replacen(current, previous, 1);
+        let current = "}\n#[cfg(test)]\nmod tests {\n    use super::*;";
+        let previous = "}\n\n#[cfg(test)]\nmod tests {\n    use super::*;";
+        assert_eq!(uncompressed_root.matches(current).count(), 1);
+        uncompressed_root = uncompressed_root.replacen(current, previous, 1);
         let root = uncompressed_root.as_str();
         let before = before();
         let old_additions = array(before, "ADDITIONS");

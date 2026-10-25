@@ -59,3 +59,21 @@ still require their ordinary authentication. The executable frozen-page
 inverse, complete-packet equality and hostile controls live in
 `src/source_reflows_merge/main_e177_overlay_pins_v10.rs`; their run-specific
 results are recorded separately and confer no runtime qualification.
+
+V11 is a lossless envelope around a V10-shaped page: `schema` is
+`semaprax.finite-source-overlay-page.v11`, `names` is a sorted, unique string
+array, and `page` retains the complete inner V10 object. Only the first slot
+of packed named-view tuples may use an integer name-table index. Literal view
+objects, their non-string names, current pins, reference objects and arbitrary
+unknown metadata remain literal. The same documented one-level pin-slot walk
+is used; no recursive metadata interpretation or source admission is added.
+
+The wire remains at most 262144 bytes. The complete canonical JSON bytes of
+all materialized packed names together must also fit that same bound; the debit
+is checked before copying a referenced name. Invalid, boolean, negative,
+fractional and out-of-range indices, unsorted/duplicate/unused names and malformed
+slots refuse. This limits amplification before the unchanged V10–V2 expansion,
+predecessor authentication and full source/compiled/archive checks. V11 restores
+the entire V10-shaped intermediate, including all unknown fields and ordering;
+older wire readers, their bounds and their independent controls are unchanged.
+Run-specific qualification is source-codec evidence only.

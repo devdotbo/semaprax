@@ -267,3 +267,327 @@ mod tests {
         assert!(expand_v10_pins(&before, &policy, &bad).is_err());
     }
 }
+
+// V11_VIEW_NAMES_BEGIN: all preceding V10 code remains byte-exact.
+pub(in super::super) const SCHEMA_V11: &str = "semaprax.finite-source-overlay-page.v11";
+fn expand_v11_names(envelope: &Value) -> Result<Value, &'static str> {
+    use std::cell::{Cell, RefCell};
+    if !super::super::keys(envelope, &["schema", "names", "page"])
+        || envelope["schema"] != SCHEMA_V11
+    {
+        return Err("v11 envelope");
+    }
+    if super::super::canonical(envelope).len() > super::super::PAGE_CAP {
+        return Err("v11 wire cap");
+    }
+    let names = envelope["names"].as_array().ok_or("v11 names")?;
+    let mut sizes = Vec::new();
+    let mut previous = None;
+    for name in names {
+        let text = name.as_str().ok_or("v11 names")?;
+        if previous.is_some_and(|old| old >= text) {
+            return Err("v11 unique sorted names");
+        }
+        previous = Some(text);
+        sizes.push(super::super::canonical(name).len());
+    }
+    let page = &envelope["page"];
+    if !page.is_object() || page["schema"] != SCHEMA_V10 {
+        return Err("v11 inner schema");
+    }
+    let used = RefCell::new(vec![false; names.len()]);
+    let materialized = Cell::new(0usize);
+    let result = v10_slots(page, &|value, named| {
+        if !named || !value.is_array() {
+            // Literal view objects, current pins, references and opaque data
+            // retain their exact old representation, including non-string names.
+            return Ok(value.clone());
+        }
+        let tuple = value.as_array().unwrap();
+        let name = tuple.first().ok_or("v11 named tuple")?;
+        let (text, size) = if let Some(text) = name.as_str() {
+            (text, super::super::canonical(name).len())
+        } else {
+            let index = usize::try_from(name.as_u64().ok_or("v11 name index")?)
+                .map_err(|_| "v11 name index")?;
+            let name = names.get(index).ok_or("v11 name index")?;
+            used.borrow_mut()[index] = true;
+            (name.as_str().unwrap(), sizes[index])
+        };
+        let bytes = materialized
+            .get()
+            .checked_add(size)
+            .filter(|bytes| *bytes <= super::super::PAGE_CAP)
+            .ok_or("v11 materialized name cap")?;
+        materialized.set(bytes);
+        // Check the complete canonical-name debit before copying table text.
+        let mut restored = tuple.clone();
+        restored[0] = text.into();
+        Ok(restored.into())
+    })?;
+    if used.borrow().iter().any(|used| !used) {
+        return Err("v11 unused names");
+    }
+    Ok(result)
+}
+pub(in super::super) fn expand_v11(
+    before: &Value,
+    policy: &Value,
+    envelope: &Value,
+) -> Result<Value, &'static str> {
+    expand_v10(before, policy, &expand_v11_names(envelope)?)
+}
+#[cfg(test)]
+fn encode_v11_names(page: &Value) -> Result<Value, &'static str> {
+    use std::cell::RefCell;
+    use std::collections::BTreeMap;
+    if !page.is_object() || page["schema"] != SCHEMA_V10 {
+        return Err("v11 encoding schema");
+    }
+    let counts = RefCell::new(BTreeMap::<String, usize>::new());
+    v10_slots(page, &|value, named| {
+        if named {
+            if let Some(tuple) = value.as_array() {
+                let name = tuple
+                    .first()
+                    .and_then(Value::as_str)
+                    .ok_or("v11 encoding name")?;
+                *counts.borrow_mut().entry(name.into()).or_default() += 1;
+            }
+        }
+        Ok(value.clone())
+    })?;
+    let names: Vec<_> = counts
+        .into_inner()
+        .into_iter()
+        .filter_map(|(name, count)| (count > 1).then_some(name))
+        .collect();
+    let indices: BTreeMap<_, _> = names
+        .iter()
+        .enumerate()
+        .map(|(index, name)| (name.as_str(), index))
+        .collect();
+    let encoded = v10_slots(page, &|value, named| {
+        if named {
+            if let Some(tuple) = value.as_array() {
+                let name = tuple
+                    .first()
+                    .and_then(Value::as_str)
+                    .ok_or("v11 encoding name")?;
+                if let Some(index) = indices.get(name) {
+                    let mut result = tuple.clone();
+                    result[0] = (*index).into();
+                    return Ok(result.into());
+                }
+            }
+        }
+        Ok(value.clone())
+    })?;
+    drop(indices);
+    let result = serde_json::json!({"schema":SCHEMA_V11,"names":names,"page":encoded});
+    if expand_v11_names(&result)? != *page {
+        return Err("v11 ENTIRE V10 page inverse");
+    }
+    Ok(result)
+}
+
+#[cfg(test)]
+mod v11_tests {
+    use super::super::super::{canonical, compose_values, digest, held_4a6eb, PAGE_CAP};
+    use super::*;
+    fn frozen() -> (Value, Value, Value) {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let read = |sha, length| {
+            serde_json::from_str::<Value>(
+                &held_4a6eb(&root.join(format!("e/{sha}")), length, sha).unwrap(),
+            )
+            .unwrap()
+        };
+        (
+            super::super::super::super::packet_before_overlay(),
+            read(
+                "f79b365ce48f1bfe3422feb73453795fe30d563c2d2167486ba85965d7b5d2dc",
+                112303,
+            ),
+            read(
+                "2018302f513448433f418a128169982a6bbe55652a843397e37fc5ed9ab9ac64",
+                261855,
+            ),
+        )
+    }
+    fn page(name: &str, count: usize) -> Value {
+        serde_json::json!({"schema":SCHEMA_V10,"replacements":[],"additions":[{
+            "current":[0],"views":vec![serde_json::json!([name,0]);count]
+        }]})
+    }
+    #[test]
+    fn v11_frozen_entire_v10_page_and_complete_packet_restore_without_changed_limits() {
+        let (before, policy, page) = frozen();
+        let compact = encode_v11_names(&page).unwrap();
+        assert_eq!(canonical(&compact).len(), 239085);
+        assert_eq!(compact["names"].as_array().unwrap().len(), 134);
+        assert!(canonical(&compact).len() < canonical(&page).len());
+        assert_eq!(
+            canonical(&expand_v11_names(&compact).unwrap()),
+            canonical(&page)
+        );
+        let old = compose_values(before.clone(), &policy, &page).unwrap();
+        let current = compose_values(before, &policy, &compact).unwrap();
+        assert_eq!(canonical(&current), canonical(&old));
+        assert_eq!(digest(&canonical(&current)), digest(&canonical(&old)));
+        assert_eq!(PAGE_CAP, 262144);
+        assert_eq!(super::super::super::SOURCE_CAP, 9753094);
+    }
+    #[test]
+    fn v11_only_packed_name_slots_change_and_all_opaque_objects_remain_literal() {
+        let mut original = page("λ\0🙂", 2);
+        let opaque = serde_json::json!({"name":0,"views":[["λ\0🙂",0]],"current":[0]});
+        original["unknown"] = opaque.clone();
+        original["names"] = opaque.clone();
+        original["additions"][0]["views"]
+            .as_array_mut()
+            .unwrap()
+            .extend([
+                serde_json::json!({"name":0,"unknown":opaque}),
+                serde_json::json!({"name":["λ\0🙂",0],"unknown":opaque}),
+                serde_json::json!({"name":"λ\0🙂","unknown":opaque}),
+            ]);
+        original["additions"][0]["fragments"] = serde_json::json!([
+            {"current":[0],"views":[["λ\0🙂",0]],"unknown":opaque},
+            {"canonical_source":"held","views":[["λ\0🙂",0]],"unknown":opaque}
+        ]);
+        original["replacements"] = serde_json::json!([{"old519_index":[0,[0],[["λ\0🙂",0]],null]}]);
+        let compact = encode_v11_names(&original).unwrap();
+        assert_eq!(compact["names"], serde_json::json!(["λ\0🙂"]));
+        assert_eq!(compact["page"]["unknown"], opaque);
+        assert_eq!(compact["page"]["names"], opaque);
+        assert_eq!(
+            compact["page"]["additions"][0]["views"][2],
+            original["additions"][0]["views"][2]
+        );
+        assert_eq!(
+            compact["page"]["additions"][0]["fragments"][1],
+            original["additions"][0]["fragments"][1]
+        );
+        assert_eq!(expand_v11_names(&compact).unwrap(), original);
+    }
+    #[test]
+    fn v11_bad_indices_tables_envelopes_and_positional_shapes_fail_closed() {
+        let valid = encode_v11_names(&page("held", 2)).unwrap();
+        for bad in [
+            serde_json::json!(true),
+            serde_json::json!(-1),
+            serde_json::json!(0.0),
+            serde_json::json!(1),
+            serde_json::json!(u64::MAX),
+            Value::Null,
+            serde_json::json!({}),
+        ] {
+            let mut changed = valid.clone();
+            changed["page"]["additions"][0]["views"][0][0] = bad;
+            assert!(expand_v11_names(&changed).is_err());
+        }
+        for names in [
+            Value::Null,
+            serde_json::json!([0]),
+            serde_json::json!(["held", "held"]),
+            serde_json::json!(["z", "held"]),
+            serde_json::json!(["held", "unused"]),
+        ] {
+            let mut changed = valid.clone();
+            changed["names"] = names;
+            assert!(expand_v11_names(&changed).is_err());
+        }
+        let mut changed = valid.clone();
+        changed["extra"] = true.into();
+        assert!(expand_v11_names(&changed).is_err());
+        let mut changed = valid.clone();
+        changed["schema"] = SCHEMA_V10.into();
+        assert!(expand_v11_names(&changed).is_err());
+        let mut changed = valid.clone();
+        changed["page"]["schema"] = SCHEMA_V9.into();
+        assert!(expand_v11_names(&changed).is_err());
+        let mut changed = valid.clone();
+        changed["page"]["additions"][0]["views"][0] = serde_json::json!([]);
+        assert!(expand_v11_names(&changed).is_err());
+        let mut changed = valid.clone();
+        changed["page"]["replacements"] = serde_json::json!([{"old519_index":[0,[],[]]}]);
+        assert!(expand_v11_names(&changed).is_err());
+        let mut changed = valid.clone();
+        changed["page"]["additions"] = serde_json::json!([{"old519_index":[0,[],[],null]}]);
+        assert!(expand_v11_names(&changed).is_err());
+        let literal = serde_json::json!({"schema":SCHEMA_V11,"names":[],"page":page("held",1)});
+        assert_eq!(expand_v11_names(&literal).unwrap(), page("held", 1));
+    }
+    #[test]
+    fn v11_wire_exact_plus_one_and_materialized_names_exact_plus_one_are_bounded() {
+        let mut exact = serde_json::json!({"schema":SCHEMA_V11,"names":[],"page":{"schema":SCHEMA_V10,"replacements":[],"additions":[],"opaque":""}});
+        let padding = PAGE_CAP - canonical(&exact).len();
+        exact["page"]["opaque"] = "x".repeat(padding).into();
+        assert_eq!(canonical(&exact).len(), PAGE_CAP);
+        assert!(expand_v11_names(&exact).is_ok());
+        exact["page"]["opaque"] = "x".repeat(padding + 1).into();
+        assert_eq!(expand_v11_names(&exact), Err("v11 wire cap"));
+        let name = "x".repeat(PAGE_CAP / 2 - 3);
+        let compact = encode_v11_names(&page(&name, 2)).unwrap();
+        assert!(canonical(&compact).len() < PAGE_CAP);
+        assert_eq!(expand_v11_names(&compact).unwrap(), page(&name, 2));
+        let mut over = compact;
+        over["names"][0] = "x".repeat(PAGE_CAP / 2 - 2).into();
+        assert_eq!(expand_v11_names(&over), Err("v11 materialized name cap"));
+        let escaped = "\0".repeat((PAGE_CAP / 2 - 3) / 6);
+        let mut compact = encode_v11_names(&page(&escaped, 2)).unwrap();
+        compact["names"][0] = format!("{escaped}\0").into();
+        assert_eq!(expand_v11_names(&compact), Err("v11 materialized name cap"));
+    }
+    #[test]
+    fn v11_keeps_original_predecessor_and_pin_refusals() {
+        let (before, policy, page) = frozen();
+        let compact = encode_v11_names(&page).unwrap();
+        let mut bad = before.clone();
+        bad["rows"][0]["compiled"] = Value::Null;
+        assert!(expand_v11(&bad, &policy, &compact).is_err());
+        let mut bad = policy.clone();
+        bad["predecessor"]["logical_sha256"] = "0".repeat(64).into();
+        assert!(expand_v11(&before, &bad, &compact).is_err());
+        let mut bad = compact;
+        bad["page"]["additions"][0]["current"] = serde_json::json!([true]);
+        assert!(expand_v11(&before, &policy, &bad).is_err());
+    }
+    #[test]
+    fn v11_appends_to_the_entire_original_v10_rust_decoder_without_rewriting_it() {
+        let source = std::include_str!(concat!(
+            env!("CARGO_MANIFEST_DIR"),
+            "/src/source_reflows_merge/main_e177_overlay_pins_v10.rs"
+        ));
+        let (original, _) = source.split_once("\n// V11_VIEW_NAMES_BEGIN:").unwrap();
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let frozen = held_4a6eb(
+            &root.join("e/139e342c746175490471415451808f4882720303027f6373dd48562e6a814440"),
+            11088,
+            "139e342c746175490471415451808f4882720303027f6373dd48562e6a814440",
+        )
+        .unwrap();
+        assert_eq!(original.as_bytes(), frozen.as_bytes());
+    }
+    #[test]
+    fn v11_shared_python_fixture_has_identical_encoding_and_refusals() {
+        let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+        let data = held_4a6eb(
+            &root.join("e/55b7035de0ddbcfca1e466205cca1ecab30e553bc7636f25604885c8e459564f"),
+            3276,
+            "55b7035de0ddbcfca1e466205cca1ecab30e553bc7636f25604885c8e459564f",
+        )
+        .unwrap();
+        let fixture: Value = serde_json::from_str(&data).unwrap();
+        assert_eq!(fixture["schema"], "semaprax.source-view-name-fixtures.v1");
+        for case in fixture["cases"].as_array().unwrap() {
+            let actual = encode_v11_names(&case["input"]).unwrap();
+            assert_eq!(canonical(&actual), canonical(&case["encoded"]));
+            assert_eq!(expand_v11_names(&actual).unwrap(), case["input"]);
+        }
+        for case in fixture["refusals"].as_array().unwrap() {
+            assert!(expand_v11_names(case).is_err());
+        }
+    }
+}
