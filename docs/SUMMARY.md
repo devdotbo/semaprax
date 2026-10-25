@@ -1899,3 +1899,5 @@ Audience: all documentation readers.
 - [Narrow replay H006 transport](evidence/compact-replay-h006-transport-20261025/README.md)
 
 - [Exact hosted calculator graph invoice update](evidence/browser-capture-a281-20261025/README.md)
+
+- [Valid alias success subjects with original rejection witnesses](evidence/alias-valid-subjects-20261025/README.md)
