@@ -1,3 +1,7 @@
+## Complete replay-prefix source coverage (2026-10-25)
+
+- Join the compact replay-prefix helper and its tests into all three source inventories that already bind the prefix root. Keep the complete existing inventories and their assertions; do not change the frozen coverage allowances.
+
 ## Default builder refusal text and diagnostic controls (2026-10-25)
 
 - Keep the complete default-limit G171 message available without allocating when its formatter is exhausted; retain the original formatter debit and sticky refusal.
