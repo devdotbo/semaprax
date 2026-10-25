@@ -82,11 +82,20 @@ fn parity(program: &Program, index: &Index<'_>, imports: bool) -> (Proof, Census
 #[test]
 fn complete_before_source_and_all_header_capacity_boundaries_are_retained() {
     let before = include_str!("call_carriers_before_directory.rs");
+    // Import ordering is formatter glue. Keep the complete original body/hash.
+    let formatted_import = "use super::{call_identity, AuthoredDeclaration};";
+    let original_import = "use super::{AuthoredDeclaration, call_identity};";
+    assert_eq!(before.matches(formatted_import).count(), 1);
+    let original_before = before.replacen(formatted_import, original_import, 1);
+    let before = original_before.as_str();
     assert_eq!(
         format!("{:x}", crate::digest_hex::LowerHex(&Sha256::digest(before))),
         "87142dc1b3f98f9d381459f0f4f8925c807d28645aa0646ea453eea3c63cc512",
     );
     let root = include_str!("call_carriers.rs");
+    assert_eq!(root.matches(formatted_import).count(), 1);
+    let original_root = root.replacen(formatted_import, original_import, 1);
+    let root = original_root.as_str();
     let linear = root.split("\n#[cfg(test)]").next().unwrap();
     assert_eq!(linear.matches("fn count_linear(").count(), 1);
     assert_eq!(

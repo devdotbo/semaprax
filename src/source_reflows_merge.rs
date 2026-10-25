@@ -414,7 +414,12 @@ pub(crate) fn consumer_input(domain: &str, source: &str, current: &str) -> Strin
         "cold835" => runtime_json::Fixture::F24,
         _ => panic!("unknown complete source consumer domain"),
     };
-    runtime_json::project(data, source, current)
+    constructor_stage::after(
+        domain,
+        source,
+        &entry,
+        runtime_json::project(data, source, current),
+    )
 }
 fn corrected_consumers_previous(source: &str, current: &str) -> String {
     let fixes = final_fix_input(source, current);
@@ -753,7 +758,7 @@ fn retained_function847_previous(source: &str, current: &str) -> String {
     joined_feature_input("453", source, current)
 }
 pub(crate) fn retained_function847_input(source: &str, current: &str) -> String {
-    retained_function847_previous(source, current)
+    constructor_stage::retained_function847_input(source, current)
 }
 pub(crate) fn directory825_input(source: &str, current: &str) -> String {
     let previous = joined_feature_input("453", source, current);
@@ -1116,7 +1121,6 @@ pub(crate) use main8a_custody::Fixture as Main8aFixture;
 pub(crate) fn main8a_metadata(fixture: Main8aFixture) -> String {
     runtime_json::main8a_metadata(fixture)
 }
-
 // Independent current raw domains: never serialize Main predecessors through old raw guards.
 pub(crate) fn main8a_previous(source: &str, current: &str) -> String {
     let previous = maina3_previous(source, current);
@@ -1150,7 +1154,6 @@ pub(crate) fn maina3_847_input(source: &str, current: &str) -> String {
     let normalized = maina3_custody::normalize(source, current);
     maina3_custody::input(maina3_custody::Input::Alias1ae, source, &normalized)
 }
-
 // The incoming test-only e47 owning inputs form their own raw domain.
 pub(crate) fn main_e47_input(source: &str, current: &str) -> String {
     let normalized = maina3_custody::normalize(source, current);
@@ -1187,13 +1190,11 @@ pub(crate) fn release_current_input(source: &str, current: &str) -> String {
     let previous = main65_previous(source, current);
     cursor_clippy_input(source, &previous)
 }
-
 // Exact after-inputs for the two original Main8a historical metadata owners.
 #[path = "source_reflows_merge/main8a_historical.rs"]
 pub(crate) mod main8a_historical;
 pub(crate) mod main_eb2_inputs;
 mod opt858_sequence_input;
-
 // Distinct closed Main7f8 historical input domains; no compiler authority.
 #[path = "source_reflows_merge/final_ready_inputs.rs"]
 mod final_ready_inputs;
@@ -1205,7 +1206,6 @@ pub(crate) mod main7f8_presence;
 pub(crate) mod main7f8_source_inputs;
 #[path = "source_reflows_merge/ordinary_plan_inputs.rs"]
 mod ordinary_plan_inputs;
-
 // Only the historical PLAN source test receives this exact root checkpoint.
 pub(crate) fn ordinary_plan_history_root_checkpoint(
     current: &str,
@@ -1265,7 +1265,10 @@ pub(crate) fn complete_receiver_followup(source: &str) -> String {
 }
 // Closed complete compiled ENTRY acquisition precedes every original #825 inverse.
 fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) -> Option<String> {
-    let restored_typed = constructor_stage::typed(source, current);
+    if let Some(before) = constructor_stage::history(source, expected, current) {
+        return Some(before);
+    }
+    let restored_typed = constructor_stage::typed_for(source, expected, current);
     let current = restored_typed.as_deref().unwrap_or(current);
     let typed_before = if source
         == "src/workspace_graph/constructor_failure/receiving/typed/tests.rs"
@@ -1368,7 +1371,6 @@ fn constructor825_compiled_entry(source: &str, expected: &str, current: &str) ->
     assert_eq!(source_sha(&entry), expected);
     Some(entry)
 }
-
 fn constructor825_attempt_before(current: &str) -> String {
     assert_eq!(
         current,
@@ -1389,7 +1391,6 @@ fn constructor825_attempt_before(current: &str) -> String {
     );
     before
 }
-
 fn initial845_current_owner_before(source: &str, current: &str) -> Option<String> {
     let normalized = constructor_stage::owner(source, current);
     let current = normalized.as_deref().unwrap_or(current);
@@ -1491,7 +1492,6 @@ fn initial845_compiled_owner_entry(source: &str, current: &str) -> Option<String
     assert_eq!(source_sha(&prior), prior_sha);
     Some(prior)
 }
-
 fn source_sha(text: &str) -> String {
     format!(
         "{:x}",

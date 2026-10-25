@@ -749,8 +749,8 @@
       "sha256": "523afb818016e67c13a23c0f653a13f94d2015aaad95efbb74363efb64ef642c"
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
-      "length": 72575,
-      "sha256": "10e82543b96523acf75cff27c8d0af4465ca0dd1ea48926756b9e7e52da75fef"
+      "length": 73563,
+      "sha256": "cfc87bbedde4e435053dc649705e0910c065a82129cae7ef88a21ccb89821c25"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
@@ -829,8 +829,8 @@
       "sha256": "90cf27667fe64714fdc3d5196406d0eec2ad59cbd12d1a07b16a23810eda066a"
     },
     "src/workspace_graph/expected_projection/borrowed_imports/typed/scalar_signature_tests.rs": {
-      "length": 22427,
-      "sha256": "24607db07dfce24677610d69f7073b44cb01fe47893f3f90bcfaab474c18ecdf"
+      "length": 24240,
+      "sha256": "05f90fdc627b0f26483963a2f5649bcec5df9cc92b554795d676188d4cc9da08"
     },
     "src/ast/program_source/function_alias/before_string.rs": {
       "length": 1898,
@@ -933,8 +933,8 @@
       "sha256": "c49b0a20bbb6681d67dfbf177fe3fd41a64c57079afa7d7713aaa78a42d6ab95"
     },
     "src/workspace_graph/expected_projection/call_carriers_directory_tests.rs": {
-      "length": 20676,
-      "sha256": "d820534cafd4ccf394e3c847dd486a3b8797add74c42395087e5ca07b8a99da1"
+      "length": 21273,
+      "sha256": "f3cc11b9d10531b47ed5349b6d62793415cb6d4f09757d0e6ad7da127111463a"
     },
     "src/workspace_graph/expected_projection.rs": {
       "length": 59698,
@@ -1197,12 +1197,12 @@
       "sha256": "b137b062c8a91954441e84e9e77ed72b05c631a11608dab43eea8e5539f25cc2"
     },
     "src/source_reflows_merge/main_e177_overlay_compiled.rs": {
-      "length": 102942,
-      "sha256": "8678353f16d853770080d0915578df3c35ee5b466db2771eddf42c35cf866d04"
+      "length": 105340,
+      "sha256": "52fc3b43b713f93ba1573b055ad1b0002ac0f0a8c72908bf3dab87112519061a"
     },
     "src/source_reflows_merge/main_e177_packet_lookup.rs": {
-      "length": 35103,
-      "sha256": "1e31aba22d551ebabbfb57e2f0b1d36f6bb1517f816a1ed6413ebd732df66981"
+      "length": 39252,
+      "sha256": "0b4d695dfb5d7e0eafc6529c37d9a57af35416943c341ad105f2418873f34c2c"
     },
     "src/cleanup_plan/replay/ordinary_plan_history/comparison_owner/before_empty_selector.rs": {
       "length": 32474,

@@ -1,3 +1,9 @@
+## Complete constructor source bindings (2026-10-25)
+
+- Authenticate current constructor sources before selecting complete historical cost, capacity and value-owner inputs; retain the original inverse recipes and whole-source comparisons.
+- Restore exact formatter-only spelling in scalar and call-carrier source checks without changing their implementations or type assertions.
+- Reuse authenticated metadata during registered-file reads while retaining fresh physical, compiled, archive and fragment checks and the complete old reader. Refresh the two stale documentation and inventory current-source records.
+
 ## Bounded repeated source-view labels (2026-10-25)
 
 - Encode repeated packed view labels through a bounded V11 dictionary while retaining every old source row, view, unknown field and fragment edge. Keep the 262144-byte wire cap and bound aggregate materialized label bytes before copying.
