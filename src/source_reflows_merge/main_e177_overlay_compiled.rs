@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "tests/workspace/semantic_graph/host_pins.rs" => Some(include_str!("../../tests/workspace/semantic_graph/host_pins.rs")),
         "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs")),
         "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs" => Some(include_str!("../../tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs")),
         "src/workspace_graph/initial_report/build.rs" => Some(include_str!("../../src/workspace_graph/initial_report/build.rs")),
@@ -329,6 +330,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "tests/workspace/semantic_graph/host_pins.rs",
             "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
             "src/source_reflows_merge/maina3_custody.rs",
             "src/cleanup_plan/replay/factored/canonical_shared/empty_memo.rs",
@@ -395,6 +397,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "tests/workspace/semantic_graph/host_pins.rs",
             "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",
             "src/workspace_graph/initial_report/build.rs",
@@ -442,6 +445,15 @@ mod tests {
         current_scope_child.replace_range(first..last, "");
         let root = current_scope_root.as_str();
         let child = current_scope_child.as_str();
+        // The new test-wire helper has complete current physical and compiled
+        // channels before its exact admission is removed for the old proof.
+        let helper = "tests/workspace/semantic_graph/host_pins.rs";
+        let physical = std::fs::read_to_string(
+            std::path::Path::new(env!("CARGO_MANIFEST_DIR")).join(helper),
+        ).unwrap();
+        assert_eq!(super::compiled(helper), Some(physical.as_str()));
+        let expected = format!("{:x}", crate::digest_hex::LowerHex(Sha256::digest(physical.as_bytes())));
+        assert_eq!(super::super::value_direct(helper, &expected, &physical), physical);
         // CURRENT_SCOPE_NORMALIZATION_END
         // Reverse this exact later metadata scope and comment-only packing
         // before every unchanged original span and whole-predecessor check.
