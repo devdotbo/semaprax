@@ -1169,6 +1169,8 @@
         "src/cleanup_plan/replay/expression_facts/arena/before_cursor.rs",
         "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/compact.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/compact_tests.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/retained_before.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/source_main8a.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix/source_maina3.rs",
@@ -1201,6 +1203,8 @@
         "src/cleanup_plan/replay/expression_facts/receiving/helpers.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/before_remaining.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/compact.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/compact_tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/tests.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/tests.rs",
@@ -2385,6 +2389,7 @@
         "src/cleanup_plan/replay/expression_facts.rs",
         "src/cleanup_plan/replay/expression_facts/arena.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/compact.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer.rs",
         "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
         "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
@@ -2397,6 +2402,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/compact.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
@@ -3018,9 +3024,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "dd7dfb710abfaac217838baca0b8c07024edeaaebe40acb0cd0544b54571ae72",
-      "full_raw_sha256": "a6d4fd51efee57e05fd3210f136c602f1f9f3ba60529f3686741ab730a65f49d",
-      "full_authenticated_production_sha256": "b029800612e3d71e6a66a4e3ce6222aa6fc0d8c1499562c0f88a466809c4a633"
+      "full_manifest_sha256": "7917472a25ec267b1691f553256fdf70669f62d46d6b94f96abff4062e1fa782",
+      "full_raw_sha256": "6f8416e5e579cbf8e44d78bfcd59e06a3434dcfd2cc94588aee25e10e6dcf667",
+      "full_authenticated_production_sha256": "5c3048f0e41636c4366a3c34b4f60f07ad08062aee378a2b673fa10c7212e5ef"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3539,6 +3545,7 @@
         "src/cleanup_plan/replay/expression_facts.rs",
         "src/cleanup_plan/replay/expression_facts/arena.rs",
         "src/cleanup_plan/replay/expression_facts/arena/prefix.rs",
+        "src/cleanup_plan/replay/expression_facts/arena/prefix/compact.rs",
         "src/cleanup_plan/replay/expression_facts/arena/producer.rs",
         "src/cleanup_plan/replay/expression_facts/arena/retained.rs",
         "src/cleanup_plan/replay/expression_facts/arena/retained_into.rs",
@@ -3551,6 +3558,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/directory/status_prefix/reused_cursor.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/helpers/matching/compact.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/helpers/regions.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/remaining.rs",
@@ -4168,9 +4176,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "db8b41f6c77f5e3b8e3e958690d60f1129c734bb73054c46e946f29ef462db0e",
-      "full_raw_sha256": "a9eb0d0df28d0435837756b68b2badecf7462fd9a7a8f80af66fd6a637eb35f5",
-      "full_authenticated_production_sha256": "5f9a18054d4f272207c90697eb23765754cc2688c23aaab9bf2ea3b67fe521f9"
+      "full_manifest_sha256": "66515deb770b193da9bd8127caa4094072291129e76e68ecd8b9484642f0cc57",
+      "full_raw_sha256": "db4efa452861d9829531a7d58bd0b78b18cb337a54666667d714dfd483252c52",
+      "full_authenticated_production_sha256": "c51cc1f139fb95c4f72ebd1e49238c2957a25cf9c50cb390652b99828842e1ca"
     }
   }
 }
