@@ -285,8 +285,8 @@
       "sha256": "9364443a8a9df12138b4eeb3671a6088e3202efb3c3e05d6a4c22ede6a8edffc"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/lookup_tests.rs": {
-      "length": 15446,
-      "sha256": "2bd12be9b146263f0c7c66f5c0cf07c3a91715a8dabb808162dca62ef5237bf2"
+      "length": 17998,
+      "sha256": "25d82517b2dd7e34292cc13259083ec550ae4fc51b9197087e7de55791eeed8d"
     },
     "src/cleanup_plan/replay/expression_facts/receiving/retained/case_certified/retained_lookup.rs": {
       "length": 8334,
@@ -750,7 +750,7 @@
     },
     "src/source_reflows_merge/main_e177_overlay_v2.rs": {
       "length": 71199,
-      "sha256": "edbcf9bbcd9eaa9823c87a824a0356aff59d6075e6c0fcb6d6da131a59aa886a"
+      "sha256": "f37cfa38a354f82f9466ca1d5a666f9a4bf18c16bf7c1d52226dabb1827418fe"
     },
     "src/string_ops/conditions/funded_receiving.rs": {
       "length": 1017,
