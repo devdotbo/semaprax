@@ -1,5 +1,6 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/workspace_graph/expected_projection/borrowed_imports_original.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports_original.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs")),
         "src/workspace_graph/diagnostics/borrowed_help_tests.rs" => Some(include_str!("../../src/workspace_graph/diagnostics/borrowed_help_tests.rs")),
@@ -363,6 +364,7 @@ mod tests {
             current_scope_root = current_scope_root.replacen(&packed, &expanded, 1);
         }
         for source in [
+            "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
             "src/workspace_graph/expected_projection/borrowed_imports/tests.rs",
             "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs",
             "tests/workspace/semantic_graph/host_pins.rs",
@@ -443,6 +445,7 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/workspace_graph/expected_projection/borrowed_imports_original.rs",
             "src/workspace_graph/expected_projection/borrowed_imports/tests.rs",
             "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs",
             "src/workspace_graph/diagnostics/borrowed_help_tests.rs",
