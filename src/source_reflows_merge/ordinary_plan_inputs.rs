@@ -395,6 +395,80 @@ fn latest_ingress_records() -> serde_json::Value {
     result
 }
 
+// A fresh physical-to-latest edge. All sealed latest/FINAL/frozen inverses below
+// remain independent and execute on their complete, authenticated old bytes.
+fn successor_ingress_checkpoint(
+    path: &str,
+    compiled: &str,
+    previous: &serde_json::Value,
+) -> (String, String) {
+    const PATH: &str = "docs/evidence/ordinary-ingress-successor-20261026/current-inputs.json";
+    const DATA: &str = include_str!(concat!(
+        env!("CARGO_MANIFEST_DIR"),
+        "/docs/evidence/ordinary-ingress-successor-20261026/current-inputs.json"
+    ));
+    const LENGTH: usize = 14971;
+    const SHA: &str = "aef6ee23a1724873cd15d3590f0086fc8a304ce3db94ca4525989994e8360046";
+    assert!(LENGTH <= FINAL_INGRESS_CAP);
+    assert_eq!(DATA.len(), LENGTH);
+    assert_eq!(digest(DATA), SHA);
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    assert_eq!(final_ingress_file(&root.join(PATH), LENGTH, SHA), DATA);
+    let packet: serde_json::Value = serde_json::from_str(DATA).unwrap();
+    assert_eq!(
+        packet["schema"],
+        "semaprax.ordinary-plan-source-successor.v1"
+    );
+    let rows = packet["rows"].as_array().unwrap();
+    assert_eq!(rows.len(), CURRENT.len());
+    for (row, (source, _)) in rows.iter().zip(CURRENT) {
+        assert_eq!(row["path"], source, "closed ordered physical source owners");
+    }
+    let row = rows.iter().find(|row| row["path"] == path).unwrap();
+    assert_eq!(row["previous_length"], previous["current_length"]);
+    assert_eq!(row["previous_sha256"], previous["current_sha256"]);
+    assert_eq!(row["previous_archive"], previous["current_archive"]);
+    let length = usize::try_from(row["current_length"].as_u64().unwrap()).unwrap();
+    let sha = row["current_sha256"].as_str().unwrap();
+    let live = final_ingress_file(&root.join(path), length, sha);
+    assert_eq!(
+        live, compiled,
+        "complete actual compiled and physical successor"
+    );
+    let archive = row["current_archive"].as_str().unwrap();
+    assert_eq!(archive, format!("e/{sha}"));
+    assert_eq!(final_ingress_file(&root.join(archive), length, sha), live);
+    let mut restored = live.clone();
+    let edits = row["inverse"].as_array().unwrap();
+    assert!(edits.len() <= 512);
+    let mut last = restored.len();
+    for edit in edits {
+        let start = usize::try_from(edit["start_byte"].as_u64().unwrap()).unwrap();
+        let after = edit["after"].as_str().unwrap();
+        let end = start
+            .checked_add(after.len())
+            .expect("bounded successor inverse");
+        assert!(end <= last);
+        assert_eq!(restored.get(start..end), Some(after));
+        restored.replace_range(start..end, edit["before"].as_str().unwrap());
+        last = start;
+    }
+    assert_eq!(
+        restored.len(),
+        usize::try_from(previous["current_length"].as_u64().unwrap()).unwrap()
+    );
+    assert_eq!(digest(&restored), previous["current_sha256"]);
+    assert_eq!(
+        restored,
+        final_ingress_file(
+            &root.join(previous["current_archive"].as_str().unwrap()),
+            restored.len(),
+            previous["current_sha256"].as_str().unwrap(),
+        )
+    );
+    (live, restored)
+}
+
 fn final_ingress_checkpoint(source: &str, expected: &str, current: &str) -> (String, String) {
     assert!(FINAL_INGRESS.len() <= FINAL_INGRESS_CAP);
     assert_eq!(FINAL_INGRESS.len(), FINAL_INGRESS_LENGTH);
@@ -429,9 +503,11 @@ fn final_ingress_checkpoint(source: &str, expected: &str, current: &str) -> (Str
         assert_eq!(newest["previous_sha256"], row["current_sha256"]);
         let latest_length = usize::try_from(newest["current_length"].as_u64().unwrap()).unwrap();
         let latest_sha = newest["current_sha256"].as_str().unwrap();
-        let latest = final_ingress_file(&root.join(path), latest_length, latest_sha);
+        let (live, latest) = successor_ingress_checkpoint(path, compiled, newest);
+        assert_eq!(latest.len(), latest_length);
+        assert_eq!(digest(&latest), latest_sha);
         assert_eq!(
-            latest, compiled,
+            live, compiled,
             "actual complete compiled and physical final source"
         );
         let latest_archive = newest["current_archive"].as_str().unwrap();
@@ -490,7 +566,8 @@ fn final_ingress_checkpoint(source: &str, expected: &str, current: &str) -> (Str
                 "exact original c874 expected namespace"
             );
             assert!(
-                current == latest
+                current == live
+                    || current == latest
                     || current == physical
                     || current == checkpoint
                     || current == frozen["e24"].as_str().unwrap()
@@ -498,7 +575,7 @@ fn final_ingress_checkpoint(source: &str, expected: &str, current: &str) -> (Str
                     || current == old["before"].as_str().unwrap(),
                 "foreign final ingress stage"
             );
-            let supplied = if current == latest || current == physical {
+            let supplied = if current == live || current == latest || current == physical {
                 checkpoint.clone()
             } else {
                 current.to_owned()

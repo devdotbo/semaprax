@@ -450,6 +450,8 @@ src/cleanup_plan/replay/expression_facts/arena/retained_into.rs
 src/cleanup_plan/replay/expression_facts/arena/retained/into_tests.rs
 src/cleanup_plan/replay/expression_facts/arena/retained/tests.rs
 src/cleanup_plan/replay/expression_facts/arena/prefix.rs
+src/cleanup_plan/replay/expression_facts/arena/prefix/compact.rs
+src/cleanup_plan/replay/expression_facts/arena/prefix/compact_tests.rs
 src/cleanup_plan/replay/expression_facts/arena/producer.rs
 src/cleanup_plan/replay/expression_facts/errors.rs
 src/cleanup_plan/replay/expression_facts/receiving/regions_entry.rs
