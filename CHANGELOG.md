@@ -1,3 +1,8 @@
+## Paired-proof state transfer (2026-10-26)
+
+- Move each complete weighted state into the visited directory after its last borrow, avoiding both component clones. Preserve labels, multiplicities, sorted lookup, logical work, payer authentication and the original backing reservation frontier.
+- Retain the complete prior implementation and its original hostile and byte/work-cut tests alongside an exact actual-type charge and allocation comparison. Builder, replay and loan limits and all public IR fields remain unchanged.
+
 ## Recursive flag query allocation (2026-10-26)
 
 - Compute recursive ownership flags without constructing discarded record and variant layout strings. Childless builtin queries project the existing complete facts directly; the full TypeFacts API, public IR fields and independent owned classifiers remain unchanged.
