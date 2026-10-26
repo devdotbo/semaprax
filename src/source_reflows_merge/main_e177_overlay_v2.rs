@@ -12,7 +12,7 @@ const ADDITIONS: &[&str] = &["src/cleanup_plan/renewal_profile.rs","src/cleanup_
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
 const POLICY_LENGTH: usize = 113812; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "fa362865b386c4ecf97bbedac0ccdb6e1e7974f27d897321b5129659304a05dc";
+const POLICY_SHA256: &str = "a3d8fa77990432bd496fd1e6bb1ae970ead1ecae81dc773a0584468127abad17";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -764,6 +764,11 @@ pub(super) fn value_direct(source: &str, expected: &str, supplied: &str) -> Stri
         result
     }
 }
+// Closed policy membership only; current source/archive bytes are never retained.
+pub(super) fn declares_source(source: &str) -> bool {
+    REPLACEMENTS.contains(&source) || ADDITIONS.contains(&source)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

@@ -1,5 +1,9 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/workspace_graph/diagnostics/borrowed_help_tests.rs" => Some(include_str!("../../src/workspace_graph/diagnostics/borrowed_help_tests.rs")),
+        "src/workspace_graph/expected_projection/call_sites.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/call_sites.rs")),
+        "src/workspace_graph/expected_projection/identity_prebound_tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/identity_prebound_tests.rs")),
+        "src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs")),
         "src/ast/program_source/decl_slices/alias_tests.rs" => Some(include_str!("../../src/ast/program_source/decl_slices/alias_tests.rs")),
         "src/ast/program_source/decl_slices/before_alias.rs" => Some(include_str!("../../src/ast/program_source/decl_slices/before_alias.rs")),
         "src/ast/program_source/function_alias.rs" => Some(include_str!("../../src/ast/program_source/function_alias.rs")),
@@ -308,6 +312,9 @@ mod tests {
         // CURRENT_SCOPE_NORMALIZATION_BEGIN
         // Undo only the complete new wire dispatch and its test view; all old inverses follow.
         let mut v11_root = root.to_owned();
+        let helper = "// Closed policy membership only; current source/archive bytes are never retained.\npub(super) fn declares_source(source: &str) -> bool {\n    REPLACEMENTS.contains(&source) || ADDITIONS.contains(&source)\n}\n\n";
+        assert_eq!(v11_root.matches(helper).count(), 1);
+        v11_root = v11_root.replacen(helper, "", 1);
         let added = "    if page[\"schema\"] == fragments_v3::SCHEMA_V11 {\n        let expanded = fragments_v3::expand_v11(&before, policy, page)?;\n        return compose_values_v2(before, policy, &expanded);\n    }\n";
         assert_eq!(v11_root.matches(added).count(), 1);
         v11_root = v11_root.replacen(added, "", 1);
@@ -432,6 +439,10 @@ mod tests {
         }
         let mut current_scope_child = child.to_owned();
         for source in [
+            "src/workspace_graph/diagnostics/borrowed_help_tests.rs",
+            "src/workspace_graph/expected_projection/call_sites.rs",
+            "src/workspace_graph/expected_projection/identity_prebound_tests.rs",
+            "src/workspace_graph/expected_projection/private_layout/authority_invocation/scratch/tests.rs",
             "tests/workspace/semantic_graph/host_pins.rs",
             "src/cleanup_plan/replay/expression_facts/arena/cursor_tests.rs",
             "tests/wasm/scalar_browser_ci_contract/current_profiles3d81.rs",

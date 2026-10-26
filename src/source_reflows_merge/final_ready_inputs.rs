@@ -218,6 +218,8 @@ fn projection344_stage(supplied: &str) -> String {
     // Authenticate the live49 join before entering the immutable old44 facade. Only
     // this exact, separately pinned live49 join may enter that old facade.
     let live = projection344_live_descriptor();
+    let successor = projection344_successor_join_with(supplied, &mut invocation);
+    let supplied = successor.as_deref().unwrap_or(supplied);
     let phase_prior = projection344_phase_join_with(supplied, &mut invocation);
     let supplied = phase_prior.as_deref().unwrap_or(supplied);
     let supplied = if supplied != current
@@ -348,6 +350,63 @@ fn projection344_phase_test_source_with(
     );
     prior
 }
+// Authenticate the complete new physical join before the unchanged phase
+// observer, live49, old44 and original facade guards below consume old bytes.
+fn projection344_successor_join_with(
+    supplied: &str,
+    invocation: &mut crate::source_reflows_merge::main_e177_final_inputs::ProjectionInvocation,
+) -> Option<String> {
+    if supplied.len() != 650350
+        || digest(supplied) != "cd2bd4c1065642e6494072f54cf6e627eaf778e234d144fe42f6877544e951e5"
+    {
+        return None;
+    }
+    let root = std::path::Path::new(env!("CARGO_MANIFEST_DIR"));
+    let descriptor = projection344_live_descriptor();
+    let mut physical = String::new();
+    let mut previous = String::new();
+    for part in descriptor["parts"].as_array().unwrap() {
+        if let Some(literal) = part["literal"].as_str() {
+            physical.push_str(literal);
+            previous.push_str(literal);
+            continue;
+        }
+        let path = part["source"].as_str().unwrap();
+        let old_length = usize::try_from(part["length"].as_u64().unwrap()).unwrap();
+        let old_sha = part["sha256"].as_str().unwrap();
+        let (length, sha) = match path {
+            "src/workspace_graph/expected_projection/call_carriers.rs" => (12395, "d0f832f517a6037e1c3f8c7f5b1cca79af990ed2837b8c29b38903cb4baa6033"),
+            "src/workspace_graph/expected_projection/call_carriers_tests.rs" => (23994, "04baeff68abf890ab6bfa855969786876b0b91ef59cf685f898b829e14e0c047"),
+            "src/workspace_graph/expected_projection/borrowed_imports/typed.rs" => (20105, "ad172362be3655aacfef822c2834f76d08a2119d33f5774f611058ca7998792b"),
+            "src/workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs" => (9293, "f30d8ceea4d53421be07e2eec5610b9c5f0ac05ff06005f67c74028128157149"),
+            _ => (old_length, old_sha),
+        };
+        let current = reader::read(&root.join(path), length, sha, 2_097_152)
+            .expect("complete current projection part before every historical join");
+        physical.push_str(&current);
+        if path != "src/workspace_graph/expected_projection/call_carriers_tests.rs"
+            && (length != old_length || sha != old_sha)
+        {
+            previous.push_str(
+                &projection344_retained_part_with(path, old_length, old_sha, invocation)
+                    .expect("independent complete predecessor part"),
+            );
+        } else {
+            previous.push_str(&current);
+        }
+    }
+    assert_eq!(
+        physical, supplied,
+        "complete compiled and physical successor join"
+    );
+    assert_eq!(previous.len(), 647939);
+    assert_eq!(
+        digest(&previous),
+        "fe42350bec2fc90ebd37d5aef11786020716c555df70c85c3bf7622a4b4b1e7b"
+    );
+    Some(previous)
+}
+
 fn projection344_phase_join(supplied: &str) -> Option<String> {
     let mut invocation =
         crate::source_reflows_merge::main_e177_final_inputs::ProjectionInvocation::new();
@@ -861,5 +920,53 @@ fn projection344_retained_parts_reject_foreign_compiled_and_requested_tuples() {
         assert!(
             projection344_retained_part_with("unlisted", length, sha, &mut invocation).is_none()
         );
+    }
+}
+
+// Retain every current byte in the complete role audit. This independent old
+// facade is allowed only for the exact test-calibration successor below; its
+// complete production prefix must remain identical to the preserved module.
+pub(super) fn projection_call_sites_facade(supplied: &str) -> String {
+    assert_eq!(supplied.len(), 10899, "whole current call-site source");
+    assert_eq!(
+        digest(supplied),
+        "b349cbfa3c51b46a7203a1051ca27c716df885fcec805ee1ed9f15c0d5de4c8e",
+        "whole current call-site source"
+    );
+    let mut invocation =
+        crate::source_reflows_merge::main_e177_final_inputs::ProjectionInvocation::new();
+    let before = invocation.value_direct(
+        "src/workspace_graph/expected_projection/call_sites.rs",
+        "f5373c1a3f2061b2556b218860d520281d6ab1cb7338d3def2ad4e1ad85abfa0",
+        supplied,
+    );
+    assert_eq!(before.len(), 7352);
+    assert_eq!(
+        digest(&before),
+        "f5373c1a3f2061b2556b218860d520281d6ab1cb7338d3def2ad4e1ad85abfa0"
+    );
+    let marker = "\n#[cfg(test)]\nmod tests {";
+    assert_eq!(supplied.matches(marker).count(), 1);
+    assert_eq!(before.matches(marker).count(), 1);
+    assert_eq!(
+        supplied.split_once(marker).unwrap().0,
+        before.split_once(marker).unwrap().0,
+        "every actual production declaration and body precedes the unchanged test-only module"
+    );
+    before
+}
+#[test]
+fn current_call_site_facade_keeps_complete_modules_production_and_foreign_refusals() {
+    let current = include_str!("../workspace_graph/expected_projection/call_sites.rs");
+    let before = projection_call_sites_facade(current);
+    assert!(current.contains("        pub(super) fn run() {"));
+    assert!(!before.contains("pub(super) fn run() {"));
+    for bad in [
+        String::new(),
+        format!("{current} "),
+        current[..current.len() - 1].to_owned(),
+        format!("{current}\npub(super) fn leaked() {{}}\n"),
+    ] {
+        assert!(std::panic::catch_unwind(|| projection_call_sites_facade(&bad)).is_err());
     }
 }
