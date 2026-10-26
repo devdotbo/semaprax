@@ -10,6 +10,13 @@ pub(super) fn previous(path: &str, length: usize, sha: &str) -> Option<String> {
     let compiled = include_str!(
         "../../workspace_graph/expected_projection/borrowed_imports/tests/full/publication.rs"
     );
+    let before = super::invoice_compiled_stage(
+        SOURCE,
+        9293,
+        "f30d8ceea4d53421be07e2eec5610b9c5f0ac05ff06005f67c74028128157149",
+        compiled,
+    );
+    let compiled = before.as_str();
     assert_eq!(
         (compiled.len(), digest(compiled)),
         (
@@ -105,6 +112,8 @@ pub(super) fn audit_join(supplied: &str) -> Option<String> {
         ("src/workspace_graph/expected_projection/string_slots.rs", include_str!("../../workspace_graph/expected_projection/string_slots.rs"), 11811, "570d9033ca799f4564b0b2f9e90abd82f063747f45cb8f20a3f23a082db09a5f"),
     ];
     for &(path, compiled, length, sha) in PARTS {
+        let before = super::invoice_compiled_stage(path, length, sha, compiled);
+        let compiled = before.as_str();
         assert_eq!((compiled.len(), digest(compiled)), (length, sha.to_owned()));
         if !path.is_empty() {
             let physical = reader::read(&root.join(path), length, sha, 2_097_152)
