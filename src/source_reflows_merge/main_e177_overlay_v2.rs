@@ -12,7 +12,7 @@ const ADDITIONS: &[&str] = &["src/cleanup_plan/renewal_profile.rs","src/cleanup_
 const POLICY_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/policy.json";
 const PAGE_PATH: &str = "docs/evidence/finite-source-overlay-v2-20261018/page.json";
 const POLICY_LENGTH: usize = 114167; // Filled from the complete literal policy below.
-const POLICY_SHA256: &str = "eb69e50569f7d80344007630838c1869cc6a15a3421638ad0f6e323b3902c6d9";
+const POLICY_SHA256: &str = "e6fc4396ab0fc057625ad2a163221c11d6720a3b1cfc4ffeec2aec14a48e2ea1";
 const EXTENSION_PATH: &str = "docs/evidence/fmt-local-441-20261018/extension.json";
 const EXTENSION_LENGTH: usize = 262076;
 const EXTENSION_SHA256: &str = "2af7299253e5cfb027186ba4fc151011a937214ff381c9267bfc11ef7d0003b6";
@@ -49,30 +49,71 @@ fn control(path: &str) -> bool {
     .contains(&path)
 }
 fn canonical(value: &Value) -> Vec<u8> {
+    fn quoted(value: &str, out: &mut String) {
+        let bytes = value.as_bytes();
+        let mut index = 0;
+        while index < bytes.len() {
+            let byte = bytes[index];
+            if !matches!(byte, 0x20..=0x7e) || matches!(byte, b'"' | b'\\') {
+                out.push_str(&serde_json::to_string(value).unwrap());
+                return;
+            }
+            index += 1;
+        }
+        out.push('"');
+        out.push_str(value);
+        out.push('"');
+    }
     fn write(v: &Value, out: &mut String) {
         match v {
             Value::Object(map) => {
                 out.push('{');
-                for (i, (key, value)) in map.iter().collect::<BTreeMap<_, _>>().iter().enumerate() {
-                    if i != 0 {
+                let mut emit = |index: usize, key: &str, value: &Value| {
+                    if index != 0 {
                         out.push(',');
                     }
-                    out.push_str(&serde_json::to_string(key).unwrap());
+                    quoted(key, out);
                     out.push(':');
                     write(value, out);
+                };
+                if map.keys().is_sorted() {
+                    for (index, (key, value)) in map.iter().enumerate() {
+                        emit(index, key, value);
+                    }
+                } else if map.len() <= 16 {
+                    // Borrow every field. Large/unknown dictionaries retain the full fallback.
+                    let mut fields = [None; 16];
+                    for (slot, entry) in fields.iter_mut().zip(map.iter()) {
+                        *slot = Some(entry);
+                    }
+                    let fields = &mut fields[..map.len()];
+                    fields.sort_unstable_by_key(|entry| entry.unwrap().0);
+                    for (index, entry) in fields.iter().enumerate() {
+                        let (key, value) = entry.unwrap();
+                        emit(index, key, value);
+                    }
+                } else {
+                    for (index, (key, value)) in
+                        map.iter().collect::<BTreeMap<_, _>>().iter().enumerate()
+                    {
+                        emit(index, key, value);
+                    }
                 }
                 out.push('}');
             }
             Value::Array(array) => {
                 out.push('[');
-                for (i, value) in array.iter().enumerate() {
-                    if i != 0 {
+                for (index, value) in array.iter().enumerate() {
+                    if index != 0 {
                         out.push(',');
                     }
                     write(value, out);
                 }
                 out.push(']');
             }
+            Value::String(value) => quoted(value, out),
+            Value::Null => out.push_str("null"),
+            Value::Bool(value) => out.push_str(if *value { "true" } else { "false" }),
             _ => out.push_str(&serde_json::to_string(v).unwrap()),
         }
     }
@@ -772,6 +813,108 @@ pub(super) fn declares_source(source: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
+    fn full_before_canonical_serializer(value: &Value) -> Vec<u8> {
+        fn write(v: &Value, out: &mut String) {
+            match v {
+                Value::Object(map) => {
+                    out.push('{');
+                    for (i, (key, value)) in
+                        map.iter().collect::<BTreeMap<_, _>>().iter().enumerate()
+                    {
+                        if i != 0 {
+                            out.push(',');
+                        }
+                        out.push_str(&serde_json::to_string(key).unwrap());
+                        out.push(':');
+                        write(value, out);
+                    }
+                    out.push('}');
+                }
+                Value::Array(array) => {
+                    out.push('[');
+                    for (i, value) in array.iter().enumerate() {
+                        if i != 0 {
+                            out.push(',');
+                        }
+                        write(value, out);
+                    }
+                    out.push(']');
+                }
+                _ => out.push_str(&serde_json::to_string(v).unwrap()),
+            }
+        }
+        let mut result = String::new();
+        write(value, &mut result);
+        result.push('\n');
+        result.into_bytes()
+    }
+
+    #[test]
+    fn canonical_writer_matches_full_before_for_all_json_types_and_unknown_fields() {
+        let special = serde_json::json!({
+            "all_ascii": (0u8..=127).map(char::from).collect::<String>(),
+            "unicode": "é😀\u{2028}",
+            "escaped": "\0\n\r\t\"\\",
+            "numbers": [-0.0, 1.25e90, i64::MIN as f64],
+            "booleans": [true, false],
+            "nothing": null,
+        });
+        for width in 0..=128 {
+            for reverse in [false, true] {
+                let mut fields = serde_json::Map::new();
+                for offset in 0..width {
+                    let index = if reverse { width - offset - 1 } else { offset };
+                    fields.insert(format!("unknown-{index:04}"), special.clone());
+                }
+                let value = Value::Object(fields);
+                let actual = canonical(&value);
+                assert_eq!(actual, full_before_canonical_serializer(&value));
+                assert_eq!(serde_json::from_slice::<Value>(&actual).unwrap(), value);
+            }
+        }
+        let mut exotic_keys = serde_json::Map::new();
+        for key in ["", "\0\n\r\t\"\\", "é😀\u{2028}"] {
+            exotic_keys.insert(key.to_owned(), special.clone());
+        }
+        let exotic_keys = Value::Object(exotic_keys);
+        assert_eq!(
+            canonical(&exotic_keys),
+            full_before_canonical_serializer(&exotic_keys)
+        );
+        assert_eq!(
+            serde_json::from_slice::<Value>(&canonical(&exotic_keys)).unwrap(),
+            exotic_keys
+        );
+        let mut nested = special;
+        for _ in 0..64 {
+            nested = serde_json::json!([nested]);
+        }
+        assert_eq!(
+            canonical(&nested),
+            full_before_canonical_serializer(&nested)
+        );
+    }
+    #[test]
+    fn canonical_writer_preserves_every_field_of_complete_current_metadata_files() {
+        let root = Path::new(env!("CARGO_MANIFEST_DIR"));
+        for path in [
+            "docs/evidence/finite-source-overlay-v2-20261018/page.json",
+            "docs/evidence/finite-source-overlay-v2-20261018/policy.json",
+            "docs/evidence/a3-e47-final-custody-20261016/hir.json",
+            "docs/evidence/a3-e47-final-custody-20261016/projection.json",
+        ] {
+            let raw = std::fs::read(root.join(path)).unwrap();
+            let value: Value = serde_json::from_slice(&raw).unwrap();
+            let actual = canonical(&value);
+            assert_eq!(actual, full_before_canonical_serializer(&value), "{path}");
+            assert_eq!(
+                serde_json::from_slice::<Value>(&actual).unwrap(),
+                value,
+                "{path}"
+            );
+        }
+    }
+
     #[test]
     fn logical_current_view_precedes_stage_normalization_and_preserves_foreign_refusals() {
         let source = "crates/semaprax-native-rust-interop-builder/src/implementation/tests/ledger_capacity/source_inventory.rs";

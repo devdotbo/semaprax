@@ -1,3 +1,7 @@
+## Canonical source-history serialization (2026-10-26)
+
+- Serialize complete canonical source-history metadata with borrowed field ordering and direct printable-ASCII output. Retain the full sorted large-object and serde escaping paths, every field and source check, with complete original-encoder and hostile-input regressions.
+
 ## Paired-proof state transfer (2026-10-26)
 
 - Move each complete weighted state into the visited directory after its last borrow, avoiding both component clones. Preserve labels, multiplicities, sorted lookup, logical work, payer authentication and the original backing reservation frontier.
