@@ -1,3 +1,8 @@
+## Recursive flag query allocation (2026-10-26)
+
+- Compute recursive ownership flags without constructing discarded record and variant layout strings. Childless builtin queries project the existing complete facts directly; the full TypeFacts API, public IR fields and independent owned classifiers remain unchanged.
+- Fund the paid receiver's actual temporary controls through its existing caller ledger. Preserve cache precedence, malformed-type verdicts and all builder/work/loan limits, with complete old-oracle, exact/short/zero-payer and allocation/drop regression controls.
+
 ## Complete constructor source bindings (2026-10-25)
 
 - Authenticate current constructor sources before selecting complete historical cost, capacity and value-owner inputs; retain the original inverse recipes and whole-source comparisons.
