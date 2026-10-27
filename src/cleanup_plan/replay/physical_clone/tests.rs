@@ -91,9 +91,23 @@ fn real_reservation_clone_exact_short_and_zero_retry_keep_first_paid_refusal() {
     // Actual selected setup: affine ledger Box, fixed census stack and paid
     // refusal String. The stack is charged, but makes no heap request.
     let text = function.id.as_str().len() + 512;
+    // Independently enumerate the actual inline direct-anchor receiving
+    // controls added to selected setup. These are stack/inline reservations,
+    // so the original heap-allocation assertion below remains unchanged.
+    let anchor_controls = 3 * size_of::<Option<SelectedDirectAnchor>>()
+        + 2 * size_of::<SelectedDirectAnchor>()
+        + size_of::<crate::bounded_output::classifier_string::ClassifierLedger>()
+        + crate::bounded_output::classifier_string::ClassifierLedger::capture_into_controls()
+        + 2 * size_of::<*const ResolvedFunction>()
+        + 2 * size_of::<&ResolvedFunction>()
+        + size_of::<&mut crate::bounded_output::classifier_string::ClassifierLedger>()
+        + 2 * size_of::<Result<(), physical_storage::PhysicalRefusal>>()
+        + 2 * size_of::<(&mut physical_storage::PhysicalReservation, usize)>()
+        + 2 * size_of::<bool>();
     let setup = size_of::<physical_storage::PhysicalReservation>()
         + 514 * size_of::<Option<(&ResolvedType, usize)>>()
-        + text;
+        + text
+        + anchor_controls;
     let (_, baseline) = measure(|| {
         let budget = ReplayBudget::from_reservation(
             &function,
