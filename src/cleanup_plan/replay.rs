@@ -2877,10 +2877,9 @@ fn hir_skeleton_paths_with_index_storage<'hir>(
     let mut work = if budget.selected() || ordinary_oracle {
         SkeletonWork::checked_with_index(program, function, budget, helpers)?
     } else {
-        // Exactly the old ordinary bootstrap/cursor frontier. No new receiving
-        // owner exists before these earlier errors have been selected.
+        // Bootstrap refusal text before receiving backing. A recursive clone
+        // still acquires and uses its complete real cursor at that clone.
         budget.prepare_builder(function)?;
-        budget.prepare_clone_cursor(function)?;
         budget.reserve_bytes(
             function,
             skeleton_work::receiving::acquisition_bytes(),
@@ -3075,6 +3074,7 @@ fn sequence_skeleton_paths(
     if path_array::main696::selected() {
         return path_array::main696::sequence_skeleton_paths(prefixes, suffixes, work);
     }
+    sequence_vector::inplace_dispatch!(prefixes, suffixes, work);
     let mut prefixes = work.merged_paths(prefixes)?;
     let suffixes = work.merged_suffixes(suffixes)?;
     let share_prefix = work.shares_prefix_tail(&suffixes)?;
@@ -3304,62 +3304,24 @@ fn sequence_skeleton_paths(
 
 use path_summary::has_active_paths;
 
-fn expression_skeleton<'hir>(
-    program: &'hir dyn crate::cleanup::ReplayContext,
-    function: &'hir ResolvedFunction,
-    expression: &'hir ResolvedExpr,
-    work: &mut SkeletonWork<'hir, '_>,
-) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    let (lease, mut frames) = if let Some(storage) = work.continuations.as_mut() {
-        if !storage.matches(program) {
-            return Err(replay_error(
-                function,
-                "typed-HIR continuation storage belongs to another program",
-            ));
-        }
-        storage.acquire(function, work.budget)?
-    } else {
-        (
-            continuation_storage::Lease::Local,
-            match work.budget {
-                ReplayBudget {
-                    payer: AllocationPayer::ActiveBuilder,
-                    lent_skeleton: false,
-                    ..
-                } => continuation_storage::fresh_receiving(function, work.budget)?,
-                // A factored constructor has lent its ordinary allowance to the
-                // original skeleton events. Keep its standalone fixed backing;
-                // incremental relocation needs an independent ordinary account.
-                _ => continuation_storage::fresh(function, work.budget)?,
-            },
-        )
-    };
-    // No directory borrow spans the runner: guards re-enter this same Storage.
-    // A panic still unwinds to invocation Drop, as in the original lease owner.
-    let result = expression_skeleton_run(program, function, expression, work, &mut frames);
-    frames.clear(); // Drop every owned continuation payload before reuse.
-    if let Some(storage) = work.continuations.as_mut() {
-        storage.release(lease, frames);
-    }
-    result
-}
+use continuation_storage::expression_skeleton;
 fn expression_skeleton_run<'hir>(
     program: &'hir dyn crate::cleanup::ReplayContext,
     function: &'hir ResolvedFunction,
     expression: &'hir ResolvedExpr,
     work: &mut SkeletonWork<'hir, '_>,
-    frames: &mut Vec<continuation_storage::Frame<'hir>>,
+    frames: &mut impl continuation_storage::FrameStack<'hir>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    use continuation_storage::{Frame, OwnedStep};
+    use continuation_storage::{Frame, FrameStack, OwnedStep};
 
     macro_rules! push_frame {
         ($frames:expr, $frame:expr) => {{
             if $frames.len() == $frames.capacity() {
-                continuation_storage::reserve_push($frames, function, work.budget)?;
+                continuation_storage::FrameStack::reserve_push($frames, function, work.budget)?;
             }
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();
-            $frames.push($frame);
+            $frames.push_owned($frame, function, work.budget)?;
         }};
     }
 
@@ -3385,9 +3347,9 @@ fn expression_skeleton_run<'hir>(
     /// advance to the next statement, fall through to the tail, or report
     /// settled paths when no active paths remain.
     #[allow(clippy::too_many_arguments)]
-    fn advance_block_value<'a, 'e>(
+    fn advance_block_value<'a, 'e, S: continuation_storage::FrameStack<'e>>(
         function: &'a ResolvedFunction,
-        frames: &mut Vec<Frame<'e>>,
+        frames: &mut S,
         work: &mut SkeletonWork<'_, '_>,
         expression: &'e ResolvedExpr,
         statements: &'e [ResolvedStatement],
@@ -3395,13 +3357,13 @@ fn expression_skeleton_run<'hir>(
         index: usize,
         paths: Vec<ExprSkeletonPath>,
     ) -> Result<Option<Vec<ExprSkeletonPath>>, Diagnostic> {
-        let mut push = |frames: &mut Vec<Frame<'e>>, frame: Frame<'e>| -> Result<(), Diagnostic> {
+        let mut push = |frames: &mut S, frame: Frame<'e>| -> Result<(), Diagnostic> {
             if frames.len() == frames.capacity() {
-                continuation_storage::reserve_push(frames, function, work.budget)?;
+                continuation_storage::FrameStack::reserve_push(frames, function, work.budget)?;
             }
             work.charge(1, "typed-HIR skeleton continuation push")?;
             note_skeleton_materialization();
-            frames.push(frame);
+            frames.push_owned(frame, function, work.budget)?;
             Ok(())
         };
         let next = index + 1;
@@ -3481,7 +3443,7 @@ fn expression_skeleton_run<'hir>(
         step: OwnedStep<'a>,
     }
     let mut active_loops: Vec<ActiveLoop<'_>> = Vec::new();
-    while let Some(frame) = frames.pop() {
+    while let Some(frame) = frames.pop_owned(function, work.budget)? {
         match frame {
             Frame::FinishCopyRegion { previous } => {
                 let paths = produced
@@ -6577,7 +6539,7 @@ fn split_status_paths(
             );
             continue;
         }
-        let mut failure = work.clone_expr_path(&path, "status failure path clone")?;
+        let mut failure = skeleton_work::status_clone!(work, path, "status failure path clone")?;
         let failure_source = work.clone_owned(&source, "failure status-source clone")?;
         work.push_observation(
             &mut failure,
@@ -7004,7 +6966,7 @@ fn plan_skeleton_paths(
                             >(),
                             "branch clone receiving controls",
                         ));
-                        branch = skeleton_clone(
+                        branch = branch_clone::production_capacity::unpaid_clone(
                             budget,
                             function,
                             &observations,
@@ -7190,7 +7152,7 @@ fn plan_skeleton_paths(
                     // nested work/census/payment Results retain their charges.
                     let mut branch;
                     if !budget.pays_allocations() {
-                        branch = skeleton_clone(
+                        branch = branch_clone::production_capacity::unpaid_clone(
                             budget,
                             function,
                             &observations,

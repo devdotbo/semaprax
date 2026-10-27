@@ -388,3 +388,90 @@ fn duplicate_keys_retain_original_key_and_detached_payer_cannot_publish() {
     drop(map);
     drop(owner);
 }
+
+#[test]
+fn full_phase_pair_directory_matches_complete_before_cfg_and_literal_actual_debits() {
+    for uses in [0, 1, 17, 127] {
+        for nested in [false, true] {
+            let (program, index) = boundary_tests::fixture_with_uses(uses, nested);
+            let function = &program.functions[index];
+            let ((before, before_work), refused, before_debit) =
+                with_limit_usage(usize::MAX, || {
+                    let owner = CfgReservation::acquire().unwrap();
+                    let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+                    work.allocation = Some(&owner);
+                    let cfg = paid_cfg::phase_pairs_before_for_test(function, &mut work).unwrap();
+                    assert_eq!(owner.first(), None);
+                    (cfg, work.used)
+                });
+            assert!(!refused);
+            let ((actual, actual_work), refused, actual_debit) =
+                with_limit_usage(usize::MAX, || {
+                    let owner = CfgReservation::acquire().unwrap();
+                    let mut work = WorkCounter::new(MAX_LOAN_PLAN_WORK_V1);
+                    work.allocation = Some(&owner);
+                    let cfg = paid_cfg::build(function, &mut work).unwrap();
+                    assert_eq!(owner.first(), None);
+                    (cfg, work.used)
+                });
+            assert!(!refused);
+            assert_eq!(actual_work, before_work);
+            assert_eq!(actual.points, before.points);
+            assert_eq!(actual.edges, before.edges);
+            assert_eq!(actual.expressions.len(), before.expressions.len());
+            assert_eq!(
+                actual.nodes.complete_len_for_test(),
+                before.nodes.complete_len_for_test()
+            );
+            for (current, prior) in actual.expressions.iter().zip(&before.expressions) {
+                assert!(std::ptr::eq(*current, *prior));
+            }
+            for (ordinal, point) in before.points.iter().enumerate() {
+                assert_eq!(actual.nodes.get(point), before.nodes.get(point));
+                assert_eq!(
+                    actual.successor_edges(ordinal),
+                    before.successor_edges(ordinal)
+                );
+                assert_eq!(actual.predecessors(ordinal), before.predecessors(ordinal));
+                assert!(actual.successors(ordinal).eq(before.successors(ordinal)));
+            }
+            let previous_nodes = 4 * std::mem::size_of::<tree::Node<LoanProgramPoint, u16>>();
+            let current_node = 2 * std::mem::size_of::<tree::Node<ExpressionId, [u16; 2]>>();
+            let pair_receivers =
+                4 * std::mem::size_of::<[u16; 2]>() + 4 * std::mem::size_of::<u16>();
+            let count = actual.expressions.len();
+            let phase_pair_saving = count * (previous_nodes - current_node - pair_receivers)
+                - 2 * std::mem::size_of::<Nodes>();
+            // Literal complete discovery/root-map removal, pending phase nodes,
+            // full optional-pair receivers, and every actual geometric root-ref
+            // backing request. No result/IR bank or predicted type width.
+            let removed_roots =
+                2 * count * std::mem::size_of::<tree::Node<ExpressionId, ExpressionId>>();
+            let phase_nodes = count * current_node;
+            let shared_nodes =
+                2 * count * std::mem::size_of::<tree::Node<ExpressionId, Option<[u16; 2]>>>();
+            let extra_pair_receivers = 4
+                * count
+                * (std::mem::size_of::<Option<[u16; 2]>>() - std::mem::size_of::<[u16; 2]>());
+            let mut root_capacity = 0usize;
+            let mut root_backing = 0usize;
+            for used in 0..count {
+                if used == root_capacity {
+                    root_capacity = (root_capacity * 2).max(used + 1).max(4);
+                    root_backing += root_capacity * std::mem::size_of::<&ResolvedExpr>();
+                }
+            }
+            let extra_headers = std::mem::size_of::<Vec<&ResolvedExpr>>()
+                + 2 * std::mem::size_of::<Map<ExpressionId, Option<[u16; 2]>>>()
+                - std::mem::size_of::<Map<ExpressionId, [u16; 2]>>();
+            let shared_directory_saving = removed_roots + phase_nodes
+                - shared_nodes
+                - extra_pair_receivers
+                - root_backing
+                - extra_headers;
+            let literal_saving = phase_pair_saving + shared_directory_saving;
+            assert_eq!(before_debit - actual_debit, literal_saving);
+            assert!(literal_saving > 0);
+        }
+    }
+}

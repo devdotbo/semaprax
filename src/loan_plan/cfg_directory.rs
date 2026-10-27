@@ -119,6 +119,10 @@ pub(super) fn fresh<T>(payer: &CfgReservation) -> Result<Vec<T>, Diagnostic> {
 pub(super) enum Nodes {
     Legacy(BTreeMap<LoanProgramPoint, u16>),
     Funded(Map<LoanProgramPoint, u16>),
+    // One complete expression key, both actual before/after point identities.
+    // The public point vector retains every complete LoanProgramPoint unchanged.
+    PhasePairs(Map<ExpressionId, [u16; 2]>),
+    PhaseRoots(Map<ExpressionId, Option<[u16; 2]>>),
 }
 impl Nodes {
     #[cfg(test)]
@@ -126,12 +130,31 @@ impl Nodes {
         match self {
             Self::Legacy(values) => values.len(),
             Self::Funded(values) => values.len,
+            Self::PhasePairs(values) => values.len * 2,
+            Self::PhaseRoots(values) => values.len * 2,
         }
     }
     pub(super) fn get(&self, key: &LoanProgramPoint) -> Option<&u16> {
         match self {
             Self::Legacy(values) => values.get(key),
             Self::Funded(values) => values.get(key),
+            Self::PhasePairs(values) => values.get(&key.expression).map(|phases| {
+                &phases[match key.phase {
+                    LoanPointPhase::Before => 0,
+                    LoanPointPhase::After => 1,
+                }]
+            }),
+            Self::PhaseRoots(values) => {
+                values
+                    .get(&key.expression)
+                    .and_then(Option::as_ref)
+                    .map(|phases| {
+                        &phases[match key.phase {
+                            LoanPointPhase::Before => 0,
+                            LoanPointPhase::After => 1,
+                        }]
+                    })
+            }
         }
     }
 }

@@ -1,5 +1,10 @@
 pub(super) fn compiled(source: &str) -> Option<&'static str> {
     match source {
+        "src/cleanup_plan/replay/continuation_storage/boxed_frames.rs" => Some(include_str!("../../src/cleanup_plan/replay/continuation_storage/boxed_frames.rs")),
+        "src/cleanup_plan/replay/factored/unpaid_continuation_receiver.rs" => Some(include_str!("../../src/cleanup_plan/replay/factored/unpaid_continuation_receiver.rs")),
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/reference_coverage.rs" => Some(include_str!("../../src/cleanup_plan/replay/expression_facts/receiving/retained/reference_coverage.rs")),
+        "src/loan_plan/root_directory_before.rs" => Some(include_str!("../../src/loan_plan/root_directory_before.rs")),
+        "src/loan_plan/phase_pairs_before.rs" => Some(include_str!("../../src/loan_plan/phase_pairs_before.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports_original.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports_original.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/tests.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests.rs")),
         "src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs" => Some(include_str!("../../src/workspace_graph/expected_projection/borrowed_imports/tests/full.rs")),

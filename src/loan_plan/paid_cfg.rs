@@ -1,6 +1,27 @@
 //! Identical CFG construction/order with explicit caller-paid actual storage.
 use super::*;
 
+#[allow(
+    dead_code,
+    reason = "Retain the complete independently compiled pre-phase-pair builder."
+)]
+#[path = "phase_pairs_before.rs"]
+mod phase_pairs_before;
+#[allow(
+    dead_code,
+    reason = "Complete independently compiled pre-shared-directory builder."
+)]
+#[path = "root_directory_before.rs"]
+mod root_directory_before;
+
+#[cfg(test)]
+pub(super) fn phase_pairs_before_for_test<'a>(
+    function: &'a ResolvedFunction,
+    work: &mut WorkCounter,
+) -> Result<Cfg<'a>, Diagnostic> {
+    phase_pairs_before::build(function, work)
+}
+
 pub(super) fn build<'a>(
     function: &'a ResolvedFunction,
     work: &mut WorkCounter,
@@ -20,7 +41,8 @@ pub(super) fn build<'a>(
         work.allocation,
     )?;
     let mut expressions = cfg_directory::fresh(payer)?;
-    let mut root_by_expression = cfg_directory::Map::<ExpressionId, ExpressionId>::new(payer)?;
+    let mut expression_roots = cfg_directory::fresh(payer)?;
+    let mut root_by_expression = cfg_directory::Map::<ExpressionId, Option<[u16; 2]>>::new(payer)?;
     let mut pending = cfg_directory::fresh(payer)?;
     storage::extend(
         &mut pending,
@@ -40,10 +62,11 @@ pub(super) fn build<'a>(
         cfg_directory::map_insert(
             &mut root_by_expression,
             expression.id.clone(),
-            root.id.clone(),
+            None,
             work.allocation,
         )?;
         storage::push(&mut expressions, expression, work.allocation)?;
+        storage::push(&mut expression_roots, root, work.allocation)?;
         // Acquire at the original child frontier, after work/identity checks.
         // Only borrowed references enter this one invocation-owned scratch.
         if child_scratch.is_none() {
@@ -75,16 +98,38 @@ pub(super) fn build<'a>(
         return Err(error("function exceeds 4,096 loan program points"));
     }
     let mut points = cfg_directory::vector(node_count, payer)?;
-    let mut nodes = cfg_directory::Map::new(payer)?;
+    // Move the complete discovery directory; do not clone keys or root IR.
+    payer
+        .reserve(2 * std::mem::size_of::<cfg_directory::Map<ExpressionId, Option<[u16; 2]>>>())
+        .map_err(|_| storage::marker())?;
+    let mut nodes = root_by_expression;
     for expression in &expressions {
+        // MAX_LOAN_ENDPOINTS_V1 above bounds the complete pair below 4096.
+        // Price the real pair's initializer/argument/receiving copies and both
+        // actual index values; Map independently pays its complete actual node.
+        payer
+            .reserve(4 * std::mem::size_of::<Option<[u16; 2]>>() + 4 * std::mem::size_of::<u16>())
+            .map_err(|_| storage::marker())?;
+        let before =
+            u16::try_from(points.len()).map_err(|_| error("CFG point identity overflows"))?;
         for phase in [LoanPointPhase::Before, LoanPointPhase::After] {
             let point = point(expression, phase);
-            let id =
-                u16::try_from(points.len()).map_err(|_| error("CFG point identity overflows"))?;
-            cfg_directory::map_insert(&mut nodes, point.clone(), id, work.allocation)?;
             storage::push(&mut points, point, work.allocation)?;
         }
+        cfg_directory::map_insert(
+            &mut nodes,
+            expression.id.clone(),
+            Some([before, before + 1]),
+            work.allocation,
+        )?;
     }
+    // The full ordinary point lookup remains the sole interface in CFG assembly.
+    // Pay the actual complete enum's initializer and receiving value before it
+    // owns the same complete phase-pair map that the final Cfg will retain.
+    payer
+        .reserve(2 * std::mem::size_of::<cfg_directory::Nodes>())
+        .map_err(|_| storage::marker())?;
+    let nodes = cfg_directory::Nodes::PhaseRoots(nodes);
     let node = |expression: &ResolvedExpr, phase: LoanPointPhase| {
         nodes
             .get(&point(expression, phase))
@@ -92,12 +137,15 @@ pub(super) fn build<'a>(
             .ok_or_else(|| error("CFG child point is not indexed"))
     };
     let root_after = |expression: &ResolvedExpr| {
-        let root = root_by_expression
-            .get(&expression.id)
+        let before = nodes
+            .get(&point(expression, LoanPointPhase::Before))
+            .ok_or_else(|| error("CFG expression lacks a function-exit root"))?;
+        let root = expression_roots
+            .get(usize::from(*before) / 2)
             .ok_or_else(|| error("CFG expression lacks a function-exit root"))?;
         nodes
             .get(&LoanProgramPoint {
-                expression: root.clone(),
+                expression: root.id.clone(),
                 phase: LoanPointPhase::After,
             })
             .copied()
@@ -107,7 +155,7 @@ pub(super) fn build<'a>(
     let _edges_stage = crate::bounded_output::reservation_stage_guard(
         crate::bounded_output::ReservationStage::LoanCfgEdges,
     );
-    let mut edge_set = cfg_directory::Set::<(u16, u16)>::new(payer)?;
+    let mut edge_pairs = cfg_directory::fresh::<(u16, u16)>(payer)?;
     for expression in &expressions {
         charge(work)?;
         let before = node(expression, LoanPointPhase::Before)?;
@@ -115,18 +163,18 @@ pub(super) fn build<'a>(
         match &expression.kind {
             ResolvedExprKind::LexicalExit { kind, value, .. } => {
                 if let Some(value) = value {
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (before, node(value, LoanPointPhase::Before)?),
                         work.allocation,
                     )?;
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (node(value, LoanPointPhase::After)?, after),
                         work.allocation,
                     )?;
                 } else {
-                    cfg_directory::set_insert(&mut edge_set, (before, after), work.allocation)?;
+                    storage::push(&mut edge_pairs, (before, after), work.allocation)?;
                 }
                 let destination = if *kind == crate::ast::LexicalExitKind::Return {
                     root_after(expression)?
@@ -136,7 +184,7 @@ pub(super) fn build<'a>(
                         LoanPointPhase::Before,
                     )?
                 };
-                cfg_directory::set_insert(&mut edge_set, (after, destination), work.allocation)?;
+                storage::push(&mut edge_pairs, (after, destination), work.allocation)?;
             }
             ResolvedExprKind::Block { statements, tail }
             | ResolvedExprKind::VecConstructor {
@@ -146,8 +194,8 @@ pub(super) fn build<'a>(
                     .first()
                     .map(statement_entry)
                     .unwrap_or(tail.as_ref());
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (before, node(entry, LoanPointPhase::Before)?),
                     work.allocation,
                 )?;
@@ -163,16 +211,16 @@ pub(super) fn build<'a>(
                         | ResolvedStatement::LexicalWhile {
                             condition, body, ..
                         } => {
-                            cfg_directory::set_insert(
-                                &mut edge_set,
+                            storage::push(
+                                &mut edge_pairs,
                                 (
                                     node(condition, LoanPointPhase::After)?,
                                     node(body, LoanPointPhase::Before)?,
                                 ),
                                 work.allocation,
                             )?;
-                            cfg_directory::set_insert(
-                                &mut edge_set,
+                            storage::push(
+                                &mut edge_pairs,
                                 (
                                     node(condition, LoanPointPhase::After)?,
                                     node(next, LoanPointPhase::Before)?,
@@ -180,8 +228,8 @@ pub(super) fn build<'a>(
                                 work.allocation,
                             )?;
                             if body.ty != ResolvedType::Never {
-                                cfg_directory::set_insert(
-                                    &mut edge_set,
+                                storage::push(
+                                    &mut edge_pairs,
                                     (
                                         node(body, LoanPointPhase::After)?,
                                         node(condition, LoanPointPhase::Before)?,
@@ -191,8 +239,8 @@ pub(super) fn build<'a>(
                             }
                         }
                         _ => {
-                            cfg_directory::set_insert(
-                                &mut edge_set,
+                            storage::push(
+                                &mut edge_pairs,
                                 (
                                     node(statement_exit(statement), LoanPointPhase::After)?,
                                     node(next, LoanPointPhase::Before)?,
@@ -203,8 +251,8 @@ pub(super) fn build<'a>(
                     }
                 }
                 if tail.ty != ResolvedType::Never {
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (node(tail, LoanPointPhase::After)?, after),
                         work.allocation,
                     )?;
@@ -215,21 +263,21 @@ pub(super) fn build<'a>(
                 then_branch,
                 else_branch,
             } => {
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (before, node(condition, LoanPointPhase::Before)?),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (
                         node(condition, LoanPointPhase::After)?,
                         node(then_branch, LoanPointPhase::Before)?,
                     ),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (
                         node(condition, LoanPointPhase::After)?,
                         node(else_branch, LoanPointPhase::Before)?,
@@ -237,15 +285,15 @@ pub(super) fn build<'a>(
                     work.allocation,
                 )?;
                 if then_branch.ty != ResolvedType::Never {
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (node(then_branch, LoanPointPhase::After)?, after),
                         work.allocation,
                     )?;
                 }
                 if else_branch.ty != ResolvedType::Never {
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (node(else_branch, LoanPointPhase::After)?, after),
                         work.allocation,
                     )?;
@@ -256,26 +304,26 @@ pub(super) fn build<'a>(
                 left,
                 right,
             } => {
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (before, node(left, LoanPointPhase::Before)?),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (
                         node(left, LoanPointPhase::After)?,
                         node(right, LoanPointPhase::Before)?,
                     ),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (node(left, LoanPointPhase::After)?, after),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (node(right, LoanPointPhase::After)?, after),
                     work.allocation,
                 )?;
@@ -283,15 +331,15 @@ pub(super) fn build<'a>(
             ResolvedExprKind::Match {
                 scrutinee, arms, ..
             } => {
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (before, node(scrutinee, LoanPointPhase::Before)?),
                     work.allocation,
                 )?;
                 for (index, arm) in arms.iter().enumerate() {
                     let entry = arm.guard.as_deref().unwrap_or(&arm.value);
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (
                             node(scrutinee, LoanPointPhase::After)?,
                             node(entry, LoanPointPhase::Before)?,
@@ -299,8 +347,8 @@ pub(super) fn build<'a>(
                         work.allocation,
                     )?;
                     if let Some(guard) = &arm.guard {
-                        cfg_directory::set_insert(
-                            &mut edge_set,
+                        storage::push(
+                            &mut edge_pairs,
                             (
                                 node(guard, LoanPointPhase::After)?,
                                 node(&arm.value, LoanPointPhase::Before)?,
@@ -309,8 +357,8 @@ pub(super) fn build<'a>(
                         )?;
                         if let Some(next) = arms.get(index + 1) {
                             let next = next.guard.as_deref().unwrap_or(&next.value);
-                            cfg_directory::set_insert(
-                                &mut edge_set,
+                            storage::push(
+                                &mut edge_pairs,
                                 (
                                     node(guard, LoanPointPhase::After)?,
                                     node(next, LoanPointPhase::Before)?,
@@ -320,8 +368,8 @@ pub(super) fn build<'a>(
                         }
                     }
                     if arm.value.ty != ResolvedType::Never {
-                        cfg_directory::set_insert(
-                            &mut edge_set,
+                        storage::push(
+                            &mut edge_pairs,
                             (node(&arm.value, LoanPointPhase::After)?, after),
                             work.allocation,
                         )?;
@@ -330,18 +378,18 @@ pub(super) fn build<'a>(
             }
             ResolvedExprKind::Try { operand, .. } | ResolvedExprKind::TryOption { operand, .. } => {
                 let operand_after = node(operand, LoanPointPhase::After)?;
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (before, node(operand, LoanPointPhase::Before)?),
                     work.allocation,
                 )?;
-                cfg_directory::set_insert(&mut edge_set, (operand_after, after), work.allocation)?;
+                storage::push(&mut edge_pairs, (operand_after, after), work.allocation)?;
                 // `?` has two semantic successors: normal unwrapping and an
                 // immediate residual return from this contract/body root.
                 // Keeping the residual edge distinct makes a later loan use
                 // live only on the normal path and terminates it on return.
-                cfg_directory::set_insert(
-                    &mut edge_set,
+                storage::push(
+                    &mut edge_pairs,
                     (operand_after, root_after(expression)?),
                     work.allocation,
                 )?;
@@ -349,15 +397,15 @@ pub(super) fn build<'a>(
             _ => {
                 let mut children = evaluation_children(expression);
                 if let Some(first) = children.next() {
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (before, node(first, LoanPointPhase::Before)?),
                         work.allocation,
                     )?;
                     let mut last = first;
                     for next in children {
-                        cfg_directory::set_insert(
-                            &mut edge_set,
+                        storage::push(
+                            &mut edge_pairs,
                             (
                                 node(last, LoanPointPhase::After)?,
                                 node(next, LoanPointPhase::Before)?,
@@ -366,18 +414,30 @@ pub(super) fn build<'a>(
                         )?;
                         last = next;
                     }
-                    cfg_directory::set_insert(
-                        &mut edge_set,
+                    storage::push(
+                        &mut edge_pairs,
                         (node(last, LoanPointPhase::After)?, after),
                         work.allocation,
                     )?;
                 } else {
-                    cfg_directory::set_insert(&mut edge_set, (before, after), work.allocation)?;
+                    storage::push(&mut edge_pairs, (before, after), work.allocation)?;
                 }
             }
         }
     }
-    let edges = edge_set.into_vec(payer)?;
+    // These are private CFG metadata edges. Their prior AVL collector emitted
+    // lexicographic unique pairs; preserve that complete publication order.
+    payer
+        .reserve(
+            2 * std::mem::size_of::<&mut [(u16, u16)]>()
+                + 2 * std::mem::size_of::<&mut Vec<(u16, u16)>>()
+                + std::mem::size_of::<usize>()
+                + std::mem::size_of::<std::cmp::Ordering>(),
+        )
+        .map_err(|_| storage::marker())?;
+    edge_pairs.sort_unstable();
+    edge_pairs.dedup();
+    let edges = edge_pairs;
     if edges.len() > MAX_LOAN_EDGES_V1 {
         return Err(error("function exceeds 4,096 loan CFG edges"));
     }
@@ -391,7 +451,7 @@ pub(super) fn build<'a>(
         .map_err(|_| storage::marker())?;
     Ok(Cfg {
         points,
-        nodes: cfg_directory::Nodes::Funded(nodes),
+        nodes,
         expressions,
         edges,
         adjacency,

@@ -642,3 +642,312 @@ fn retained_owned_search_real_receiving_frontiers_keep_full_diagnostics_sticky_f
     assert!(zero.error.is_some());
     assert_eq!(zero.paid, 0);
 }
+
+fn inplace_fixture_inputs(
+    function: &ResolvedFunction,
+    count: usize,
+    mode: usize,
+) -> Vec<ExprSkeletonPath> {
+    let mut paths = inputs(function, count);
+    for (index, path) in paths.iter_mut().enumerate() {
+        let active = match mode {
+            0 => false,
+            1 => index == 0,
+            2 => index + 1 == count,
+            3 => index == count / 2,
+            4 => index % 2 == 0,
+            _ => true,
+        };
+        path.failed = !active && index % 2 == 0;
+        path.residual = !active && index % 2 != 0;
+        if let Some(place) = path.owned_source.as_mut() {
+            place
+                .projections
+                .push(DeclarationId::new(format!("inplace.projection.{index}.é")));
+        }
+    }
+    paths
+}
+
+#[test]
+fn inplace_active_receiver_preserves_complete_old_ordered_languages_and_every_path_field() {
+    let program = fixture();
+    let function = &program.functions[0];
+    for count in [0, 1, 2, 7, 8, 9, 15, 16, 17, 32, 257] {
+        for suffix_count in [2, 3, 8] {
+            for mode in 0..6 {
+                let prefixes = inplace_fixture_inputs(function, count, mode);
+                let suffixes = inputs(function, suffix_count);
+                let mut old_budget = ReplayBudget::new();
+                old_budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                old_budget.merge_paths = false;
+                let mut old_work =
+                    SkeletonWork::with_index(&program, function, &mut old_budget, None).unwrap();
+                let expected = super::before::sequence_skeleton_paths(
+                    prefixes.clone(),
+                    &suffixes,
+                    &mut old_work,
+                )
+                .unwrap();
+                let expected = skeleton_work::merge_keys_tests::snapshot(
+                    expected.into_iter().map(|path| (path, vec![])).collect(),
+                );
+                old_work.release_observation_scratch_for_test();
+                drop(old_work);
+                let (actual, refused, _, receipt) =
+                    crate::bounded_output::with_limit_usage_refusal(usize::MAX, || {
+                        let mut budget = ReplayBudget::new();
+                        budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                        budget.merge_paths = false;
+                        let mut work =
+                            SkeletonWork::with_index(&program, function, &mut budget, None)
+                                .unwrap();
+                        let mut prefixes = work
+                            .clone_owned(&prefixes, "inplace fixture prefix backing")
+                            .unwrap();
+                        let suffixes = work
+                            .clone_owned(&suffixes, "inplace fixture suffix backing")
+                            .unwrap();
+                        let additional = prefixes.len().checked_mul(suffixes.len()).unwrap_or(0);
+                        work.budget
+                            .reserve_vec(
+                                function,
+                                &mut prefixes,
+                                additional,
+                                "inplace fixture spare caller capacity",
+                            )
+                            .unwrap();
+                        let pointer = prefixes.as_ptr();
+                        let result =
+                            super::super::sequence_skeleton_paths(prefixes, &suffixes, &mut work)
+                                .unwrap();
+                        if (8..=256).contains(&count) {
+                            assert_eq!(
+                                result.as_ptr(),
+                                pointer,
+                                "actual ordinary entry reused the full caller vector"
+                            );
+                        }
+                        work.release_observation_scratch_for_test();
+                        drop(work);
+                        drop(budget);
+                        skeleton_work::merge_keys_tests::snapshot(
+                            result.into_iter().map(|path| (path, vec![])).collect(),
+                        )
+                    });
+                assert!(!refused && receipt.is_none());
+                assert_eq!(actual,expected,"full fields and prefix-major/suffix-minor order count={count} suffix={suffix_count} mode={mode}");
+            }
+        }
+    }
+}
+
+#[test]
+fn inplace_actual_receiving_zero_short_exact_floor_sticky_and_full_drop() {
+    use crate::bounded_output::{active_remaining, set_active_floor, with_limit_usage_refusal};
+    use crate::test_allocation_observer::{current_metrics, measure};
+    let program = fixture();
+    let function = &program.functions[0];
+    let prefixes = inplace_fixture_inputs(function, 16, 4);
+    let suffixes = inputs(function, 3);
+    let run = |available: usize, floor: usize| {
+        with_limit_usage_refusal(available.saturating_add(floor), || {
+            assert!(set_active_floor(floor));
+            measure(|| {
+                let mut budget = ReplayBudget::new();
+                budget.skeleton_remaining = MAX_REPLAY_WORK_UNITS;
+                budget.merge_paths = false;
+                let result = (|| {
+                    let mut work = SkeletonWork::with_index(&program, function, &mut budget, None)?;
+                    let mut prefixes =
+                        work.clone_owned(&prefixes, "inplace actual caller prefix clone")?;
+                    let suffixes =
+                        work.clone_owned(&suffixes, "inplace actual caller suffix clone")?;
+                    work.budget.reserve_vec(
+                        function,
+                        &mut prefixes,
+                        32,
+                        "inplace actual caller spare capacity",
+                    )?;
+                    let result =
+                        super::super::sequence_skeleton_paths(prefixes, &suffixes, &mut work);
+                    drop(suffixes);
+                    work.release_observation_scratch_for_test();
+                    result
+                })();
+                let admitted = result.is_ok();
+                if let Err(error) = &result {
+                    assert_eq!(error.code, "SPX-H006");
+                    let remaining = active_remaining();
+                    let before = current_metrics();
+                    let retry = budget
+                        .reserve_bytes(function, 0, "inplace sticky zero retry")
+                        .unwrap_err();
+                    assert_eq!(retry, Diagnostic::io("SPX-H006", String::new()));
+                    drop(retry);
+                    assert_eq!(current_metrics(), before);
+                    assert_eq!(active_remaining(), remaining);
+                }
+                drop(result);
+                drop(budget);
+                admitted
+            })
+        })
+    };
+    let ((admitted, metrics), refused, exact, receipt) = run(usize::MAX, 0);
+    assert!(admitted && !refused && receipt.is_none() && !metrics.invalid);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(metrics.allocated, metrics.freed);
+    for floor in [0, 37] {
+        for available in [0, exact / 4, exact / 2, exact - 1, exact, exact + 1] {
+            let ((admitted, metrics), refused, paid, receipt) = run(available, floor);
+            assert_eq!(admitted, available >= exact);
+            assert_eq!(refused, available < exact);
+            assert!(!metrics.invalid);
+            assert_eq!(metrics.live, 0);
+            assert_eq!(metrics.allocated, metrics.freed);
+            if admitted {
+                assert_eq!(paid, exact);
+                assert!(receipt.is_none());
+            } else {
+                assert!(receipt.is_some());
+                assert!(paid <= available);
+            }
+        }
+    }
+}
+
+#[test]
+fn unpaid_status_clone_preserves_whole_original_outputs_errors_work_and_drop() {
+    fn before(
+        paths: Vec<ExprSkeletonPath>,
+        source: StatusSourceId,
+        work: &mut SkeletonWork<'_, '_>,
+    ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+        #[cfg(test)]
+        if path_array::main696::selected() {
+            return path_array::main696::split_status_paths(paths, source, work);
+        }
+        let mut results = Vec::new();
+        let minimum = path_array::count!(work, false, paths.len(), "status path capacity");
+        path_array::select!(first, minimum, &results, work);
+        for mut path in paths {
+            if path.failed || path.residual {
+                path_array::push!(
+                    work,
+                    first,
+                    minimum,
+                    &mut results,
+                    path,
+                    "short-circuited status path"
+                );
+                continue;
+            }
+            let mut failure = work.clone_expr_path(&path, "status failure path clone")?;
+            let failure_source = work.clone_owned(&source, "failure status-source clone")?;
+            work.push_observation(
+                &mut failure,
+                SkeletonObservation::Status {
+                    source: failure_source,
+                    success: false,
+                },
+                "status failure observation",
+            )?;
+            failure.failed = true;
+            failure.owned_source = None;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                failure,
+                "status failure path"
+            );
+            let success_source = work.clone_owned(&source, "success status-source clone")?;
+            work.push_observation(
+                &mut path,
+                SkeletonObservation::Status {
+                    source: success_source,
+                    success: true,
+                },
+                "status success observation",
+            )?;
+            path.owned_source = None;
+            path_array::push!(
+                work,
+                first,
+                minimum,
+                &mut results,
+                path,
+                "status success path"
+            );
+        }
+        Ok(results)
+    }
+    let program = fixture();
+    let function = &program.functions[0];
+    for count in [0, 1, 4, 16, 64] {
+        let mut paths = inplace_fixture_inputs(function, count, 5);
+        for (index, path) in paths.iter_mut().enumerate() {
+            let observation = path.observations.items[0].clone();
+            path.observations
+                .items
+                .extend(std::iter::repeat_n(observation, index % 8));
+        }
+        for allowance in [0, 1, 2, 8, 32, 4096, MAX_REPLAY_WORK_UNITS] {
+            let mut observations = Vec::new();
+            for old in [true, false] {
+                let held = paths.clone();
+                let mut budget = ReplayBudget::with_skeleton_limit(allowance);
+                let mut work =
+                    SkeletonWork::with_index(&program, function, &mut budget, None).unwrap();
+                let source = StatusSourceId {
+                    expression: function.body.id.clone(),
+                    lane: StatusLane::OperationFailure,
+                };
+                let start = skeleton_materializations();
+                let result = if old {
+                    before(held, source, &mut work)
+                } else {
+                    crate::cleanup_plan::replay::split_status_paths(held, source, &mut work)
+                };
+                let events = skeleton_materializations() - start;
+                let result = result.map(|paths| {
+                    skeleton_work::merge_keys_tests::snapshot(
+                        paths.into_iter().map(|path| (path, vec![])).collect(),
+                    )
+                });
+                work.release_observation_scratch_for_test();
+                drop(work);
+                observations.push((result, events, budget.remaining, budget.skeleton_remaining));
+            }
+            assert_eq!(observations[0],observations[1],"every path field/observation, diagnostic, original work and materialization count; count={count} allowance={allowance}");
+            // Held full input paths and constructor setup are excluded equally.
+            // Every new split allocation, error and complete result Drop is
+            // observed, without carrying snapshots out of the window.
+            for old in [true, false] {
+                let held = paths.clone();
+                let mut budget = ReplayBudget::with_skeleton_limit(allowance);
+                let mut work =
+                    SkeletonWork::with_index(&program, function, &mut budget, None).unwrap();
+                let source = StatusSourceId {
+                    expression: function.body.id.clone(),
+                    lane: StatusLane::OperationFailure,
+                };
+                let ((), metrics) = crate::test_allocation_observer::measure(|| {
+                    let result = if old {
+                        before(held, source, &mut work)
+                    } else {
+                        crate::cleanup_plan::replay::split_status_paths(held, source, &mut work)
+                    };
+                    drop(result);
+                    work.release_observation_scratch_for_test();
+                    drop(work);
+                });
+                assert!(!metrics.invalid);
+                assert_eq!(metrics.live, 0);
+                assert_eq!(metrics.allocated, metrics.freed);
+            }
+        }
+    }
+}

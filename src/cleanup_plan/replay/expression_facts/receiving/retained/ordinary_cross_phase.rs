@@ -1156,7 +1156,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
                                 budget,
                                 &statuses,
                             )?;
-                            structural_maps::validate_reference_coverage(function, budget)?;
+                            super::reference_coverage::validate(function, budget, &statuses)?;
                             structural_control::validate_ordinary_cfg(function, budget)?;
                             if !cleanup_inert_path_product_can_be_summarized(function)?
                                 && !status_only_paths_can_be_summarized(function)
@@ -1465,7 +1465,7 @@ pub(in crate::cleanup_plan::replay) fn validate_structure_with_budget_storage<'h
         budget,
         &statuses,
     )?;
-    structural_maps::validate_reference_coverage(function, budget)?;
+    super::reference_coverage::validate(function, budget, &statuses)?;
     structural_control::validate_ordinary_cfg(function, budget)?;
     if !cleanup_inert_path_product_can_be_summarized(function)?
         && !status_only_paths_can_be_summarized(function)

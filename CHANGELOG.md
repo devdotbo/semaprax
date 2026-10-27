@@ -1,3 +1,7 @@
+## Replay and loan scratch allocation (2026-10-27)
+
+- Reduce transient replay history, continuation, path-join, and loan-directory allocation while preserving complete checked HIR, canonical plans, diagnostics, work limits, and independent comparisons. Keep the original allocation and failure controls and add full prior-producer comparisons for the changed storage paths.
+
 ## Canonical source-history serialization (2026-10-26)
 
 - Serialize complete canonical source-history metadata with borrowed field ordering and direct printable-ASCII output. Retain the full sorted large-object and serde escaping paths, every field and source check, with complete original-encoder and hostile-input regressions.

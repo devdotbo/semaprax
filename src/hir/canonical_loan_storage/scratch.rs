@@ -4,6 +4,7 @@ use super::*;
 #[derive(Default)]
 pub(super) struct Scratch {
     pub(super) local: Vec<(LoanId, usize)>,
-    pub(super) liveness: Vec<(LiveKey, Option<usize>, usize)>,
+    // Source occurrence until full validation, then the derived origin ordinal.
+    pub(super) liveness: Vec<(LiveKey, usize)>,
     pub(super) ids: Vec<(IdKey, LoanId, usize)>,
 }

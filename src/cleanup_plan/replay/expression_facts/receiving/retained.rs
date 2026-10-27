@@ -840,3 +840,5 @@ mod ordinary_cross_phase_before_receiving;
 #[allow(dead_code, reason = "complete immediate receiver retains its original historical child")]
 #[rustfmt::skip]
 mod ordinary_block_before;
+
+mod reference_coverage;

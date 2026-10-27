@@ -2,11 +2,11 @@
 use super::*;
 
 pub(in crate::cleanup_plan::replay) const DIRECTORY_CONTROLS: usize = std::mem::size_of::<Vec<usize>>()
-    + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + 2 * std::mem::size_of::<Result<(), crate::cleanup_plan::replay::physical_budget::ByteFailure>>()
     + 2 * std::mem::size_of::<(&ResolvedFunction, &mut ReplayBudget, usize, &str)>()
     // Subsequent per-input acquisition call, before its count/Result forms.
     + 2 * std::mem::size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
-    + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + 2 * std::mem::size_of::<Result<(), crate::cleanup_plan::replay::physical_budget::ByteFailure>>()
     + 2 * std::mem::size_of::<usize>();
 
 pub(in crate::cleanup_plan::replay) fn compare_paths(
@@ -42,11 +42,13 @@ impl SkeletonWork<'_, '_> {
         type Group = (ExprSkeletonPath, Vec<Observations>);
         // The directory stores indices, never references into relocatable groups.
         // Its header is new storage and is acquired before construction.
-        self.budget.reserve_bytes(
-            self.function,
-            DIRECTORY_CONTROLS,
-            "factored borrowed merge directory",
-        )?;
+        crate::cleanup_plan::replay::physical_budget::compact_try!(self
+            .budget
+            .reserve_compact_bytes(
+                self.function,
+                DIRECTORY_CONTROLS,
+                "factored borrowed merge directory",
+            ));
         super::merge_search::initialize!(self, search);
         let mut order = Vec::<usize>::new();
         let mut groups = Vec::<Group>::new();
@@ -148,11 +150,13 @@ impl SkeletonWork<'_, '_> {
         type Group = (CallSkeletonState, Vec<Observations>);
         // The directory stores indices, never references into relocatable groups.
         // Its header is new storage and is acquired before construction.
-        self.budget.reserve_bytes(
-            self.function,
-            DIRECTORY_CONTROLS,
-            "factored borrowed merge directory",
-        )?;
+        crate::cleanup_plan::replay::physical_budget::compact_try!(self
+            .budget
+            .reserve_compact_bytes(
+                self.function,
+                DIRECTORY_CONTROLS,
+                "factored borrowed merge directory",
+            ));
         super::merge_search::initialize!(self, search);
         let mut order = Vec::<usize>::new();
         let mut groups = Vec::<Group>::new();

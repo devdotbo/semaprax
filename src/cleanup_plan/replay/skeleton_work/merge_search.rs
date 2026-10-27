@@ -11,6 +11,10 @@ pub(in crate::cleanup_plan::replay) struct SearchOwner {
     pub position: usize,
     pub found: bool,
     pub ordering: Ordering,
+    // Primitive terminal operands/results occupy this actual paid owner.
+    pub terminal_low: usize,
+    pub terminal_high: usize,
+    pub terminal: bool,
 }
 // Three lexical reserve sites, but only TWO new caller frames: query and step.
 // The path/call setup uses the existing subsequent acquisition already prepaid
@@ -21,7 +25,7 @@ pub(in crate::cleanup_plan::replay) struct SearchOwner {
 // At each sequential primitive site success is (), a sole owning error exits;
 // no compound search Result or closure is constructed or retained.
 const PAYMENT: usize = 2 * size_of::<(&mut ReplayBudget, &ResolvedFunction, usize, &str)>()
-    + 2 * size_of::<Result<(), Diagnostic>>();
+    + 2 * size_of::<Result<(), crate::cleanup_plan::replay::physical_budget::ByteFailure>>();
 pub(in crate::cleanup_plan::replay) const OWNER_CONTROLS: usize =
     size_of::<SearchOwner>() + 2 * PAYMENT;
 // Each query's Vec::len actual/formal refs and returned usize. Zero/false
@@ -64,20 +68,21 @@ pub(in crate::cleanup_plan::replay) const CALL_COMPARE: usize = PATH_COMPARE
     + 4 * size_of::<&Vec<(u32, CleanupPlace)>>() // commit cmp actual/formal pairs
     + 2 * size_of::<Ordering>() // commit cmp return/receiver
     + size_of::<Ordering>(); // caller's distinct non-Equal `other` binding
-                             // Four builtin operations have two copied operands and one result each:
-                             // high-low, difference/2, low+quotient, mid+1. The terminal bound test has
-                             // two operands and its bool. Even terminal/no-probe iterations acquire the
-                             // full declared branch bank first; this conservative cost is never refunded.
+                             // Four builtin operations retain their full old probe tariff.
+                             // The terminal operands and result live in SearchOwner before
+                             // selection; no probe index/comparison family exists on termination.
 pub(in crate::cleanup_plan::replay) const STEP_PAYLOAD: usize =
     4 * (2 * size_of::<usize>() + size_of::<usize>()) + 2 * size_of::<usize>() + size_of::<bool>();
 
 macro_rules! initialize {
     ($work:ident, $owner:ident) => {
-        $work.budget.reserve_bytes(
-            $work.function,
-            $crate::cleanup_plan::replay::skeleton_work::merge_search::OWNER_CONTROLS,
-            "factored merge fee computation controls",
-        )?;
+        $crate::cleanup_plan::replay::physical_budget::compact_try!($work
+            .budget
+            .reserve_compact_bytes(
+                $work.function,
+                $crate::cleanup_plan::replay::skeleton_work::merge_search::OWNER_CONTROLS,
+                "factored merge fee computation controls",
+            ));
         $crate::cleanup_plan::replay::skeleton_work::merge_search::construct!($owner);
     };
 }
@@ -92,34 +97,46 @@ macro_rules! construct {
             position: 0,
             found: false,
             ordering: std::cmp::Ordering::Equal,
+            terminal_low: 0,
+            terminal_high: 0,
+            terminal: true,
         };
     };
 }
 pub(in crate::cleanup_plan::replay) use construct;
 macro_rules! search {
     ($work:ident, $owner:ident, $order:ident, $index:expr, $comparison:expr, $compare:expr) => {{
-        $work.budget.reserve_bytes(
-            $work.function,
-            $crate::cleanup_plan::replay::skeleton_work::merge_search::QUERY_PAYLOAD,
-            "factored retained merge query",
-        )?;
+        $crate::cleanup_plan::replay::physical_budget::compact_try!($work
+            .budget
+            .reserve_compact_bytes(
+                $work.function,
+                $crate::cleanup_plan::replay::skeleton_work::merge_search::QUERY_PAYLOAD,
+                "factored retained merge query",
+            ));
         $owner.low = 0;
         $owner.high = $order.len();
         $owner.found = false;
         $owner.position = 0;
         loop {
-            $work.budget.reserve_bytes(
-                $work.function,
-                $crate::cleanup_plan::replay::skeleton_work::merge_search::ORDER_INDEX
-                    + $index
-                    + $comparison
-                    + $crate::cleanup_plan::replay::skeleton_work::merge_search::STEP_PAYLOAD,
-                "factored retained merge comparison",
-            )?;
-            if $owner.low >= $owner.high {
+            $owner.terminal_low = $owner.low;
+            $owner.terminal_high = $owner.high;
+            $owner.terminal = $owner.terminal_low >= $owner.terminal_high;
+            if $owner.terminal {
                 $owner.position = $owner.low;
                 break;
             }
+            // Only a real probe constructs the complete old index/comparison
+            // and arithmetic receiving family. Its tariff is unchanged.
+            $crate::cleanup_plan::replay::physical_budget::compact_try!($work
+                .budget
+                .reserve_compact_bytes(
+                    $work.function,
+                    $crate::cleanup_plan::replay::skeleton_work::merge_search::ORDER_INDEX
+                        + $index
+                        + $comparison
+                        + $crate::cleanup_plan::replay::skeleton_work::merge_search::STEP_PAYLOAD,
+                    "factored retained merge comparison",
+                ));
             // low<=high<=len; no addition can exceed high. Search owns no key.
             $owner.mid = $owner.low + ($owner.high - $owner.low) / 2;
             $owner.group = $order[$owner.mid];

@@ -456,6 +456,43 @@ impl<K: KeyWork> Directory<K> {
         }
     }
 
+    /// Compare a retained full-key directory with one borrowed ordered set.
+    /// The set and directory retain all original identities; no second key set.
+    pub(super) fn same_btree_keys(
+        &self,
+        other: &BTreeSet<K>,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<bool, Diagnostic> {
+        self.authenticate(function, budget)?;
+        budget.reserve_bytes(
+            function,
+            2 * std::mem::size_of::<Result<bool, Diagnostic>>()
+                + 2 * std::mem::size_of::<Result<Option<&K>, Diagnostic>>()
+                + 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+                + std::mem::size_of::<Iter<'_, K>>()
+                + std::mem::size_of::<std::collections::btree_set::Iter<'_, K>>()
+                + 4 * std::mem::size_of::<Option<&K>>()
+                + 4 * std::mem::size_of::<&K>()
+                + 2 * std::mem::size_of::<bool>(),
+            "retained reference comparison controls",
+        )?;
+        if self.len() != other.len() {
+            return Ok(false);
+        }
+        let mut left = self.iter();
+        for right in other {
+            let Some(key) = self.next_paid(&mut left, function, budget)? else {
+                return Ok(false);
+            };
+            Self::charge_pair(key, right, function, budget, self.phase)?;
+            if Ord::cmp(key, right) != Ordering::Equal {
+                return Ok(false);
+            }
+        }
+        Ok(true)
+    }
+
     /// Ordered merge walk; `true` when no full key is shared.
     pub(super) fn is_disjoint(
         &self,

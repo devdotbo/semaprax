@@ -1,6 +1,50 @@
 //! Same canonical output order; actual result/temporary/replacement payment.
 use super::*;
 
+// Inline the successful append: no intermediate owned Diagnostic Results.
+// The actual immutable final Box fields and all prior IDs remain complete.
+macro_rules! append_endpoint_id {
+    ($ids:expr, $id:expr, $payer:expr) => {{
+        let ids: &mut Box<[LoanId]> = $ids;
+        let id = $id;
+        let payer = $payer;
+        let count = match ids.len().checked_add(1) {
+            Some(count) => count,
+            None => {
+                payer.arithmetic();
+                return Err(storage::marker());
+            }
+        };
+        match payer.array::<LoanId>(count) {
+            Ok(()) => (),
+            Err(_) => return Err(storage::marker()),
+        }
+        let requested = match count.checked_mul(std::mem::size_of::<LoanId>()) {
+            Some(bytes) => bytes,
+            None => {
+                payer.arithmetic();
+                return Err(storage::marker());
+            }
+        };
+        let mut values = Vec::new();
+        if values.try_reserve_exact(count).is_err() {
+            payer.allocation(requested);
+            return Err(storage::marker());
+        }
+        if values.capacity() != count {
+            let excess = values
+                .capacity()
+                .saturating_sub(count)
+                .saturating_mul(std::mem::size_of::<LoanId>());
+            let _ = payer.capacity(requested, excess);
+            return Err(storage::marker());
+        }
+        values.extend_from_slice(ids);
+        values.push(id);
+        *ids = values.into_boxed_slice();
+    }};
+}
+
 pub(super) fn materialize<S>(
     cfg: Cfg<'_>,
     drafts: Vec<CfgDraft<S>>,
@@ -38,22 +82,6 @@ pub(super) fn materialize<S>(
             cause: draft.cause.clone(),
         });
     }
-    payer
-        .reserve(2 * std::mem::size_of::<Vec<Vec<LoanId>>>())
-        .map_err(|_| storage::marker())?;
-    let mut starts = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
-    let mut kills = storage::filled(cfg.points.len(), Vec::<LoanId>::new(), Some(payer))?;
-    for loan in &loans {
-        storage::push(
-            &mut starts[*cfg.nodes.get(&loan.start).expect("start point retained") as usize],
-            loan.id,
-            Some(payer),
-        )?;
-        for edge in &loan.end_edges {
-            let to = cfg.edges[*edge as usize].1;
-            storage::push(&mut kills[to as usize], loan.id, Some(payer))?;
-        }
-    }
     let mut endpoints = cfg_directory::vector(cfg.points.len(), payer)?;
     for (node, point) in cfg.points.iter().enumerate() {
         // Both producers append LoanId in increasing loan-index order. Merge
@@ -75,16 +103,33 @@ pub(super) fn materialize<S>(
         endpoints.push(LoanEndpoint {
             point: point.clone(),
             live_before: compact_ids::from_vec_paid(live_before, payer)?,
-            starts: compact_ids::from_vec_paid(
-                storage::clone_vec(&starts[node], Some(payer))?,
-                payer,
-            )?,
-            kills: compact_ids::from_vec_paid(
-                storage::clone_vec(&kills[node], Some(payer))?,
-                payer,
-            )?,
+            starts: Box::new([]),
+            kills: Box::new([]),
             live_after: compact_ids::from_vec_paid(live_after, payer)?,
         });
+    }
+    // Publish the same dense endpoints first, then append IDs in the original
+    // loan/termination-edge order. No temporary per-point Vec directory exists.
+    payer
+        .reserve(ENDPOINT_LOOP_CONTROLS)
+        .map_err(|_| storage::marker())?;
+    for loan in &loans {
+        payer
+            .reserve(ENDPOINT_APPEND_CONTROLS)
+            .map_err(|_| storage::marker())?;
+        append_endpoint_id!(
+            &mut endpoints[*cfg.nodes.get(&loan.start).expect("start point retained") as usize]
+                .starts,
+            loan.id,
+            payer
+        );
+        for edge in &loan.end_edges {
+            payer
+                .reserve(ENDPOINT_APPEND_CONTROLS)
+                .map_err(|_| storage::marker())?;
+            let to = cfg.edges[*edge as usize].1;
+            append_endpoint_id!(&mut endpoints[to as usize].kills, loan.id, payer);
+        }
     }
     let mut edges = cfg_directory::vector(cfg.edges.len(), payer)?;
     for ((from, to), live) in cfg.edges.iter().zip(edge_live) {
@@ -115,6 +160,24 @@ pub(super) fn materialize<S>(
         edges,
     })
 }
+
+// Actual additional borrowed loop controls. No owning IR/result storage bank.
+const ENDPOINT_LOOP_CONTROLS: usize = 2 * std::mem::size_of::<std::slice::Iter<'static, Loan>>()
+    + 4 * std::mem::size_of::<&Loan>()
+    + 2 * std::mem::size_of::<std::slice::Iter<'static, u16>>()
+    + 4 * std::mem::size_of::<&u16>();
+const ENDPOINT_APPEND_CONTROLS: usize = 4 * std::mem::size_of::<&mut Box<[LoanId]>>()
+    + 4 * std::mem::size_of::<&crate::bounded_output::cfg_reservation::CfgReservation>()
+    + 4 * std::mem::size_of::<LoanId>()
+    + 4 * std::mem::size_of::<Vec<LoanId>>()
+    + 2 * std::mem::size_of::<Result<(), crate::bounded_output::cfg_reservation::Refused>>()
+    + 2 * std::mem::size_of::<Result<(), std::collections::TryReserveError>>()
+    + 4 * std::mem::size_of::<Box<[LoanId]>>()
+    + 12 * std::mem::size_of::<usize>()
+    + 4 * std::mem::size_of::<Option<usize>>()
+    + 4 * std::mem::size_of::<&[LoanId]>()
+    + 2 * std::mem::size_of::<Option<&u16>>()
+    + 4 * std::mem::size_of::<bool>();
 
 #[cfg(test)]
 mod before;

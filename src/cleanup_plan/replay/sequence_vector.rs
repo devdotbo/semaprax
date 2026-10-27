@@ -1,5 +1,5 @@
 //! Lexical one-successor output-vector transfer after the first original work.
-use super::{Diagnostic, ExprSkeletonPath, Observations, ReplayBudget, ResolvedFunction};
+use super::*;
 use std::mem::size_of;
 
 // Paid after the first original stopped-push/active-clone work. The first
@@ -212,3 +212,133 @@ pub(super) use stopped_after_work;
 #[cfg(test)]
 #[path = "sequence_vector/funded_tests.rs"]
 pub(super) mod funded_tests;
+
+// This caller already owns prefixes while its caller retains the full suffix
+// vector. The slice is an actual borrow, never a cheaper claimed owned path.
+macro_rules! inplace_dispatch {
+    ($prefixes:ident, $suffixes:ident, $work:ident) => {{
+        if matches!($work.budget.payer, AllocationPayer::ActiveBuilder)
+            && !$work.budget.merge_paths
+            && $prefixes.len() >= 8
+            && $prefixes.len() <= 256
+            && $suffixes.len() > 1
+            && $suffixes.len() <= 8
+        {
+            // Representation selection is read-only. It grants no work: the
+            // authoritative counter still pays every actual relocation below.
+            let extra = $prefixes.len() * ($prefixes.len() - 1) * ($suffixes.len() + 1)
+                + 2 * $prefixes.len();
+            if extra < $work.budget.skeleton_remaining / 4 {
+                $work.budget.reserve_bytes(
+                    $work.function,
+                    $crate::cleanup_plan::replay::sequence_vector::INPLACE_QUERY,
+                    "inplace path eligibility controls",
+                )?;
+                $work.budget.reserve_bytes(
+                    $work.function,
+                    $crate::cleanup_plan::replay::sequence_vector::INPLACE_BODY,
+                    "inplace complete path receiving controls",
+                )?;
+                return $crate::cleanup_plan::replay::sequence_vector::inplace_sequence(
+                    $prefixes, $suffixes, $work,
+                );
+            }
+        }
+    }};
+}
+pub(super) use inplace_dispatch;
+// Actual new scan/receiver carriers, including full original paths/results.
+// These are storage fees, never a new path, work or allocation allowance.
+pub(super) const INPLACE_QUERY: usize = 2 * std::mem::size_of::<Result<(), Diagnostic>>()
+    + std::mem::size_of::<std::iter::Enumerate<std::slice::Iter<'static, ExprSkeletonPath>>>()
+    + 4 * std::mem::size_of::<usize>()
+    + 4 * std::mem::size_of::<bool>();
+pub(super) const INPLACE_BODY: usize = 2 * std::mem::size_of::<(
+    Vec<ExprSkeletonPath>,
+    &[ExprSkeletonPath],
+    &mut SkeletonWork<'static, 'static>,
+)>() + 2 * std::mem::size_of::<
+    Result<Vec<ExprSkeletonPath>, Diagnostic>,
+>() + 3 * std::mem::size_of::<ExprSkeletonPath>()
+    + 2 * std::mem::size_of::<Observations>()
+    + std::mem::size_of::<std::iter::Enumerate<std::slice::Iter<'static, ExprSkeletonPath>>>()
+    + 8 * std::mem::size_of::<usize>()
+    + 2 * std::mem::size_of::<&mut SkeletonWork<'static, 'static>>()
+    + 2 * std::mem::size_of::<Result<(), Diagnostic>>();
+
+pub(super) fn inplace_sequence(
+    mut prefixes: Vec<ExprSkeletonPath>,
+    suffixes: &[ExprSkeletonPath],
+    work: &mut SkeletonWork<'_, '_>,
+) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    let mut remaining = prefixes.len();
+    work.charge(2 * remaining, "inplace full path index cursor work")?;
+    let mut index = 0usize;
+    while remaining != 0 {
+        if prefixes[index].failed || prefixes[index].residual {
+            work.charge(1, "short-circuited skeleton path")?;
+            note_skeleton_materialization();
+            work.budget
+                .reserve_bytes(work.function, 0, "short-circuited skeleton path")?;
+            index += 1;
+        } else {
+            // All prior outputs precede index, so tail is exactly the original
+            // rows still unprocessed. No canonical sequence is sorted/repaired.
+            let tail = remaining - 1;
+            let shifts = tail * (suffixes.len() + 1) * 2;
+            work.charge(shifts, "inplace full path relocation work")?;
+            let mut prefix = prefixes.remove(index);
+            for (offset, suffix) in suffixes.iter().enumerate() {
+                let observations = if offset == 0 {
+                    work.charge(1, "skeleton prefix clone")?;
+                    skeleton_work::enumerated_prefix::share!(work, prefix);
+                    skeleton_work::prefix_fusion::after_work!(
+                        work,
+                        prefix.observations,
+                        suffix.observations
+                    )
+                } else {
+                    let observations = if offset + 1 == suffixes.len() {
+                        work.charge(1, "skeleton prefix clone")?;
+                        note_skeleton_materialization();
+                        std::mem::take(&mut prefix.observations)
+                    } else {
+                        work.clone_observations(&prefix.observations, "skeleton prefix clone")?
+                    };
+                    work.extend_owned_observations(
+                        observations,
+                        &suffix.observations,
+                        "skeleton suffix clone",
+                    )?
+                };
+                let owned_source = work.clone_owned(
+                    &suffix.owned_source,
+                    "sequenced skeleton owned-source clone",
+                )?;
+                let path = ExprSkeletonPath {
+                    observations,
+                    owned_source,
+                    failed: suffix.failed,
+                    residual: suffix.residual,
+                    continuation: lexical_skeleton::Continuation::sequenced(
+                        &prefix.continuation,
+                        &suffix.continuation,
+                    ),
+                };
+                work.charge(1, "sequenced skeleton path")?;
+                note_skeleton_materialization();
+                work.budget.reserve_vec(
+                    work.function,
+                    &mut prefixes,
+                    1,
+                    "sequenced skeleton path",
+                )?;
+                prefixes.insert(index + offset, path);
+            }
+            drop(prefix);
+            index += suffixes.len();
+        }
+        remaining -= 1;
+    }
+    Ok(prefixes)
+}

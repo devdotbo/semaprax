@@ -362,6 +362,64 @@ impl ClonePayload for ResolvedType {
     }
 }
 impl ClonePayload for StagedCopyResultSource {
+    fn clone_needs_type_cursor(&self) -> bool {
+        match self {
+            Self::Body { instance, .. } => instance.clone_needs_type_cursor(),
+            Self::TryResidual {
+                source_instance,
+                target_instance,
+                ..
+            }
+            | Self::TryOptionNone {
+                source_instance,
+                target_instance,
+                ..
+            } => {
+                source_instance.clone_needs_type_cursor()
+                    || target_instance.clone_needs_type_cursor()
+            }
+        }
+    }
+    fn clone_payload_bytes_without_type_cursor(&self) -> Option<usize> {
+        match self {
+            Self::Body { instance, .. } => instance.clone_payload_bytes_without_type_cursor(),
+            Self::TryResidual {
+                source_instance,
+                target_instance,
+                result,
+                ok_case,
+                ok_field,
+                err_case,
+                err_field,
+                ..
+            } => {
+                let mut bytes = source_instance
+                    .clone_payload_bytes_without_type_cursor()?
+                    .checked_add(target_instance.clone_payload_bytes_without_type_cursor()?)?;
+                for id in [result, ok_case, ok_field, err_case, err_field] {
+                    bytes = bytes.checked_add(id.clone_payload_bytes_without_type_cursor()?)?;
+                }
+                Some(bytes)
+            }
+            Self::TryOptionNone {
+                source_instance,
+                target_instance,
+                option,
+                some_case,
+                some_field,
+                none_case,
+                ..
+            } => {
+                let mut bytes = source_instance
+                    .clone_payload_bytes_without_type_cursor()?
+                    .checked_add(target_instance.clone_payload_bytes_without_type_cursor()?)?;
+                for id in [option, some_case, some_field, none_case] {
+                    bytes = bytes.checked_add(id.clone_payload_bytes_without_type_cursor()?)?;
+                }
+                Some(bytes)
+            }
+        }
+    }
     fn clone_payload_bytes(&self) -> Option<usize> {
         match self {
             Self::Body { instance, .. } => instance.clone_payload_bytes(),

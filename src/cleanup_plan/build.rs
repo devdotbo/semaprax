@@ -1011,7 +1011,7 @@ impl<'a> PlanBuilder<'a> {
     }
 
     fn push_transition(&mut self, block: BlockId, transition: CleanupTransition) {
-        self.blocks[block.0 as usize].transitions.push(transition);
+        push_cleanup_transition(&mut self.blocks[block.0 as usize].transitions, transition);
     }
 
     fn initialize(
@@ -6754,3 +6754,42 @@ interface HostEcho permits { host.echo } {
 
 #[cfg(test)]
 pub(super) mod phase_measurement;
+
+// Preserve every complete transition and its publication order. A first slot
+// needs one element; later pushes retain ordinary Vec geometric growth.
+fn push_cleanup_transition(values: &mut Vec<CleanupTransition>, value: CleanupTransition) {
+    if values.capacity() == 0 {
+        values.reserve_exact(1);
+    }
+    values.push(value);
+}
+#[cfg(test)]
+mod exact_transition_backing_tests {
+    use super::*;
+    #[test]
+    fn full_real_transition_and_following_order_match_original_vector() {
+        let parsed = crate::check(
+            include_str!("../../tests/fixtures/native_rust_hir_capacity.spx"),
+            "real-transition-capacity.spx",
+        )
+        .unwrap();
+        let program = crate::hir::resolve(&parsed).unwrap();
+        let transition = program
+            .functions
+            .iter()
+            .flat_map(|f| &f.cleanup_plan.blocks)
+            .flat_map(|b| &b.transitions)
+            .next()
+            .expect("full hostile fixture contains a real transition");
+        let mut before = Vec::new();
+        let mut current = Vec::new();
+        for _ in 0..17 {
+            before.push(transition.clone());
+            push_cleanup_transition(&mut current, transition.clone());
+            assert_eq!(current, before);
+            if current.len() == 1 {
+                assert_eq!(current.capacity(), 1);
+            }
+        }
+    }
+}

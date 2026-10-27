@@ -228,10 +228,9 @@ impl<'a, 'b> SkeletonWork<'a, 'b> {
             return Self::oracle_with_index(program, function, budget, index, lease);
         }
         use crate::hir::funded::FundedError;
-        // The held payer owns refusal text and the exact clone census cursor
-        // before any collector may acquire scratch, keys or tree nodes.
+        // Own refusal text before collectors acquire backing. Recursive clone
+        // sites acquire their complete census cursor before using that cursor.
         budget.prepare_builder(function)?;
-        budget.prepare_clone_cursor(function)?;
         // Concrete new fallible receiving sums, closures and explicit reserve
         // references, before those receivers are formed. No guessed heap fee.
         let controls = 2 * std::mem::size_of::<
@@ -550,6 +549,42 @@ impl SkeletonWork<'_, '_> {
         self.budget.reserve_clone(self.function, path, phase)?;
         note_skeleton_materialization();
         Ok(path.clone())
+    }
+
+    /// A status clone is immediately extended by one full observation. Keep
+    /// every original field and clone census, acquiring that known slot once.
+    pub(super) fn clone_expr_path_for_status(
+        &mut self,
+        path: &ExprSkeletonPath,
+        phase: &str,
+    ) -> Result<ExprSkeletonPath, Diagnostic> {
+        if self.budget.payer != AllocationPayer::LegacyUnobserved
+            || self.budget.admission != AdmissionMode::Ordinary
+            || self.budget.merge_paths
+        {
+            return self.clone_expr_path(path, phase);
+        }
+        self.charge(1, phase)?;
+        self.budget.reserve_clone(self.function, path, phase)?;
+        note_skeleton_materialization();
+        let capacity = path
+            .observations
+            .items
+            .len()
+            .checked_add(1)
+            .ok_or_else(|| replay_error(self.function, "status history capacity overflowed"))?;
+        let mut items = Vec::with_capacity(capacity);
+        items.extend(path.observations.items.iter().cloned());
+        Ok(ExprSkeletonPath {
+            observations: Observations {
+                items,
+                prefix: path.observations.prefix.clone(),
+            },
+            owned_source: path.owned_source.clone(),
+            failed: path.failed,
+            residual: path.residual,
+            continuation: path.continuation.clone(),
+        })
     }
 
     pub(super) fn clone_observations(
@@ -1217,3 +1252,18 @@ mod incoming_constructor_control {
         });
     }
 }
+
+// Paid callers keep their original direct method and receiving Result.
+macro_rules! status_clone {
+    ($work:ident, $path:ident, $phase:expr) => {{
+        if $work.budget.payer == AllocationPayer::LegacyUnobserved
+            && $work.budget.admission == AdmissionMode::Ordinary
+            && !$work.budget.merge_paths
+        {
+            $work.clone_expr_path_for_status(&$path, $phase)
+        } else {
+            $work.clone_expr_path(&$path, $phase)
+        }
+    }};
+}
+pub(in crate::cleanup_plan::replay) use status_clone;

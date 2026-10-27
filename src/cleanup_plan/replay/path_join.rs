@@ -9,6 +9,10 @@ mod before;
 #[allow(dead_code, reason = "complete MAIN019d callback receiver")]
 #[path = "path_join/before_receiving.rs"]
 mod before_receiving;
+#[allow(
+    dead_code,
+    reason = "Retain the complete original B-tree insertion owner and controls."
+)]
 mod boxed_states;
 mod branch_join;
 #[cfg(test)]
@@ -153,13 +157,19 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
         });
     }
 
-    budget.reserve_array::<BTreeSet<Box<PathState>>>(
+    budget.reserve_array::<boxed_states::avl::Set<PathState>>(
         function,
         plan.blocks.len(),
         "incoming state frontier",
     )?;
-    let mut incoming = vec![BTreeSet::<Box<PathState>>::new(); plan.blocks.len()];
-    let mut insertions = boxed_states::Insertions::<PathState>::acquire(function, budget)?;
+    budget.reserve_array::<boxed_states::avl::Set<PathState>>(
+        function,
+        plan.blocks.len(),
+        "incoming AVL state frontier initializers",
+    )?;
+    let mut incoming = Vec::with_capacity(plan.blocks.len());
+    incoming.resize_with(plan.blocks.len(), boxed_states::avl::Set::<PathState>::new);
+    let mut insertions = boxed_states::avl::Insertions::<PathState>::acquire(function, budget)?;
     insertions.insert_owned(
         function,
         &mut incoming[plan.entry.0 as usize],
@@ -222,7 +232,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                 )
                 .into());
             }
-            validate_control_group_with_budget(function, &states, block_id, budget)?;
+            validate_avl_control_group_with_budget(function, &states, block_id, budget)?;
             // The validated singleton already owns the complete joined fields.
             // Consume it once; neither original vector nor any nested identity
             // is cloned, replaced from a clone, or temporarily reinitialized.
@@ -549,7 +559,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
             }
             continue;
         }
-        let mut groups = BTreeMap::<ControlKey, BTreeSet<Box<PathState>>>::new();
+        let mut groups = BTreeMap::<ControlKey, boxed_states::avl::Set<PathState>>::new();
         for state in states {
             let key = if storage::atomic_controls::selected(&state, budget) {
                 let payload = storage::atomic_controls::reserve(function, &state, budget)?;
@@ -565,7 +575,7 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                 )
             };
             if !groups.contains_key(&key) {
-                storage::reserve_btree_node::<ControlKey, BTreeSet<Box<PathState>>>(
+                storage::reserve_btree_node::<ControlKey, boxed_states::avl::Set<PathState>>(
                     function,
                     budget,
                     "ownership control groups",
@@ -590,9 +600,9 @@ pub(super) fn validate_path_states<E: semantic_refusal::Error>(
                 )
                 .into());
             }
-            validate_control_group_with_budget(function, &states, block_id, budget)?;
+            validate_avl_control_group_with_budget(function, &states, block_id, budget)?;
             let (live_order, mut conditional_variants) =
-                joined_ownership_state(program, function, &states, budget)?;
+                joined_avl_ownership_state(program, function, &states, budget)?;
             // Identical branch arms deduplicate to one state; the producer
             // still joined them. An exact break rejoin is never re-keyed.
             if states.len() == 1 {
@@ -1203,3 +1213,50 @@ mod final_edge_tests;
 pub(in crate::cleanup_plan::replay) mod before_path_boundary;
 
 pub(in crate::cleanup_plan::replay) mod selected;
+
+fn validate_avl_control_group_with_budget(
+    function: &ResolvedFunction,
+    states: &boxed_states::avl::Set<PathState>,
+    block: BlockId,
+    budget: &mut ReplayBudget,
+) -> Result<(), Diagnostic> {
+    // Preserve every complete prior-state history, in identical key order.
+    for state in states.iter() {
+        validate_join_compatibility(
+            function,
+            states
+                .iter()
+                .take_while(|prior| *prior < state)
+                .map(|prior| prior.as_ref()),
+            state.as_ref(),
+            block,
+            budget,
+        )?;
+    }
+    Ok(())
+}
+fn joined_avl_ownership_state(
+    program: &dyn crate::cleanup::ReplayContext,
+    function: &ResolvedFunction,
+    states: &boxed_states::avl::Set<PathState>,
+    budget: &mut ReplayBudget,
+) -> Result<(Vec<LivenessFlagId>, Vec<ReplayConditionalVariant>), Diagnostic> {
+    let mut states = states.iter().map(|state| state.as_ref());
+    let first = states
+        .next()
+        .ok_or_else(|| replay_error(function, "cleanup join has no incoming states"))?;
+    storage::reserve_ownership_clone(function, first, budget)?;
+    let mut live_order = first.live_order.clone();
+    let mut conditional_variants = first.conditional_variants.clone();
+    for state in states {
+        live_order = join_live_orders(function, &live_order, &state.live_order, budget)?;
+        conditional_variants = join_conditional_variants(
+            program,
+            function,
+            &conditional_variants,
+            &state.conditional_variants,
+            budget,
+        )?;
+    }
+    Ok((live_order, conditional_variants))
+}

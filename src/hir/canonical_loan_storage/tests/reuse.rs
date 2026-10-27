@@ -74,9 +74,15 @@ fn literal_reusable_scratch_is_paid_once_and_retained_through_exact_short_receiv
     let program = fixture();
     // One retained local2/IDs2/live3 scratch. Persistent buffers still grow
     // IDs2→4, live3→6 and origins2→4 with full replacement backing charges.
-    let bytes = 2 * size_of::<(LoanId, usize)>()
+    let controls = 2
+        * (2 * size_of::<std::slice::IterMut<'_, (LiveKey, usize)>>()
+            + 2 * size_of::<Option<&mut (LiveKey, usize)>>()
+            + 2 * size_of::<&mut (LiveKey, usize)>()
+            + 2 * size_of::<usize>());
+    let bytes = controls
+        + 2 * size_of::<(LoanId, usize)>()
         + 2 * size_of::<(IdKey, LoanId, usize)>()
-        + 3 * size_of::<(LiveKey, Option<usize>, usize)>()
+        + 3 * size_of::<(LiveKey, usize)>()
         + 6 * size_of::<(IdKey, LoanId)>()
         + 9 * size_of::<(LiveKey, usize)>()
         + 6 * size_of::<Place>();
@@ -111,7 +117,7 @@ fn literal_reusable_scratch_is_paid_once_and_retained_through_exact_short_receiv
         assert_eq!(refused, allowance < bytes);
         if allowance == bytes {
             assert_eq!(used, bytes);
-            assert_eq!(observed.allocated, bytes);
+            assert_eq!(observed.allocated, bytes - controls);
             assert!(receipt.is_none());
         } else {
             assert!(receipt.is_some());
@@ -275,6 +281,122 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     // Unregistered compiled source: authenticate the ENTIRE current input,
     // reverse only these exact optional observer adapters, then preserve every
     // original whole-before assertion and old inverse below. No page admission.
+    assert_eq!(projected.len(), 18507);
+    assert_eq!(
+        digest(&projected),
+        "c892df18aba24c09d47a4689b98fb006356eb6ddb4282550eeeef8f414bc8950"
+    );
+    {
+        let current = r########"    storage
+        .ids
+        .extend(id_probe.drain(..).map(|(key, id, _)| (key, id)));
+    // Both lookups still run: original validation in endpoint source order,
+    // then publication from the same immutable local directory. The source
+    // occurrence is dead only after every original validation has succeeded.
+    for (key, ordinal) in live_probe.iter_mut() {
+        *ordinal = origin(&key.2).expect("checked every source endpoint");
+    }
+    storage.liveness.extend(live_probe.drain(..));
+    storage
+        .origins
+        .extend(plan.loans.into_iter().map(|loan| loan.origin));
+"########;
+        let prior = r########"    storage
+        .ids
+        .extend(id_probe.drain(..).map(|(key, id, _)| (key, id)));
+    storage.liveness.extend(
+        live_probe
+            .drain(..)
+            .map(|(key, ordinal, _)| (key, ordinal.expect("checked every source endpoint"))),
+    );
+    storage
+        .origins
+        .extend(plan.loans.into_iter().map(|loan| loan.origin));
+"########;
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, prior, 1);
+    }
+    {
+        let current = r########"            ));
+        }
+    }
+    // The first complete origin validation above retains its original error
+    // priority. Only its redundant cached Option was removed from each probe.
+    // Acquire the actual new mutation/lookup receiving carriers before forming
+    // them; the complete real LiveKey and all public plan fields stay intact.
+    payer.reserve(
+        2 * std::mem::size_of::<std::slice::IterMut<'_, (LiveKey, usize)>>()
+            + 2 * std::mem::size_of::<Option<&mut (LiveKey, usize)>>()
+            + 2 * std::mem::size_of::<&mut (LiveKey, usize)>()
+            + 2 * std::mem::size_of::<usize>(),
+    )?;
+    // No partial plan directory is published. Growth prepays full replacement
+    // capacities while old backing is still live, never a delta or refund.
+    let id_needed = count(storage.ids.len(), id_probe.len(), payer)?;
+"########;
+        let prior = r########"            ));
+        }
+    }
+    // No partial plan directory is published. Growth prepays full replacement
+    // capacities while old backing is still live, never a delta or refund.
+    let id_needed = count(storage.ids.len(), id_probe.len(), payer)?;
+"########;
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, prior, 1);
+    }
+    {
+        let current = r########"                *loan,
+            );
+            let first = live_probe.partition_point(|entry| entry.0 < key);
+            if storage.live(&key).is_some() || live_probe[first].1 < source {
+                return Err(hir_error("canonical shared-loan liveness is duplicated"));
+            }
+            source += 1;
+"########;
+        let prior = r########"                *loan,
+            );
+            let first = live_probe.partition_point(|entry| entry.0 < key);
+            if storage.live(&key).is_some() || live_probe[first].2 < source {
+                return Err(hir_error("canonical shared-loan liveness is duplicated"));
+            }
+            source += 1;
+"########;
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, prior, 1);
+    }
+    {
+        let current = r########"                    endpoint.point.phase,
+                    *loan,
+                ),
+                source,
+            ));
+        }
+    }
+    // This private ordering indexes first source occurrences, not canonical
+    // endpoint/loan vectors or error selection. It requires no sort scratch.
+    live_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
+    let mut source = 0usize;
+    for endpoint in &plan.endpoints {
+        let live = match endpoint.point.phase {
+"########;
+        let prior = r########"                    endpoint.point.phase,
+                    *loan,
+                ),
+                origin(loan),
+                source,
+            ));
+        }
+    }
+    // This private ordering indexes first source occurrences, not canonical
+    // endpoint/loan vectors or error selection. It requires no sort scratch.
+    live_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.2.cmp(&b.2)));
+    let mut source = 0usize;
+    for endpoint in &plan.endpoints {
+        let live = match endpoint.point.phase {
+"########;
+        assert_eq!(projected.matches(current).count(), 1);
+        projected = projected.replacen(current, prior, 1);
+    }
     assert_eq!(projected.len(), 17695);
     assert_eq!(
         digest(&projected),

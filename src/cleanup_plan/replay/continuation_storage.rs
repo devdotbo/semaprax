@@ -46,7 +46,7 @@ impl<'hir> Storage<'hir> {
         if self.frames.is_some() {
             let frames = self.frames.as_mut().unwrap();
             if frames.capacity() == 0 {
-                *frames = if self.receiving_owner.is_some() {
+                *frames = if self.receiving_owner.is_some() && !budget.lent_skeleton {
                     fresh_receiving(function, budget)?
                 } else {
                     fresh(function, budget)?
@@ -86,11 +86,12 @@ impl<'hir> Storage<'hir> {
             nested.slots = replacement;
         }
         if nested.slots[depth].is_none() {
-            nested.slots[depth] = Some(if self.receiving_owner.is_some() {
-                fresh_receiving(function, budget)?
-            } else {
-                fresh(function, budget)?
-            });
+            nested.slots[depth] =
+                Some(if self.receiving_owner.is_some() && !budget.lent_skeleton {
+                    fresh_receiving(function, budget)?
+                } else {
+                    fresh(function, budget)?
+                });
         } else {
             budget.reserve_bytes(function, 0, "typed HIR continuation stack")?;
         }
@@ -415,4 +416,100 @@ pub(super) fn reserve_push(
     replacement.append(frames);
     *frames = replacement;
     Ok(())
+}
+
+mod boxed_frames;
+pub(super) fn expression_skeleton<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    expression: &'hir ResolvedExpr,
+    work: &mut SkeletonWork<'hir, '_>,
+) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
+    if matches!(work.budget.payer, AllocationPayer::LegacyUnobserved) {
+        return boxed_frames::run(program, function, expression, work);
+    }
+    let (lease, mut frames) = if let Some(storage) = work.continuations.as_mut() {
+        if !storage.matches(program) {
+            return Err(replay_error(
+                function,
+                "typed-HIR continuation storage belongs to another program",
+            ));
+        }
+        storage.acquire(function, work.budget)?
+    } else {
+        (
+            continuation_storage::Lease::Local,
+            match work.budget {
+                ReplayBudget {
+                    payer: AllocationPayer::ActiveBuilder,
+                    lent_skeleton: false,
+                    ..
+                } => continuation_storage::fresh_receiving(function, work.budget)?,
+                // A factored constructor has lent its ordinary allowance to the
+                // original skeleton events. Keep its standalone fixed backing;
+                // incremental relocation needs an independent ordinary account.
+                _ => continuation_storage::fresh(function, work.budget)?,
+            },
+        )
+    };
+    // No directory borrow spans the runner: guards re-enter this same Storage.
+    // A panic still unwinds to invocation Drop, as in the original lease owner.
+    let result = expression_skeleton_run(program, function, expression, work, &mut frames);
+    frames.clear(); // Drop every owned continuation payload before reuse.
+    if let Some(storage) = work.continuations.as_mut() {
+        storage.release(lease, frames);
+    }
+    result
+}
+
+pub(super) trait FrameStack<'hir> {
+    fn len(&self) -> usize;
+    fn capacity(&self) -> usize;
+    fn reserve_push(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic>;
+    fn push_owned(
+        &mut self,
+        frame: Frame<'hir>,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic>;
+    fn pop_owned(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<Option<Frame<'hir>>, Diagnostic>;
+}
+impl<'hir> FrameStack<'hir> for Vec<Frame<'hir>> {
+    fn len(&self) -> usize {
+        Vec::len(self)
+    }
+    fn capacity(&self) -> usize {
+        Vec::capacity(self)
+    }
+    fn reserve_push(
+        &mut self,
+        function: &ResolvedFunction,
+        budget: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        reserve_push(self, function, budget)
+    }
+    fn push_owned(
+        &mut self,
+        frame: Frame<'hir>,
+        _: &ResolvedFunction,
+        _: &mut ReplayBudget,
+    ) -> Result<(), Diagnostic> {
+        self.push(frame);
+        Ok(())
+    }
+    fn pop_owned(
+        &mut self,
+        _: &ResolvedFunction,
+        _: &mut ReplayBudget,
+    ) -> Result<Option<Frame<'hir>>, Diagnostic> {
+        Ok(self.pop())
+    }
 }

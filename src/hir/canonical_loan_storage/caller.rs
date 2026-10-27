@@ -337,14 +337,13 @@ fn append_reusing(
                     endpoint.point.phase,
                     *loan,
                 ),
-                origin(loan),
                 source,
             ));
         }
     }
     // This private ordering indexes first source occurrences, not canonical
     // endpoint/loan vectors or error selection. It requires no sort scratch.
-    live_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.2.cmp(&b.2)));
+    live_probe.sort_unstable_by(|a, b| a.0.cmp(&b.0).then(a.1.cmp(&b.1)));
     let mut source = 0usize;
     for endpoint in &plan.endpoints {
         let live = match endpoint.point.phase {
@@ -360,7 +359,7 @@ fn append_reusing(
                 *loan,
             );
             let first = live_probe.partition_point(|entry| entry.0 < key);
-            if storage.live(&key).is_some() || live_probe[first].2 < source {
+            if storage.live(&key).is_some() || live_probe[first].1 < source {
                 return Err(hir_error("canonical shared-loan liveness is duplicated"));
             }
             source += 1;
@@ -388,6 +387,16 @@ fn append_reusing(
             ));
         }
     }
+    // The first complete origin validation above retains its original error
+    // priority. Only its redundant cached Option was removed from each probe.
+    // Acquire the actual new mutation/lookup receiving carriers before forming
+    // them; the complete real LiveKey and all public plan fields stay intact.
+    payer.reserve(
+        2 * std::mem::size_of::<std::slice::IterMut<'_, (LiveKey, usize)>>()
+            + 2 * std::mem::size_of::<Option<&mut (LiveKey, usize)>>()
+            + 2 * std::mem::size_of::<&mut (LiveKey, usize)>()
+            + 2 * std::mem::size_of::<usize>(),
+    )?;
     // No partial plan directory is published. Growth prepays full replacement
     // capacities while old backing is still live, never a delta or refund.
     let id_needed = count(storage.ids.len(), id_probe.len(), payer)?;
@@ -399,11 +408,13 @@ fn append_reusing(
     storage
         .ids
         .extend(id_probe.drain(..).map(|(key, id, _)| (key, id)));
-    storage.liveness.extend(
-        live_probe
-            .drain(..)
-            .map(|(key, ordinal, _)| (key, ordinal.expect("checked every source endpoint"))),
-    );
+    // Both lookups still run: original validation in endpoint source order,
+    // then publication from the same immutable local directory. The source
+    // occurrence is dead only after every original validation has succeeded.
+    for (key, ordinal) in live_probe.iter_mut() {
+        *ordinal = origin(&key.2).expect("checked every source endpoint");
+    }
+    storage.liveness.extend(live_probe.drain(..));
     storage
         .origins
         .extend(plan.loans.into_iter().map(|loan| loan.origin));

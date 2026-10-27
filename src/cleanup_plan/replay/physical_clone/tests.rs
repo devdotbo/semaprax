@@ -172,3 +172,147 @@ fn real_reservation_clone_exact_short_and_zero_retry_keep_first_paid_refusal() {
     assert_eq!(short.allocated, short.freed);
     assert_eq!(short.live, 0);
 }
+
+use crate::bounded_output::{set_active_floor, with_limit_usage_refusal};
+use crate::test_allocation_observer::current_metrics;
+fn cursor_program() -> ResolvedProgram {
+    let parsed = crate::check(
+        "module cursor.test; @id(\"main\") fn main()->i64 {0}",
+        "cursor.spx",
+    )
+    .unwrap();
+    crate::hir::resolve(&parsed).unwrap()
+}
+#[test]
+fn staged_copy_sources_keep_all_fields_and_pay_recursive_cursor_only_when_used() {
+    let program = cursor_program();
+    let function = &program.functions[0];
+    let expression = function.body.id.clone();
+    let declaration = DeclarationId::new("cursor.stage.identity");
+    let compound = ResolvedType::Function {
+        parameters: vec![ResolvedType::I64; 3],
+        result: Box::new(ResolvedType::I64),
+    };
+    let values = [
+        StagedCopyResultSource::Body {
+            expression: expression.clone(),
+            instance: ResolvedType::I64,
+        },
+        StagedCopyResultSource::TryResidual {
+            expression: expression.clone(),
+            operand: expression.clone(),
+            source_instance: ResolvedType::I64,
+            target_instance: ResolvedType::I64,
+            result: declaration.clone(),
+            ok_case: declaration.clone(),
+            ok_field: declaration.clone(),
+            err_case: declaration.clone(),
+            err_field: declaration.clone(),
+        },
+        StagedCopyResultSource::TryOptionNone {
+            expression: expression.clone(),
+            operand: expression.clone(),
+            source_instance: ResolvedType::I64,
+            target_instance: ResolvedType::I64,
+            option: declaration.clone(),
+            some_case: declaration.clone(),
+            some_field: declaration.clone(),
+            none_case: declaration.clone(),
+        },
+        StagedCopyResultSource::Body {
+            expression,
+            instance: compound,
+        },
+    ];
+    assert!(
+        <StagedCopyResultSource as ClonePayload>::NEEDS_TYPE_CURSOR,
+        "future payloads remain conservative"
+    );
+    let text = function.id.as_str().len() + 512;
+    let cursor = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
+    for (index, value) in values.iter().enumerate() {
+        let recursive = index == 3;
+        assert_eq!(value.clone_needs_type_cursor(), recursive);
+        let payload = value.clone_payload_bytes().unwrap();
+        if !recursive {
+            assert_eq!(
+                value.clone_payload_bytes_without_type_cursor(),
+                Some(payload)
+            );
+        }
+        let exact = text + usize::from(recursive) * cursor + payload;
+        for floor in [0, 37] {
+            for available in [0, text - 1, exact - 1, exact, exact + 1] {
+                let (((), metrics), refused, used, receipt) =
+                    with_limit_usage_refusal(available + floor, || {
+                        assert!(set_active_floor(floor));
+                        measure(|| {
+                            let mut budget = ReplayBudget::new();
+                            let result =
+                                budget.reserve_clone(function, value, "actual staged copy source");
+                            if available >= exact {
+                                result.unwrap();
+                                assert_eq!(budget.builder_clone_cursor_paid, recursive);
+                                let copy = value.clone();
+                                assert_eq!(&copy, value);
+                                drop(copy);
+                            } else {
+                                let error = result.unwrap_err();
+                                let before = current_metrics();
+                                assert!(budget
+                                    .reserve_clone(function, value, "sticky staged retry")
+                                    .is_err());
+                                assert_eq!(current_metrics(), before);
+                                drop(error);
+                            }
+                            drop(budget);
+                        })
+                    });
+                assert_eq!(refused, available < exact);
+                assert!(!metrics.invalid);
+                assert_eq!(metrics.live, 0);
+                assert_eq!(metrics.allocated, metrics.freed);
+                if !refused {
+                    assert!(receipt.is_none());
+                    assert_eq!(used, exact);
+                    assert_eq!(metrics.allocated, text + payload);
+                } else {
+                    assert!(receipt.is_some());
+                    assert!(used <= available);
+                }
+            }
+        }
+    }
+}
+
+#[test]
+fn ordinary_hir_setup_leaves_unused_cursor_unpaid_then_funds_real_recursive_clone() {
+    let program = cursor_program();
+    let function = &program.functions[0];
+    let compound = ResolvedType::Function {
+        parameters: vec![ResolvedType::I64],
+        result: Box::new(ResolvedType::I64),
+    };
+    let (((), metrics), refused, _, receipt) = with_limit_usage_refusal(usize::MAX, || {
+        measure(|| {
+            let mut budget = ReplayBudget::with_skeleton_limit(MAX_REPLAY_WORK_UNITS);
+            let paths =
+                hir_skeleton_paths_with_index(&program, function, &mut budget, None).unwrap();
+            assert!(
+                !budget.builder_clone_cursor_paid,
+                "flat actual HIR receiver constructs no recursive cursor"
+            );
+            drop(paths);
+            budget
+                .reserve_clone(function, &compound, "later real recursive type")
+                .unwrap();
+            assert!(budget.builder_clone_cursor_paid);
+            let copy = compound.clone();
+            assert_eq!(copy, compound);
+            drop((copy, budget));
+        })
+    });
+    assert!(!refused && receipt.is_none() && !metrics.invalid);
+    assert_eq!(metrics.live, 0);
+    assert_eq!(metrics.allocated, metrics.freed);
+}

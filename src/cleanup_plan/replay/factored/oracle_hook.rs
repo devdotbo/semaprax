@@ -4,6 +4,17 @@
 use super::*;
 use crate::cleanup_plan::replay::allocation::{enter, OracleLease};
 
+#[path = "unpaid_continuation_receiver.rs"]
+mod unpaid_continuation_receiver;
+
+pub(super) fn cross_check_unpaid<'hir>(
+    program: &'hir dyn crate::cleanup::ReplayContext,
+    function: &'hir ResolvedFunction,
+    storage: &mut continuation_storage::Storage<'hir>,
+) -> Result<(), Diagnostic> {
+    unpaid_continuation_receiver::cross_check(program, function, storage)
+}
+
 /// Explicit private-test dispatcher. No compiler or resolver call chooses it.
 pub(super) fn cross_check(
     program: &dyn crate::cleanup::ReplayContext,
@@ -29,6 +40,13 @@ pub(super) fn cross_check_with_storage<'hir>(
             Some(storage) if storage.has_receiving_owner() => {
                 storage.authenticate(program, function, budget)?;
                 super::continuation_receiver::cross_check(program, function, storage)?;
+            }
+            Some(storage)
+                if !budget.pays_allocations()
+                    && crate::bounded_output::active_remaining().is_none()
+                    && storage.frames.as_ref().is_some_and(Vec::is_empty) =>
+            {
+                unpaid_continuation_receiver::cross_check(program, function, storage)?;
             }
             _ => super::cross_check(program, function),
         },

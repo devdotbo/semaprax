@@ -1240,6 +1240,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_before_receiving.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase_tests.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/reference_coverage.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_before.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_before_prefix.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/status_tests.rs",
@@ -1406,6 +1407,7 @@
         "src/cleanup_plan/replay/factored/oracle_order/tests.rs",
         "src/cleanup_plan/replay/factored/strategy/before_fitting.rs",
         "src/cleanup_plan/replay/factored/strategy/fitting_tests.rs",
+        "src/cleanup_plan/replay/factored/unpaid_continuation_receiver.rs",
         "src/cleanup_plan/replay/final_output.rs",
         "src/cleanup_plan/replay/final_output/before.rs",
         "src/cleanup_plan/replay/final_output/before_compaction.rs",
@@ -2415,6 +2417,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/reference_coverage.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs",
         "src/cleanup_plan/replay/factored/canonical_shared.rs",
@@ -2823,6 +2826,7 @@
         "src/cleanup_plan/replay/cfg_bounds.rs",
         "src/cleanup_plan/replay/constructed_variant.rs",
         "src/cleanup_plan/replay/continuation_storage.rs",
+        "src/cleanup_plan/replay/continuation_storage/boxed_frames.rs",
         "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs",
         "src/cleanup_plan/replay/expression_children.rs",
         "src/cleanup_plan/replay/factored.rs",
@@ -3024,9 +3028,9 @@
         "src/workspace_graph/validation.rs",
         "src/workspace_report.rs"
       ],
-      "full_manifest_sha256": "88fe51de578b860c1e3d9a6277ba8dc6ebc6832ac6c24541e78d5e3d6cc6130d",
-      "full_raw_sha256": "4686562e604f0b5a29a05a2dbcb0695a6ceb3f614e996863a341bbe20afeb012",
-      "full_authenticated_production_sha256": "72e15c380f47cab663caba81dda29dcff542bb2d00b3321e48501a4c85d9f576"
+      "full_manifest_sha256": "0f2cba78a7c2c2e2ace482927447652224ad1164a6f2fc4285798f94db9cd3b8",
+      "full_raw_sha256": "abd9c2e7a02aa3da08db1241cf167cc362cf1de12aceec109e73921f0189e89b",
+      "full_authenticated_production_sha256": "110785d0b7e94802205a3eed7f382a3e3b539ce21164c2d3e49951de8eb33dba"
     },
     "projection": {
       "baseline": "a82e00cc83f99b16249181c45710d962598577db",
@@ -3540,6 +3544,7 @@
         "src/cleanup_plan/replay/cfg_bounds.rs",
         "src/cleanup_plan/replay/constructed_variant.rs",
         "src/cleanup_plan/replay/continuation_storage.rs",
+        "src/cleanup_plan/replay/continuation_storage/boxed_frames.rs",
         "src/cleanup_plan/replay/continuation_storage/paid_receiving.rs",
         "src/cleanup_plan/replay/expression_children.rs",
         "src/cleanup_plan/replay/expression_facts.rs",
@@ -3571,6 +3576,7 @@
         "src/cleanup_plan/replay/expression_facts/receiving/retained/exits.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/inline_status.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/retained/ordinary_cross_phase.rs",
+        "src/cleanup_plan/replay/expression_facts/receiving/retained/reference_coverage.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands.rs",
         "src/cleanup_plan/replay/expression_facts/receiving/return_operands/exits.rs",
         "src/cleanup_plan/replay/factored.rs",
@@ -4176,9 +4182,9 @@
         "src/workspace_graph/source_schema.rs",
         "src/workspace_graph/source_schema/static_text.rs"
       ],
-      "full_manifest_sha256": "b78ad22b4476aaad54a0bce513e4220d4bce5da2db1a0d2d3201ae0c03718265",
-      "full_raw_sha256": "808ea7ba4dd7e56a2779ce0349e5ce897dc03c049e884d33f3378331b13ac7bd",
-      "full_authenticated_production_sha256": "929b054600f61874d8360555988eb680527d20c7d0c8c47eb35e8733c97ea13c"
+      "full_manifest_sha256": "51d04ec37afc2721a5c818c0cd41fbb22abceb9065a9b3d182da41775ce9f6d5",
+      "full_raw_sha256": "6ae85f217376fded950dce6831a6378b4c60c6886f432bea94bb7b01171d2c64",
+      "full_authenticated_production_sha256": "22cdb7bc33c6993b8f3506ac8277b118ec0fd760f075e9d24fd8f679d7d3b3a0"
     }
   }
 }
