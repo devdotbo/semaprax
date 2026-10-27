@@ -278,6 +278,16 @@ fn complete_old_callers_storage_and_tests_remain_exact_and_all_current_hooks_are
     );
     let hooks: serde_json::Value = serde_json::from_str(hooks).unwrap();
     let mut projected = include_str!("../caller.rs").to_owned();
+    // Bind the complete Clippy-compatible receiver, then undo its single
+    // complete-vector move adapter before every original custody assertion.
+    assert_eq!(projected.len(), 18497);
+    assert_eq!(
+        digest(&projected),
+        "72f5ac61b4330a715561d2d82dffc07b1c4758fdbdd930a3474b64c42234ebc6"
+    );
+    let append = "storage.liveness.append(live_probe);";
+    assert_eq!(projected.matches(append).count(), 1);
+    projected = projected.replacen(append, "storage.liveness.extend(live_probe.drain(..));", 1);
     // Unregistered compiled source: authenticate the ENTIRE current input,
     // reverse only these exact optional observer adapters, then preserve every
     // original whole-before assertion and old inverse below. No page admission.

@@ -3312,7 +3312,7 @@ fn expression_skeleton_run<'hir>(
     work: &mut SkeletonWork<'hir, '_>,
     frames: &mut impl continuation_storage::FrameStack<'hir>,
 ) -> Result<Vec<ExprSkeletonPath>, Diagnostic> {
-    use continuation_storage::{Frame, FrameStack, OwnedStep};
+    use continuation_storage::{Frame, OwnedStep};
 
     macro_rules! push_frame {
         ($frames:expr, $frame:expr) => {{

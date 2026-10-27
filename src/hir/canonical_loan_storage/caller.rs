@@ -414,7 +414,7 @@ fn append_reusing(
     for (key, ordinal) in live_probe.iter_mut() {
         *ordinal = origin(&key.2).expect("checked every source endpoint");
     }
-    storage.liveness.extend(live_probe.drain(..));
+    storage.liveness.append(live_probe);
     storage
         .origins
         .extend(plan.loans.into_iter().map(|loan| loan.origin));

@@ -2,6 +2,10 @@
 //! This changes storage only. The shared complete runner and 516-frame authority remain.
 use super::*;
 struct BoxedFrames<'hir> {
+    #[allow(
+        clippy::vec_box,
+        reason = "Each complete live continuation owns its backing; the pointer directory avoids reserving 516 full Frames for shallow traversals."
+    )]
     frames: Vec<Box<Frame<'hir>>>,
 }
 impl<'hir> FrameStack<'hir> for BoxedFrames<'hir> {

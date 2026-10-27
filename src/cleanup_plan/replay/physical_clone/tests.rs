@@ -224,10 +224,12 @@ fn staged_copy_sources_keep_all_fields_and_pay_recursive_cursor_only_when_used()
             instance: compound,
         },
     ];
-    assert!(
-        <StagedCopyResultSource as ClonePayload>::NEEDS_TYPE_CURSOR,
-        "future payloads remain conservative"
-    );
+    const {
+        assert!(
+            <StagedCopyResultSource as ClonePayload>::NEEDS_TYPE_CURSOR,
+            "future payloads remain conservative"
+        );
+    }
     let text = function.id.as_str().len() + 512;
     let cursor = 514 * std::mem::size_of::<Option<(&ResolvedType, usize)>>();
     for (index, value) in values.iter().enumerate() {

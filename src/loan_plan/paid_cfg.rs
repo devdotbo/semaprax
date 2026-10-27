@@ -1,4 +1,8 @@
 //! Identical CFG construction/order with explicit caller-paid actual storage.
+#![allow(
+    clippy::duplicate_mod,
+    reason = "Complete independently compiled before builders retain their original modules and fixtures."
+)]
 use super::*;
 
 #[allow(

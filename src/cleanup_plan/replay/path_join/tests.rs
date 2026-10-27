@@ -154,7 +154,7 @@ fn avl_prefix_keeps_every_history_union_and_control_disagreement() {
             .map(|(_, history)| state(history))
             .collect();
         let expected = copied_prefix(&function, &states).err();
-        let mut boxed = super::boxed_states::avl::Set::new();
+        let mut boxed = crate::cleanup_plan::replay::path_join::boxed_states::avl::Set::new();
         for state in states {
             boxed.insert(Box::new(state));
         }
@@ -171,7 +171,7 @@ fn avl_prefix_keeps_every_history_union_and_control_disagreement() {
     foreign.published = true;
     let raw: BTreeSet<_> = [state(&[4, 5]), foreign].into_iter().collect();
     let expected = copied_prefix(&function, &raw).unwrap_err();
-    let mut boxed = super::boxed_states::avl::Set::new();
+    let mut boxed = crate::cleanup_plan::replay::path_join::boxed_states::avl::Set::new();
     for state in raw {
         boxed.insert(Box::new(state));
     }
@@ -187,8 +187,8 @@ fn avl_prefix_keeps_every_history_union_and_control_disagreement() {
 
 #[test]
 fn avl_actual_full_state_owner_zero_exact_and_each_short_frontier_keep_full_drop() {
-    use super::boxed_states::avl::{Insertions, Set};
     use crate::bounded_output::with_limit_usage_refusal;
+    use crate::cleanup_plan::replay::path_join::boxed_states::avl::{Insertions, Set};
     use crate::test_allocation_observer::{current_metrics, measure};
     use std::mem::size_of;
     let function = function();
@@ -248,7 +248,7 @@ fn avl_actual_full_state_owner_zero_exact_and_each_short_frontier_keep_full_drop
 
 #[test]
 fn avl_full_path_states_keep_all_fields_order_and_borrowed_cursor_clones() {
-    use super::boxed_states::avl::Set;
+    use crate::cleanup_plan::replay::path_join::boxed_states::avl::Set;
     for stride in [1, 17, 31, 64, 126] {
         let mut actual = Set::new();
         let mut expected = BTreeSet::new();
