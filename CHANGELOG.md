@@ -1,6 +1,6 @@
 ## Schema-less function rename capture refusal (2026-10-28)
 
-- Refuse schema-less single-file function renames that would retarget a call to or from a same-named local value as `SPX-G111`, and require such renames to start from a resolvable base, leaving source unchanged on refusal; renames without capture, project renames and v2/v3 patches are unaffected.
+- Refuse schema-less function renames, single-file and Project, that would retarget a call to or from a same-named local value as `SPX-G111`, leaving source unchanged on refusal. A single-file rename must also start from a resolvable base; a Project rename compares the resolved HIR of every Project module. Renames without capture and v2/v3 patches are unaffected.
 
 ## Replay and loan scratch allocation (2026-10-27)
 

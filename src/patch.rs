@@ -14,6 +14,7 @@ use std::path::{Path, PathBuf};
 use self::direct_apply::apply_with_commit_hook;
 use self::operations::{PatchSchema, PatchSelector, ReplaceCallTypeArgument, SemanticPatch};
 pub(crate) use self::operations::{PreflightOperation, ScalarType};
+pub(crate) use self::rename_targets::validate_project_rename_targets;
 use self::source_index::SemanticSourceIndex;
 
 #[derive(Clone, Copy, Debug, Eq, Ord, PartialEq, PartialOrd)]

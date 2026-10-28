@@ -80,8 +80,12 @@ candidate both resolve and the candidate changes the resolved target of any
 call, value invocation, or function reference, the rename rejects as
 `SPX-G111` before staging and leaves the source unchanged. This happens when a
 local binding or parameter captures the new name, or when a renamed call site
-resolved to a same-named local value. Project rename keeps its own typed-fact
-equivalence gate.
+resolved to a same-named local value. Project rename runs the same comparison
+over the resolved HIR of every Project module in the base snapshot and in the
+complete candidate build, before its typed-fact equivalence gate, which compares
+no display names and records no same-module call edge. A retargeting Project
+rename rejects as `SPX-G111` before any plan is retained, so nothing reaches
+A0 or the source.
 
 ## Threat model and nonclaims
 

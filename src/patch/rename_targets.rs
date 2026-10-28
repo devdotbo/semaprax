@@ -2,7 +2,11 @@
 //! call-target check that keeps such renames from retargeting a call site.
 
 use super::*;
-use crate::hir::{FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedProgram};
+use crate::hir::{
+    FunctionExecutionId, ResolvedExpr, ResolvedExprKind, ResolvedFunction,
+    ResolvedFunctionInstance, ResolvedFunctionTemplate, ResolvedProgram,
+};
+use crate::workspace_graph::WorkspaceGraphProjectionModule;
 
 pub(super) fn function_name_positions(
     program: &crate::ast::Program,
@@ -52,8 +56,40 @@ pub(super) fn validate_v1_function_rename_targets(
     before: &crate::ast::Program,
     candidate: &crate::ast::Program,
 ) -> Result<(), Vec<Diagnostic>> {
-    let before_targets = call_targets(&hir::resolve(before)?);
-    let candidate_targets = call_targets(&hir::resolve(candidate)?);
+    let before_targets = program_call_targets(&hir::resolve(before)?);
+    let candidate_targets = program_call_targets(&hir::resolve(candidate)?);
+    compare_call_targets(&before_targets, &candidate_targets)
+}
+
+/// Project rename counterpart of [`validate_v1_function_rename_targets`].
+/// A Project module does not resolve standalone, so this compares the retained
+/// per-module HIR of every Project module in the base snapshot and the
+/// candidate build.
+/// The typed-fact equivalence gate omits display names and records no
+/// same-module call edge, so it cannot see a call that a local value captures.
+pub(crate) fn validate_project_rename_targets(
+    base: &[WorkspaceGraphProjectionModule],
+    candidate: &[WorkspaceGraphProjectionModule],
+) -> Result<(), Vec<Diagnostic>> {
+    let project_targets = |modules: &[WorkspaceGraphProjectionModule]| {
+        let mut targets = CallTargets::new();
+        for module in modules {
+            collect_call_targets(
+                module.functions(),
+                module.function_templates(),
+                module.function_instances(),
+                &mut targets,
+            );
+        }
+        targets
+    };
+    compare_call_targets(&project_targets(base), &project_targets(candidate))
+}
+
+fn compare_call_targets(
+    before_targets: &CallTargets,
+    candidate_targets: &CallTargets,
+) -> Result<(), Vec<Diagnostic>> {
     if before_targets == candidate_targets {
         return Ok(());
     }
@@ -77,9 +113,24 @@ pub(super) fn validate_v1_function_rename_targets(
     )])
 }
 
-fn call_targets(program: &ResolvedProgram) -> CallTargets {
-    let functions = program
-        .functions
+fn program_call_targets(program: &ResolvedProgram) -> CallTargets {
+    let mut targets = CallTargets::new();
+    collect_call_targets(
+        &program.functions,
+        &program.function_templates,
+        &program.function_instances,
+        &mut targets,
+    );
+    targets
+}
+
+fn collect_call_targets(
+    functions: &[ResolvedFunction],
+    templates: &[ResolvedFunctionTemplate],
+    instances: &[ResolvedFunctionInstance],
+    targets: &mut CallTargets,
+) {
+    let functions = functions
         .iter()
         .map(|function| {
             (
@@ -89,7 +140,7 @@ fn call_targets(program: &ResolvedProgram) -> CallTargets {
                 &function.ensures,
             )
         })
-        .chain(program.function_templates.iter().map(|template| {
+        .chain(templates.iter().map(|template| {
             (
                 FunctionExecutionId::Monomorphic(template.id.clone()),
                 &template.requires,
@@ -97,7 +148,7 @@ fn call_targets(program: &ResolvedProgram) -> CallTargets {
                 &template.ensures,
             )
         }))
-        .chain(program.function_instances.iter().map(|instance| {
+        .chain(instances.iter().map(|instance| {
             (
                 FunctionExecutionId::Generic(instance.id.clone()),
                 &instance.function.requires,
@@ -105,7 +156,6 @@ fn call_targets(program: &ResolvedProgram) -> CallTargets {
                 &instance.function.ensures,
             )
         }));
-    let mut targets = CallTargets::new();
     for (owner, requires, body, ensures) in functions {
         let owner = owner.identity_key();
         let mut pending: Vec<&ResolvedExpr> = Vec::new();
@@ -137,5 +187,4 @@ fn call_targets(program: &ResolvedProgram) -> CallTargets {
             hir::push_resolved_expression_children_in_authored_order(expression, &mut pending);
         }
     }
-    targets
 }
