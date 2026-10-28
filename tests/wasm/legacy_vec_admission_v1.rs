@@ -125,10 +125,8 @@ fn vec_imports_reject_before_legacy_web_output_effects() {
             let stdout = String::from_utf8(result.stdout).unwrap();
             let stderr = String::from_utf8(result.stderr).unwrap();
             assert!(!stdout.contains("\"status\":\"built\""), "{stdout}");
-            assert!(
-                stdout.contains("SPX-W131") || stderr.contains("SPX-W131"),
-                "{stdout}{stderr}"
-            );
+            // --json diagnostics are JSON lines on stdout (docs/DEVELOPMENT.md).
+            assert!(stdout.contains("\"code\":\"SPX-W131\""), "{stdout}{stderr}");
             assert_missing(&missing);
         }
         assert_inventory(&root, &["existing"]);
