@@ -237,8 +237,12 @@ which names the parent and, for a link, suggests the resolved output path; a
 missing parent gets a hint to create it first. Control characters in those
 paths are shown escaped. Only the immediate parent is checked: on macOS,
 `--target native -o /tmp/app` fails because `/tmp` links to `/private/tmp`, so
-use `-o /private/tmp/app`. Other targets keep their own parent handling and
-also report a bad parent with `SPX-I301`.
+use `-o /private/tmp/app`. `--target native-callable` and Web packages built
+without `--export` or `--profile` do not reject a linked parent:
+`native-callable` builds into the directory the link resolves to, and a
+missing or non-directory parent fails with `SPX-I107`. Such a Web package is
+created through the link, and a missing or non-directory parent fails with
+`SPX-I301` without a hint.
 
 For command-profile projects, `run` executes the ordinary project entry, not
 the process-input command function. The output points to the built adapters
