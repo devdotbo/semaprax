@@ -3,8 +3,8 @@ use std::io::{self, Write as _};
 use std::path::{Component, Path, PathBuf};
 
 use same_file::Handle;
-use semaprax::diagnostic::output_parent::{missing_directory_help, rejected_directory, shown};
 use semaprax::diagnostic::Diagnostic;
+use semaprax::wasm::output_parent::{missing_directory_help, rejected_directory, shown};
 
 use super::project::{
     is_project_manifest, normalize_project_path, resolve_positional, DEFAULT_MANIFEST,

@@ -1,6 +1,6 @@
 use crate::ast::{BinaryOp, Program, UnaryOp};
 use crate::command_io_ops::CommandOperationProfile;
-use crate::diagnostic::{output_parent, quote_json, Diagnostic};
+use crate::diagnostic::{quote_json, Diagnostic};
 use crate::graph;
 use crate::hir::{
     self, DeclarationId, FunctionExecutionId, IdentityOrigin, ResolvedExpr, ResolvedExprKind,
@@ -42,6 +42,8 @@ mod network_io;
 pub(crate) mod numeric_conversions;
 #[cfg(any(test, feature = "unstable-wit-component-harness"))]
 mod option_propagation_component_v10;
+#[doc(hidden)]
+pub mod output_parent;
 mod owned;
 mod owned_data_exports;
 mod owned_data_public;

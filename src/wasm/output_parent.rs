@@ -9,12 +9,18 @@
 //! rendering, so every path interpolated here goes through [`shown`], which
 //! escapes control characters the same way the rendered `Diagnostic.path`
 //! is escaped.
+//!
+//! The module is declared under `wasm`, the library owner of Web package
+//! publication, rather than under `diagnostic`: `src/diagnostic.rs` is a
+//! byte-authenticated source owner (`src/diagnostic/writer/tests.rs`), and the
+//! single-file native and Project routes in `src/cli/build.rs` reach the same
+//! helpers through `semaprax::wasm::output_parent`.
 
 use std::fs;
 use std::io;
 use std::path::Path;
 
-use super::Diagnostic;
+use crate::diagnostic::Diagnostic;
 
 /// Describe an inspected output parent that is not a real non-reparse
 /// directory.
